@@ -32,6 +32,8 @@ reports/[asset]_flying_rocket_[YYYYMMDD]_[HHMM].md
 
 After saving, follow with a ≤6-line conversational summary: adjusted score, top 1–2 changes vs prior, single most actionable item.
 
+**Auto-push:** After saving each report, immediately `git add` the new report file, commit it with a descriptive message, and `git push` to `origin/main`. One commit per report. Do this without being asked.
+
 ## Asset Defaults
 
 - If no asset specified → **BTC**
