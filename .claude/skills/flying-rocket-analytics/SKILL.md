@@ -21,7 +21,9 @@ Shorting crypto is **not** the mirror of going long. The asymmetries are:
 
 The framework treats shorting with **more humility than longing**: higher unlock thresholds, smaller maximum position size (cap **50% total short notional** of the dedicated short book), mandatory stops at every phase, time-decay max-hold limits, and explicit carry-cost accounting.
 
-**Cross-validation rule:** Flying Rocket and Fallen Knives scores should be **inversely related** for the same asset at the same timestamp. If both score ≥12, the framework is internally inconsistent — pause and re-examine inputs before acting.
+**Cross-validation rule:** Flying Rocket and Fallen Knives scores should be **inversely related** for the same asset at the same timestamp. If **both score ≥12** (never a *sum* threshold — the May-14 report's "sum = 8 vs 24" framing is wrong and appears nowhere in these skills), the framework is internally inconsistent — pause and re-examine inputs before acting.
+
+**Mandatory computed companion score (Jun 2026):** the Cross-Check line in the header must carry the **computed** Fallen Knives composite (number + gate count, from the same live data fetch) — **estimated/eyeballed companion numbers are prohibited.** *(In May–Jun 2026 the long-side series leaned on a sourceless "FR ~3–4" for weeks; do not repeat that on either side.)* If the companion cannot be computed, say so explicitly and treat the cross-validation as **unverified** — do not assert inverse consistency you did not measure.
 
 **Asset scope:** BTC default. ETH, SOL, major alts (top 20 mcap) with metric substitution. **Smaller alts → require explicit user confirmation** due to short-borrow availability and squeeze risk.
 
@@ -69,6 +71,8 @@ Tables with **source + timestamp** for every cell:
 - **On-Chain**: MVRV-Z | LTH 30d Δ | Exchange inflow trend | Coinbase Premium
 - **Carry**: Perp funding annualized | Spot borrow (if applicable) | Implied bleed/month
 
+**Canonical-spot reconciliation (Jun 2026, mirror of Fallen Knives):** canonical spot = **median of the primary source + ≥2 others**, timestamped. If the inter-source spread is **>0.5%**, report it and compute Total Short EV at both extremes; if the EV sign flips across the spread, mark the read **low-confidence / corroborative-only** and require a second independent unlock condition before deploying any short. Do not act on a short whose entire edge sits inside the price-source noise.
+
 ### 2.5. Regime / Asset-Selection Pre-Check (mandatory)
 
 Before scoring, run this fast check. If any condition fires, **stop and warn the user** rather than producing a stale score.
@@ -90,7 +94,7 @@ Bulleted highest-impact news: regulatory wins/losses, ETF news, macro releases, 
 
 | Category | Max | Scoring Rubric |
 |---|---|---|
-| **Euphoria Sentiment** | 5 | F&G or asset equivalent. ≥90 → 5 · 80–89 → 4 · 70–79 → 3 · 60–69 → 2 · 50–59 → 1 · <50 → 0 |
+| **Euphoria Sentiment** | 5 | **3-day average** F&G or asset equivalent — use the smoothed average, NOT the single-day spot print, to avoid score whipsaw (mirror of the Fallen Knives Jun-2026 tune). ≥90 → 5 · 80–89 → 4 · 70–79 → 3 · 60–69 → 2 · 50–59 → 1 · <50 → 0 |
 | **Momentum Overextension** | 4 | Weekly RSI. >75 → 4 · 70–75 → 3 · 65–70 → 2 · 60–65 → 1 · <60 → 0. Bonus −1 if monthly RSI also >70 (rare cycle-top condition) — capped at 4 max |
 | **Valuation Extreme** | 5 | **Primary (BTC/ETH):** MVRV-Z. >5 → 5 · 3–5 → 4 · 2–3 → 3 · 1–2 → 1 · <1 → 0. **Fallback (alts):** distance from ATH. New ATH or <5% from ATH → 5 · 5–15% → 3 · 15–30% → 1 · >30% → 0. State which used. |
 | **Distribution Evidence** | 3 | Count of: (a) LTH supply declining 30d AND profit-taking rate >$500M/day (BTC scale; pro-rate by mcap for ETH/alts), (b) net exchange inflows >30d avg with large-address tagging, (c) ETF flows decelerating or net outflows after sustained inflow regime. 3/3 → 3 · 2/3 → 2 · 1/3 → 1 · 0/3 → 0 |
@@ -101,11 +105,10 @@ Bulleted highest-impact news: regulatory wins/losses, ETF news, macro releases, 
 - Perp funding annualized <−5% AND OI within 5% of 90-day high: **−2** to raw score
 - Rationale: the consensus is already short; you are buying squeeze fuel, not selling a top. This penalty formalizes what would otherwise be only narrative warning.
 
-**Correlation / Regime Modifier** (applied to raw score after squeeze-trap penalty):
-- Asset–SPX 30d corr >0.7 AND SPX within 3% of ATH (full risk-on regime): score **×0.80** — shorting into systemic risk-on is dangerous regardless of asset-level signals
-- Corr 0.2–0.7 (mixed regime): **×1.00**
-- Corr <0.2 (decoupled): **×1.05** — crypto-specific weakness easier to express
-- Corr <0 AND asset weakening while SPX rises (negative decoupling): **×1.15** — idiosyncratic distribution most actionable
+**Correlation / Regime Treatment** (revised Jun 2026 — demoted from a score multiplier to a sourced gate surcharge + label, mirror of the Fallen Knives change; every branch here only ever makes a short *harder*, never easier, per Hard Rule 6):
+- **Risk-on suppressor (kept, hardened):** **sourced** 30d corr >0.7 AND SPX within 3% of ATH (full risk-on) → require **one additional confirmation gate** for any short-phase unlock. This replaces the ×0.80 haircut and extends the suppression to *every* phase rather than fractionally trimming a score.
+- **Decoupled / negative-decoupling (corr <0.2 / <0):** **context label only — NO score bonus.** The old ×1.05 / ×1.15 multipliers rode on eyeballed correlations and *inflated short conviction*; removed. The §5 trend term and §3 developments already carry the idiosyncratic-distribution information.
+- **Sourcing rule (Hard Rule 1):** state the sourced 30d correlation + timestamp, or "not computed." If **not computed**, the risk-on surcharge defaults **ON** (when unsure, demand *more* confirmation to short — the conservative direction for the asymmetric side).
 
 **Phase-of-Cycle Hard Cap** (applied last, overrides everything above):
 - Asset >20% below 1-year ATH: **adjusted score capped at 8** regardless of inputs. A recovery tape cannot be a distribution tape; the rubric should reflect that explicitly. State the cap was applied in the report.
@@ -147,6 +150,8 @@ Baseline grid for short setups (probabilities reflect price direction, NOT short
 | 18–20 | 5% | 15% | 40% | 40% |
 
 Adjust each cell ±10% based on idiosyncratic catalysts (and state).
+
+**Trend term (added Jun 2026 — short-side directional humility, mirror of Fallen Knives §5).** This grid maps euphoria→mean-revert monotonically, so it reads **persistently bearish in an active UPtrend** — telling you to short strength that keeps making higher highs (the short-side falling-knife). Correct for this: when price is **above a major MA AND making higher highs** (confirmed uptrend), shift **10–15% of mass from Mean-Revert / Bear-Reversal → Continued Rally** — respect the trend you are shorting into. Apply the mirror toward the downside only once the trend is **breaking** (loss of a major MA or a confirmed lower-high). State the shift. *(This tune can only make a short case weaker, never stronger — consistent with Hard Rule 6.)*
 
 Final matrix:
 
@@ -281,6 +286,8 @@ Numbered bull (✅) and bear (❌) signals with one-line rationale. **Reminder:*
 
 **Note:** the long-side framework lets you deploy starting at 11. The short side requires 13. The 2-point spread is the asymmetry tax — shorts demand more confirmation because adverse moves cost more.
 
+> **Reconciliation note (Jun 2026 — mirror of the Fallen Knives footnote):** these stances describe **score eligibility only.** Actual short deployment is *additionally* gated by the gate count (§4), the **phase-of-cycle hard cap** (§4), the **squeeze-trap penalty** (§4), and **carry economics** (§6.5 — carry > 40% of target = no trade). A "Conviction" 15–17 row is **not** a deploy mandate: the cap, penalty, or carry can each veto every phase. State the gate/cap/penalty-limited reality explicitly in the verdict — never let the table imply more short exposure than the full gating authorizes.
+
 ## Asset Generalization
 
 | Metric | BTC | ETH | Major Alts | Smaller Alts |
@@ -297,7 +304,7 @@ Numbered bull (✅) and bear (❌) signals with one-line rationale. **Reminder:*
 
 1. **Shorting is not the mirror of longing.** Carry bleeds, drift hurts, squeezes kill. Operate with more humility.
 2. **Real-time data is non-negotiable.**
-3. **Top-picking is a confirmation game, not a prediction game.** Wait for evidence — distribution candles, breadth divergence, funding extremes — not feels.
+3. **Top-picking is a confirmation game, not a prediction game.** Wait for evidence — distribution candles, breadth divergence, funding extremes — not feels. **Anti-bear-trap (added Jun 2026, mirror of Fallen Knives' anti-bull-trap):** pullbacks within an uptrend are suspect — *never declare a top "confirmed" on a single down-week.* Require **trend-structure breakdown** (loss of a major MA or a confirmed lower-high) before deploying the distribution thesis. A dip in a structural bull tape is squeeze fuel, not a top.
 4. **Carry > target / 0.4 → no trade.** Even a perfect thesis loses money to bleed if the move takes too long.
 5. **Always have a time stop.** Decay discipline.
 6. **Always have a price stop.** No exceptions.
@@ -305,6 +312,8 @@ Numbered bull (✅) and bear (❌) signals with one-line rationale. **Reminder:*
 8. **Cross-validate with Fallen Knives.** If both frameworks light up on the same asset, something is broken.
 9. **Cover into weakness, not strength.** LIFO covers as score drops; this is the symmetric mirror of pyramid-adding on the way up for longs.
 10. **Regulatory and adoption catalysts are the #1 short killer.** Stay current; cover into surprises.
+11. **Two-tier certainty (Jun 2026, mirror of Fallen Knives).** Realized-data statements may use strong language; **forward / regime-resolution claims must carry a probability OR an `IF→THEN` plus a named falsifier.** The score is a coincident euphoria gauge, not a forecast — never let a high score license a confident *price* prediction.
+12. **Verdict-confidence collar (Jun 2026, mirror of Fallen Knives; FR ≥ as strict).** When **|Total Short EV| < 3% (the existing minimum-edge filter) OR the asset is >20% off its 1-year ATH (phase-of-cycle cap fired) OR the squeeze-trap penalty is active**, you are prohibited from declaring a top "confirmed" or a distribution regime "resolved." **Stand-down remains the modal, correct output** — frame a no-trade verdict as the analysis, not a failure.
 
 ## Data Source Priority
 
@@ -350,3 +359,24 @@ After saving, post a ≤6-line conversational summary:
 ## Language
 
 English by default. Russian on explicit user request. Default: English. Ask only if ambiguous.
+
+## Framework Revision Log
+
+### 2026-06-11 — Symmetric tuning from the Fallen Knives backtest (Hard Rule 6 audited)
+
+A 66-agent backtest of the May 14 – Jun 10 2026 cycle re-tuned the long-side framework. Only the **direction-neutral or short-tightening** tunes were mirrored here; the long-only *loosening* tunes were **deliberately withheld**, and that withholding was adversarially confirmed correct.
+
+**Mirrored (each makes a short harder or is neutral):**
+- **3-day-average sentiment** on the Euphoria leg (kills single-day F&G whipsaw).
+- **Trend term in the §5 matrix** — shift mass toward Continued Rally in a confirmed uptrend (respect the trend you short into; can only weaken a short case).
+- **Anti-bear-trap** addition to Principle 3 — require trend-structure breakdown before deploying the distribution thesis.
+- **Interpretation-table reconciliation** — stance = score eligibility only; deployment is additionally gated by gate count + phase-of-cycle cap + squeeze penalty + carry.
+- **Correlation modifier demoted** — eyeballed bonus multipliers (×1.05/×1.15) removed (they inflated short conviction); risk-on suppressor converted to a +1-gate surcharge that extends to every phase; sourced-or-default-ON.
+- **Mandatory computed companion (FK) score**, canonical-spot reconciliation, two-tier certainty, and a verdict-confidence collar (FR ≥ as strict).
+
+**Deliberately WITHHELD (Hard Rule 6 — never relax short discipline):**
+- **No deep-greed override.** A "deploy more short into a still-rising parabola, bypassing gates" rule would be the single most dangerous possible edit to a short book (unlimited loss + squeeze fuel). The long-side Deep-Value Override has **no** short-side analogue, by design.
+- **No stop loosening.** Mandatory price **and** time stops on every tranche stay intact. (The FK stop-vs-buy-zone coherence check is *not* ported — FR's stop-above-entry is correct.)
+- **No gate softening.** Stricter unlock thresholds (≥13/15/17/19), the 50%-of-book cap, the squeeze-trap penalty, and the phase-of-cycle hard cap are all unchanged.
+
+The asymmetry tax is preserved. When in doubt on the short side, the framework adds confirmation rather than removing it.

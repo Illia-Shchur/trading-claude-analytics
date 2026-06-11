@@ -15,6 +15,7 @@ Personal workspace for crypto market analysis using the **Fallen Knives** framew
 4. **Cold start defaults to all dry powder.** Never assume prior deployment unless a prior report or the user explicitly confirms a position.
 5. **Cross-validation between frameworks.** Fallen Knives and Flying Rocket scores on the same asset at the same timestamp must be **inversely related**. If both score ≥12 simultaneously, the framework is internally inconsistent — pause, re-examine inputs, and flag this in the report rather than acting on either signal.
 6. **Asymmetric humility on shorts.** Flying Rocket uses stricter thresholds (Phase 1A unlocks at score ≥13 vs ≥10 for longs), smaller phase sizes (5/10/15/20, capped at 50% of short book vs 10/15/30/45 for longs), and mandatory price + time stops on every tranche. This is the framework's asymmetry tax — never relax it.
+7. **Sync git before every analysis.** Run `git fetch origin` (and confirm the working tree is in sync with `origin/main`) before producing any report, so each analysis builds on the latest committed state. Pair this with the Auto-push convention below: fetch before, commit + push after — every report, without being asked.
 
 ## Output Convention
 
