@@ -1,6 +1,6 @@
 ---
 name: framework-calibration
-description: "Backtest a report-based forecasting framework against its OWN prior reports, grade past predictions vs realized outcomes, adversarially derive parameter tunes, and AUTO-APPLY the survivors to the framework's SKILL file. The iterative self-improvement loop. Works on any framework in this workspace (Fallen Knives, Flying Rocket, and future ones). Use whenever the user asks to calibrate / recalibrate / retune / improve a strategy, backtest predictions, audit forecast accuracy, 'reanalyse the reports and correct the strategy', 'were our predictions right', 'what parameters to tune', or any framework self-improvement / iterative-improvement request. Always runs the exhaustive multi-agent adversarial workflow."
+description: "Backtest a report-based forecasting framework against its OWN prior reports, grade past predictions vs realized outcomes, adversarially derive parameter tunes, and PROPOSE the survivors for user review (applied to the framework's SKILL file via a branch + PR only after approval — never auto-pushed). The iterative self-improvement loop. Works on any framework in this workspace (Fallen Knives, Flying Rocket, and future ones). Use whenever the user asks to calibrate / recalibrate / retune / improve a strategy, backtest predictions, audit forecast accuracy, 'reanalyse the reports and correct the strategy', 'were our predictions right', 'what parameters to tune', or any framework self-improvement / iterative-improvement request. Always runs the exhaustive multi-agent adversarial workflow."
 ---
 
 # Framework Calibration — Backtest-Driven Iterative Improvement
@@ -13,8 +13,8 @@ It is the meta-framework: *Fallen Knives* and *Flying Rocket* analyze markets; *
 
 **Operating mode (fixed for this workspace):**
 - **Scope:** general — point it at any framework's `SKILL.md` + that framework's reports.
-- **Apply mode:** **auto-apply** every adversarially-survived tune (with revision-log entry + commit), then report. No per-tune confirmation gate — but the standing guardrails below are hard vetoes that auto-apply may never cross.
-- **Depth:** **always exhaustive** — every run launches the multi-agent adversarial `Workflow`. (A skill instructing `Workflow` is itself the user opt-in.)
+- **Apply mode:** **propose-then-review** — run the analysis, adjudicate the tunes, and prepare the exact surgical edits, then **STOP and present them for the user to review**. **Never edit a target `SKILL.md` or push a framework rule-change without explicit approval.** On approval, apply on a **branch + PR** (never a direct push to `main`). The standing guardrails below are hard vetoes regardless.
+- **Depth:** **always exhaustive** — every run launches the multi-agent adversarial `Workflow`. Because the run is large and billed, **state a pre-flight scale estimate before invoking it** (≈ agents = reports + assets + dimensions + candidate-tunes + skeptic-votes; a 19-report corpus is ~50–80 agents) and note that results return for review before anything is applied. (A skill instructing `Workflow` is the user's opt-in to *orchestration* — it is **not** opt-in to editing files; that gate is separate and explicit.)
 
 ## Inputs — resolve these before running
 
@@ -35,18 +35,26 @@ A generalized, runnable workflow script ships alongside this file: **`backtest-w
 
 Scale the finder/skeptic counts to the corpus: a 5-report series needs fewer extractors than a 19-report one; a "thorough audit" request widens the skeptic pool to 3–5 votes per tune.
 
-## Adjudication → auto-apply policy
+## Adjudication → propose-for-review policy
 
-After the workflow returns, **apply every tune whose verdict is `adopt` or `adopt_with_modification`** — using the **modification text**, not the original proposal (the adversarial layer's modification is the adjudicated form). **Never apply a `reject`.** Then:
+After the workflow returns, **prepare** (do **not** yet apply) the edit set from every tune whose verdict is `adopt` or `adopt_with_modification`; **never include a `reject`.** Select the text to apply per tune:
 
-1. For each adopted tune, **Read the target SKILL, locate the exact text, and Edit** it to the adjudicated form. Map every before→after precisely — these are surgical edits to a live framework.
-2. **Run a validation pass** (grep): no duplicate list numbering, no broken cross-references, no stale text left behind (old thresholds, removed multipliers), no operator-precedence ambiguity in compound unlock clauses. Fix any defect the audit flagged in a prior calibration's edits.
-3. **Add a dated `## Framework Revision Log` entry** (create the section if absent) summarizing: each applied tune (before→after, one line), the rejected tunes **with why** (the rejections are half the value — they document what *not* to do), and the standing N=1 caveat.
-4. **Mirror to a companion framework only with the asymmetry filter** below.
+- **`adopt`** → use the diagnosis's original `after` text.
+- **`adopt_with_modification`** → use the skeptic's **`modification`** text (the adjudicated form), never the original `after`.
+- **`adopt_with_modification` with an empty/blank `modification`** → **demote to needs-review**; do not fall back to the original (the policy explicitly distrusts the un-modified proposal here).
 
-## Standing guardrails — hard vetoes that auto-apply may NEVER cross
+Then:
 
-Even a tune the skeptics passed is **rejected at apply-time** if it would:
+1. **Reconcile overlaps first.** Group prepared edits by the exact target text/location in the SKILL. If two adopted tunes touch the same line/clause, **merge** compatible ones into a single edit or **sequence** them deterministically; if they genuinely conflict, **escalate that pair to needs-review** rather than applying either. Never fire two overlapping `Edit`s against the same text (the second silently fails or clobbers the first).
+2. **Present for review.** Show the user the adjudicated tuning set (adopted / rejected / needs-review), each precise **before→after**, and the draft retrospective. **Wait for explicit approval. Do not edit any target SKILL before this.**
+3. **On approval, apply on a branch.** For each approved tune, **Read the target SKILL, locate the exact text, and Edit** it to the adjudicated form — surgical, one mapped before→after each. Commit on a new branch and **open a PR** (`gh pr create`); do **not** push to `main`.
+4. **Run a validation pass** after editing: grep for duplicate list numbering, broken cross-references, stale text (old thresholds, removed multipliers), operator-precedence ambiguity in compound unlock clauses. **grep is necessary but not sufficient** — pair it with the §Reachability checks below; **any failure there or a guardrail miss hard-blocks the PR** until fixed.
+5. **Add a dated `## Framework Revision Log` entry** (create the section if absent) summarizing: each applied tune (before→after, one line), the rejected tunes **with why** (the rejections are half the value — they document what *not* to do), any needs-review escalations, and the standing N=1 caveat.
+6. **Mirror to a companion framework only with the asymmetry filter** below.
+
+## Standing guardrails — hard vetoes no apply may cross (even with user approval)
+
+Even a tune the skeptics passed — and even one the user approved in the review step — is **withheld at apply-time** if it would:
 
 - **Relax short-side discipline** (Flying Rocket): no deep-greed/override-style loosening, no stop loosening, no gate softening, no threshold reduction. Per Hard Rule 6, the short side only ever gets *tightening* or direction-neutral mirrors. When mirroring a long-side tune to the short framework, apply it **only if it cannot make a short easier**; otherwise withhold it and log the withholding as deliberate.
 - **Loosen a capital guardrail into a falling knife** — front-load size at shallow drawdown, deploy more on a thin score, credit *failed* trend gates toward an unlock, or remove a stop entirely. (These were the dominant rejection reasons in the Jun 2026 calibration.)
@@ -64,12 +72,12 @@ The Jun 2026 pass shipped a Deep-Value Override that was **mathematically unreac
 - **Decoupling:** a deploy-trigger and a stop-trigger must never key off the same number.
 - **Denominator/N/A:** if gates can be N/A for some asset class (e.g., PoW-only signals on PoS assets), reduce the denominator — never leave an unfillable gate inflating the count.
 
-## Output & git (Hard Rule 7 + Auto-push)
+## Output & git (Hard Rule 7 + review gate)
 
 - Save the memo to `reports/strategy_retrospective_[YYYYMMDD].md` (or `[framework]_calibration_[YYYYMMDD].md` for a single-framework run).
-- Append a one-line entry to **`reports/calibration_ledger.md`** (create if absent): date · framework(s) · #adopted/#rejected · headline change · "N=1 — re-validate after next full cycle." This is the running tuning history across calibrations.
-- **Commit + push** the changed SKILL(s) + retrospective + ledger in one commit (message: what was calibrated, top adopted/rejected, evidence window). Do not sweep unrelated working-tree changes into it.
-- Post a ≤8-line summary: predictions-right-vs-wrong tally, the 1–2 highest-leverage tunes applied, the most important *rejection*, and the N=1 caveat.
+- Append a one-line entry to **`reports/calibration_ledger.md`** (create if absent): date · framework(s) · #adopted/#rejected/#needs-review · headline change · "N=1 — re-validate after next full cycle." This is the running tuning history across calibrations.
+- **The retrospective + ledger are analysis outputs** — they may be saved + committed normally (Auto-push convention). **The target-SKILL edits are NOT** — they require user approval and ship via a **branch + PR** (one PR per calibration; message: what was calibrated, top adopted/rejected, evidence window). **Never push a framework rule-change directly to `main`**, and never sweep unrelated working-tree changes into either commit.
+- Post a ≤8-line summary: predictions-right-vs-wrong tally, the 1–2 highest-leverage tunes **proposed**, the most important *rejection*, the N=1 caveat — and the **pending PR / review** the user must approve before anything changes the framework.
 
 ## Principles
 

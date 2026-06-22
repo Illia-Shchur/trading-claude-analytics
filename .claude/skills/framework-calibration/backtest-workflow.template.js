@@ -7,6 +7,9 @@
 //   3. REPORTS — every report the target framework produced (from `ls reports/`)
 //   4. DIMENSIONS — framework dimensions to diagnose (defaults are generic)
 // Pure JS (no TS). No Date.now()/Math.random()/argless new Date().
+// This script ONLY analyzes and RETURNS the adjudicated tuning set + memo. It
+// does NOT edit any SKILL. Applying edits is a separate, user-reviewed step
+// (branch + PR, never a push to main) — see SKILL.md "propose-for-review policy".
 // ============================================================================
 
 export const meta = {
@@ -21,9 +24,17 @@ export const meta = {
   ],
 }
 
-// ── ⟨EDIT 1⟩ paths ──────────────────────────────────────────────────────────
-const DIR = '/Users/eternal/Desktop/Trading Claude Analytics/reports'
-const SKILLDIR = '/Users/eternal/Desktop/Trading Claude Analytics/.claude/skills'
+// ── ⟨EDIT 1⟩ paths — ABSOLUTE (the agents' Read tool requires absolute paths) ─
+// Pick ONE block for your OS. Default = Windows (this workspace). Backslashes are
+// escaped; Windows tolerates the mixed `\...\skills/fallen-knives.../SKILL.md`
+// separators produced by the ${SKILLDIR}/... joins below.
+//
+// --- Windows (default) ---
+const DIR = 'C:\\Users\\Eternal\\IdeaProjects\\trading-claude-analytics\\reports'
+const SKILLDIR = 'C:\\Users\\Eternal\\IdeaProjects\\trading-claude-analytics\\.claude\\skills'
+// --- macOS (swap in if running there) ---
+//   const DIR = '/Users/eternal/Desktop/Trading Claude Analytics/reports'
+//   const SKILLDIR = '/Users/eternal/Desktop/Trading Claude Analytics/.claude/skills'
 const TARGET_SKILLS = [           // skills whose ALREADY-APPLIED edits get audited
   `${SKILLDIR}/fallen-knives-analytics/SKILL.md`,
   `${SKILLDIR}/flying-rocket-analytics/SKILL.md`,
@@ -40,14 +51,16 @@ const REPORTS = [
   // { f: 'btc_fallen_knives_20260514_1030.md', a: 'BTC', t: 'fallen_knives', d: '2026-05-14' },
   // ... fill from `ls reports/` ...
 ]
+// Fail loud rather than silently grading an empty corpus (unedited template, wrong DIR, etc.).
+if (!REPORTS.length) throw new Error('REPORTS is empty — fill it from `ls reports/` before running. A single report is too thin to grade.')
 
 // ── ⟨EDIT 4⟩ assets present in the corpus + diagnosis dimensions ─────────────
-const ASSETS = ['BTC', 'ETH', 'Gold', 'SOL']   // group reports by these
+const ASSETS = ['BTC', 'ETH', 'Gold']   // group reports by these (add another major only once a report corpus for it exists)
 const DIMENSIONS = [
   { key: 'scoring-rubric',        focus: 'Composite score weights/thresholds + any regime modifier. Did the score track reality or whipsaw? Noisy single-day inputs? Bands that saturate through a normal move?' },
   { key: 'confirmation-gates',    focus: 'Gates that drive phase unlocks. Identify PRO-CYCLICAL gates that turn OFF as conditions improve for the thesis, creating a feedback loop where the better the setup, the fewer gates pass. Quantify any score/gate divergence.' },
   { key: 'deployment-pyramid',    focus: 'Phase sizing + unlock thresholds. Did the pyramid INVERT (smallest tranche at the worst price, locked out at the best)? Cross-asset: did a lower-conviction asset deploy more than a higher-conviction one?' },
-  { key: 'stops',                 focus: 'Stop placement/logic. Were stops placed where they eject the position at the worst moment, or contradict the framework own add-zones? Near-misses?' },
+  { key: 'stops',                 focus: 'Stop placement/logic. Were stops placed where they eject the position at the worst moment, or contradict the framework\'s own add-zones? Near-misses?' },
   { key: 'probability-matrix-ev', focus: 'Score->probability grid and weighted EV. Persistent directional bias (positive EV while price went the other way)? Monotonic mapping that ignores trend/regime?' },
   { key: 'data-quality-crossasset', focus: 'Data noise, source disagreement, cross-asset coherence, and any cross-framework (inverse) consistency check — was it actually measured or eyeballed?' },
   { key: 'voice-judgment',        focus: 'Narrative/judgment calls in the prose vs the quant layer. Over/under-stated confidence? Declarations of a regime "resolved" that were falsified? What encodable guardrails would have helped?' },
