@@ -40,7 +40,7 @@ Before writing ANY analysis, fetch live data for ALL categories. Never use memor
 5. **Equities breadth** — S&P 500, Nasdaq, equal-weight vs cap-weight spread (NYSE A/D, % stocks above 200d). Narrowing breadth in a rally = vulnerability signal.
 6. **Derivatives positioning** — Funding rates (target: high positive), open interest delta + position vs 90-day OI high, long/short ratio, perp basis, options skew/put-call ratio.
 7. **On-chain distribution** — MVRV-Z, LTH supply trend (rising distribution rate), exchange inflows (large addresses sending to exchanges), Coinbase Premium turning negative.
-8. **Borrow/carry costs** — Perp funding (8h × 3 × 365 = annualized); spot borrow rates where applicable. **Sign matters:** positive funding = shorts pay (cost); negative funding = shorts earn (bonus, but flags squeeze setup).
+8. **Borrow/carry costs** — Perp funding (8h × 3 × 365 = annualized); spot borrow rates where applicable. **Sign matters (corrected Jul 2026) — standard perp convention:** POSITIVE funding = longs pay shorts (carry INCOME to a short); NEGATIVE funding = shorts pay longs (carry COST — and a crowded-short squeeze flag, see §4 penalty). Search-and-correct all prose worked examples elsewhere in this SKILL using the old (inverted) sign convention.
 9. **Rotation regime** — Altcoin Season Index (CoinMarketCap), BTC dominance level + 30d trend. Drives the asset-selection pre-check (see §2.5) and feeds the structural-vulnerability sub-gate.
 10. **Breaking news** — Regulatory wins for crypto (bullish, dangerous for shorts), ETF news, large M&A, treasury company moves, exchange/protocol exploits (bearish, supportive for shorts).
 
@@ -73,6 +73,8 @@ Tables with **source + timestamp** for every cell:
 
 **Canonical-spot reconciliation (Jun 2026, mirror of Fallen Knives):** canonical spot = **median of the primary source + ≥2 others**, timestamped. If the inter-source spread is **>0.5%**, report it and compute Total Short EV at both extremes; if the EV sign flips across the spread, mark the read **low-confidence / corroborative-only** and require a second independent unlock condition before deploying any short. Do not act on a short whose entire edge sits inside the price-source noise.
 
+**Extend to historical price anchors (Jul 2026).** Any historical price anchor used in a scenario band, falsifier, or IF-THEN must carry source + date and be cross-checked against the same-asset report series (FK + FR) within the trailing ~30 days, or the single freshest live 52-week-low/high print if no report-series match exists. Any percent-change claim referencing the anchor must reproduce it within ~2% (or consistent with the corroborative-spread tolerance above). Failure → anchor marked UNVERIFIED and no band boundary may sit on it; the band boundary must instead use the nearest independently-sourced live figure, or the boundary is omitted with the gap disclosed (never silently rounded near the unverified number). For cold-start assets/early series with no prior report to cross-check against, degrade to "UNVERIFIED — disclose only, do not block."
+
 ### 2.5. Regime / Asset-Selection Pre-Check (mandatory)
 
 Before scoring, run this fast check. If any condition fires, **stop and warn the user** rather than producing a stale score.
@@ -101,9 +103,11 @@ Bulleted highest-impact news: regulatory wins/losses, ETF news, macro releases, 
 | **Structural Vulnerability** | 3 | Count of: (a) perp funding pinned positive (annualized >25%) ≥7d, (b) put/call ratio <0.6 or 25d skew deeply call-favored, (c) breadth divergence — asset at ATH while equities breadth narrowing OR while majority of other crypto majors are NOT at ATH. 3/3 → 3 · 2/3 → 2 · 1/3 → 1 · 0/3 → 0 |
 | **TOTAL** | **20** | |
 
-**Squeeze-Trap Penalty** (applied to raw before modifier):
-- Perp funding annualized <−5% AND OI within 5% of 90-day high: **−2** to raw score
-- Rationale: the consensus is already short; you are buying squeeze fuel, not selling a top. This penalty formalizes what would otherwise be only narrative warning.
+**Squeeze-Trap Penalty** (applied to raw before modifier; decoupled from the OI conjunct, Jul 2026):
+- Perp funding annualized <−5% sustained ≥3 consecutive funding intervals: **−2** to raw score AND **+1** confirmation-gate surcharge on every phase unlock (stacking with the correlation surcharge, capped so total stacked gate surcharges never require more than 100% of the active gate denominator).
+- If additionally OI is within 5% of the 90-day high, escalate: **−2** raw and **+2** gate surcharge.
+- If funding prints <−7% (annualized) in a single interval AND OI is within 5% of the 90-day high, the escalated penalty fires IMMEDIATELY without waiting for 3-interval confirmation.
+- Rationale: negative funding alone is sufficient evidence of a crowded short — the consensus is already positioned; you are buying squeeze fuel, not selling a top. The OI conjunct is no longer required to trigger the base penalty (it only escalates it) — this penalty formalizes what would otherwise be only narrative warning.
 
 **Correlation / Regime Treatment** (revised Jun 2026 — demoted from a score multiplier to a sourced gate surcharge + label, mirror of the Fallen Knives change; every branch here only ever makes a short *harder*, never easier, per Hard Rule 6):
 - **Risk-on suppressor (kept, hardened):** **sourced** 30d corr >0.7 AND SPX within 3% of ATH (full risk-on) → require **one additional confirmation gate** for any short-phase unlock. This replaces the ×0.80 haircut and extends the suppression to *every* phase rather than fractionally trimming a score.
@@ -111,7 +115,7 @@ Bulleted highest-impact news: regulatory wins/losses, ETF news, macro releases, 
 - **Sourcing rule (Hard Rule 1):** state the sourced 30d correlation + timestamp, or "not computed." If **not computed**, the risk-on surcharge defaults **ON** (when unsure, demand *more* confirmation to short — the conservative direction for the asymmetric side).
 
 **Phase-of-Cycle Hard Cap** (applied last, overrides everything above):
-- Asset >20% below 1-year ATH: **adjusted score capped at 8** regardless of inputs. A recovery tape cannot be a distribution tape; the rubric should reflect that explicitly. State the cap was applied in the report.
+- Asset >20% below 1-year ATH: **adjusted score capped at 8** regardless of inputs. A recovery tape cannot be a distribution tape; the rubric should reflect that explicitly. State the cap was applied in the report. **Cap-regime vacuity disclosure (Jul 2026):** while this cap binds, additionally print: (i) the score as X / 8 attainable (alongside X/20); (ii) the line "interpretation bands ≥11 unreachable; Hard-Rule-5 both-≥12 check structurally unfalsifiable in this regime — FR ≥9 (near-cap) is a standing, currently-dormant heightened-watch condition, not a Hard-Rule-5 substitute or new pause/unlock threshold (has not fired once in the sample)"; (iii) never print a bare consistency ✅ — use "structurally consistent (cap-bound; both-≥12 unfalsifiable by construction)".
 - Asset 10–20% below 1-year ATH: capped at **14** (Phase 1A still reachable in theory but Phase 2-3 locked out).
 - Asset within 10% of 1-year ATH: no cap; full 20 scale available.
 
@@ -121,21 +125,23 @@ Round to nearest integer. State raw, squeeze-trap penalty, modifier, cap, and fi
 
 Mark each ✅ / ⚠️ / ❌ / **N/A** (inapplicable).
 
-**N/A handling:** if a gate is structurally inapplicable to the current asset/cycle position (e.g., breadth divergence cannot be evaluated when the asset is >15% off ATH), mark **N/A** and *reduce the denominator by 1*. Do not silently mark inapplicable gates as ❌ — that biases the framework toward false-negatives and obscures which signals are genuinely absent vs unmeasurable.
+**N/A handling:** if a gate is structurally inapplicable to the current asset/cycle position (e.g., breadth divergence cannot be evaluated when the asset is >15% off ATH), mark **N/A** and *reduce the denominator by 1*. Do not silently mark inapplicable gates as ❌ — that biases the framework toward false-negatives and obscures which signals are genuinely absent vs unmeasurable. **Fixed non-crypto gate schema (Jul 2026):** the set of gates STRUCTURALLY inapplicable to the asset class (e.g., gate 4 perp-funding-based squeeze-trap for gold) is fixed per asset class and restated with the N/A list each report; gates that are merely unmeasured in a given run stay ⚠️ per the N/A-handling rule above and must NOT be folded into the frozen denominator. The active denominator must be an exact integer — a previously-N/A gate may only be reclassified as active via an explicit, disclosed schema-revision note, never a per-report ad hoc redefinition.
 
 1. F&G ≥80 (or asset-equivalent extreme greed) sustained ≥7 days
 2. Weekly RSI >70
 3. MVRV-Z >3 (BTC/ETH) OR within 5% of ATH (alts)
 4. Perp funding annualized >25% for ≥3 funding intervals
-5. ETF flows decelerating or net outflows (BTC/ETH) OR retail euphoria proxies elevated (alts)
-6. Coinbase Premium negative ≥3 consecutive days (US institutions selling). If data unavailable, mark ⚠️ (not N/A — this is a measurable signal, just missing in this run).
+5. ETF flows decelerating or net outflows (BTC/ETH) OR retail euphoria proxies elevated (alts) — counts ✅ only when (a) price is within the phase-of-cycle no-cap zone (not >20% off 1-yr ATH, per §2.5 cap) AND (b) price has not made a fresh multi-month or cycle low in the trailing 10 sessions. If either condition fails, record ⚠️ capitulation-context — not counted (this signal fires in both distribution and capitulation; only the distribution reading confirms a short).
+6. Coinbase Premium negative ≥3 consecutive days (US institutions selling) — counts ✅ only when (a) and (b) above hold; otherwise ⚠️ capitulation-context. If data unavailable, mark ⚠️ (not N/A — this is a measurable signal, just missing in this run).
 7. LTH 30d distribution rate >$500M/day (pro-rated for non-BTC)
 8. Breadth divergence: asset at or within 5% of ATH while >50% of top-20 mcap peers off-ATH by >15%. **Mark N/A if the asset is >15% below its own ATH** — the precondition for divergence cannot be evaluated.
-9. Rotation regime favors the short: for BTC short, BTC dominance rolling over or in established downtrend (Altcoin Season Index rising through 50); for alt short, BTC dominance rising and altseason index falling. *(Replaces the legacy "macro catalyst neutral-to-negative" gate — macro is already captured by the correlation modifier and §3 critical developments. This gate is more decisive for crypto-specific distribution.)*
+9. Rotation regime favors the short: for BTC short, BTC dominance rolling over or in established downtrend (Altcoin Season Index rising through 50); for alt short, BTC dominance rising and altseason index falling — counts ✅ only when (a) and (b) above hold (see gate 5); otherwise ⚠️ capitulation-context. *(Replaces the legacy "macro catalyst neutral-to-negative" gate — macro is already captured by the correlation modifier and §3 critical developments. This gate is more decisive for crypto-specific distribution.)*
 
-Count ✅ only. State count as **X / Y** where Y is the active (non-N/A) gate count, then convert to the "of 9" equivalent for unlock-gate comparison: a 5/8 active count = ~5.6/9 equivalent, round down → 5/9 effective.
+**Gate-class labels + reachable-ceiling disclosure (Jul 2026).** Tag each gate [TOP] or [FLOW] per its actual condition as written this report (not a hardcoded universal list) — gates 1, 2, 3, 8 are [TOP] (top-coincident, extinguished by trend breakdown); gates 5, 6, 7, 9 are [FLOW] (evaluable through a decline); gate 4 (funding-rate elevation) is CONDITIONAL — flag per-report whether the top-extinguishing logic actually applies (funding can spike on short-squeeze/relief-rally events inside a confirmed downtrend). Print the reachable gate ceiling in the current regime, qualified as regime-conditional (e.g., "ceiling ≈3/9: [TOP] gates unreachable at the current confirmed trend state — re-widens if trend structure repairs"). While the §2.5 cap is active, label the count "structurally dark (cap-bound; [TOP] gates unreachable — a rising [FLOW]-only count is NOT setup progress)" instead of a bare X/8.
 
-Phase unlocks reference the legacy 9-denominator thresholds (≥4 for 1A, ≥5 for 1B, ≥6 for 2, ≥8 for 3). When N/A reduction is in effect, use the rounded-down equivalent.
+Count ✅ only. State count as **X / Y** where Y is the active (non-N/A) gate count. **Unified N/A gate-count arithmetic (Jul 2026, ceil-threshold convention — replaces the round-down conversion):** when gates are N/A, do NOT convert the achieved count. Restate each phase THRESHOLD against the active denominator as `ceil(legacy_threshold/9 × active_count)` — e.g., 8 active gates: 1A `ceil(3.56)=4`, 1B `ceil(4.44)=5`, P2 `ceil(5.33)=6`, P3 `ceil(7.11)=8` — and print the restated floors in the phase table alongside the legacy /9 floors for cross-check (e.g. "1B: ceil(5/9×8)=5 [legacy 5]"). Never round in the direction that lowers a floor; forbid converting ambiguous ⚠️ gates to N/A (mirror of the FK rule). Every report MUST print the converted unlock thresholds with arithmetic shown; approximate (~) denominators are prohibited. Strictest-wins rounding (ceil, never floor) applies to all required counts.
+
+Phase unlocks reference the legacy 9-denominator thresholds (≥4 for 1A, ≥5 for 1B, ≥6 for 2, ≥8 for 3). When N/A reduction is in effect, use the ceil-threshold conversion above.
 
 ### 5. Probability Matrix — Derived From Score
 
@@ -153,6 +159,8 @@ Adjust each cell ±10% based on idiosyncratic catalysts (and state).
 
 **Trend term (added Jun 2026 — short-side directional humility, mirror of Fallen Knives §5).** This grid maps euphoria→mean-revert monotonically, so it reads **persistently bearish in an active UPtrend** — telling you to short strength that keeps making higher highs (the short-side falling-knife). Correct for this: when price is **above a major MA AND making higher highs** (confirmed uptrend), shift **10–15% of mass from Mean-Revert / Bear-Reversal → Continued Rally** — respect the trend you are shorting into. Apply the mirror toward the downside only once the trend is **breaking** (loss of a major MA or a confirmed lower-high). State the shift. *(This tune can only make a short case weaker, never stronger — consistent with Hard Rule 6.)*
 
+**Confirmation throttle — bounce ≠ uptrend (Jul 2026).** While the §2.5 cap regime is active (>20% off 1-yr ATH), a bounce does NOT qualify as a confirmed uptrend for this shift unless the higher-high/higher-low structure is ≥15 sessions old on weekly-close basis. Single-report momentum (>5% move in ≤7 days) must be labeled BOUNCE (UNCONFIRMED) and the shift withheld; the post-shift Continued Rally cell may never exceed 55%. In the 10–20%-off-ATH band, apply the same standard at a ≥10-session threshold (this is the live regime where Phase 1A can unlock and a single-week rip could otherwise be mislabeled "confirmed uptrend"). Outside both cap regimes the original criterion stands unchanged. If assets oscillate across the 20%-off-ATH boundary report-to-report, use the prior report's regime classification as tie-break.
+
 Final matrix:
 
 | Scenario | Probability | Target Range | Key Trigger |
@@ -164,21 +172,27 @@ Probabilities **must** sum to 100%. **Weighted Expected Value (EV_price)** = Σ 
 
 ```
 Directional EV (%)  = (spot − EV_price) / spot × 100
-Carry EV (%)        = − (annualized funding rate) × (expected hold days / 365)
-                      (note the leading minus: positive funding → carry COST to shorts;
-                       negative funding → carry BONUS to shorts)
+Carry EV (%)        = + (annualized funding rate) × (hold days / 365) for a short,
+                      MINUS borrow/fee costs (never floored — always count in full
+                      against Total Short EV and the 40%-of-target veto, regardless of sign)
 Total Short EV (%)  = Directional EV + Carry EV
 ```
 
+**Sign convention (corrected Jul 2026):** POSITIVE funding = longs pay shorts (carry INCOME to a short); NEGATIVE funding = shorts pay longs (carry COST — and a crowded-short squeeze flag, §4 penalty). **Zero-floor on carry income:** for carry INCOME (positive-funding case) specifically, floor it at ZERO for the purposes of the +3% minimum-edge filter and the carry>40%-of-target veto — funding income may never help a short clear the filter or shrink the carry veto; only costs count against the trade at those two decision points. The headline Total Short EV and Carry EV lines shown for transparency must still report the TRUE signed (unfloored) number, with a footnote showing the floored value used for the two gate checks when they differ. **Mandatory EV recomputation/sum-check:** probabilities must sum to 100%; recompute EV_price from the printed cells as the final step, flowing from the printed probability/midpoint cells to EV_price only (never the reverse); if the stated EV differs from the recomputation by >0.5%, correct before publishing — show the component sum. (This sum-check requirement mirrors, and is textually identical to, the Fallen Knives EV grid's own mandatory recomputation check.)
+
 Three lessons baked into this:
 
-1. **Sign of funding matters.** Most reports won't see negative funding, but when they do, shorts earn it — and that *adds* to expected P&L. Show both lines explicitly even when one is trivial.
-2. **Carry can flip the trade either way.** A +6% directional edge with −10% annualized carry over a 90-day hold = −2.5% carry drag → +3.5% net. Profitable but thin. A +6% directional with +25% annualized carry over 90 days = −6.2% drag → barely scratch. Show the math.
-3. **Negative-funding carry bonus is not a green light to short.** If funding is deeply negative *because* the consensus is already short, the squeeze-trap penalty (§4) should have already lowered the score. Carry bonus is a tiebreaker, not a thesis.
+1. **Sign of funding matters.** Most reports won't see negative funding, but when they do, it is a COST (a crowded-short squeeze signal), not income. Show both lines explicitly even when one is trivial.
+2. **Carry can flip the trade either way.** A +6% directional edge with a funding cost (negative funding) drag over a 90-day hold reduces net edge; a positive-funding income case is floored at zero for gating purposes regardless of magnitude. Show the math.
+3. **Carry income is not a green light to short** and can never itself clear the minimum-edge filter or shrink the carry veto — see the zero-floor rule above.
 
-State: spot, EV_price, Directional EV, expected hold (days), annualized funding, Carry EV, **Total Short EV**, and the no-trade threshold (Total Short EV must exceed +3% to clear the framework's minimum-edge filter; below that, expected gain is not worth the asymmetry of being short).
+State: spot, EV_price, Directional EV, expected hold (days), annualized funding, Carry EV (true signed value + floored value if they differ), **Total Short EV**, and the no-trade threshold (Total Short EV must exceed +3% to clear the framework's minimum-edge filter; below that, expected gain is not worth the asymmetry of being short).
+
+**Stand-down accountability (Jul 2026).** A stand-down verdict does not exempt the forecast layer from grading. Every FR report must restate the prior FR report's EV_price, modal band, and named falsifiers (text explicitly tagged "(Falsifier: ...)" in the source report only — not any forward-probability "Pattern" line) for the asset and mark each as held / falsified with the realized print. This creates no new report-cadence obligation — it is a duty to grade IF/when a report is produced on that asset, not a trigger to produce one. Grading does not itself re-arm a short — resuming FR coverage on a stood-down asset requires re-running the full §2.5/§4 gate stack from scratch. *(Mirrored: the Fallen Knives cross-validation section carries the reciprocal line — "if a companion Flying Rocket report exists and has gone dark on this asset, the next FK report for that asset must carry a one-line 'prior FR forecast check' for any outstanding un-graded EV/falsifier claim.")*
 
 ### 6. Short Deployment Strategy
+
+**EV-voice demotion when the phase-of-cycle cap binds (Jul 2026, corroborative-only labeling).** When the phase-of-cycle hard cap (or 0-gate state) already vetoes all phases, the Total Short EV must be labeled CORROBORATIVE ONLY — NOT LOAD-BEARING, and the verdict must name the structural veto (cap / gates / FK≥12 force-cover) as the binding reason. This applies only where the cap/gate-state is the unambiguous SOLE or dominant veto (not merely present alongside other borderline factors). Categorical directional prose ("a short here is expected to lose," "coin-flip," "asymmetry runs against the short") is prohibited in this state; state only "Total Short EV fails/passes the +3% minimum-edge filter at both spread extremes," with the point estimate and its trailing calibration (signed error of up to the last 3 available published EVs for that asset, or "n=[count], insufficient for a trend read" if fewer than 2 exist) printed beside it. Cross-references Principle 12 (bars "confirmed/resolved" claims) — this clause bars categorical EV-magnitude/directional-confidence claims in the same trigger state.
 
 **Splits: 5 / 10 / 15 / 20** (max **50% of dedicated short book**, NEVER 100%). Front-loaded but smaller than long phases — shorts demand more humility.
 
@@ -187,30 +201,32 @@ State: spot, EV_price, Directional EV, expected hold (days), annualized funding,
 **Mandatory:** every deployed phase has a **hard stop** (price level above entry) and a **time stop** (max hold). Both must be stated at entry. Violation of either = automatic cover of that tranche.
 
 #### Phase 1A — Probe (5%)
-- **Unlock gates:** adjusted score ≥13 AND ≥4 of 9 gates ✅
+- **Unlock gates:** adjusted score ≥13 AND ≥4 of 9 gates ✅ AND §7 preflight PASS
 - **Entry zone:** ASSET-SPECIFIC. State range.
 - **Hard stop:** +8% above entry OR daily close above local high — whichever tighter
 - **Time stop:** 21 calendar days
 - **Status:** DRY POWDER / SHORT ([entry]) / COVERED / STOPPED
 
 #### Phase 1B — Add (10%)
-- **Unlock gates:** adjusted score ≥15 AND ≥5 gates ✅ AND Phase 1A still in profit OR scratch
+- **Unlock gates:** adjusted score ≥15 AND ≥5 gates ✅ AND Phase 1A still in profit OR scratch AND §7 preflight PASS
 - **Entry zone:** [range — must be at higher price than 1A entry, confirming overextension]
 - **Hard stop:** +10% above blended cost
 - **Time stop:** 28 days from this entry
 - **Status:** DRY POWDER / SHORT / COVERED / STOPPED
 
 #### Phase 2 — Conviction (15%)
-- **Unlock gates:** adjusted score ≥17 AND ≥6 gates ✅ AND macro catalyst neutral-to-negative AND correlation regime not full risk-on
+- **Unlock gates:** adjusted score ≥17 AND ≥6 gates ✅ AND macro catalyst neutral-to-negative AND correlation regime not full risk-on AND §7 preflight PASS
 - **Hard stop:** +12% above blended cost
 - **Time stop:** 35 days
 - **Status:** DRY POWDER / SHORT / COVERED / STOPPED
 
 #### Phase 3 — Generational Short (20%)
-- **Unlock gates:** adjusted score ≥19 AND ≥8 gates ✅ AND clear distribution candle (weekly bearish engulfing or break of key support on volume) AND ETF flows confirmed net outflow ≥5 sessions
+- **Unlock gates:** adjusted score ≥19 AND ≥8 gates ✅ AND clear distribution candle (weekly bearish engulfing or break of key support on volume) AND ETF flows confirmed net outflow ≥5 sessions AND §7 preflight PASS
 - **Hard stop:** +15% above blended cost
 - **Time stop:** 49 days
 - **Status:** DRY POWDER / SHORT / COVERED / STOPPED
+
+**§7 Cover-Trigger Preflight veto (Jul 2026, pure tightening).** Before any phase unlock, evaluate the six state-checkable §7 cover triggers at the proposed entry (F&G <40, published FK ≥12, funding negative ≥3 intervals, price below 50d MA, MVRV-Z <2, upside narrative break) and print the result as a table; if ANY is live at entry, the unlock is VOID — do not open a tranche the exit framework closes at inception. The two positional §7 triggers (score-drop-from-peak, time/hard-stop-hit) are explicitly OUT OF SCOPE for this preflight — they are evaluated only after a tranche exists. A single borderline/noisy trigger within a stated tolerance band (e.g., MVRV-Z 1.9–2.0) may be logged as a WARNING rather than an automatic VOID, with an analyst note required.
 
 **Total max short exposure: 50% of dedicated short book. Remaining 50% is structural dry powder for adverse moves / averaging at higher prices ONLY if thesis intact AND score has not deteriorated.**
 
@@ -233,6 +249,18 @@ When the requested asset scores below the Caution Zone (11), do **not** stop the
 
 **BTC-hedged expression for alt shorts** — when BTC dominance is in confirmed uptrend AND the candidate is an alt, consider expressing the short as **short alt / long BTC pair** rather than naked short alt. This neutralizes the systemic risk-on beta and isolates the relative-weakness thesis. Note: pair sizing is at the user's discretion (typically dollar-neutral); the framework's phase sizing applies to the *short leg notional*.
 
+### 6.6. Stood-Down Accountability (Jul 2026)
+
+Every STAND DOWN report must name its re-check triggers and open with a FALSIFIER STATUS line grading every prior published falsifier explicitly tagged "(Falsifier: ...)" in the source report on that asset: STANDING / FIRED (with date and one-line mark-to-market) / EXPIRED.
+
+A full standalone FR re-run (or, if no input category has materially changed since the last full FR report, a short logged reaffirmation: verdict + one-paragraph delta) is required within one session when any of:
+(a) the inline FR companion computed in the FK series prints ≥9;
+(b) a shorts-dominated liquidation/squeeze day occurs on the asset (≥$100M short liqs or the asset leads a squeeze);
+(c) a NAMED falsifier's specific condition has moved materially closer to firing (e.g., price within 10% of the stated falsifier level) since the last report;
+(d) any self-declared falsifier in the last FR report FIRES (log it: "falsifier fired" is a required header line in the re-run).
+
+A mandatory re-check obligates a fresh look, not a fresh trade — it inherits all existing caps/thresholds/vetoes unchanged and may validly re-confirm STAND DOWN. Silence is only permitted while all published falsifiers are STANDING. A companion framework's (FK's) score threshold crossing does NOT independently trigger this note — it belongs to a different discipline tier under Hard Rule 6.
+
 ### 7. Cover / Exit Framework (Symmetric)
 
 Covers execute LIFO (most-recently-added tranche first). Apply mechanically.
@@ -247,7 +275,7 @@ Covers execute LIFO (most-recently-added tranche first). Apply mechanically.
 | Adjusted score ≥15 (i.e., trade still wins) but ANY time stop hit | Cover that tranche, reassess | Decay discipline — do not let shorts age indefinitely |
 | Hard stop hit on any tranche | **Cover that tranche immediately** | No exceptions |
 | Narrative break to the UPSIDE (surprise ETF approval, major regulatory win, sovereign adoption, etc.) | **Cover 100%** | Thesis voided |
-| Fallen Knives score ≥12 on same asset | **Cover 100%** | Inverse framework signals accumulation zone — directly contradicts thesis |
+| Fallen Knives score ≥12 on same asset (Jul 2026: cite the PUBLISHED same-trading-day or most recent prior close FK score when one exists; re-derive only when none exists and disclose "re-derived, unpublished." If a re-derivation and a published score disagree across the 12 boundary, the trigger FIRES — strictest-wins/max of the two readings — and the divergence must be disclosed and reconciled next report) | **Cover 100%** | Inverse framework signals accumulation zone — directly contradicts thesis |
 
 State current cover-trigger status and remaining position.
 
@@ -313,7 +341,8 @@ Numbered bull (✅) and bear (❌) signals with one-line rationale. **Reminder:*
 9. **Cover into weakness, not strength.** LIFO covers as score drops; this is the symmetric mirror of pyramid-adding on the way up for longs.
 10. **Regulatory and adoption catalysts are the #1 short killer.** Stay current; cover into surprises.
 11. **Two-tier certainty (Jun 2026, mirror of Fallen Knives).** Realized-data statements may use strong language; **forward / regime-resolution claims must carry a probability OR an `IF→THEN` plus a named falsifier.** The score is a coincident euphoria gauge, not a forecast — never let a high score license a confident *price* prediction.
-12. **Verdict-confidence collar (Jun 2026, mirror of Fallen Knives; FR ≥ as strict).** When **|Total Short EV| < 3% (the existing minimum-edge filter) OR the asset is >20% off its 1-year ATH (phase-of-cycle cap fired) OR the squeeze-trap penalty is active**, you are prohibited from declaring a top "confirmed" or a distribution regime "resolved." **Stand-down remains the modal, correct output** — frame a no-trade verdict as the analysis, not a failure.
+12. **Verdict-confidence collar (Jun 2026, mirror of Fallen Knives; FR ≥ as strict; symmetrized Jul 2026).** When **|Total Short EV| < 3% (the existing minimum-edge filter) OR the asset is >20% off its 1-year ATH (phase-of-cycle cap fired) OR the squeeze-trap penalty is active**, you are prohibited from declaring a top "confirmed" or a distribution regime "resolved." **The collar is TWO-SIDED:** under the same conditions you are equally prohibited from declaring, in any section (including §5 trend-term prose), a bottom "in," a correction "over/behind us/complete," an uptrend "confirmed," a squeeze setup "unwound," or a positioning book "bailed out." The lexicon confirmed/resolved/unwound/behind us may only attach to a defined structural test that has completed (weekly close, ≥5 sessions held, finalized monthly data) as a forward-looking resolution claim; otherwise the claim must be an IF→THEN with a named falsifier. Plain descriptive-present-tense structural statements (e.g., "gold is in a confirmed downtrend" describing current position relative to moving averages) remain permitted without an IF→THEN wrapper. A stand-down verdict never requires a bullish counter-forecast — the cap and gates are sufficient grounds on their own. **Stand-down remains the modal, correct output** — frame a no-trade verdict as the analysis, not a failure.
+13. **Single-observation durability lock (Jul 2026, mirror of FK's already-adopted single-observation durability rule, at ≥ FK strictness).** No flow, funding, or positioning INFLECTION/turn/regime-change claim — in prose, in the Distribution-Evidence leg (including partial/fractional sub-leg credit), or in gate 5 — may rest on fewer than 5 sessions of confirming data or a completed trend-structure event. One-day prints must be reported as "one day ≠ a run" and score as the prior regime. Asymmetry: claims that make a short HARDER (e.g., outflows ending) need the full 5 sessions; claims that make a short easier get no relaxation (Hard Rule 6).
 
 ## Data Source Priority
 
@@ -380,3 +409,22 @@ A 66-agent backtest of the May 14 – Jun 10 2026 cycle re-tuned the long-side f
 - **No gate softening.** Stricter unlock thresholds (≥13/15/17/19), the 50%-of-book cap, the squeeze-trap penalty, and the phase-of-cycle hard cap are all unchanged.
 
 The asymmetry tax is preserved. When in doubt on the short side, the framework adds confirmation rather than removing it.
+
+### 2026-07-04 — Adversarial re-calibration (314-agent backtest, joint run with Fallen Knives; thorough audit, 3 skeptics/tune)
+
+**Coverage gap, stated plainly:** Flying Rocket produced **zero live reports since 2026-06-18** — the Jun-11 mirrored tunes (trend term, anti-bear-trap, demoted correlation modifier, mandatory computed FK companion, verdict-confidence collar) are validated only by construction, never by outcome, through a July window that included exactly the tape (sustained-negative funding, a ~$200M shorts-dominated squeeze) the squeeze-trap penalty and cover-trigger exist to catch. This calibration's FR-side tunes below are correspondingly **untested until FR runs again** — treat every one as `not_exercised`, not `validated`.
+
+**18 tunes adopted-with-modification** (all tightening, direction-neutral, or corrective — none loosen a gate, stop, threshold, or cap; full before→after text in `reports/strategy_retrospective_20260704.md`):
+
+- **Corrected the inverted funding-carry sign convention** (SKILL text and the Total Short EV decomposition both had it backwards — positive funding is carry INCOME to a short, negative is COST/squeeze-flag) with a **zero-floor on carry income** for the +3%-edge filter and the 40%-carry veto — income can never help a short clear either gate, only costs count.
+- **Decoupled the squeeze-trap penalty from the OI conjunct** (negative funding alone now triggers the base −2/+1-gate penalty; OI proximity only escalates it) and added a **regime-attribution requirement** on gates 5/6/9 (a rising [FLOW]-only count during a fresh cycle low or off-no-cap-zone is tagged capitulation-context, not counted as distribution confirmation).
+- **§7 Cover-Trigger Preflight veto** on every phase unlock — a tranche may not open if any of the six state-checkable cover triggers is already live at entry (closes the "the exit framework would close this trade at inception" gap).
+- **Gate-class [TOP]/[FLOW] labels + reachable-ceiling disclosure**, and a **fixed non-crypto gate schema** with mandatory printed `ceil(fraction × active_denominator)` threshold conversion (replaces the round-down "of 9 equivalent" approximation — the old convention could silently understate a phase floor).
+- **Trend-term confirmation throttle**: a bounce inside the >20%-off-ATH cap regime doesn't count as a confirmed uptrend shift without ≥15 weekly-close sessions of higher-high/higher-low structure (≥10 in the 10–20% band); single-report >5% moves are labeled BOUNCE (UNCONFIRMED).
+- **Cap-regime vacuity disclosure** (print score as X/8-attainable while capped, and label the interpretation bands unreachable rather than implying setup progress) and **EV-voice demotion** to corroborative-only when the cap/gate-state is the sole veto.
+- **Symmetrized the Verdict-Confidence Collar** (bars premature bullish-resolution language — "bottom in," "uptrend confirmed" — under the same conditions it already bars premature top-calls) and **ported the single-observation durability lock** as new Principle 13 (no flow/funding/positioning inflection claim on <5 sessions or without a completed trend-structure event; asymmetric — claims that make a short easier get no relaxation).
+- **Published-FK-first, strictest-wins** for the FK≥12 force-cover trigger (cite the published same-day/prior-close FK score; a re-derivation disagreeing across the boundary fires the trigger, never resolves it away); extended the canonical-spot reconciliation to historical price anchors feeding scenario bands/falsifiers; mandatory EV recomputation/sum-check; Stand-Down Accountability (§6.6) — falsifier-status header + mandatory re-check triggers on a stood-down asset, consolidating two near-duplicate proposals into one mechanism.
+
+**18 FR-side rejections held** — the dominant pattern was **duplicate/inferior proposals of tunes that survived in stronger form** (three separate "published-score-governs" variants collapsed into the one adopted above; three separate single-observation-durability-mirror proposals collapsed into Principle 13) — and a smaller set of genuinely rejected ideas: a carry-ledger sign-attestation line judged redundant with the corrected sign convention itself; a non-crypto score-floor/baseline-conditioning family judged to encode an unverified qualitative judgment call into the rubric; a falsifier-anchoring rule requiring falsifiers sit exactly at a modal-band floor, rejected as over-rigid against the framework's own disclosed-estimate convention. **No rejection reversed a prior-adopted (2026-06-11) tune** — the anti-thrash veto held.
+
+**N=1, doubly so here** — these tunes have not been tested against a single live report. Re-validate FR specifically the moment it produces its next output, before treating any "adopted" verdict above as more than a documented, un-exercised correction.
