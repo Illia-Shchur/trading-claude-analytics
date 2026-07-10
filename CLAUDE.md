@@ -18,6 +18,15 @@ Personal workspace for crypto market analysis using the **Fallen Knives** framew
 6. **Asymmetric humility on shorts.** Flying Rocket uses stricter thresholds (Phase 1A unlocks at score ≥13 vs ≥10 for longs), smaller phase sizes (5/10/15/20, capped at 50% of short book vs 10/15/30/45 for longs), and mandatory price + time stops on every tranche. This is the framework's asymmetry tax — never relax it.
 7. **Sync git before every analysis.** Run `git fetch origin` (and confirm the working tree is in sync with `origin/main`) before producing any report, so each analysis builds on the latest committed state. Pair this with the Auto-push convention below: fetch before, commit + push after — every report, without being asked.
 
+## Deterministic Tooling (`tools/`)
+
+Node scripts (no deps) that make report numbers computed instead of narrated — see `tools/README.md` and the "Deterministic toolchain" sections in the framework SKILLs (which are authoritative for what is mandatory):
+
+- `node tools/fetch.mjs btc|eth|sol|gold|macro` — live numeric backbone (cross-checked spot, ATH/drawdown, weekly Wilder RSI-14, 200-week SMA, ADR sessions, F&G streaks, real yield/VIX/DXY/Brent), source + timestamp on every block. Does NOT cover ETF flows / on-chain / news — those stay live web fetches (Hard Rule 1).
+- `node tools/compute.mjs …` — rubric bands, ceil gate thresholds, per-asset rounding, EV sum-check, stop coherence, ADR, FR funding/cycle-cap.
+- `node tools/lint-report.mjs reports/<file>.md` — validates each report's ` ```json machine ` block after save, before commit. A FAIL is fixed, never committed around.
+- `node tools/selftest.mjs` — regression vectors; run before calibrations and after any `tools/lib.mjs` change. `tools/lib.mjs` mirrors the SKILL rubrics letter-for-letter: a SKILL band change and its `lib.mjs`+`selftest.mjs` change land in the same commit.
+
 ## Output Convention
 
 Reports are saved as markdown to:

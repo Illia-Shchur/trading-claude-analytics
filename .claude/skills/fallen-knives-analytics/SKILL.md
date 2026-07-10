@@ -35,6 +35,15 @@ It synthesizes five scored legs — sentiment, momentum, valuation, capitulation
 
 Tag every figure with **source + timestamp**.
 
+### Deterministic toolchain (mandatory, Jul 2026)
+
+The repo ships `tools/` (see `tools/README.md`) so the numeric backbone is **computed, not narrated** — the failure modes it retires were all hand-done steps (the 4-report RSI NOT-FOUND debt, the ETH `ceil(7/9×8)=6` misprint, eyeballed EV sum-checks, ADR absorbing a half-session).
+
+1. **Fetch:** start every report with `node tools/fetch.mjs <asset>` (+ `node tools/fetch.mjs macro`). It returns, with source + timestamp on every block: cross-checked spot (>1.5% divergence flagged), ATH/drawdown, weekly closes → **computed Wilder RSI-14** (satisfying the momentum input rule's auditability line: source, boundary, period, closes count), the **exact 200-week SMA** with the gate-6 ±8% boolean (retires the "estimated, flagged" 200-week), daily sessions + 5-day ADR (exclude abbreviated sessions via `tools/compute.mjs adr --exclude`), and F&G spot / 3-day average / gate-1 daily-print streaks from the pinned provider.
+2. **Compute:** band assignments, `ceil` gate thresholds, per-asset .5 rounding, EV recomputation, and the stop-coherence boolean come from `tools/compute.mjs` (or the fetch output) — hand arithmetic is a cross-check, never the source of record. The band classifiers in `tools/lib.mjs` mirror §4 letter-for-letter; **any band/threshold change to this SKILL must change `tools/lib.mjs` + `tools/selftest.mjs` in the same commit.**
+3. **Scope honesty:** the toolchain covers price/momentum/valuation-input/sentiment/macro series only. ETF flows (Farside is bot-blocked), on-chain (MVRV-Z, LTH, reserves, liquidations), COT, and news remain live web fetches under Hard Rule 1 — a tool-covered field never excuses a missing web-sourced one.
+4. **Tool failure:** if a fetch source errors (the tool reports per-source errors instead of dying), fall back to the SKILL's documented NOT-FOUND/fallback rules and disclose the failure — never substitute memory.
+
 ## Report Structure
 
 Produce the report in this exact order. Asset name appears in every section header.
@@ -334,6 +343,8 @@ reports/[asset]_fallen_knives_[YYYYMMDD]_[HHMM].md
 
 Path is repo-relative, per CLAUDE.md's Output Convention (which also governs the post-save commit/push). Filename uses lowercase asset symbol. Example: `btc_fallen_knives_20260514_0930.md`.
 
+**Machine block + lint (mandatory, Jul 2026).** Every report ends with a fenced ` ```json machine ` block (schema `report-machine/1` — field list in the header of `tools/lint-report.mjs`) carrying the structured facts: spot, score legs/raw/adjusted/rounding, gates (active/na/passed), EV scenarios + stated EV, deployment, stops, verdict, key inputs. After saving and BEFORE committing, run `node tools/lint-report.mjs reports/<file>.md` — it recomputes the arithmetic (legs sum, rounding convention, gate denominator + ceil thresholds + [V] count, EV within the §5 0.5% tolerance, Rally ≤50% cap, stop coherence). **A FAIL is fixed, never overridden or committed around.** The block also makes future calibrations cheaper and more accurate: extraction agents read it instead of re-deriving numbers from prose.
+
 After saving, post a brief conversational summary (≤6 lines) highlighting:
 - Adjusted score and stance
 - Top 1–2 changes vs prior report (or "first report" if cold start)
@@ -424,3 +435,7 @@ Source: adversarial doc audit (full memo with per-finding evidence: `audits/fall
 11. **Partial-tranche deployment codified:** an unlock authorizes UP TO nominal size — downsizing permitted, upsizing prohibited.
 
 Guardrail compliance: no stop weakened (gold's ratification documents the standing parameter; the alternative — reverting to a vacuously-true `<12` — would have degraded gold's compound stop to price-only, the anti-pattern the compound design exists to prevent), no phase upsized, no failed [T] gate credited, short side untouched, all 17+41+1 held rejections preserved. Deliberately NOT touched: the Override worsening-flows veto (its time-correlation with the arming condition is ledger-flagged for the next full calibration — an untested reversal was explicitly deferred there and remains deferred). **All Layer-2 items are N=1 adjudications under the agility mandate — the next calibration must re-grade them out-of-sample exactly as it re-grades adopted tunes.**
+
+### 2026-07-10 (second pass) — Deterministic toolchain introduced (`tools/`)
+
+Owner directive: certainty in calculations, data fetching, and performance consistency. Added and mandated the repo toolchain — `tools/fetch.mjs` (live numeric backbone: cross-checked spot, ATH/drawdown, computed weekly Wilder RSI-14, exact 200-week SMA + gate-6 ±8% boolean, ADR sessions, F&G 3-day avg + gate-1 daily-print streaks, FRED real yield / VIX / DXY / Brent macro), `tools/compute.mjs` (band classifiers mirroring §4 letter-for-letter, ceil thresholds, per-asset rounding, EV sum-check, stop coherence, ADR with exclusions), `tools/lint-report.mjs` (validates the new mandatory ```json machine``` block — schema `report-machine/1` — after every save, before every commit; FAIL is fixed, never overridden), `tools/selftest.mjs` (regression vectors, including the ETH ceil(7/9×8)=7 misprint and the gold no-flush valuation cap). **Coupling rule: any band/threshold change to this SKILL changes `tools/lib.mjs` + `tools/selftest.mjs` in the same commit.** Scope honesty: ETF flows, on-chain, COT, and news remain live web fetches (Hard Rule 1) — the toolchain covers the computable series only. No score band, gate, threshold, phase size, or stop moved in this change.

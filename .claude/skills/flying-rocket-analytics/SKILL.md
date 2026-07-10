@@ -46,6 +46,14 @@ Before writing ANY analysis, fetch live data for ALL categories. Never use memor
 
 Tag every figure with **source + timestamp**.
 
+### Deterministic toolchain (mandatory, Jul 2026 — shared with Fallen Knives)
+
+Use the repo toolchain (`tools/README.md`) for every computable number:
+
+1. **Fetch:** `node tools/fetch.mjs <asset>` (+ `macro`) — cross-checked spot (>1.5% divergence flagged, feeding the canonical-spot reconciliation), computed weekly Wilder RSI-14, **trailing-1-year high with % below** (the §4 phase-of-cycle cap input, computed not eyeballed), F&G 3-day average, VIX/DXY/real-yield/Brent macro block. The same fetch also feeds the mandatory computed Fallen Knives companion score — both sides score off one data pull, making Hard Rule 5's inverse check same-timestamp by construction.
+2. **Compute:** `node tools/compute.mjs fr-funding --per8h X` (annualized + monthly bleed, sign convention printed), `fr-cap --spot X --ath1y Y` (cycle cap tier), `band fr-*` (rubric bands), `ev`, `adr`. **Edge convention codified in code (Hard Rule 6):** where §4's dash-range bands leave an exact edge ambiguous, `tools/lib.mjs` resolves it to the LOWER-score band — the harder-to-short reading (RSI exactly 75 → 3, not 4; MVRV-Z exactly 5 → 4; exactly 10% below 1y-ATH → cap 14 applies). A tightening-or-neutral mirror of the FK edge rule, never a loosening.
+3. **Scope honesty + failure:** ETF flows, on-chain, derivatives positioning (funding/OI/skew), borrow rates, and news remain live web fetches per Hard Rule 1; on tool-source failure, follow the documented fallback rules and disclose.
+
 ## Report Structure
 
 ### 1. Header
@@ -362,10 +370,12 @@ Numbered bull (✅) and bear (❌) signals with one-line rationale. **Reminder:*
 Save the report as a markdown file to:
 
 ```
-/Users/eternal/Desktop/Trading Claude Analytics/reports/[ASSET]_flying_rocket_[YYYYMMDD]_[HHMM].md
+reports/[asset]_flying_rocket_[YYYYMMDD]_[HHMM].md
 ```
 
-Filename uses lowercase asset symbol. Example: `btc_flying_rocket_20260514_1030.md`.
+Path is repo-relative, per CLAUDE.md's Output Convention (which also governs the post-save commit/push). Filename uses lowercase asset symbol. Example: `btc_flying_rocket_20260514_1030.md`.
+
+**Machine block + lint (mandatory, Jul 2026).** Every report ends with a fenced ` ```json machine ` block (schema `report-machine/1`, field list in `tools/lint-report.mjs`). FR-specific enforcement: every tranche in the block must carry BOTH a price `stop` and a `time_stop` (Hard Rule 6 — the linter errors on either missing), tranche sizes are checked against 5/10/15/20 with the ≤50% short-book cap, and the cycle cap is cross-checked against the recorded % below 1-year ATH. Run `node tools/lint-report.mjs reports/<file>.md` after saving, before committing; a FAIL is fixed, never overridden.
 
 After saving, post a ≤6-line conversational summary:
 - Adjusted score and stance
@@ -428,3 +438,7 @@ The asymmetry tax is preserved. When in doubt on the short side, the framework a
 **18 FR-side rejections held** — the dominant pattern was **duplicate/inferior proposals of tunes that survived in stronger form** (three separate "published-score-governs" variants collapsed into the one adopted above; three separate single-observation-durability-mirror proposals collapsed into Principle 13) — and a smaller set of genuinely rejected ideas: a carry-ledger sign-attestation line judged redundant with the corrected sign convention itself; a non-crypto score-floor/baseline-conditioning family judged to encode an unverified qualitative judgment call into the rubric; a falsifier-anchoring rule requiring falsifiers sit exactly at a modal-band floor, rejected as over-rigid against the framework's own disclosed-estimate convention. **No rejection reversed a prior-adopted (2026-06-11) tune** — the anti-thrash veto held.
 
 **N=1, doubly so here** — these tunes have not been tested against a single live report. Re-validate FR specifically the moment it produces its next output, before treating any "adopted" verdict above as more than a documented, un-exercised correction.
+
+### 2026-07-10 — Deterministic toolchain adopted (mirror of the Fallen Knives change, Hard Rule 6 audited)
+
+Shared `tools/` toolchain mandated (fetch/compute/lint/selftest — see `tools/README.md` and the FK revision-log entry of the same date). Short-side specifics, every one a tightening-or-neutral mirror: (1) rubric band EXACT EDGES resolve to the LOWER-score band in code (RSI 75 → 3; MVRV-Z 5 → 4; ATH-distance 5% → 3; exactly 10% below 1y-ATH → cap 14 APPLIES) — ambiguity always resolves toward harder-to-short; (2) the linter ERRORS on any tranche missing a price stop or a time stop, on tranche totals >50% of the short book, and cross-checks the phase-of-cycle cap against the computed 1y-ATH distance; (3) the funding sign convention (positive = carry income to a short) is printed by `fr-funding` on every use, preventing regression of the Jul-2026 sign correction; (4) the companion FK score now computes from the same fetch payload — Hard Rule 5's inverse check is same-timestamp by construction. Also fixed the stale macOS output path (repo-relative now, matching CLAUDE.md). No band, threshold, cap, stop, or size moved. N=1 until exercised by a live FR report (none since 2026-06-18).

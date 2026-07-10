@@ -243,6 +243,7 @@ const extractsRaw = await parallel(extractChunks.map(files => () =>
     `You are a forensic analyst. Read these ${files.length} ${fwLabel(files[0].t)} report file(s), IN ORDER:\n`+
     files.map((r, j) => `${j + 1}. ${DIR}/${r.f} (${r.a}, dated ${r.d})`).join('\n')+`\n\n`+
     `Return exactly ONE extract per file, in the SAME ORDER, echoing the exact filename in "file". `+
+    `If a report ends with a \`\`\`json machine block (schema report-machine/1), treat its structured fields as AUTHORITATIVE for the numeric extraction (score/gates/EV/deployment/stops) and spend your reading on the prose predictions. `+
     (files.some(r => r.a === 'MULTI') ? `combined_* files are multi-asset: prefix EVERY extracted item with its asset ticker; encode per-asset scores in the scalar fields like "BTC 12 / ETH 10". ` : '')+
     `Per report, extract EVERY testable prediction and forward-looking claim, exact with numbers: all probability-matrix scenarios, all IF->THEN "Pattern" conditionals, all action items, the deployment/stop state, and any falsifiable thesis statements. `+
     `Reports in a series repeat standing predictions — extract them EACH time they appear (each report is graded on its own claims); do NOT summarize across reports or skip "unchanged" items. Extract faithfully; do not editorialize.`,

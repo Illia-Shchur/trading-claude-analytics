@@ -1,0 +1,232 @@
+// ============================================================================
+// tools/lib.mjs — pure computation library for the Fallen Knives / Flying
+// Rocket / framework-calibration toolchain. NO network, NO filesystem.
+// Every function implements the corresponding SKILL.md rule LETTER-FOR-LETTER;
+// if a SKILL band changes, this file must change in the same commit
+// (see "Deterministic Toolchain" sections in the SKILLs).
+// ============================================================================
+
+// ── generic math ────────────────────────────────────────────────────────────
+
+/** Wilder RSI. closes = chronological (oldest → newest). */
+export function wilderRSI(closes, period = 14) {
+  if (!Array.isArray(closes) || closes.length < period + 1) {
+    return { rsi: null, closes_used: closes ? closes.length : 0, confidence: 'insufficient',
+      note: `need ≥${period + 1} closes for a seed, ≥15 for a low-confidence read, ≥30 for unflagged (FK momentum input rule)` }
+  }
+  let gain = 0, loss = 0
+  for (let i = 1; i <= period; i++) {
+    const d = closes[i] - closes[i - 1]
+    if (d >= 0) gain += d; else loss -= d
+  }
+  let avgGain = gain / period, avgLoss = loss / period
+  for (let i = period + 1; i < closes.length; i++) {
+    const d = closes[i] - closes[i - 1]
+    avgGain = (avgGain * (period - 1) + Math.max(d, 0)) / period
+    avgLoss = (avgLoss * (period - 1) + Math.max(-d, 0)) / period
+  }
+  const rsi = avgLoss === 0 ? 100 : 100 - 100 / (1 + avgGain / avgLoss)
+  const n = closes.length
+  // FK momentum input rule: 15–29 closes = low-confidence; ≥30 unflagged
+  const confidence = n >= 30 ? 'ok' : 'low'
+  return { rsi: round2(rsi), closes_used: n, period, confidence }
+}
+
+export function sma(values, n) {
+  if (!Array.isArray(values) || values.length < n) return null
+  const tail = values.slice(-n)
+  return tail.reduce((a, b) => a + b, 0) / n
+}
+
+export function drawdownPct(spot, ath) { return round2((1 - spot / ath) * 100) }
+
+function round2(x) { return x == null ? null : Math.round(x * 100) / 100 }
+
+// ── Fallen Knives: score arithmetic ─────────────────────────────────────────
+
+/** Per-asset .5 rounding conventions (FK SKILL §4, codified 2026-07-10). */
+export const ROUNDING = { btc: 'half-up', gold: 'half-up', eth: 'half-down' }
+
+/** Round a raw composite per convention: 'half-up' | 'half-down'. */
+export function roundScore(raw, convention) {
+  if (convention === 'half-up') return Math.floor(raw + 0.5)
+  if (convention === 'half-down') return Math.ceil(raw - 0.5)
+  throw new Error(`unknown rounding convention "${convention}" — declare half-up or half-down (FK SKILL §4)`)
+}
+
+/**
+ * FK phase gate thresholds = ceil(fraction × active_denominator).
+ * Fractions: 1A ⅓ · 1B 5/9 · 2 ⅔ · 3 7/9. [V] floors fixed: 2/3/3/4.
+ * Regression anchor: ceil(7/9 × 8) = 7, NOT 6 (the ETH Jun-2026 misprint).
+ */
+export function ceilThresholds(active) {
+  if (!Number.isInteger(active) || active < 1 || active > 9) throw new Error('active denominator must be an integer 1–9')
+  return {
+    active,
+    p1a: Math.ceil(active / 3),
+    p1b: Math.ceil((5 * active) / 9),
+    p2: Math.ceil((2 * active) / 3),
+    p3: Math.ceil((7 * active) / 9),
+    v_floor: { p1a: 2, p1b: 3, p2: 3, p3: 4 },
+  }
+}
+
+/** The six [V] gates on the FK board. */
+export const FK_V_GATES = [1, 2, 3, 4, 7, 8]
+
+// ── Fallen Knives: rubric band classifiers ──────────────────────────────────
+// Convention (FK SKILL §4, adjudicated 2026-07-10): chained ≤/≥, first match
+// wins; an EXACT EDGE belongs to the band whose inequality includes it
+// (higher-score band). Deviation permitted only toward the LOWER score, flagged.
+
+export const fk = {
+  /** 3-day avg F&G: ≤10→5 · ≤15→4 · ≤25→3 · ≤35→2 · ≤50→1 · >50→0 */
+  sentimentBand(v) { return v <= 10 ? 5 : v <= 15 ? 4 : v <= 25 ? 3 : v <= 35 ? 2 : v <= 50 ? 1 : 0 },
+
+  /**
+   * Weekly RSI: <30→4 · ≤35→3 · ≤40→2 · ≤45→1 · >45→0.
+   * lowConfidence (15–29 closes): a value within 2 RSI points of a band edge
+   * takes the LOWER-score band (FK momentum input rule).
+   */
+  momentumBand(rsi, { lowConfidence = false } = {}) {
+    const band = r => (r < 30 ? 4 : r <= 35 ? 3 : r <= 40 ? 2 : r <= 45 ? 1 : 0)
+    let result = band(rsi), edgeApplied = false
+    if (lowConfidence) {
+      for (const edge of [30, 35, 40, 45]) {
+        if (Math.abs(rsi - edge) <= 2) {
+          const lower = band(edge + 1e-9)
+          if (lower < result) { result = lower; edgeApplied = true }
+        }
+      }
+    }
+    return { band: result, low_confidence_edge_rule_applied: edgeApplied }
+  },
+
+  /** MVRV-Z: <0.1→5 · ≤0.5→4 · ≤2→3 · ≤3→2 · ≤5→0 · >5→−2 (trim signal) */
+  mvrvZBand(z) { return z < 0.1 ? 5 : z <= 0.5 ? 4 : z <= 2 ? 3 : z <= 3 ? 2 : z <= 5 ? 0 : -2 },
+
+  /** Alt fallback, drawdown-from-ATH % (positive number): ≥70→5 · ≥60→4 · ≥50→3 · ≥40→2 · ≥30→1 · <30→0 */
+  drawdownBand(dd) { return dd >= 70 ? 5 : dd >= 60 ? 4 : dd >= 50 ? 3 : dd >= 40 ? 2 : dd >= 30 ? 1 : 0 },
+
+  /**
+   * Gold/low-vol adaptation band-set (FK SKILL §4): ≥45→3 gated behind a
+   * CONFIRMED COT flush (absent a flush, cap at 2) · ≥36→2 · ≥28→2 · ≥20→2 · ≥12→1 · <12→0.
+   * Eligibility preconditions (documented vol ratio ≤½ BTC) are NOT checked here.
+   */
+  goldLowVolBand(dd, { cotFlushConfirmed = false } = {}) {
+    if (dd >= 45) return cotFlushConfirmed ? 3 : 2
+    return dd >= 36 ? 2 : dd >= 28 ? 2 : dd >= 20 ? 2 : dd >= 12 ? 1 : 0
+  },
+}
+
+// ── Flying Rocket: rubric band classifiers ──────────────────────────────────
+// Convention (Hard Rule 6 — asymmetry tax): where the FR SKILL's dash-range
+// bands leave an exact edge ambiguous, code resolves it to the LOWER-score
+// band (the harder-to-short reading). This is a tightening-or-neutral mirror
+// of the FK edge convention, never a loosening.
+
+export const fr = {
+  /** 3-day avg F&G greed side: ≥90→5 · 80–89→4 · 70–79→3 · 60–69→2 · 50–59→1 · <50→0 */
+  euphoriaBand(v) { return v >= 90 ? 5 : v >= 80 ? 4 : v >= 70 ? 3 : v >= 60 ? 2 : v >= 50 ? 1 : 0 },
+
+  /** Weekly RSI: >75→4 · 70–75→3 · 65–70→2 · 60–65→1 · <60→0. Exact 75→3, 70→2, 65→1, 60→0 (conservative). */
+  momentumBand(rsi) { return rsi > 75 ? 4 : rsi > 70 ? 3 : rsi > 65 ? 2 : rsi > 60 ? 1 : 0 },
+
+  /** MVRV-Z: >5→5 · 3–5→4 · 2–3→3 · 1–2→1 · <1→0. Exact 5→4, 3→3, 2→1, 1→0 (conservative). */
+  mvrvZBand(z) { return z > 5 ? 5 : z > 3 ? 4 : z > 2 ? 3 : z > 1 ? 1 : 0 },
+
+  /** Alt fallback, % below ATH: <5→5 · 5–15→3 · 15–30→1 · >30→0. Exact 5→3, 15→1, 30→0 (conservative). */
+  athDistanceBand(pctBelow) { return pctBelow < 5 ? 5 : pctBelow < 15 ? 3 : pctBelow < 30 ? 1 : 0 },
+
+  /**
+   * Phase-of-cycle hard cap from % below 1-year ATH: >20%→cap 8 · 10–20%→cap 14 ·
+   * <10%→no cap. Exact 20→14 (SKILL letter); exact 10→14 (ambiguous → conservative
+   * = cap applies: a cap lowers the score, the harder-to-short direction).
+   */
+  phaseCycleCap(pctBelow1yATH) { return pctBelow1yATH > 20 ? 8 : pctBelow1yATH >= 10 ? 14 : null },
+
+  /** Perp funding: per-8h % → annualized % (×3×365). POSITIVE = carry INCOME to a short (Jul 2026 sign convention). */
+  annualizedFunding(per8hPct) { return round2(per8hPct * 3 * 365) },
+
+  /** Squeeze-trap penalty tier from annualized funding % and OI proximity (FR SKILL §4). */
+  squeezeTrapPenalty({ fundingAnnualizedPct, sustained3Intervals = false, oiWithin5PctOf90dHigh = false, singleIntervalBelowMinus7 = false }) {
+    const base = fundingAnnualizedPct < -5 && sustained3Intervals
+    const escalatedImmediate = singleIntervalBelowMinus7 && oiWithin5PctOf90dHigh
+    if ((base && oiWithin5PctOf90dHigh) || escalatedImmediate) return { raw_penalty: -2, gate_surcharge: 2, tier: 'escalated' }
+    if (base) return { raw_penalty: -2, gate_surcharge: 1, tier: 'base' }
+    return { raw_penalty: 0, gate_surcharge: 0, tier: 'none' }
+  },
+}
+
+// ── EV / probability matrix ─────────────────────────────────────────────────
+
+/**
+ * scenarios: [{name, p, mid} | {name, p, low, high}], p in percentage points.
+ * Returns weighted EV, probability sum, per-component contributions.
+ */
+export function weightedEV(scenarios) {
+  const components = scenarios.map(s => {
+    const mid = s.mid != null ? s.mid : (s.low + s.high) / 2
+    return { name: s.name, p: s.p, mid: round2(mid), contribution: round2((s.p / 100) * mid) }
+  })
+  const ev = round2(components.reduce((a, c) => a + c.contribution, 0))
+  const prob_sum = round2(scenarios.reduce((a, s) => a + s.p, 0))
+  return { ev, prob_sum, prob_sum_ok: Math.abs(prob_sum - 100) <= 0.5, components }
+}
+
+/**
+ * FK §5 mandatory sum-check: stated EV must match the recomputation within
+ * 0.5% RELATIVE TO THE RECOMPUTED EV. Also flags prob-sum ≠ 100 and any
+ * Rally cell > 50% (the post-adjustment cap).
+ */
+export function evCheck(statedEV, scenarios, { spot = null, tolPct = 0.5 } = {}) {
+  const w = weightedEV(scenarios)
+  const relDiffPct = w.ev === 0 ? null : round2(Math.abs(statedEV - w.ev) / Math.abs(w.ev) * 100)
+  const rally = scenarios.find(s => /rally/i.test(s.name))
+  return {
+    recomputed_ev: w.ev, stated_ev: statedEV, rel_diff_pct: relDiffPct,
+    within_tolerance: relDiffPct != null && relDiffPct <= tolPct,
+    prob_sum: w.prob_sum, prob_sum_ok: w.prob_sum_ok,
+    rally_cap_ok: !rally || rally.p <= 50,
+    vs_spot_pct: spot ? round2((w.ev / spot - 1) * 100) : null,
+    components: w.components,
+  }
+}
+
+// ── stops / deployment coherence ────────────────────────────────────────────
+
+/** FK coherence boolean: CATASTROPHIC stop strictly below the deepest active buy-zone floor. */
+export function stopCoherence(catastrophic, deepestZoneFloor) {
+  return { pass: catastrophic < deepestZoneFloor, catastrophic, deepest_zone_floor: deepestZoneFloor,
+    rule: 'catastrophic stop must sit STRICTLY below the deepest active buy-zone floor (the compound line may sit inside a band by design)' }
+}
+
+// ── ADR ─────────────────────────────────────────────────────────────────────
+
+/**
+ * 5-day ADR over FULL sessions only (FK stop rules, hardened 2026-07-10).
+ * sessions: chronological [{date:'YYYY-MM-DD', high, low}]. exclude: dates of
+ * holiday-abbreviated sessions (must be excluded AND disclosed).
+ */
+export function adr(sessions, { n = 5, exclude = [] } = {}) {
+  const ex = new Set(exclude)
+  const usable = sessions.filter(s => !ex.has(s.date) && s.high != null && s.low != null)
+  const used = usable.slice(-n)
+  if (used.length < n) return { adr: null, note: `only ${used.length} usable sessions (need ${n})`, used, excluded: exclude }
+  const value = round2(used.reduce((a, s) => a + (s.high - s.low), 0) / n)
+  return { adr: value, used: used.map(s => ({ date: s.date, range: round2(s.high - s.low) })), excluded: exclude }
+}
+
+// ── sentiment streaks ───────────────────────────────────────────────────────
+
+/**
+ * Gate-1 streak: consecutive DAILY prints ≤ threshold, counted from the most
+ * recent print backward. values: newest-first [{value:number, date?:string}].
+ */
+export function fngStreak(values, threshold) {
+  let streak = 0
+  for (const v of values) { if (v.value <= threshold) streak++; else break }
+  return streak
+}
+
+export const _internal = { round2 }
