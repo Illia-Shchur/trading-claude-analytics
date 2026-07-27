@@ -6,7 +6,8 @@
 // ============================================================================
 import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds, FK_V_GATES,
   fk, fr, weightedEV, evCheck, stopCoherence, adr, fngStreak,
-  FK_SCORE_UNLOCK, fkPhasesUnlockedByScore, discretionValid, d5StopCheck, ratchetCheck } from './lib.mjs'
+  FK_SCORE_UNLOCK, fkPhasesUnlockedByScore, discretionValid, d5StopCheck, ratchetCheck,
+  mechanicalScore } from './lib.mjs'
 
 let failures = 0
 function eq(name, got, want) {
@@ -169,6 +170,16 @@ ok('D6 catastrophic re-anchor onto a prior-named zone is the one exception',
   ratchetCheck(50000, 48000, { tier: 'catastrophic', priorNamedZone: true }).pass)
 ok('D6 exception does NOT extend to the compound line',
   !ratchetCheck(50000, 48000, { tier: 'compound', priorNamedZone: true }).pass)
+
+// Phase 3 reads the MECHANICAL score; 1A/1B/2 read the adjusted score.
+eq('adjusted 17 but mechanical 15 → Phase 3 stays locked',
+  fkPhasesUnlockedByScore(17, 15), ['p1a', 'p1b', 'p2'])
+eq('adjusted 17 with mechanical 17 → Phase 3 unlocks',
+  fkPhasesUnlockedByScore(17, 17), ['p1a', 'p1b', 'p2', 'p3'])
+eq('adjusted 9 (mechanical 7) → 1A only, on the adjusted line',
+  fkPhasesUnlockedByScore(9, 7), ['p1a'])
+eq('mechanical score = rounded leg sum, no D1 term', mechanicalScore(10.5, 'half-up'), 11)
+eq('mechanical score half-down', mechanicalScore(10.5, 'half-down'), 10)
 
 // ── verdict ─────────────────────────────────────────────────────────────────
 if (failures) { console.error(`\n${failures} FAILURE(S)`); process.exit(1) }

@@ -76,8 +76,13 @@ export const FK_V_GATES = [1, 2, 3, 4, 7, 8]
 
 /**
  * FK phase SCORE unlock lines (SKILL §6). Cut 2026-07-27 under owner agility
- * mandate #2: 1A 10→8, 1B 13→11. Phases 2/3 unchanged — the two large tranches
- * stay fully mechanical.
+ * mandate #2: 1A 10→8, 1B 13→11; the Phase 2/3 lines are unchanged.
+ *
+ * These lines are read against the ADJUSTED score (legs + D1 term) for phases
+ * 1A/1B/2 — all three are reachable by the analyst channels. Phase 3 alone is
+ * read against the MECHANICAL score: no analyst channel reaches it (D2 is
+ * barred there and D1 may never be its sole enabler), though the mechanical
+ * Deep-Value-Override branch still can.
  */
 export const FK_SCORE_UNLOCK = { p1a: 8, p1b: 11, p2: 15, p3: 17 }
 
@@ -101,12 +106,20 @@ export function discretionValid(v) {
 }
 
 /**
- * Which FK phases a given adjusted score unlocks on the score axis alone.
- * Gate count / [V] floor / conviction path are checked separately.
+ * Which FK phases a given score unlocks on the score axis alone. Gate count /
+ * [V] floor / conviction path are checked separately.
+ *
+ * Pass `mechanical` to evaluate Phase 3 against the leg sum (SKILL §6, pinned
+ * 2026-07-27); omit it and every phase is read against `adjusted`.
  */
-export function fkPhasesUnlockedByScore(adjusted) {
-  return Object.entries(FK_SCORE_UNLOCK).filter(([, line]) => adjusted >= line).map(([p]) => p)
+export function fkPhasesUnlockedByScore(adjusted, mechanical = adjusted) {
+  return Object.entries(FK_SCORE_UNLOCK)
+    .filter(([p, line]) => (p === 'p3' ? mechanical : adjusted) >= line)
+    .map(([p]) => p)
 }
+
+/** The mechanical score: the leg sum with no D1 term, rounded per convention. */
+export function mechanicalScore(legSum, convention) { return roundScore(legSum, convention) }
 
 /**
  * D5 discretion tax: a discretionary tranche's hard price-only stop may sit no

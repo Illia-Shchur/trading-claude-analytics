@@ -112,6 +112,16 @@ else {
     // The layer ships 2026-07-27; reports predating it legitimately have no term.
     if (!dv.ok) (String(b.date) >= DISCRETION_EPOCH ? err : warn)(msg)
     else { sum += S.discretionary; addend = '+discretionary' }
+    // score.mechanical = round(leg sum) — the number every protective rule
+    // reads (compound stop, Override arming, §7 trims, EV floor, collar).
+    const legSum = legNames.reduce((a, n) => a + (S.legs[n] || 0), 0)
+    const conv = S.rounding || ROUNDING[String(b.asset || '').toLowerCase()]
+    if (typeof S.mechanical === 'number' && conv) {
+      const expected = Math.max(0, Math.min(20, roundScore(legSum, conv)))
+      if (S.mechanical !== expected) err(`score.mechanical=${S.mechanical} but ${conv}(leg sum ${legSum}) = ${expected}`)
+    } else if (String(b.date) >= DISCRETION_EPOCH) {
+      warn('score.mechanical not declared — the compound stop, Override arming, §7 trims, the EV-floor check and the collar all read it (D1 governing rule)')
+    }
   } else if (S.discretionary != null) {
     err('score.discretionary is Fallen-Knives-only — the short side takes no analyst adjustment (Hard Rule 6)')
   }
@@ -182,7 +192,12 @@ if (FW === 'fallen_knives') {
 
   let discretionaryPct = 0
   for (const t of tranches) {
-    if (!t.discretionary) continue
+    // Fail CLOSED: an Override fill mis-encoded as discretionary:false would
+    // otherwise drop silently out of both caps (SKILL D5 encoding rule).
+    const nonMechanical = t.discretionary === true || t.channel === 'override'
+    if (!nonMechanical) continue
+    if (t.channel === 'override' && t.discretionary !== true)
+      warn(`tranche ${t.phase} has channel "override" but discretionary:${t.discretionary} — Override fills are written discretionary:true (they count toward the 40%/25% caps); counted anyway`)
     discretionaryPct += t.pct || 0
     // The Deep-Value Override is a MECHANICAL channel: it counts toward the 40%
     // non-mechanical cap but takes the compound stop, not the D5 price-only
@@ -205,7 +220,7 @@ if (FW === 'fallen_knives') {
   // prints" (§6 / D5). The report asserts that release explicitly; the linter
   // cannot infer it, and an unstated release is a bound cap.
   const released = D.throttle_released === true
-  const overridePct = tranches.filter(t => t.discretionary && t.channel === 'override').reduce((a, t) => a + (t.pct || 0), 0)
+  const overridePct = tranches.filter(t => t.channel === 'override').reduce((a, t) => a + (t.pct || 0), 0)
   if (!released) {
     if (discretionaryPct > 40)
       err(`non-mechanical capital ${discretionaryPct}% (D1 + D2 + Override) exceeds the 40% book cap — set deployment.throttle_released:true only when a [T] gate has relit or a confirmed higher-low printed (D5)`)
@@ -223,8 +238,14 @@ if (FW === 'fallen_knives') {
       if (!(t.deployed === true || typeof t.entry === 'number')) continue
       const key = phaseKey(t.phase)
       const line = key ? FK_SCORE_UNLOCK[`p${key}`] : null
-      if (line != null && S.adjusted < line)
-        err(`tranche ${t.phase} deployed at adjusted score ${S.adjusted}, below its ≥${line} unlock line (§6)`)
+      if (line == null) continue
+      // Phase 3 reads the MECHANICAL score — no analyst channel reaches it.
+      const usesMechanical = key === '3'
+      const score = usesMechanical && typeof S.mechanical === 'number' ? S.mechanical : S.adjusted
+      if (usesMechanical && typeof S.mechanical !== 'number')
+        warn(`tranche ${t.phase} checked against adjusted ${S.adjusted} — declare score.mechanical so the Phase-3 leg-sum-only line is actually enforced (§6)`)
+      if (score < line)
+        err(`tranche ${t.phase} deployed at ${usesMechanical ? 'mechanical' : 'adjusted'} score ${score}, below its ≥${line} unlock line (§6)`)
     }
   }
 
