@@ -236,6 +236,115 @@ export const fr = {
   },
 }
 
+// ── Flying Rocket: two-channel architecture (SKILL §2.5/§4B, 2026-07-27) ─────
+
+/**
+ * Channel router. Replaces the old ">20% off ATH ⇒ dead" reading of the
+ * phase-of-cycle cap: that regime is now Channel B (bear continuation) when the
+ * downtrend is confirmed, and stand-down when it is not.
+ *
+ *   A    — within 20% of the 1-year ATH; score §4A, cap tiers as before
+ *   B    — >20% off AND below a falling 200dma; score §4B
+ *   none — >20% off with a flat/rising 200dma, or price above it: no channel
+ *
+ * `ma200Falling` and `priceBelowMA200` must BOTH be true for B. Missing/non-
+ * boolean values resolve to `none` (fail closed — the harder-to-short reading,
+ * Hard Rule 6).
+ */
+export function frChannel({ pctBelow1yATH, ma200Falling, priceBelowMA200 } = {}) {
+  if (typeof pctBelow1yATH !== 'number' || !Number.isFinite(pctBelow1yATH)) return 'none'
+  if (pctBelow1yATH <= 20) return 'A'
+  return (ma200Falling === true && priceBelowMA200 === true) ? 'B' : 'none'
+}
+
+/**
+ * Channel B rubric bands (SKILL §4B). Same edge convention as every other FR
+ * band: an exact edge resolves to the LOWER-score band via `>` chains.
+ */
+export const frB = {
+  /** Rally off the trailing 40-session low, %: >35→5 · >25→4 · >18→3 · >12→2 · >8→1 · else 0 */
+  rallyBand(pct) { return pct > 35 ? 5 : pct > 25 ? 4 : pct > 18 ? 3 : pct > 12 ? 2 : pct > 8 ? 1 : 0 },
+
+  /**
+   * Daily Wilder RSI-14: >65→4 · >58→3 · >52→2 · >45→1 · else 0.
+   * Hard qualifier: weekly RSI ≥50 forces this leg to 0 — a bounce that has
+   * repaired the higher timeframe is not an exhaustion (SKILL §4B).
+   */
+  momentumBand(dailyRSI, weeklyRSI) {
+    if (typeof weeklyRSI === 'number' && weeklyRSI >= 50) return 0
+    return dailyRSI > 65 ? 4 : dailyRSI > 58 ? 3 : dailyRSI > 52 ? 2 : dailyRSI > 45 ? 1 : 0
+  },
+
+  /** Resistance confluence, count of 4: 4→5 · 3→4 · 2→3 · 1→1 · 0→0 */
+  resistanceBand(n) { return n >= 4 ? 5 : n === 3 ? 4 : n === 2 ? 3 : n === 1 ? 1 : 0 },
+
+  /** Bear-structure integrity, count of 3 → same number. 0 VOIDS the channel. */
+  structureBand(n) { return Math.max(0, Math.min(3, n | 0)) },
+
+  /** Relative sentiment / positioning, count of 3 → same number. */
+  sentimentBand(n) { return Math.max(0, Math.min(3, n | 0)) },
+
+  /** Bounce-maturity floor: a rally younger than 8 sessions costs 2 raw points. */
+  maturityPenalty(bounceSessions) { return bounceSessions < 8 ? -2 : 0 },
+}
+
+// ── Flying Rocket: score lines, gates, discretion layer (SKILL S1–S7) ────────
+
+/**
+ * Phase unlock lines on the score axis (SKILL §6, cut 2026-07-27 from
+ * 13/15/17/19). Phase 3 is Channel-A-only, mechanical-only, and unchanged.
+ */
+export const FR_SCORE_UNLOCK = { p1a: 11, p1b: 13, p2: 15, p3: 19 }
+
+/** Legacy /9 gate floors; 1A moved 4 → 3 on 2026-07-27. Convert with ceilThresholds(). */
+export const FR_GATE_FLOORS = { p1a: 3, p1b: 5, p2: 6, p3: 8 }
+
+/** Max absolute value and step of the S1 discretionary term (mirrors FK D1). */
+export const FR_DISCRETION = { max: 2, step: 0.5 }
+
+/**
+ * Which FR phases a score unlocks on the score axis alone. Phase 3 reads the
+ * MECHANICAL score (S1: "S1 buys entries, never exits"); every other phase
+ * reads the adjusted one. Gate count, channel, and the §7 preflight are
+ * checked separately.
+ */
+export function frPhasesUnlockedByScore(adjusted, mechanical = adjusted) {
+  return Object.entries(FR_SCORE_UNLOCK)
+    .filter(([p, line]) => (p === 'p3' ? mechanical : adjusted) >= line)
+    .map(([p]) => p)
+}
+
+/** S5 discretion tax and the Channel B structural limits. */
+export const FR_S5 = { maxStopPct: 6, maxTimeStopDays: 14, maxBookPct: 20 }
+export const FR_CHANNEL_B = { maxBookPct: 30, maxTimeStopDays: { p1a: 21, p1b: 21, p2: 28 } }
+
+/**
+ * S5 stop tax: an analyst-channel (S1/S2) tranche's hard stop may sit no more
+ * than 6% ABOVE its fill. Note the direction — a short's stop is above entry,
+ * the mirror of FK's d5StopCheck.
+ */
+export function s5StopCheck(fill, stop) {
+  if (typeof fill !== 'number' || typeof stop !== 'number') return { pass: false, reason: 'fill and stop must both be numbers' }
+  const ceiling = round2(fill * (1 + FR_S5.maxStopPct / 100))
+  const distancePct = round2((stop / fill - 1) * 100)
+  if (stop <= fill) return { pass: false, ceiling, distance_pct: distancePct, reason: 'stop is at or below the fill — a short stop sits ABOVE entry' }
+  return { pass: stop <= ceiling, ceiling, distance_pct: distancePct, reason: stop <= ceiling ? null : `stop sits ${distancePct}% above fill — wider than the ${FR_S5.maxStopPct}% S5 limit` }
+}
+
+/**
+ * S6 ratchet, short side: a stop moves TOWARD price only — for a short that is
+ * DOWN, never up. Time stops ratchet identically (days may shrink, never grow).
+ *
+ * Unlike FK's D6 there is NO exception: the only case S6 exempts is the first
+ * stop set from a genuinely flat book, where no prior value exists and this
+ * check is simply not called. Trimming a position does not make the book flat.
+ */
+export function frRatchetCheck(oldValue, newValue, { tier = 'stop' } = {}) {
+  if (typeof oldValue !== 'number' || typeof newValue !== 'number') return { pass: false, reason: 'both values must be numbers' }
+  if (newValue <= oldValue) return { pass: true, direction: newValue === oldValue ? 'unchanged' : 'toward price', reason: null }
+  return { pass: false, direction: 'away from price', reason: `S6 ratchet: ${tier} ${oldValue} → ${newValue} widens the stop — prohibited, not merely disclosable` }
+}
+
 // ── EV / probability matrix ─────────────────────────────────────────────────
 
 /**

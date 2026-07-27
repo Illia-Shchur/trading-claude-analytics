@@ -7,7 +7,8 @@
 import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds, FK_V_GATES,
   fk, fr, weightedEV, evCheck, stopCoherence, adr, fngStreak,
   FK_SCORE_UNLOCK, fkPhasesUnlockedByScore, discretionValid, d5StopCheck, ratchetCheck,
-  mechanicalScore } from './lib.mjs'
+  mechanicalScore, frChannel, frB, FR_SCORE_UNLOCK, FR_GATE_FLOORS, frPhasesUnlockedByScore,
+  s5StopCheck, frRatchetCheck, FR_S5, FR_CHANNEL_B } from './lib.mjs'
 
 let failures = 0
 function eq(name, got, want) {
@@ -180,6 +181,65 @@ eq('adjusted 9 (mechanical 7) → 1A only, on the adjusted line',
   fkPhasesUnlockedByScore(9, 7), ['p1a'])
 eq('mechanical score = rounded leg sum, no D1 term', mechanicalScore(10.5, 'half-up'), 11)
 eq('mechanical score half-down', mechanicalScore(10.5, 'half-down'), 10)
+
+
+// ── Flying Rocket: two-channel architecture + S1–S6 (2026-07-27) ───────────
+
+// Channel router. The old cap read ">20% off ATH ⇒ no short possible"; that
+// regime is now B when the downtrend is confirmed, stand-down when it is not.
+eq('within 20% of the ATH → Channel A', frChannel({ pctBelow1yATH: 12, ma200Falling: true, priceBelowMA200: true }), 'A')
+eq('exactly 20% off → still Channel A (boundary)', frChannel({ pctBelow1yATH: 20, ma200Falling: false, priceBelowMA200: false }), 'A')
+eq('>20% off + falling 200dma + below it → Channel B', frChannel({ pctBelow1yATH: 32.9, ma200Falling: true, priceBelowMA200: true }), 'B')
+eq('>20% off but 200dma RISING → stand down, not B', frChannel({ pctBelow1yATH: 32.9, ma200Falling: false, priceBelowMA200: true }), 'none')
+eq('>20% off, falling 200dma, but price ABOVE it → stand down', frChannel({ pctBelow1yATH: 32.9, ma200Falling: true, priceBelowMA200: false }), 'none')
+eq('missing regime booleans fail closed to stand-down', frChannel({ pctBelow1yATH: 40 }), 'none')
+eq('non-numeric ATH distance fails closed', frChannel({ pctBelow1yATH: null, ma200Falling: true, priceBelowMA200: true }), 'none')
+
+// Channel B rubric bands — exact edges resolve to the LOWER band (Hard Rule 6).
+eq('rally 34.5% (Mar-16 ETH peak) → band 4', frB.rallyBand(34.5), 4)
+eq('rally exactly 35 → lower band 4, not 5', frB.rallyBand(35), 4)
+eq('rally 19.1% (Jun-15 ETH peak) → band 3', frB.rallyBand(19.1), 3)
+eq('rally 7% → 0, below the floor', frB.rallyBand(7), 0)
+eq('daily RSI 66.1 with weekly 48.5 (Jan-14 ETH peak) → 4', frB.momentumBand(66.1, 48.5), 4)
+eq('daily RSI 58.03 (Dec-10 ETH peak) → band 3, just above the edge', frB.momentumBand(58.03, 43.5), 3)
+eq('daily RSI exactly 58 → lower band 2 (Hard Rule 6 edge convention)', frB.momentumBand(58, 43.5), 2)
+eq('daily RSI exactly 65 → lower band 3, not 4', frB.momentumBand(65, 40), 3)
+eq('weekly RSI ≥50 forces the leg to 0 however hot the daily', frB.momentumBand(72, 50), 0)
+eq('weekly RSI absent → daily alone governs', frB.momentumBand(72), 4)
+eq('resistance 4/4 → 5', frB.resistanceBand(4), 5)
+eq('resistance 1/4 → 1 (no 2-point band)', frB.resistanceBand(1), 1)
+eq('bounce younger than 8 sessions costs 2 raw', frB.maturityPenalty(3), -2)
+eq('bounce of exactly 8 sessions is mature', frB.maturityPenalty(8), 0)
+
+// Score lines: cut 13/15/17 → 11/13/15; Phase 3 held at 19 and mechanical-only.
+eq('FR unlock lines', FR_SCORE_UNLOCK, { p1a: 11, p1b: 13, p2: 15, p3: 19 })
+eq('FR 1A gate floor moved 4 → 3', FR_GATE_FLOORS.p1a, 3)
+eq('FR gate floors 1B/2/3 unchanged', [FR_GATE_FLOORS.p1b, FR_GATE_FLOORS.p2, FR_GATE_FLOORS.p3], [5, 6, 8])
+eq('score 11 unlocks 1A only', frPhasesUnlockedByScore(11), ['p1a'])
+eq('score 10 unlocks nothing', frPhasesUnlockedByScore(10), [])
+eq('adjusted 19 but mechanical 17 → Phase 3 stays locked (S1 buys entries, never exits)',
+  frPhasesUnlockedByScore(19, 17), ['p1a', 'p1b', 'p2'])
+eq('adjusted 19 with mechanical 19 → Phase 3 unlocks', frPhasesUnlockedByScore(19, 19), ['p1a', 'p1b', 'p2', 'p3'])
+eq('S1 term bounded ±2 on a 0.5 step, same as D1', [discretionValid(2).ok, discretionValid(2.5).ok, discretionValid(0.25).ok], [true, false, false])
+eq('an omitted S1 term is INVALID, never a silent zero', discretionValid(undefined).ok, false)
+
+// S5 stop tax — note the direction: a short's stop sits ABOVE the fill.
+ok('S5: stop 6% above fill passes at the boundary', s5StopCheck(2000, 2120).pass)
+ok('S5: stop 8% above fill fails', !s5StopCheck(2000, 2160).pass)
+ok('S5: a stop BELOW the fill is rejected outright', !s5StopCheck(2000, 1900).pass)
+ok('S5: a stop AT the fill is rejected', !s5StopCheck(2000, 2000).pass)
+eq('S5 ceiling is reported for the report to cite', s5StopCheck(2000, 2120).ceiling, 2120)
+eq('S5 caps: 6% stop, 14d clock, 20% of book', [FR_S5.maxStopPct, FR_S5.maxTimeStopDays, FR_S5.maxBookPct], [6, 14, 20])
+eq('Channel B caps: 30% of book, 21/21/28d clocks', [FR_CHANNEL_B.maxBookPct, FR_CHANNEL_B.maxTimeStopDays.p1a, FR_CHANNEL_B.maxTimeStopDays.p2], [30, 21, 28])
+
+// S6 ratchet — for a short, toward price means DOWN.
+ok('S6: lowering a short stop is toward price', frRatchetCheck(2200, 2100).pass)
+ok('S6: an unchanged stop passes', frRatchetCheck(2200, 2200).pass)
+ok('S6: raising a short stop is prohibited', !frRatchetCheck(2100, 2200).pass)
+ok('S6 has NO named-zone exception, unlike FK D6',
+  !frRatchetCheck(2100, 2200, { tier: 'catastrophic' }).pass)
+ok('S6: a time stop may shorten', frRatchetCheck(21, 14, { tier: 'time_stop' }).pass)
+ok('S6: a time stop may never be extended', !frRatchetCheck(14, 21, { tier: 'time_stop' }).pass)
 
 // ── verdict ─────────────────────────────────────────────────────────────────
 if (failures) { console.error(`\n${failures} FAILURE(S)`); process.exit(1) }
