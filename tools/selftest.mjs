@@ -5,7 +5,8 @@
 // invalidates every downstream number.
 // ============================================================================
 import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds, FK_V_GATES,
-  fk, fr, weightedEV, evCheck, stopCoherence, adr, fngStreak } from './lib.mjs'
+  fk, fr, weightedEV, evCheck, stopCoherence, adr, fngStreak,
+  FK_SCORE_UNLOCK, fkPhasesUnlockedByScore, discretionValid, d5StopCheck, ratchetCheck } from './lib.mjs'
 
 let failures = 0
 function eq(name, got, want) {
@@ -135,6 +136,39 @@ ok('stop coherence 54000 vs 54000 FAIL (strict)', !stopCoherence(54000, 54000).p
 }
 eq('fng streak ≤15', fngStreak([{ value: 14 }, { value: 15 }, { value: 12 }, { value: 18 }, { value: 10 }], 15), 3)
 eq('fng streak broken at newest', fngStreak([{ value: 23 }, { value: 14 }], 15), 0)
+
+// ── Analyst Discretion Layer (FK D1–D6, 2026-07-27) ─────────────────────────
+eq('score unlock lines (1A/1B cut 10→8, 13→11; 2/3 unchanged)', FK_SCORE_UNLOCK, { p1a: 8, p1b: 11, p2: 15, p3: 17 })
+eq('phases unlocked at 8 (1A only)', fkPhasesUnlockedByScore(8), ['p1a'])
+eq('phases unlocked at 7 (none — below the cut 1A line)', fkPhasesUnlockedByScore(7), [])
+eq('phases unlocked at 11 (1A+1B)', fkPhasesUnlockedByScore(11), ['p1a', 'p1b'])
+eq('phases unlocked at 17 (all four)', fkPhasesUnlockedByScore(17), ['p1a', 'p1b', 'p2', 'p3'])
+
+ok('D1 0 is valid (must be written explicitly)', discretionValid(0).ok)
+ok('D1 ±2 at the bound is valid', discretionValid(2).ok && discretionValid(-2).ok)
+ok('D1 1.5 on-step is valid', discretionValid(1.5).ok)
+ok('D1 2.5 exceeds the bound', !discretionValid(2.5).ok)
+ok('D1 0.25 is off-step', !discretionValid(0.25).ok)
+ok('D1 omitted is INVALID (silent omission never passes as a deliberate 0)',
+  !discretionValid(undefined).ok && !discretionValid(null).ok)
+
+// D5: the hard stop on a discretionary tranche sits no more than 15% below fill.
+ok('D5 stop 10% below fill passes', d5StopCheck(100, 90).pass)
+ok('D5 stop exactly 15% below fill passes (boundary inclusive)', d5StopCheck(100, 85).pass)
+ok('D5 stop 20% below fill FAILS — deeper than the discretion tax allows', !d5StopCheck(100, 80).pass)
+ok('D5 stop at or above fill FAILS', !d5StopCheck(100, 100).pass && !d5StopCheck(100, 101).pass)
+eq('D5 deepest permitted line off a 60000 fill', d5StopCheck(60000, 55000).floor, 51000)
+
+// D6: stops move toward price only; one narrow exception.
+ok('D6 raising a stop passes', ratchetCheck(50000, 52000).pass)
+ok('D6 unchanged passes', ratchetCheck(50000, 50000).pass)
+ok('D6 widening is PROHIBITED', !ratchetCheck(50000, 48000).pass)
+ok('D6 widening stays prohibited when the zone was not named in a prior report',
+  !ratchetCheck(50000, 48000, { tier: 'catastrophic' }).pass)
+ok('D6 catastrophic re-anchor onto a prior-named zone is the one exception',
+  ratchetCheck(50000, 48000, { tier: 'catastrophic', priorNamedZone: true }).pass)
+ok('D6 exception does NOT extend to the compound line',
+  !ratchetCheck(50000, 48000, { tier: 'compound', priorNamedZone: true }).pass)
 
 // ── verdict ─────────────────────────────────────────────────────────────────
 if (failures) { console.error(`\n${failures} FAILURE(S)`); process.exit(1) }

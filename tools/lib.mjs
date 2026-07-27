@@ -74,6 +74,71 @@ export function ceilThresholds(active) {
 /** The six [V] gates on the FK board. */
 export const FK_V_GATES = [1, 2, 3, 4, 7, 8]
 
+/**
+ * FK phase SCORE unlock lines (SKILL §6). Cut 2026-07-27 under owner agility
+ * mandate #2: 1A 10→8, 1B 13→11. Phases 2/3 unchanged — the two large tranches
+ * stay fully mechanical.
+ */
+export const FK_SCORE_UNLOCK = { p1a: 8, p1b: 11, p2: 15, p3: 17 }
+
+// ── Fallen Knives: Analyst Discretion Layer (SKILL D1–D6, 2026-07-27) ───────
+
+/** Max absolute value and step of the D1 discretionary score term. */
+export const FK_DISCRETION = { max: 2, step: 0.5 }
+
+/**
+ * Validate a D1 discretionary term: a number in [−2, +2] on a 0.5 step.
+ * `null`/`undefined` is INVALID by design — the SKILL requires the field to be
+ * printed every report, writing 0 when no adjustment was taken, so that a
+ * silent omission can never pass as a deliberate zero.
+ */
+export function discretionValid(v) {
+  if (typeof v !== 'number' || !Number.isFinite(v)) return { ok: false, reason: 'missing or non-numeric (write 0 when no adjustment was taken)' }
+  if (Math.abs(v) > FK_DISCRETION.max) return { ok: false, reason: `|${v}| exceeds the ±${FK_DISCRETION.max} bound (D1)` }
+  if (Math.abs(v / FK_DISCRETION.step - Math.round(v / FK_DISCRETION.step)) > 1e-9)
+    return { ok: false, reason: `${v} is not on the ${FK_DISCRETION.step} step (D1)` }
+  return { ok: true, reason: null }
+}
+
+/**
+ * Which FK phases a given adjusted score unlocks on the score axis alone.
+ * Gate count / [V] floor / conviction path are checked separately.
+ */
+export function fkPhasesUnlockedByScore(adjusted) {
+  return Object.entries(FK_SCORE_UNLOCK).filter(([, line]) => adjusted >= line).map(([p]) => p)
+}
+
+/**
+ * D5 discretion tax: a discretionary tranche's hard price-only stop may sit no
+ * more than 15% below its fill. Returns the deepest permissible line and the
+ * boolean. Gate-earned tranches are not subject to this (they carry the
+ * compound stop) — callers must only apply it to discretionary fills.
+ */
+export const FK_D5_MAX_STOP_DISTANCE_PCT = 15
+
+export function d5StopCheck(fill, stop) {
+  if (typeof fill !== 'number' || typeof stop !== 'number') return { pass: false, reason: 'fill and stop must both be numbers' }
+  const floor = round2(fill * (1 - FK_D5_MAX_STOP_DISTANCE_PCT / 100))
+  const distancePct = round2((1 - stop / fill) * 100)
+  if (stop >= fill) return { pass: false, floor, distance_pct: distancePct, reason: 'stop is at or above the fill' }
+  return { pass: stop >= floor, floor, distance_pct: distancePct, reason: stop >= floor ? null : `stop sits ${distancePct}% below fill — deeper than the ${FK_D5_MAX_STOP_DISTANCE_PCT}% D5 limit` }
+}
+
+/**
+ * D6 ratchet: a stop parameter may only move TOWARD price. For a long book
+ * every tier (catastrophic floor, compound price line, compound score line,
+ * D5 line) is monotonically non-decreasing; checkpoint dates only move earlier.
+ * The single permitted downward move is a catastrophic re-anchor onto a zone
+ * NAMED in a prior report — pass `{ priorNamedZone: true }` to allow it.
+ */
+export function ratchetCheck(oldValue, newValue, { priorNamedZone = false, tier = 'stop' } = {}) {
+  if (typeof oldValue !== 'number' || typeof newValue !== 'number') return { pass: false, reason: 'both values must be numbers' }
+  if (newValue >= oldValue) return { pass: true, direction: newValue === oldValue ? 'unchanged' : 'toward price', reason: null }
+  if (priorNamedZone && tier === 'catastrophic')
+    return { pass: true, direction: 'away from price (permitted exception)', reason: 'catastrophic re-anchor onto a prior-report-named deeper zone — must be atomic and cited' }
+  return { pass: false, direction: 'away from price', reason: `D6 ratchet: ${tier} ${oldValue} → ${newValue} widens the stop — prohibited, not merely disclosable` }
+}
+
 // ── Fallen Knives: rubric band classifiers ──────────────────────────────────
 // Convention (FK SKILL §4, adjudicated 2026-07-10): chained ≤/≥, first match
 // wins; an EXACT EDGE belongs to the band whose inequality includes it

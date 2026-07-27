@@ -13,23 +13,41 @@
 //   framework: "fallen_knives" | "flying_rocket"
 //   asset: "BTC" ; date: "YYYY-MM-DD" ; spot: {value, source}
 //   score:
-//     FK: {legs:{sentiment,momentum,valuation,capitulation,holder}, raw, adjusted, rounding}
+//     FK: {legs:{sentiment,momentum,valuation,capitulation,holder}, discretionary, raw, adjusted, rounding}
+//         discretionary = the D1 analyst term, REQUIRED, in [-2,+2] on a 0.5 step;
+//         write 0 when no adjustment was taken. raw = legs sum + discretionary.
 //     FR: {legs:{euphoria,momentum,valuation,distribution,vulnerability}, penalty(opt), raw, adjusted,
 //          rounding, cap:{applied,value}(opt)}
 //   gates: {active, na:[...], passed:[...]}            gate numbers 1–9
 //   ev: {scenarios:[{name,p,low,high|mid}], stated_ev, vs_spot_pct}
-//   deployment: {deployed_pct, dry_pct, tranches:[{phase,pct,entry, stop(FR), time_stop(FR)}]}
+//   deployment: {deployed_pct, dry_pct, throttle_released(FK opt bool — a [T] gate
+//                relit or a confirmed higher-low printed, releasing the 40%/25% caps),
+//                tranches:[{phase,pct,entry, stop(FR/FK-discretionary),
+//                time_stop(FR), deployed(FK bool), discretionary(FK bool),
+//                channel(FK: "D1"|"D2"|"override")}]}
+//         FK: a tranche is treated as FILLED (and its score unlock line enforced)
+//         when deployed:true or entry is numeric — dry placeholder rows carry
+//         descriptive text in `entry` and are skipped.
+//         FK: every tranche with discretionary:true counts toward the 40% cap.
+//         Analyst channels (D1/D2) additionally carry a D5 hard stop no more than
+//         15% below entry and may never be Phase 3; channel "override" is
+//         MECHANICAL — capped but exempt from D5 and Phase-3 exclusion.
 //   stops (FK, when any zone is armed/deployed): {catastrophic, deepest_zone_floor, compound:{price,score_line}}
 //   verdict: string
 //   inputs (opt): {weekly_rsi, rsi_closes, mvrv_z, fng_3d, drawdown_pct, ...}
 // ============================================================================
 import { readFileSync } from 'node:fs'
 import { basename } from 'node:path'
-import { roundScore, ROUNDING, ceilThresholds, FK_V_GATES, evCheck, stopCoherence } from './lib.mjs'
+import { roundScore, ROUNDING, ceilThresholds, FK_V_GATES, evCheck, stopCoherence,
+  discretionValid, d5StopCheck, FK_SCORE_UNLOCK, FK_DISCRETION } from './lib.mjs'
 
 const file = process.argv[2]
 const legacy = process.argv.includes('--legacy')
 if (!file) { console.error('usage: node tools/lint-report.mjs <report.md> [--legacy]'); process.exit(1) }
+
+// Ship date of the Analyst Discretion Layer (FK SKILL D1–D6). Reports dated
+// before it are linted under the prior schema; on/after, its fields are hard.
+const DISCRETION_EPOCH = '2026-07-27'
 
 const errors = [], warnings = []
 const err = m => errors.push(m)
@@ -82,9 +100,23 @@ else {
     const min = FW === 'fallen_knives' && n === 'valuation' ? -2 : 0
     if (v < min || v > legMax[n]) err(`score.legs.${n}=${v} outside [${min}, ${legMax[n]}]`)
   }
-  const sum = legNames.reduce((a, n) => a + (S.legs[n] || 0), 0) + (FW === 'flying_rocket' ? (S.penalty || 0) : 0)
+  let sum = legNames.reduce((a, n) => a + (S.legs[n] || 0), 0) + (FW === 'flying_rocket' ? (S.penalty || 0) : 0)
+  let addend = FW === 'flying_rocket' ? '+penalty' : ''
+  // FK D1 analyst discretion term (SKILL Analyst Discretion Layer, 2026-07-27).
+  // Required — 0 must be written explicitly so an omission never passes as a
+  // deliberate zero. Never applies to Flying Rocket (Hard Rule 6: no discretion
+  // on the short side).
+  if (FW === 'fallen_knives') {
+    const dv = discretionValid(S.discretionary)
+    const msg = `score.discretionary ${dv.reason} — required field, bounded ±${FK_DISCRETION.max} on a ${FK_DISCRETION.step} step (D1)`
+    // The layer ships 2026-07-27; reports predating it legitimately have no term.
+    if (!dv.ok) (String(b.date) >= DISCRETION_EPOCH ? err : warn)(msg)
+    else { sum += S.discretionary; addend = '+discretionary' }
+  } else if (S.discretionary != null) {
+    err('score.discretionary is Fallen-Knives-only — the short side takes no analyst adjustment (Hard Rule 6)')
+  }
   if (typeof S.raw !== 'number') err('score.raw missing')
-  else if (Math.abs(sum - S.raw) > 0.01) err(`score.raw=${S.raw} but legs${FW === 'flying_rocket' ? '+penalty' : ''} sum to ${sum}`)
+  else if (Math.abs(sum - S.raw) > 0.01) err(`score.raw=${S.raw} but legs${addend} sum to ${sum}`)
 }
 if (typeof S.adjusted !== 'number') err('score.adjusted missing')
 else if (typeof S.raw === 'number') {
@@ -92,6 +124,9 @@ else if (typeof S.raw === 'number') {
   if (!conv) warn('score.rounding not declared and asset has no pinned convention — declare one (FK §4)')
   else {
     let expected = roundScore(S.raw, conv)
+    // FK: the D1 term can push the raw composite outside 0–20; the adjusted
+    // score is clamped to the band (SKILL §4).
+    if (FW === 'fallen_knives') expected = Math.max(0, Math.min(20, expected))
     if (FW === 'flying_rocket' && S.cap && S.cap.applied) expected = Math.min(expected, S.cap.value)
     if (S.adjusted !== expected) err(`score.adjusted=${S.adjusted} but ${conv}(${S.raw})${S.cap && S.cap.applied ? ` capped at ${S.cap.value}` : ''} = ${expected}`)
   }
@@ -140,6 +175,59 @@ if (FW === 'fallen_knives') {
   const okSizes = [10, 15, 30, 45]
   for (const t of tranches) if (t.pct != null && !okSizes.includes(t.pct))
     warn(`tranche ${t.phase} size ${t.pct}% not a pyramid split (10/15/30/45) — partial deployment is allowed DOWN only, state it`)
+
+  // ── Analyst Discretion Layer: D5 tax + caps (SKILL D2/D5, 2026-07-27) ─────
+  // "Phase 1A" | "1a" | "2" → "1a" | "2"; null when unrecognizable.
+  const phaseKey = p => (String(p).toLowerCase().replace(/phase/g, '').match(/1a|1b|2|3/) || [null])[0]
+
+  let discretionaryPct = 0
+  for (const t of tranches) {
+    if (!t.discretionary) continue
+    discretionaryPct += t.pct || 0
+    // The Deep-Value Override is a MECHANICAL channel: it counts toward the 40%
+    // non-mechanical cap but takes the compound stop, not the D5 price-only
+    // stop, and it may legitimately fire Phase 3 (SKILL D5, §6 Phase 3).
+    if (t.channel === 'override') continue
+    if (phaseKey(t.phase) === '3')
+      err(`tranche ${t.phase} flagged discretionary — no analyst channel reaches Phase 3 (D1/D2)`)
+    if (typeof t.stop !== 'number') {
+      err(`tranche ${t.phase} is an analyst-channel fill but carries no D5 hard stop — every D1/D2 tranche states a price-only stop at fill`)
+    } else if (typeof t.entry === 'number') {
+      const d5 = d5StopCheck(t.entry, t.stop)
+      if (!d5.pass) err(`tranche ${t.phase} D5 stop ${t.stop} vs fill ${t.entry}: ${d5.reason} (deepest permitted ${d5.floor})`)
+    } else {
+      warn(`tranche ${t.phase} is discretionary with a stop but no numeric entry — D5 15%-of-fill bound not checkable`)
+    }
+    if (t.channel && !['D1', 'D2', 'override'].includes(t.channel))
+      warn(`tranche ${t.phase} channel "${t.channel}" — expected D1, D2, or override`)
+  }
+  // Both caps bind only "until a [T] gate relights OR a confirmed higher-low
+  // prints" (§6 / D5). The report asserts that release explicitly; the linter
+  // cannot infer it, and an unstated release is a bound cap.
+  const released = D.throttle_released === true
+  const overridePct = tranches.filter(t => t.discretionary && t.channel === 'override').reduce((a, t) => a + (t.pct || 0), 0)
+  if (!released) {
+    if (discretionaryPct > 40)
+      err(`non-mechanical capital ${discretionaryPct}% (D1 + D2 + Override) exceeds the 40% book cap — set deployment.throttle_released:true only when a [T] gate has relit or a confirmed higher-low printed (D5)`)
+    if (overridePct > 25)
+      err(`Deep-Value Override capital ${overridePct}% exceeds its own 25% sub-cap, counted inside the 40% (§6)`)
+  } else if (discretionaryPct > 40 || overridePct > 25) {
+    warn(`caps released (throttle_released:true) with ${discretionaryPct}% non-mechanical / ${overridePct}% override — state the relit [T] gate or the confirmed higher-low in the report`)
+  }
+
+  // Score-axis unlock lines (cut 2026-07-27: 1A ≥8, 1B ≥11; 2/3 unchanged).
+  // Only FILLED tranches are tested — the tranches[] array also carries dry
+  // phases as placeholders, whose `entry` is descriptive text, not a price.
+  if (typeof S.adjusted === 'number') {
+    for (const t of tranches) {
+      if (!(t.deployed === true || typeof t.entry === 'number')) continue
+      const key = phaseKey(t.phase)
+      const line = key ? FK_SCORE_UNLOCK[`p${key}`] : null
+      if (line != null && S.adjusted < line)
+        err(`tranche ${t.phase} deployed at adjusted score ${S.adjusted}, below its ≥${line} unlock line (§6)`)
+    }
+  }
+
   const st = b.stops
   if ((D.deployed_pct > 0 || tranches.length) && !st) err('position/zone active but stops block missing')
   if (st) {
