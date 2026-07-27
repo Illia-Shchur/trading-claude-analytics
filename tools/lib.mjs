@@ -296,8 +296,54 @@ export const frB = {
  */
 export const FR_SCORE_UNLOCK = { p1a: 11, p1b: 13, p2: 15, p3: 19 }
 
+/**
+ * Channel B ladder (added 2026-07-27 after the risk audit's ladder-calibration
+ * finding). §4B's rubric scores 2–4 points HIGHER than §4A on the same quality
+ * of setup, so reusing Channel A's ladder put Phase 2 — Channel B's maximum —
+ * at the MODAL Channel B signal, while in Channel A it is the rare one. The B
+ * ladder is shifted +2 to restore the intended rarity. Phase 3 is absent by
+ * construction: Channel B cannot reach it at any score.
+ */
+export const FR_SCORE_UNLOCK_B = { p1a: 13, p1b: 15, p2: 17 }
+
+/** The ladder for a channel. Channel B has no p3 entry — the phase is unreachable. */
+export function frUnlockLadder(channel) { return channel === 'B' ? FR_SCORE_UNLOCK_B : FR_SCORE_UNLOCK }
+
 /** Legacy /9 gate floors; 1A moved 4 → 3 on 2026-07-27. Convert with ceilThresholds(). */
 export const FR_GATE_FLOORS = { p1a: 3, p1b: 5, p2: 6, p3: 8 }
+
+/**
+ * Mechanical stop bounds per phase, as % ABOVE the fill (SKILL §6).
+ * Channel B is tighter everywhere and has no Phase 3.
+ */
+export const FR_MECH_STOP_PCT = {
+  A: { '1a': 8, '1b': 10, '2': 12, '3': 15 },
+  B: { '1a': 6, '1b': 6, '2': 8 },
+}
+
+/**
+ * Minimum stop distance (added 2026-07-27 after the risk audit).
+ * A stop parked at the bounce high +1% typically lands 2.5–4% above the fill;
+ * against ETH's ~2–3% daily sigma that is a ~80% touch probability from noise
+ * alone, before any edge. A stop must therefore sit at least 1.5 × ADR(5)
+ * above the fill. If 1.5 × ADR(5) exceeds the phase ceiling, the tape is too
+ * volatile for the phase and there is NO TRADE — the rule tightens entry
+ * rather than widening risk.
+ */
+export const FR_MIN_STOP_ADR_MULT = 1.5
+
+export function frStopBand(fill, { adr5 = null, channel = 'A', phase = '1a' } = {}) {
+  const ceilPct = (FR_MECH_STOP_PCT[channel] || FR_MECH_STOP_PCT.A)[phase]
+  if (ceilPct == null) return { ok: false, reason: `phase ${phase} is unreachable in Channel ${channel}` }
+  const ceiling = round2(fill * (1 + ceilPct / 100))
+  if (adr5 == null) return { ok: true, ceiling, ceiling_pct: ceilPct, floor: null, floor_pct: null, reason: 'ADR(5) not supplied — minimum-distance rule not checkable' }
+  const floorPct = round2((FR_MIN_STOP_ADR_MULT * adr5 / fill) * 100)
+  if (floorPct > ceilPct) return { ok: false, ceiling, ceiling_pct: ceilPct, floor_pct: floorPct, reason: `1.5×ADR(5) = ${floorPct}% exceeds the ${ceilPct}% phase ceiling — tape too volatile for this phase, no trade` }
+  return { ok: true, ceiling, ceiling_pct: ceilPct, floor: round2(fill * (1 + floorPct / 100)), floor_pct: floorPct, reason: null }
+}
+
+/** Per-asset concentration cap across BOTH channels, % of the dedicated short book. */
+export const FR_MAX_PER_ASSET_PCT = 30
 
 /** Max absolute value and step of the S1 discretionary term (mirrors FK D1). */
 export const FR_DISCRETION = { max: 2, step: 0.5 }

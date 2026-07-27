@@ -57,7 +57,10 @@ import { readFileSync } from 'node:fs'
 import { basename } from 'node:path'
 import { roundScore, ROUNDING, ceilThresholds, FK_V_GATES, evCheck, stopCoherence,
   discretionValid, d5StopCheck, FK_SCORE_UNLOCK, FK_DISCRETION,
-  s5StopCheck, frRatchetCheck, FR_S5, FR_CHANNEL_B } from './lib.mjs'
+  s5StopCheck, frRatchetCheck, FR_S5, FR_CHANNEL_B,
+  frUnlockLadder, FR_GATE_FLOORS, frStopBand, FR_MAX_PER_ASSET_PCT } from './lib.mjs'
+
+const round2 = n => Math.round(n * 100) / 100
 
 const file = process.argv[2]
 const legacy = process.argv.includes('--legacy')
@@ -118,6 +121,15 @@ else {
     const min = FW === 'fallen_knives' && n === 'valuation' ? -2 : 0
     if (v < min || v > legMax[n]) err(`score.legs.${n}=${v} outside [${min}, ${legMax[n]}]`)
   }
+  // score.penalty is the ONE field that must always be ≤0 — it carries the
+  // squeeze-trap penalty (−2) and the Channel B bounce-maturity floor (−2), and
+  // it feeds `mechanical`, the number every protective rule reads. Unbounded, a
+  // positive "penalty" would lift the score past the ±2 discretionary bound.
+  if (FW === 'flying_rocket' && S.penalty != null) {
+    if (typeof S.penalty !== 'number' || !Number.isFinite(S.penalty)) err(`score.penalty=${JSON.stringify(S.penalty)} must be a number`)
+    else if (S.penalty > 0) err(`score.penalty=${S.penalty} is positive — the penalty term only ever subtracts (squeeze-trap −2, bounce-maturity −2)`)
+    else if (S.penalty < -4) err(`score.penalty=${S.penalty} is below the −4 floor (squeeze-trap −2 + bounce-maturity −2 is the deepest defined stack)`)
+  }
   let sum = legNames.reduce((a, n) => a + (S.legs[n] || 0), 0) + (FW === 'flying_rocket' ? (S.penalty || 0) : 0)
   let addend = FW === 'flying_rocket' ? '+penalty' : ''
   // Analyst discretion term — FK D1 (2026-07-27) and FR S1 (2026-07-27).
@@ -153,7 +165,10 @@ else {
 if (typeof S.adjusted !== 'number') err('score.adjusted missing')
 else if (typeof S.raw === 'number') {
   const conv = S.rounding || ROUNDING[String(b.asset || '').toLowerCase()]
-  if (!conv) warn('score.rounding not declared and asset has no pinned convention — declare one (FK §4)')
+  // ROUNDING only pins btc/eth/gold. Without a convention the whole score
+  // arithmetic check was skipped — on SOL, all-zero legs with adjusted:20 and a
+  // 20% Phase-3 short passed with two warnings.
+  if (!conv) (String(b.date) >= DISCRETION_EPOCH ? err : warn)('score.rounding not declared and asset has no pinned convention — declare one, or the entire score arithmetic goes unchecked (§4)')
   else {
     let expected = roundScore(S.raw, conv)
     // Both layers: the discretionary term can push the raw composite outside
@@ -283,15 +298,29 @@ if (FW === 'fallen_knives') {
       warn('stops.compound {price, score_line} incomplete — the compound thesis stop needs both (score line default 12, per-asset calibrated)')
   }
 } else {
-  // Flying Rocket — Hard Rule 6: every tranche carries BOTH a price stop and a time stop
+  // Flying Rocket — every tranche carries BOTH a price stop and a time stop
+  const post = String(b.date) >= DISCRETION_EPOCH
   const okSizes = [5, 10, 15, 20, 2.5]   // 2.5 = the S2 half-size probe
+  // Phase label MUST resolve. A label like "Generational Short" previously
+  // returned null and silently skipped the Phase-3 bar and every clock limit.
   const phaseKeyFR = p => (String(p).toLowerCase().replace(/phase/g, '').match(/1a|1b|2|3/) || [null])[0]
+  // Clock parsing must be strict: "until the thesis resolves" has no digits and
+  // used to skip every time-stop limit; "2026-08-20" used to parse as 2026 days.
+  const daysOf = v => {
+    if (typeof v === 'number') return Number.isFinite(v) ? v : null
+    const m = String(v).match(/^\s*(\d{1,3})\s*(?:calendar\s*)?d(?:ays?)?\s*$/i)
+    return m ? Number(m[1]) : null
+  }
   let total = 0
   for (const t of tranches) {
     total += t.pct || 0
     if (t.pct != null && !okSizes.includes(t.pct)) warn(`FR tranche ${t.phase} size ${t.pct}% not in 5/10/15/20 (or 2.5 for an S2 half-size probe)`)
     if (typeof t.stop !== 'number') err(`FR tranche ${t.phase}: price stop missing (mandatory)`)
     if (!t.time_stop) err(`FR tranche ${t.phase}: time stop missing (mandatory)`)
+    else if (post && daysOf(t.time_stop) == null)
+      err(`FR tranche ${t.phase}: time_stop ${JSON.stringify(t.time_stop)} is not a day count — write "21 days" or 21, so the clock limits are checkable`)
+    if (post && phaseKeyFR(t.phase) == null)
+      err(`FR tranche ${t.phase}: phase label does not resolve to 1A/1B/2/3 — an unresolvable label skips the Phase-3 bar and every clock limit`)
   }
   if (total > 50) err(`FR tranches total ${total}% > 50% short-book cap`)
 
@@ -299,9 +328,20 @@ if (FW === 'fallen_knives') {
   // Fail closed: a Channel B report must prove its regime in the block, so a
   // bear-continuation short cannot be written outside the regime defining it.
   const CH = b.channel
-  const post = String(b.date) >= DISCRETION_EPOCH
   if (!['A', 'B', 'none'].includes(CH)) {
     (post ? err : warn)(`channel must be "A", "B" or "none" (got ${JSON.stringify(CH)}) — the score means different things in each (§2.5)`)
+  } else if (CH === 'A') {
+    // Channel A must prove its regime too. Previously only "B" did, so the
+    // cleanest way to short a >20%-off asset with none of Channel B's limits
+    // was to declare Channel A and omit two optional fields.
+    const R = b.regime || {}
+    const off = typeof R.pct_below_1y_ath === 'number' ? R.pct_below_1y_ath : b.high_1y_pct_below
+    if (post && typeof off !== 'number')
+      err('channel "A" requires regime.pct_below_1y_ath (or high_1y_pct_below) — without it the phase-of-cycle cap is unverifiable')
+    else if (typeof off === 'number' && off > 20)
+      err(`channel "A" declared at ${off}% below the 1y ATH — beyond 20% the asset is Channel B (falling 200dma) or stand-down, never A (§2.5)`)
+    if (post && typeof off === 'number' && off >= 10 && !(S.cap && S.cap.applied))
+      err(`channel "A" at ${off}% below the 1y ATH must declare score.cap {applied:true, value:14} — the cap tier is not optional (§4)`)
   } else if (CH === 'B') {
     const R = b.regime || {}
     if (!(typeof R.pct_below_1y_ath === 'number' && R.pct_below_1y_ath > 20))
@@ -312,35 +352,104 @@ if (FW === 'fallen_knives') {
       err('channel "B" requires regime.price_below_ma200:true — above the 200dma there is no bear structure to continue')
   }
 
-  // ── Channel B structural limits + S5 discretion tax + S6 ratchet ─────────
-  let chanBPct = 0, analystPct = 0
+  // ── the MECHANICAL path is enforced too ──────────────────────────────────
+  // Until 2026-07-27 only the discretionary quarter of the book was checked:
+  // no score line, no gate floor, no mechanical stop distance, and the ratchet
+  // was dead code for mechanical tranches. A 50%-of-book, zero-gate, Phase-3
+  // short with stops 40% BELOW entry linted clean. All of that is now bound.
+  const gatesPassed = Array.isArray(b.gates && b.gates.passed) ? b.gates.passed.length : null
+  const activeGates = (b.gates && typeof b.gates.active === 'number') ? b.gates.active : 9
+  const ladder = frUnlockLadder(CH)
+  let chanBPct = 0, analystPct = 0, liveTotal = 0
   for (const t of tranches) {
     const live = t.deployed === true || typeof t.entry === 'number'
     const key = phaseKeyFR(t.phase)
-    const tChan = t.channel_regime || CH          // per-tranche channel wins (channel-migration rule)
+    // channel_regime must be explicit on a live tranche: defaulting it to the
+    // report channel silently re-homes a surviving Channel B tranche into a
+    // later Channel A report, dropping it out of the 30% cap and the clocks.
+    if (post && live && !['A', 'B'].includes(t.channel_regime))
+      err(`FR tranche ${t.phase}: channel_regime must be "A" or "B" on a live tranche — a tranche keeps the channel it opened under (channel-migration rule)`)
+    const tChan = ['A', 'B'].includes(t.channel_regime) ? t.channel_regime : CH
     const analyst = t.discretionary === true || t.channel === 'S1' || t.channel === 'S2'
+    const days = daysOf(t.time_stop)
 
     if (t.discretionary === true && !['S1', 'S2'].includes(t.channel))
       err(`FR tranche ${t.phase} is discretionary:true but channel is ${JSON.stringify(t.channel)} — analyst fills are "S1" or "S2" (S5 encoding rule)`)
     if (['S1', 'S2'].includes(t.channel) && t.discretionary !== true)
       err(`FR tranche ${t.phase} has channel "${t.channel}" but discretionary:${t.discretionary} — analyst fills are written discretionary:true so they count toward the ${FR_S5.maxBookPct}% cap (S5 encoding rule)`)
 
+    if (live && key) {
+      liveTotal += t.pct || 0
+      const tLadder = frUnlockLadder(tChan)
+      const line = tLadder[`p${key}`]
+      // Score line. Phase 3 reads MECHANICAL; every other phase reads adjusted.
+      if (line == null) {
+        err(`FR tranche ${t.phase} is filled in Channel ${tChan}, which has no Phase ${key.toUpperCase()} (§4B)`)
+      } else {
+        const readScore = key === '3' ? S.mechanical : S.adjusted
+        const which = key === '3' ? 'mechanical' : 'adjusted'
+        if (typeof readScore === 'number' && readScore < line)
+          err(`FR tranche ${t.phase} filled at ${which} score ${readScore} but Channel ${tChan} Phase ${key.toUpperCase()} unlocks at ≥${line} (§6)`)
+      }
+      // Gate floor, converted to the active denominator (ceil, never floor).
+      const floor9 = FR_GATE_FLOORS[`p${key}`]
+      if (floor9 != null && gatesPassed != null) {
+        const need = Math.ceil(floor9 / 9 * activeGates)
+        if (!analyst && gatesPassed < need)
+          err(`FR tranche ${t.phase} filled on ${gatesPassed}/${activeGates} gates but Phase ${key.toUpperCase()} needs ceil(${floor9}/9×${activeGates})=${need} (§4) — an S2 fill may be exactly one short, and must be encoded as such`)
+        if (analyst && t.channel === 'S2' && gatesPassed < need - 1)
+          err(`FR tranche ${t.phase} is an S2 fill on ${gatesPassed}/${activeGates} gates — the Conviction Path substitutes for EXACTLY ONE missing gate (needs ≥${need - 1}) (S2)`)
+      }
+      // Channel B's gate 8 is a veto: at ❌ the unlock is void regardless of count.
+      if (tChan === 'B' && Array.isArray(b.gates && b.gates.passed) && !b.gates.passed.includes(8))
+        err(`FR tranche ${t.phase} is a Channel B fill but gate 8 (funding not sustained-negative) is not passed — gate 8 voids a Channel B unlock regardless of count (§4B)`)
+      // Mechanical stop distance, both bounds, plus the sign.
+      if (typeof t.entry === 'number' && typeof t.stop === 'number') {
+        const band = frStopBand(t.entry, { adr5: b.inputs && b.inputs.adr5, channel: tChan, phase: key })
+        if (!band.ok) err(`FR tranche ${t.phase}: ${band.reason}`)
+        else {
+          if (t.stop <= t.entry) err(`FR tranche ${t.phase}: stop ${t.stop} is at or below the fill ${t.entry} — a short's stop sits ABOVE entry`)
+          else if (t.stop > band.ceiling) err(`FR tranche ${t.phase}: stop ${t.stop} is ${round2((t.stop / t.entry - 1) * 100)}% above fill — Channel ${tChan} Phase ${key.toUpperCase()} caps it at ${band.ceiling_pct}% (${band.ceiling})`)
+          else if (band.floor != null && t.stop < band.floor)
+            err(`FR tranche ${t.phase}: stop ${t.stop} sits ${round2((t.stop / t.entry - 1) * 100)}% above fill, inside the 1.5×ADR(5) noise floor of ${band.floor_pct}% (${band.floor}) — a stop this tight is a coin flip on noise`)
+        }
+      } else if (typeof t.stop === 'number' && post) {
+        warn(`FR tranche ${t.phase} has a stop but no numeric entry — no stop-distance bound is checkable`)
+      }
+      // Load-bearing discretion: if the mechanical score alone would not have
+      // cleared the line, the tranche IS an analyst fill and must say so.
+      if (line != null && key !== '3' && typeof S.mechanical === 'number' && typeof S.adjusted === 'number'
+        && S.mechanical < line && S.adjusted >= line && !analyst)
+        err(`FR tranche ${t.phase}: the discretionary term is load-bearing (mechanical ${S.mechanical} < ${line} ≤ adjusted ${S.adjusted}) — write discretionary:true with channel "S1" so the tranche pays the S5 tax (S5)`)
+    }
+
     if (tChan === 'B') {
       chanBPct += t.pct || 0
       if (key === '3') err(`FR tranche ${t.phase} is Channel B — Phase 3 is unreachable in Channel B at any score (§6)`)
       const maxDays = FR_CHANNEL_B.maxTimeStopDays[`p${key}`]
-      const days = Number(String(t.time_stop).match(/\d+/) || [NaN])
-      if (maxDays && Number.isFinite(days) && days > maxDays)
+      if (maxDays && days != null && days > maxDays)
         err(`FR tranche ${t.phase} Channel B time stop ${days}d exceeds the ${maxDays}d limit (§6)`)
+    }
+
+    // S6 ratchet binds the MECHANICAL rules too, not just the analyst (S6).
+    if (typeof t.prior_stop === 'number' && typeof t.stop === 'number') {
+      const r = frRatchetCheck(t.prior_stop, t.stop)
+      if (!r.pass) err(`FR tranche ${t.phase}: ${r.reason}`)
+    }
+    // ...and the clock ratchets the same way: it may shorten, never extend.
+    if (t.prior_time_stop != null && days != null) {
+      const pd = daysOf(t.prior_time_stop)
+      if (pd != null) {
+        const r = frRatchetCheck(pd, days, { tier: 'time_stop' })
+        if (!r.pass) err(`FR tranche ${t.phase}: ${r.reason}`)
+      }
     }
 
     if (!analyst) continue
     analystPct += t.pct || 0
     if (key === '3') err(`FR tranche ${t.phase} flagged discretionary — no analyst channel reaches Phase 3 (S5)`)
     if (t.channel === 'S2' && key !== '1a') err(`FR tranche ${t.phase} filled via S2 — the Conviction Path unlocks Phase 1A only (S2)`)
-    if (t.channel === 'S1' && key === '3') err(`FR tranche ${t.phase}: S1 tops out at Phase 2 (S5)`)
-    const days = Number(String(t.time_stop).match(/\d+/) || [NaN])
-    if (Number.isFinite(days) && days > FR_S5.maxTimeStopDays)
+    if (days != null && days > FR_S5.maxTimeStopDays)
       err(`FR tranche ${t.phase} is an analyst-channel fill with a ${days}d clock — S5 caps it at ${FR_S5.maxTimeStopDays}d`)
     if (live && typeof t.entry === 'number' && typeof t.stop === 'number') {
       const s5 = s5StopCheck(t.entry, t.stop)
@@ -348,15 +457,11 @@ if (FW === 'fallen_knives') {
     } else if (live && typeof t.stop === 'number') {
       warn(`FR tranche ${t.phase} is an analyst fill with a stop but no numeric entry — the S5 ${FR_S5.maxStopPct}%-of-fill bound is not checkable`)
     }
-
-    // S6 ratchet: a stop that moved AWAY from price since the prior report.
-    if (typeof t.prior_stop === 'number' && typeof t.stop === 'number') {
-      const r = frRatchetCheck(t.prior_stop, t.stop)
-      if (!r.pass) err(`FR tranche ${t.phase}: ${r.reason}`)
-    }
   }
   if (chanBPct > FR_CHANNEL_B.maxBookPct) err(`FR Channel B tranches total ${chanBPct}% > the ${FR_CHANNEL_B.maxBookPct}% Channel B sub-cap (§4B)`)
   if (analystPct > FR_S5.maxBookPct) err(`FR analyst-channel capital ${analystPct}% (S1 + S2) exceeds the ${FR_S5.maxBookPct}% book cap (S5)`)
+  if (liveTotal > FR_MAX_PER_ASSET_PCT)
+    err(`FR live tranches total ${liveTotal}% on ${b.asset} > the ${FR_MAX_PER_ASSET_PCT}% per-asset concentration cap — the two channels may not stack into one asset (§6)`)
 
   // Cycle cap is a Channel A construct; in Channel B the regime IS the old cap
   // trigger and no cap is declared.

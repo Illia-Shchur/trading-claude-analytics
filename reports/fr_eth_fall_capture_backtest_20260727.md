@@ -11,7 +11,13 @@ Deterministic, no lookahead, no discretion. All price data Yahoo Finance daily O
 
 - **Fall definition:** ZigZag with a 10% reversal threshold on daily closes. Each `H → L` leg with depth ≥10% is one fall. Non-overlapping by construction.
 - **Scoring reconstruction:** the three legs computable from price + F&G history (Euphoria Sentiment, Momentum Overextension, Valuation-by-ATH-distance) are computed exactly, via `tools/lib.mjs`'s `fr.*` band classifiers — i.e. with the live rubric, including its edge conventions. The two legs that need paid data (**Distribution Evidence**, **Structural Vulnerability**, 3 pts each) are **not** reconstructable historically and are treated as a parameter, `unmeasured ∈ [0,6]`, with results reported across the range.
-- **Simulation fills:** signal on close of day *i*, fill at the **open of day _i_+1**. Stops are intraday-high touches. No slippage, no funding — both of which make the results below *optimistic*, and both of which cut against shorts.
+- **Simulation fills:** signal on close of day *i*, fill at the **open of day _i_+1**. Stops are intraday-high touches. **No slippage, no funding, and no §7 cover triggers.**
+
+**Three omissions, stated honestly, because two of them cut against these results and one does not:**
+
+1. **Funding does NOT cut against the short here** — an earlier draft of this section said it did, which contradicted this framework's own Jul-2026 sign correction. Positive funding is *income* to a short, gate 8 vetoes sustained-negative funding, and §4B leg (b) rewards funding flipping positive into the bounce — so the strategy structurally selects for positive-funding tape. Over a 21-day ETH short, funding at +4% to +11% annualized is **+0.2% to +0.6% of income**; fees are ~0.09%; spot borrow, if that is the expression, is 0.2–0.5%. Net carry is roughly **±0.5%**, an order of magnitude smaller than the risk that actually matters.
+2. **Slippage does, and it is the material one.** The mandated stop sits at the bounce high +1% — the most obvious liquidity pool on the chart, in a 24/7 market with no circuit breakers. The "−6.0% worst case in all three windows" below is an artifact of modelling the exit as a touch at the exact stop price. Breakeven average adverse slippage per losing trade: **3.58%** (ETH, both windows) and **1.96%** (BTC). Those are comfortable margins *at the observed trade counts* — and they would not be if the signal fired three times as often, which is why the counts are now printed in §4.2.
+3. **§7's cover triggers were not simulated** — only the stop and the time stop were. This is the single largest gap between what was tested and what the framework implements, and it is why §7's preflight and cover lists were channel-scoped in the same revision: applied unscoped, F&G <40 and MVRV-Z <2 are near-permanent in a bear tape and would have truncated the +37.8% trade that carries the in-sample window. **The strategy validated here is only the strategy the SKILL implements because of that scoping.** Re-test with §7 active once live reports exist.
 
 **Scope honesty.** One asset, one primary window, n=12 in-sample events. Every parameter below that was read off the in-sample window is re-tested out-of-sample in §4, and one of them failed that test (§4.2). Treat §3's trigger as a coarse regime filter, not a calibrated edge.
 
@@ -120,10 +126,12 @@ The RSI≥52 row is the more attractive one on its face. §4.2 shows it is also 
 
 ### 4.2 The trigger partially generalises — and the pretty variant was curve-fit
 
-| Variant | ETH in-sample | ETH OOS (4y) | BTC OOS (4.5y) |
+| Variant | ETH in-sample (1y) | ETH OOS (3.1y) | BTC OOS (4.5y) |
 |---|---|---|---|
-| **R≥15%, RSI≥45** — catch / win / Σ | 67% / 29% / +18.5 | **62% / 31% / +56.6** | **44% / 54% / +67.1** |
-| R≥15%, RSI≥52 — catch / win / Σ | 50% / 75% / +41.3 | 31% / **25%** / +19.9 | 33% / 57% / +38.5 |
+| **R≥15%, RSI≥45** — catch / win / Σ / **N** | 67% / 29% / +18.5 / **7** | **62% / 31% / +56.6 / 16** | **44% / 54% / +67.1 / 13** |
+| R≥15%, RSI≥52 — catch / win / Σ / **N** | 50% / 75% / +41.3 / 4 | 31% / **25%** / +19.9 / 8 | 33% / 57% / +38.5 / 7 |
+
+**Signal frequency: ~5/year on ETH, ~3/year on BTC.** This is a rare signal, not a busy one — which is what makes the slippage margins in §0 survivable. Per-trade averages: ETH in-sample +2.64%, ETH OOS +3.54%, BTC OOS +5.16%.
 
 The RSI≥52 variant's in-sample 75% win rate collapses to 25% out-of-sample. It was fit to four trades. **Discarded.**
 

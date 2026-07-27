@@ -8,7 +8,9 @@ import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds, FK_V
   fk, fr, weightedEV, evCheck, stopCoherence, adr, fngStreak,
   FK_SCORE_UNLOCK, fkPhasesUnlockedByScore, discretionValid, d5StopCheck, ratchetCheck,
   mechanicalScore, frChannel, frB, FR_SCORE_UNLOCK, FR_GATE_FLOORS, frPhasesUnlockedByScore,
-  s5StopCheck, frRatchetCheck, FR_S5, FR_CHANNEL_B } from './lib.mjs'
+  s5StopCheck, frRatchetCheck, FR_S5, FR_CHANNEL_B,
+  FR_SCORE_UNLOCK_B, frUnlockLadder, frStopBand, FR_MECH_STOP_PCT,
+  FR_MIN_STOP_ADR_MULT, FR_MAX_PER_ASSET_PCT } from './lib.mjs'
 
 let failures = 0
 function eq(name, got, want) {
@@ -240,6 +242,45 @@ ok('S6 has NO named-zone exception, unlike FK D6',
   !frRatchetCheck(2100, 2200, { tier: 'catastrophic' }).pass)
 ok('S6: a time stop may shorten', frRatchetCheck(21, 14, { tier: 'time_stop' }).pass)
 ok('S6: a time stop may never be extended', !frRatchetCheck(14, 21, { tier: 'time_stop' }).pass)
+
+
+// ── FR second pass: ladder calibration, stop noise floor, concentration ─────
+// §4B scores 2-4 points higher than §4A on an equivalent setup, so reusing
+// Channel A's ladder put Phase 2 (Channel B's MAXIMUM) at the modal B signal.
+eq('Channel B ladder is shifted +2 vs Channel A', FR_SCORE_UNLOCK_B, { p1a: 13, p1b: 15, p2: 17 })
+eq('frUnlockLadder routes by channel', frUnlockLadder('B'), FR_SCORE_UNLOCK_B)
+eq('frUnlockLadder defaults to Channel A', frUnlockLadder('A'), FR_SCORE_UNLOCK)
+eq('Channel B has NO Phase 3 entry in its ladder', frUnlockLadder('B').p3, undefined)
+eq('a modal Channel B score of 14 no longer reaches Phase 2', frUnlockLadder('B').p2 > 14, true)
+
+// Mechanical stop bounds — Channel B tighter everywhere, no Phase 3.
+eq('Channel A mechanical stop ceilings', FR_MECH_STOP_PCT.A, { '1a': 8, '1b': 10, '2': 12, '3': 15 })
+eq('Channel B mechanical stop ceilings', FR_MECH_STOP_PCT.B, { '1a': 6, '1b': 6, '2': 8 })
+ok('Channel B Phase 3 has no stop band because the phase does not exist',
+  !frStopBand(2000, { channel: 'B', phase: '3' }).ok)
+
+// The noise floor: a stop inside 1.5x ADR(5) is a coin flip on noise, not risk
+// control. ETH ADR(5) = 60.19 on 1855.89 = 3.24% daily range.
+eq('minimum stop distance is 1.5x ADR(5)', FR_MIN_STOP_ADR_MULT, 1.5)
+{
+  const band = frStopBand(1855.89, { adr5: 60.19, channel: 'A', phase: '1a' })
+  ok('ETH at 3.24% ADR: an 8% Phase-1A ceiling clears the 4.86% noise floor', band.ok)
+  eq('floor is 1.5x ADR as a percentage of fill', band.floor_pct, 4.86)
+  eq('ceiling is the phase default', band.ceiling_pct, 8)
+}
+{
+  // Channel B caps Phase 1A at 6%; a quiet tape leaves room, a wild one does not.
+  ok('Channel B 1A still viable at ETH-quiet volatility', frStopBand(1855.89, { adr5: 60.19, channel: 'B', phase: '1a' }).ok)
+  const wild = frStopBand(1855.89, { adr5: 130, channel: 'B', phase: '1a' })
+  ok('when 1.5xADR exceeds the 6% Channel B ceiling there is NO TRADE', !wild.ok)
+  ok('...and the reason says so rather than widening the stop', /no trade/.test(wild.reason))
+}
+ok('without ADR the band still returns bounds but flags the floor unchecked',
+  frStopBand(2000, { channel: 'A', phase: '1a' }).floor === null)
+
+// Concentration: the two channels may not stack into one asset.
+eq('per-asset cap is 30% across BOTH channels', FR_MAX_PER_ASSET_PCT, 30)
+ok('the per-asset cap binds tighter than the 50% book cap', FR_MAX_PER_ASSET_PCT < 50)
 
 // ── verdict ─────────────────────────────────────────────────────────────────
 if (failures) { console.error(`\n${failures} FAILURE(S)`); process.exit(1) }

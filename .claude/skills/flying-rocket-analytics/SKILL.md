@@ -40,7 +40,7 @@ Channel B exists because the old cap answered "is this a top?" and, on a correct
 
 **Channel exclusivity:** exactly one channel is active per report. Determine it in §2.5, print it in the header, and score only that channel's rubric. Positions opened under one channel keep that channel's rules for their whole life — a Channel B tranche does not inherit Channel A's wider stops if the regime later repairs (see §6, channel-migration rule).
 
-**Cross-validation rule:** Flying Rocket and Fallen Knives scores should be **inversely related** for the same asset at the same timestamp. If **both score ≥12** (never a *sum* threshold — the May-14 report's "sum = 8 vs 24" framing is wrong and appears nowhere in these skills), the framework is internally inconsistent — pause and re-examine inputs before acting.
+**Cross-validation rule:** Flying Rocket and Fallen Knives scores should be **inversely related** for the same asset at the same timestamp. If **both score ≥12** (never a *sum* threshold — the May-14 report's "sum = 8 vs 24" framing is wrong and appears nowhere in these skills), the framework is internally inconsistent — pause and re-examine inputs before acting. **Channel A only, from 2026-07-27:** in Channel B the two frameworks score different objects on different horizons and a both-≥12 reading is expected rather than anomalous; the FK ≥12 force-cover governs there instead. See §7 for the full resolution — the force-cover itself is unchanged in both channels.
 
 **Mandatory computed companion score (Jun 2026):** the Cross-Check line in the header must carry the **computed** Fallen Knives composite (number + gate count, from the same live data fetch) — **estimated/eyeballed companion numbers are prohibited.** *(In May–Jun 2026 the long-side series leaned on a sourceless "FR ~3–4" for weeks; do not repeat that on either side.)* If the companion cannot be computed, say so explicitly and treat the cross-validation as **unverified** — do not assert inverse consistency you did not measure.
 
@@ -114,7 +114,7 @@ Before scoring, run this fast check. If any condition fires, **stop and warn the
 | Chosen asset is >20% below its 1-year ATH **AND** below a falling 200dma (200dma today < 200dma 20 sessions ago) | **Channel B — Bear Continuation.** Not a top; do not score §4A. Score §4B and use the Channel B gates, sizes, stops, and 30% cap. State the channel and the two regime measurements (% off 1y ATH, 200dma slope) in the header. |
 | Chosen asset is >20% below its 1-year ATH **AND** the 200dma is flat or rising (or price is above it) | **No channel — stand down.** This is the genuine phase-of-cycle mismatch the old cap was written for: a recovery/basing tape that is neither a distribution top nor a confirmed downtrend. Channel A is capped at **8/20** (unreachable); Channel B's regime test fails. Continue scoring §4A for the record, state that no phase can unlock, and say which of the two regime conditions would have to change. |
 | Chosen asset = BTC AND BTC dominance is in confirmed uptrend (30d trend up, dominance >55%, broke out of a multi-month range) AND Altcoin Season Index <40 | **Wrong-asset risk.** Dominance breakout = capital rotating INTO BTC FROM alts. If a short exists in crypto today, it is more likely in a lagging alt than in BTC. Recommend a screening run on the lagging top-20 alt cohort (see §6.5) BEFORE deploying any short on BTC. |
-| Chosen asset = an alt AND BTC dominance is *falling* (altseason regime, index >75) AND user's alt has outperformed BTC by >2× over trailing 30d | **Squeeze-trap risk on alt short.** Short interest in outperforming alts during altseason is the most frequently liquidated short cohort. Require ≥6 of 9 confirmation gates ✅ (vs the default 3) before Phase 1A unlocks, **and the S2 Conviction Path is unavailable** — a discretionary substitution is exactly the wrong instrument in the most-liquidated short cohort. State this as a temporary asymmetry override in the report. |
+| Chosen asset = an alt AND BTC dominance is *falling* (altseason regime, index >75) AND user's alt has outperformed BTC by >2× over trailing 30d | **Squeeze-trap risk on alt short.** Short interest in outperforming alts during altseason is the most frequently liquidated short cohort. Require ≥6 of 9 confirmation gates ✅ (vs the default 3 — a deliberate +3, not the +2 it was against the old floor of 4; the most-liquidated short cohort gets the wider margin) before Phase 1A unlocks, **and the S2 Conviction Path is unavailable** — a discretionary substitution is exactly the wrong instrument in the most-liquidated short cohort. State this as a temporary asymmetry override in the report. |
 | User requested a smaller alt (top-20-by-mcap not satisfied) | Confirm borrow availability and likely liquidity before producing deployment numbers. State borrow rate and 24h volume in the report. |
 
 If none fire, proceed normally.
@@ -153,9 +153,9 @@ Score **only the rubric of the channel selected in §2.5**. Both rubrics are 20-
 - Asset 10–20% below 1-year ATH: capped at **14** (Phases 1A–1B reachable; Phase 2–3 locked out).
 - Asset within 10% of 1-year ATH: no cap; full 20 scale available.
 - Asset >20% below 1-year ATH: Channel A is capped at **8** and therefore dead — but this is now a *routing* result, not a verdict. §2.5 has already sent you to Channel B (if the 200dma is falling) or to stand-down (if it is not). **Do not report a capped Channel A score as the framework's answer when Channel B is the live channel.** The cap-regime vacuity disclosure below applies only in the stand-down case.
-- **Cap-regime vacuity disclosure (Jul 2026, retained for the stand-down case):** while the 8-cap binds and no channel is live, print: (i) the score as X / 8 attainable (alongside X/20); (ii) the line "interpretation bands ≥11 unreachable; Hard-Rule-5 both-≥12 check structurally unfalsifiable in this regime"; (iii) never a bare consistency ✅ — use "structurally consistent (cap-bound; both-≥12 unfalsifiable by construction)".
+- **Cap-regime vacuity disclosure (Jul 2026, retained for the stand-down case):** while the 8-cap binds and no channel is live, print: (i) the score as X / 8 attainable (alongside X/20); (ii) the line "interpretation bands ≥9 unreachable — no phase reachable at any score, the Channel A 1A line of 11 sitting 3 points above the cap; Hard-Rule-5 both-≥12 check structurally unfalsifiable in this regime"; (iii) never a bare consistency ✅ — use "structurally consistent (cap-bound; both-≥12 unfalsifiable by construction)".
 
-Round to nearest integer. State raw, squeeze-trap penalty, modifier, cap, discretionary term, and final adjusted — in that order.
+Round to nearest integer. State, in this order: **raw legs · squeeze-trap penalty · bounce-maturity floor (Channel B) · gate surcharges (these move the gate floor, not the score) · cap · MECHANICAL score · discretionary term · cap re-applied · final ADJUSTED score.** The mechanical score is not optional to print — it is the number every cover trigger, the force-cover, both vetoes, the minimum-edge filter, the collar and Phase 3 read.
 
 #### 4B — Channel B rubric (Bear Continuation)
 
@@ -168,7 +168,7 @@ This rubric scores a **counter-trend rally dying into resistance**. Every leg is
 | **Rally Extension** | 5 | Bounce off the trailing 40-session low, measured to the current session high. >35% → 5 · >25% → 4 · >18% → 3 · >12% → 2 · >8% → 1 · else 0. *(Six ETH bear-rally peaks: 19.1 / 20.3 / 20.8 / 26.4 / 26.6 / 34.5%.)* |
 | **Local Momentum Exhaustion** | 4 | **Daily** Wilder RSI-14 — the bounce timeframe, not the weekly. >65 → 4 · >58 → 3 · >52 → 2 · >45 → 1 · else 0. **Hard qualifier: weekly RSI must be <50.** If weekly RSI ≥50 the bounce may be a genuine trend repair, not an exhaustion — score this leg **0** and add a ⚠️ to the regime line regardless of the daily print. |
 | **Resistance Confluence** | 5 | Count of: (a) price within 3% of, or rejected from, the 200dma; (b) price within 3% of the 50dma from below, or has just lost it; (c) price at/below a prior swing high that is itself a lower high; (d) price into a prior breakdown level / gap. 4/4 → 5 · 3/4 → 4 · 2/4 → 3 · 1/4 → 1 · 0/4 → 0 |
-| **Bear Structure Integrity** | 3 | Count of: (a) 50dma below 200dma; (b) the last completed weekly close did not reclaim the 200dma; (c) the sequence of lower highs since the cycle top is unbroken. 3/3 → 3 · 2/3 → 2 · 1/3 → 1 · 0/3 → 0. **At 0/3 the channel is void** — the bear structure you are trading has already broken. |
+| **Bear Structure Integrity** | 3 | Count of: (a) the bounce high is a **lower high** than the prior swing high; (b) the 50dma is below the 200dma **and the gap has not narrowed** over the trailing 20 sessions; (c) **no** weekly close above the 200dma in the trailing 8 weeks. 3/3 → 3 · 2/3 → 2 · 1/3 → 1 · 0/3 → 0. **At 0/3 the channel is void** — the bear structure you are trading has already broken. *(Rewritten 2026-07-27: the original criteria — "50dma below 200dma" and "last weekly close did not reclaim the 200dma" — were near-tautological with §4B's own regime precondition, handing every Channel B setup ~3 free points. Each replacement tests something the precondition does not already guarantee.)* |
 | **Relative Sentiment / Positioning** | 3 | Count of: (a) F&G 3-day average ≥1.5× its own trailing 30-day mean, or ≥45 in a sub-30 regime — *local* greed, sourced and computed, never eyeballed; (b) perp funding has flipped positive after ≥5 sessions negative (longs re-crowding into the bounce); (c) a flow tell — ETF net inflows resuming into the rally, or exchange outflows stalling. 3/3 → 3 · 2/3 → 2 · 1/3 → 1 · 0/3 → 0 |
 | **TOTAL** | **20** | |
 
@@ -198,7 +198,7 @@ Mark each ✅ / ⚠️ / ❌ / **N/A** (inapplicable).
 8. Breadth divergence: asset at or within 5% of ATH while >50% of top-20 mcap peers off-ATH by >15%. **Mark N/A if the asset is >15% below its own ATH** — the precondition for divergence cannot be evaluated.
 9. Rotation regime favors the short: for BTC short, BTC dominance rolling over or in established downtrend (Altcoin Season Index rising through 50); for alt short, BTC dominance rising and altseason index falling — counts ✅ only when (a) and (b) above hold (see gate 5); otherwise ⚠️ capitulation-context. *(Replaces the legacy "macro catalyst neutral-to-negative" gate — macro is already captured by the correlation modifier and §3 critical developments. This gate is more decisive for crypto-specific distribution.)*
 
-**Gate-class labels + reachable-ceiling disclosure (Jul 2026).** Tag each gate [TOP] or [FLOW] per its actual condition as written this report (not a hardcoded universal list) — gates 1, 2, 3, 8 are [TOP] (top-coincident, extinguished by trend breakdown); gates 5, 6, 7, 9 are [FLOW] (evaluable through a decline); gate 4 (funding-rate elevation) is CONDITIONAL — flag per-report whether the top-extinguishing logic actually applies (funding can spike on short-squeeze/relief-rally events inside a confirmed downtrend). Print the reachable gate ceiling in the current regime, qualified as regime-conditional (e.g., "ceiling ≈3/9: [TOP] gates unreachable at the current confirmed trend state — re-widens if trend structure repairs"). While the §2.5 cap is active, label the count "structurally dark (cap-bound; [TOP] gates unreachable — a rising [FLOW]-only count is NOT setup progress)" instead of a bare X/8.
+**Gate-class labels + reachable-ceiling disclosure (Jul 2026). Channel A gate set only** — Channel B's gates are all evaluable inside a downtrend by construction, so it carries no [TOP]/[FLOW] classification and no reachable-ceiling disclosure, and its gate 8 may never be marked N/A. Tag each gate [TOP] or [FLOW] per its actual condition as written this report (not a hardcoded universal list) — gates 1, 2, 3, 8 are [TOP] (top-coincident, extinguished by trend breakdown); gates 5, 6, 7, 9 are [FLOW] (evaluable through a decline); gate 4 (funding-rate elevation) is CONDITIONAL — flag per-report whether the top-extinguishing logic actually applies (funding can spike on short-squeeze/relief-rally events inside a confirmed downtrend). Print the reachable gate ceiling in the current regime, qualified as regime-conditional (e.g., "ceiling ≈3/9: [TOP] gates unreachable at the current confirmed trend state — re-widens if trend structure repairs"). While the §2.5 cap is active, label the count "structurally dark (cap-bound; [TOP] gates unreachable — a rising [FLOW]-only count is NOT setup progress)" instead of a bare X/Y.
 
 **Channel B gate set (use INSTEAD of gates 1–9 when Channel B is live).** Channel A's gates are top-coincident by construction and would read 0/9 at every bear-rally peak — a false negative, not a finding. Channel B's nine:
 
@@ -214,7 +214,7 @@ Mark each ✅ / ⚠️ / ❌ / **N/A** (inapplicable).
 
 Gate 8 is the only gate in either channel that voids an unlock on its own. That is deliberate: the backtest's worst realistic failure mode for Channel B is shorting a bounce that is already crowded short. **N/A handling, the ceil-threshold conversion, and the ⚠️-may-not-become-N/A rule apply to the Channel B set identically.**
 
-Count ✅ only. State count as **X / Y** where Y is the active (non-N/A) gate count. **Unified N/A gate-count arithmetic (Jul 2026, ceil-threshold convention — replaces the round-down conversion):** when gates are N/A, do NOT convert the achieved count. Restate each phase THRESHOLD against the active denominator as `ceil(legacy_threshold/9 × active_count)` — e.g., 8 active gates: 1A `ceil(3.56)=4`, 1B `ceil(4.44)=5`, P2 `ceil(5.33)=6`, P3 `ceil(7.11)=8` — and print the restated floors in the phase table alongside the legacy /9 floors for cross-check (e.g. "1B: ceil(5/9×8)=5 [legacy 5]"). Never round in the direction that lowers a floor; forbid converting ambiguous ⚠️ gates to N/A (mirror of the FK rule). Every report MUST print the converted unlock thresholds with arithmetic shown; approximate (~) denominators are prohibited. Strictest-wins rounding (ceil, never floor) applies to all required counts.
+Count ✅ only. State count as **X / Y** where Y is the active (non-N/A) gate count. **Unified N/A gate-count arithmetic (Jul 2026, ceil-threshold convention — replaces the round-down conversion):** when gates are N/A, do NOT convert the achieved count. Restate each phase THRESHOLD against the active denominator as `ceil(legacy_threshold/9 × active_count)` — e.g., 8 active gates: 1A `ceil(3/9×8)=ceil(2.67)=3`, 1B `ceil(4.44)=5`, P2 `ceil(5.33)=6`, P3 `ceil(7.11)=8` — and print the restated floors in the phase table alongside the legacy /9 floors for cross-check (e.g. "1B: ceil(5/9×8)=5 [legacy 5]"). Never round in the direction that lowers a floor; forbid converting ambiguous ⚠️ gates to N/A (mirror of the FK rule). Every report MUST print the converted unlock thresholds with arithmetic shown; approximate (~) denominators are prohibited. Strictest-wins rounding (ceil, never floor) applies to all required counts.
 
 Phase unlocks reference the legacy 9-denominator thresholds (**≥3** for 1A, ≥5 for 1B, ≥6 for 2, ≥8 for 3 — the 1A floor moved 4 → 3 on 2026-07-27; every other floor is unchanged). When N/A reduction is in effect, use the ceil-threshold conversion above.
 
@@ -234,7 +234,7 @@ Adjust each cell ±10% based on idiosyncratic catalysts (and state).
 
 **Trend term (added Jun 2026 — short-side directional humility, mirror of Fallen Knives §5).** This grid maps euphoria→mean-revert monotonically, so it reads **persistently bearish in an active UPtrend** — telling you to short strength that keeps making higher highs (the short-side falling-knife). Correct for this: when price is **above a major MA AND making higher highs** (confirmed uptrend), shift **10–15% of mass from Mean-Revert / Bear-Reversal → Continued Rally** — respect the trend you are shorting into. Apply the mirror toward the downside only once the trend is **breaking** (loss of a major MA or a confirmed lower-high). State the shift. *(This tune can only make a short case weaker, never stronger — consistent with Hard Rule 6.)*
 
-**Confirmation throttle — bounce ≠ uptrend (Jul 2026).** While the §2.5 cap regime is active (>20% off 1-yr ATH), a bounce does NOT qualify as a confirmed uptrend for this shift unless the higher-high/higher-low structure is ≥15 sessions old on weekly-close basis. Single-report momentum (>5% move in ≤7 days) must be labeled BOUNCE (UNCONFIRMED) and the shift withheld; the post-shift Continued Rally cell may never exceed 55%. In the 10–20%-off-ATH band, apply the same standard at a ≥10-session threshold (this is the live regime where Phase 1A can unlock and a single-week rip could otherwise be mislabeled "confirmed uptrend"). Outside both cap regimes the original criterion stands unchanged. If assets oscillate across the 20%-off-ATH boundary report-to-report, use the prior report's regime classification as tie-break.
+**Confirmation throttle — bounce ≠ uptrend (Jul 2026).** While the asset is >20% off its 1-yr ATH — **Channel A stand-down or Channel B alike**, since Channel B removes the cap but not the measurement — a bounce does NOT qualify as a confirmed uptrend for this shift unless the higher-high/higher-low structure is ≥15 sessions old on weekly-close basis. Single-report momentum (>5% move in ≤7 days) must be labeled BOUNCE (UNCONFIRMED) and the shift withheld; the post-shift Continued Rally cell may never exceed 55%. In the 10–20%-off-ATH band, apply the same standard at a ≥10-session threshold (this is the live regime where Phase 1A can unlock and a single-week rip could otherwise be mislabeled "confirmed uptrend"). Outside both cap regimes the original criterion stands unchanged. If assets oscillate across the 20%-off-ATH boundary report-to-report, use the prior report's regime classification as tie-break.
 
 **Analyst override of the grid (2026-07-27, S1).** The baseline grid is a starting point, not an output. The analyst may depart from it by more than the ±10% cell adjustment above when the tape warrants — including replacing the scenario set entirely with one that fits the actual setup (Channel B, for instance, is usually better described by "bounce resumes / range / breakdown resumes / capitulation leg" than by the top-centric default). Requirements: probabilities still sum to 100%, the EV recomputation/sum-check still runs, and the departure is stated with its reasoning in §9. The **direction** of the departure is unconstrained — the grid may be made more bearish or more bullish than baseline — but a departure that makes the short case stronger must name the evidence it rests on, per Principle 11's two-tier certainty rule.
 
@@ -281,22 +281,34 @@ State: spot, EV_price, Directional EV, expected hold (days), annualized funding,
 
 **Score lines cut 2026-07-27** (1A 13→**11**, 1B 15→**13**, P2 17→**15**; Phase 3 stays at **19** — a generational short must stay rare, and the backtest gave no evidence for cutting it). The cut is worth more than any other single change: at realistic inputs it takes Channel A from 1 of 6 distribution tops to 4 of 6. Going to 10 was tested and rejected — it bought one extra fall at the optimistic leg assumption and nothing at the realistic one.
 
+**The two channels use DIFFERENT ladders** *(added 2026-07-27, second pass)*. §4B's rubric scores **2–4 points higher than §4A on an equivalent-quality setup** — its legs are measured against a bear baseline, so a merely typical bear-rally top scores 13–16 where a merely typical distribution top scores 10–12. Running both through one ladder put Phase 2 — Channel B's *maximum* — at the **modal** Channel B signal, while in Channel A the same line is the rare one. That is a calibration error, not a policy: it would have deployed the channel's full 30% on its most ordinary setup.
+
+| Phase | Channel A | Channel B |
+|---|---|---|
+| 1A | ≥11 | **≥13** |
+| 1B | ≥13 | **≥15** |
+| 2 | ≥15 | **≥17** |
+| 3 | ≥19 (mechanical) | **unreachable** |
+
+Gate floors are shared (3/5/6/8 on the /9 denominator). The scores are not comparable across channels and the ladders are not either — always state which channel's ladder you are reading against.
+
 #### Phase 1A — Probe (5%)
-- **Unlock gates:** adjusted score **≥11** AND **≥3** of 9 gates ✅ AND §7 preflight PASS — **OR** the S2 Analyst Conviction Path
+- **Unlock gates:** adjusted score **≥11 (Channel A) / ≥13 (Channel B)** AND **≥3** of 9 gates ✅ AND §7 preflight PASS — **OR** the S2 Analyst Conviction Path
 - **Entry zone:** ASSET-SPECIFIC. State range.
 - **Hard stop:** +8% above entry OR daily close above local high — whichever tighter. **Channel B: +6% or the bounce high +1%, whichever tighter.**
-- **Time stop:** 21 calendar days. **Channel B: 21 days, not extendable.**
+- **Time stop:** 21 calendar days. **Channel B: 21 days.** Neither is extendable — S6 binds both.
 - **Status:** DRY POWDER / SHORT ([entry]) / COVERED / STOPPED
 
 #### Phase 1B — Add (10%)
-- **Unlock gates:** adjusted score **≥13** AND ≥5 gates ✅ AND Phase 1A still in profit OR scratch AND §7 preflight PASS
+- **Unlock gates:** adjusted score **≥13 (Channel A) / ≥15 (Channel B)** AND ≥5 gates ✅ AND Phase 1A still in profit OR scratch AND §7 preflight PASS
 - **Entry zone:** [range — must be at higher price than 1A entry, confirming overextension]
+- **Channel B adds require a FRESH stall confirmation at a higher price, with the earlier tranche unstopped.** In Channel B "price is higher" is not confirmation of overextension — it is the bounce resuming, which is the thesis failing, and the 1A stop is probably already hit. A Channel B add is therefore only legitimate when the rally has stalled a *second* time at a *higher* level while the first tranche survived. The practical consequence, stated plainly: **Channel B is normally a single 5% probe.** Its 30% ceiling requires three separately confirmed stalls and is expected to be rare — if you find yourself reaching it often, the stall confirmation is being read too loosely.
 - **Hard stop:** +10% above blended cost. **Channel B: +6% above blended cost, or the bounce high +1%, whichever tighter.**
 - **Time stop:** 28 days from this entry. **Channel B: 21 days.**
 - **Status:** DRY POWDER / SHORT / COVERED / STOPPED
 
 #### Phase 2 — Conviction (15%)
-- **Unlock gates:** adjusted score **≥15** AND ≥6 gates ✅ AND macro catalyst neutral-to-negative AND correlation regime not full risk-on AND §7 preflight PASS
+- **Unlock gates:** adjusted score **≥15 (Channel A) / ≥17 (Channel B)** AND ≥6 gates ✅ AND macro catalyst neutral-to-negative AND correlation regime not full risk-on AND §7 preflight PASS. *(The macro clause is a deliberate Phase-2-only extra, retained; it is not the retired gate-9 predecessor, which §4's gate list replaced.)*
 - **Hard stop:** +12% above blended cost. **Channel B: +8% above blended cost.**
 - **Time stop:** 35 days. **Channel B: 28 days.**
 - **Status:** DRY POWDER / SHORT / COVERED / STOPPED
@@ -309,9 +321,42 @@ State: spot, EV_price, Directional EV, expected hold (days), annualized funding,
 - **Time stop:** 49 days
 - **Status:** DRY POWDER / SHORT / COVERED / STOPPED
 
+#### Stop distance has a FLOOR as well as a ceiling (added 2026-07-27, second pass)
+
+A stop parked at "the bounce high +1%" typically lands **2.5–4% above the fill**, because you enter on the stall bar a few percent below the high. Against ETH's realised daily σ of ~2–3% — 3.24% ADR(5) on the repo's own most recent quiet-week print — that is a **~80% probability of being touched by noise alone over a 21-day hold, before any edge at all.** A stop that tight does not control risk; it converts the strategy into a lottery on the minority of entries that survive the chop, and "tighten the stop further" is therefore the wrong response to a poor win rate.
+
+**Rule:** every tranche's stop sits in a band — no closer than **1.5 × ADR(5)** above the fill, and no wider than the phase ceiling (Channel A 8/10/12/15%, Channel B 6/6/8%).
+
+- If the structure level (bounce high +1%) is **inside** the noise floor, widen to the floor — up to the phase ceiling, never past it.
+- If **1.5 × ADR(5) exceeds the phase ceiling**, the tape is too volatile for that phase: **no trade.** This tightens entry rather than widening risk, which is the correct direction on this side of the book.
+- The floor never overrides the S6 ratchet: on an existing position a stop may still only move toward price. The floor governs where a stop is first set.
+
+Print ADR(5), the floor, the ceiling, and the chosen stop for every tranche. `node tools/compute.mjs adr` computes the input; `frStopBand()` in `tools/lib.mjs` computes the band and the linter enforces both bounds.
+
+#### Concentration, and what "the short book" actually means
+
+**Per-asset cap: 30% of the dedicated short book, across BOTH channels combined.** Without it the two channels stack legitimately into a single name — Channel A 15% while the asset is 19% off its high, then Channel B 30% after it breaks 20%, then an analyst 5% — reaching 45–50% of the book on one asset, entered on two different theses about one decline, all short, all exposed to the same squeeze. Every book-level cap held in that construction; none of them was measuring the thing that would hurt.
+
+**Leverage and liquidation (mandatory statement in every report with a live tranche).** All phase sizes in this framework are percentages of a **dedicated short book, assumed unlevered**. The framework's entire loss control is a *price level*, and a price-level stop is not the mechanism by which a short position actually dies — margin is. Therefore:
+
+- State the assumed book size basis and whether the expression is spot-borrow, unlevered perp, or levered perp.
+- If levered, state the **liquidation price** for each tranche. **A tranche whose liquidation price sits at or inside its stop distance is prohibited** — the stop would never execute, and the position would be closed by the venue instead, at a price nobody chose.
+- If the short book shares margin with a Fallen Knives long book on the same venue, say so. A cascade that liquidates one can liquidate the other, and neither framework models the other's collateral.
+
+#### Consecutive-stop-out suspension (Channel B)
+
+**Three consecutive stopped-out Channel B tranches on the same asset suspends Channel B for that asset** until either the asset leaves the Channel B regime (a weekly close reclaims the 200dma) or 30 calendar days pass with no new entry. This implements backtest falsifier **F4** as a live control rather than a post-hoc grading note: at a 29–54% win rate the expected worst losing streak over ~46 signals is roughly ten, and nothing else in this framework counts consecutive losses. A suspension is not a judgment that the thesis was wrong — it is an admission that the *timing* signal has stopped working on this asset in this regime, which is precisely what three stop-outs measure.
+
+The suspension is recorded in the S7 Discretion Ledger and may not be lifted by an S1 term, an S2 path, or a high score. *(This is deliberately narrower than a book-level drawdown circuit breaker, which was considered and declined for the long side; it is per-asset, per-channel, and triggered by a count rather than by a P&L threshold.)*
+
 **Channel-migration rule.** A tranche keeps the channel it was opened under for its entire life. If the regime crosses (a Channel B asset reclaims its 200dma on a weekly close, or a Channel A asset falls >20% off the ATH into a falling 200dma), open tranches do **not** inherit the new channel's wider stops or longer clocks — they keep their own, and the Channel B 200dma-reclaim cover in §7 fires regardless. A new channel may only open *new* tranches, and the 30% Channel B cap and 50% total cap are both measured across the whole book, not per channel.
 
-**§7 Cover-Trigger Preflight veto (Jul 2026, pure tightening).** Before any phase unlock, evaluate the six state-checkable §7 cover triggers at the proposed entry (F&G <40, published FK ≥12, funding negative ≥3 intervals, price below 50d MA, MVRV-Z <2, upside narrative break) and print the result as a table; if ANY is live at entry, the unlock is VOID — do not open a tranche the exit framework closes at inception. The two positional §7 triggers (score-drop-from-peak, time/hard-stop-hit) are explicitly OUT OF SCOPE for this preflight — they are evaluated only after a tranche exists. A single borderline/noisy trigger within a stated tolerance band (e.g., MVRV-Z 1.9–2.0) may be logged as a WARNING rather than an automatic VOID, with an analyst note required.
+**§7 Cover-Trigger Preflight veto (Jul 2026, pure tightening; channel-scoped 2026-07-27).** Before any phase unlock, evaluate the state-checkable §7 cover triggers **for the active channel** at the proposed entry, print the result as a table, and if ANY is live the unlock is VOID — do not open a tranche the exit framework closes at inception.
+
+- **Channel A (six):** F&G <40 · published FK ≥12 · funding negative ≥3 intervals · price below the 50d MA · MVRV-Z <2 · upside narrative break.
+- **Channel B (five):** published FK ≥12 · funding negative ≥3 intervals · upside narrative break · last weekly close reclaimed the 200dma · Bear Structure Integrity 0/3.
+
+**Why the lists differ, and why this is not a loosening.** Channel B trades a market that has already repriced 40–60%. F&G <40, MVRV-Z <2 and price-below-the-50dma are near-permanent there — and price below the 50dma is a Channel B *scoring positive* (§4B Resistance Confluence credits "within 3% of the 50dma from below, or has just lost it"). Applying Channel A's list to Channel B would veto every Channel B entry at inception and then trim any that opened by 25/50/25% on conditions that were true *before* entry and formed part of the thesis. That is not caution, it is an incoherent rule. Channel B's replacements are strictly harder-edged: two of the five are its own 100%-cover regime tests, which have no Channel A equivalent. The two dropped from the veto list are dropped **only** from Channel B, where they are regime constants rather than signals. The two positional §7 triggers (score-drop-from-peak, time/hard-stop-hit) are explicitly OUT OF SCOPE for this preflight — they are evaluated only after a tranche exists. A single borderline/noisy trigger within a stated tolerance band (e.g., MVRV-Z 1.9–2.0) may be logged as a WARNING rather than an automatic VOID, with an analyst note required.
 
 **Total max short exposure: 50% of dedicated short book. Remaining 50% is structural dry powder for adverse moves / averaging at higher prices ONLY if thesis intact AND score has not deteriorated.**
 
@@ -328,7 +373,7 @@ When the requested asset scores below Phase-1A eligibility (11), do **not** stop
 
 **Screening procedure** (qualitative — no need for full skill rerun per candidate):
 
-1. Identify the **lagging cohort**: top-20 mcap assets that are simultaneously (a) within 10% of their own 1-year ATH (precondition for any short setup), AND (b) underperforming BTC over trailing 30d by >15%, AND (c) showing positive funding (consensus long).
+1. Identify the **lagging cohort**: top-20 mcap assets that are simultaneously (a) within 10% of their own 1-year ATH (precondition for a **Channel A** setup — skip §6.5 entirely in Channel B, where the screen can only return candidates the active channel cannot trade), AND (b) underperforming BTC over trailing 30d by >15%, AND (c) showing positive funding (consensus long).
 2. Of the lagging cohort, flag the 1–3 candidates whose qualitative scoring on Sentiment / Funding / Distribution looks highest. State this is a *qualitative scan*, not a full Flying Rocket score — recommend the user run `/flying-rocket-analytics <candidate>` for any flagged name to get the formal score.
 3. If no lagging-cohort candidate qualifies, state explicitly: "no actionable short candidate identified in top-20 cohort."
 
@@ -358,14 +403,23 @@ Covers execute LIFO (most-recently-added tranche first). Apply mechanically.
 | **Mechanical** score drops ≥5 points from its **mechanical** peak | Cover 25% | Top-signal eroding |
 | **Channel B only:** weekly close reclaims the 200dma | **Cover 100% of Channel B tranches** | The regime the channel is defined by has ended — this is Channel B's equivalent of a thesis void, and it is not discretionary |
 | **Channel B only:** Bear Structure Integrity leg scores 0/3 | **Cover 100% of Channel B tranches** | Same, measured on the rubric rather than the single MA |
-| F&G drops below 40 | Cover 25% | Sentiment regime change |
-| MVRV-Z drops below 2 (BTC/ETH) | Cover 50% | Valuation reset achieved |
-| Asset breaks below 50-day MA on daily close with volume | Cover 25% | Technical confirmation |
+| **Channel A only:** F&G drops below 40 | Cover 25% | Sentiment regime change |
+| **Channel A only:** MVRV-Z drops below 2 (BTC/ETH) | Cover 50% | Valuation reset achieved |
+| **Channel A only:** asset breaks below 50-day MA on daily close with volume | Cover 25% | Technical confirmation |
 | Funding flips negative for ≥3 consecutive intervals | **Cover 50%** | Squeeze fuel building under shorts — exit before forced |
 | **Mechanical** score ≥15 (i.e., trade still wins) but ANY time stop hit | Cover that tranche, reassess | Decay discipline — do not let shorts age indefinitely. Per S6 the clock never extends |
 | Hard stop hit on any tranche | **Cover that tranche immediately** | No exceptions |
 | Narrative break to the UPSIDE (surprise ETF approval, major regulatory win, sovereign adoption, etc.) | **Cover 100%** | Thesis voided |
 | Fallen Knives score ≥12 on same asset (Jul 2026: cite the PUBLISHED same-trading-day or most recent prior close FK score when one exists; re-derive only when none exists and disclose "re-derived, unpublished." If a re-derivation and a published score disagree across the 12 boundary, the trigger FIRES — strictest-wins/max of the two readings — and the divergence must be disclosed and reconciled next report) | **Cover 100%** | Inverse framework signals accumulation zone — directly contradicts thesis |
+
+**The FK cross-check in Channel B (2026-07-27) — the force-cover holds, the *consistency law* is rescoped.** Channel B is defined as an asset >20% below its 1-year ATH under a falling 200dma: precisely the tape where Fallen Knives scores its highest. FK 12–15 alongside a Channel B FR of 11–15 is therefore an **expected co-occurrence**, not the evidence of internal inconsistency that Hard Rule 5's both-≥12 test was written to catch. The two frameworks are scoring different objects on different horizons — FK asks "is this asset worth owning for the next two quarters," Channel B asks "is *this three-week bounce* exhausted." Those can both be true.
+
+Resolution, in two parts:
+
+1. **The FK ≥12 force-cover is unchanged and still fires** — cover 100%, no carve-out, in either channel. It is a protective trigger and this revision does not weaken protective triggers. The practical consequence is that **Channel B is unavailable whenever the companion FK score is ≥12**, and that is the correct behaviour: do not short a bounce while the long-side framework is calling a generational accumulation zone. State the companion score in every Channel B report; if it is ≥12, stand down and say the force-cover is what stood you down.
+2. **Hard Rule 5's both-≥12 *inconsistency* flag is Channel A only.** In Channel B, both frameworks reading ≥12 does not mean an input is broken — it means the short must not be open, which part 1 already enforces. Print "Hard Rule 5: Channel B — level-based inverse consistency not evaluable (different scored objects); FK ≥12 force-cover governs instead" rather than a bare ✅ or a false inconsistency flag.
+
+This is a real coverage limitation and worth stating plainly: it makes Channel B unavailable in the deepest fear, which is exactly where the largest bear rallies occur. It is the price of not weakening a cover trigger, and it is the right price to pay.
 
 State current cover-trigger status and remaining position.
 
@@ -395,14 +449,14 @@ Numbered bull (✅) and bear (❌) signals with one-line rationale. **Reminder:*
 
 ### 12. Strategic Verdict
 
-- Restate: adjusted score, weighted EV, short EV vs carry, F&G, current stance
+- Restate: **mechanical score, discretionary term, adjusted score** (all three — the mechanical one is what every protective rule reads), weighted EV, short EV vs carry, F&G, current stance
 - 2–3 paragraph synthesis. Voice: **seasoned macro allocator who has shorted multiple bubbles (dotcom, 2008, 2018 crypto, 2022 crypto) and lost money on others** — humility and respect for asymmetry are non-negotiable
 - Numbered action items
 - "The Pattern" block quote with 2–3 conditional scenarios
 
 ## Analyst Discretion Layer
 
-Adopted 2026-07-27, mirroring the Fallen Knives layer of the same date at short-side strictness. The rubric is a coincident gauge built from a handful of measurable inputs. The analyst sees things the rubric cannot: a funding flip mid-session, a borrow rate doubling, an exchange outage, a Fed speaker, a narrative turning, an order book thinning. The backtest is explicit that this matters here more than on the long side — Channel B's mechanical trigger fires ~15×/year and is right under half the time, with expectancy carried by a fat right tail. **A signal like that is a candidate generator, not an edge.** The selection among candidates is exactly the analyst's job, and this layer gives that judgment bounded, audited weight.
+Adopted 2026-07-27, mirroring the Fallen Knives layer of the same date at short-side strictness. The rubric is a coincident gauge built from a handful of measurable inputs. The analyst sees things the rubric cannot: a funding flip mid-session, a borrow rate doubling, an exchange outage, a Fed speaker, a narrative turning, an order book thinning. The backtest is explicit that this matters here more than on the long side — Channel B's mechanical trigger fires only ~3–7×/year (7 signals in the 12-month in-sample window, 16 in 3.1 years of ETH out-of-sample, 13 in 4.5 years of BTC) and is right under half the time, with expectancy carried by a fat right tail. **A signal like that is a candidate generator, not an edge.** The selection among candidates is exactly the analyst's job, and this layer gives that judgment bounded, audited weight.
 
 Bounded and audited. Not unlimited.
 
@@ -414,8 +468,10 @@ Each non-zero adjustment names, in one line each: the specific factor, why the r
 
 **Governing rule — S1 buys entries, never exits.** Two numbers now exist and every rule must name which it reads:
 
-- **Mechanical score** = `round(Σ legs)` after the squeeze-trap penalty, correlation surcharge, bounce-maturity floor, and channel cap — with **no** discretionary term.
-- **Adjusted score** = `round(Σ legs + discretionary)`, clamped to [0, 20].
+- **Mechanical score** = `min(channel_cap, clamp(round(Σ legs + squeeze-trap penalty + bounce-maturity floor), 0, 20))` — with **no** discretionary term. The correlation and squeeze-trap **gate** surcharges are not in this formula: they move the gate floor, not the score.
+- **Adjusted score** = `min(channel_cap, clamp(mechanical + discretionary, 0, 20))`.
+
+**The cap is applied AFTER the discretionary term, not before it.** Discretion may not reach past a phase-of-cycle cap: a mechanical 14 under the 10–20% cap plus a +2 is still **14**, not 16, and Phase 2 stays locked exactly as the cap says. The cap is a structural statement about where in the cycle the asset sits, and no analyst read changes where in the cycle the asset sits. Likewise the squeeze-trap penalty and the bounce-maturity floor sit *inside* the mechanical score, so the adjusted score inherits them — a +2 cannot buy back the −2 that a crowded-short tape or an immature bounce just imposed, because it is added to an already-penalised number rather than to the raw legs.
 
 **The adjusted score is read by deployment/unlock rules ONLY** — the Phase 1A/1B/2 score lines and the §5 probability grid.
 
@@ -468,7 +524,7 @@ Every non-mechanical entry pays, on all four axes:
 | | Mechanical unlock | S1/S2 analyst channel |
 |---|---|---|
 | Size | full phase size | **half** |
-| Price stop | phase default (8/10/12%) | **≤6% above fill**, or the tighter of the phase default and the structure level |
+| Price stop | phase default (Ch. A 8/10/12/15%, Ch. B 6/6/8%), inside the ADR noise band | **the tightest of** 6% above fill, the active channel's phase default, and the structure level — never wider than the mechanical tranche it sits beside, and still no tighter than the 1.5×ADR(5) floor |
 | Time stop | phase default (21/28/35d) | **14 days** |
 | Deepest phase | Phase 3 (Channel A) | **Phase 1A only via S2; Phase 2 max via S1** |
 
@@ -483,8 +539,9 @@ A tranche is on the analyst channel if the discretionary term was **load-bearing
 Once set, a stop moves **toward price only** — for a short, that means **down, never up**. This binds the analyst, the mechanical rules, and every future report on the position.
 
 - A stop may tighten on any evidence. It may never loosen on any evidence, including a higher score, a stronger thesis, a "temporary" squeeze, or a wider volatility read.
-- The **only** exception: the first time a stop is set for a position sequence, from a genuinely flat book. There is no prior stop to ratchet against. Trimming a position does not make the book flat and does not reset the ratchet.
-- A time stop ratchets the same way: it may shorten, never extend. **"Adjusted score ≥15 but the time stop hit" covers the tranche.** A short that needs more time is a short that was wrong about *when*, which on this side of the book is indistinguishable from being wrong.
+- The **only** exception: the first time a stop is set for a position sequence. There is no prior stop to ratchet against.
+- **A position sequence is not ended by a stop-out.** It is ended by the *regime* ending — a Channel B 200dma reclaim, a channel change, or 30 calendar days with no live tranche on the asset. Without this, the exception swallowed the rule: a full stop-out leaves the book flat, so a stopped-out short could re-enter with a wider stop than the one that just failed, and the ratchet would bind only while you were winning. Trimming does not reset it either.
+- A time stop ratchets the same way: it may shorten, never extend. **"Mechanical score ≥15 but the time stop hit" covers the tranche.** A short that needs more time is a short that was wrong about *when*, which on this side of the book is indistinguishable from being wrong.
 - Every stop change is logged in the Stop Migration Ledger with its direction; a widening entry is a lint error.
 
 ### S7 — The Discretion Ledger
@@ -498,7 +555,7 @@ The next calibration grades this ledger as its own channel, with an explicit cou
 
 ## Score Interpretation
 
-| Adjusted Score | Phase | Stance |
+| Score — adjusted, except the 19+ row which is mechanical (S1) | Phase | Stance |
 |---|---|---|
 | 0–5 | No Signal | OBSERVE — no short edge |
 | 6–8 | Watch List | PREPARE — refresh thesis, mark key levels |
@@ -510,7 +567,7 @@ The next calibration grades this ledger as its own channel, with an explicit cou
 
 **Note (revised 2026-07-27):** the long side unlocks Phase 1A at 8, the short side at 11. The 3-point spread is the asymmetry tax at the door — *wider* than the 2 points it replaced, even though both numbers came down. The rest of the tax moved to where it does more good: half the maximum book size, mandatory price **and** time stops on every tranche, the S6 ratchet, a 30% sub-cap and no Phase 3 in Channel B, a 20% cap and a 14-day clock on analyst-channel entries, and a gate that voids a Channel B unlock outright when funding says the short is already crowded.
 
-> **Reconciliation note (Jun 2026 — mirror of the Fallen Knives footnote):** these stances describe **score eligibility only.** Actual short deployment is *additionally* gated by the gate count (§4), the **phase-of-cycle hard cap** (§4), the **squeeze-trap penalty** (§4), and **carry economics** (§6.5 — carry > 40% of target = no trade). A "Conviction" 15–17 row is **not** a deploy mandate: the cap, penalty, or carry can each veto every phase. State the gate/cap/penalty-limited reality explicitly in the verdict — never let the table imply more short exposure than the full gating authorizes.
+> **Reconciliation note (Jun 2026 — mirror of the Fallen Knives footnote):** these stances describe **score eligibility only.** Actual short deployment is *additionally* gated by the gate count (§4), the **phase-of-cycle hard cap** (§4), the **squeeze-trap penalty** (§4), and **carry economics** (§6, Carry Cost Ledger — carry > 40% of target = no trade). A "Conviction" 15–18 row is **not** a deploy mandate: the cap, penalty, or carry can each veto every phase. State the gate/cap/penalty-limited reality explicitly in the verdict — never let the table imply more short exposure than the full gating authorizes.
 
 ## Asset Generalization
 
@@ -528,7 +585,7 @@ The next calibration grades this ledger as its own channel, with an explicit cou
 
 1. **Shorting is not the mirror of longing.** Carry bleeds, drift hurts, squeezes kill. Operate with more humility.
 2. **Real-time data is non-negotiable.**
-3. **Top-picking is a confirmation game, not a prediction game.** Wait for evidence — distribution candles, breadth divergence, funding extremes — not feels. **Anti-bear-trap (added Jun 2026, mirror of Fallen Knives' anti-bull-trap):** pullbacks within an uptrend are suspect — *never declare a top "confirmed" on a single down-week.* Require **trend-structure breakdown** (loss of a major MA or a confirmed lower-high) before deploying the distribution thesis. A dip in a structural bull tape is squeeze fuel, not a top.
+3. **Top-picking is a confirmation game, not a prediction game.** Wait for evidence — distribution candles, breadth divergence, funding extremes — not feels. **Anti-bear-trap (added Jun 2026, mirror of Fallen Knives' anti-bull-trap):** pullbacks within an uptrend are suspect — *never declare a top "confirmed" on a single down-week.* Require **trend-structure breakdown** (loss of a major MA or a confirmed lower-high) before deploying the distribution thesis. A dip in a structural bull tape is squeeze fuel, not a top. **(Channel A. In Channel B the trend-structure breakdown is the entry precondition rather than the thing being waited for; Principle 14 governs there.)**
 4. **Carry > target / 0.4 → no trade.** Even a perfect thesis loses money to bleed if the move takes too long.
 5. **Always have a time stop.** Decay discipline.
 6. **Always have a price stop.** No exceptions.
@@ -537,7 +594,7 @@ The next calibration grades this ledger as its own channel, with an explicit cou
 9. **Cover into weakness, not strength.** LIFO covers as score drops; this is the symmetric mirror of pyramid-adding on the way up for longs.
 10. **Regulatory and adoption catalysts are the #1 short killer.** Stay current; cover into surprises.
 11. **Two-tier certainty (Jun 2026, mirror of Fallen Knives).** Realized-data statements may use strong language; **forward / regime-resolution claims must carry a probability OR an `IF→THEN` plus a named falsifier.** The score is a coincident euphoria gauge, not a forecast — never let a high score license a confident *price* prediction.
-12. **Verdict-confidence collar (Jun 2026, mirror of Fallen Knives; FR ≥ as strict; symmetrized Jul 2026).** When **|Total Short EV| < 3% (the existing minimum-edge filter) OR the asset is >20% off its 1-year ATH (phase-of-cycle cap fired) OR the squeeze-trap penalty is active**, you are prohibited from declaring a top "confirmed" or a distribution regime "resolved." **The collar is TWO-SIDED:** under the same conditions you are equally prohibited from declaring, in any section (including §5 trend-term prose), a bottom "in," a correction "over/behind us/complete," an uptrend "confirmed," a squeeze setup "unwound," or a positioning book "bailed out." The lexicon confirmed/resolved/unwound/behind us may only attach to a defined structural test that has completed (weekly close, ≥5 sessions held, finalized monthly data) as a forward-looking resolution claim; otherwise the claim must be an IF→THEN with a named falsifier. Plain descriptive-present-tense structural statements (e.g., "gold is in a confirmed downtrend" describing current position relative to moving averages) remain permitted without an IF→THEN wrapper. A stand-down verdict never requires a bullish counter-forecast — the cap and gates are sufficient grounds on their own. **Stand-down remains the modal, correct output** — frame a no-trade verdict as the analysis, not a failure.
+12. **Verdict-confidence collar (Jun 2026, mirror of Fallen Knives; FR ≥ as strict; symmetrized Jul 2026).** When **|Total Short EV| < 3% (the existing minimum-edge filter) OR the asset is >20% off its 1-year ATH (Channel A stand-down **or Channel B** — in Channel B the cap does not fire but the collar is always on; state that once) OR the squeeze-trap penalty is active**, you are prohibited from declaring a top "confirmed" or a distribution regime "resolved." **The collar is TWO-SIDED:** under the same conditions you are equally prohibited from declaring, in any section (including §5 trend-term prose), a bottom "in," a correction "over/behind us/complete," an uptrend "confirmed," a squeeze setup "unwound," or a positioning book "bailed out." The lexicon confirmed/resolved/unwound/behind us may only attach to a defined structural test that has completed (weekly close, ≥5 sessions held, finalized monthly data) as a forward-looking resolution claim; otherwise the claim must be an IF→THEN with a named falsifier. Plain descriptive-present-tense structural statements (e.g., "gold is in a confirmed downtrend" describing current position relative to moving averages) remain permitted without an IF→THEN wrapper. A stand-down verdict never requires a bullish counter-forecast — the cap and gates are sufficient grounds on their own. **Stand-down remains the modal, correct output** — frame a no-trade verdict as the analysis, not a failure.
 13. **Single-observation durability lock (Jul 2026, mirror of FK's already-adopted single-observation durability rule, at ≥ FK strictness).** No flow, funding, or positioning INFLECTION/turn/regime-change claim — in prose, in the Distribution-Evidence leg (including partial/fractional sub-leg credit), or in gate 5 — may rest on fewer than 5 sessions of confirming data or a completed trend-structure event. One-day prints must be reported as "one day ≠ a run" and score as the prior regime. Asymmetry: claims that make a short HARDER (e.g., outflows ending) need the full 5 sessions; claims that make a short easier get no relaxation (Hard Rule 6). **The durability lock is a rubric rule, not a discretion rule** — an S1 term may rest on a single observation, because it is bounded at ±2, logged, and cannot move any protective rule. Say plainly in §9 that the read is one-session-old.
 
 14. **Two channels, one discipline (2026-07-27).** Channel B is not a licence to short a falling market — it is a licence to short an *exhausted rally inside* one. The distinction is the whole of the channel's risk control: shorting the breakdown was tested and it filled at the trough of two of the three falls it caught. If the setup in front of you is a fresh low rather than a stalling bounce, Channel B has no trade, whatever the score says.
@@ -579,7 +636,7 @@ Added 2026-07-27, all fail-closed:
 Run `node tools/lint-report.mjs reports/<file>.md` after saving, before committing; a FAIL is fixed, never overridden.
 
 After saving, post a ≤6-line conversational summary:
-- Adjusted score and stance
+- Mechanical and adjusted score, channel, and stance
 - Top 1–2 changes vs prior (or "first report")
 - The single most actionable item — including **explicit no-trade verdict if score insufficient** (this is the most common honest output)
 
@@ -670,3 +727,26 @@ Twelve ≥10% ETH falls in the trailing year. Assuming both unmeasured legs scor
 **Reconciliation with the 2026-06-11 hold.** That entry withheld "gate softening" and recorded the ≥13/15/17/19 thresholds as part of the asymmetry tax. This revision moves three of those four lines. The withholding was correct *as a mirror decision* — it refused to import long-side loosening onto the short side without short-side evidence. What has changed is that short-side evidence now exists, and it says the binding constraint was never the thresholds but the cap. The two withheld items that actually guard against catastrophe are **untouched and reaffirmed**: there is still **no short-side Deep-Value Override** (and S1/S2 are now the only two non-mechanical channels, so no third path can appear), and there is still **no stop loosening** — this revision tightens stops, adds a ratchet, shortens clocks, and lowers caps.
 
 **N=0.** No FR report has run since 2026-06-18, so the 2026-07-04 tunes remain un-exercised, and *this* revision adds an entire untested channel on top of them. Channel B's parameters were read off six ETH events and validated on 22 more across two assets — that is a starting configuration, not a calibrated edge. The backtest carries four named falsifiers (F1–F4); the next calibration grades them and the S7 ledger together, with an explicit counterfactual against the mechanical framework alone. **Treat the first live cycle of Channel B as an experiment with a hard stop, not as a strategy.**
+
+### 2026-07-27 — Hardening pass: 35 findings from two adversarial audits
+
+Two independent audits were run against the revision above — one for internal contradictions, one an adversarial risk review instructed to break the framework. They returned 25 and 10 findings. The headline verdict of the risk audit is worth recording verbatim in substance: *the loosening was not the dangerous part; the sizing genuinely caps a single Channel B event at ~2% of the short book.* What was dangerous was **coherence and enforcement**.
+
+**Four findings that would have made the revision unsafe or useless:**
+
+1. **The §7 preflight would have voided Channel B at five of the six events it exists to capture**, and the §7 covers would have shredded any tranche that opened. F&G <40 and MVRV-Z <2 are near-permanent 40–60% off the high, and "price below the 50dma" is a Channel B *scoring positive*. The preflight and three cover rows are now channel-scoped, with Channel B getting its own five-trigger list built from its own regime tests. Without this the entire channel was theatre.
+2. **The linter never checked a single FR score line, gate floor, or mechanical stop distance.** `FR_SCORE_UNLOCK` and `FR_GATE_FLOORS` were exported and never imported. A 50%-of-book, zero-gate, Phase-3 short with stops 40% *below* entry linted **PASS, 0 errors**. That same report now yields 16. Everything the analyst was taxed on was enforced; almost nothing the mechanical path was promised on was.
+3. **The ladder was calibrated on the wrong distribution.** §4B scores 2–4 points higher than §4A on an equivalent setup, so Phase 2 — Channel B's *maximum* — sat at the **modal** Channel B signal. Channel B now has its own ladder (13/15/17), and the Bear Structure leg was rewritten: two of its three criteria were near-tautological with §4B's own regime precondition, handing every setup ~3 free points.
+4. **Discretion could reach past the phase-of-cycle cap.** The adjusted score was `round(Σ legs + discretionary)` — applied *before* the cap and *without* the squeeze-trap penalty or the bounce-maturity floor. A capped 14 plus a +2 cleared Phase 2. The formula is now `min(cap, clamp(mechanical + discretionary, 0, 20))`, so a +2 can neither outrank the cycle cap nor buy back a penalty.
+
+**Three controls that did not exist at all**, each added because the audit showed the framework had no representation of the risk:
+
+- **A stop noise floor.** The mandated stop lands 2.5–4% above fill; against ETH's ~2–3% daily σ that is a ~80% touch probability from noise over a 21-day hold. Stops now sit in a band — no tighter than 1.5×ADR(5), no wider than the phase ceiling — and if the floor exceeds the ceiling there is **no trade**. The corollary matters: tightening the stop is the *wrong* response to a poor win rate here.
+- **A per-asset concentration cap of 30%.** The two channels stacked legitimately into one name at 45–50% of the book, on two theses about one decline, all short, all facing the same squeeze. Every book-level cap held; none was measuring the thing that would hurt.
+- **A consecutive-stop-out suspension** (3 on one asset suspends Channel B there), plus a mandatory leverage/liquidation statement — a tranche whose liquidation price sits inside its stop is now prohibited, because a price-level stop is not the mechanism by which a short actually dies.
+
+**Also closed:** the S6 ratchet was dead code for mechanical tranches and reset on every stop-out (a position sequence now survives a stop-out and ends only with the regime); `score.penalty` was unbounded and unsigned; phase labels that did not parse skipped every limit; `time_stop` accepted prose; Channel A never had to prove its regime; score arithmetic went unchecked on any asset without a pinned rounding convention; and the FK≥12 / Hard-Rule-5 conflict is resolved explicitly — the force-cover is **unchanged and still fires**, while the both-≥12 *inconsistency* flag is scoped to Channel A. That leaves Channel B unavailable in the deepest fear, which is a real coverage limitation and the correct price for not weakening a cover trigger.
+
+**Corrections to the evidence document.** The backtest's method section claimed funding "cuts against shorts" — wrong, and contradicting this framework's own Jul-2026 sign correction; net carry is ≈±0.5% over 21 days and is not the risk. Slippage is, and the −6% worst case is a backtest artifact of modelling the exit as a touch at the stop. Trade counts are now printed (7 / 16 / 13): the signal fires **~3–7×/year**, not the ~15 this SKILL previously claimed — an error that materially understated the per-trade slippage budget.
+
+**What survived the audits unchanged:** the sizing schedule, Principle 14 (short the exhausted rally, never the breakdown — the audit called it the best finding in the study), gate 8 as the only true veto in either framework, the S5 tax, and the discarding of the curve-fit RSI≥52 variant. **N=0 still.** Two audits found 35 problems in a framework that had never produced a report; assume the third would find more.
