@@ -73,7 +73,7 @@ Population A is what Flying Rocket was designed for and scores competently. Popu
 
 Yet the B peaks have their own tight, consistent signature, visible on the day:
 
-> a **19–35% counter-trend rally** off a 40-day low, dying **below the 200dma**, with **daily** RSI-14 recovered to **58–67** while **weekly** RSI stays **31–48**.
+> a **19–35% counter-trend rally** off a 40-day low, dying **below the 200dma**, with **weekly** RSI still **31–48** and, in four of the six, **daily** RSI-14 recovered to **58–67**.
 
 Four of the six B peaks printed daily RSI 58.0 / 66.1 / 66.6 / 65.0. The framework measures euphoria on an absolute scale in a market that had already repriced 60%. What identifies a bear-rally top is **local, relative** euphoria — F&G 45 against a 30-day mean of 20 is a genuine sentiment extreme *for that regime*; weekly RSI is simply the wrong timeframe for a three-week bounce.
 
