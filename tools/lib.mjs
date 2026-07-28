@@ -551,11 +551,38 @@ export function positionSnapshotCheck(snap) {
  * no tranche dimension to infer one from. An open deal with no tag is reported
  * UNTAGGED — real position, honest attribution — never guessed from size or date.
  */
+export const LEDGER_ASSET_ALIASES = {
+  // The framework analyses SPOT GOLD; the ledger can only hold a token. PAXG is
+  // fully-backed tokenized gold redeemable for LBMA bars and tracks spot ~1:1,
+  // so reading it as the gold position is far closer to the truth than a cold
+  // start that pretends the position does not exist.
+  //
+  // It is a PROXY, not the same instrument, and the difference is not cosmetic:
+  // PAXG carries issuer/custody counterparty risk that spot gold does not, and
+  // it can trade at a premium or discount to XAU. So the alias is disclosed on
+  // every response rather than silently resolved — a report states that its
+  // gold position is held as PAXG.
+  GOLD: {
+    ledger: 'PAXG',
+    note: 'Position read from PAXG, tokenized gold. PAXG is a PROXY for spot gold — fully backed and tracking XAU ~1:1, but carrying issuer/custody counterparty risk that spot gold does not, and able to trade at a premium or discount. Quantity and cost basis are real; treat the instrument as PAXG, not bullion. Canonical gold SPOT still comes from Hard Rule 1 sources, never from this mark.',
+  },
+}
+
 export function positionForAsset(snap, assetRaw) {
-  const asset = String(assetRaw || '').toUpperCase()
-  const notTracked = (snap.coverage?.assets_not_tracked || []).map(a => String(a).toUpperCase())
+  const requested = String(assetRaw || '').toUpperCase()
+  const alias = LEDGER_ASSET_ALIASES[requested] || null
+  const asset = alias ? alias.ledger : requested
+  const aliasFields = alias
+    ? { requested_asset: requested, ledger_asset: alias.ledger, alias_note: alias.note }
+    : {}
+  const notTracked = (snap.coverage?.assets_not_tracked || [])
+    .map(a => String(a).toUpperCase())
+    // An alias resolves the coverage gap it was written for: the ledger lists GOLD
+    // as untracked because it holds no bullion, which stops being the relevant fact
+    // once the request has been routed to the token that stands in for it.
+    .filter(a => !(alias && a === requested))
   if (notTracked.includes(asset)) {
-    return { asset, covered: false, reason: 'not_tracked',
+    return { asset, ...aliasFields, covered: false, reason: 'not_tracked',
       note: 'This asset has no counterpart in the ledger and never will. Carry position state forward from the prior report; do NOT read a zero position from this response.' }
   }
 
@@ -567,7 +594,7 @@ export function positionForAsset(snap, assetRaw) {
   const funding = (snap.futures?.funding_by_asset || []).find(f => String(f.asset).toUpperCase() === asset) || null
 
   if (!position && openDeals.length === 0 && closedDeals.length === 0 && futures.length === 0) {
-    return { asset, covered: false, reason: 'no_ledger_history',
+    return { asset, ...aliasFields, covered: false, reason: 'no_ledger_history',
       note: 'The ledger tracks this asset but holds no position, no round trip and no open future in it. That is a genuine flat, not a gap — but it is stated, not inferred from an absent row.' }
   }
 
@@ -577,6 +604,7 @@ export function positionForAsset(snap, assetRaw) {
 
   return {
     asset,
+    ...aliasFields,
     covered: true,
     position,
     attribution: {

@@ -340,7 +340,9 @@ Run `node tools/position.mjs <asset>` **before** writing this section. It reads 
 
 **Band STALE (12–72 h):** usable **descriptively** — what is held, what it cost, how past trades performed — under an explicit age banner. It may **not** satisfy a phase-dependent unlock precondition and may not fill a realized ledger column.
 
-**Exit 1 (EXPIRED / missing) or exit 2 (NOT_COVERED, e.g. gold):** say so in one line and proceed as a **cold start under Hard Rule 4**, or carry state forward from the prior report for a not-covered asset. **Never read a zero position out of a NOT_COVERED response** — a flat position and an unknown position lead to opposite decisions. Refuse the position claim, never the report.
+**Exit 1 (EXPIRED / missing) or exit 2 (NOT_COVERED — an asset with no ledger counterpart and no alias):** say so in one line and proceed as a **cold start under Hard Rule 4**, or carry state forward from the prior report for a not-covered asset. **Never read a zero position out of a NOT_COVERED response** — a flat position and an unknown position lead to opposite decisions. Refuse the position claim, never the report.
+
+**Gold aliases onto PAXG** *(2026-07-28)*: the ledger cannot hold bullion, so `gold` resolves to the tokenized-gold position and comes back **covered**, carrying `requested_asset`/`ledger_asset`/`alias_note`. State in the report that the gold position is held as **PAXG** — a proxy tracking XAU ~1:1 but carrying issuer/custody counterparty risk bullion does not, and able to trade at a premium or discount. Canonical gold **spot** is unaffected and still comes from Hard Rule 1 sources; only the position is read from the ledger.
 
 **Two carve-outs survive even at FRESH, and only two.** (a) Snapshot `mark_price_usd` is **informational** and never becomes this report's canonical spot — Hard Rule 1's independent multi-venue cross-check stands. (b) Phase attribution comes from **deal tags only**; an untagged holding is reported as real-but-`UNTAGGED`, never inferred from quantity or timing, because a guessed phase can unlock the next tranche.
 

@@ -326,8 +326,9 @@ ok('a truncated file names the missing block',
 {
   const snap = {
     schema: 'position-snapshot/1',
-    coverage: { assets_not_tracked: ['GOLD'] },
-    positions: [{ asset: 'BTC', qty: '1.5', avg_cost_usd: '71204.0000' }],
+    coverage: { assets_not_tracked: ['GOLD', 'SILVER'] },
+    positions: [{ asset: 'BTC', qty: '1.5', avg_cost_usd: '71204.0000' },
+                { asset: 'PAXG', qty: '1.3293894', avg_cost_usd: '4204.5027' }],
     deals: {
       open: [{ asset: 'BTC', deal_key: 'SPOT:BTC:a', tag: 'FK-P1A' },
              { asset: 'BTC', deal_key: 'SPOT:BTC:b', tag: null }],
@@ -337,10 +338,34 @@ ok('a truncated file names the missing block',
     futures: { open_positions: [{ base_asset: 'ETH', side: 'SHORT' }], funding_by_asset: [{ asset: 'ETH' }] },
     performance: { by_tag: [{ tag: 'FK-P1A', performance: { deal_count: 3 } }] },
   }
+  // Gold aliases onto PAXG (2026-07-28): the ledger cannot hold bullion, and a
+  // cold start that pretends the position does not exist is further from the
+  // truth than reading the token that stands in for it. The alias is DISCLOSED,
+  // never silently resolved — PAXG carries issuer/custody risk spot gold does
+  // not, so a report must be able to say which instrument it is holding.
   const gold = positionForAsset(snap, 'gold')
-  eq('gold is NOT COVERED', gold.covered, false)
-  ok('gold never reports a quantity at all', gold.qty === undefined && gold.position === undefined)
-  ok('gold says carry state forward from the prior report', /prior report/.test(gold.note))
+  eq('gold resolves onto its ledger proxy', gold.covered, true)
+  eq('...and the projection targets PAXG', gold.asset, 'PAXG')
+  eq('...while still naming what was asked for', gold.requested_asset, 'GOLD')
+  ok('...and the proxy caveat travels with the number',
+    /PROXY/.test(gold.alias_note) && /counterparty risk/.test(gold.alias_note))
+  eq('...reading the real PAXG row', gold.position.qty, '1.3293894')
+  ok('...and the mark never becomes canonical gold spot', /Hard Rule 1/.test(gold.alias_note))
+
+  // An asset that is genuinely untracked and has no proxy is still the original
+  // case, and still must never come back as a zero position: zero and unknown
+  // lead to opposite decisions and nothing else distinguishes them.
+  const silver = positionForAsset(snap, 'silver')
+  eq('an untracked asset with no alias is NOT COVERED', silver.covered, false)
+  eq('...for the named reason', silver.reason, 'not_tracked')
+  ok('...never reporting a quantity at all', silver.qty === undefined && silver.position === undefined)
+  ok('...and saying carry state forward from the prior report', /prior report/.test(silver.note))
+
+  // The alias is not a licence to invent: if the proxy itself has no ledger
+  // history, gold falls back to an honest gap rather than a fabricated flat.
+  const goldEmpty = positionForAsset({ ...snap, positions: [], deals: { open: [], closed: [] } }, 'gold')
+  eq('gold with no PAXG history is not covered', goldEmpty.covered, false)
+  eq('...and says so as a gap, not a zero', goldEmpty.reason, 'no_ledger_history')
 
   const btc = positionForAsset(snap, 'btc')
   eq('btc is covered', btc.covered, true)
@@ -355,7 +380,6 @@ ok('a truncated file names the missing block',
   const sol = positionForAsset(snap, 'sol')
   eq('an asset with no history is not covered either', sol.covered, false)
   eq('...but for a different, named reason', sol.reason, 'no_ledger_history')
-  eq('gold\'s reason is distinct', gold.reason, 'not_tracked')
 
   // A short lives on the futures side; the projection must find it by base asset.
   const eth = positionForAsset(snap, 'eth')

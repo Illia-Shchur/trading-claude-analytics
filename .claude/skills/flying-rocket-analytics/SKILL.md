@@ -375,7 +375,9 @@ Run `node tools/position.mjs <asset>` **before** writing this section. It reads 
 
 **Band STALE (12–72 h):** descriptive use only, under an explicit age banner. It may **not** satisfy a phase-dependent unlock precondition — including Phase 1B's *"1A in profit or scratch"* — and may not fill a realized ledger column below.
 
-**Exit 1 (EXPIRED / missing) or exit 2 (NOT_COVERED):** say so in one line and proceed as a **cold start under Hard Rule 4**. Never read a zero position out of a NOT_COVERED response. Refuse the position claim, never the report.
+**Exit 1 (EXPIRED / missing) or exit 2 (NOT_COVERED — an asset with no ledger counterpart and no alias):** say so in one line and proceed as a **cold start under Hard Rule 4**. Never read a zero position out of a NOT_COVERED response. Refuse the position claim, never the report.
+
+**Gold aliases onto PAXG** *(2026-07-28)*: the ledger cannot hold bullion, so `gold` resolves to the tokenized-gold position and comes back **covered**, carrying `requested_asset`/`ledger_asset`/`alias_note`. State in the report that the gold position is held as **PAXG** — a proxy tracking XAU ~1:1 but carrying issuer/custody counterparty risk bullion does not, and able to trade at a premium or discount. Canonical gold **spot** is unaffected and still comes from Hard Rule 1 sources; only the position is read from the ledger.
 
 **Two carve-outs survive even at FRESH, and only two.** (a) Snapshot marks are **informational** and never become canonical spot — and note the snapshot's `liquidation_price_usd` is **always null**: liquidation price is not synced, and a null there is *not* permission to omit a stated liquidation price from a levered tranche. (b) Phase attribution comes from **deal tags only**; an untagged short is real-but-`UNTAGGED`, never inferred from size or timing.
 
