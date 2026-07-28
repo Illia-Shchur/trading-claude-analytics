@@ -41,6 +41,7 @@ Tag every figure with **source + timestamp**.
 
 The repo ships `tools/` (see `tools/README.md`) so the numeric backbone is **computed, not narrated** — the failure modes it retires were all hand-done steps (the 4-report RSI NOT-FOUND debt, the ETH `ceil(7/9×8)=6` misprint, eyeballed EV sum-checks, ADR absorbing a half-session).
 
+0. **Position (Hard Rule 8):** run `node tools/position.mjs <asset>` first. What you already hold — real quantity, ACB, and above all **real dry powder** — changes what the rest of the report is deciding, and sizing a tranche before checking the cash exists is how a plan spends money it does not have. Exit `0` FRESH/STALE, `1` EXPIRED or missing (cold start per Hard Rule 4, stated), `2` NOT_COVERED (never a zero position). See §6 "Position & Performance".
 1. **Fetch:** start every report with `node tools/fetch.mjs <asset>` (+ `node tools/fetch.mjs macro`). It returns, with source + timestamp on every block: cross-checked spot (>1.5% divergence flagged), ATH/drawdown, weekly closes → **computed Wilder RSI-14** (satisfying the momentum input rule's auditability line: source, boundary, period, closes count), the **exact 200-week SMA** with the gate-6 ±8% boolean (retires the "estimated, flagged" 200-week), daily sessions + 5-day ADR (exclude abbreviated sessions via `tools/compute.mjs adr --exclude`), and F&G spot / 3-day average / gate-1 daily-print streaks from the pinned provider.
 2. **Compute:** band assignments, `ceil` gate thresholds, per-asset .5 rounding, EV recomputation, and the stop-coherence boolean come from `tools/compute.mjs` (or the fetch output) — hand arithmetic is a cross-check, never the source of record. The band classifiers in `tools/lib.mjs` mirror §4 letter-for-letter; **any band/threshold change to this SKILL must change `tools/lib.mjs` + `tools/selftest.mjs` in the same commit.**
 3. **Scope honesty:** the toolchain covers price/momentum/valuation-input/sentiment/macro series only. ETF flows (Farside is bot-blocked), on-chain (MVRV-Z, LTH, reserves, liquidations), COT, and news remain live web fetches under Hard Rule 1 — a tool-covered field never excuses a missing web-sourced one.
@@ -326,6 +327,23 @@ For each phase show: capital share, trigger zone, gates required, current status
 
 **Dry powder yield benchmark:** state assumed opportunity cost (current T-bill yield or USDC/sDAI yield). Cash is a position; idle cash has a measurable cost.
 
+#### Position & Performance (Hard Rule 8 — read the ledger before sizing anything)
+
+Run `node tools/position.mjs <asset>` **before** writing this section. It reads the position snapshot exported from the personal-accounting ledger — derived from actual Binance fills, not from what a prior report said. This replaces the narrated carry-forward line that used to open §6.
+
+**Exit 0 / band FRESH (≤12 h): these figures are the position of record and supersede any number carried forward from a prior report.** Print, from the snapshot:
+
+- **Position of record** — real quantity, ACB cost basis (`avg_cost_usd`), total cost, unrealized PnL, and each holding's **attribution** (its deal tag, e.g. `FK-P1A`, or `UNTAGGED`).
+- **Real dry powder** — `dry_powder.stable_balance_usd`. This is the sharp one. A phase plan sized as "45% of the book" against a book that was never measured is arithmetic, not a plan; check the tranche against an actual balance. Note that `dry_powder` **excludes futures-wallet collateral** (already counted as equity) and **includes** stablecoins locked in resting orders.
+- **Realized performance** — closed round trips for this asset with realized PnL and hold time, plus win rate / profit factor / expectancy overall and **per tag** (`performance_by_tag`, and `performance_by_tag_prefix` for the whole framework). State how Phase 1A entries have actually performed; do not assert it.
+- **Position Reconciliation** — where the prior report's narrated figures diverge from the ledger, naming the delta. **The ledger wins.** The line survives from the old convention with its meaning inverted: it used to reconcile the ledger against the report, and now it flags where the report drifted.
+
+**Band STALE (12–72 h):** usable **descriptively** — what is held, what it cost, how past trades performed — under an explicit age banner. It may **not** satisfy a phase-dependent unlock precondition and may not fill a realized ledger column.
+
+**Exit 1 (EXPIRED / missing) or exit 2 (NOT_COVERED, e.g. gold):** say so in one line and proceed as a **cold start under Hard Rule 4**, or carry state forward from the prior report for a not-covered asset. **Never read a zero position out of a NOT_COVERED response** — a flat position and an unknown position lead to opposite decisions. Refuse the position claim, never the report.
+
+**Two carve-outs survive even at FRESH, and only two.** (a) Snapshot `mark_price_usd` is **informational** and never becomes this report's canonical spot — Hard Rule 1's independent multi-venue cross-check stands. (b) Phase attribution comes from **deal tags only**; an untagged holding is reported as real-but-`UNTAGGED`, never inferred from quantity or timing, because a guessed phase can unlock the next tranche.
+
 #### Ledger tag (print on every tranche that fills)
 
 When a report authorizes a fill, print the **ledger tag** for that tranche alongside the status line. The tag is what the personal-accounting ledger records against the round-trip deal, and it is the *only* thing that connects a real Binance position back to the tranche that authorized it — the ledger stores quantity and cost basis, but `crypto_trade` has no tranche dimension and never will. An untagged holding is a real position with unknown attribution; it cannot resolve a phase-dependent unlock precondition.
@@ -597,3 +615,17 @@ Every tranche that fills now prints a **ledger tag** (`FK-P1A`/`FK-P1B`/`FK-P2`/
 The tag is load-bearing for one reason: the ledger records quantity and cost basis but has no tranche dimension, so nothing except the tag can say which tranche authorized a holding. An untagged position is therefore reported as real-but-`UNTAGGED` and may not resolve a phase-dependent unlock precondition. Tagging stays **manual** — inferring a phase from quantity or timing is a guess, and a guessed phase unlocks the next tranche.
 
 **No score, band, threshold, gate, phase size, stop, or cap moved.** `tools/lib.mjs` and `tools/selftest.mjs` are untouched by design (no rubric changed); `selftest.mjs` passes.
+
+### 2026-07-28 — Position of record: the ledger supersedes the narration (Hard Rule 8, §6 + toolchain)
+
+`node tools/position.mjs <asset>` reads a `position-snapshot/1` file exported from the personal-accounting ledger and derived from **actual Binance fills**. §6 gains a **Position & Performance** subsection sourced from it, and the toolchain gains step 0: run it *before* `fetch`.
+
+The problem it retires is specific and was verifiable on disk. Across the report series, `deployment.tranches[].entry` was a prose string in **every** case and `deployed: true` appeared **zero** times; the BTC cost basis (`"~65000 blended"`) was a remembered figure retyped report after report and never once checked against a fill; and `deployed_pct: 10` meant "10% of an unstated notional" because no book size existed anywhere. A framework that plans a 45% Phase 3 against cash it has never measured is doing arithmetic, not planning.
+
+**What changed and what did not.** A FRESH (≤12 h) snapshot is now the position of record and supersedes any narrated carry-forward figure; Hard Rule 4's dry-powder default is amended to govern only the *absence* of fresh evidence (STALE, EXPIRED, NOT_COVERED — still most cases). The **Position Reconciliation** line survives with its meaning inverted: it now flags where a *prior report's* figures drifted from the ledger, and the ledger wins.
+
+Two carve-outs survive even at FRESH, and only two: snapshot marks never become canonical spot (Hard Rule 1's independent multi-venue cross-check is the point, and sourcing spot from your own database defeats it), and phase attribution comes from **deal tags only** — an untagged holding is real-but-`UNTAGGED`, never inferred, because a guessed phase unlocks the next tranche.
+
+Freshness bands on the **older** of `generated_at` and `holdings_as_of`: the ledger's live balances refresh only on an explicit link, so a file written a minute ago can be valuing week-old balances, and banding on the write time alone would report FRESH for a position nobody has re-read in a week. Missing, stale-beyond-72h, or not-covered **refuses the position claim, never the report** — it routes into Rule 4's existing safe default rather than into a stall, so the framework never becomes dependent on a hand-started app.
+
+**No score, band, threshold, gate, phase size, stop, or cap moved.** `tools/lib.mjs` gains only new pure functions (`positionFreshness`, `positionSnapshotCheck`, `positionForAsset`) — no existing rubric was touched; `tools/selftest.mjs` gains vectors for the three bands, the `holdings_as_of` override, fail-closed on missing timestamps, schema rejection, gold-is-not-zero, and untagged attribution. `selftest.mjs` passes.

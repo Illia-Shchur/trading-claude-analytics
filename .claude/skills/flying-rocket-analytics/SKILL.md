@@ -69,6 +69,7 @@ Tag every figure with **source + timestamp**.
 
 Use the repo toolchain (`tools/README.md`) for every computable number:
 
+0. **Position (Hard Rule 8):** run `node tools/position.mjs <asset>` first. Real dry powder against the 50% book cap, open shorts reconciled against the tranche ledger, and per-channel realized win rate (`FR-A-` vs `FR-B-`) all come from it — see §6 "Position & Performance". Exit `0` FRESH/STALE, `1` EXPIRED or missing (cold start per Hard Rule 4, stated), `2` NOT_COVERED (never a zero position).
 1. **Fetch:** `node tools/fetch.mjs <asset>` (+ `macro`) — cross-checked spot (>1.5% divergence flagged, feeding the canonical-spot reconciliation), computed weekly Wilder RSI-14, **trailing-1-year high with % below** (the §4 phase-of-cycle cap input, computed not eyeballed), F&G 3-day average, VIX/DXY/real-yield/Brent macro block. The same fetch also feeds the mandatory computed Fallen Knives companion score — both sides score off one data pull, making Hard Rule 5's inverse check same-timestamp by construction.
 2. **Compute:** `node tools/compute.mjs fr-funding --per8h X` (annualized + monthly bleed, sign convention printed), `fr-cap --spot X --ath1y Y` (cycle cap tier), `band fr-*` (rubric bands), `ev`, `adr`. **Edge convention codified in code (Hard Rule 6):** where §4's dash-range bands leave an exact edge ambiguous, `tools/lib.mjs` resolves it to the LOWER-score band — the harder-to-short reading (RSI exactly 75 → 3, not 4; MVRV-Z exactly 5 → 4; exactly 10% below 1y-ATH → cap 14 applies). A tightening-or-neutral mirror of the FK edge rule, never a loosening.
 3. **Scope honesty + failure:** ETF flows, on-chain, derivatives positioning (funding/OI/skew), borrow rates, and news remain live web fetches per Hard Rule 1; on tool-source failure, follow the documented fallback rules and disclose.
@@ -360,12 +361,34 @@ The suspension is recorded in the S7 Discretion Ledger and may not be lifted by 
 
 **Total max short exposure: 50% of dedicated short book. Remaining 50% is structural dry powder for adverse moves / averaging at higher prices ONLY if thesis intact AND score has not deteriorated.**
 
+#### Position & Performance (Hard Rule 8 — read the ledger before sizing anything)
+
+Run `node tools/position.mjs <asset>` **before** writing this section. It reads the position snapshot exported from the personal-accounting ledger — derived from actual Binance fills, not from what a prior report said. This replaces the narrated carry-forward line that used to open §6.
+
+**Exit 0 / band FRESH (≤12 h): these figures are the position of record and supersede any number carried forward from a prior report.** Print, from the snapshot:
+
+- **Position of record** — real quantity, ACB cost basis, unrealized PnL, and each holding's **attribution** (its deal tag, e.g. `FR-B-1A`, or `UNTAGGED`).
+- **Open shorts reconciled against the tranche ledger** — `futures.open_positions` where `side: "SHORT"`, matched to the tranches §6 believes are live. A short in the account that no tranche authorizes, or a tranche with no position behind it, is a discrepancy to state, not to average out.
+- **Real dry powder** — `dry_powder.stable_balance_usd`, against the 50% book cap and the 30% per-asset cap. Note it **excludes futures-wallet collateral**, which is counted as equity, not powder.
+- **Realized performance** — closed round trips with realized PnL and hold time, plus win rate / profit factor / expectancy per tag. `performance_by_tag_prefix` carries `FR-A-` and `FR-B-` separately: **per-channel win rate is exactly the evidence Hard Rule 6 asks for**, and it is now readable rather than asserted.
+- **Position Reconciliation** — where the prior report's narrated figures diverge from the ledger, naming the delta. **The ledger wins.**
+
+**Band STALE (12–72 h):** descriptive use only, under an explicit age banner. It may **not** satisfy a phase-dependent unlock precondition — including Phase 1B's *"1A in profit or scratch"* — and may not fill a realized ledger column below.
+
+**Exit 1 (EXPIRED / missing) or exit 2 (NOT_COVERED):** say so in one line and proceed as a **cold start under Hard Rule 4**. Never read a zero position out of a NOT_COVERED response. Refuse the position claim, never the report.
+
+**Two carve-outs survive even at FRESH, and only two.** (a) Snapshot marks are **informational** and never become canonical spot — and note the snapshot's `liquidation_price_usd` is **always null**: liquidation price is not synced, and a null there is *not* permission to omit a stated liquidation price from a levered tranche. (b) Phase attribution comes from **deal tags only**; an untagged short is real-but-`UNTAGGED`, never inferred from size or timing.
+
 #### Carry Cost Ledger (mandatory section when any short is live)
 
 | Phase | Entry Date | Notional | Funding Annualized at Entry | Cumulative Funding Paid | Days Held |
 |---|---|---|---|---|---|
 
 State assumed carry-cost-to-target as a % of expected gain. **If carry > 40% of target gain, the trade is structurally bad — do not enter, regardless of score.**
+
+**Filling the realized column from the ledger — and the sign trap that will invert it if you do not read this.** *Cumulative Funding Paid* is filled from `futures.funding_by_asset[].funding_usd` in the position snapshot. That figure is **account cashflow**: negative means funding was **paid out of the account**, positive means received — whichever side the position is on. This framework's *"positive funding = income to a short"* describes the **market rate**, which is direction-agnostic. They are different quantities and they **invert**: a long paying positive-rate funding books *negative* in the ledger. Use the ledger figure **only** for this realized column, and read its `funding_sign_convention` string inline before transcribing a number. *Funding Annualized at Entry* stays a **live rate quote** and never comes from the ledger.
+
+**Grain gap, stated not hidden.** This ledger is per **tranche**; the account's funding is recorded per **symbol** and never will have a tranche dimension (futures never enters the cost-basis engine). When more than one tranche is live in the same symbol, the per-symbol total must be **allocated by hand** across the rows — say that you allocated it and on what basis. It is 1:1 only while a single tranche is live. Do not present an allocated figure as if the ledger measured it per tranche.
 
 #### Ledger tag (print on every tranche that fills)
 
@@ -773,3 +796,15 @@ Every short tranche that fills now prints a **ledger tag** (`FR-A-1A`…`FR-A-3`
 The tag is load-bearing because the ledger has no tranche dimension: nothing else connects a real position to the tranche that authorized it. An untagged short is reported as real-but-`UNTAGGED` and may not resolve a phase-dependent precondition such as Phase 1B's *"1A in profit or scratch."* Tagging stays **manual** — a guessed phase unlocks the next tranche, and on the short side that is exactly the failure Hard Rule 6 exists to prevent.
 
 **Nothing was relaxed.** No stop, time stop, size cap, ratchet, cover trigger, carry veto or funding gate was touched; no score, band or threshold moved. `tools/lib.mjs` and `tools/selftest.mjs` are unchanged (no rubric changed); `selftest.mjs` passes.
+
+### 2026-07-28 — Position of record: the ledger supersedes the narration (Hard Rule 8, §6 + toolchain)
+
+`node tools/position.mjs <asset>` reads a `position-snapshot/1` file exported from the personal-accounting ledger and derived from **actual Binance fills**. §6 gains a **Position & Performance** subsection sourced from it, and the toolchain gains step 0: run it *before* `fetch`.
+
+For the short side specifically it supplies four things this framework has been asserting rather than reading: **real dry powder** against the 50% book cap and the 30% per-asset cap; **open shorts** (`side: "SHORT"`, read off the sign of the position amount) reconciled against the tranches §6 believes are live; **per-channel realized win rate** via `FR-A-` vs `FR-B-` tag prefixes — the exact evidence Hard Rule 6 requires before any short-side threshold is revisited; and the realized **Cumulative Funding Paid** column of the Carry Cost Ledger.
+
+**The funding sign trap is now documented inline in §6, because it inverts silently.** The ledger stores **account cashflow** (paid = negative, direction-aware); this framework's *"positive funding = income to a short"* describes the direction-agnostic **market rate**. A long paying positive-rate funding books *negative* in the ledger. The ledger figure is admissible **only** for the realized column; *Funding Annualized at Entry* stays a live rate quote. The **grain gap** is stated rather than hidden: funding is recorded per symbol and will never have a tranche dimension, so a multi-tranche symbol requires a hand allocation that must be disclosed as one.
+
+Bands are FRESH ≤12 h / STALE 12–72 h / EXPIRED beyond, computed on the **older** of `generated_at` and `holdings_as_of`. STALE may not resolve a phase-dependent precondition — including Phase 1B's *"1A in profit or scratch."* EXPIRED, missing, or NOT_COVERED refuses the **position claim, never the report**, routing into Hard Rule 4's cold-start default. Note that the snapshot's `liquidation_price_usd` is always null (not synced) and that a null there is **not** permission to omit a stated liquidation price from a levered tranche.
+
+**Nothing was relaxed.** No stop, time stop, size cap, ratchet, cover trigger, carry veto or funding gate was touched; no score, band or threshold moved. Rule 8 only replaces a narrated position figure with a measured one — and every one of its failure modes fails *toward* the more conservative existing rule. `tools/lib.mjs` gains only new pure functions; `tools/selftest.mjs` gains vectors for the bands, the `holdings_as_of` override, fail-closed on missing timestamps, schema rejection, gold-is-not-zero, and untagged attribution. `selftest.mjs` passes.

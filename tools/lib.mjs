@@ -462,4 +462,137 @@ export function fngStreak(values, threshold) {
   return streak
 }
 
+// ── position snapshot (Hard Rule 8) ─────────────────────────────────────────
+// Pure projection + freshness banding over the position-snapshot/1 file exported
+// from the personal-accounting ledger. No filesystem here — tools/position.mjs
+// owns the read; everything rule-shaped lives in this file so selftest covers it.
+
+export const POSITION_SNAPSHOT_SCHEMA = 'position-snapshot/1'
+
+/** Freshness bounds in MINUTES: ≤12h FRESH, ≤72h STALE, beyond that EXPIRED. */
+export const POSITION_FRESHNESS = { stale: 720, expired: 4320 }
+
+/**
+ * Band a snapshot's age. Takes BOTH timestamps and uses the OLDER of the two:
+ * `crypto_holding` refreshes only on `POST /link`, so a file written a minute ago
+ * can be valuing week-old balances. Banding on `generated_at` alone would report
+ * FRESH for a position nobody has re-read in a week — the failure mode this
+ * function exists to prevent, not an edge case.
+ *
+ * All arguments are epoch-ms numbers or ISO strings; a missing/unparseable
+ * `generatedAt` is EXPIRED, never a pass. A missing `holdingsAsOf` is treated as
+ * unknown-and-therefore-old for the same fail-closed reason.
+ */
+export function positionFreshness(generatedAt, holdingsAsOf, now = Date.now(), opts = {}) {
+  const { stale = POSITION_FRESHNESS.stale, expired = POSITION_FRESHNESS.expired } = opts
+  const nowMs = toMs(now)
+  const genMs = toMs(generatedAt)
+  const holdMs = toMs(holdingsAsOf)
+
+  if (genMs === null) {
+    return { band: 'EXPIRED', age_min: null, driver: 'generated_at', generated_age_min: null,
+      holdings_age_min: null, stale_after_min: stale, expired_after_min: expired,
+      note: 'generated_at is missing or unparseable — treat as no snapshot at all (cold start, Hard Rule 4)' }
+  }
+  const genAge = Math.round((nowMs - genMs) / 60000)
+  // Unknown holdings_as_of fails closed: unknown age is old age, never fresh age.
+  const holdAge = holdMs === null ? Infinity : Math.round((nowMs - holdMs) / 60000)
+  const age = Math.max(genAge, holdAge)
+  const driver = holdAge > genAge ? 'holdings_as_of' : 'generated_at'
+
+  const band = age <= stale ? 'FRESH' : (age <= expired ? 'STALE' : 'EXPIRED')
+  const note = band === 'FRESH'
+    ? 'position of record — supersedes any figure carried forward from a prior report'
+    : band === 'STALE'
+      ? 'descriptive use only, with an age banner. May NOT satisfy a phase-dependent unlock precondition or fill a realized ledger column.'
+      : 'cold start per Hard Rule 4 — state explicitly that no fresh ledger was available'
+  return { band, age_min: age === Infinity ? null : age, driver,
+    generated_age_min: genAge, holdings_age_min: holdAge === Infinity ? null : holdAge,
+    stale_after_min: stale, expired_after_min: expired, note }
+}
+
+function toMs(v) {
+  if (v === null || v === undefined) return null
+  if (typeof v === 'number') return Number.isFinite(v) ? v : null
+  const t = Date.parse(v)
+  return Number.isNaN(t) ? null : t
+}
+
+/**
+ * Structural check before a single figure is read. Deliberately shallow — it
+ * verifies the schema tag and that every block a caller dereferences exists, so a
+ * v2 file or a truncated write is rejected loudly instead of yielding undefined
+ * that formats as a plausible blank.
+ */
+export function positionSnapshotCheck(snap) {
+  const errors = []
+  if (!snap || typeof snap !== 'object') return { ok: false, errors: ['not a JSON object'] }
+  if (snap.schema !== POSITION_SNAPSHOT_SCHEMA) {
+    errors.push(`schema is ${JSON.stringify(snap.schema)}, expected "${POSITION_SNAPSHOT_SCHEMA}"`)
+  }
+  for (const key of ['generated_at', 'source', 'portfolio', 'dry_powder', 'positions',
+    'futures', 'trades', 'deals', 'performance', 'coverage']) {
+    if (snap[key] === undefined || snap[key] === null) errors.push(`missing top-level "${key}"`)
+  }
+  if (snap.positions !== undefined && !Array.isArray(snap.positions)) errors.push('"positions" is not an array')
+  return { ok: errors.length === 0, errors }
+}
+
+/**
+ * Project one asset out of a snapshot.
+ *
+ * `covered:false` is the whole point of this function. An asset the ledger does
+ * not track (gold) must never come back as `qty: 0` — a zero position and an
+ * unknown position lead to opposite decisions, and the framework has no other
+ * signal to tell them apart.
+ *
+ * Attribution comes ONLY from deal tags. The ledger knows what is held and what
+ * it cost; it does not know which tranche authorized it, and `crypto_trade` has
+ * no tranche dimension to infer one from. An open deal with no tag is reported
+ * UNTAGGED — real position, honest attribution — never guessed from size or date.
+ */
+export function positionForAsset(snap, assetRaw) {
+  const asset = String(assetRaw || '').toUpperCase()
+  const notTracked = (snap.coverage?.assets_not_tracked || []).map(a => String(a).toUpperCase())
+  if (notTracked.includes(asset)) {
+    return { asset, covered: false, reason: 'not_tracked',
+      note: 'This asset has no counterpart in the ledger and never will. Carry position state forward from the prior report; do NOT read a zero position from this response.' }
+  }
+
+  const position = (snap.positions || []).find(p => String(p.asset).toUpperCase() === asset) || null
+  const openDeals = (snap.deals?.open || []).filter(d => String(d.asset).toUpperCase() === asset)
+  const closedDeals = (snap.deals?.closed || []).filter(d => String(d.asset).toUpperCase() === asset)
+  const fills = (snap.trades?.by_asset || []).find(t => String(t.asset).toUpperCase() === asset) || null
+  const futures = (snap.futures?.open_positions || []).filter(p => String(p.base_asset).toUpperCase() === asset)
+  const funding = (snap.futures?.funding_by_asset || []).find(f => String(f.asset).toUpperCase() === asset) || null
+
+  if (!position && openDeals.length === 0 && closedDeals.length === 0 && futures.length === 0) {
+    return { asset, covered: false, reason: 'no_ledger_history',
+      note: 'The ledger tracks this asset but holds no position, no round trip and no open future in it. That is a genuine flat, not a gap — but it is stated, not inferred from an absent row.' }
+  }
+
+  const tags = [...new Set(openDeals.map(d => d.tag).filter(Boolean))]
+  const untagged = openDeals.filter(d => !d.tag).length
+  const perfByTag = (snap.performance?.by_tag || []).filter(t => tags.includes(t.tag))
+
+  return {
+    asset,
+    covered: true,
+    position,
+    attribution: {
+      tags,
+      untagged_open_deals: untagged,
+      note: untagged > 0
+        ? `${untagged} open deal(s) carry no tag. Report the position as real but attribution UNTAGGED — a phase-dependent unlock precondition cannot resolve through an untagged holding.`
+        : 'every open deal carries a phase tag',
+    },
+    open_deals: openDeals,
+    closed_deals: closedDeals,
+    fills: fills ? { fill_count_total: fills.fill_count_total, fills: fills.fills } : null,
+    futures_positions: futures,
+    funding,
+    performance_by_tag: perfByTag,
+  }
+}
+
 export const _internal = { round2 }

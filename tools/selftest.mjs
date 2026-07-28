@@ -10,7 +10,8 @@ import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds, FK_V
   mechanicalScore, frChannel, frB, FR_SCORE_UNLOCK, FR_GATE_FLOORS, frPhasesUnlockedByScore,
   s5StopCheck, frRatchetCheck, FR_S5, FR_CHANNEL_B,
   FR_SCORE_UNLOCK_B, frUnlockLadder, frStopBand, FR_MECH_STOP_PCT,
-  FR_MIN_STOP_ADR_MULT, FR_MAX_PER_ASSET_PCT } from './lib.mjs'
+  FR_MIN_STOP_ADR_MULT, FR_MAX_PER_ASSET_PCT,
+  positionFreshness, positionSnapshotCheck, positionForAsset, POSITION_FRESHNESS } from './lib.mjs'
 
 let failures = 0
 function eq(name, got, want) {
@@ -281,6 +282,83 @@ ok('without ADR the band still returns bounds but flags the floor unchecked',
 // Concentration: the two channels may not stack into one asset.
 eq('per-asset cap is 30% across BOTH channels', FR_MAX_PER_ASSET_PCT, 30)
 ok('the per-asset cap binds tighter than the 50% book cap', FR_MAX_PER_ASSET_PCT < 50)
+
+// ── position snapshot / Hard Rule 8 ─────────────────────────────────────────
+// The bands decide whether a report may state a position as fact. Each vector
+// below corresponds to a way the framework could quietly start lying.
+const T0 = Date.parse('2026-07-28T12:00:00Z')
+const ago = min => new Date(T0 - min * 60000).toISOString()
+
+eq('freshness bounds are 12h / 72h in minutes', POSITION_FRESHNESS, { stale: 720, expired: 4320 })
+eq('1h old, holdings just as fresh → FRESH', positionFreshness(ago(60), ago(60), T0).band, 'FRESH')
+eq('exactly 12h → still FRESH (inclusive edge)', positionFreshness(ago(720), ago(720), T0).band, 'FRESH')
+eq('12h + 1min → STALE', positionFreshness(ago(721), ago(721), T0).band, 'STALE')
+eq('exactly 72h → still STALE (inclusive edge)', positionFreshness(ago(4320), ago(4320), T0).band, 'STALE')
+eq('72h + 1min → EXPIRED', positionFreshness(ago(4321), ago(4321), T0).band, 'EXPIRED')
+
+// The second staleness axis. crypto_holding refreshes only on POST /link, so a
+// file written a minute ago can be valuing week-old balances. Without this, a
+// report reads FRESH off a position nobody has re-checked in a week.
+{
+  const f = positionFreshness(ago(1), ago(10080), T0) // written now, balances 7 days old
+  eq('holdings_as_of dominates a just-written file', f.band, 'EXPIRED')
+  eq('...and the driver names which timestamp did it', f.driver, 'holdings_as_of')
+  eq('...while generated_at alone would have said 1 minute', f.generated_age_min, 1)
+}
+eq('an unknown holdings_as_of fails CLOSED, not open',
+  positionFreshness(ago(1), null, T0).band, 'EXPIRED')
+eq('a missing generated_at is EXPIRED, never a pass',
+  positionFreshness(null, ago(1), T0).band, 'EXPIRED')
+ok('--max-age-min narrows the FRESH window',
+  positionFreshness(ago(60), ago(60), T0, { stale: 30 }).band === 'STALE')
+
+// Schema gate: an unrecognised file must be refused, not partially read.
+ok('a v2 file is rejected', !positionSnapshotCheck({ schema: 'position-snapshot/2' }).ok)
+ok('a truncated file names the missing block',
+  positionSnapshotCheck({ schema: 'position-snapshot/1', generated_at: 'x' }).errors.some(e => /positions/.test(e)))
+
+// Projection. The gold case is the one that matters most: an untracked asset
+// must never come back as a zero position, because zero and unknown lead to
+// opposite decisions and nothing else distinguishes them.
+{
+  const snap = {
+    schema: 'position-snapshot/1',
+    coverage: { assets_not_tracked: ['GOLD'] },
+    positions: [{ asset: 'BTC', qty: '1.5', avg_cost_usd: '71204.0000' }],
+    deals: {
+      open: [{ asset: 'BTC', deal_key: 'SPOT:BTC:a', tag: 'FK-P1A' },
+             { asset: 'BTC', deal_key: 'SPOT:BTC:b', tag: null }],
+      closed: [{ asset: 'ETH', tag: 'FR-B-1A' }],
+    },
+    trades: { by_asset: [{ asset: 'BTC', fill_count_total: 9, fills: [{ price: '69000' }] }] },
+    futures: { open_positions: [{ base_asset: 'ETH', side: 'SHORT' }], funding_by_asset: [{ asset: 'ETH' }] },
+    performance: { by_tag: [{ tag: 'FK-P1A', performance: { deal_count: 3 } }] },
+  }
+  const gold = positionForAsset(snap, 'gold')
+  eq('gold is NOT COVERED', gold.covered, false)
+  ok('gold never reports a quantity at all', gold.qty === undefined && gold.position === undefined)
+  ok('gold says carry state forward from the prior report', /prior report/.test(gold.note))
+
+  const btc = positionForAsset(snap, 'btc')
+  eq('btc is covered', btc.covered, true)
+  eq('btc attribution lists only real tags', btc.attribution.tags, ['FK-P1A'])
+  eq('an untagged open deal is COUNTED, not guessed into a phase', btc.attribution.untagged_open_deals, 1)
+  ok('...and the note says an unlock precondition cannot resolve through it',
+    /UNTAGGED/.test(btc.attribution.note) && /unlock precondition/.test(btc.attribution.note))
+  eq('per-tag performance is joined for the tags actually held', btc.performance_by_tag.length, 1)
+
+  // An asset the ledger tracks but holds nothing in is a genuine flat — still
+  // stated, not inferred from an absent row.
+  const sol = positionForAsset(snap, 'sol')
+  eq('an asset with no history is not covered either', sol.covered, false)
+  eq('...but for a different, named reason', sol.reason, 'no_ledger_history')
+  eq('gold\'s reason is distinct', gold.reason, 'not_tracked')
+
+  // A short lives on the futures side; the projection must find it by base asset.
+  const eth = positionForAsset(snap, 'eth')
+  eq('eth is covered via its open short alone', eth.covered, true)
+  eq('...and the SHORT is carried through', eth.futures_positions[0].side, 'SHORT')
+}
 
 // ── verdict ─────────────────────────────────────────────────────────────────
 if (failures) { console.error(`\n${failures} FAILURE(S)`); process.exit(1) }
