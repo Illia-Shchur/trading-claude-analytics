@@ -671,7 +671,10 @@ Added 2026-07-27, all fail-closed:
 - Channel B tranches: no Phase 3 at any score, ≤30% of the short book in aggregate, `time_stop` ≤21 days (≤28 at Phase 2).
 - S6 ratchet: a stop that moved away from price versus the prior report on the same position is an error, not a warning.
 
-Run `node tools/lint-report.mjs reports/<file>.md` after saving, before committing; a FAIL is fixed, never overridden.
+Added 2026-07-29:
+- **`entry_price` (numeric) on every filled tranche**, alongside the prose `entry` (which keeps its own meaning — which zone, why blocked, blended MTM). This is load-bearing for exactly the rules Hard Rule 6 protects: the stop band (`frStopBand`, including the 1.5×ADR(5) noise floor), the S5 6%-above-fill bound, the S6 ratchet, the per-phase clock limits, the Channel B 30% sub-cap and the 20% analyst cap are **all gated on the fill predicate**, and until this field existed that predicate had never once been true — 152/152 tranches across 39 reports encoded `entry` as prose. A 20%-of-book Phase-3 short at score 0/20 on 0/9 gates with a stop 40% BELOW entry linted clean, with zero warnings. Four of Hard Rule 6's seven never-relax items were written down and unenforced. The linter **warns** when a prose `entry` reads like a fill without an `entry_price` and **errors** on reports dated on/after 2026-07-29. **This relaxes nothing — it makes existing discipline bind.**
+
+Run `node tools/lint-report.mjs reports/<file>.md` after saving, before committing; a FAIL is fixed, never overridden. Then run `node tools/export-signals.mjs` to regenerate `exports/signal-feed.json` — the committed contract the personal-accounting ledger imports — and commit it alongside the report when it changes. It writes only when content actually moved, so a no-op run leaves `git status` clean.
 
 After saving, post a ≤6-line conversational summary:
 - Mechanical and adjusted score, channel, and stance
@@ -696,6 +699,22 @@ After saving, post a ≤6-line conversational summary:
 English by default. Russian on explicit user request. Default: English. Ask only if ambiguous.
 
 ## Framework Revision Log
+
+### 2026-07-29 — Fill encoding: four of Hard Rule 6's seven were unenforced
+
+**Nothing was relaxed. This entry makes existing discipline bind.** No score line, gate floor, stop bound, clock, size cap, or ratchet moved.
+
+Hard Rule 6 names seven things that may never be relaxed: a stop, a time stop, a size cap, the ratchet, a cover trigger, the carry veto, and the funding veto gate. An audit found that **four of them — stops, time stops, size caps, and the ratchet — were written down and structurally unenforced.**
+
+Every one of those checks in `lint-report.mjs` runs only on a tranche the linter considers FILLED, via `deployed === true || typeof entry === 'number'`. Across 39 machine-block reports that predicate had **never once been true**: all **152/152** tranches encode `entry` as prose, and `deployed: true` appears **zero** times. So `frStopBand` (both bounds and the 1.5×ADR(5) noise floor), the S5 6%-above-fill bound, the S5 14-day clock, the 20% analyst cap, the Channel B 30% sub-cap and 21/28-day clocks, the Phase-3 exclusions, the gate floors, the Channel-A/B score ladders and `frRatchetCheck` were all unreachable. Verified directly: a synthetic report placing a **20%-of-book Phase 3 short at mechanical score 0/20 on 0/9 gates with a stop 40% BELOW entry** passed the pre-2026-07-29 linter with **0 errors and 0 warnings**. Against the fixed linter the same report produces three errors.
+
+`report-machine/1` therefore takes optional numeric **`entry_price`** and boolean **`deployed`** on `deployment.tranches[]`. The prose `entry` is **kept** — it carries information the number cannot. The predicate becomes `deployed === true || typeof entry_price === 'number' || typeof entry === 'number'`, which is backward compatible; a prose `entry` that reads like a fill without an `entry_price` **warns** before 2026-07-29 and **errors** on/after, so no existing report retroactively fails.
+
+This is the rare change that satisfies Hard Rule 6 by construction: it can only ever *add* enforcement, and it unbundles nothing — no threshold, cap, or clock was touched in the same change.
+
+Also added: `tools/export-signals.mjs` → the committed `exports/signal-feed.json`, read by the personal-accounting ledger. It emits legs as an ordered named array under an explicit `rubric` discriminator (`FR-A/1` vs `FR-B/1`) because **Channel B reuses Channel A's five leg keys for an entirely different rubric** — there must be no representation in which `euphoria` silently means rally extension. Missing pre-2026-07-27 fields are resolved rather than marked unknown: an absent `channel` means Channel B did not yet exist, so the score was necessarily §4A.
+
+**Standing caveat:** `filled_tranche_count` is 0 on every pre-2026-07-29 signal — an artifact of the old encoding, never evidence that no short was taken.
 
 ### 2026-06-11 — Symmetric tuning from the Fallen Knives backtest (Hard Rule 6 audited)
 

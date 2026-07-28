@@ -11,7 +11,10 @@ import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds, FK_V
   s5StopCheck, frRatchetCheck, FR_S5, FR_CHANNEL_B,
   FR_SCORE_UNLOCK_B, frUnlockLadder, frStopBand, FR_MECH_STOP_PCT,
   FR_MIN_STOP_ADR_MULT, FR_MAX_PER_ASSET_PCT,
-  positionFreshness, positionSnapshotCheck, positionForAsset, POSITION_FRESHNESS } from './lib.mjs'
+  positionFreshness, positionSnapshotCheck, positionForAsset, POSITION_FRESHNESS,
+  fillPrice, trancheFilled, entryLooksLikeFill, EPOCHS, ENTRY_PRICE_EPOCH,
+  reportFileMeta, localToUtcISO, schemaEpochOf, signalRubric, legSpec, inferChannel,
+  inferDiscretion, gateMask, unlockFor, canonicalJSON, feedChanged, REPORT_FILE_RE } from './lib.mjs'
 
 let failures = 0
 function eq(name, got, want) {
@@ -358,6 +361,169 @@ ok('a truncated file names the missing block',
   const eth = positionForAsset(snap, 'eth')
   eq('eth is covered via its open short alone', eth.covered, true)
   eq('...and the SHORT is carried through', eth.futures_positions[0].side, 'SHORT')
+}
+
+// ── tranche fill detection — the predicate that was dead for 152/152 ────────
+// Regression: `deployed === true || typeof entry === 'number'` was never once
+// true across 39 machine-block reports, so every score unlock line, gate floor,
+// stop band, size cap and ratchet downstream of it was unreachable code.
+eq('fillPrice reads entry_price', fillPrice({ entry_price: 65000, entry: '~65000 (MTM -1.2%)' }), 65000)
+eq('fillPrice falls back to a legacy numeric entry', fillPrice({ entry: 4475 }), 4475)
+eq('fillPrice on the real corpus shape is null', fillPrice({ entry: '~65000 (MTM -1.2%)' }), null)
+eq('fillPrice ignores a non-finite price', fillPrice({ entry_price: NaN }), null)
+ok('trancheFilled: deployed alone is enough', trancheFilled({ deployed: true, entry: 'dry' }))
+ok('trancheFilled: entry_price alone is enough', trancheFilled({ entry_price: 100 }))
+ok('trancheFilled: prose entry alone is NOT', !trancheFilled({ entry: '1640-1730 armed' }))
+
+// The heuristic that surfaces an under-encoded fill. Both live examples from
+// the corpus must read as fills; every staged/placeholder form must not.
+ok('a blended MTM entry reads as a fill', entryLooksLikeFill('~65000 (MTM -1.2%)').fill_like)
+ok('a bare approximate price reads as a fill', entryLooksLikeFill('~4650').fill_like)
+ok('a blended entry reads as a fill', entryLooksLikeFill('~4475 (blended 25% @ ~4545, MTM -9.7%)').fill_like)
+ok('a staged RANGE does not', !entryLooksLikeFill('1640-1730 armed (spot ~4% above, unfilled); voids <1650 daily close').fill_like)
+ok('"frozen" does not', !entryLooksLikeFill('frozen').fill_like)
+ok('"dry" does not', !entryLooksLikeFill('dry').fill_like)
+ok('a frozen range does not', !entryLooksLikeFill('58000-61500 (frozen, half-size on gate-9 relight)').fill_like)
+ok('a prospective zone does not', !entryLooksLikeFill('3700-3950 prospective (frozen, score-gated; re-stop 3650 first)').fill_like)
+// Negative language WINS over a fill signature — an "unfilled" zone quoting a
+// blended MTM elsewhere in the sentence must never be read as a live tranche.
+ok('negative language beats a fill signature', !entryLooksLikeFill('~1700 zone, unfilled (prior blended MTM shown for reference)').fill_like)
+ok('a numeric entry is not prose', !entryLooksLikeFill(4475).fill_like)
+eq('the entry_price epoch is dated after the corpus', ENTRY_PRICE_EPOCH, '2026-07-29')
+
+// ── signal feed: filename as primary key ────────────────────────────────────
+// R6, verified live: `grep -l '```json machine' reports/*.md` returns 40, but
+// only 39 are reports — calibration_ledger.md QUOTES the fence in prose. A
+// grep-first scanner ingests the calibration ledger as a signal. Filter on the
+// filename regex first, always.
+ok('calibration_ledger.md is rejected by filename', !reportFileMeta('calibration_ledger.md').ok)
+ok('a retrospective is rejected by filename', !reportFileMeta('strategy_retrospective_20260611.md').ok)
+ok('a backtest is rejected by filename', !reportFileMeta('fr_eth_fall_capture_backtest_20260727.md').ok)
+ok('the fence appearing in prose cannot make a file a report', !REPORT_FILE_RE.test('calibration_ledger.md'))
+{
+  const m = reportFileMeta('eth_flying_rocket_20260728_0540.md')
+  ok('a real report parses', m.ok)
+  eq('...asset is upcased', m.asset, 'ETH')
+  eq('...framework', m.framework, 'flying_rocket')
+  eq('...date', m.date, '2026-07-28')
+  eq('...local time', m.local_time, '05:40')
+  eq('...zone', m.zone, 'America/New_York')
+  eq('...and the instant is EDT (UTC−4)', m.at_utc, '2026-07-28T09:40:00Z')
+  eq('...epoch', m.schema_epoch, 'discretion_and_two_channel')
+}
+ok('an impossible calendar date is rejected', !reportFileMeta('btc_fallen_knives_20260230_1030.md').ok)
+ok('an impossible clock is rejected', !reportFileMeta('btc_fallen_knives_20260711_2599.md').ok)
+
+// DST is resolved from the platform tz database, not a hardcoded offset.
+eq('summer report → EDT (UTC−4)', localToUtcISO('2026-07-11', '10:30'), '2026-07-11T14:30:00Z')
+eq('winter report → EST (UTC−5)', localToUtcISO('2026-01-15', '10:30'), '2026-01-15T15:30:00Z')
+eq('a malformed time yields null, never a wrong instant', localToUtcISO('2026-07-11', '1030'), null)
+
+// The 4 verified (asset, framework, date) collisions are why report_file is the
+// PK: same asset, same framework, same DAY, different reports.
+{
+  const a = reportFileMeta('btc_fallen_knives_20260714_0845.md')
+  const c = reportFileMeta('btc_fallen_knives_20260714_1430.md')
+  eq('collision: same asset', a.asset, c.asset)
+  eq('collision: same date', a.date, c.date)
+  ok('...but distinct instants', a.at_utc !== c.at_utc)
+  ok('...and distinct files', a.file !== c.file)
+}
+
+eq('epoch: before the machine block', schemaEpochOf('2026-07-10'), 'pre_machine_block')
+eq('epoch: the machine-block epoch is inclusive', schemaEpochOf('2026-07-11'), 'machine_block')
+eq('epoch: the discretion epoch is inclusive', schemaEpochOf('2026-07-27'), 'discretion_and_two_channel')
+
+// ── signal feed: the rubric discriminator (R13) ─────────────────────────────
+eq('FK rubric', signalRubric('fallen_knives', null), 'FK/1')
+eq('FR Channel A rubric', signalRubric('flying_rocket', 'A'), 'FR-A/1')
+eq('FR Channel B rubric', signalRubric('flying_rocket', 'B'), 'FR-B/1')
+eq('a stand-down still scored under §4A', signalRubric('flying_rocket', 'none'), 'FR-A/1')
+
+// Channel B REUSES Channel A's five leg keys for a completely different rubric.
+// There must be no representation in which `euphoria` means rally extension.
+{
+  const a = legSpec('FR-A/1'), bb = legSpec('FR-B/1')
+  eq('both channels share the block keys', a.map(l => l.block_key), bb.map(l => l.block_key))
+  eq('...but NOT the rubric names', bb.map(l => l.rubric_name),
+    ['rally_extension', 'local_exhaustion', 'resistance_confluence', 'bear_structure_integrity', 'relative_sentiment'])
+  ok('euphoria never silently means rally extension',
+    a[0].rubric_name === 'euphoria' && bb[0].rubric_name === 'rally_extension' && a[0].block_key === bb[0].block_key)
+  eq('§4B maxes match §4A positionally', bb.map(l => l.max), [5, 4, 5, 3, 3])
+  eq('FK valuation alone can go negative', legSpec('FK/1')[2].min, -2)
+  eq('an unknown rubric yields no legs', legSpec('nope'), [])
+}
+
+// ── signal feed: the two epochs are RESOLVED, never "unknown" ───────────────
+{
+  const pre = inferChannel('flying_rocket', undefined, '2026-07-14')
+  eq('a pre-epoch FR report was necessarily Channel A', pre.channel, 'A')
+  ok('...and says so', pre.inferred)
+  ok('...with a basis naming the epoch', pre.basis.includes(EPOCHS.discretionAndTwoChannel))
+  const post = inferChannel('flying_rocket', 'B', '2026-07-28')
+  eq('a declared channel is taken as declared', post.channel, 'B')
+  ok('...and is not marked inferred', !post.inferred)
+  const fk = inferChannel('fallen_knives', undefined, '2026-07-14')
+  eq('FK has no channel dimension at all', fk.channel, null)
+  ok('...and that is not an inference', !fk.inferred)
+  const missing = inferChannel('flying_rocket', undefined, '2026-07-28')
+  eq('a post-epoch FR report with no channel is NOT guessed into A', missing.channel, null)
+}
+{
+  const pre = inferDiscretion({ raw: 12, adjusted: 12 }, '2026-07-14')
+  eq('pre-epoch discretion was structurally impossible → 0', pre.discretionary, 0)
+  ok('...and is flagged inferred', pre.discretionary_inferred)
+  eq('...so mechanical = raw', pre.mechanical, 12)
+  ok('...also flagged', pre.mechanical_inferred)
+  const post = inferDiscretion({ raw: 11, adjusted: 11, mechanical: 9, discretionary: 2 }, '2026-07-28')
+  eq('a declared discretionary term is taken as declared', post.discretionary, 2)
+  ok('...and not marked inferred', !post.discretionary_inferred && !post.mechanical_inferred)
+  const gap = inferDiscretion({ raw: 11, adjusted: 11 }, '2026-07-28')
+  eq('a post-epoch report missing the term is null, not 0', gap.discretionary, null)
+}
+
+// ── signal feed: gates, ladders ─────────────────────────────────────────────
+eq('gate mask: 1 → bit 0', gateMask([1]), 1)
+eq('gate mask: 9 → bit 8', gateMask([9]), 256)
+eq('gate mask: the live ETH board 1,2,3,4,6,7,8', gateMask([1, 2, 3, 4, 6, 7, 8]), 0b011101111)
+eq('gate mask drops out-of-range numbers rather than throwing', gateMask([0, 1, 10, 'x']), 1)
+eq('gate mask of nothing', gateMask([]), 0)
+{
+  const b = unlockFor('flying_rocket', 'B', { adjusted: 9, mechanical: 9 })
+  eq('Channel B ladder is the +2 one', [b.p1a, b.p1b, b.p2], [13, 15, 17])
+  eq('...and Phase 3 does not exist in it', b.p3, null)
+  ok('...which the note states', b.p3_note.includes('unreachable'))
+  eq('the live ETH 9/20 unlocks nothing', b.highest_phase_unlocked_by_score, null)
+  const a = unlockFor('flying_rocket', 'A', { adjusted: 13, mechanical: 13 })
+  eq('Channel A at 13 reaches Phase 1B', a.highest_phase_unlocked_by_score, 'p1b')
+  // Phase 3 reads MECHANICAL — an adjusted score lifted by discretion may not buy it.
+  const p3 = unlockFor('flying_rocket', 'A', { adjusted: 19, mechanical: 17 })
+  eq('discretion cannot buy FR Phase 3', p3.highest_phase_unlocked_by_score, 'p2')
+  const fk = unlockFor('fallen_knives', null, { adjusted: 17, mechanical: 17 })
+  eq('FK ladder', [fk.p1a, fk.p1b, fk.p2, fk.p3], [8, 11, 15, 17])
+  eq('...at 17 reaches Phase 3', fk.highest_phase_unlocked_by_score, 'p3')
+  const fkd = unlockFor('fallen_knives', null, { adjusted: 17, mechanical: 15 })
+  eq('discretion cannot buy FK Phase 3 either', fkd.highest_phase_unlocked_by_score, 'p2')
+}
+
+// ── signal feed: byte stability (R7) ────────────────────────────────────────
+// signal-feed.json is COMMITTED, so an unstable key order or a generated_at
+// diff would turn every regeneration into a whole-file diff.
+eq('keys are sorted regardless of insertion order',
+  canonicalJSON({ b: 1, a: 2 }), canonicalJSON({ a: 2, b: 1 }))
+eq('nested keys too',
+  canonicalJSON({ x: { z: 1, y: 2 } }), canonicalJSON({ x: { y: 2, z: 1 } }))
+ok('array ORDER is preserved — it is meaningful',
+  canonicalJSON([1, 2]) !== canonicalJSON([2, 1]))
+ok('output ends in a trailing newline', canonicalJSON({ a: 1 }).endsWith('}\n'))
+{
+  const feed = { schema: 'signal-feed/1', generated_at: '2026-07-28T10:00:00Z', signals: [{ a: 1 }] }
+  const rerun = { schema: 'signal-feed/1', generated_at: '2026-07-28T11:00:00Z', signals: [{ a: 1 }] }
+  ok('a fresh generated_at alone is NOT a change', !feedChanged(canonicalJSON(feed), rerun).changed)
+  const real = { ...rerun, signals: [{ a: 2 }] }
+  ok('a real content change IS', feedChanged(canonicalJSON(feed), real).changed)
+  ok('no existing feed is a change', feedChanged(null, feed).changed)
+  ok('a corrupt existing feed is a change, not a crash', feedChanged('{not json', feed).changed)
 }
 
 // ── verdict ─────────────────────────────────────────────────────────────────

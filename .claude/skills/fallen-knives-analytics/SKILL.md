@@ -491,6 +491,10 @@ Path is repo-relative, per CLAUDE.md's Output Convention (which also governs the
 
 **Machine block + lint (mandatory, Jul 2026; extended 2026-07-27).** Every report ends with a fenced ` ```json machine ` block (schema `report-machine/1` — field list in the header of `tools/lint-report.mjs`) carrying the structured facts: spot, score legs/**discretionary**/**mechanical**/raw/adjusted/rounding, gates (active/na/passed), EV scenarios + stated EV, deployment (with each tranche's `discretionary` flag, `channel`, and D5 `stop` — see D5's encoding rule: Override fills are `discretionary: true, channel: "override"`), stops, verdict, key inputs. The `score.discretionary` field is **required** — write `0` when no adjustment was taken, so a silent omission is never mistaken for a deliberate zero. The linter enforces the ±2 bound, the 0.5 step, the leg-sum-plus-discretion arithmetic, the cut unlock lines, and a D5 stop on every discretionary tranche. After saving and BEFORE committing, run `node tools/lint-report.mjs reports/<file>.md` — it recomputes the arithmetic (legs sum, rounding convention, gate denominator + ceil thresholds + [V] count, EV within the §5 0.5% tolerance, Rally ≤50% cap, stop coherence). **A FAIL is fixed, never overridden or committed around.** The block also makes future calibrations cheaper and more accurate: extraction agents read it instead of re-deriving numbers from prose.
 
+**Fill encoding — required on every filled tranche (added 2026-07-29).** A tranche you actually filled carries **numeric `entry_price`** (and, when useful, `deployed: true`). The prose `entry` field keeps its own job — which zone, why blocked, blended MTM — and both are wanted; they answer different questions. This is not bookkeeping: **every mechanical check is gated on the fill predicate**, so a fill written only as prose silently skips its score unlock line, its gate floor, the D5 stop bound, the 40%/25% caps and the ratchet. That was the state of the world until 2026-07-29 — 152/152 tranches across 39 reports were prose, and `deployed: true` had never once appeared, which made all of it unreachable code. The linter now **warns** when a prose `entry` reads like a fill without an `entry_price`, and **errors** on any report dated on/after 2026-07-29.
+
+**Feed export (added 2026-07-29).** After `lint` passes and before committing, run `node tools/export-signals.mjs`. It regenerates `exports/signal-feed.json`, the committed contract the personal-accounting ledger imports, and writes only when content actually changed — a no-op run leaves `git status` clean. Commit the feed alongside the report when it moves.
+
 After saving, post a brief conversational summary (≤6 lines) highlighting:
 - Adjusted score and stance
 - Top 1–2 changes vs prior report (or "first report" if cold start)
@@ -510,6 +514,18 @@ After saving, post a brief conversational summary (≤6 lines) highlighting:
 Reports can be delivered in English or Russian per user preference. Default: English. Ask only if ambiguous.
 
 ## Framework Revision Log
+
+### 2026-07-29 — Fill encoding: the mechanical checks were unreachable code
+
+No score, band, threshold, phase size, stop, or cap moved. What changed is that the existing ones now **run**.
+
+Every mechanical enforcement in `lint-report.mjs` — the cut score unlock lines (1A ≥8, 1B ≥11, 2 ≥15, 3 ≥17), the ceil gate thresholds, the D5 15%-below-fill stop bound, the 40% non-mechanical and 25% Override caps, and the ratchet — is gated on a tranche being FILLED. That predicate was `deployed === true || typeof entry === 'number'`, and an audit of the corpus found it had **never once been true**: all **152/152** tranches across 39 machine-block reports encode `entry` as prose (`"~65000 (MTM -1.2%)"`, `"1640-1730 armed"`, `"dry"`), and `deployed: true` appears **zero** times. Every check listed above was unreachable.
+
+`report-machine/1` therefore takes optional numeric **`entry_price`** and boolean **`deployed`** on `deployment.tranches[]`. The prose `entry` is **kept**, not replaced — it carries real information the numeric field cannot (which zone, why blocked, blended MTM). The fill predicate becomes `deployed === true || typeof entry_price === 'number' || typeof entry === 'number'`, which is backward compatible. A prose `entry` that reads like a fill with no `entry_price` **warns** before 2026-07-29 and **errors** on/after, so the 39 existing reports do not retroactively fail; the warning fires on 32 tranches across 24 of them, all of them real held positions.
+
+Also added: `tools/export-signals.mjs`, which projects every report's machine block into the committed `exports/signal-feed.json` for the personal-accounting ledger. It resolves the corpus's two schema epochs rather than marking them unknown (a pre-2026-07-27 report has no `channel` because Channel B did not exist), scans by the filename regex rather than by "contains a machine block" (`calibration_ledger.md` quotes the fence in prose), and emits legs as a named array under a rubric discriminator so Channel B's renamed legs can never be read with Channel A's names.
+
+**Standing caveat:** `filled_tranche_count` is 0 on every pre-2026-07-29 signal. That is an artifact of the old encoding, not evidence that nothing was filled — any calibration reading the feed must not treat it as an observation.
 
 ### 2026-06-10 — Backtest-driven tuning (BTC/ETH/Gold, May 14 → Jun 10 2026)
 

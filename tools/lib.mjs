@@ -595,4 +595,337 @@ export function positionForAsset(snap, assetRaw) {
   }
 }
 
+// ── tranche fill detection (report-machine/1 deployment.tranches[]) ─────────
+// The predicate that decides whether a tranche is LIVE, and therefore whether
+// its score unlock line, gate floor, stop band, size cap and ratchet are
+// enforced at all. Until 2026-07-29 the linter asked `deployed === true ||
+// typeof entry === 'number'` — a condition that had never once been true:
+// across 39 machine-block reports, all 152/152 tranches encode `entry` as
+// prose ("~65000 (MTM -1.2%)", "1640-1730 armed", "dry"). Every mechanical
+// check downstream of it was unreachable code. Adding the numeric
+// `entry_price` field (and keeping the prose `entry`, which carries real
+// information — which zone, why blocked, blended MTM) is what makes the
+// framework's own stop and cap discipline actually bind. This RELAXES nothing.
+
+/** The numeric fill price of a tranche, or null if it has none. */
+export function fillPrice(t) {
+  if (!t) return null
+  if (typeof t.entry_price === 'number' && Number.isFinite(t.entry_price)) return t.entry_price
+  if (typeof t.entry === 'number' && Number.isFinite(t.entry)) return t.entry
+  return null
+}
+
+/** Is this tranche live? `deployed:true` or any numeric fill price. */
+export function trancheFilled(t) { return (t && t.deployed === true) || fillPrice(t) !== null }
+
+/**
+ * Does a PROSE `entry` describe an actual fill rather than a staged zone?
+ *
+ * Positive: a bare or ~approximate single price ("~65000 (MTM -1.2%)", "~4650"),
+ * or the words MTM / blended, which only mean something against a real position.
+ * Negative always wins: "unfilled", "dry", "frozen", "prospective", "armed" and
+ * a price RANGE ("1640-1730 armed") are staged placeholders, not fills.
+ *
+ * Used to WARN (pre-epoch) or ERROR (on/after ENTRY_PRICE_EPOCH) that the
+ * tranche needs a numeric `entry_price` so the mechanical checks can run.
+ */
+export function entryLooksLikeFill(entry) {
+  if (typeof entry !== 'string') return { fill_like: false, reason: 'entry is not prose' }
+  const neg = /\b(unfilled|dry|frozen|prospective|armed|staged|not filled|no fill)\b/i.exec(entry)
+  if (neg) return { fill_like: false, reason: `staged/placeholder language ("${neg[1]}")` }
+  const bare = /^\s*~?\s*\$?\s*[\d,]+(?:\.\d+)?\s*(?:\(|$)/.test(entry)
+  const mtm = /\b(MTM|blended)\b/i.exec(entry)
+  if (bare) return { fill_like: true, reason: 'entry opens with a single price, not a range' }
+  if (mtm) return { fill_like: true, reason: `entry says "${mtm[1]}", which only has meaning against a real position` }
+  return { fill_like: false, reason: 'no fill signature' }
+}
+
+// ── signal feed (A → B): report-machine/1 → signal-feed/1 ───────────────────
+// Pure helpers behind tools/export-signals.mjs. Everything here is filesystem-
+// free so selftest.mjs covers it; the script does the I/O.
+
+export const SIGNAL_FEED_SCHEMA = 'signal-feed/1'
+
+/**
+ * The two schema epochs the report corpus straddles.
+ *
+ * `machineBlock` — before 2026-07-11 no report carried a ```json machine
+ * block at all. Those reports are prose, and skipping them is CORRECT, not a
+ * failure; `--strict` only fires on a report dated on/after this date.
+ *
+ * `discretionAndTwoChannel` — the FK Analyst Discretion Layer (D1–D6) and the
+ * FR two-channel architecture (§4B) both shipped 2026-07-27. Reports predating
+ * it have no `channel` and no `score.discretionary` — and those absences have
+ * DEFINITIONALLY correct values rather than unknown ones, because neither
+ * feature existed. See inferChannel() / inferDiscretion().
+ *
+ * `entryPrice` — the report-machine/1 extension that makes a fill machine-
+ * visible (`deployed` / `entry_price`). Before it, the linter's fill predicate
+ * was never once true across 152/152 tranches in 39 reports, so every score
+ * unlock line, gate floor, stop band, size cap and ratchet was unreachable.
+ * On/after it, a prose `entry` that looks like a fill is an ERROR.
+ */
+export const EPOCHS = {
+  machineBlock: '2026-07-11',
+  discretionAndTwoChannel: '2026-07-27',
+  entryPrice: '2026-07-29',
+}
+export const MACHINE_BLOCK_EPOCH = EPOCHS.machineBlock
+export const DISCRETION_EPOCH = EPOCHS.discretionAndTwoChannel
+export const ENTRY_PRICE_EPOCH = EPOCHS.entryPrice
+
+/** Reports are timestamped in local EST/EDT per the repo's Output Convention. */
+export const REPORT_ZONE = 'America/New_York'
+
+/**
+ * The filename IS the primary key. The machine block carries a `date` but no
+ * time field, and (asset, framework, date) genuinely collides — btc/eth ×
+ * fallen_knives on both 2026-07-14 and 2026-07-18. Scanning must therefore
+ * filter on THIS regex, never on "contains a machine block": calibration_ledger.md
+ * quotes the ```json machine fence in prose and a grep-first scanner ingests
+ * the ledger as if it were a signal.
+ */
+export const REPORT_FILE_RE = /^([a-z0-9]+)_(fallen_knives|flying_rocket)_(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})\.md$/
+
+/** Offset of `zone` from UTC, in minutes, at instant `utcMs`. */
+function zoneOffsetMinutes(utcMs, zone) {
+  const dtf = new Intl.DateTimeFormat('en-US', {
+    timeZone: zone, hour12: false,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+  })
+  const p = {}
+  for (const { type, value } of dtf.formatToParts(new Date(utcMs))) p[type] = value
+  const hour = p.hour === '24' ? 0 : Number(p.hour)
+  const asIfUTC = Date.UTC(Number(p.year), Number(p.month) - 1, Number(p.day), hour, Number(p.minute), Number(p.second))
+  return (asIfUTC - utcMs) / 60000
+}
+
+/**
+ * "2026-07-11" + "10:30" in America/New_York → "2026-07-11T14:30:00Z".
+ *
+ * Solved by fixed point rather than a hardcoded −4/−5, so DST is handled by the
+ * platform's tz database instead of by a rule this file would get wrong twice a
+ * year. Returns null if the date/time are malformed or the runtime has no tz
+ * data — a null instant is honest; a wrong one silently mis-sorts the feed.
+ */
+export function localToUtcISO(date, time, zone = REPORT_ZONE) {
+  const dm = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(date))
+  const tm = /^(\d{2}):(\d{2})$/.exec(String(time))
+  if (!dm || !tm) return null
+  const [Y, M, D] = [Number(dm[1]), Number(dm[2]), Number(dm[3])]
+  const [h, mi] = [Number(tm[1]), Number(tm[2])]
+  if (M < 1 || M > 12 || D < 1 || D > 31 || h > 23 || mi > 59) return null
+  const target = Date.UTC(Y, M - 1, D, h, mi)
+  // Reject a rolled-over calendar date (2026-02-30 → Mar 2).
+  const probe = new Date(target)
+  if (probe.getUTCFullYear() !== Y || probe.getUTCMonth() !== M - 1 || probe.getUTCDate() !== D) return null
+  try {
+    let t = target
+    for (let i = 0; i < 3; i++) {
+      const next = target - zoneOffsetMinutes(t, zone) * 60000
+      if (next === t) break
+      t = next
+    }
+    return new Date(t).toISOString().replace(/\.\d{3}Z$/, 'Z')
+  } catch { return null }
+}
+
+/** Which epoch a report date falls in. */
+export function schemaEpochOf(date) {
+  const d = String(date)
+  if (d >= EPOCHS.discretionAndTwoChannel) return 'discretion_and_two_channel'
+  if (d >= EPOCHS.machineBlock) return 'machine_block'
+  return 'pre_machine_block'
+}
+
+/**
+ * Parse a report filename into its identity. `ok:false` means the file is not a
+ * framework report and must be ignored — not skipped, not failed.
+ */
+export function reportFileMeta(name) {
+  const m = REPORT_FILE_RE.exec(String(name))
+  if (!m) return { ok: false, file: String(name), reason: 'filename does not match <asset>_<framework>_YYYYMMDD_HHMM.md' }
+  const [, asset, framework, Y, M, D, hh, mm] = m
+  const date = `${Y}-${M}-${D}`
+  const local_time = `${hh}:${mm}`
+  const at_utc = localToUtcISO(date, local_time)
+  if (!at_utc) return { ok: false, file: String(name), reason: `filename encodes an impossible date/time (${date} ${local_time})` }
+  return {
+    ok: true,
+    file: String(name),
+    asset: asset.toUpperCase(),
+    framework,
+    date,
+    local_time,
+    zone: REPORT_ZONE,
+    at_utc,
+    schema_epoch: schemaEpochOf(date),
+  }
+}
+
+/**
+ * The rubric discriminator. Channel B reuses Channel A's five leg KEYS for a
+ * completely different rubric, so no consumer may read a leg without first
+ * knowing which rubric produced it. `none` is a stand-down, whose legs were
+ * still scored under §4A.
+ */
+export function signalRubric(framework, channel) {
+  if (framework === 'fallen_knives') return 'FK/1'
+  if (framework !== 'flying_rocket') return null
+  return channel === 'B' ? 'FR-B/1' : 'FR-A/1'
+}
+
+const LEG_SPECS = {
+  'FK/1': [
+    { ordinal: 1, block_key: 'sentiment', rubric_name: 'sentiment', min: 0, max: 5 },
+    { ordinal: 2, block_key: 'momentum', rubric_name: 'momentum', min: 0, max: 4 },
+    { ordinal: 3, block_key: 'valuation', rubric_name: 'valuation', min: -2, max: 5 },
+    { ordinal: 4, block_key: 'capitulation', rubric_name: 'capitulation', min: 0, max: 3 },
+    { ordinal: 5, block_key: 'holder', rubric_name: 'holder_behavior', min: 0, max: 3 },
+  ],
+  'FR-A/1': [
+    { ordinal: 1, block_key: 'euphoria', rubric_name: 'euphoria', min: 0, max: 5 },
+    { ordinal: 2, block_key: 'momentum', rubric_name: 'momentum', min: 0, max: 4 },
+    { ordinal: 3, block_key: 'valuation', rubric_name: 'valuation', min: 0, max: 5 },
+    { ordinal: 4, block_key: 'distribution', rubric_name: 'distribution', min: 0, max: 3 },
+    { ordinal: 5, block_key: 'vulnerability', rubric_name: 'vulnerability', min: 0, max: 3 },
+  ],
+  // §4B — same block keys, different questions. This mapping is the whole
+  // reason legs are emitted as an ordered array of named objects rather than
+  // an object keyed by block_key: there must be no representation of the feed
+  // in which `euphoria` silently means rally extension.
+  'FR-B/1': [
+    { ordinal: 1, block_key: 'euphoria', rubric_name: 'rally_extension', min: 0, max: 5 },
+    { ordinal: 2, block_key: 'momentum', rubric_name: 'local_exhaustion', min: 0, max: 4 },
+    { ordinal: 3, block_key: 'valuation', rubric_name: 'resistance_confluence', min: 0, max: 5 },
+    { ordinal: 4, block_key: 'distribution', rubric_name: 'bear_structure_integrity', min: 0, max: 3 },
+    { ordinal: 5, block_key: 'vulnerability', rubric_name: 'relative_sentiment', min: 0, max: 3 },
+  ],
+}
+
+/** The ordered leg specification for a rubric, or [] if the rubric is unknown. */
+export function legSpec(rubric) { return (LEG_SPECS[rubric] || []).map(l => ({ ...l })) }
+
+/**
+ * Channel, resolved rather than guessed.
+ *
+ * An absent `channel` on a pre-2026-07-27 Flying Rocket report is not unknown —
+ * Channel B did not exist, so the score was necessarily computed under §4A.
+ * Emitting "unknown" would lose that certainty and force every consumer to
+ * re-derive it from a date they may not have.
+ */
+export function inferChannel(framework, channel, date) {
+  if (framework === 'fallen_knives')
+    return { channel: null, inferred: false, basis: 'Fallen Knives has no channel dimension' }
+  if (['A', 'B', 'none'].includes(channel))
+    return { channel, inferred: false, basis: 'declared in the machine block' }
+  if (String(date) < EPOCHS.discretionAndTwoChannel)
+    return {
+      channel: 'A', inferred: true,
+      basis: `report dated ${date} predates the two-channel architecture (${EPOCHS.discretionAndTwoChannel}); Channel B did not exist, so the score was computed under the §4A rubric`,
+    }
+  return {
+    channel: null, inferred: false,
+    basis: `channel is required on/after ${EPOCHS.discretionAndTwoChannel} but is absent or invalid (${JSON.stringify(channel)}) — lint-report.mjs errors on this`,
+  }
+}
+
+/**
+ * The mechanical/discretionary split, resolved the same way.
+ *
+ * Before the Analyst Discretion Layer shipped, discretion was structurally
+ * impossible: there was no term to take. So `discretionary` is 0 and
+ * `mechanical` equals `raw` — a fact, not a default.
+ */
+export function inferDiscretion(score, date) {
+  const S = score || {}
+  const pre = String(date) < EPOCHS.discretionAndTwoChannel
+  const hasD = typeof S.discretionary === 'number'
+  const hasM = typeof S.mechanical === 'number'
+  const basis = pre
+    ? `report dated ${date} predates the Analyst Discretion Layer (${EPOCHS.discretionAndTwoChannel}); no discretionary term existed, so discretion was structurally 0 and mechanical = raw`
+    : 'declared in the machine block'
+  return {
+    discretionary: hasD ? S.discretionary : (pre ? 0 : null),
+    discretionary_inferred: !hasD && pre,
+    mechanical: hasM ? S.mechanical : (pre && typeof S.raw === 'number' ? S.raw : null),
+    mechanical_inferred: !hasM && pre && typeof S.raw === 'number',
+    basis: (!hasD || !hasM) && pre ? basis : 'declared in the machine block',
+  }
+}
+
+/**
+ * Gate numbers 1–9 as a bitmask (gate n → bit n−1), so Phase 4 can store an
+ * exactly-queryable integer instead of an array column. Invalid numbers are
+ * dropped, not thrown on — the linter is the place that errors on them.
+ */
+export function gateMask(passed) {
+  let mask = 0
+  for (const g of passed || []) if (Number.isInteger(g) && g >= 1 && g <= 9) mask |= 1 << (g - 1)
+  return mask
+}
+
+/**
+ * The score-axis unlock ladder that applied to this report, plus the highest
+ * phase the score alone reached. Channel-aware: Channel B's ladder is shifted
+ * +2 and has no p3 at all.
+ */
+export function unlockFor(framework, channel, { adjusted = null, mechanical = null } = {}) {
+  const ladderName = framework === 'fallen_knives' ? 'FK' : channel === 'B' ? 'FR-B' : 'FR-A'
+  const ladder = framework === 'fallen_knives' ? FK_SCORE_UNLOCK : frUnlockLadder(channel)
+  const mech = typeof mechanical === 'number' ? mechanical : adjusted
+  const order = ['p1a', 'p1b', 'p2', 'p3']
+  let highest = null
+  for (const p of order) {
+    const line = ladder[p]
+    if (line == null) continue
+    const read = p === 'p3' ? mech : adjusted
+    if (typeof read === 'number' && read >= line) highest = p
+  }
+  return {
+    ladder: ladderName,
+    p1a: ladder.p1a ?? null,
+    p1b: ladder.p1b ?? null,
+    p2: ladder.p2 ?? null,
+    p3: ladder.p3 ?? null,
+    p3_note: ladder.p3 == null
+      ? 'Phase 3 is unreachable in Channel B at any score (§4B/§6)'
+      : 'Phase 3 reads the MECHANICAL score — no analyst channel reaches it',
+    highest_phase_unlocked_by_score: highest,
+  }
+}
+
+/**
+ * Canonical JSON: object keys sorted recursively, arrays in order, 2-space
+ * indent, trailing newline. signal-feed.json is COMMITTED, so an unstable key
+ * order would turn every regeneration into a diff of the whole file.
+ */
+export function canonicalJSON(value) {
+  const canon = v => {
+    if (Array.isArray(v)) return v.map(canon)
+    if (v && typeof v === 'object') {
+      const out = {}
+      for (const k of Object.keys(v).sort()) out[k] = canon(v[k])
+      return out
+    }
+    return v
+  }
+  return JSON.stringify(canon(value), null, 2) + '\n'
+}
+
+/**
+ * Is the new feed materially different from the one on disk? `generated_at`
+ * changes on every run by construction and must not count as a change, or the
+ * committed file churns for nothing.
+ */
+export function feedChanged(prevText, next) {
+  if (!prevText) return { changed: true, reason: 'no existing feed' }
+  let prev
+  try { prev = JSON.parse(prevText) } catch { return { changed: true, reason: 'existing feed is not valid JSON' } }
+  const strip = o => { const { generated_at, ...rest } = o || {}; return rest }
+  const same = canonicalJSON(strip(prev)) === canonicalJSON(strip(next))
+  return { changed: !same, reason: same ? 'identical except generated_at' : 'content differs' }
+}
+
 export const _internal = { round2 }

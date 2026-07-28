@@ -32,12 +32,20 @@
 //   ev: {scenarios:[{name,p,low,high|mid}], stated_ev, vs_spot_pct}
 //   deployment: {deployed_pct, dry_pct, throttle_released(FK opt bool — a [T] gate
 //                relit or a confirmed higher-low printed, releasing the 40%/25% caps),
-//                tranches:[{phase,pct,entry, stop(FR/FK-discretionary),
-//                time_stop(FR), deployed(FK bool), discretionary(FK bool),
+//                tranches:[{phase,pct,entry,entry_price(opt num),deployed(opt bool),
+//                stop(FR/FK-discretionary), time_stop(FR), discretionary(FK bool),
 //                channel(FK: "D1"|"D2"|"override")}]}
-//         FK: a tranche is treated as FILLED (and its score unlock line enforced)
-//         when deployed:true or entry is numeric — dry placeholder rows carry
-//         descriptive text in `entry` and are skipped.
+//         A tranche is FILLED — and its score unlock line, gate floor, stop
+//         band, size cap and ratchet enforced — when `deployed:true` or a
+//         numeric `entry_price` (or a numeric legacy `entry`) is present. Dry
+//         placeholder rows carry descriptive text in `entry` and are skipped.
+//         `entry_price` + `deployed` were added 2026-07-29. `entry` KEEPS its
+//         prose meaning (which zone, why blocked, blended MTM) — the two fields
+//         answer different questions and both are wanted. Before the extension
+//         the fill predicate had never once been true (152/152 tranches across
+//         39 reports are prose), so every mechanical check below was unreachable.
+//         A prose `entry` that reads like a fill ("~65000 (MTM -1.2%)") without
+//         an `entry_price` warns before 2026-07-29 and errors on/after it.
 //         FK: every tranche with discretionary:true counts toward the 40% cap.
 //         Analyst channels (D1/D2) additionally carry a D5 hard stop no more than
 //         15% below entry and may never be Phase 3; channel "override" is
@@ -58,7 +66,8 @@ import { basename } from 'node:path'
 import { roundScore, ROUNDING, ceilThresholds, FK_V_GATES, evCheck, stopCoherence,
   discretionValid, d5StopCheck, FK_SCORE_UNLOCK, FK_DISCRETION,
   s5StopCheck, frRatchetCheck, FR_S5, FR_CHANNEL_B,
-  frUnlockLadder, FR_GATE_FLOORS, frStopBand, FR_MAX_PER_ASSET_PCT } from './lib.mjs'
+  frUnlockLadder, FR_GATE_FLOORS, frStopBand, FR_MAX_PER_ASSET_PCT,
+  fillPrice, trancheFilled, entryLooksLikeFill, ENTRY_PRICE_EPOCH } from './lib.mjs'
 
 const round2 = n => Math.round(n * 100) / 100
 
@@ -218,6 +227,29 @@ const D = b.deployment || {}
 if (typeof D.deployed_pct === 'number' && typeof D.dry_pct === 'number' && Math.abs(D.deployed_pct + D.dry_pct - 100) > 0.01)
   err(`deployed_pct + dry_pct = ${D.deployed_pct + D.dry_pct}, not 100`)
 const tranches = D.tranches || []
+
+// ── fill encoding (report-machine/1 extension, 2026-07-29) ──────────────────
+// A fill must be MACHINE-VISIBLE, or none of the mechanical discipline below
+// runs on it. Stops, time stops, size caps and the ratchet are four of Hard
+// Rule 6's seven never-relax items, and until this check existed they were
+// written down and unenforced: the fill predicate had never once been true.
+// A tranche whose prose `entry` reads like a fill but carries no numeric
+// `entry_price` is the exact case that silently skipped every check.
+{
+  const postEP = String(b.date) >= ENTRY_PRICE_EPOCH
+  for (const t of tranches) {
+    if (fillPrice(t) !== null) continue
+    const look = entryLooksLikeFill(t.entry)
+    if (look.fill_like) {
+      const msg = `tranche ${t.phase}: entry ${JSON.stringify(t.entry)} reads as a FILL (${look.reason}) but no numeric entry_price — the score unlock line, gate floor, stop band, size cap and ratchet are all skipped without it (report-machine/1, ${ENTRY_PRICE_EPOCH})`
+      ;(postEP ? err : warn)(msg)
+    } else if (t.deployed === true) {
+      const msg = `tranche ${t.phase}: deployed:true but no numeric entry_price — the stop-distance bounds (D5 / S5 / frStopBand) cannot be checked against a fill that has no price`
+      ;(postEP ? err : warn)(msg)
+    }
+  }
+}
+
 if (FW === 'fallen_knives') {
   const okSizes = [10, 15, 30, 45]
   for (const t of tranches) if (t.pct != null && !okSizes.includes(t.pct))
@@ -242,13 +274,14 @@ if (FW === 'fallen_knives') {
     if (t.channel === 'override') continue
     if (phaseKey(t.phase) === '3')
       err(`tranche ${t.phase} flagged discretionary — no analyst channel reaches Phase 3 (D1/D2)`)
+    const fp = fillPrice(t)
     if (typeof t.stop !== 'number') {
       err(`tranche ${t.phase} is an analyst-channel fill but carries no D5 hard stop — every D1/D2 tranche states a price-only stop at fill`)
-    } else if (typeof t.entry === 'number') {
-      const d5 = d5StopCheck(t.entry, t.stop)
-      if (!d5.pass) err(`tranche ${t.phase} D5 stop ${t.stop} vs fill ${t.entry}: ${d5.reason} (deepest permitted ${d5.floor})`)
+    } else if (fp !== null) {
+      const d5 = d5StopCheck(fp, t.stop)
+      if (!d5.pass) err(`tranche ${t.phase} D5 stop ${t.stop} vs fill ${fp}: ${d5.reason} (deepest permitted ${d5.floor})`)
     } else {
-      warn(`tranche ${t.phase} is discretionary with a stop but no numeric entry — D5 15%-of-fill bound not checkable`)
+      warn(`tranche ${t.phase} is discretionary with a stop but no numeric entry_price — D5 15%-of-fill bound not checkable`)
     }
     if (t.channel && !['D1', 'D2', 'override'].includes(t.channel))
       warn(`tranche ${t.phase} channel "${t.channel}" — expected D1, D2, or override`)
@@ -272,7 +305,7 @@ if (FW === 'fallen_knives') {
   // phases as placeholders, whose `entry` is descriptive text, not a price.
   if (typeof S.adjusted === 'number') {
     for (const t of tranches) {
-      if (!(t.deployed === true || typeof t.entry === 'number')) continue
+      if (!trancheFilled(t)) continue
       const key = phaseKey(t.phase)
       const line = key ? FK_SCORE_UNLOCK[`p${key}`] : null
       if (line == null) continue
@@ -362,7 +395,8 @@ if (FW === 'fallen_knives') {
   const ladder = frUnlockLadder(CH)
   let chanBPct = 0, analystPct = 0, liveTotal = 0
   for (const t of tranches) {
-    const live = t.deployed === true || typeof t.entry === 'number'
+    const live = trancheFilled(t)
+    const fp = fillPrice(t)
     const key = phaseKeyFR(t.phase)
     // channel_regime must be explicit on a live tranche: defaulting it to the
     // report channel silently re-homes a surviving Channel B tranche into a
@@ -404,17 +438,17 @@ if (FW === 'fallen_knives') {
       if (tChan === 'B' && Array.isArray(b.gates && b.gates.passed) && !b.gates.passed.includes(8))
         err(`FR tranche ${t.phase} is a Channel B fill but gate 8 (funding not sustained-negative) is not passed — gate 8 voids a Channel B unlock regardless of count (§4B)`)
       // Mechanical stop distance, both bounds, plus the sign.
-      if (typeof t.entry === 'number' && typeof t.stop === 'number') {
-        const band = frStopBand(t.entry, { adr5: b.inputs && b.inputs.adr5, channel: tChan, phase: key })
+      if (fp !== null && typeof t.stop === 'number') {
+        const band = frStopBand(fp, { adr5: b.inputs && b.inputs.adr5, channel: tChan, phase: key })
         if (!band.ok) err(`FR tranche ${t.phase}: ${band.reason}`)
         else {
-          if (t.stop <= t.entry) err(`FR tranche ${t.phase}: stop ${t.stop} is at or below the fill ${t.entry} — a short's stop sits ABOVE entry`)
-          else if (t.stop > band.ceiling) err(`FR tranche ${t.phase}: stop ${t.stop} is ${round2((t.stop / t.entry - 1) * 100)}% above fill — Channel ${tChan} Phase ${key.toUpperCase()} caps it at ${band.ceiling_pct}% (${band.ceiling})`)
+          if (t.stop <= fp) err(`FR tranche ${t.phase}: stop ${t.stop} is at or below the fill ${fp} — a short's stop sits ABOVE entry`)
+          else if (t.stop > band.ceiling) err(`FR tranche ${t.phase}: stop ${t.stop} is ${round2((t.stop / fp - 1) * 100)}% above fill — Channel ${tChan} Phase ${key.toUpperCase()} caps it at ${band.ceiling_pct}% (${band.ceiling})`)
           else if (band.floor != null && t.stop < band.floor)
-            err(`FR tranche ${t.phase}: stop ${t.stop} sits ${round2((t.stop / t.entry - 1) * 100)}% above fill, inside the 1.5×ADR(5) noise floor of ${band.floor_pct}% (${band.floor}) — a stop this tight is a coin flip on noise`)
+            err(`FR tranche ${t.phase}: stop ${t.stop} sits ${round2((t.stop / fp - 1) * 100)}% above fill, inside the 1.5×ADR(5) noise floor of ${band.floor_pct}% (${band.floor}) — a stop this tight is a coin flip on noise`)
         }
       } else if (typeof t.stop === 'number' && post) {
-        warn(`FR tranche ${t.phase} has a stop but no numeric entry — no stop-distance bound is checkable`)
+        warn(`FR tranche ${t.phase} has a stop but no numeric entry_price — no stop-distance bound is checkable`)
       }
       // Load-bearing discretion: if the mechanical score alone would not have
       // cleared the line, the tranche IS an analyst fill and must say so.
@@ -451,11 +485,11 @@ if (FW === 'fallen_knives') {
     if (t.channel === 'S2' && key !== '1a') err(`FR tranche ${t.phase} filled via S2 — the Conviction Path unlocks Phase 1A only (S2)`)
     if (days != null && days > FR_S5.maxTimeStopDays)
       err(`FR tranche ${t.phase} is an analyst-channel fill with a ${days}d clock — S5 caps it at ${FR_S5.maxTimeStopDays}d`)
-    if (live && typeof t.entry === 'number' && typeof t.stop === 'number') {
-      const s5 = s5StopCheck(t.entry, t.stop)
-      if (!s5.pass) err(`FR tranche ${t.phase} S5 stop ${t.stop} vs fill ${t.entry}: ${s5.reason} (widest permitted ${s5.ceiling})`)
+    if (live && fp !== null && typeof t.stop === 'number') {
+      const s5 = s5StopCheck(fp, t.stop)
+      if (!s5.pass) err(`FR tranche ${t.phase} S5 stop ${t.stop} vs fill ${fp}: ${s5.reason} (widest permitted ${s5.ceiling})`)
     } else if (live && typeof t.stop === 'number') {
-      warn(`FR tranche ${t.phase} is an analyst fill with a stop but no numeric entry — the S5 ${FR_S5.maxStopPct}%-of-fill bound is not checkable`)
+      warn(`FR tranche ${t.phase} is an analyst fill with a stop but no numeric entry_price — the S5 ${FR_S5.maxStopPct}%-of-fill bound is not checkable`)
     }
   }
   if (chanBPct > FR_CHANNEL_B.maxBookPct) err(`FR Channel B tranches total ${chanBPct}% > the ${FR_CHANNEL_B.maxBookPct}% Channel B sub-cap (§4B)`)

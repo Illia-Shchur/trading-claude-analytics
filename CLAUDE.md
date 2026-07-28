@@ -32,7 +32,8 @@ Node scripts (no deps) that make report numbers computed instead of narrated —
 - `node tools/fetch.mjs btc|eth|sol|gold|macro` — live numeric backbone (cross-checked spot, ATH/drawdown, weekly Wilder RSI-14, 200-week SMA, ADR sessions, F&G streaks, real yield/VIX/DXY/Brent), source + timestamp on every block. Does NOT cover ETF flows / on-chain / news — those stay live web fetches (Hard Rule 1).
 - `node tools/position.mjs btc|eth|sol|all [--file <path>] [--max-age-min N] [--fills N]` — the Hard Rule 8 position of record: real quantity, ACB cost basis, dry powder, open futures, fill-level history, closed round-trips, per-tag/per-prefix win rate. Exit `0` FRESH/STALE, `1` EXPIRED or missing (cold start per Rule 4), `2` NOT_COVERED (gold — never a zero position). Run it **before** `fetch`: what you already hold changes what the report is deciding.
 - `node tools/compute.mjs …` — rubric bands, ceil gate thresholds, per-asset rounding, EV sum-check, stop coherence, ADR, FR funding/cycle-cap.
-- `node tools/lint-report.mjs reports/<file>.md` — validates each report's ` ```json machine ` block after save, before commit. A FAIL is fixed, never committed around.
+- `node tools/lint-report.mjs reports/<file>.md` — validates each report's ` ```json machine ` block after save, before commit. A FAIL is fixed, never committed around. **A filled tranche must carry a numeric `entry_price` (or `deployed: true`)** — without it the score unlock line, gate floor, stop band, size cap and ratchet are all skipped. A prose `entry` that reads like a fill warns before 2026-07-29 and errors on/after.
+- `node tools/export-signals.mjs` — regenerates `exports/signal-feed.json`, the committed A→B contract read by the personal-accounting ledger. Run after `lint`, before `commit`; it writes only when content actually changed, so a no-op run leaves `git status` clean. `--dry-run` for counts, `--strict` to fail on a post-epoch report with no machine block.
 - `node tools/selftest.mjs` — regression vectors; run before calibrations and after any `tools/lib.mjs` change. `tools/lib.mjs` mirrors the SKILL rubrics letter-for-letter: a SKILL band change and its `lib.mjs`+`selftest.mjs` change land in the same commit.
 
 ## Output Convention
@@ -51,7 +52,9 @@ reports/[asset]_flying_rocket_[YYYYMMDD]_[HHMM].md
 
 After saving, follow with a ≤6-line conversational summary: adjusted score, top 1–2 changes vs prior, single most actionable item.
 
-**Auto-push:** After saving each report, immediately `git add` the new report file, commit it with a descriptive message, and `git push` to `origin/main`. One commit per report. Do this without being asked.
+**Auto-push:** After saving each report, run `node tools/export-signals.mjs`, then `git add` the new report file **and `exports/signal-feed.json` if it changed**, commit with a descriptive message, and `git push` to `origin/main`. One commit per report. Do this without being asked.
+
+Full per-report workflow: `position` → `fetch` → `compute` → save → `lint` → `export-signals` → commit + push.
 
 ## Asset Defaults
 
