@@ -568,6 +568,43 @@ export const LEDGER_ASSET_ALIASES = {
   },
 }
 
+// ── custody status (position-snapshot/1 qty_reconciliation_status) ──────────
+// The ledger sees Binance. It does not see a hardware wallet, and a withdrawal
+// is not a trade — so a coin moved to cold storage leaves the live balance
+// while its cost basis stays on the books from the fill that bought it.
+//
+// Reporting that as an unknown was the first fix and it was not enough: a
+// position of record that says "unknown" on 0.5 BTC is read downstream as FLAT,
+// and flat is the one answer that is definitely wrong. The exporter now nets
+// recorded withdrawals against the gap, and this lifts the verdict out of the
+// position object so a report cannot skim past it.
+//
+// OFF_VENUE is a belief, never a fact. Confirm custody before sizing anything
+// against it — and never let it satisfy a phase-dependent unlock precondition,
+// which needs a tagged deal on a quantity the ledger can actually see.
+export function custodyForPosition(position, asset) {
+  const status = position?.qty_reconciliation_status || null
+  if (!position || status === null || status === 'RECONCILED') {
+    return { status: status || 'RECONCILED', on_venue: true, off_venue_qty: null,
+      note: 'Live balance agrees with the fill replay; the position is where the ledger can see it.' }
+  }
+  if (status === 'EXPLAINED_BY_EXTERNAL_TRANSFER') {
+    return {
+      status,
+      on_venue: false,
+      off_venue_qty: position.off_venue_qty ?? null,
+      custody_adjusted_unrealized_pnl_usd: position.custody_adjusted_unrealized_pnl_usd ?? null,
+      note: `${position.off_venue_qty} ${asset} left the exchange as a withdrawal, not a sale, and is presumed held in external custody. REPORT THIS AS A HELD POSITION — do NOT read the near-zero live balance as flat or as an exit. The mark is custody-adjusted and therefore a belief the ledger cannot verify: it cannot tell cold storage from a sale on another venue. Confirm custody before sizing against it, and do not let it satisfy a phase-dependent unlock precondition.`,
+    }
+  }
+  return {
+    status: 'UNEXPLAINED',
+    on_venue: null,
+    off_venue_qty: null,
+    note: 'The live balance and the fill replay disagree and recorded withdrawals do NOT account for the gap. This is a data defect — an unread wallet, an uncovered venue, or an incomplete backfill — not a position. Do NOT report a figure for this asset in either direction; fix the ledger first.',
+  }
+}
+
 export function positionForAsset(snap, assetRaw) {
   const requested = String(assetRaw || '').toUpperCase()
   const alias = LEDGER_ASSET_ALIASES[requested] || null
@@ -607,6 +644,7 @@ export function positionForAsset(snap, assetRaw) {
     ...aliasFields,
     covered: true,
     position,
+    custody: custodyForPosition(position, asset),
     attribution: {
       tags,
       untagged_open_deals: untagged,

@@ -379,6 +379,15 @@ Run `node tools/position.mjs <asset>` **before** writing this section. It reads 
 
 **Gold aliases onto PAXG** *(2026-07-28)*: the ledger cannot hold bullion, so `gold` resolves to the tokenized-gold position and comes back **covered**, carrying `requested_asset`/`ledger_asset`/`alias_note`. State in the report that the gold position is held as **PAXG** — a proxy tracking XAU ~1:1 but carrying issuer/custody counterparty risk bullion does not, and able to trade at a premium or discount. Canonical gold **spot** is unaffected and still comes from Hard Rule 1 sources; only the position is read from the ledger.
 
+**Custody status is read before any quantity** *(2026-07-29)*. Every covered response carries a `custody` block, because the ledger sees Binance and cannot see a hardware wallet — and a withdrawal is not a trade, so coins moved to cold storage leave the live balance while their cost basis stays on the books.
+
+- `RECONCILED` — live balance agrees with the fill replay. Report normally.
+- `EXPLAINED_BY_EXTERNAL_TRANSFER` — the shortfall matches recorded net withdrawals. Report the asset as **HELD OFF-VENUE**, quoting `off_venue_qty`, and say the mark is **custody-adjusted**. Do **NOT** report it as flat, exited, or trimmed — a near-zero live balance here means the coins moved, not that they were sold.
+- `UNEXPLAINED` — the shortfall has no accounting. This is a **data defect, not a position**: report no quantity and no PnL in either direction, name the discrepancy, and treat the asset as unreadable until the ledger is fixed.
+
+A custody-adjusted figure is a **belief**, not a fact — it cannot distinguish cold storage from a sale on another venue. It never satisfies a phase-dependent unlock precondition, and nothing is sized against it without independent confirmation that the coins are still held.
+
+
 **Two carve-outs survive even at FRESH, and only two.** (a) Snapshot marks are **informational** and never become canonical spot — and note the snapshot's `liquidation_price_usd` is **always null**: liquidation price is not synced, and a null there is *not* permission to omit a stated liquidation price from a levered tranche. (b) Phase attribution comes from **deal tags only**; an untagged short is real-but-`UNTAGGED`, never inferred from size or timing.
 
 #### Carry Cost Ledger (mandatory section when any short is live)

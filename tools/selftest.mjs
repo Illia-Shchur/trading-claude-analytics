@@ -367,8 +367,41 @@ ok('a truncated file names the missing block',
   eq('gold with no PAXG history is not covered', goldEmpty.covered, false)
   eq('...and says so as a gap, not a zero', goldEmpty.reason, 'no_ledger_history')
 
+  // Custody (2026-07-29). A coin withdrawn to cold storage vanishes from the
+  // live balance while its cost basis stays on the books, because a withdrawal
+  // is not a trade. Detecting the divergence was the first fix; it left the
+  // report told only "unknown", and a position of record that says unknown on
+  // 0.5 BTC is read as FLAT — the one answer that is definitely wrong.
+  const offVenue = positionForAsset({ ...snap, positions: [{
+    asset: 'BTC', qty: '0.00000184', trade_derived_qty: '0.50385839',
+    qty_reconciliation_status: 'EXPLAINED_BY_EXTERNAL_TRANSFER',
+    off_venue_qty: '0.50385655', custody_adjusted_unrealized_pnl_usd: '4821.30',
+  }] }, 'btc')
+  eq('a withdrawn position is off-venue, not flat', offVenue.custody.status, 'EXPLAINED_BY_EXTERNAL_TRANSFER')
+  eq('...with the off-venue quantity lifted out of the position row',
+    offVenue.custody.off_venue_qty, '0.50385655')
+  ok('...and the note forbidding the flat reading in the imperative',
+    /do NOT read the near-zero live balance as flat/.test(offVenue.custody.note))
+  ok('...while refusing to overclaim — the ledger cannot see a hardware wallet',
+    /cannot tell cold storage from a sale/.test(offVenue.custody.note))
+  ok('...and barring it from unlocking a phase on belief alone',
+    /unlock precondition/.test(offVenue.custody.note))
+
+  // An unexplained gap is a data defect, not a position. Reporting a number in
+  // EITHER direction off it would be guessing with a confident face.
+  const unexplained = positionForAsset({ ...snap, positions: [{
+    asset: 'BTC', qty: '0.00000184', trade_derived_qty: '0.50385839',
+    qty_reconciliation_status: 'UNEXPLAINED',
+  }] }, 'btc')
+  eq('an unaccounted gap stays unexplained', unexplained.custody.status, 'UNEXPLAINED')
+  eq('...claiming nothing about where the coins are', unexplained.custody.on_venue, null)
+  ok('...and naming it a defect to fix, not a position to report',
+    /data defect/.test(unexplained.custody.note) && /fix the ledger first/.test(unexplained.custody.note))
+
   const btc = positionForAsset(snap, 'btc')
   eq('btc is covered', btc.covered, true)
+  eq('a position with no custody flag reads as on-venue', btc.custody.status, 'RECONCILED')
+  eq('...and is where the ledger can see it', btc.custody.on_venue, true)
   eq('btc attribution lists only real tags', btc.attribution.tags, ['FK-P1A'])
   eq('an untagged open deal is COUNTED, not guessed into a phase', btc.attribution.untagged_open_deals, 1)
   ok('...and the note says an unlock precondition cannot resolve through it',
