@@ -367,6 +367,21 @@ The suspension is recorded in the S7 Discretion Ledger and may not be lifted by 
 
 State assumed carry-cost-to-target as a % of expected gain. **If carry > 40% of target gain, the trade is structurally bad — do not enter, regardless of score.**
 
+#### Ledger tag (print on every tranche that fills)
+
+When a report authorizes a short tranche, print the **ledger tag** alongside the status line. The tag is what the personal-accounting ledger records against the round-trip deal, and it is the *only* thing that connects a real position back to the tranche that authorized it — the ledger stores quantity and cost basis, but `crypto_trade` has no tranche dimension and never will. An untagged position is real but of unknown attribution, and cannot resolve a phase-dependent unlock precondition such as Phase 1B's *"1A in profit or scratch."*
+
+| Tranche | Tag |
+|---|---|
+| Channel A Phase 1A / 1B / 2 / 3 | `FR-A-1A` · `FR-A-1B` · `FR-A-2` · `FR-A-3` |
+| Channel B Phase 1A / 1B / 2 | `FR-B-1A` · `FR-B-1B` · `FR-B-2` |
+| S1 / S2 analyst-discretion entries | `FR-S1` · `FR-S2` — these carry the S5 tax (≤6% stop, ≤14d clock, ≤20% of book) |
+| Traded outside the framework | `UNFRAMED` |
+
+**There is no `FR-B-3`.** Channel B has no Phase 3 at any score (§ Channel B caps), so the tag does not exist — a tag that cannot be typed cannot be mis-analyzed.
+
+Apply it in the app via `PUT /api/investments/deal-note` with the `dealKey`, the tag, and a note whose **first line is `report=reports/<this report's filename>`** and whose remaining lines state the price stop, the time stop, and the sizing rationale. Channel performance then reads back as `GET /api/investments/deals/stats?tagPrefix=FR-A-` vs `?tagPrefix=FR-B-` — which is precisely the evidence Hard Rule 6 asks for before any short-side threshold is ever revisited. Tagging is manual and deliberately so: inferring a phase from quantity or timing is a guess, and a guessed phase can unlock the next tranche.
+
 ### 6.5. Asset Rotation / Cross-Asset Screening (when own-asset scores <11)
 
 When the requested asset scores below Phase-1A eligibility (11), do **not** stop the analysis. Run a short screening pass across the lagging cohort to surface where a short might actually be live, and report it explicitly. The user's question is rarely "is this *specific* asset a short" — it's usually "is there a short anywhere in crypto right now." Answer that question.
@@ -750,3 +765,11 @@ Two independent audits were run against the revision above — one for internal 
 **Corrections to the evidence document.** The backtest's method section claimed funding "cuts against shorts" — wrong, and contradicting this framework's own Jul-2026 sign correction; net carry is ≈±0.5% over 21 days and is not the risk. Slippage is, and the −6% worst case is a backtest artifact of modelling the exit as a touch at the stop. Trade counts are now printed (7 / 16 / 13): the signal fires **~3–7×/year**, not the ~15 this SKILL previously claimed — an error that materially understated the per-trade slippage budget.
 
 **What survived the audits unchanged:** the sizing schedule, Principle 14 (short the exhausted rally, never the breakdown — the audit called it the best finding in the study), gate 8 as the only true veto in either framework, the S5 tax, and the discarding of the curve-fit RSI≥52 variant. **N=0 still.** Two audits found 35 problems in a framework that had never produced a report; assume the third would find more.
+
+### 2026-07-28 — Ledger tag vocabulary (§6, additive)
+
+Every short tranche that fills now prints a **ledger tag** (`FR-A-1A`…`FR-A-3`, `FR-B-1A`…`FR-B-2`, `FR-S1`/`FR-S2`, `UNFRAMED`), applied by hand in the personal-accounting app via `PUT /api/investments/deal-note`. **`FR-B-3` does not exist** — Channel B has no Phase 3 at any score, and a tag that cannot be typed cannot be mis-analyzed. The app gained a matching `tagPrefix` filter, which makes `?tagPrefix=FR-A-` vs `?tagPrefix=FR-B-` a direct per-channel readout of win rate, profit factor and expectancy — exactly the realized-P&L evidence Hard Rule 6 demands before any short-side threshold is revisited. This framework is still N=0 on outcomes; the tag is what will eventually make it N>0 on money rather than on narrative.
+
+The tag is load-bearing because the ledger has no tranche dimension: nothing else connects a real position to the tranche that authorized it. An untagged short is reported as real-but-`UNTAGGED` and may not resolve a phase-dependent precondition such as Phase 1B's *"1A in profit or scratch."* Tagging stays **manual** — a guessed phase unlocks the next tranche, and on the short side that is exactly the failure Hard Rule 6 exists to prevent.
+
+**Nothing was relaxed.** No stop, time stop, size cap, ratchet, cover trigger, carry veto or funding gate was touched; no score, band or threshold moved. `tools/lib.mjs` and `tools/selftest.mjs` are unchanged (no rubric changed); `selftest.mjs` passes.

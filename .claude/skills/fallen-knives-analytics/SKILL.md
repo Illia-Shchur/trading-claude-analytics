@@ -326,6 +326,19 @@ For each phase show: capital share, trigger zone, gates required, current status
 
 **Dry powder yield benchmark:** state assumed opportunity cost (current T-bill yield or USDC/sDAI yield). Cash is a position; idle cash has a measurable cost.
 
+#### Ledger tag (print on every tranche that fills)
+
+When a report authorizes a fill, print the **ledger tag** for that tranche alongside the status line. The tag is what the personal-accounting ledger records against the round-trip deal, and it is the *only* thing that connects a real Binance position back to the tranche that authorized it — the ledger stores quantity and cost basis, but `crypto_trade` has no tranche dimension and never will. An untagged holding is a real position with unknown attribution; it cannot resolve a phase-dependent unlock precondition.
+
+| Tranche | Tag |
+|---|---|
+| Phase 1A / 1B / 2 / 3 | `FK-P1A` · `FK-P1B` · `FK-P2` · `FK-P3` |
+| Deep-Value Override firing | `FK-OVR` |
+| D1 threshold cross / D2 conviction path | `FK-D1` · `FK-D2` — these carry the D5 stop |
+| Traded outside the framework | `UNFRAMED` |
+
+Apply it in the app via `PUT /api/investments/deal-note` with the `dealKey`, the tag, and a note whose **first line is `report=reports/<this report's filename>`** and whose remaining lines state the stop, the clock, and the sizing rationale. Per-phase performance then reads back as `GET /api/investments/deals/stats?tag=FK-P1A`, and the whole framework as `?tagPrefix=FK-`. Tagging is manual and deliberately so: inferring a phase from quantity or timing is a guess, and a guessed phase can unlock the next tranche.
+
 ### 7. Exit / Trim Framework (Symmetric)
 
 The framework de-risks as conviction signals invert. Track cost basis per phase. Trims execute against most-recently-deployed tranches first (LIFO).
@@ -576,3 +589,11 @@ Guardrail compliance: no stop weakened (gold's ratification documents the standi
 ### 2026-07-10 (second pass) — Deterministic toolchain introduced (`tools/`)
 
 Owner directive: certainty in calculations, data fetching, and performance consistency. Added and mandated the repo toolchain — `tools/fetch.mjs` (live numeric backbone: cross-checked spot, ATH/drawdown, computed weekly Wilder RSI-14, exact 200-week SMA + gate-6 ±8% boolean, ADR sessions, F&G 3-day avg + gate-1 daily-print streaks, FRED real yield / VIX / DXY / Brent macro), `tools/compute.mjs` (band classifiers mirroring §4 letter-for-letter, ceil thresholds, per-asset rounding, EV sum-check, stop coherence, ADR with exclusions), `tools/lint-report.mjs` (validates the new mandatory ```json machine``` block — schema `report-machine/1` — after every save, before every commit; FAIL is fixed, never overridden), `tools/selftest.mjs` (regression vectors, including the ETH ceil(7/9×8)=7 misprint and the gold no-flush valuation cap). **Coupling rule: any band/threshold change to this SKILL changes `tools/lib.mjs` + `tools/selftest.mjs` in the same commit.** Scope honesty: ETF flows, on-chain, COT, and news remain live web fetches (Hard Rule 1) — the toolchain covers the computable series only. No score band, gate, threshold, phase size, or stop moved in this change.
+
+### 2026-07-28 — Ledger tag vocabulary (§6, additive)
+
+Every tranche that fills now prints a **ledger tag** (`FK-P1A`/`FK-P1B`/`FK-P2`/`FK-P3`, `FK-OVR`, `FK-D1`/`FK-D2`, `UNFRAMED`), applied by hand in the personal-accounting app via `PUT /api/investments/deal-note`. The app gained a matching `tagPrefix` filter, so `?tag=FK-P1A` is per-phase realized performance and `?tagPrefix=FK-` is the whole framework — win rate, profit factor, expectancy and hold-time skew on **money**, not on price. Every calibration to date has graded predictions against price; nothing has ever graded them against the P&L of the fills they authorized, because no join existed between a report and a position.
+
+The tag is load-bearing for one reason: the ledger records quantity and cost basis but has no tranche dimension, so nothing except the tag can say which tranche authorized a holding. An untagged position is therefore reported as real-but-`UNTAGGED` and may not resolve a phase-dependent unlock precondition. Tagging stays **manual** — inferring a phase from quantity or timing is a guess, and a guessed phase unlocks the next tranche.
+
+**No score, band, threshold, gate, phase size, stop, or cap moved.** `tools/lib.mjs` and `tools/selftest.mjs` are untouched by design (no rubric changed); `selftest.mjs` passes.
