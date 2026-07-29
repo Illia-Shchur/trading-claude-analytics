@@ -411,6 +411,35 @@ ok('a truncated file names the missing block',
     seeded.custody.cost_basis_contaminated, true)
   ok('...and it may not unlock a phase either', /unlock precondition/.test(seeded.custody.note))
 
+  // Cost-basis reliability (2026-07-29), orthogonal to custody. The ledger's
+  // engine used to treat "sold more than held" as "sold down to dust" and snap
+  // the position to zero, so a margin short's quantity was erased and the
+  // buy-back that closed it re-accumulated from zero — every short round trip
+  // added its full size. On the real account that reported 833.5 SOL against a
+  // true 1.98, and booked short proceeds as pure profit against a zero basis.
+  // The quantity is sound; it is the COST that is unknowable, so the two
+  // verdicts have to be separable.
+  const shorted = positionForAsset({ ...snap, positions: [{
+    asset: 'BTC', qty: '0.5', trade_derived_qty: '0.5',
+    qty_reconciliation_status: 'RECONCILED',
+    basis_reliable: false, oversold_qty: '0.51120000',
+  }] }, 'btc')
+  eq('an oversold asset can be fully RECONCILED on quantity...',
+    shorted.custody.status, 'RECONCILED')
+  eq('...while its cost basis is separately declared underivable',
+    shorted.basis.reliable, false)
+  ok('...naming both causes without pretending to know which',
+    /sold short on margin/.test(shorted.basis.note)
+      && /never ingested/.test(shorted.basis.note))
+  ok('...forbidding avg cost, basis, unrealized PnL and ROI',
+    /Do NOT quote average cost, cost basis, unrealized PnL or ROI/.test(shorted.basis.note))
+  ok('...but keeping the quantity as the position of record',
+    /QUANTITY is still sound/.test(shorted.basis.note))
+  ok('...and demoting realized PnL to an upper bound, since a short realized against zero',
+    /UPPER BOUND/.test(shorted.basis.note))
+  eq('a healthy asset reports a reliable basis and no note',
+    positionForAsset(snap, 'btc').basis.reliable, true)
+
   // An unexplained gap is a data defect, not a position. Reporting a number in
   // EITHER direction off it would be guessing with a confident face.
   const unexplained = positionForAsset({ ...snap, positions: [{

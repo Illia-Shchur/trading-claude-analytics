@@ -618,6 +618,33 @@ export function custodyForPosition(position, asset) {
   }
 }
 
+// ── cost-basis reliability (position-snapshot/1 basis_reliable) ────────────
+// Orthogonal to custody, and the distinction matters: custody asks "are the
+// coins where the ledger can see them", this asks "does the ledger know what
+// they cost". An asset can be perfectly RECONCILED on quantity and still have
+// no derivable basis.
+//
+// It goes UNRELIABLE when the ledger's replay disposed of more than it ever saw
+// acquired — a margin short, or a sale of coins whose acquisition was never
+// ingested. The ledger cannot tell those apart, so neither does this.
+//
+// Why it exists: the engine used to treat "sold more than held" as if it were
+// "sold down to dust" and snap the position to zero, so a short's quantity was
+// erased and the buy-back that closed it re-accumulated from zero. Every short
+// round trip added its full size to the position. On real history that turned a
+// true 1.98 SOL opening balance into 833.5, and booked short-sale proceeds as
+// pure profit because the basis of the sold quantity was zero.
+export function basisForPosition(position, asset) {
+  if (!position || position.basis_reliable !== false) {
+    return { reliable: true, oversold_qty: null, note: null }
+  }
+  return {
+    reliable: false,
+    oversold_qty: position.oversold_qty ?? null,
+    note: `COST BASIS NOT DERIVABLE for ${asset}: the ledger's replay disposed of more than it ever saw acquired (${position.oversold_qty ?? 'an unrecorded quantity'} beyond the position), because the asset was sold short on margin or because an acquisition was never ingested — the ledger cannot tell which. Do NOT quote average cost, cost basis, unrealized PnL or ROI for ${asset}; state that the basis is unknown. The QUANTITY is still sound and is the position of record. Realized PnL is an UPPER BOUND, not a result: a short leg was realized against a zero basis, so it overstates the gain. This may not satisfy a phase-dependent unlock precondition that reads cost basis, and nothing is sized against a cost basis that does not exist.`,
+  }
+}
+
 export function positionForAsset(snap, assetRaw) {
   const requested = String(assetRaw || '').toUpperCase()
   const alias = LEDGER_ASSET_ALIASES[requested] || null
@@ -658,6 +685,7 @@ export function positionForAsset(snap, assetRaw) {
     covered: true,
     position,
     custody: custodyForPosition(position, asset),
+    basis: basisForPosition(position, asset),
     attribution: {
       tags,
       untagged_open_deals: untagged,
