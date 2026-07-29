@@ -387,6 +387,30 @@ ok('a truncated file names the missing block',
   ok('...and barring it from unlocking a phase on belief alone',
     /unlock precondition/.test(offVenue.custody.note))
 
+  // A migration seed (2026-07-29). The floor migration carried each asset across
+  // the ledger's data floor as a synthetic OPENING_BALANCE fill sized from a
+  // pre-floor history it then deleted — and that history came from balances-only
+  // discovery, which could not see a coin already fully exited, so every seed is
+  // biased upward. This was the ENTIRE divergence on the real account: subtract
+  // the seed and BTC, ETH and PAXG all land on their live balance or on dust.
+  // Unlike a withdrawal it is not evidence of coins anywhere, so the live side
+  // stands alone as the position while the basis stays contaminated.
+  const seeded = positionForAsset({ ...snap, positions: [{
+    asset: 'BTC', qty: '0.00000184', trade_derived_qty: '0.50386853',
+    qty_reconciliation_status: 'EXPLAINED_BY_SYNTHETIC_OPENING_BALANCE',
+  }] }, 'btc')
+  eq('a seed-sized gap is named as a migration artefact',
+    seeded.custody.status, 'EXPLAINED_BY_SYNTHETIC_OPENING_BALANCE')
+  ok('...with the live quantity promoted to the position, unlike UNEXPLAINED',
+    /REPORT THE LIVE QUANTITY AS THE POSITION/.test(seeded.custody.note))
+  ok('...and the replayed quantity forbidden as a holding',
+    /do NOT report trade_derived_qty/.test(seeded.custody.note))
+  ok('...explicitly not laundered into custody, which would restate an artefact as wealth',
+    seeded.custody.off_venue_qty === null && /not.*off-venue custody/i.test(seeded.custody.note))
+  eq('...but the basis is flagged contaminated, because the seed carried a price too',
+    seeded.custody.cost_basis_contaminated, true)
+  ok('...and it may not unlock a phase either', /unlock precondition/.test(seeded.custody.note))
+
   // An unexplained gap is a data defect, not a position. Reporting a number in
   // EITHER direction off it would be guessing with a confident face.
   const unexplained = positionForAsset({ ...snap, positions: [{

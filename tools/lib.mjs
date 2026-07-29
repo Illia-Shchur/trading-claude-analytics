@@ -597,11 +597,24 @@ export function custodyForPosition(position, asset) {
       note: `${position.off_venue_qty} ${asset} left the exchange as a withdrawal, not a sale, and is presumed held in external custody. REPORT THIS AS A HELD POSITION — do NOT read the near-zero live balance as flat or as an exit. The mark is custody-adjusted and therefore a belief the ledger cannot verify: it cannot tell cold storage from a sale on another venue. Confirm custody before sizing against it, and do not let it satisfy a phase-dependent unlock precondition.`,
     }
   }
+  // A migration seed is the one divergence where the LIVE side is trustworthy on its own. The gap is a
+  // synthetic OPENING_BALANCE fill from the 2026-07-08 floor migration, sized from a pre-floor history that
+  // was then deleted — so the replay is inflated by coins that may never have existed, while the live
+  // balance is still a direct observation of the exchange. Report the live quantity; distrust the basis.
+  if (status === 'EXPLAINED_BY_SYNTHETIC_OPENING_BALANCE') {
+    return {
+      status,
+      on_venue: true,
+      off_venue_qty: null,
+      cost_basis_contaminated: true,
+      note: `The replay exceeds the live balance by a synthetic OPENING_BALANCE seed carried at the ledger's data floor — an accounting artefact, not coins, and one that can never be reconciled because the pre-floor fills it was computed from were deleted. REPORT THE LIVE QUANTITY AS THE POSITION (this asset may genuinely be flat); do NOT report trade_derived_qty as ${asset} held, and do NOT treat it as off-venue custody — unlike a withdrawal there is no evidence these coins exist. Cost basis, unrealized PnL and realized PnL for ${asset} are contaminated by the seed's price: quote them as unreliable or not at all, and do not let them satisfy a phase-dependent unlock precondition.`,
+    }
+  }
   return {
     status: 'UNEXPLAINED',
     on_venue: null,
     off_venue_qty: null,
-    note: 'The live balance and the fill replay disagree and recorded withdrawals do NOT account for the gap. This is a data defect — an unread wallet, an uncovered venue, or an incomplete backfill — not a position. Do NOT report a figure for this asset in either direction; fix the ledger first.',
+    note: 'The live balance and the fill replay disagree, and neither recorded withdrawals nor a migration seed accounts for the gap. This is a data defect — an unread wallet, an uncovered venue, or an incomplete backfill — not a position. Do NOT report a figure for this asset in either direction; fix the ledger first.',
   }
 }
 
