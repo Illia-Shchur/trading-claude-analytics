@@ -11,7 +11,7 @@ import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds, FK_V
   s5StopCheck, frRatchetCheck, FR_S5, FR_CHANNEL_B,
   FR_SCORE_UNLOCK_B, frUnlockLadder, frStopBand, FR_MECH_STOP_PCT,
   FR_MIN_STOP_ADR_MULT, FR_MAX_PER_ASSET_PCT,
-  positionFreshness, positionSnapshotCheck, positionForAsset, POSITION_FRESHNESS,
+  positionFreshness, positionSnapshotCheck, positionForAsset, shortForPosition, POSITION_FRESHNESS,
   fillPrice, trancheFilled, entryLooksLikeFill, EPOCHS, ENTRY_PRICE_EPOCH,
   reportFileMeta, localToUtcISO, schemaEpochOf, signalRubric, legSpec, inferChannel,
   inferDiscretion, gateMask, unlockFor, canonicalJSON, feedChanged, REPORT_FILE_RE } from './lib.mjs'
@@ -439,6 +439,55 @@ ok('a truncated file names the missing block',
     /UPPER BOUND/.test(shorted.basis.note))
   eq('a healthy asset reports a reliable basis and no note',
     positionForAsset(snap, 'btc').basis.reliable, true)
+
+  // The producer's own note wins when it ships one. A snapshot from the signed
+  // engine (2026-07-30+) makes a NARROWER claim than the reconstruction above —
+  // "unbacked disposal, NOT a short" — and rewriting it from here would put this
+  // file's assumptions in front of the file's own evidence.
+  const producerNote = positionForAsset({ ...snap, positions: [{
+    asset: 'BTC', qty: '0', trade_derived_qty: '-3',
+    qty_reconciliation_status: 'RECONCILED',
+    basis_reliable: false, oversold_qty: '3',
+    basis_unreliable_note: 'COST BASIS NOT DERIVABLE — 1 UNBACKED disposal(s). This is NOT a margin short.',
+  }] }, 'btc')
+  ok('the producer\'s own basis note is preferred over the reconstructed one',
+    /UNBACKED/.test(producerNote.basis.note) && !/cannot tell which/.test(producerNote.basis.note))
+
+  // The short leg (2026-07-30): a THIRD question, and one the quantity cannot
+  // answer. trade_derived_qty is a net across wallets, so a spot long can offset
+  // a margin short to nothing and a framework reading the net alone would see no
+  // borrow to cover.
+  const shortLeg = positionForAsset({ ...snap, positions: [{
+    asset: 'BTC', qty: '6', trade_derived_qty: '6',
+    qty_reconciliation_status: 'RECONCILED', basis_reliable: true,
+    short_qty: '4', short_avg_price_usd: '70000',
+  }] }, 'btc')
+  eq('a net-long quantity can still carry an open short', shortLeg.short.short, true)
+  eq('...with the quantity that has to be covered', shortLeg.short.short_qty, '4')
+  eq('...and the entry a cover is measured against', shortLeg.short.avg_entry_usd, '70000')
+  ok('...saying plainly that the net hides it', /NET/.test(shortLeg.short.note))
+
+  const flat = positionForAsset({ ...snap, positions: [{
+    asset: 'BTC', qty: '6', trade_derived_qty: '6',
+    qty_reconciliation_status: 'RECONCILED', basis_reliable: true, short_qty: null,
+  }] }, 'btc')
+  eq('a stated null short_qty is a measured flat', flat.short.short, false)
+  eq('...and says nothing', flat.short.note, null)
+
+  // Absence is not zero — the same trap custody and basis were already fixed for.
+  // An older producer could not represent a short AT ALL, so silence there means
+  // unknown; it surfaced shorts as an underivable basis instead.
+  const oldFile = positionForAsset({ ...snap, positions: [{
+    asset: 'BTC', qty: '6', trade_derived_qty: '6',
+    qty_reconciliation_status: 'RECONCILED', basis_reliable: true,
+  }] }, 'btc')
+  eq('an absent short_qty is UNKNOWN, not flat', oldFile.short.short, null)
+  ok('...and says so, pointing at where that producer hid a short',
+    /NOT PRESENT/.test(oldFile.short.note) && /basis_reliable:false/.test(oldFile.short.note))
+  eq('with no row at all, whether a short is open is unknown — not answered',
+    shortForPosition(null, 'AAVE').short, null)
+  ok('...and refuses on the record rather than silently',
+    /UNKNOWN, not answered/.test(shortForPosition(null, 'AAVE').note))
 
   // An unexplained gap is a data defect, not a position. Reporting a number in
   // EITHER direction off it would be guessing with a confident face.

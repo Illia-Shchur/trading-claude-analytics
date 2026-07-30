@@ -96,6 +96,19 @@ const base = {
   },
   dry_powder: snap.dry_powder,
   portfolio: snap.portfolio,
+  // The realized carry cost of a borrow, plus the borrows still open. Two uses: Hard Rule 6's Carry
+  // Cost Ledger finally has a measured number behind it, and an open borrow (or a past accrual) is the
+  // evidence that a negative replayed quantity is a genuine short rather than a gap in ingestion.
+  // Absent on a snapshot written before 2026-07-30 — which is NOT the same as a zero carry.
+  carry: snap.carry ?? null,
+  carry_note: snap.carry
+    ? 'Spot/margin financing only, cross margin only. NOT futures funding (that is futures.funding_total_usd) — do not sum the two without saying which is which. An empty open_borrows means nothing was borrowed at the last link, not that nothing was ever borrowed; the history is interest_by_asset.'
+    : 'NOT PRESENT in this snapshot — the producer predates the carry ledger. Report carry cost as UNKNOWN, never as zero.',
+  // A position's SIDE, which its quantity does not carry: trade_derived_qty is a net across wallets, so a
+  // spot long can offset a margin short down to nearly nothing. Read short_qty per position, not the sign.
+  short_leg_note: (snap.positions || []).some(p => p.short_qty !== undefined)
+    ? 'Each position carries short_qty / short_avg_price_usd when it is net short — borrow-corroborated, not inferred from a sale. A null or absent short_qty on a position means no short. total_cost_usd is NEGATIVE on a short: money received, not spent.'
+    : 'NOT PRESENT in this snapshot — the producer predates the signed cost-basis model. Report short exposure as UNKNOWN, never as zero; on that producer a short surfaced as basis_reliable:false instead.',
   performance_overall: snap.performance?.overall ?? null,
   performance_by_tag_prefix: snap.performance?.by_tag_prefix ?? [],
   coverage: snap.coverage,

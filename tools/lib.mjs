@@ -637,8 +637,14 @@ export function custodyForPosition(position, asset) {
 // no derivable basis.
 //
 // It goes UNRELIABLE when the ledger's replay disposed of more than it ever saw
-// acquired — a margin short, or a sale of coins whose acquisition was never
-// ingested. The ledger cannot tell those apart, so neither does this.
+// acquired. Until 2026-07-30 that meant one of two things and the ledger could
+// not say which: a margin short, or a sale of coins whose acquisition was never
+// ingested. The engine now models shorts, so on a snapshot produced from that
+// date the flag means only the second — a genuine ingestion gap — and a short is
+// a position with a real basis, reported through `short_qty`. Older files still
+// carry the older, vaguer meaning, which is why the PRODUCER'S OWN note is
+// preferred over anything reconstructed here: it was written by the code that
+// set the flag and cannot drift from it.
 //
 // Why it exists: the engine used to treat "sold more than held" as if it were
 // "sold down to dust" and snap the position to zero, so a short's quantity was
@@ -661,7 +667,46 @@ export function basisForPosition(position, asset) {
   return {
     reliable: false,
     oversold_qty: position.oversold_qty ?? null,
-    note: `COST BASIS NOT DERIVABLE for ${asset}: the ledger's replay disposed of more than it ever saw acquired (${position.oversold_qty ?? 'an unrecorded quantity'} beyond the position), because the asset was sold short on margin or because an acquisition was never ingested — the ledger cannot tell which. Do NOT quote average cost, cost basis, unrealized PnL or ROI for ${asset}; state that the basis is unknown. The QUANTITY is still sound and is the position of record. Realized PnL is an UPPER BOUND, not a result: a short leg was realized against a zero basis, so it overstates the gain. This may not satisfy a phase-dependent unlock precondition that reads cost basis, and nothing is sized against a cost basis that does not exist.`,
+    // The producer ships its own wording with the flag. Prefer it: a snapshot from
+    // the signed engine says "unbacked disposal, NOT a short", an older one says
+    // "short or ingestion gap, cannot tell", and rewriting either from here would
+    // put this file's assumptions in front of the file's own evidence.
+    note: position.basis_unreliable_note
+      || `COST BASIS NOT DERIVABLE for ${asset}: the ledger's replay disposed of more than it ever saw acquired (${position.oversold_qty ?? 'an unrecorded quantity'} beyond the position), because the asset was sold short on margin or because an acquisition was never ingested — the ledger cannot tell which. Do NOT quote average cost, cost basis, unrealized PnL or ROI for ${asset}; state that the basis is unknown. The QUANTITY is still sound and is the position of record. Realized PnL is an UPPER BOUND, not a result: a short leg was realized against a zero basis, so it overstates the gain. This may not satisfy a phase-dependent unlock precondition that reads cost basis, and nothing is sized against a cost basis that does not exist.`,
+  }
+}
+
+// ── the short leg (position-snapshot/1 short_qty) ─────────────────────────
+// A THIRD orthogonal question, and the one a short-side framework actually asks:
+// custody asks where the coins are, basis asks what they cost, this asks which
+// WAY the position points. It is not answerable from the quantity, because the
+// quantity is a NET across wallets: hold 10 spot and short 4 on margin and the
+// net reads +6, with the borrow — the thing that must be covered, that pays
+// carry, and that a squeeze runs against — nowhere in the number.
+//
+// Absent on a snapshot written before 2026-07-30, when the engine could not
+// represent a short at all. Absent is UNKNOWN, never "no short": that producer
+// would have reported a short as an underivable basis instead, so read
+// `basis.reliable === false` on an old file as possibly-a-short.
+export function shortForPosition(position, asset) {
+  if (!position) {
+    return { short: null, short_qty: null, avg_entry_usd: null,
+      note: `NO POSITION ROW for ${asset} — whether a short is open is UNKNOWN, not answered.` }
+  }
+  if (position.short_qty === undefined) {
+    return { short: null, short_qty: null, avg_entry_usd: null,
+      note: `NOT PRESENT in this snapshot — the producer predates the signed cost-basis model and could not represent a short. Report short exposure in ${asset} as UNKNOWN, never as zero; on this producer a short surfaced as basis_reliable:false instead.` }
+  }
+  const qty = position.short_qty === null ? 0 : Number(position.short_qty)
+  if (!(qty > 0)) {
+    return { short: false, short_qty: 0, avg_entry_usd: null, note: null }
+  }
+  return {
+    short: true,
+    short_qty: position.short_qty,
+    avg_entry_usd: position.short_avg_price_usd ?? null,
+    note: position.short_note
+      || `NET SHORT ${position.short_qty} ${asset} at an average entry of ${position.short_avg_price_usd ?? 'an unstated price'}. trade_derived_qty is a NET and may read flat or even long against an offsetting spot position; this leg still has to be covered and still pays carry. total_cost_usd is NEGATIVE for a short — money received, not spent.`,
   }
 }
 
@@ -711,6 +756,7 @@ export function positionForAsset(snap, assetRaw) {
     position,
     custody: custodyForPosition(position, asset),
     basis: basisForPosition(position, asset),
+    short: shortForPosition(position, asset),
     attribution: {
       tags,
       untagged_open_deals: untagged,
