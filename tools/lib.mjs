@@ -583,8 +583,20 @@ export const LEDGER_ASSET_ALIASES = {
 // against it — and never let it satisfy a phase-dependent unlock precondition,
 // which needs a tagged deal on a quantity the ledger can actually see.
 export function custodyForPosition(position, asset) {
-  const status = position?.qty_reconciliation_status || null
-  if (!position || status === null || status === 'RECONCILED') {
+  // An absent row is not a clean row. Until 2026-07-30 this function opened with
+  // `if (!position || ...)` and answered RECONCILED / on_venue — synthesising an
+  // affirmative all-clear out of nothing at all. That mattered because the
+  // exporter drove its position loop off LIVE holdings only, so an asset sold
+  // down to exactly zero emitted no row: SOL replayed to -1.15 with an
+  // underivable basis and reached a report as reconciled and reliable. The
+  // exporter now emits a row for every replayed asset, and this refuses to
+  // invent one when it does not.
+  if (!position) {
+    return { status: 'NO_POSITION_ROW', on_venue: null, off_venue_qty: null,
+      note: `The snapshot carries no position row for ${asset}, so custody is UNKNOWN — not reconciled. An absent row is the absence of an answer, never an all-clear. Do NOT report this asset as on-venue, flat, or exited on the strength of this response; a snapshot written before 2026-07-30 omitted any asset whose live balance was exactly zero, including assets the replay still held a position in.` }
+  }
+  const status = position.qty_reconciliation_status || null
+  if (status === null || status === 'RECONCILED') {
     return { status: status || 'RECONCILED', on_venue: true, off_venue_qty: null,
       note: 'Live balance agrees with the fill replay; the position is where the ledger can see it.' }
   }
@@ -635,7 +647,15 @@ export function custodyForPosition(position, asset) {
 // true 1.98 SOL opening balance into 833.5, and booked short-sale proceeds as
 // pure profit because the basis of the sold quantity was zero.
 export function basisForPosition(position, asset) {
-  if (!position || position.basis_reliable !== false) {
+  // Same trap as custodyForPosition, and the more dangerous of the two: a
+  // missing row used to return `reliable: true`, inverting an oversold warning
+  // into a clean bill of health. Reliability is a claim about a row; with no row
+  // there is nothing to make the claim about.
+  if (!position) {
+    return { reliable: null, oversold_qty: null,
+      note: `NO POSITION ROW for ${asset} — cost-basis reliability is UNKNOWN, not confirmed. Do not read this as a reliable basis, and do not quote average cost, cost basis, unrealized PnL or ROI on the strength of it.` }
+  }
+  if (position.basis_reliable !== false) {
     return { reliable: true, oversold_qty: null, note: null }
   }
   return {
@@ -671,8 +691,13 @@ export function positionForAsset(snap, assetRaw) {
   const funding = (snap.futures?.funding_by_asset || []).find(f => String(f.asset).toUpperCase() === asset) || null
 
   if (!position && openDeals.length === 0 && closedDeals.length === 0 && futures.length === 0) {
+    // "Genuine flat" is a real claim and it rests on one property of the producer: the exporter emits a
+    // position row for every asset the REPLAY holds, not only for the ones the exchange still holds. Before
+    // 2026-07-30 it did not, and this branch could fire on an asset carrying a live short and an underivable
+    // basis. The claim is therefore stated together with what it depends on, so a stale snapshot cannot
+    // launder an omission into a conclusion.
     return { asset, ...aliasFields, covered: false, reason: 'no_ledger_history',
-      note: 'The ledger tracks this asset but holds no position, no round trip and no open future in it. That is a genuine flat, not a gap — but it is stated, not inferred from an absent row.' }
+      note: 'The ledger tracks this asset but holds no position row, no round trip and no open future in it. That is a genuine flat, not a gap — but it is stated, not inferred from an absent row. It holds only for a snapshot generated on or after 2026-07-30, when the exporter began emitting a row for every replayed asset including those with a zero live balance; on an older file an absent row may simply be an asset that was sold to exactly zero.' }
   }
 
   const tags = [...new Set(openDeals.map(d => d.tag).filter(Boolean))]

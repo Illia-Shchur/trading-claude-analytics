@@ -471,6 +471,31 @@ ok('a truncated file names the missing block',
   const eth = positionForAsset(snap, 'eth')
   eq('eth is covered via its open short alone', eth.covered, true)
   eq('...and the SHORT is carried through', eth.futures_positions[0].side, 'SHORT')
+
+  // ── an ABSENT position row is not a clean position row ───────────────────
+  // The failure this pair exists to prevent, and it was live. Both guards used
+  // to open `if (!position || ...)` and answer RECONCILED / reliable:true, so an
+  // asset with no row was handed to a report as an affirmative all-clear. It
+  // mattered because the exporter drove its loop off LIVE holdings, and an asset
+  // sold to exactly zero has none — SOL replayed to -1.15 with an underivable
+  // basis and appeared nowhere at all. `eth` above is exactly that shape: it is
+  // covered (an open short proves history) while carrying no position row.
+  eq('a covered asset with no position row has a null position', eth.position, null)
+  eq('...and custody refuses to synthesise RECONCILED from the absence',
+    eth.custody.status, 'NO_POSITION_ROW')
+  eq('...claiming nothing about where the coins are', eth.custody.on_venue, null)
+  ok('...and saying plainly that an absent row is not an all-clear',
+    /never an all-clear/.test(eth.custody.note)
+      && /do NOT report this asset as on-venue, flat, or exited/i.test(eth.custody.note))
+  eq('...while basis reliability is UNKNOWN rather than true',
+    eth.basis.reliable, null)
+  ok('...refusing the same figures an unreliable basis refuses',
+    /do not quote average cost, cost basis, unrealized PnL or ROI/i.test(eth.basis.note))
+
+  // And the flat claim states what it rests on, so a pre-2026-07-30 snapshot —
+  // which omitted zero-balance assets — cannot launder an omission into a verdict.
+  ok('a genuine-flat verdict discloses the producer property it depends on',
+    /on or after 2026-07-30/.test(sol.note) && /sold to exactly zero/.test(sol.note))
 }
 
 // ── tranche fill detection — the predicate that was dead for 152/152 ────────
