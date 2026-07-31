@@ -1,9 +1,9 @@
 {
   "counts": {
-    "files_in_reports_dir": 109,
-    "framework_reports": 105,
+    "files_in_reports_dir": 112,
+    "framework_reports": 108,
     "non_framework_files_ignored": 4,
-    "signals": 39,
+    "signals": 42,
     "skipped_no_machine_block": 66,
     "skipped_post_epoch_missing_block": 0,
     "skipped_unparseable": 0
@@ -14,7 +14,7 @@
     "entry_price": "2026-07-29",
     "machine_block": "2026-07-11"
   },
-  "generated_at": "2026-07-28T15:09:49Z",
+  "generated_at": "2026-07-31T08:43:23Z",
   "generated_by": "tools/export-signals.mjs",
   "ignored_files": [
     {
@@ -8234,6 +8234,444 @@
         "p3_note": "Phase 3 is unreachable in Channel B at any score (§4B/§6)"
       },
       "verdict": "STAND DOWN -- no ETH short. FIRST LIVE CHANNEL B REPORT in framework history: ETH -61.99% off its 1y high with a 200dma falling -5.24%/20 sessions and price -11.60% beneath it routes to Channel B rather than the pre-2026-07-27 structural stand-down. Mechanical 9/20, discretionary 0.0, adjusted 9/20, against a Channel B Phase-1A line of 13 -- SHORT BY 4. Legs: rally extension 4 (+25.17% off the 40-session low $1,510.51 to today's high; +30.85% to the Jul-27 bounce high $1,976.46 -- same band), local exhaustion 2 (daily RSI 54.38, weekly RSI 42.16 <50 so the hard qualifier passes), resistance confluence 1 (1/4 -- only the May breakdown shelf; 200dma 13% overhead, 50dma 7% BELOW), bear structure 1 (1/3 -- bounce made a HIGHER high and the 50/200 gap NARROWED from -20.41% to -17.42%; only 'no weekly close above the 200dma in 8 weeks' passed), relative sentiment 1 (1/3 -- ETF inflow regime resuming into the rally; F&G 3d 28.33 vs a 36.45 threshold, no funding flip). Squeeze-trap penalty NOT active: deepest funding print -4.00% ann across 45 Binance intervals, inside the -5% trigger; longest negative run 3 intervals at -3.63/-3.56/-1.25%. Bounce-maturity floor 0 (32 sessions). No cap -- Channel B has none. Correlation sourced 0.547 <0.70, no risk-on gate surcharge. GATES 6/9 (passed 1,2,3,4,6,7,8; failed 5 price never reached the 200dma, 9 no local greed), no N/A, denominator 9, floors ceil(3/9x9)=3 / ceil(5/9x9)=5 / ceil(6/9x9)=6, Phase 3 unreachable. THE GATE BOARD CLEARS THROUGH PHASE 2 AND THE SCORE DOES NOT CLEAR PHASE 1A -- the inversion is the finding; every prior ETH FR was vetoed by the cap or the gate count. Gate 8 (funding veto, the only true veto in either framework) GREEN. Section 7 preflight PASSES clean on all five Channel B triggers, no borderline WARNING. S2 unavailable (score line unmet AND gate count not short by exactly one); S1 max +2.0 reaches 11, still 2 short. Total Short EV +0.38% floored / +0.50% true (EV_price $1,875.66 vs spot $1,882.85, directional +0.38%, carry +0.12% true floored to 0.00% for gating at +2.08% ann funding over 21d) -- FAILS the +3% minimum-edge filter. EV is LOAD-BEARING, not corroborative-only: no cap exists in Channel B and gates read 6/9, so the demotion clause does not apply. Collar ON (>20% off 1y high in Channel B, and |EV|<3%). Cross-check: FK computed 11/20 from the same fetch, matching the PUBLISHED Jul-25 11/20 exactly -- <12, force-cover does NOT fire, but FK is ONE GATE from 12, at which point Channel B becomes unavailable on ETH entirely. Hard Rule 5: Channel B -- level-based inverse consistency not evaluable (different scored objects); FK >=12 force-cover governs instead. Prior Jul-16 FR graded: EV_price $1,943.50 OVER-called by 3.22% (realized $1,882.85); modal band $1,870-2,120 HIT; falsifier 'a held retest of the broken $1,830 wall as support' FIRED (Jul-23/25 pullback held every close above $1,830, then rallied +7% to $1,976.46). Trailing EV calibration n=2, errors now straddle zero (+2.14%, -3.22%) -- the prior under-call pattern is retired. The realistic path to a live ETH short runs HIGHER not lower: a rally into $2,060-2,130 rejected at the falling 200dma would light gate 5 and plausibly add 3 points of resistance confluence. All phases DRY POWDER; 0% of the 50% book, 0% of the 30% per-asset cap, 0% of the 20% analyst-channel cap."
+    },
+    {
+      "asset": "BTC",
+      "channel": "B",
+      "channel_inference_basis": "declared in the machine block",
+      "channel_inferred": false,
+      "content_sha256": "87a0108efa8bf1c8342e35a82b58bef2283087c112878952bab0496c587b3c8d",
+      "deployment": {
+        "deployed_pct": "0",
+        "dry_pct": "100",
+        "filled_detection": "deployed === true || typeof entry_price === \"number\" || typeof entry === \"number\"",
+        "filled_detection_caveat": "before the entry_price epoch (2026-07-29) no tranche in this corpus carried deployed:true or a numeric entry — 152/152 tranches across 39 reports encode `entry` as prose — so filled_tranche_count is structurally 0 on every pre-epoch signal. It is an artifact of the old schema, not an observation that nothing was filled.",
+        "filled_tranche_count": 0,
+        "throttle_released": false,
+        "tranche_count": 0,
+        "tranches": []
+      },
+      "ev": {
+        "scenarios": [
+          {
+            "high": "71500",
+            "low": "66000",
+            "mid": null,
+            "name": "Bounce resumes toward 200dma",
+            "p": "28"
+          },
+          {
+            "high": "66000",
+            "low": "62000",
+            "mid": null,
+            "name": "Range around the 50dma / 200-week",
+            "p": "38"
+          },
+          {
+            "high": "62000",
+            "low": "57700",
+            "mid": null,
+            "name": "50dma lost, July-low retest",
+            "p": "24"
+          },
+          {
+            "high": "57700",
+            "low": "52000",
+            "mid": null,
+            "name": "Fresh cycle lows",
+            "p": "10"
+          }
+        ],
+        "stated_ev_usd": "63419",
+        "vs_spot_pct": "-0.64"
+      },
+      "framework": "flying_rocket",
+      "gates": {
+        "active": 9,
+        "na": [],
+        "passed": [
+          1,
+          2,
+          3,
+          4,
+          6,
+          7,
+          8
+        ],
+        "passed_count": 7,
+        "passed_mask": 239
+      },
+      "regime": {
+        "ma200_falling": true,
+        "pct_below_1y_ath": "49.43",
+        "price_below_ma200": true
+      },
+      "report_at_derivation": "derived by interpreting the filename's HHMM in America/New_York (the repo's Output Convention) — the machine block carries a date but no time field, and (asset, framework, date) collides (btc/eth × fallen_knives on 2026-07-14 and 2026-07-18), so report_file is the primary key",
+      "report_at_utc": "2026-07-31T08:26:00Z",
+      "report_date": "2026-07-31",
+      "report_file": "btc_flying_rocket_20260731_0426.md",
+      "report_local_time": "04:26",
+      "report_zone": "America/New_York",
+      "rubric": "FR-B/1",
+      "schema_epoch": "discretion_and_two_channel",
+      "score": {
+        "adjusted": "6",
+        "cap_applied": false,
+        "cap_value": null,
+        "discretionary": "0",
+        "discretionary_inferred": false,
+        "inference_basis": "declared in the machine block",
+        "legs": [
+          {
+            "block_key": "euphoria",
+            "max": 5,
+            "min": 0,
+            "ordinal": 1,
+            "rubric_name": "rally_extension",
+            "value": "2"
+          },
+          {
+            "block_key": "momentum",
+            "max": 4,
+            "min": 0,
+            "ordinal": 2,
+            "rubric_name": "local_exhaustion",
+            "value": "1"
+          },
+          {
+            "block_key": "valuation",
+            "max": 5,
+            "min": 0,
+            "ordinal": 3,
+            "rubric_name": "resistance_confluence",
+            "value": "1"
+          },
+          {
+            "block_key": "distribution",
+            "max": 3,
+            "min": 0,
+            "ordinal": 4,
+            "rubric_name": "bear_structure_integrity",
+            "value": "2"
+          },
+          {
+            "block_key": "vulnerability",
+            "max": 3,
+            "min": 0,
+            "ordinal": 5,
+            "rubric_name": "relative_sentiment",
+            "value": "0"
+          }
+        ],
+        "mechanical": "6",
+        "mechanical_inferred": false,
+        "penalty": "0",
+        "raw": "6",
+        "rounding": "half-up"
+      },
+      "spot_source": "median of 4 synchronized live quotes: CoinGecko $63,819.00 / Binance BTCUSDT $63,914.00 / Kraken XXBTZUSD $63,831.90 / Coinbase BTC-USD $63,816.94 (all Jul-31 08:25 UTC); spread 0.152%",
+      "spot_usd": "63825.45",
+      "stops": null,
+      "unlock": {
+        "highest_phase_unlocked_by_score": null,
+        "ladder": "FR-B",
+        "p1a": 13,
+        "p1b": 15,
+        "p2": 17,
+        "p3": null,
+        "p3_note": "Phase 3 is unreachable in Channel B at any score (§4B/§6)"
+      },
+      "verdict": "STAND DOWN -- no BTC short. FIRST LIVE CHANNEL B REPORT ON BITCOIN: -49.43% off the 1y high with a 200dma falling -3.41%/20 sessions and price -10.70% beneath it routes to Channel B rather than the pre-2026-07-27 Channel-A cap (0/8 attainable). Framework change, not regime change -- BTC satisfied these measurements long before the last report; what is new is that a rubric exists for the tape. Mechanical 6/20, discretionary 0.0, adjusted 6/20 against a Channel B Phase-1A line of 13 -- SHORT BY 7. Legs, using the FR-B/1 rubric (leg keys are Channel A names carrying Channel B meanings): rally extension 2 (+13.03% off the 40-session low $57,747.77 to today's high $65,271.17; +15.87% to the Jul-21 bounce high $66,910.06 -- same band), local exhaustion 1 (daily RSI 48.08 today, weekly RSI 40.04 <50 so the hard qualifier passes; the daily RSI was 61.56 at the bounce high TEN SESSIONS AGO -- the exhaustion already happened), resistance confluence 1 (1/4 -- only the Jul-21 lower-high shelf; 200dma $71,460.20 is 10.7% OVERHEAD and was never touched, price is +0.64% ABOVE the 50dma not below it), bear structure 2 (2/3 -- bounce high IS a lower high vs $67,248.13, and no weekly close above the 200dma in 8 weeks; but the 50/200 gap NARROWED from -11.96% to -11.27%), relative sentiment 0 (0/3 -- F&G 3d 27.33 vs a 38.65 threshold; NO funding flip because funding has been positive 24 consecutive intervals with no negative run to flip from; NO flow tell because BTC ETFs are in OUTFLOW -$526.5M over four sessions with July's +$205M the lowest monthly total on record, which is the OPPOSITE of the 'longs re-crowding into the bounce' the criterion asks for). Squeeze-trap penalty NOT active: 24 consecutive POSITIVE funding intervals, no negative print in the sampled window. Bounce-maturity floor 0 (30 sessions from the low, 20 to the bounce high). No cap -- Channel B has none. Correlation SOURCED 0.331 (30 daily log-return pairs vs SPX, Jun-16 to Jul-30) <0.70 -> risk-on surcharge OFF. Section 2.5 wrong-asset row CHECKED and NOT fired: BTC dominance ~56.3% but Altcoin Season Index ~58 not <40, and dominance has been falling not breaking out. GATES 7/9 (passed 1,2,3,4,6,7,8; failed 5 the bounce stalled 6.37% SHORT of the 200dma, 9 no local greed and no funding flip), no N/A, denominator 9, floors ceil(3/9x9)=3 / ceil(5/9x9)=5 / ceil(6/9x9)=6, Phase 3 unreachable in Channel B. Gate 1 disclosure: +15.87% to the bounce high clears the >=15% bar, +13.03% to today's session high does not; both printed, verdict identical either way. SAME INVERSION AS ETH BUT WIDER -- gates clear through Phase 2 and the score misses Phase 1A by seven, which is categorical rather than a near-miss. Gate 8 (funding veto, the only true veto in either framework) emphatically GREEN. Section 7 Channel B preflight PASSES clean on all five triggers, no borderline WARNING, and more comfortably than ETH (bear structure 2/3 vs 1/3, funding 24 consecutive positive vs 9). S1 unavailable in effect (max +2.0 reaches 8, five short); S2 structurally unavailable (score line missed by 7 AND gate count over-satisfied at 7/9). Total Short EV +0.64% floored / +1.16% true (EV_price $63,419 vs spot $63,825.45, directional +0.64%, carry +0.522% true floored to 0.00% for gating at +9.07% ann funding over 21d) -- FAILS the +3% minimum-edge filter by 2.36 points. EV is LOAD-BEARING, not corroborative-only: Channel B has no cap and gates read 7/9. First non-negative BTC FR EV in the series. Collar ON (>20% off 1y high in Channel B, and |EV|<3%). Stop band computed though nothing fills: fill $63,825.45, ADR(5) $1,567.16 = 2.46%, noise floor 1.5xADR = +3.68% -> $66,176.19, Channel B 1A ceiling +6% -> $67,654.98, structure level (bounce high +1%) $67,579.16 sits INSIDE the band -- frStopBand ok:true. BTC has the widest workable stop band of the three assets and the lowest score; tradeability and opportunity are different things. Cross-check: FK computed 10/20 with 3/9 gates from the same fetch (legs 2/1/4/0/3; momentum dropped 2->1 as weekly RSI crossed above 40.0; gates 3,6,8 passed, gate 5 Hash Ribbon left WARNING-unmeasured and kept in the denominator per the warning-may-not-become-NA rule), vs PUBLISHED Jul-25 11/20 3/9 -- both <12, same side of the boundary, no strictest-wins conflict, force-cover does NOT fire. Hard Rule 5: Channel B -- level-based inverse consistency not evaluable (different scored objects); FK >=12 force-cover governs instead. POSITION (Hard Rule 8, FRESH 665 min, driver holdings_as_of, rolls STALE in ~55 min): custody RECONCILED, quantity 0.00000184 BTC = dust, BTC effectively FLAT; basis.reliable FALSE (5 unbacked disposals exceeding the replayed position by 0.0336045 BTC, explicitly NOT a margin short -- short_qty null) so NO avg cost, cost basis, unrealized PnL or ROI is quoted and realized +$1,639.83 is an UPPER BOUND; attribution UNTAGGED (2 open deals); no open futures, futures equity $0.00; dry powder $14,288.30. POSITION RECONCILIATION: the deal layer carries two open BTC LONG deals (SPOT opened 2025-02-26 open_qty 0.00009996 at VWAP $83,993.64 stated unrealized -$1.03; CROSS_MARGIN opened 2025-01-17 open_qty 0.01984387 at VWAP $80,608.04 stated unrealized -$283.29) claiming ~0.0199 BTC against a reconciled live balance of 0.00000184 -- neither the quantities nor the -$284.32 combined unrealized is reported as a position or a loss; the quantity engine wins and the divergence is a data defect to fix. performance_by_tag_prefix empty for FR-A-/FR-B-: still N=0 on money. Re-check trigger 6.6(e) FIRED (asset newly satisfies the Channel B regime test); 6.6(b) did NOT fire -- Jul-29/30 liquidations were LONG-dominated ($298M/$186M longs vs $103M/$100M shorts), inverting the two consecutive ~93%-short squeeze days that triggered the Jul-16 re-run. Prior Jul-16 FR graded: EV_price $65,400 OVER-called by 2.41% (realized $63,825.45); modal band $65-71k PARTIAL HIT (entered on the Jul-21 $66,910.06 print, did not hold); falsifier 'a held trend-repair rally' PARTIAL FIRE -- the weekly-close limb fired (two consecutive weekly closes above the 200-week SMA $63,555.64: Jul-19 $64,690.80, Jul-26 $65,340.30) while the ETF limb was refuted (-$526.5M over four sessions, record-low month), and the 200-DAY structure remains unrepaired. Trailing EV calibration n=3 (-1.1%, +0.2%, -2.41%), mean signed error -1.10%, ALL THREE POINTING THE SAME WAY -- flagged as a candidate bias for the next calibration but NOT corrected here, because correcting a forecast downward strengthens a short case and Hard Rule 6 does not permit that on three observations. Realistic re-arm distance stated honestly: a 200dma rejection at $70,000-71,500 takes mechanical 6 -> ~11-12, STILL SHORT of 13; BTC needs the rejection AND a second improvement to reach a probe. All phases DRY POWDER; 0% of the 50% book, 0% of the 30% per-asset cap, 0% of the 20% analyst-channel cap."
+    },
+    {
+      "asset": "ETH",
+      "channel": "B",
+      "channel_inference_basis": "declared in the machine block",
+      "channel_inferred": false,
+      "content_sha256": "3e6940f29576d896c6e5fa182eb02d0da133c78c850ffafb3c24bf65fcf03b15",
+      "deployment": {
+        "deployed_pct": "0",
+        "dry_pct": "100",
+        "filled_detection": "deployed === true || typeof entry_price === \"number\" || typeof entry === \"number\"",
+        "filled_detection_caveat": "before the entry_price epoch (2026-07-29) no tranche in this corpus carried deployed:true or a numeric entry — 152/152 tranches across 39 reports encode `entry` as prose — so filled_tranche_count is structurally 0 on every pre-epoch signal. It is an artifact of the old schema, not an observation that nothing was filled.",
+        "filled_tranche_count": 0,
+        "throttle_released": false,
+        "tranche_count": 0,
+        "tranches": []
+      },
+      "ev": {
+        "scenarios": [
+          {
+            "high": "2130",
+            "low": "1960",
+            "mid": null,
+            "name": "Bounce resumes / 200dma test",
+            "p": "32"
+          },
+          {
+            "high": "1960",
+            "low": "1820",
+            "mid": null,
+            "name": "Range grinds",
+            "p": "36"
+          },
+          {
+            "high": "1820",
+            "low": "1690",
+            "mid": null,
+            "name": "Bounce fails, 50dma test",
+            "p": "22"
+          },
+          {
+            "high": "1690",
+            "low": "1510",
+            "mid": null,
+            "name": "Breakdown leg resumes",
+            "p": "10"
+          }
+        ],
+        "stated_ev_usd": "1880.9",
+        "vs_spot_pct": "-0.39"
+      },
+      "framework": "flying_rocket",
+      "gates": {
+        "active": 9,
+        "na": [],
+        "passed": [
+          1,
+          2,
+          3,
+          4,
+          6,
+          7,
+          8
+        ],
+        "passed_count": 7,
+        "passed_mask": 239
+      },
+      "regime": {
+        "ma200_falling": true,
+        "pct_below_1y_ath": "61.88",
+        "price_below_ma200": true
+      },
+      "report_at_derivation": "derived by interpreting the filename's HHMM in America/New_York (the repo's Output Convention) — the machine block carries a date but no time field, and (asset, framework, date) collides (btc/eth × fallen_knives on 2026-07-14 and 2026-07-18), so report_file is the primary key",
+      "report_at_utc": "2026-07-31T08:26:00Z",
+      "report_date": "2026-07-31",
+      "report_file": "eth_flying_rocket_20260731_0426.md",
+      "report_local_time": "04:26",
+      "report_zone": "America/New_York",
+      "rubric": "FR-B/1",
+      "schema_epoch": "discretion_and_two_channel",
+      "score": {
+        "adjusted": "9",
+        "cap_applied": false,
+        "cap_value": null,
+        "discretionary": "0",
+        "discretionary_inferred": false,
+        "inference_basis": "declared in the machine block",
+        "legs": [
+          {
+            "block_key": "euphoria",
+            "max": 5,
+            "min": 0,
+            "ordinal": 1,
+            "rubric_name": "rally_extension",
+            "value": "4"
+          },
+          {
+            "block_key": "momentum",
+            "max": 4,
+            "min": 0,
+            "ordinal": 2,
+            "rubric_name": "local_exhaustion",
+            "value": "2"
+          },
+          {
+            "block_key": "valuation",
+            "max": 5,
+            "min": 0,
+            "ordinal": 3,
+            "rubric_name": "resistance_confluence",
+            "value": "1"
+          },
+          {
+            "block_key": "distribution",
+            "max": 3,
+            "min": 0,
+            "ordinal": 4,
+            "rubric_name": "bear_structure_integrity",
+            "value": "1"
+          },
+          {
+            "block_key": "vulnerability",
+            "max": 3,
+            "min": 0,
+            "ordinal": 5,
+            "rubric_name": "relative_sentiment",
+            "value": "1"
+          }
+        ],
+        "mechanical": "9",
+        "mechanical_inferred": false,
+        "penalty": "0",
+        "raw": "9",
+        "rounding": "half-down"
+      },
+      "spot_source": "median of 4 synchronized live quotes: CoinGecko $1,888.23 / Binance ETHUSDT $1,891.62 / Kraken XETHZUSD $1,888.47 / Coinbase ETH-USD $1,888.21 (all Jul-31 08:25 UTC); spread 0.181%",
+      "spot_usd": "1888.35",
+      "stops": null,
+      "unlock": {
+        "highest_phase_unlocked_by_score": null,
+        "ladder": "FR-B",
+        "p1a": 13,
+        "p1b": 15,
+        "p2": 17,
+        "p3": null,
+        "p3_note": "Phase 3 is unreachable in Channel B at any score (§4B/§6)"
+      },
+      "verdict": "STAND DOWN -- no ETH short, seventh consecutive. Channel B live (-61.88% off 1y high, 200dma falling -5.26%/20 sessions, price -10.54% beneath it). Mechanical 9/20, discretionary 0.0, adjusted 9/20 against a Channel B Phase-1A line of 13 -- SHORT BY 4, unchanged from Jul-28. Legs: rally extension 4 (+28.02% off the 40-session low $1,510.51 to today's high $1,933.78; +30.85% to the Jul-27 bounce high $1,976.46 -- same band), local exhaustion 2 (daily RSI 53.74, weekly RSI 42.85 <50 so the hard qualifier passes), resistance confluence 1 (1/4 -- only the Jul-15 lower-high shelf $1,944.16; 200dma $2,110.10 is 10.5% OVERHEAD and the 50dma $1,773.62 is 6.4% BELOW), bear structure 1 (1/3 -- bounce high EXCEEDED the prior swing high $1,944.16, and the 50/200 gap NARROWED again from -20.65% to -15.95%; only 'no weekly close above the 200dma in 8 weeks' passed), relative sentiment 1 (1/3 -- ETF inflow regime, +$342.85M MTD with three named green sessions Jul-27/28/29; F&G 3d 27.33 vs a 38.65 threshold; no funding flip). Squeeze-trap penalty NOT active: 9 consecutive POSITIVE funding intervals, deepest negative in 24 intervals -4.00% ann, inside the -5% trigger. Bounce-maturity floor 0 (35 sessions from the low, 31 to the bounce high). No cap -- Channel B has none. Correlation SOURCED 0.398 (30 daily log-return pairs vs SPX, Jun-16 to Jul-30) <0.70 -> risk-on surcharge OFF on a measured number. GATES 7/9 (passed 1,2,3,4,6,7,8; failed 5 the rally stalled 6.33% SHORT of the 200dma, 9 no local greed), no N/A, denominator 9, floors ceil(3/9x9)=3 / ceil(5/9x9)=5 / ceil(6/9x9)=6, Phase 3 unreachable in Channel B. THE GATE BOARD CLEARS THROUGH PHASE 2 AND THE SCORE DOES NOT CLEAR PHASE 1A -- second consecutive report with this inversion. LABELED MEASUREMENT CORRECTION: the Jul-28 report's prose printed 'GATES 6/9' while its own machine block listed passed [1,2,3,4,6,7,8] = 7; the list was right, the count was a transcription error, so the gate board is FLAT at 7/9 rather than improved. No score effect, not counted toward any trim. Gate 8 (funding veto, the only true veto in either framework) GREEN. Section 7 Channel B preflight PASSES clean on all five triggers, no borderline WARNING -- but FK at 11 published is ONE POINT from making Channel B unavailable on ETH outright, and Bear Structure at 1/3 is ONE CRITERION from the 0/3 that voids the channel and force-covers 100%. S1 unavailable in effect (max +2.0 reaches 11, still 2 short); S2 structurally unavailable (score line missed by 4 AND gate count over-satisfied at 7/9, not short by exactly one). Total Short EV +0.39% floored / +0.64% true (EV_price $1,880.90 vs spot $1,888.35, directional +0.39%, carry +0.245% true floored to 0.00% for gating at +4.26% ann funding over 21d) -- FAILS the +3% minimum-edge filter by 2.61 points. EV is LOAD-BEARING, not corroborative-only: Channel B has no cap and gates read 7/9, so the demotion clause does not apply. Collar ON (>20% off 1y high in Channel B, and |EV|<3%). Stop band computed though nothing fills: fill $1,888.35, ADR(5) $62.34 = 3.30%, noise floor 1.5xADR = +4.95% -> $1,981.86, Channel B 1A ceiling +6% -> $2,001.65, structure level (bounce high +1%) $1,996.22 sits INSIDE the band -- frStopBand ok:true. The tape is tradeable on the noise floor; the SCORE is what fails. Cross-check: FK computed 10/20 with 2/8 gates from the same fetch (legs 2/1/4/0/3; capitulation dropped 1->0 as the Jul-23/24 negative-funding episode fully reversed), vs PUBLISHED Jul-25 11/20 2/8 -- both <12, same side of the boundary, no strictest-wins conflict, force-cover does NOT fire. Hard Rule 5: Channel B -- level-based inverse consistency not evaluable (different scored objects); FK >=12 force-cover governs instead. POSITION (Hard Rule 8, FRESH 665 min, driver holdings_as_of, rolls STALE in ~55 min): custody RECONCILED, quantity 0.00006517 ETH = dust, ETH effectively FLAT; basis.reliable FALSE (24 unbacked disposals exceeding the replayed position by 8.50642325 ETH, explicitly NOT a margin short -- short_qty null) so NO avg cost, cost basis, unrealized PnL or ROI is quoted and realized +$447.02 is an UPPER BOUND; attribution UNTAGGED (1 open deal); no open futures, futures equity $0.00; dry powder $14,288.30. POSITION RECONCILIATION: the deal layer carries an open CROSS_MARGIN:ETH:LONG deal (opened 2025-08-22, open_qty 4.009 ETH, entry VWAP $4,031.37, stated unrealized -$6,589.51) that CONTRADICTS the reconciled live quantity and sits on the unreliable basis -- neither figure is reported as a position or a loss; the ledger's quantity engine wins and the divergence is a data defect to fix. performance_by_tag_prefix empty for FR-A-/FR-B-: the framework is still N=0 on money. Prior Jul-28 FR graded: EV_price $1,875.66 HELD (realized $1,888.35, +0.68%); modal band $1,976-2,130 MISSED (price never touched $1,976, stayed in the 34% Range/chop mode); both named falsifiers STANDING (no weekly close above the 200dma; no held close below $1,757). Trailing EV calibration n=3 (+2.14%, -3.22%, +0.68%), mean signed error -0.13%, errors straddle zero, no bias worth correcting. The realistic path to a live ETH short runs HIGHER not lower: a rally into $2,060-2,130 rejected at the falling 200dma lights gate 5 and plausibly takes resistance confluence 1/4 -> 3/4 for a mechanical ~12-13. All phases DRY POWDER; 0% of the 50% book, 0% of the 30% per-asset cap, 0% of the 20% analyst-channel cap."
+    },
+    {
+      "asset": "UNI",
+      "channel": "none",
+      "channel_inference_basis": "declared in the machine block",
+      "channel_inferred": false,
+      "content_sha256": "e8c9a0f1b700fbf7536478b4b8afae6bbfffaad8dfc75e940bc96f894959a073",
+      "deployment": {
+        "deployed_pct": "0",
+        "dry_pct": "100",
+        "filled_detection": "deployed === true || typeof entry_price === \"number\" || typeof entry === \"number\"",
+        "filled_detection_caveat": "before the entry_price epoch (2026-07-29) no tranche in this corpus carried deployed:true or a numeric entry — 152/152 tranches across 39 reports encode `entry` as prose — so filled_tranche_count is structurally 0 on every pre-epoch signal. It is an artifact of the old schema, not an observation that nothing was filled.",
+        "filled_tranche_count": 0,
+        "throttle_released": false,
+        "tranche_count": 0,
+        "tranches": []
+      },
+      "ev": {
+        "scenarios": [
+          {
+            "high": "5.4",
+            "low": "4.7",
+            "mid": null,
+            "name": "Rally extends into the 4.80-5.00 shelf",
+            "p": "34"
+          },
+          {
+            "high": "4.7",
+            "low": "4.1",
+            "mid": null,
+            "name": "Range / digest",
+            "p": "33"
+          },
+          {
+            "high": "4.1",
+            "low": "3.4",
+            "mid": null,
+            "name": "Pullback to the 50dma / 3.40",
+            "p": "24"
+          },
+          {
+            "high": "3.4",
+            "low": "2.9",
+            "mid": null,
+            "name": "Fee-switch pop retraces",
+            "p": "9"
+          }
+        ],
+        "stated_ev_usd": "4.3525",
+        "vs_spot_pct": "-0.92"
+      },
+      "framework": "flying_rocket",
+      "gates": {
+        "active": 8,
+        "na": [
+          8
+        ],
+        "passed": [],
+        "passed_count": 0,
+        "passed_mask": 0
+      },
+      "regime": {
+        "ma200_falling": true,
+        "pct_below_1y_ath": "64.14",
+        "price_below_ma200": false
+      },
+      "report_at_derivation": "derived by interpreting the filename's HHMM in America/New_York (the repo's Output Convention) — the machine block carries a date but no time field, and (asset, framework, date) collides (btc/eth × fallen_knives on 2026-07-14 and 2026-07-18), so report_file is the primary key",
+      "report_at_utc": "2026-07-31T08:26:00Z",
+      "report_date": "2026-07-31",
+      "report_file": "uni_flying_rocket_20260731_0426.md",
+      "report_local_time": "04:26",
+      "report_zone": "America/New_York",
+      "rubric": "FR-A/1",
+      "schema_epoch": "discretion_and_two_channel",
+      "score": {
+        "adjusted": "0",
+        "cap_applied": false,
+        "cap_value": null,
+        "discretionary": "0",
+        "discretionary_inferred": false,
+        "inference_basis": "declared in the machine block",
+        "legs": [
+          {
+            "block_key": "euphoria",
+            "max": 5,
+            "min": 0,
+            "ordinal": 1,
+            "rubric_name": "euphoria",
+            "value": "0"
+          },
+          {
+            "block_key": "momentum",
+            "max": 4,
+            "min": 0,
+            "ordinal": 2,
+            "rubric_name": "momentum",
+            "value": "0"
+          },
+          {
+            "block_key": "valuation",
+            "max": 5,
+            "min": 0,
+            "ordinal": 3,
+            "rubric_name": "valuation",
+            "value": "0"
+          },
+          {
+            "block_key": "distribution",
+            "max": 3,
+            "min": 0,
+            "ordinal": 4,
+            "rubric_name": "distribution",
+            "value": "0"
+          },
+          {
+            "block_key": "vulnerability",
+            "max": 3,
+            "min": 0,
+            "ordinal": 5,
+            "rubric_name": "vulnerability",
+            "value": "0"
+          }
+        ],
+        "mechanical": "0",
+        "mechanical_inferred": false,
+        "penalty": "0",
+        "raw": "0",
+        "rounding": "half-up"
+      },
+      "spot_source": "median of 4 synchronized live quotes: CoinGecko $4.3900 / Binance UNIUSDT $4.4060 / Kraken UNIUSD $4.3906 / Coinbase UNI-USD $4.3950 (all Jul-31 08:25 UTC); spread 0.364%",
+      "spot_usd": "4.3928",
+      "stops": null,
+      "unlock": {
+        "highest_phase_unlocked_by_score": null,
+        "ladder": "FR-A",
+        "p1a": 11,
+        "p1b": 13,
+        "p2": 15,
+        "p3": 19,
+        "p3_note": "Phase 3 reads the MECHANICAL score — no analyst channel reaches it"
+      },
+      "verdict": "STAND DOWN -- no UNI short. NO CHANNEL: section 2.5 row 2 fires exactly as written -- UNI is 64.14% below its 1-year high (spot $4.3928 vs $12.2563, 2025-08-13) AND trades +24.32% ABOVE its 200dma ($3.54), so Channel A is capped at 8 (unreachable; Phase 1A needs 11) and Channel B's regime precondition ('close below the 200dma') FAILS OUTRIGHT. This is the genuine phase-of-cycle mismatch the cap was written for. Two conditions independently disqualify a short before any input is scored. Channel A scored FOR THE RECORD at 0/20 (0/8 attainable): euphoria 0 (F&G 3d 27.33, band <50; no UNI-native daily fear instrument, ASI ~58 and social heat disclosed not scored), momentum 0 (WEEKLY RSI 56.79, band <60 -- and note 56.79 >= 50 means Channel B's hard qualifier would zero its momentum leg too, because a repaired higher timeframe is a TREND REPAIR not an exhaustion), valuation 0 (alt fallback distance-from-ATH: -90.17% from the $44.92 2021 ATH, -64.14% from the 1y high, both band >30%), distribution 0 (0/3 -- no LTH/profit-taking data sourceable, no tagged exchange-inflow evidence, no ETF product exists), vulnerability 0 (0/3 -- funding +7.90% ann far below the >25% bar which is STRUCTURALLY UNREACHABLE given Binance's +-0.01%/8h cap; no meaningful UNI options market for skew/PCR; breadth divergence unevaluable at 90% below ATH). Squeeze-trap penalty NOT active: two ISOLATED negative funding prints (Jul-28 00:00 -6.61% ann, Jul-29 08:00 -4.07% ann), no 3-interval run; the -6.61% print breaches -5% but the immediate-fire escalation additionally requires OI within 5% of the 90-day high in the SAME interval and OI was mid-build -- disclosed because it is close. Correlation SOURCED 0.239 (30 daily log-return pairs vs SPX, Jun-16 to Jul-30), lowest of the three assets, <0.70 -> risk-on surcharge OFF; per the Jun-2026 revision the low correlation is a CONTEXT LABEL ONLY and confers no score bonus. CAP-REGIME VACUITY DISCLOSURE printed: score stated as 0/8 attainable alongside 0/20; interpretation bands >=9 unreachable, no phase reachable at any score, the Channel A 1A line of 11 sitting 3 points above the cap; Hard-Rule-5 both->=12 check structurally unfalsifiable in this regime -- reported as 'structurally consistent (cap-bound; both->=12 unfalsifiable by construction)', never a bare consistency tick. GATES 0/9 raw with gate 8 N/A (breadth divergence unevaluable at 90.17% below ATH) -> active denominator 8, ceil-threshold floors printed: 1A ceil(3/9x8)=3 [legacy 3], 1B ceil(5/9x8)=5 [legacy 5], P2 ceil(6/9x8)=6 [legacy 6], P3 ceil(8/9x8)=8 [legacy 8]. Gates 5 and 6 recorded WARNING-unmeasured and NOT converted to N/A per the warning-may-not-become-NA rule. Gate 4 flagged CONDITIONAL per-report: the top-extinguishing logic does NOT apply because funding is elevated and repeatedly pinned at the exchange cap ON A RALLY -- squeeze-relevant, not top-coincident. Gate count labelled '0/8 -- structurally dark (cap-bound; [TOP] gates unreachable -- a rising [FLOW]-only count is NOT setup progress)'; reachable ceiling ~2/8 regime-conditional, re-widening only if trend structure repairs to near the 1-year high, which would require a ~179% further rally. SMALLER-ALT ROW ALSO FIRES: UNI is mcap RANK 34, outside top-20. Borrow/liquidity stated as required -- $2.756B mcap, $441.5M spot 24h volume, $184.1M Binance perp 24h quote volume (~50x thinner than BTC's $9.1B), OI $88.87M at 100.0% of its 90-day high after a +31.8% weekly build, long/short 1.40. NO deployment numbers are produced, so the explicit-user-acknowledgement precondition is NOT engaged; it would be required before any sizing if UNI ever routed to a live channel. ALTSEASON SQUEEZE-TRAP ROW NEARLY FIRES and is named rather than hidden: UNI has outperformed BTC by far more than 2x over 30d (+58.89% vs BTC roughly flat) and dominance has been choppy-to-lower, but the Altcoin Season Index reads ~58 not >75, so the row does NOT formally fire and no +3-gate override is levied -- UNI sits substantively in the most-liquidated short cohort and escapes the override on a single index reading 17 points short of the threshold. NO STALL CONFIRMATION IS POSSIBLE: the bounce high IS today's session high ($4.5525, a fresh high of the entire move), so the rally is still rising -- Principle 14 blocks the trade independently even if the regime test passed. Total Short EV +0.92% floored / +1.37% true (EV_price $4.3525 vs spot $4.3928, directional +0.92%, carry +0.455% true floored to 0.00% for gating at +7.90% ann funding over 21d) -- FAILS the +3% minimum-edge filter at BOTH spread extremes ($4.3900 -> +0.97%, $4.4060 -> +1.21%, sign does not flip). EV-VOICE DEMOTION APPLIED: the cap and the 0-gate state are the unambiguous sole binding veto, so Total Short EV is CORROBORATIVE ONLY -- NOT LOAD-BEARING; no categorical directional prose offered. Trailing EV calibration n=1 numeric (this report); the Jun-16 prior published no EV_price -- insufficient for a trend read. Collar ON, three triggers (>20% off 1y high, |EV|<3%, cap binding). SECTION 7 PREFLIGHT (Channel A list): VOID -- THREE triggers already live at inception: F&G 27.33 <40, MVRV-Z proxy deep-value equivalent <2, and UPSIDE NARRATIVE BREAK (UNIfication fee switch live since Dec-2025 and EXPANDED in July across Robinhood Chain v2/v3, Uniswap v4 and bridge cleanups; Uniswap the native AMM on Robinhood Chain since Jul-1 with >430 tokenized stocks via Ondo; Standard Chartered initiation at a $100 end-2030 target). Even absent the cap and even at a clearing score, the exit framework would close the tranche at inception. Cross-check: FK computed 7/20 from the same fetch, disclosed as RE-DERIVED/UNPUBLISHED (no published UNI FK exists) -- legs sentiment 2, momentum 0 (weekly RSI 56.79 >45), valuation 5 (-90.17% drawdown, band >=70%), capitulation 0, holder 0 (top-100 concentration and exchange-reserve trend NOT FOUND for UNI, scored 0 conservatively and flagged rather than credited on absent data). 7 < 12, force-cover does NOT fire; inverse relation holds DIRECTIONALLY (FK 7 vs FR 0) while unfalsifiable at the >=12 level under the cap. POSITION (Hard Rule 8, FRESH 665 min, driver holdings_as_of, rolls STALE in ~55 min): COVERED, custody RECONCILED, quantity 0 UNI with NO live balance row -- the zero is real and IS the position, UNI is genuinely flat rather than merely unreported. basis.reliable TRUE with disclosure: 0.00010104 UNI disposed unbacked but waived as sub-dollar dust, so cost figures are quotable normally though the replay is not described as having had nothing missing. UNI is the ONLY asset of the three in this batch whose basis the ledger can derive -- ETH and BTC both return basis.reliable FALSE on unbacked disposals -- so its realized +$410.06 is a RESULT rather than an upper bound. Zero open deals (attribution trivially clean), no open futures, futures equity $0.00, dry powder $14,288.30. Position Reconciliation: NO divergence -- no prior UNI report narrated a position figure and no deal layer contradicts the quantity engine. performance_by_tag_prefix empty for FR-A-/FR-B-: still N=0 on money. Section 6.5 RUN (not skipped -- UNI is not in Channel B so the skip clause does not apply): the lagging cohort is EMPTY AT THE FIRST FILTER because no top-20 asset sits within 10% of its own 1-year high (BTC -49.4%, ETH -61.9%, UNI -64.1%) -- 'no actionable short candidate identified in top-20 cohort'. BTC-hedged expression noted and NOT recommended: dominance is not in a confirmed uptrend, and pairing short UNI against long BTC would neutralize the beta while leaving the idiosyncratic fee-switch leg -- the exact reason UNI is up 59% -- fully exposed. Prior Jun-16 FR graded: verdict STAND DOWN 0/20 CORRECT AND DECISIVELY SO (UNI $2.55 -> $4.3928, +72% in 45 days; a short would have blown through this framework's own 8% Phase-1A stop inside a fortnight at a rank-34 alt's slippage); directional EV claim HELD, magnitude UNGRADEABLE (prose-only, no encoded EV_price); the four-limb falsifier ('rallies to ~$7-8 AND weekly RSI >70 AND F&G >=80 AND funding pins >25% ann for a week -- any absent = no short') is STANDING with ALL FOUR conditions absent ($4.39 vs $7-8, RSI 56.79 vs >70, F&G 27.33 vs >=80, funding 7.90% vs >25%). Section 6.6 re-check triggers: NONE fired -- notably (e) did NOT fire and CANNOT, because UNI trades above its 200dma. ANALYST FINDING LOGGED AS A COVERAGE GAP, not converted into a score: UNI is the most short-LOOKING asset in this batch (+58.9%/30d, daily RSI 73.33, OI at a 90-day max, funding pinned at the cap, $2.76B float) and the rubric returns 0 on every leg because every leg is calibrated to a CYCLE position UNI does not occupy -- it is at a LOCAL top inside a CYCLE bottom, and neither channel has a square for that object. The single input that would change the verdict is a daily close BELOW the 200dma at $3.54 with the 200dma still falling, which is a -19.4% move: UNI is nineteen percent of DOWNSIDE away from being scoreable. All phases DRY POWDER and structurally locked; 0% of the 50% book, 0% of the 30% per-asset cap, 0% of the 20% analyst-channel cap."
     }
   ],
   "skipped": [
