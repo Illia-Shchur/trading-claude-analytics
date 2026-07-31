@@ -439,6 +439,28 @@ ok('a truncated file names the missing block',
     /UPPER BOUND/.test(shorted.basis.note))
   eq('a healthy asset reports a reliable basis and no note',
     positionForAsset(snap, 'btc').basis.reliable, true)
+  eq('...with no dust disclosure, because nothing was waived',
+    positionForAsset(snap, 'btc').basis.note, null)
+
+  // Dust disclosure (2026-07-31). The producer used to trip basis_reliable on a
+  // 1e-8 QUANTITY, which means nothing across assets — a rounding artefact in
+  // SHIB, real money in BTC — and flagged 90 of 98 live positions on gaps like
+  // 5e-8 ADA, burying the three that were genuinely large. The band is $1 of
+  // value now, and what it waives is published rather than absorbed. So a clean
+  // flag with dust present is NOT a defect, and must not be reported as one —
+  // but it is also not the same claim as a replay that had nothing missing.
+  const dusty = positionForAsset({ ...snap, positions: [{
+    asset: 'BTC', qty: '0.5', trade_derived_qty: '0.5',
+    qty_reconciliation_status: 'RECONCILED',
+    basis_reliable: true, dust_unbacked_qty: '0.00000005',
+  }] }, 'btc')
+  eq('a sub-dollar unbacked slice leaves the basis reliable', dusty.basis.reliable, true)
+  eq('...and reports how much was waived', dusty.basis.dust_unbacked_qty, '0.00000005')
+  ok('...disclosing it without calling it a defect',
+    /waived as sub-dollar dust/.test(dusty.basis.note)
+      && !/NOT DERIVABLE/.test(dusty.basis.note))
+  ok('...and still permitting the cost figures',
+    /Quote the cost figures normally/.test(dusty.basis.note))
 
   // The producer's own note wins when it ships one. A snapshot from the signed
   // engine (2026-07-30+) makes a NARROWER claim than the reconstruction above —

@@ -662,7 +662,22 @@ export function basisForPosition(position, asset) {
       note: `NO POSITION ROW for ${asset} — cost-basis reliability is UNKNOWN, not confirmed. Do not read this as a reliable basis, and do not quote average cost, cost basis, unrealized PnL or ROI on the strength of it.` }
   }
   if (position.basis_reliable !== false) {
-    return { reliable: true, oversold_qty: null, note: null }
+    // A clean flag is not the same claim as a clean replay. From 2026-07-31 the
+    // producer forgives an unbacked slice worth under $1 rather than flagging it
+    // — before that date the band was a 1e-8 QUANTITY, which meant nothing across
+    // assets and flagged 90 of 98 positions on gaps like 5e-8 ADA. `dust_unbacked_qty`
+    // is what the threshold waived, published precisely so this branch can say so.
+    // Absent (older file, or nothing waived) ⇒ stay silent; it is not a defect and
+    // must not read as one.
+    const dust = position.dust_unbacked_qty ?? null
+    return {
+      reliable: true,
+      oversold_qty: null,
+      dust_unbacked_qty: dust,
+      note: dust
+        ? `Basis reliable for ${asset}, with a disclosure: ${dust} was disposed unbacked but waived as sub-dollar dust rather than counted against the flag. Quote the cost figures normally — this is the ordinary state of a long-tail book, not a defect — but do not describe the replay as having had nothing missing.`
+        : null,
+    }
   }
   return {
     reliable: false,
