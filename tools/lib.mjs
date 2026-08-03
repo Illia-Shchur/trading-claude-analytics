@@ -1394,10 +1394,16 @@ export const EPOCHS = {
   machineBlock: '2026-07-11',
   discretionAndTwoChannel: '2026-07-27',
   entryPrice: '2026-07-29',
+  // companion_fr strict-shape validation (2026-08 toolchain-extension plan,
+  // commit 14). Set to the ship date so no EXISTING report is retroactively
+  // broken — every report in the corpus predates this epoch and keeps the
+  // warn-only tolerant read; only a report dated on/after it must comply.
+  companionFR: '2026-08-03',
 }
 export const MACHINE_BLOCK_EPOCH = EPOCHS.machineBlock
 export const DISCRETION_EPOCH = EPOCHS.discretionAndTwoChannel
 export const ENTRY_PRICE_EPOCH = EPOCHS.entryPrice
+export const COMPANION_FR_EPOCH = EPOCHS.companionFR
 
 /** Reports are timestamped in local EST/EDT per the repo's Output Convention. */
 export const REPORT_ZONE = 'America/New_York'

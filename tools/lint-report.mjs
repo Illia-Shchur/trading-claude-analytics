@@ -67,7 +67,7 @@ import { roundScore, ROUNDING, ceilThresholds, FK_V_GATES, evCheck, stopCoherenc
   discretionValid, d5StopCheck, FK_SCORE_UNLOCK, FK_DISCRETION,
   s5StopCheck, frRatchetCheck, FR_S5, FR_CHANNEL_B,
   frUnlockLadder, FR_GATE_FLOORS, frStopBand, FR_MAX_PER_ASSET_PCT,
-  fillPrice, trancheFilled, entryLooksLikeFill, ENTRY_PRICE_EPOCH, frComposite } from './lib.mjs'
+  fillPrice, trancheFilled, entryLooksLikeFill, ENTRY_PRICE_EPOCH, frComposite, COMPANION_FR_EPOCH } from './lib.mjs'
 
 const round2 = n => Math.round(n * 100) / 100
 
@@ -511,6 +511,82 @@ if (FW === 'fallen_knives') {
   }
   if (CH === 'B' && S.cap && S.cap.applied)
     err('FR Channel B declares a phase-of-cycle cap — the cap is Channel A only; Channel B is bounded by the 30% sub-cap and the Phase-3 exclusion instead (§4B)')
+}
+
+// ── companion_fr / correlation / trend_residual (2026-08 toolchain-extension
+//    plan, commit 14) ─────────────────────────────────────────────────────
+// companion_fr is the mandatory Hard Rule 5 FR companion, carried inline on
+// every fallen_knives report. Before COMPANION_FR_EPOCH: tolerant — either
+// the pre-toolchain top-level shape (score/channel/regime|routing found in
+// every 2026-08-01 report) or the older nested inputs.companion_fr shape is
+// accepted, with a migration-note warning. On/after the epoch: strict.
+{
+  const postFR = String(b.date) >= COMPANION_FR_EPOCH
+  const cf = b.companion_fr || (b.inputs && b.inputs.companion_fr)
+  if (FW === 'fallen_knives' && !cf && postFR) {
+    err(`companion_fr missing — every fallen_knives report needs the Hard Rule 5 FR companion (report-machine/1, ${COMPANION_FR_EPOCH})`)
+  } else if (cf) {
+    const nested = !b.companion_fr && b.inputs && b.inputs.companion_fr
+    if (nested) (postFR ? err : warn)('companion_fr found nested under inputs.companion_fr — write it top-level (report-machine/1 migration)')
+    if (typeof cf.score !== 'number' || cf.score < 0 || cf.score > 20)
+      (postFR ? err : warn)(`companion_fr.score=${JSON.stringify(cf.score)} must be a number 0-20`)
+    // The gold 2026-08-01 drift this epoch exists to close: channel was
+    // written "none — STAND DOWN", a compound string that fails any enum
+    // check the moment something consumes it. Strict form: channel is
+    // EXACTLY 'A'/'B'/'none'; descriptive text moves to a sibling channel_note.
+    const rawChannel = String(cf.channel || '')
+    const strictChannel = ['A', 'B', 'none'].includes(cf.channel)
+    if (!strictChannel) {
+      const msg = `companion_fr.channel=${JSON.stringify(cf.channel)} is not exactly "A"/"B"/"none" — move descriptive text to companion_fr.channel_note (report-machine/1, ${COMPANION_FR_EPOCH})`
+      ;(postFR ? err : warn)(msg)
+    }
+    const channelForChecks = strictChannel ? cf.channel : (rawChannel.startsWith('B') ? 'B' : rawChannel.startsWith('none') ? 'none' : rawChannel.startsWith('A') ? 'A' : null)
+    if (channelForChecks === 'B') {
+      const regime = cf.regime || cf.routing
+      if (!regime || typeof regime.pct_below_1y_ath !== 'number' || regime.ma200_falling !== true)
+        (postFR ? err : warn)('companion_fr channel "B" requires a complete regime/routing block (pct_below_1y_ath, ma200_falling:true) proving the bear-continuation regime')
+    }
+    if (typeof cf.standalone_report_owed === 'boolean' && typeof cf.score === 'number' && cf.score >= 9 && cf.standalone_report_owed !== true)
+      err(`companion_fr.score=${cf.score} >= 9 but standalone_report_owed is not true — the tripwire is unconditional at >=9`)
+    if (typeof cf.cross_validation !== 'string' || !cf.cross_validation)
+      (postFR ? err : warn)('companion_fr.cross_validation missing — Hard Rule 5 requires the FK/FR inverse-relation check stated on every report')
+  }
+}
+
+// correlation is optional; error only when present and internally
+// inconsistent — no epoch gate, this is a narrow types-and-consistency check.
+if (b.correlation) {
+  const c = b.correlation
+  const v = c.value_30d_vs_spx
+  if (typeof v === 'number') {
+    if (typeof c.surcharge_applied === 'boolean' && c.surcharge_applied !== (v > 0.7))
+      err(`correlation.surcharge_applied=${c.surcharge_applied} but value_30d_vs_spx=${v} implies ${v > 0.7} (surcharge is exactly corr > 0.7)`)
+    // phase2_corr_condition ships as descriptive prose in every report to date
+    // (e.g. "PASS on a computed number (0.241 < 0.80)"), not a boolean — a
+    // future report may write it as a plain boolean, so both are accepted.
+    // Only a CONTRADICTORY string is an error; prose that merely lacks the
+    // expected verdict word is not penalized (free text is not fully checkable).
+    if (typeof c.phase2_corr_condition === 'boolean' && c.phase2_corr_condition !== (v < 0.8))
+      err(`correlation.phase2_corr_condition=${c.phase2_corr_condition} but value_30d_vs_spx=${v} implies ${v < 0.8} (Phase 2 condition is exactly corr < 0.8)`)
+    else if (typeof c.phase2_corr_condition === 'string') {
+      const text = c.phase2_corr_condition.toUpperCase()
+      if (v < 0.8 && text.includes('FAIL')) err(`correlation.phase2_corr_condition reads FAIL but value_30d_vs_spx=${v} < 0.8 should PASS`)
+      if (v >= 0.8 && text.includes('PASS')) err(`correlation.phase2_corr_condition reads PASS but value_30d_vs_spx=${v} >= 0.8 should FAIL`)
+    }
+    if (!c.window) warn('correlation.window missing — state the date range a numeric correlation was computed over')
+    if (!c.method) warn('correlation.method missing — state the method (e.g. Pearson on daily log returns) a numeric correlation was computed with')
+  }
+}
+
+// trend_residual: types only — its content is a prose judgement about lower
+// lows that no tool computes, so depth beyond this needs market data inside
+// the linter, which the no-network constraint rules out.
+if (b.trend_residual) {
+  const tr = b.trend_residual
+  if (tr.active_downtrend != null && typeof tr.active_downtrend !== 'boolean')
+    err(`trend_residual.active_downtrend=${JSON.stringify(tr.active_downtrend)} must be a boolean`)
+  if (tr.active_downtrend === true && !tr.consequence)
+    warn('trend_residual.active_downtrend is true but no consequence is stated — say what changed (e.g. Deep-Value Override throttle)')
 }
 
 finish()
