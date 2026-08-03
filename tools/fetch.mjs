@@ -216,6 +216,14 @@ async function fetchAsset(key, { series = false } = {}) {
   return outp
 }
 
+async function fredCSV(seriesId) {
+  const r = await fetch(`https://fred.stlouisfed.org/graph/fredgraph.csv?id=${seriesId}`, UA)
+  if (!r.ok) throw new Error(`${r.status}`)
+  const rows = (await r.text()).trim().split('\n').slice(1).map(l => l.split(','))
+    .filter(([, v]) => v !== '.').map(([d, v]) => ({ date: d, value: Number(v) }))
+  return rows.slice(-10)
+}
+
 async function fetchMacro() {
   const outp = { scope: 'macro', fetched_at: new Date().toISOString(), errors: [] }
   const attempt = async (label, fn) => { try { return await fn() } catch (e) { outp.errors.push(`${label}: ${e.message}`); return null } }
@@ -223,20 +231,21 @@ async function fetchMacro() {
     { key: 'vix', symbol: '^VIX', label: 'CBOE VIX' },
     { key: 'dxy', symbol: 'DX-Y.NYB', label: 'US Dollar Index' },
     { key: 'brent', symbol: 'BZ=F', label: 'Brent crude' },
-    { key: 'spx', symbol: '^GSPC', label: 'S&P 500' },
+    // 3mo, not 1mo: SPX feeds commit 10's correlation join, which needs
+    // several weeks of overlap with the crypto daily series (2y).
+    { key: 'spx', symbol: '^GSPC', label: 'S&P 500', range: '3mo' },
     { key: 'ndx', symbol: '^IXIC', label: 'Nasdaq Composite' },
     { key: 'us10y', symbol: '^TNX', label: 'US 10y nominal yield (×10 units)' },
     { key: 'gold', symbol: 'GC=F', label: 'COMEX gold front month' },
+    // ^IRX = 13-week (3mo) T-bill discount rate, already in percent units —
+    // the dry-powder cash-yield benchmark.
+    { key: 'irx', symbol: '^IRX', label: '13-week T-bill discount rate (%)' },
   ]
-  const [fred, ...charts] = await Promise.all([
-    attempt('FRED DFII10', async () => {
-      const r = await fetch('https://fred.stlouisfed.org/graph/fredgraph.csv?id=DFII10', UA)
-      if (!r.ok) throw new Error(`${r.status}`)
-      const rows = (await r.text()).trim().split('\n').slice(1).map(l => l.split(','))
-        .filter(([, v]) => v !== '.').map(([d, v]) => ({ date: d, value: Number(v) }))
-      return rows.slice(-10)
-    }),
-    ...series.map(s => attempt(`yahoo ${s.symbol}`, () => yahooChart(s.symbol, '1mo', '1d'))),
+  const [fred, fred3mo, ...charts] = await Promise.all([
+    attempt('FRED DFII10', () => fredCSV('DFII10')),
+    // DGS3MO = 3-month T-bill secondary-market rate — cross-check for ^IRX.
+    attempt('FRED DGS3MO', () => fredCSV('DGS3MO')),
+    ...series.map(s => attempt(`yahoo ${s.symbol}`, () => yahooChart(s.symbol, s.range || '1mo', '1d'))),
   ])
   if (fred) outp.real_yield_10y_tips = { source: 'FRED DFII10 (daily, %)', last: fred[fred.length - 1],
     delta_5_prints: round2(fred[fred.length - 1].value - fred[fred.length - 6].value), last_10: fred }
@@ -246,7 +255,20 @@ async function fetchMacro() {
     const last = c[c.length - 1], prior5 = c[Math.max(0, c.length - 6)]
     outp[s.key] = { source: `Yahoo ${s.symbol} (${s.label})`, last_close: round2(last.close), date: last.date,
       delta_5_sessions_pct: round2((last.close / prior5.close - 1) * 100) }
+    // SPX also carries the full daily series (commit 10: pearson()/alignSeries()
+    // need date-keyed closes, not just the last-close summary).
+    if (s.key === 'spx') outp.spx.series = c.map(row => ({ date: row.date, close: round2(row.close) }))
   })
+  const irx = outp.irx ? outp.irx.last_close : null
+  const dgs3mo = fred3mo && fred3mo.length ? fred3mo[fred3mo.length - 1].value : null
+  if (irx != null || dgs3mo != null) {
+    outp.dry_powder_benchmark = {
+      annualized_pct: irx != null ? irx : dgs3mo,
+      source: irx != null ? `Yahoo ^IRX (${outp.irx.date})` : `FRED DGS3MO (${fred3mo[fred3mo.length - 1].date})`,
+      cross_check: irx != null && dgs3mo != null ? { irx, dgs3mo, delta_pct_pts: round2(irx - dgs3mo) } : null,
+      note: 'idle-cash opportunity cost — what dry powder earns risk-free while unallocated',
+    }
+  }
   return outp
 }
 
