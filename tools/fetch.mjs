@@ -7,15 +7,18 @@
 // remain WebSearch/WebFetch jobs per Hard Rule 1; this tool does NOT replace them.
 //
 // Usage:
-//   node tools/fetch.mjs btc|eth|sol|gold      → spot cross-check, ATH/drawdown,
+//   node tools/fetch.mjs btc|eth|sol|gold [--series] → spot cross-check, ATH/drawdown,
 //       weekly closes + Wilder RSI-14 + 200-week SMA (±8% gate-6 check),
-//       daily sessions + 5-day ADR, F&G spot/3-day avg/gate-1 streaks
+//       daily sessions (2y) + 5-day ADR + `trend` block (RSI-14, 50/200dma,
+//       200dma slope, 40-session low/bounce/age — every frChannel()/frB.*
+//       daily input), F&G spot/3-day avg/gate-1 streaks. `--series` also
+//       emits the full 2y daily OHLC array under `daily.series`.
 //   node tools/fetch.mjs macro                 → DFII10 real yield, VIX, DXY,
 //       Brent, SPX, NDX, US10Y (last close + 5-session Δ)
 // Every block carries source + fetched_at; failed sources land in `errors`
 // instead of killing the run (the report then follows the SKILL's NOT-FOUND rules).
 // ============================================================================
-import { wilderRSI, sma, drawdownPct, adr, fngStreak, _internal } from './lib.mjs'
+import { wilderRSI, sma, drawdownPct, adr, fngStreak, dailyTrend, _internal } from './lib.mjs'
 const { round2 } = _internal
 
 const ASSETS = {
@@ -64,7 +67,7 @@ function weeklyBlock(candles, spot) {
   }
 }
 
-async function fetchAsset(key) {
+async function fetchAsset(key, { series = false } = {}) {
   const a = ASSETS[key]
   const outp = { asset: key.toUpperCase(), fetched_at: new Date().toISOString(), errors: [] }
   const attempt = async (label, fn) => { try { return await fn() } catch (e) { outp.errors.push(`${label}: ${e.message}`); return null } }
@@ -73,7 +76,10 @@ async function fetchAsset(key) {
     a.cg ? attempt('coingecko spot', () => getJSON(`https://api.coingecko.com/api/v3/simple/price?ids=${a.cg}&vs_currencies=usd`)) : null,
     a.cg ? attempt('coingecko coin/ath', () => getJSON(`https://api.coingecko.com/api/v3/coins/${a.cg}?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false`)) : null,
     attempt('yahoo weekly', () => yahooChart(a.yahoo, '5y', '1wk')),
-    attempt('yahoo daily', () => yahooChart(a.yahoo, '3mo', '1d')),
+    // 2y, not 3mo: dailyTrend() needs ≥220 daily bars for a 200dma + 20-session
+    // slope (commit 2/3 of the 2026-08 toolchain-extension plan). 1y is too
+    // tight once holidays thin GC=F's calendar.
+    attempt('yahoo daily', () => yahooChart(a.yahoo, '2y', '1d')),
     a.crossYahoo ? attempt('yahoo cross-spot', () => yahooChart(a.crossYahoo, '5d', '1d')) : null,
     a.fng ? attempt('alternative.me fng', () => getJSON('https://api.alternative.me/fng/?limit=30')) : null,
   ])
@@ -122,9 +128,12 @@ async function fetchAsset(key) {
 
   // daily: ADR-5 with per-session ranges (analyst excludes abbreviated sessions via compute.mjs adr --exclude)
   if (daily) {
-    const sessions = daily.slice(-12).map(c => ({ date: c.date, high: round2(c.high), low: round2(c.low) }))
-    outp.daily = { source: `Yahoo ${a.yahoo} 3mo 1d`, last_sessions: sessions, adr5: adr(sessions),
+    const sessions = daily.slice(-12).map(c => ({ date: c.date, high: round2(c.high), low: round2(c.low), close: round2(c.close) }))
+    outp.daily = { source: `Yahoo ${a.yahoo} 2y 1d (${daily.length} candles)`, last_sessions: sessions, adr5: adr(sessions),
       note: 'ADR must use 5 FULL sessions — if any listed session is holiday-abbreviated, recompute with tools/compute.mjs adr --exclude <date> and disclose' }
+    // trend: every frChannel()/frB.* daily input, derived from the full 2y series
+    outp.trend = dailyTrend(daily.map(c => ({ date: c.date, high: c.high, low: c.low, close: c.close })), { spot })
+    if (series) outp.daily.series = daily.map(c => ({ date: c.date, open: round2(c.open), high: round2(c.high), low: round2(c.low), close: round2(c.close) }))
   }
 
   // sentiment: F&G spot, 3-day avg (the scored input), gate-1 streaks (daily prints)
@@ -176,7 +185,9 @@ async function fetchMacro() {
   return outp
 }
 
-const target = (process.argv[2] || '').toLowerCase()
+const argv = process.argv.slice(2)
+const target = (argv[0] || '').toLowerCase()
+const series = argv.includes('--series')
 if (target === 'macro') fetchMacro().then(o => console.log(JSON.stringify(o, null, 2)))
-else if (ASSETS[target]) fetchAsset(target).then(o => console.log(JSON.stringify(o, null, 2)))
-else { console.error(`usage: node tools/fetch.mjs <${Object.keys(ASSETS).join('|')}|macro>`); process.exit(1) }
+else if (ASSETS[target]) fetchAsset(target, { series }).then(o => console.log(JSON.stringify(o, null, 2)))
+else { console.error(`usage: node tools/fetch.mjs <${Object.keys(ASSETS).join('|')}|macro> [--series]`); process.exit(1) }
