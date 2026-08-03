@@ -25,13 +25,16 @@
 //   node tools/compute.mjs fr-companion --market '<json>' [--counts '<json>'] [--rounding half-up]
 //   node tools/compute.mjs corr --asset '<json array of {date,close}>' --spx '<json array of {date,close}>' [--window N]
 //   node tools/compute.mjs tier1 --from <date> --sessions N [--asset-class equity|crypto]
+//   node tools/compute.mjs percentile --values v1,v2,... --x N
+//        (market-data-extension plan, Tier 0 — DISCLOSED CONTEXT ONLY, not a
+//        scored leg or gate; where does x sit in its own recent distribution)
 // JSON args may also be passed as @path/to/file.json
 // ============================================================================
 import { readFileSync } from 'node:fs'
 import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds,
   fk, fr, weightedEV, evCheck, stopCoherence, adr, fngStreak,
   dailyTrend, frStallConfirmation, frComposite, frCompanion, correlationFromCloses,
-  nextNTradingDays } from './lib.mjs'
+  nextNTradingDays, percentileRank, distributionStats } from './lib.mjs'
 
 const [, , cmd, ...rest] = process.argv
 const args = [], flags = {}
@@ -177,6 +180,12 @@ switch (cmd) {
     out(correlationFromCloses(json(flags.asset), json(flags.spx), { window: flags.window != null ? Number(flags.window) : null }))
     break
   }
+  case 'percentile': {
+    if (!flags.values || flags.x == null) fail('pass --values v1,v2,... --x N (context only — not a scored input)')
+    const values = nums(flags.values)
+    out({ n: values.length, x: num(flags.x), percentile_rank: percentileRank(values, num(flags.x)), stats: distributionStats(values) })
+    break
+  }
   case 'tier1': {
     if (!flags.from) fail('pass --from <date> --sessions N')
     const sessions = Number(flags.sessions || 5)
@@ -195,5 +204,5 @@ switch (cmd) {
     break
   }
   default:
-    fail(`unknown command "${cmd || ''}" — rsi | thresholds | round | band | ev | stop-coherence | adr | streak | fr-funding | fr-cap | sma | drawdown | trend | stall | fr-composite | fr-companion | corr | tier1 (see header of tools/compute.mjs)`)
+    fail(`unknown command "${cmd || ''}" — rsi | thresholds | round | band | ev | stop-coherence | adr | streak | fr-funding | fr-cap | sma | drawdown | trend | stall | fr-composite | fr-companion | corr | tier1 | percentile (see header of tools/compute.mjs)`)
 }

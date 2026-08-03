@@ -132,6 +132,49 @@ export function stdev(values) {
 }
 
 /**
+ * Percentile rank of `x` within `values` — where a reading sits in its OWN
+ * recent distribution, 0-100 (market-data-extension plan, Tier 0/B1). This
+ * is DISCLOSED CONTEXT ONLY: it re-expresses an existing scored input
+ * (RSI, drawdown, funding, F&G) against its own 2y history, it never
+ * becomes a new leg or gate itself — turning it into one is a
+ * framework-calibration job, not a toolchain one.
+ *
+ * Midrank on ties: a value equal to k other observations counts as HALF a
+ * rank for each tie, matching the standard percentile-rank convention (a
+ * value tied with everything reads as the 50th percentile, not the 0th or
+ * 100th, and does not silently favor one direction). Nulls in `values` are
+ * dropped, never coerced to 0 — a missing history point must not manufacture
+ * a fake percentile.
+ */
+export function percentileRank(values, x) {
+  const clean = (values || []).filter(v => typeof v === 'number' && Number.isFinite(v))
+  if (clean.length === 0 || typeof x !== 'number' || !Number.isFinite(x)) return null
+  let below = 0, equal = 0
+  for (const v of clean) { if (v < x) below++; else if (v === x) equal++ }
+  return Math.round(((below + equal / 2) / clean.length) * 10000) / 100
+}
+
+/**
+ * Summary stats over a numeric series for disclosure panels
+ * (market-data-extension plan, Tier 0/B1). Pure, null-safe, no percentile —
+ * pair with percentileRank() for "where does the CURRENT reading sit."
+ * Nulls are dropped, never coerced to 0.
+ */
+export function distributionStats(values) {
+  const clean = (values || []).filter(v => typeof v === 'number' && Number.isFinite(v))
+  if (clean.length === 0) return { n: 0, min: null, max: null, median: null, mean: null, stdev: null }
+  const mean = clean.reduce((a, b) => a + b, 0) / clean.length
+  return {
+    n: clean.length,
+    min: Math.min(...clean),
+    max: Math.max(...clean),
+    median: median(clean),
+    mean: Math.round(mean * 10000) / 10000,
+    stdev: stdev(clean),
+  }
+}
+
+/**
  * Pearson correlation coefficient. THROWS on length mismatch (a caller bug,
  * not a data condition). Returns null — never NaN — on zero variance in
  * either series: a NaN would make `corr > 0.7` evaluate false, silently

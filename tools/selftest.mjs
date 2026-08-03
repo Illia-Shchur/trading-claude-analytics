@@ -6,6 +6,7 @@
 // ============================================================================
 import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds, FK_V_GATES,
   median, stdev, pearson, pctChange, consecutiveRun, smaSlope, logReturns, alignSeries,
+  percentileRank, distributionStats,
   dailyTrend, frStallConfirmation, frComposite, frCompanion, spotPanel, fundingBlock,
   corrSurcharge, correlationRegime, correlationFromCloses,
   fk, fr, weightedEV, evCheck, stopCoherence, adr, fngStreak,
@@ -34,6 +35,26 @@ eq('median even-length averages the two middles', median([1, 2, 3, 4]), 2.5)
 eq('median empty → null', median([]), null)
 ok('stdev n=1 → null (need ≥2 for sample stdev)', stdev([5]) === null)
 eq('stdev of [2,4,4,4,5,5,7,9] → 2.138 (textbook sample-stdev vector)', Math.round(stdev([2, 4, 4, 4, 5, 5, 7, 9]) * 1000) / 1000, 2.138)
+
+// ── percentileRank / distributionStats (market-data-extension plan, B1) ────
+eq('percentileRank empty values → null', percentileRank([], 5), null)
+eq('percentileRank x is not a number → null', percentileRank([1, 2, 3], null), null)
+eq('percentileRank below everything → 0', percentileRank([10, 20, 30], 5), 0)
+eq('percentileRank above everything → 100', percentileRank([10, 20, 30], 35), 100)
+eq('percentileRank of the median of 5 evenly-spaced values → 50', percentileRank([1, 2, 3, 4, 5], 3), 50)
+eq('percentileRank ties use MIDRANK — value tied with all 4 others → 50, not 0 or 100', percentileRank([7, 7, 7, 7, 7], 7), 50)
+eq('percentileRank single observed value, queried above it → 100', percentileRank([7], 8), 100)
+eq('percentileRank drops nulls rather than treating them as 0', percentileRank([null, 10, 20, 30], 25), percentileRank([10, 20, 30], 25))
+eq('distributionStats empty → n:0, all null (not a crash, not zero-coerced)', distributionStats([]), { n: 0, min: null, max: null, median: null, mean: null, stdev: null })
+{
+  const ds = distributionStats([1, 2, 3, 4, 5])
+  eq('distributionStats n', ds.n, 5)
+  eq('distributionStats min', ds.min, 1)
+  eq('distributionStats max', ds.max, 5)
+  eq('distributionStats median', ds.median, 3)
+  eq('distributionStats mean', ds.mean, 3)
+}
+eq('distributionStats drops nulls from n/min/max, not coerced to 0', distributionStats([null, 10, 20]).n, 2)
 ok('pearson throws on length mismatch', (() => { try { pearson([1, 2], [1]); return false } catch (e) { return true } })())
 eq('pearson perfect positive', pearson([1, 2, 3], [2, 4, 6]), 1)
 eq('pearson perfect negative', pearson([1, 2, 3], [6, 4, 2]), -1)
