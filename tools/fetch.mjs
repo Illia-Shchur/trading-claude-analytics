@@ -22,7 +22,7 @@
 import { pathToFileURL } from 'node:url'
 import { wilderRSI, sma, drawdownPct, adr, fngStreak, dailyTrend, spotPanel, fundingBlock, fr,
   percentileRank, realizedVolBlock, rollingRealizedVol,
-  rollingWilderRSI, rollingDrawdownFromATH, rollingSMADistance, deribitVolBlock, _internal } from './lib.mjs'
+  rollingWilderRSI, rollingDrawdownFromATH, rollingSMADistance, deribitVolBlock, basisBlock, _internal } from './lib.mjs'
 const { round2 } = _internal
 
 // annualize: realized-vol annualization convention (market-data-extension
@@ -108,6 +108,12 @@ function dailyAnnualizedFundingSeries(intervals) {
   return days.map(d => fr.annualizedFunding(d.values.reduce((a, b) => a + b, 0) / d.values.length))
 }
 
+async function binancePremiumIndex(symbol) {
+  const j = await getJSON(`https://fapi.binance.com/fapi/v1/premiumIndex?symbol=${encodeURIComponent(symbol)}`)
+  if (j.markPrice == null || j.indexPrice == null) throw new Error(`binance premiumIndex: missing mark/index for ${symbol}`)
+  return { markPrice: Number(j.markPrice), indexPrice: Number(j.indexPrice) }
+}
+
 async function deribitDvol(currency) {
   const end = Date.now(), start = end - 2 * 86400e3
   const j = await getJSON(`https://www.deribit.com/api/v2/public/get_volatility_index_data?currency=${encodeURIComponent(currency)}&start_timestamp=${start}&end_timestamp=${end}&resolution=43200`)
@@ -170,7 +176,7 @@ async function fetchAsset(key, { series = false } = {}) {
   const attempt = async (label, fn) => { try { return await fn() } catch (e) { outp.errors.push(`${label}: ${e.message}`); return null } }
 
   const venues = a.venues || {}
-  const [cgSpot, cgCoin, weekly, daily, cross, fng, binanceQ, coinbaseQ, krakenQ, funding, dvolCandles, optionBook] = await Promise.all([
+  const [cgSpot, cgCoin, weekly, daily, cross, fng, binanceQ, coinbaseQ, krakenQ, funding, dvolCandles, optionBook, premiumIndex] = await Promise.all([
     // include_last_updated_at reuses this SAME call for the spot panel (commit
     // 7) — no new CoinGecko request.
     a.cg ? attempt('coingecko spot', () => getJSON(`https://api.coingecko.com/api/v3/simple/price?ids=${a.cg}&vs_currencies=usd&include_last_updated_at=true`)) : null,
@@ -199,6 +205,8 @@ async function fetchAsset(key, { series = false } = {}) {
     a.perp ? attempt('binance funding', () => binanceFunding(a.perp, 1000)) : null,
     a.deribit ? attempt('deribit dvol', () => deribitDvol(a.deribit)) : null,
     a.deribit ? attempt('deribit option book', () => deribitOptionBook(a.deribit)) : null,
+    // same condition as funding — premiumIndex needs a perp market
+    a.perp ? attempt('binance premiumIndex', () => binancePremiumIndex(a.perp)) : null,
   ])
 
   // spot — cross-checked across sources; >1.5% divergence flagged
@@ -354,6 +362,16 @@ async function fetchAsset(key, { series = false } = {}) {
       const dailySeries = dailyAnnualizedFundingSeries(funding)
       ctx.funding_annualized_percentile_vs_history = dailySeries.length ? percentileRank(dailySeries, outp.funding.mean_annualized_pct) : null
       ctx.funding_history_days_available = dailySeries.length
+    }
+
+    // basis/carry — riskFreePct is left null here: fetchMacro() (a separate
+    // invocation, `node tools/fetch.mjs macro`) is where
+    // dry_powder_benchmark.annualized_pct lives; compose the two via
+    // compute.mjs basis --risk-free-pct when writing a report, same pattern
+    // as compute.mjs corr composing a separately-fetched asset + SPX series.
+    if (premiumIndex && outp.funding) {
+      ctx.basis = { source: `Binance fapi premiumIndex (${a.perp})`,
+        ...basisBlock({ mark: premiumIndex.markPrice, index: premiumIndex.indexPrice, fundingAnnualizedPct: outp.funding.mean_annualized_pct }) }
     }
 
     if (fng && fng.data) {

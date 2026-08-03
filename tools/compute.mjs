@@ -34,6 +34,8 @@
 //   node tools/compute.mjs vol-surface --book <@file.json|json> [--dvol <json>] [--rv30 N]
 //        (Tier 1/C1 — Deribit ATM IV + moneyness skew + VRP; BTC/ETH only,
 //        empty book -> available:false; DISCLOSED CONTEXT ONLY)
+//   node tools/compute.mjs basis --mark N --index N [--funding-annualized-pct N] [--risk-free-pct N]
+//        (Tier 1/C2 — perp basis + carry vs risk-free; DISCLOSED CONTEXT ONLY)
 // JSON args may also be passed as @path/to/file.json
 // ============================================================================
 import { readFileSync } from 'node:fs'
@@ -41,7 +43,7 @@ import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds,
   fk, fr, weightedEV, evCheck, stopCoherence, adr, fngStreak,
   dailyTrend, frStallConfirmation, frComposite, frCompanion, correlationFromCloses,
   nextNTradingDays, percentileRank, distributionStats,
-  realizedVolBlock, rollingRealizedVol, deribitVolBlock } from './lib.mjs'
+  realizedVolBlock, rollingRealizedVol, deribitVolBlock, basisBlock } from './lib.mjs'
 
 const [, , cmd, ...rest] = process.argv
 const args = [], flags = {}
@@ -203,6 +205,15 @@ switch (cmd) {
       n_closes: closes.length, note: 'context only — not a scored input or gate' })
     break
   }
+  case 'basis': {
+    if (flags.mark == null || flags.index == null) fail('pass --mark N --index N [--funding-annualized-pct N] [--risk-free-pct N]')
+    out(basisBlock({
+      mark: num(flags.mark), index: num(flags.index),
+      fundingAnnualizedPct: flags['funding-annualized-pct'] != null ? num(flags['funding-annualized-pct']) : null,
+      riskFreePct: flags['risk-free-pct'] != null ? num(flags['risk-free-pct']) : null,
+    }))
+    break
+  }
   case 'vol-surface': {
     if (!flags['book']) fail('pass --book <json array from Deribit get_book_summary_by_currency?kind=option> [--dvol <json candles>] [--rv30 N]')
     out(deribitVolBlock({
@@ -229,5 +240,5 @@ switch (cmd) {
     break
   }
   default:
-    fail(`unknown command "${cmd || ''}" — rsi | thresholds | round | band | ev | stop-coherence | adr | streak | fr-funding | fr-cap | sma | drawdown | trend | stall | fr-composite | fr-companion | corr | tier1 | percentile | rvol | vol-surface (see header of tools/compute.mjs)`)
+    fail(`unknown command "${cmd || ''}" — rsi | thresholds | round | band | ev | stop-coherence | adr | streak | fr-funding | fr-cap | sma | drawdown | trend | stall | fr-composite | fr-companion | corr | tier1 | percentile | rvol | vol-surface | basis (see header of tools/compute.mjs)`)
 }

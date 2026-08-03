@@ -7,7 +7,7 @@
 import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds, FK_V_GATES,
   median, stdev, pearson, pctChange, consecutiveRun, smaSlope, logReturns, alignSeries,
   percentileRank, distributionStats, realizedVol, realizedVolBlock, rollingRealizedVol,
-  rollingWilderRSI, rollingDrawdownFromATH, rollingSMADistance, deribitVolBlock,
+  rollingWilderRSI, rollingDrawdownFromATH, rollingSMADistance, deribitVolBlock, basisBlock,
   dailyTrend, frStallConfirmation, frComposite, frCompanion, spotPanel, fundingBlock,
   corrSurcharge, correlationRegime, correlationFromCloses,
   fk, fr, weightedEV, evCheck, stopCoherence, adr, fngStreak,
@@ -134,6 +134,20 @@ function round2Local(x) { return Math.round(x * 100) / 100 }
 
   const malformed = deribitVolBlock({ bookRows: [{ instrument_name: 'not-a-real-instrument', mark_iv: 20, underlying_price: 100 }], nowMs })
   ok('a malformed instrument name is dropped, not a crash', malformed.available === false)
+}
+
+// ── basisBlock (C2) — perp basis + carry, sign convention preserved ────────
+{
+  ok('missing mark/index → available:false, not a crash', basisBlock({}).available === false)
+  const b = basisBlock({ mark: 63865.45, index: 63807.8, fundingAnnualizedPct: 4.73, riskFreePct: 3.68 })
+  ok('available with mark/index supplied', b.available === true)
+  eq('perp_basis_pct = (mark/index-1)*100', b.perp_basis_pct, Math.round((63865.45 / 63807.8 - 1) * 100 * 100) / 100)
+  eq('annualized_carry_pct passes fundingAnnualizedPct through UNCHANGED — never recomputed here', b.annualized_carry_pct, 4.73)
+  eq('vs_risk_free_pp = carry - riskFree', b.vs_risk_free_pp, Math.round((4.73 - 3.68) * 100) / 100)
+  eq('positive funding labels "longs pay shorts"', b.label, 'positive (longs pay shorts)')
+  eq('negative funding labels "shorts pay longs"', basisBlock({ mark: 100, index: 100, fundingAnnualizedPct: -2 }).label, 'negative (shorts pay longs)')
+  eq('vs_risk_free_pp is null when riskFreePct is not supplied (never a guessed 0)', basisBlock({ mark: 100, index: 99, fundingAnnualizedPct: 5 }).vs_risk_free_pp, null)
+  ok('sign_convention statement matches fr.annualizedFunding()\'s own convention verbatim', b.sign_convention.includes('POSITIVE funding = longs pay shorts = carry INCOME to a short'))
 }
 ok('pearson throws on length mismatch', (() => { try { pearson([1, 2], [1]); return false } catch (e) { return true } })())
 eq('pearson perfect positive', pearson([1, 2, 3], [2, 4, 6]), 1)

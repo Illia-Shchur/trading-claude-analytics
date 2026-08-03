@@ -437,6 +437,39 @@ export function deribitVolBlock({ dvolCandles = [], bookRows = [], rv30 = null, 
 }
 
 /**
+ * Perp basis + carry context (market-data-extension plan, C2). DISCLOSED
+ * CONTEXT ONLY — not a scored leg or gate. `mark`/`index` come from
+ * Binance's premiumIndex (mark price vs index price). `fundingAnnualizedPct`
+ * is fr.annualizedFunding()'s OWN OUTPUT for the SAME asset — this function
+ * does not recompute it, just re-expresses it against a risk-free
+ * benchmark, keeping the sign convention verbatim: POSITIVE funding = longs
+ * pay shorts = carry INCOME to a short (the exact convention already pinned
+ * in compute.mjs fr-funding — restating it differently here would be a bug
+ * factory, not a feature). `riskFreePct` (e.g. fetchMacro()'s
+ * dry_powder_benchmark.annualized_pct) is optional; supplying it derives
+ * `vs_risk_free_pp`. The `label` is DESCRIPTIVE ONLY — same discipline as
+ * correlationRegime()'s label ladder — it carries no scoring consequence.
+ */
+export function basisBlock({ mark = null, index = null, fundingAnnualizedPct = null, riskFreePct = null } = {}) {
+  if (typeof mark !== 'number' || typeof index !== 'number' || index === 0) {
+    return { available: false, reason: 'mark/index price unavailable', note: 'DISCLOSED CONTEXT ONLY — not a scored leg or gate' }
+  }
+  const perpBasisPct = round2((mark / index - 1) * 100)
+  const carryPct = typeof fundingAnnualizedPct === 'number' ? fundingAnnualizedPct : null
+  const vsRiskFreePp = (carryPct != null && typeof riskFreePct === 'number') ? round2(carryPct - riskFreePct) : null
+  const label = carryPct == null ? 'not computed' : carryPct > 0 ? 'positive (longs pay shorts)' : carryPct < 0 ? 'negative (shorts pay longs)' : 'flat'
+  return {
+    available: true,
+    perp_basis_pct: perpBasisPct,
+    annualized_carry_pct: carryPct,
+    vs_risk_free_pp: vsRiskFreePp,
+    label,
+    sign_convention: 'POSITIVE funding = longs pay shorts = carry INCOME to a short (FR SKILL, Jul 2026) — identical convention to fr.annualizedFunding()',
+    note: 'DISCLOSED CONTEXT ONLY — not a scored leg or gate; label is descriptive, consequence-free (mirrors the correlation label-ladder discipline)',
+  }
+}
+
+/**
  * Log returns of a chronological closes series. Null-skips any pair spanning
  * a non-positive close (log undefined) rather than throwing — a single bad
  * print should not void an entire correlation window.
