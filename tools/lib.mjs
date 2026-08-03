@@ -583,6 +583,81 @@ export function stablecoinBlock(rows) {
 }
 
 /**
+ * Snapshot-to-snapshot boundary-crossing diff (market-data-extension plan,
+ * D2). Pure — `tools/tripwire.mjs` does the file I/O, this does the
+ * comparison. Reports ONLY scoring-relevant crossings, each via the
+ * EXISTING classifier it would use in a report (fk.*, fr.*, frChannel) —
+ * never a reimplementation of a band or gate.
+ *
+ * `prevSnapshot`/`nextSnapshot` are `tools/snapshot.mjs` records' own
+ * `.snapshot` field: `{ btc: <fetchAsset() output>, eth: ..., macro: ... }`.
+ * `checkpoints` (optional) = `{ btc: { line }, ... }` — a report-authored
+ * stop/checkpoint price, which nothing in a bare fetch snapshot knows;
+ * supplying it also checks whole-ADR-unit crossings in distance-to-line.
+ *
+ * Every crossing types are DISCLOSURE — "a boundary moved," not a
+ * recommendation. This does not compute or move any score itself.
+ */
+export function tripwireDiff(prevSnapshot, nextSnapshot, { checkpoints = {} } = {}) {
+  const crossings = []
+  const assets = Object.keys(nextSnapshot || {}).filter(k => k !== 'macro' && prevSnapshot && prevSnapshot[k])
+
+  for (const a of assets) {
+    const p = prevSnapshot[a], n = nextSnapshot[a]
+    const AS = a.toUpperCase()
+
+    if (p.sentiment && n.sentiment && p.sentiment.avg_3d != null && n.sentiment.avg_3d != null) {
+      const from = fk.sentimentBand(p.sentiment.avg_3d), to = fk.sentimentBand(n.sentiment.avg_3d)
+      if (from !== to) crossings.push({ asset: AS, type: 'fk_sentiment_band', from, to, prev_value: p.sentiment.avg_3d, next_value: n.sentiment.avg_3d })
+
+      const pStreak = p.sentiment.streaks_daily_prints, nStreak = n.sentiment.streaks_daily_prints
+      if (pStreak && nStreak) {
+        const pOn = pStreak.le15 >= 7, nOn = nStreak.le15 >= 7
+        if (pOn !== nOn) crossings.push({ asset: AS, type: 'fk_gate1_streak_le15_ge7', from: pOn, to: nOn, prev_value: pStreak.le15, next_value: nStreak.le15 })
+      }
+    }
+
+    if (p.weekly && n.weekly && p.weekly.rsi14 && n.weekly.rsi14 && p.weekly.rsi14.rsi != null && n.weekly.rsi14.rsi != null) {
+      const from = fk.momentumBand(p.weekly.rsi14.rsi).band, to = fk.momentumBand(n.weekly.rsi14.rsi).band
+      if (from !== to) crossings.push({ asset: AS, type: 'fk_momentum_band', from, to, prev_value: p.weekly.rsi14.rsi, next_value: n.weekly.rsi14.rsi })
+    }
+
+    if (p.weekly && n.weekly && p.weekly.sma_200w && n.weekly.sma_200w &&
+        typeof p.weekly.sma_200w.within_8pct === 'boolean' && typeof n.weekly.sma_200w.within_8pct === 'boolean' &&
+        p.weekly.sma_200w.within_8pct !== n.weekly.sma_200w.within_8pct) {
+      crossings.push({ asset: AS, type: 'gate6_within_8pct', from: p.weekly.sma_200w.within_8pct, to: n.weekly.sma_200w.within_8pct })
+    }
+
+    if (p.trend && n.trend && !p.trend.insufficient && !n.trend.insufficient && p.high_1y && n.high_1y &&
+        p.high_1y.pct_below != null && n.high_1y.pct_below != null) {
+      const from = frChannel({ pctBelow1yATH: p.high_1y.pct_below, ma200Falling: p.trend.ma200_falling, priceBelowMA200: p.trend.price_below_ma200 })
+      const to = frChannel({ pctBelow1yATH: n.high_1y.pct_below, ma200Falling: n.trend.ma200_falling, priceBelowMA200: n.trend.price_below_ma200 })
+      if (from !== to) crossings.push({ asset: AS, type: 'fr_channel_routing', from, to })
+
+      const capFrom = fr.phaseCycleCap(p.high_1y.pct_below), capTo = fr.phaseCycleCap(n.high_1y.pct_below)
+      if (capFrom !== capTo) crossings.push({ asset: AS, type: 'fr_phase_cycle_cap', from: capFrom, to: capTo, prev_value: p.high_1y.pct_below, next_value: n.high_1y.pct_below })
+    }
+
+    if (p.funding && n.funding && p.funding.mean_annualized_pct != null && n.funding.mean_annualized_pct != null) {
+      const from = Math.sign(p.funding.mean_annualized_pct), to = Math.sign(n.funding.mean_annualized_pct)
+      if (from !== to) crossings.push({ asset: AS, type: 'funding_sign', from, to, prev_value: p.funding.mean_annualized_pct, next_value: n.funding.mean_annualized_pct })
+    }
+
+    const cp = checkpoints[a]
+    if (cp && cp.line != null && p.spot && n.spot && p.spot.canonical != null && n.spot.canonical != null &&
+        p.daily && n.daily && p.daily.adr5 && n.daily.adr5 && p.daily.adr5.adr && n.daily.adr5.adr) {
+      const distFrom = Math.abs(p.spot.canonical - cp.line) / p.daily.adr5.adr
+      const distTo = Math.abs(n.spot.canonical - cp.line) / n.daily.adr5.adr
+      if (Math.floor(distFrom) !== Math.floor(distTo)) {
+        crossings.push({ asset: AS, type: 'checkpoint_adr_distance', from: round2(distFrom), to: round2(distTo), line: cp.line })
+      }
+    }
+  }
+
+  return { crossings, n_crossings: crossings.length }
+}
+
+/**
  * Log returns of a chronological closes series. Null-skips any pair spanning
  * a non-positive close (log undefined) rather than throwing — a single bad
  * print should not void an entire correlation window.

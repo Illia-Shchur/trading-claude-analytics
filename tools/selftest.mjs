@@ -7,7 +7,7 @@
 import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds, FK_V_GATES,
   median, stdev, pearson, pctChange, consecutiveRun, smaSlope, logReturns, alignSeries,
   percentileRank, distributionStats, realizedVol, realizedVolBlock, rollingRealizedVol,
-  rollingWilderRSI, rollingDrawdownFromATH, rollingSMADistance, deribitVolBlock, basisBlock, positioningBlock, netLiquidity, stablecoinBlock,
+  rollingWilderRSI, rollingDrawdownFromATH, rollingSMADistance, deribitVolBlock, basisBlock, positioningBlock, netLiquidity, stablecoinBlock, tripwireDiff,
   dailyTrend, frStallConfirmation, frComposite, frCompanion, spotPanel, fundingBlock,
   corrSurcharge, correlationRegime, correlationFromCloses,
   fk, fr, weightedEV, evCheck, stopCoherence, adr, fngStreak,
@@ -198,6 +198,72 @@ function round2Local(x) { return Math.round(x * 100) / 100 }
 
   const short = rows.slice(0, 10)
   eq('net_change_30d_pct is null when history is shorter than 30 days (never a fabricated window)', stablecoinBlock(short).net_change_30d_pct, null)
+}
+
+// ── tripwireDiff (D2) — snapshot-to-snapshot boundary crossings ────────────
+{
+  eq('identical snapshots → zero crossings', tripwireDiff({ btc: { sentiment: { avg_3d: 27 } } }, { btc: { sentiment: { avg_3d: 27 } } }).n_crossings, 0)
+
+  // fk_sentiment_band: 27 -> band 2 (<=35); 24 -> band 3 (<=25). Crosses.
+  const sentCross = tripwireDiff({ btc: { sentiment: { avg_3d: 27 } } }, { btc: { sentiment: { avg_3d: 24 } } })
+  eq('F&G crossing a band edge (27->24, 35->25 cut) is reported', sentCross.n_crossings, 1)
+  eq('crossing type is fk_sentiment_band', sentCross.crossings[0].type, 'fk_sentiment_band')
+
+  // gate1 streak threshold: le15 6->7 crosses the >=7 line
+  const streakCross = tripwireDiff(
+    { btc: { sentiment: { avg_3d: 27, streaks_daily_prints: { le15: 6 } } } },
+    { btc: { sentiment: { avg_3d: 27, streaks_daily_prints: { le15: 7 } } } },
+  )
+  eq('gate-1 streak crossing the >=7 line is reported', streakCross.n_crossings, 1)
+  eq('crossing type is fk_gate1_streak_le15_ge7', streakCross.crossings[0].type, 'fk_gate1_streak_le15_ge7')
+
+  // weekly RSI momentum band: 46 (band 0, >45) -> 40 (band 2, <=40)
+  const rsiCross = tripwireDiff(
+    { btc: { weekly: { rsi14: { rsi: 46 } } } },
+    { btc: { weekly: { rsi14: { rsi: 40 } } } },
+  )
+  eq('weekly RSI crossing a momentum band edge is reported', rsiCross.n_crossings, 1)
+  eq('crossing type is fk_momentum_band', rsiCross.crossings[0].type, 'fk_momentum_band')
+
+  // gate-6 boolean flip
+  const gate6Cross = tripwireDiff(
+    { btc: { weekly: { sma_200w: { within_8pct: true } } } },
+    { btc: { weekly: { sma_200w: { within_8pct: false } } } },
+  )
+  eq('gate-6 within_8pct boolean flip is reported', gate6Cross.n_crossings, 1)
+  eq('crossing type is gate6_within_8pct', gate6Cross.crossings[0].type, 'gate6_within_8pct')
+
+  // frChannel routing: 'none' (within 20%) -> 'B' (>20% below, MA200 falling, price below MA200)
+  const routingCross = tripwireDiff(
+    { btc: { trend: { insufficient: null, ma200_falling: false, price_below_ma200: false }, high_1y: { pct_below: 15 } } },
+    { btc: { trend: { insufficient: null, ma200_falling: true, price_below_ma200: true }, high_1y: { pct_below: 25 } } },
+  )
+  ok('frChannel routing crossing is reported', routingCross.crossings.some(c => c.type === 'fr_channel_routing'))
+  ok('fr_phase_cycle_cap tier crossing is ALSO reported from the same pct_below move (15->25 crosses the 20% cap boundary)', routingCross.crossings.some(c => c.type === 'fr_phase_cycle_cap'))
+
+  // funding sign flip
+  const fundingCross = tripwireDiff(
+    { btc: { funding: { mean_annualized_pct: 3.5 } } },
+    { btc: { funding: { mean_annualized_pct: -1.2 } } },
+  )
+  eq('funding sign flip is reported', fundingCross.n_crossings, 1)
+  eq('crossing type is funding_sign', fundingCross.crossings[0].type, 'funding_sign')
+
+  // checkpoint ADR-distance crossing (optional, only fires when supplied)
+  const cpCross = tripwireDiff(
+    { btc: { spot: { canonical: 60000 }, daily: { adr5: { adr: 1000 } } } },
+    { btc: { spot: { canonical: 58500 }, daily: { adr5: { adr: 1000 } } } },
+    { checkpoints: { btc: { line: 55000 } } },
+  )
+  eq('checkpoint distance crossing a whole-ADR unit (5.0 -> 3.5 ADR from the line) is reported', cpCross.n_crossings, 1)
+  eq('crossing type is checkpoint_adr_distance', cpCross.crossings[0].type, 'checkpoint_adr_distance')
+  eq('no checkpoints supplied -> that check is simply skipped, not an error', tripwireDiff(
+    { btc: { spot: { canonical: 60000 }, daily: { adr5: { adr: 1000 } } } },
+    { btc: { spot: { canonical: 58500 }, daily: { adr5: { adr: 1000 } } } },
+  ).n_crossings, 0)
+
+  ok('an asset present only in `next` (not `prev`) is skipped, not a crash', tripwireDiff({}, { eth: { sentiment: { avg_3d: 10 } } }).n_crossings === 0)
+  eq('the "macro" key is never treated as an asset', tripwireDiff({ macro: {} }, { macro: {} }).n_crossings, 0)
 }
 ok('pearson throws on length mismatch', (() => { try { pearson([1, 2], [1]); return false } catch (e) { return true } })())
 eq('pearson perfect positive', pearson([1, 2, 3], [2, 4, 6]), 1)
