@@ -11,25 +11,26 @@
 //       weekly closes + Wilder RSI-14 + 200-week SMA (±8% gate-6 check),
 //       daily sessions (2y) + 5-day ADR + `trend` block (RSI-14, 50/200dma,
 //       200dma slope, 40-session low/bounce/age — every frChannel()/frB.*
-//       daily input), F&G spot/3-day avg/gate-1 streaks. `--series` also
-//       emits the full 2y daily OHLC array under `daily.series`.
+//       daily input), F&G spot/3-day avg/gate-1 streaks, `funding` (Binance
+//       fapi, 45×8h intervals — absent, not zero, for assets with no perp).
+//       `--series` also emits the full 2y daily OHLC array under `daily.series`.
 //   node tools/fetch.mjs macro                 → DFII10 real yield, VIX, DXY,
 //       Brent, SPX, NDX, US10Y (last close + 5-session Δ)
 // Every block carries source + fetched_at; failed sources land in `errors`
 // instead of killing the run (the report then follows the SKILL's NOT-FOUND rules).
 // ============================================================================
-import { wilderRSI, sma, drawdownPct, adr, fngStreak, dailyTrend, spotPanel, _internal } from './lib.mjs'
+import { wilderRSI, sma, drawdownPct, adr, fngStreak, dailyTrend, spotPanel, fundingBlock, _internal } from './lib.mjs'
 const { round2 } = _internal
 
 const ASSETS = {
-  btc: { cg: 'bitcoin', yahoo: 'BTC-USD', fng: true,
+  btc: { cg: 'bitcoin', yahoo: 'BTC-USD', fng: true, perp: 'BTCUSDT',
     venues: { binance: 'BTCUSDT', coinbase: 'BTC-USD', kraken: 'XBTUSD' } },
-  eth: { cg: 'ethereum', yahoo: 'ETH-USD', fng: true,
+  eth: { cg: 'ethereum', yahoo: 'ETH-USD', fng: true, perp: 'ETHUSDT',
     venues: { binance: 'ETHUSDT', coinbase: 'ETH-USD', kraken: 'ETHUSD' } },
-  sol: { cg: 'solana', yahoo: 'SOL-USD', fng: true,
+  sol: { cg: 'solana', yahoo: 'SOL-USD', fng: true, perp: 'SOLUSDT',
     venues: { binance: 'SOLUSDT', coinbase: 'SOL-USD', kraken: 'SOLUSD' } },
-  // Gold has no crypto-exchange venues — the panel degrades to n_synchronized:0
-  // + low_confidence:true with an honest reason, not a crash.
+  // Gold has no crypto-exchange venues or perp — the spot panel degrades to
+  // n_synchronized:0 + low_confidence:true, and `funding` is absent, not zero.
   gold: { yahoo: 'GC=F', crossYahoo: 'MGC=F', fng: false, athRange: '10y', venues: {} },
 }
 const UA = { headers: { 'User-Agent': 'Mozilla/5.0 (trading-claude-analytics toolchain)' } }
@@ -57,6 +58,12 @@ async function krakenQuote(pair) {
   // Kraken's REST ticker carries no timestamp — 'receipt' (fetch-time-implicit,
   // never excluded on staleness since there is nothing to measure staleness against).
   return { source: 'Kraken', symbol: pair, value: Number(result.c[0]), ts: null, ts_kind: 'receipt' }
+}
+
+async function binanceFunding(symbol, limit) {
+  const rows = await getJSON(`https://fapi.binance.com/fapi/v1/fundingRate?symbol=${encodeURIComponent(symbol)}&limit=${limit}`)
+  if (!Array.isArray(rows) || rows.length === 0) throw new Error(`binance fapi: no funding history for ${symbol}`)
+  return rows.map(r => ({ fundingRate: r.fundingRate, fundingTime: Number(r.fundingTime) }))
 }
 
 async function yahooChart(symbol, range, interval) {
@@ -98,7 +105,7 @@ async function fetchAsset(key, { series = false } = {}) {
   const attempt = async (label, fn) => { try { return await fn() } catch (e) { outp.errors.push(`${label}: ${e.message}`); return null } }
 
   const venues = a.venues || {}
-  const [cgSpot, cgCoin, weekly, daily, cross, fng, binanceQ, coinbaseQ, krakenQ] = await Promise.all([
+  const [cgSpot, cgCoin, weekly, daily, cross, fng, binanceQ, coinbaseQ, krakenQ, funding] = await Promise.all([
     // include_last_updated_at reuses this SAME call for the spot panel (commit
     // 7) — no new CoinGecko request.
     a.cg ? attempt('coingecko spot', () => getJSON(`https://api.coingecko.com/api/v3/simple/price?ids=${a.cg}&vs_currencies=usd&include_last_updated_at=true`)) : null,
@@ -113,6 +120,9 @@ async function fetchAsset(key, { series = false } = {}) {
     venues.binance ? attempt('binance spot', () => binanceQuote(venues.binance)) : null,
     venues.coinbase ? attempt('coinbase spot', () => coinbaseQuote(venues.coinbase)) : null,
     venues.kraken ? attempt('kraken spot', () => krakenQuote(venues.kraken)) : null,
+    // gold has no perp — ASSETS.gold has no `perp` symbol, so this block is
+    // ABSENT from the report, never a zero standing in for "not applicable".
+    a.perp ? attempt('binance funding', () => binanceFunding(a.perp, 45)) : null,
   ])
 
   // spot — cross-checked across sources; >1.5% divergence flagged
@@ -199,6 +209,10 @@ async function fetchAsset(key, { series = false } = {}) {
       note: 'score the 3-day average; gate-1 streak counts DAILY prints ≤15 (≥7 consecutive)',
     }
   }
+
+  // funding: absent (not zero) when the asset has no perp, e.g. gold
+  if (funding) outp.funding = { source: `Binance fapi fundingRate (${a.perp}, ${funding.length} intervals)`, ...fundingBlock(funding) }
+
   return outp
 }
 

@@ -828,6 +828,57 @@ export function frRatchetCheck(oldValue, newValue, { tier = 'stop' } = {}) {
   return { pass: false, direction: 'away from price', reason: `S6 ratchet: ${tier} ${oldValue} → ${newValue} widens the stop — prohibited, not merely disclosable` }
 }
 
+// ── Flying Rocket: funding block ─────────────────────────────────────────────
+
+/**
+ * Derives the funding inputs FR §4B and fr.squeezeTrapPenalty() need from raw
+ * Binance-shaped funding intervals: `[{fundingRate, fundingTime}]`,
+ * chronological (oldest → newest). `n` caps how many trailing intervals to use
+ * (Binance funds every 8h — 45 intervals ≈ 15 days).
+ *
+ * Two unit traps, both encoded here rather than left to a caller:
+ * 1. Binance's `fundingRate` is a FRACTION ("0.0001" = 0.01%), but
+ *    fr.annualizedFunding() takes a per-8h PERCENT — a caller passing the raw
+ *    fraction through would be 100× off. `per8hPct = Number(fundingRate)*100`.
+ * 2. FK's capitulation-(b) counts funding INTERVALS (8h prints); FR-B's
+ *    relative-sentiment-(b) counts SESSIONS (calendar days, ≤3 intervals
+ *    each). Conflating them is a ≤3× scoring error, so both are emitted
+ *    under unit-explicit keys — never a single ambiguous "streak".
+ *
+ * `oi_90d_high_available` is always `false` here: Binance's OI history
+ * endpoint serves ~30 days, but fr.squeezeTrapPenalty() wants a 90-day high.
+ * `oi_within_5pct_of_90d_high` stays `null` — a 30-day number must never
+ * pass itself off as a 90-day one.
+ */
+export function fundingBlock(intervals, { n = 45 } = {}) {
+  if (!Array.isArray(intervals) || intervals.length === 0) {
+    return { insufficient: 'no funding intervals supplied', n_intervals: 0 }
+  }
+  const used = intervals.slice(-n)
+  const per8hPct = used.map(iv => Number(iv.fundingRate) * 100)
+  const meanPer8hPct = per8hPct.reduce((a, b) => a + b, 0) / per8hPct.length
+
+  const days = []
+  for (let i = 0; i < used.length; i++) {
+    const key = new Date(used[i].fundingTime).toISOString().slice(0, 10)
+    const day = days.find(d => d.key === key)
+    if (day) day.values.push(per8hPct[i]); else days.push({ key, values: [per8hPct[i]] })
+  }
+  const dailyAvgPct = days.map(d => d.values.reduce((a, b) => a + b, 0) / d.values.length)
+
+  return {
+    n_intervals: used.length,
+    n_sessions: days.length,
+    mean_per_8h_pct: round2(meanPer8hPct),
+    mean_annualized_pct: fr.annualizedFunding(meanPer8hPct),
+    longest_negative_run_intervals: consecutiveRun(per8hPct, v => v < 0, { from: 'end' }),
+    longest_negative_run_sessions: consecutiveRun(dailyAvgPct, v => v < 0, { from: 'end' }),
+    oi_90d_high_available: false,
+    oi_within_5pct_of_90d_high: null,
+    sign_convention: 'POSITIVE funding = longs pay shorts = carry INCOME to a short (FR SKILL, Jul 2026)',
+  }
+}
+
 // ── EV / probability matrix ─────────────────────────────────────────────────
 
 /**

@@ -6,7 +6,7 @@
 // ============================================================================
 import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds, FK_V_GATES,
   median, stdev, pearson, pctChange, consecutiveRun, smaSlope, logReturns, alignSeries,
-  dailyTrend, frStallConfirmation, frComposite, frCompanion, spotPanel,
+  dailyTrend, frStallConfirmation, frComposite, frCompanion, spotPanel, fundingBlock,
   fk, fr, weightedEV, evCheck, stopCoherence, adr, fngStreak,
   FK_SCORE_UNLOCK, fkPhasesUnlockedByScore, discretionValid, d5StopCheck, ratchetCheck,
   mechanicalScore, frChannel, frB, FR_SCORE_UNLOCK, FR_GATE_FLOORS, frPhasesUnlockedByScore,
@@ -235,6 +235,42 @@ ok('zero quotes → low_confidence true with a reason', spotPanel([]).low_confid
   ok('a single synchronized quote is low-confidence (no independent cross-check)', p.low_confidence === true)
   eq('...but canonical is still that one value', p.canonical, 100)
 }
+
+// ── fundingBlock (commit 8) — unit traps + the BTC 2026-08-01 pin ──────────
+{
+  // BTC pin: 15 intervals, 0 negative, mean annualized 4.73%.
+  const start = Date.parse('2026-07-17T00:00:00Z')
+  const intervals = Array.from({ length: 15 }, (_, i) => ({ fundingRate: '0.0000432', fundingTime: start + i * 8 * 3600e3 }))
+  const f = fundingBlock(intervals)
+  eq('15 intervals used', f.n_intervals, 15)
+  eq('mean annualized = 4.73% (2026-08-01 pin)', f.mean_annualized_pct, 4.73)
+  eq('0 negative intervals', f.longest_negative_run_intervals, 0)
+  eq('0 negative sessions', f.longest_negative_run_sessions, 0)
+  ok('OI 90d high never claimed available', f.oi_90d_high_available === false)
+  ok('OI proximity stays null, never a 30d number posing as 90d', f.oi_within_5pct_of_90d_high === null)
+}
+{
+  // Unit trap 1: Binance's fundingRate is a FRACTION, not a percent.
+  // "0.0001" → per8hPct 0.01 (NOT 0.0001) → annualized 0.01×3×365 = 10.95.
+  const f = fundingBlock([{ fundingRate: '0.0001', fundingTime: Date.now() }])
+  eq('fraction "0.0001" reads as per8h 0.01%, not 0.0001%', f.mean_per_8h_pct, 0.01)
+  eq('annualized = 0.01 × 3 × 365 = 10.95%', f.mean_annualized_pct, 10.95)
+}
+{
+  // Unit trap 2: 3 negative intervals inside ONE calendar day is 3 intervals
+  // but only 1 session — conflating them is up to a 3× scoring error.
+  const day = Date.parse('2026-07-20T00:00:00Z')
+  const intervals = [
+    { fundingRate: '0.0001', fundingTime: day - 3 * 8 * 3600e3 }, // prior day, positive
+    { fundingRate: '-0.0001', fundingTime: day + 0 * 8 * 3600e3 }, // same day, negative ×3
+    { fundingRate: '-0.0001', fundingTime: day + 1 * 8 * 3600e3 },
+    { fundingRate: '-0.0001', fundingTime: day + 2 * 8 * 3600e3 },
+  ]
+  const f = fundingBlock(intervals)
+  eq('3 negative INTERVALS', f.longest_negative_run_intervals, 3)
+  eq('...but only 1 negative SESSION (same calendar day)', f.longest_negative_run_sessions, 1)
+}
+ok('no intervals → insufficient, not a crash', fundingBlock([]).insufficient != null)
 
 // ── ceilThresholds — including the ETH ceil(7/9×8)=7 misprint regression ────
 eq('thresholds /9', (({ p1a, p1b, p2, p3 }) => [p1a, p1b, p2, p3])(ceilThresholds(9)), [3, 5, 6, 7])
