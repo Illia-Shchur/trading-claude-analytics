@@ -2,13 +2,57 @@
   "schema": "marketdata/1",
   "note": "Hand-maintained, dated, sourced manual market inputs — ETF flows, MVRV-Z, LTH/STH supply metrics, exchange reserves, liquidations, COT. Mirrors tools/calendar-tier1.json's discipline exactly and for the same reason: this repo has no deps, no secrets story, and auto-pushes to a public remote, so these stay hand-entered rather than API-keyed (market-data-extension plan, D1). compute.mjs marketdata --asset <asset> [--max-age-days N] warns loudly when any verified_on is older than N days (default 3 — these inputs move daily/weekly, not quarterly like calendar-tier1). Every entry needs its OWN verified_on — do not bulk-copy one across entries added at different times. Deliberately NOT automated: the 2026-08-01 report run's own value came from REJECTING bad data (a stale April funding claim, a two-month-old MVRV-Z quoted at a stale price, a liquidation figure on a mismatched venue set) — an API would have swallowed all three. lint-report.mjs warns (never errors, no epoch) when a machine block's key_inputs cites one of these metrics with no backing dated entry here.",
   "entries": [
-    { "asset": "BTC", "metric": "mvrv_z", "value": 0.41, "as_of": "2026-07-31", "source": "checkonchain.com (via web fetch, Hard Rule 1)", "verified_on": "2026-08-01" },
-    { "asset": "BTC", "metric": "realized_price", "value": 52418, "as_of": "2026-07-31", "source": "checkonchain.com (via web fetch, Hard Rule 1)", "verified_on": "2026-08-01" },
-    { "asset": "BTC", "metric": "lth_mvrv", "value": 1.27, "as_of": "2026-07-31", "source": "checkonchain.com (via web fetch, Hard Rule 1) — supply rising, reserves falling", "verified_on": "2026-08-01" },
-    { "asset": "BTC", "metric": "sth_mvrv", "value": 0.93, "as_of": "2026-07-31", "source": "checkonchain.com (via web fetch, Hard Rule 1)", "verified_on": "2026-08-01" }
+    {
+      "asset": "BTC",
+      "metric": "lth_mvrv",
+      "value": 1.27,
+      "as_of": "2026-07-31",
+      "source": "checkonchain.com (via web fetch, Hard Rule 1) — supply rising, reserves falling",
+      "verified_on": "2026-08-01"
+    },
+    {
+      "asset": "BTC",
+      "metric": "sth_mvrv",
+      "value": 0.93,
+      "as_of": "2026-07-31",
+      "source": "checkonchain.com (via web fetch, Hard Rule 1)",
+      "verified_on": "2026-08-01"
+    },
+    {
+      "asset": "BTC",
+      "metric": "mvrv_z",
+      "value": 0.3469,
+      "as_of": "2026-08-02",
+      "source": "bitcoin-data.com /v1/mvrv-zscore/last (public JSON API, Hard Rule 1). Scale cross-checked against Santiment mvrv_usd_z_score for BTC: 0.3315 vs 0.371 on 2026-07-04, 0.04 apart.",
+      "verified_on": "2026-08-03"
+    },
+    {
+      "asset": "BTC",
+      "metric": "realized_price",
+      "value": 52367.36,
+      "as_of": "2026-08-02",
+      "source": "bitcoin-data.com /v1/realized-price/last (public JSON API, Hard Rule 1)",
+      "verified_on": "2026-08-03"
+    },
+    {
+      "asset": "ETH",
+      "metric": "mvrv_z",
+      "value": -1.121278,
+      "as_of": "2026-07-04",
+      "source": "Santiment getMetric(mvrv_usd_z_score), slug ethereum (public GraphQL, SANAPI FREE tier caps this metric's query window at 2026-07-04). Live sign bounded arithmetically: implied realized price $2,277.11 (= 2026-07-04 close $1,779.03 / MVRV ratio 0.781315) vs spot $1,868.21 gives a live MVRV ratio of 0.820, so MV<RV forces Z negative; spot would need +21.9% to flip it. Scaled estimate -0.92. Provider scale cross-checked on BTC (see the BTC mvrv_z entry). DECLINED alternative: the circulating '-0.7 / 7-year low' traces to a single 2026-06-08 BeInCrypto/Phemex article at ETH $1,684.",
+      "verified_on": "2026-08-03"
+    },
+    {
+      "asset": "ETH",
+      "metric": "realized_price",
+      "value": 2277.11,
+      "as_of": "2026-07-04",
+      "source": "computed from Santiment mvrv_usd (ratio) 0.781315 and the Yahoo ETH-USD 2026-07-04 close $1,779.03. IMPLIED, not directly sourced — labelled as such.",
+      "verified_on": "2026-08-03"
+    }
   ],
   "known_gaps": [
-    "ETH/SOL/gold have no dated entries yet in this file — backfill on each asset's next report.",
+    "SOL and gold have no dated entries yet in this file — backfill on each asset's next report. ETH mvrv_z/realized_price backfilled 2026-08-03; ETH lth_mvrv/sth_mvrv still absent (Glassnode/checkonchain ETH cohort metrics were not obtainable this session).",
     "etf_flow and liquidations are NOT yet columns here (they're currently narrated inline in each report's key_inputs, e.g. etf_flow_jul31_usd_m/liquidations_jul31_network_usd_m) — add as dated entries once a stable metric-name convention is picked; lint-report.mjs's marketdata-backing check currently covers mvrv_z/realized_price/lth_mvrv/sth_mvrv only.",
     "COT (CFTC) not populated for any asset.",
     "Exchange reserves not populated as a standalone metric for any asset."
