@@ -67,7 +67,7 @@ import { roundScore, ROUNDING, ceilThresholds, FK_V_GATES, evCheck, stopCoherenc
   discretionValid, d5StopCheck, FK_SCORE_UNLOCK, FK_DISCRETION,
   s5StopCheck, frRatchetCheck, FR_S5, FR_CHANNEL_B,
   frUnlockLadder, FR_GATE_FLOORS, frStopBand, FR_MAX_PER_ASSET_PCT,
-  fillPrice, trancheFilled, entryLooksLikeFill, ENTRY_PRICE_EPOCH } from './lib.mjs'
+  fillPrice, trancheFilled, entryLooksLikeFill, ENTRY_PRICE_EPOCH, frComposite } from './lib.mjs'
 
 const round2 = n => Math.round(n * 100) / 100
 
@@ -156,11 +156,16 @@ else {
     // score.mechanical — the number every protective rule reads. FK: round(leg
     // sum). FR: round(leg sum + penalty) then the Channel A cycle cap, since
     // both are mechanical inputs and only the S1 term is excluded.
-    const legSum = legNames.reduce((a, n) => a + (S.legs[n] || 0), 0) + (isFK ? 0 : (S.penalty || 0))
+    // frComposite() is the extracted arithmetic (commit 4): FK calls it with
+    // penalty:0, which collapses every FR-only term to a no-op — the same
+    // shape the inline math used to hand-roll here.
+    const penaltyVal = isFK ? 0 : (S.penalty || 0)
+    const legSum = legNames.reduce((a, n) => a + (S.legs[n] || 0), 0) + penaltyVal
     const conv = S.rounding || ROUNDING[String(b.asset || '').toLowerCase()]
     if (typeof S.mechanical === 'number' && conv) {
-      let expected = Math.max(0, Math.min(20, roundScore(legSum, conv)))
-      if (!isFK && S.cap && S.cap.applied) expected = Math.min(expected, S.cap.value)
+      const composite = frComposite({ legs: S.legs, penalty: penaltyVal, discretionary: 0, rounding: conv,
+        cap: (!isFK && S.cap) ? S.cap : null })
+      const expected = composite.mechanical
       if (S.mechanical !== expected) err(`score.mechanical=${S.mechanical} but ${conv}(leg sum${isFK ? '' : '+penalty'} ${legSum})${!isFK && S.cap && S.cap.applied ? ` capped at ${S.cap.value}` : ''} = ${expected}`)
     } else if (String(b.date) >= DISCRETION_EPOCH) {
       warn(isFK
