@@ -409,6 +409,97 @@ export const frB = {
   maturityPenalty(bounceSessions) { return bounceSessions < 8 ? -2 : 0 },
 }
 
+// ── Flying Rocket: daily trend derivation (feeds frChannel / frB inputs) ─────
+// `sessions`: chronological (oldest→newest) [{date, high, low, close}]. This is
+// the block that used to be hand-computed off-tool for every FK/FR report —
+// commit 2 of the 2026-08 toolchain-extension plan.
+
+/**
+ * Derives every daily-timeframe input frChannel() and frB.* need from a raw
+ * OHLC session array: RSI-14, 50/200dma, 200dma slope, the trailing 40-session
+ * low, bounce %, and bounce age. Three definitional calls are ENCODED here,
+ * not left to the caller, because each one moves a live score or gate:
+ *
+ * 1. `ma200_falling` is STRICT `< 0`. A flat slope is NOT falling — it routes
+ *    frChannel() to 'none' (fail-closed, Hard Rule 6). This is what produced
+ *    gold's 'none' at a +0.52% slope on 2026-08-01.
+ * 2. The 50/200 "gap narrowed" comparison uses `|gap|`. With a negative gap
+ *    (50 below 200, the normal bearish-cross state) a naive `<` on the signed
+ *    gap inverts the meaning. `ma50_below_ma200` and `gap_narrowed_20` are
+ *    reported SEPARATELY; `structure_b` is derived from both, never assumed.
+ * 3. `bounce_age_sessions` counts sessions SINCE the 40-session low (to now),
+ *    NOT low-to-high. Pinned by the ETH 2026-08-01 report: low on Jun-26,
+ *    age 37. This is the highest-risk call in the block — it drives
+ *    frB.maturityPenalty, a −2 SCORE term — so `sessions_low_to_high` (the
+ *    alternative reading) is emitted alongside rather than discarded.
+ */
+export function dailyTrend(sessions, { spot = null, fast = 50, slow = 200, slopeN = 20, lowN = 40 } = {}) {
+  const need = slow + slopeN
+  if (!Array.isArray(sessions) || sessions.length < need) {
+    return { insufficient: `need ≥${need} daily sessions for a ${slow}dma + ${slopeN}-session slope, got ${sessions ? sessions.length : 0}` }
+  }
+  const closes = sessions.map(s => s.close)
+  const price = spot != null ? spot : closes[closes.length - 1]
+
+  const rsi14 = wilderRSI(closes, 14)
+  const ma50 = sma(closes, fast)
+  const ma200 = sma(closes, slow)
+  const ma200SlopePct = smaSlope(closes, { n: slow, lookback: slopeN })
+  const ma200Falling = ma200SlopePct == null ? null : ma200SlopePct < 0
+  const priceBelowMa200 = ma200 == null ? null : price < ma200
+  const ma50BelowMa200 = (ma50 == null || ma200 == null) ? null : ma50 < ma200
+
+  const closesPast = closes.slice(0, closes.length - slopeN)
+  const ma50Past = sma(closesPast, fast)
+  const ma200Past = sma(closesPast, slow)
+  const gapNowPct = (ma50 == null || ma200 == null || ma200 === 0) ? null : Math.abs(ma50 - ma200) / ma200 * 100
+  const gapPastPct = (ma50Past == null || ma200Past == null || ma200Past === 0) ? null : Math.abs(ma50Past - ma200Past) / ma200Past * 100
+  const gapNarrowed20 = (gapNowPct == null || gapPastPct == null) ? null : gapNowPct < gapPastPct
+  const structureB = ma50BelowMa200 === true && gapNarrowed20 === true
+
+  const withinPct = (a, b, pct) => (a == null || b == null || b === 0) ? null : Math.abs(a / b - 1) * 100 <= pct
+  const within3pctOfMa200 = withinPct(price, ma200, 3)
+  const within3pctOfMa50FromBelow = (ma50 == null) ? null : (price <= ma50 && withinPct(price, ma50, 3))
+
+  const lowWindow = sessions.slice(-lowN)
+  const lows = lowWindow.map(s => s.low)
+  const low40 = Math.min(...lows)
+  const lowIdx = lows.indexOf(low40) // first occurrence — earliest session that set the low
+  const bouncePct = low40 === 0 ? null : round2((price / low40 - 1) * 100)
+  const bounceAgeSessions = (lows.length - 1) - lowIdx
+  const highsAfterLow = lowWindow.slice(lowIdx).map(s => s.high)
+  const highAfterLow = Math.max(...highsAfterLow)
+  const sessionsLowToHigh = highsAfterLow.indexOf(highAfterLow)
+
+  return {
+    insufficient: null,
+    rsi14: rsi14.rsi, rsi14_confidence: rsi14.confidence,
+    ma50: round2(ma50), ma200: round2(ma200),
+    ma200_slope20_pct: ma200SlopePct, ma200_falling: ma200Falling,
+    price_below_ma200: priceBelowMa200, ma50_below_ma200: ma50BelowMa200,
+    gap_now_pct: gapNowPct == null ? null : round2(gapNowPct), gap_narrowed_20: gapNarrowed20,
+    structure_b: structureB,
+    within_3pct_of_ma200: within3pctOfMa200, within_3pct_of_ma50_from_below: within3pctOfMa50FromBelow,
+    low_40s: round2(low40), bounce_pct: bouncePct,
+    bounce_age_sessions: bounceAgeSessions, sessions_low_to_high: sessionsLowToHigh,
+  }
+}
+
+/**
+ * FR §4B single-session stall confirmation: the bounce fails to extend its
+ * high AND the session closes at or below the prior close. A session that
+ * prints even a marginal new high does NOT confirm — the bounce is still
+ * live, so `confirmed` stays false rather than being inferred from the close
+ * alone. null (not false) on missing inputs — an unconfirmed stall must not
+ * be reported as an explicitly-checked "no".
+ */
+export function frStallConfirmation({ close, priorClose, high, bounceHigh } = {}) {
+  if ([close, priorClose, high, bounceHigh].some(v => typeof v !== 'number')) return null
+  const failedNewHigh = high < bounceHigh
+  const closedDown = close <= priorClose
+  return { confirmed: failedNewHigh && closedDown, failed_new_high: failedNewHigh, closed_down: closedDown }
+}
+
 // ── Flying Rocket: score lines, gates, discretion layer (SKILL S1–S7) ────────
 
 /**

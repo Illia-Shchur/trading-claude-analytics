@@ -6,6 +6,7 @@
 // ============================================================================
 import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds, FK_V_GATES,
   median, stdev, pearson, pctChange, consecutiveRun, smaSlope, logReturns, alignSeries,
+  dailyTrend, frStallConfirmation,
   fk, fr, weightedEV, evCheck, stopCoherence, adr, fngStreak,
   FK_SCORE_UNLOCK, fkPhasesUnlockedByScore, discretionValid, d5StopCheck, ratchetCheck,
   mechanicalScore, frChannel, frB, FR_SCORE_UNLOCK, FR_GATE_FLOORS, frPhasesUnlockedByScore,
@@ -65,6 +66,50 @@ eq('logReturns skips a non-positive close rather than throwing', logReturns([100
   eq('alignSeries xs/ys line up', [aligned.xs, aligned.ys], [[100, 101], [5000, 5010]])
   eq('alignSeries reports what it dropped from each side', aligned.dropped, { a: 2, b: 0 })
 }
+
+// ── dailyTrend (commit 2) — the three encoded adjudications ────────────────
+{
+  const flat220 = Array(220).fill(100)
+  const flatSessions = flat220.map((c, i) => ({ date: `f${i}`, high: c, low: c, close: c }))
+  const flatTrend = dailyTrend(flatSessions)
+  eq('a FLAT 200dma slope is 0, not falling (strict <0)', flatTrend.ma200_slope20_pct, 0)
+  ok('...so ma200_falling is false, not true', flatTrend.ma200_falling === false)
+}
+{
+  // Engineered so the SIGNED 50/200 gap goes -5 → -10 (widens in magnitude)
+  // while a naive signed "<" comparison would misread it as narrowing.
+  const closes = [100, 100, 100, 100, 70, 70, 60, 60, 40, 40]
+  const sessions = closes.map((c, i) => ({ date: `g${i}`, high: c, low: c, close: c }))
+  const t = dailyTrend(sessions, { fast: 2, slow: 4, slopeN: 2, lowN: 10 })
+  eq('gap now = |40-50|/50 → 20%', t.gap_now_pct, 20)
+  ok('ma50 below ma200 (bearish cross)', t.ma50_below_ma200 === true)
+  ok('gap actually WIDENED (5→10) → gap_narrowed_20 is false', t.gap_narrowed_20 === false)
+  ok('naive signed compare (-10 < -5) would wrongly say "narrowed" — abs() is why this is false',
+    (-10 < -5) === true && t.gap_narrowed_20 === false)
+  ok('structure_b requires narrowing too, not just the cross → false', t.structure_b === false)
+  ok('price below ma200', t.price_below_ma200 === true)
+}
+{
+  // Pinned to the ETH 2026-08-01 report: 40-session low, bounce 30.85%, age 37
+  // sessions (SINCE the low, not low-to-high — sessions_low_to_high differs).
+  const sessions = Array.from({ length: 45 }, (_, i) => ({ date: `e${i}`, high: 105, low: 105, close: 100 }))
+  sessions[7] = { date: 'e7-LOW', high: 105, low: 100, close: 100 }
+  sessions[15] = { date: 'e15-HIGH', high: 300, low: 105, close: 100 }
+  const t = dailyTrend(sessions, { fast: 1, slow: 1, slopeN: 1, lowN: 40, spot: 130.85 })
+  eq('40-session low picked up correctly', t.low_40s, 100)
+  eq('bounce_pct = (130.85/100 - 1) × 100 = 30.85 (ETH Aug-01 pin)', t.bounce_pct, 30.85)
+  eq('bounce_age_sessions = 37 SINCE the low (ETH Aug-01 pin)', t.bounce_age_sessions, 37)
+  ok('sessions_low_to_high is a DIFFERENT number than age — the alternative reading', t.sessions_low_to_high !== t.bounce_age_sessions)
+  eq('...specifically 8 (low at window-idx 2, high at window-idx 10)', t.sessions_low_to_high, 8)
+}
+eq('insufficient history returns ONLY the insufficient field, no partial numbers',
+  Object.keys(dailyTrend([{ date: 'x', high: 1, low: 1, close: 1 }])), ['insufficient'])
+
+// ── frStallConfirmation ──────────────────────────────────────────────────────
+eq('stall confirmed: failed new high AND closed down', frStallConfirmation({ close: 95, priorClose: 96, high: 98, bounceHigh: 100 }).confirmed, true)
+eq('NOT confirmed: a marginal new high keeps the bounce alive', frStallConfirmation({ close: 95, priorClose: 96, high: 101, bounceHigh: 100 }).confirmed, false)
+eq('NOT confirmed: closed up even without a new high', frStallConfirmation({ close: 97, priorClose: 96, high: 98, bounceHigh: 100 }).confirmed, false)
+eq('missing input → null, not a false "no"', frStallConfirmation({ close: 95, priorClose: 96, high: 98 }), null)
 
 // ── ceilThresholds — including the ETH ceil(7/9×8)=7 misprint regression ────
 eq('thresholds /9', (({ p1a, p1b, p2, p3 }) => [p1a, p1b, p2, p3])(ceilThresholds(9)), [3, 5, 6, 7])

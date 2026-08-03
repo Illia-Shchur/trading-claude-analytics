@@ -17,11 +17,15 @@
 //   node tools/compute.mjs fr-funding --per8h 0.0053
 //   node tools/compute.mjs fr-cap --spot 64400 --ath1y 73800
 //   node tools/compute.mjs sma --values 1,2,3,4 --n 2
+//   node tools/compute.mjs trend --sessions '<json array of {date,high,low,close}>' [--spot N]
+//        [--fast 50] [--slow 200] [--slope-n 20] [--low-n 40]
+//   node tools/compute.mjs stall --close N --prior-close N --high N --bounce-high N
 // JSON args may also be passed as @path/to/file.json
 // ============================================================================
 import { readFileSync } from 'node:fs'
 import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds,
-  fk, fr, weightedEV, evCheck, stopCoherence, adr, fngStreak } from './lib.mjs'
+  fk, fr, weightedEV, evCheck, stopCoherence, adr, fngStreak,
+  dailyTrend, frStallConfirmation } from './lib.mjs'
 
 const [, , cmd, ...rest] = process.argv
 const args = [], flags = {}
@@ -122,6 +126,22 @@ switch (cmd) {
     out({ spot: num(flags.spot), ath: num(flags.ath), drawdown_pct: drawdownPct(num(flags.spot), num(flags.ath)) })
     break
   }
+  case 'trend': {
+    if (!flags.sessions) fail('pass --sessions <json array of {date,high,low,close}> (chronological)')
+    out(dailyTrend(json(flags.sessions), {
+      spot: flags.spot != null ? num(flags.spot) : null,
+      fast: Number(flags.fast || 50), slow: Number(flags.slow || 200),
+      slopeN: Number(flags['slope-n'] || 20), lowN: Number(flags['low-n'] || 40),
+    }))
+    break
+  }
+  case 'stall': {
+    out(frStallConfirmation({
+      close: num(flags.close), priorClose: num(flags['prior-close']),
+      high: num(flags.high), bounceHigh: num(flags['bounce-high']),
+    }))
+    break
+  }
   default:
-    fail(`unknown command "${cmd || ''}" — rsi | thresholds | round | band | ev | stop-coherence | adr | streak | fr-funding | fr-cap | sma | drawdown (see header of tools/compute.mjs)`)
+    fail(`unknown command "${cmd || ''}" — rsi | thresholds | round | band | ev | stop-coherence | adr | streak | fr-funding | fr-cap | sma | drawdown | trend | stall (see header of tools/compute.mjs)`)
 }
