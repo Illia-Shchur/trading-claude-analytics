@@ -1,0 +1,18 @@
+{
+  "schema": "calendar-tier1/1",
+  "note": "Hand-maintained, dated, sourced tier-1 macro release calendar for the current + next quarter. NOT a live API — this repo has no deps, no secrets story, and auto-pushes to a public remote (see the toolchain-extension plan, commit 13). compute.mjs tier1 warns loudly when any verified_on is >30 days stale or the requested window runs past the last entry. Every entry needs its OWN verified_on — do not bulk-copy one across entries added at different times.",
+  "entries": [
+    { "event": "FOMC decision", "date": "2026-09-16", "source": "federalreserve.gov/monetarypolicy/fomccalendars.htm", "verified_on": "2026-08-03" },
+    { "event": "FOMC decision", "date": "2026-10-28", "source": "federalreserve.gov/monetarypolicy/fomccalendars.htm", "verified_on": "2026-08-03" },
+    { "event": "FOMC decision", "date": "2026-12-09", "source": "federalreserve.gov/monetarypolicy/fomccalendars.htm", "verified_on": "2026-08-03" },
+    { "event": "Employment Situation (NFP)", "date": "2026-08-07", "source": "computed: BLS Employment Situation is released the first Friday of each month (structural convention, not a per-date BLS lookup — bls.gov/schedule/news_release/empsit.htm was not independently re-verified this session)", "verified_on": "2026-08-03" },
+    { "event": "Employment Situation (NFP)", "date": "2026-09-04", "source": "computed: first Friday of month, see note above", "verified_on": "2026-08-03" },
+    { "event": "Employment Situation (NFP)", "date": "2026-10-02", "source": "computed: first Friday of month, see note above", "verified_on": "2026-08-03" },
+    { "event": "Employment Situation (NFP)", "date": "2026-11-06", "source": "computed: first Friday of month, see note above", "verified_on": "2026-08-03" },
+    { "event": "Employment Situation (NFP)", "date": "2026-12-04", "source": "computed: first Friday of month, see note above", "verified_on": "2026-08-03" }
+  ],
+  "known_gaps": [
+    "CPI (bls.gov/schedule/news_release/cpi.htm) returned HTTP 403 on the fetch attempt this session — not populated rather than guessed. Add once independently confirmed.",
+    "PCE (bea.gov) not attempted this session — not populated."
+  ]
+}

@@ -17,7 +17,8 @@ import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds, FK_V
   positionFreshness, positionSnapshotCheck, positionForAsset, shortForPosition, POSITION_FRESHNESS,
   fillPrice, trancheFilled, entryLooksLikeFill, EPOCHS, ENTRY_PRICE_EPOCH,
   reportFileMeta, localToUtcISO, schemaEpochOf, signalRubric, legSpec, inferChannel,
-  inferDiscretion, gateMask, unlockFor, canonicalJSON, feedChanged, REPORT_FILE_RE, snapshotDigestPayload } from './lib.mjs'
+  inferDiscretion, gateMask, unlockFor, canonicalJSON, feedChanged, REPORT_FILE_RE, snapshotDigestPayload,
+  weekdayOf, isTradingDay, nextNTradingDays, tradingDaysBetween } from './lib.mjs'
 
 let failures = 0
 function eq(name, got, want) {
@@ -303,6 +304,33 @@ ok('Phase 2 condition is <0.8, independent of the label ladder', correlationRegi
   eq('aligned sessions = 10 (12 crypto dates - 2 weekend-only)', c.n_aligned_sessions, 10)
 }
 ok('too few aligned points → corr null, not a crash', correlationFromCloses([{ date: 'd1', close: 100 }], [{ date: 'd1', close: 100 }]).corr === null)
+
+// ── trading-day calendar (commit 13) ────────────────────────────────────────
+eq('weekdayOf a known Monday', weekdayOf('2026-01-19'), 'Monday')
+ok('a Saturday is not an equity trading day', isTradingDay('2026-07-04', { assetClass: 'equity' }) === false)
+ok('...but IS a crypto trading day — crypto trades every day', isTradingDay('2026-07-04', { assetClass: 'crypto' }) === true)
+ok('July 4 2026 is a Saturday, so July 3 (observed) is the closed weekday', isTradingDay('2026-07-03', { assetClass: 'equity' }) === false)
+eq('...and July 3 2026 really is a Friday', weekdayOf('2026-07-03'), 'Friday')
+{
+  // Good Friday, 2026-04-03: equities closed, crypto open — the sharpest case
+  // of the asset-class split this calendar exists to serve.
+  ok('Good Friday: equities closed', isTradingDay('2026-04-03', { assetClass: 'equity' }) === false)
+  ok('Good Friday: crypto open', isTradingDay('2026-04-03', { assetClass: 'crypto' }) === true)
+}
+{
+  // Year boundary: 2026-12-31 (Thu, trading) → next equity trading day skips
+  // New Year's Day (2027-01-01, Fri) and the weekend, landing on 2027-01-04.
+  const next = nextNTradingDays('2026-12-30', 3, { assetClass: 'equity' })
+  eq('next 3 equity trading days cross the year boundary correctly', next, ['2026-12-31', '2027-01-04', '2027-01-05'])
+}
+{
+  const cryptoNext = nextNTradingDays('2026-07-02', 3, { assetClass: 'crypto' })
+  eq('crypto has no holidays or weekends to skip — just the next 3 calendar days', cryptoNext, ['2026-07-03', '2026-07-04', '2026-07-05'])
+}
+// 2026-07-01=Wed .. 07-06=Mon: only 07-02(Thu) counts — 07-03 is the observed
+// July 4 holiday, 07-04/05 are the weekend, both ends excluded.
+eq('tradingDaysBetween counts only equity trading days, excludes both ends', tradingDaysBetween('2026-07-01', '2026-07-06', { assetClass: 'equity' }), 1)
+eq('toDate <= fromDate → 0, never negative', tradingDaysBetween('2026-07-10', '2026-07-01'), 0)
 
 // ── ceilThresholds — including the ETH ceil(7/9×8)=7 misprint regression ────
 eq('thresholds /9', (({ p1a, p1b, p2, p3 }) => [p1a, p1b, p2, p3])(ceilThresholds(9)), [3, 5, 6, 7])

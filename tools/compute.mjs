@@ -24,12 +24,14 @@
 //        --rounding half-up|half-down [--channel A|B] [--cap-applied] [--cap-value N]
 //   node tools/compute.mjs fr-companion --market '<json>' [--counts '<json>'] [--rounding half-up]
 //   node tools/compute.mjs corr --asset '<json array of {date,close}>' --spx '<json array of {date,close}>' [--window N]
+//   node tools/compute.mjs tier1 --from <date> --sessions N [--asset-class equity|crypto]
 // JSON args may also be passed as @path/to/file.json
 // ============================================================================
 import { readFileSync } from 'node:fs'
 import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds,
   fk, fr, weightedEV, evCheck, stopCoherence, adr, fngStreak,
-  dailyTrend, frStallConfirmation, frComposite, frCompanion, correlationFromCloses } from './lib.mjs'
+  dailyTrend, frStallConfirmation, frComposite, frCompanion, correlationFromCloses,
+  nextNTradingDays } from './lib.mjs'
 
 const [, , cmd, ...rest] = process.argv
 const args = [], flags = {}
@@ -175,6 +177,23 @@ switch (cmd) {
     out(correlationFromCloses(json(flags.asset), json(flags.spx), { window: flags.window != null ? Number(flags.window) : null }))
     break
   }
+  case 'tier1': {
+    if (!flags.from) fail('pass --from <date> --sessions N')
+    const sessions = Number(flags.sessions || 5)
+    const assetClass = flags['asset-class'] || 'equity'
+    const cal = JSON.parse(readFileSync(new URL('./calendar-tier1.json', import.meta.url), 'utf8'))
+    const window = nextNTradingDays(flags.from, sessions, { assetClass })
+    const windowEnd = window[window.length - 1]
+    const upcoming = cal.entries.filter(e => e.date > flags.from && e.date <= windowEnd)
+    const lastEntryDate = cal.entries.reduce((m, e) => (e.date > m ? e.date : m), '')
+    const now = new Date()
+    const staleEntries = cal.entries.filter(e => (now - new Date(`${e.verified_on}T00:00:00Z`)) / 86400000 > 30)
+    const warnings = []
+    if (staleEntries.length) warnings.push(`${staleEntries.length}/${cal.entries.length} calendar entries have verified_on >30 days stale — re-confirm against source before relying on them`)
+    if (windowEnd > lastEntryDate) warnings.push(`window end ${windowEnd} runs past the last calendar entry (${lastEntryDate}) — add more entries to tools/calendar-tier1.json`)
+    out({ from: flags.from, sessions, asset_class: assetClass, window, window_end: windowEnd, upcoming, warnings })
+    break
+  }
   default:
-    fail(`unknown command "${cmd || ''}" — rsi | thresholds | round | band | ev | stop-coherence | adr | streak | fr-funding | fr-cap | sma | drawdown | trend | stall | fr-composite | fr-companion | corr (see header of tools/compute.mjs)`)
+    fail(`unknown command "${cmd || ''}" — rsi | thresholds | round | band | ev | stop-coherence | adr | streak | fr-funding | fr-cap | sma | drawdown | trend | stall | fr-composite | fr-companion | corr | tier1 (see header of tools/compute.mjs)`)
 }

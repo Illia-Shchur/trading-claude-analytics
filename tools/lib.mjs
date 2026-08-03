@@ -1673,4 +1673,77 @@ export function snapshotDigestPayload(snapshot) {
   return canonicalJSON(out)
 }
 
+// ── trading-day calendar ─────────────────────────────────────────────────────
+// US EQUITY market holidays only — crypto trades every day, weekends and
+// holidays included. Source: NYSE holiday calendar (nyse.com/markets/hours-
+// calendars), cross-checked here by direct weekday computation rather than
+// copied from memory. When an observed holiday falls on a weekend (July 4,
+// 2026 is a Saturday), the OBSERVED weekday is listed, not the calendar date —
+// that is the date the market is actually closed.
+
+/** Sourced 2025-2027 (checkpoint dates in this repo's reports fall in 2026). */
+export const US_MARKET_HOLIDAYS = [
+  '2025-01-01', '2025-01-20', '2025-02-17', '2025-04-18', '2025-05-26', '2025-06-19',
+  '2025-07-04', '2025-09-01', '2025-11-27', '2025-12-25',
+  '2026-01-01', '2026-01-19', '2026-02-16', '2026-04-03', '2026-05-25', '2026-06-19',
+  '2026-07-03', '2026-09-07', '2026-11-26', '2026-12-25',
+  '2027-01-01', '2027-01-18', '2027-02-15', '2027-03-26', '2027-05-31', '2027-06-18',
+  '2027-07-05', '2027-09-06', '2027-11-25', '2027-12-24',
+]
+const US_MARKET_HOLIDAY_SET = new Set(US_MARKET_HOLIDAYS)
+
+/** ISO weekday name for a 'YYYY-MM-DD' date, UTC (avoids local-tz off-by-one). */
+export function weekdayOf(dateStr) {
+  return new Date(`${dateStr}T00:00:00Z`).toLocaleDateString('en-US', { weekday: 'long', timeZone: 'UTC' })
+}
+
+/**
+ * Is `dateStr` a trading day? `assetClass: 'crypto'` is ALWAYS true — crypto
+ * trades 7 days/week, 365 days/year, holidays included. `'equity'` (default)
+ * excludes weekends and US_MARKET_HOLIDAYS. This split exists because a
+ * calendar checkpoint ("N trading days from now") means something different
+ * for the two asset classes on the same calendar date — Good Friday is the
+ * sharpest case: equities closed, crypto open.
+ */
+export function isTradingDay(dateStr, { assetClass = 'equity' } = {}) {
+  if (assetClass === 'crypto') return true
+  const day = new Date(`${dateStr}T00:00:00Z`).getUTCDay()
+  if (day === 0 || day === 6) return false
+  return !US_MARKET_HOLIDAY_SET.has(dateStr)
+}
+
+function addDaysISO(dateStr, n) {
+  const d = new Date(`${dateStr}T00:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + n)
+  return d.toISOString().slice(0, 10)
+}
+
+/**
+ * The next `n` trading days STRICTLY AFTER `fromDateStr` (not including it).
+ * A checkpoint's weekday-verified landing date must be computed with this —
+ * never with raw calendar-day arithmetic — before any distance/likelihood
+ * language is written about it.
+ */
+export function nextNTradingDays(fromDateStr, n, { assetClass = 'equity' } = {}) {
+  const out = []
+  let cur = fromDateStr
+  while (out.length < n) {
+    cur = addDaysISO(cur, 1)
+    if (isTradingDay(cur, { assetClass })) out.push(cur)
+  }
+  return out
+}
+
+/** Count of trading days strictly between two dates (exclusive both ends). */
+export function tradingDaysBetween(fromDateStr, toDateStr, { assetClass = 'equity' } = {}) {
+  if (toDateStr <= fromDateStr) return 0
+  let count = 0, cur = fromDateStr
+  while (true) {
+    cur = addDaysISO(cur, 1)
+    if (cur >= toDateStr) break
+    if (isTradingDay(cur, { assetClass })) count++
+  }
+  return count
+}
+
 export const _internal = { round2 }
