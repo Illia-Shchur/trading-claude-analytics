@@ -7,7 +7,7 @@
 import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds, FK_V_GATES,
   median, stdev, pearson, pctChange, consecutiveRun, smaSlope, logReturns, alignSeries,
   percentileRank, distributionStats, realizedVol, realizedVolBlock, rollingRealizedVol,
-  rollingWilderRSI, rollingDrawdownFromATH, rollingSMADistance, deribitVolBlock, basisBlock, positioningBlock,
+  rollingWilderRSI, rollingDrawdownFromATH, rollingSMADistance, deribitVolBlock, basisBlock, positioningBlock, netLiquidity,
   dailyTrend, frStallConfirmation, frComposite, frCompanion, spotPanel, fundingBlock,
   corrSurcharge, correlationRegime, correlationFromCloses,
   fk, fr, weightedEV, evCheck, stopCoherence, adr, fngStreak,
@@ -165,6 +165,18 @@ function round2Local(x) { return Math.round(x * 100) / 100 }
   eq('history_days reports the actual count obtained (3), never a 90d claim', p.history_days, 3)
   ok('scope_note states single-venue/account-weighted explicitly, not just in a comment', p.scope_note.includes('SINGLE-VENUE') && p.scope_note.includes('ACCOUNT-weighted'))
   ok('missing series → null sub-blocks, not a crash', positioningBlock({}).long_short_account_ratio === null)
+}
+
+// ── netLiquidity (C4) — the unit trap: WALCL/WTREGEN millions, RRPONTSYD billions
+{
+  ok('missing any component → available:false, not a crash', netLiquidity({}).available === false)
+  // pinned to real magnitudes probed live 2026-08-03 (FRED WALCL, RRPONTSYD, WTREGEN)
+  const nl = netLiquidity({ walclMillions: 6738190, rrpontsydBillions: 2.151, wtregenMillions: 910776 })
+  eq('WALCL($M) - RRPONTSYD($B)*1000 - WTREGEN($M) = 5,825,263 ($M) — the unit conversion happens INSIDE the function',
+    nl.net_liquidity_usd_millions, 5825263)
+  ok('magnitude check: ~$5.8T, not ~$5.8B (the 1000x failure mode this vector guards against)', nl.net_liquidity_usd_trillions > 5 && nl.net_liquidity_usd_trillions < 7)
+  eq('components are echoed in their ORIGINAL (unconverted) units for audit', nl.components.rrpontsyd_usd_billions, 2.151)
+  ok('cadence_note states the weekly (not daily) release schedule', nl.cadence_note.includes('WEEKLY'))
 }
 ok('pearson throws on length mismatch', (() => { try { pearson([1, 2], [1]); return false } catch (e) { return true } })())
 eq('pearson perfect positive', pearson([1, 2, 3], [2, 4, 6]), 1)

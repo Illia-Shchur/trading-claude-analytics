@@ -23,7 +23,7 @@ import { pathToFileURL } from 'node:url'
 import { wilderRSI, sma, drawdownPct, adr, fngStreak, dailyTrend, spotPanel, fundingBlock, fr,
   percentileRank, realizedVolBlock, rollingRealizedVol,
   rollingWilderRSI, rollingDrawdownFromATH, rollingSMADistance, deribitVolBlock, basisBlock,
-  positioningBlock, _internal } from './lib.mjs'
+  positioningBlock, netLiquidity, _internal } from './lib.mjs'
 const { round2 } = _internal
 
 // annualize: realized-vol annualization convention (market-data-extension
@@ -448,15 +448,45 @@ async function fetchMacro() {
     // ^IRX = 13-week (3mo) T-bill discount rate, already in percent units —
     // the dry-powder cash-yield benchmark.
     { key: 'irx', symbol: '^IRX', label: '13-week T-bill discount rate (%)' },
+    // ^MOVE — bond-market vol (market-data-extension plan, C4). DISCLOSED
+    // CONTEXT ONLY: bond vol often turns before equity vol (VIX).
+    { key: 'move', symbol: '^MOVE', label: 'ICE BofA MOVE Index (bond vol)' },
   ]
-  const [fred, fred3mo, ...charts] = await Promise.all([
+  const [fred, fred3mo, hyOas, nfci, walcl, rrpontsyd, wtregen, ...charts] = await Promise.all([
     attempt('FRED DFII10', () => fredCSV('DFII10')),
     // DGS3MO = 3-month T-bill secondary-market rate — cross-check for ^IRX.
     attempt('FRED DGS3MO', () => fredCSV('DGS3MO')),
+    // Macro stress + net liquidity (market-data-extension plan, C4) —
+    // DISCLOSED CONTEXT ONLY. Credit stress (HY OAS) and financial
+    // conditions (NFCI) often lead equity vol; net liquidity is a
+    // historically-discussed crypto driver. All keyless FRED CSV, same
+    // fredCSV() transport as DFII10/DGS3MO — no new endpoint, just more
+    // series IDs.
+    attempt('FRED BAMLH0A0HYM2 (HY OAS)', () => fredCSV('BAMLH0A0HYM2')),
+    attempt('FRED NFCI', () => fredCSV('NFCI')),
+    attempt('FRED WALCL', () => fredCSV('WALCL')),
+    attempt('FRED RRPONTSYD', () => fredCSV('RRPONTSYD')),
+    attempt('FRED WTREGEN', () => fredCSV('WTREGEN')),
     ...series.map(s => attempt(`yahoo ${s.symbol}`, () => yahooChart(s.symbol, s.range || '1mo', '1d'))),
   ])
   if (fred) outp.real_yield_10y_tips = { source: 'FRED DFII10 (daily, %)', last: fred[fred.length - 1],
     delta_5_prints: round2(fred[fred.length - 1].value - fred[fred.length - 6].value), last_10: fred }
+  if (hyOas) outp.hy_oas = { source: 'FRED BAMLH0A0HYM2 (ICE BofA US High Yield OAS, daily, %)', last: hyOas[hyOas.length - 1],
+    delta_5_prints: round2(hyOas[hyOas.length - 1].value - hyOas[Math.max(0, hyOas.length - 6)].value),
+    note: 'DISCLOSED CONTEXT ONLY — credit stress, not a scored input' }
+  if (nfci) outp.nfci = { source: 'FRED NFCI (Chicago Fed National Financial Conditions Index, weekly)', last: nfci[nfci.length - 1],
+    note: 'DISCLOSED CONTEXT ONLY — 0 = historical average; positive = tighter-than-average conditions' }
+  if (walcl && rrpontsyd && wtregen) {
+    outp.net_liquidity = {
+      source: 'FRED WALCL + RRPONTSYD + WTREGEN (weekly, Thursdays)',
+      as_of: walcl[walcl.length - 1].date,
+      ...netLiquidity({
+        walclMillions: walcl[walcl.length - 1].value,
+        rrpontsydBillions: rrpontsyd[rrpontsyd.length - 1].value,
+        wtregenMillions: wtregen[wtregen.length - 1].value,
+      }),
+    }
+  }
   charts.forEach((c, i) => {
     if (!c) return
     const s = series[i]

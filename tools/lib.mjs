@@ -521,6 +521,34 @@ export function positioningBlock({ longShortRows = [], takerRows = [], oiRows = 
 }
 
 /**
+ * Fed net liquidity proxy = WALCL - RRP - TGA (market-data-extension plan,
+ * C4). DISCLOSED CONTEXT ONLY — not a scored leg or gate.
+ *
+ * UNIT TRAP, stated first — same class as the Binance fundingRate
+ * fraction-vs-percent trap fundingBlock() already guards against: FRED
+ * reports WALCL and WTREGEN in $ MILLIONS but RRPONTSYD in $ BILLIONS.
+ * Mixing them unconverted is a 1000x error. The conversion happens INSIDE
+ * this function (rrpontsydBillions * 1000) — a caller can never pass all
+ * three in "FRED's native units" and silently get a wrong answer; the
+ * parameter name itself states the expected unit.
+ */
+export function netLiquidity({ walclMillions = null, rrpontsydBillions = null, wtregenMillions = null } = {}) {
+  if (typeof walclMillions !== 'number' || typeof rrpontsydBillions !== 'number' || typeof wtregenMillions !== 'number') {
+    return { available: false, reason: 'WALCL/RRPONTSYD/WTREGEN unavailable', note: 'DISCLOSED CONTEXT ONLY — not a scored leg or gate' }
+  }
+  const rrpMillions = rrpontsydBillions * 1000
+  const netMillions = round2(walclMillions - rrpMillions - wtregenMillions)
+  return {
+    available: true,
+    net_liquidity_usd_millions: netMillions,
+    net_liquidity_usd_trillions: round2(netMillions / 1e6),
+    components: { walcl_usd_millions: walclMillions, rrpontsyd_usd_billions: rrpontsydBillions, wtregen_usd_millions: wtregenMillions },
+    cadence_note: 'WALCL/WTREGEN publish WEEKLY (Thursdays) — this is a weekly figure, not daily; a stale mid-week read must not be mistaken for fresh',
+    note: 'DISCLOSED CONTEXT ONLY — not a scored leg or gate',
+  }
+}
+
+/**
  * Log returns of a chronological closes series. Null-skips any pair spanning
  * a non-positive close (log undefined) rather than throwing — a single bad
  * print should not void an entire correlation window.
