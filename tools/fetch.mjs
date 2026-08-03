@@ -242,16 +242,23 @@ async function fetchAsset(key, { series = false } = {}) {
     const vals = sources.map(s => s.value)
     divergence = round2((Math.max(...vals) / Math.min(...vals) - 1) * 100)
   }
-  const spot = sources.length ? sources[0].value : null
-  outp.spot = { canonical: spot, sources, divergence_pct: divergence,
-    warning: divergence != null && divergence > 1.5 ? `inter-source spread ${divergence}% > 1.5% — reconcile before scoring` : null }
-
-  // spot.panel — STEP A of the two-step canonical-spot flip (commit 7/12 of
-  // the 2026-08 toolchain-extension plan). `canonical` above is UNCHANGED
-  // (priority-first, sources[0]); this is a parallel, additive computation.
-  // FK SKILL:166 mandates "canonical spot = median of the primary source +
-  // ≥2 others" — the existing `canonical` field contradicts that rule, which
-  // is why it is not simply overwritten here.
+  // spot.panel — the canonical-spot computation. STEP B of the two-step flip
+  // (commit 12/12 of the 2026-08 toolchain-extension plan) landed 2026-08-03:
+  // `spot.canonical` is now the PANEL MEDIAN, per FK SKILL:166 ("canonical
+  // spot = median of the primary source + ≥2 others"). Step A (commit 7) added
+  // the panel alongside a priority-first `canonical`; the two coexisted for one
+  // live report run (btc/eth_fallen_knives_20260803_1411, which used the median
+  // by hand and recorded the delta) before the flip.
+  //
+  // The panel is computed BEFORE `spot` because every downstream consumer —
+  // ATH drawdown, the 200-week SMA's pct_vs_spot and its gate-6 ±8% boolean,
+  // trend/ma200 — reads `spot`. Leaving those on priority-first while renaming
+  // the reported field would have been a cosmetic flip, not a real one.
+  //
+  // Fallback: if the panel yields no median (no usable venue quotes — every
+  // quote a frozen bar close, or all sources errored), `spot` falls back to
+  // priority-first rather than going null, so a partial fetch still produces a
+  // scorable report. spot.canonical_source names which path was taken.
   const cgTs = cgSpot && cgSpot[a.cg] && cgSpot[a.cg].last_updated_at != null ? cgSpot[a.cg].last_updated_at * 1000 : null
   const quotes = [
     cgVal != null && { source: 'CoinGecko', symbol: a.cg, value: cgVal, ts: cgTs, ts_kind: 'venue' },
@@ -262,9 +269,17 @@ async function fetchAsset(key, { series = false } = {}) {
     krakenQ,
   ].filter(Boolean)
   const panel = spotPanel(quotes)
+  const priorityFirst = sources.length ? sources[0].value : null
+  const spot = panel.canonical != null ? panel.canonical : priorityFirst
+
+  outp.spot = { canonical: spot, sources, divergence_pct: divergence,
+    warning: divergence != null && divergence > 1.5 ? `inter-source spread ${divergence}% > 1.5% — reconcile before scoring` : null }
+  outp.spot.canonical_source = panel.canonical != null ? 'panel_median' : 'priority_first_fallback'
   outp.spot.panel = panel
+  // DEPRECATED echo, kept so any consumer written against step A keeps working.
+  // Identical to spot.canonical whenever the panel produced a median.
   outp.spot.canonical_median = panel.canonical
-  outp.spot.method_conflict = 'spot.canonical is priority-first (sources[0]); FK SKILL:166 mandates the median — see spot.panel.canonical / spot.canonical_median. Flip pending commit 12 of the toolchain-extension plan.'
+  outp.spot.method_conflict = null
 
   // ATH / drawdown
   if (cgCoin && cgCoin.market_data) {
