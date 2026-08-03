@@ -42,6 +42,9 @@
 //   node tools/compute.mjs netliq --walcl N --rrpontsyd N --wtregen N
 //        (Tier 1/C4 — WALCL/WTREGEN in FRED's $ MILLIONS, rrpontsyd in FRED's
 //        $ BILLIONS — units converted INSIDE netLiquidity(); DISCLOSED CONTEXT ONLY)
+//   node tools/compute.mjs stablecoin --rows <@file.json|json>
+//        (Tier 1/C5 — DefiLlama aggregate supply; third-party, back-revision
+//        risk disclosed; DISCLOSED CONTEXT ONLY)
 // JSON args may also be passed as @path/to/file.json
 // ============================================================================
 import { readFileSync } from 'node:fs'
@@ -50,7 +53,7 @@ import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds,
   dailyTrend, frStallConfirmation, frComposite, frCompanion, correlationFromCloses,
   nextNTradingDays, percentileRank, distributionStats,
   realizedVolBlock, rollingRealizedVol, deribitVolBlock, basisBlock, positioningBlock,
-  netLiquidity } from './lib.mjs'
+  netLiquidity, stablecoinBlock } from './lib.mjs'
 
 const [, , cmd, ...rest] = process.argv
 const args = [], flags = {}
@@ -221,6 +224,11 @@ switch (cmd) {
     }))
     break
   }
+  case 'stablecoin': {
+    if (!flags.rows) fail('pass --rows <@file.json|json> (raw DefiLlama stablecoincharts/all array)')
+    out(stablecoinBlock(json(flags.rows)))
+    break
+  }
   case 'netliq': {
     if (flags.walcl == null || flags.rrpontsyd == null || flags.wtregen == null) fail('pass --walcl N (FRED $M) --rrpontsyd N (FRED $B) --wtregen N (FRED $M)')
     out(netLiquidity({ walclMillions: num(flags.walcl), rrpontsydBillions: num(flags.rrpontsyd), wtregenMillions: num(flags.wtregen) }))
@@ -261,5 +269,5 @@ switch (cmd) {
     break
   }
   default:
-    fail(`unknown command "${cmd || ''}" — rsi | thresholds | round | band | ev | stop-coherence | adr | streak | fr-funding | fr-cap | sma | drawdown | trend | stall | fr-composite | fr-companion | corr | tier1 | percentile | rvol | vol-surface | basis | positioning | netliq (see header of tools/compute.mjs)`)
+    fail(`unknown command "${cmd || ''}" — rsi | thresholds | round | band | ev | stop-coherence | adr | streak | fr-funding | fr-cap | sma | drawdown | trend | stall | fr-composite | fr-companion | corr | tier1 | percentile | rvol | vol-surface | basis | positioning | netliq | stablecoin (see header of tools/compute.mjs)`)
 }

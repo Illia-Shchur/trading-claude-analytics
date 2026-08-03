@@ -549,6 +549,40 @@ export function netLiquidity({ walclMillions = null, rrpontsydBillions = null, w
 }
 
 /**
+ * Aggregate stablecoin supply context (market-data-extension plan, C5).
+ * DISCLOSED CONTEXT ONLY — a capital-flow tell, not a settled figure.
+ *
+ * `rows` = raw DefiLlama `stablecoincharts/all` result array, each row
+ * `{date (unix seconds, string), totalCirculatingUSD: {peggedUSD, ...}}`
+ * (verified live 2026-08-03), chronological oldest → newest. Emits the
+ * latest total + 30d/90d net change + percentile vs the full supplied
+ * history — labeled explicitly as THIRD-PARTY, cross-chain aggregation
+ * subject to back-revision, never presented as a settled point figure.
+ */
+export function stablecoinBlock(rows) {
+  const clean = (rows || [])
+    .map(r => ({ date: r && r.date, value: r && r.totalCirculatingUSD ? Number(r.totalCirculatingUSD.peggedUSD) : NaN }))
+    .filter(r => Number.isFinite(r.value))
+  if (!clean.length) return { available: false, reason: 'no usable rows', note: 'DISCLOSED CONTEXT ONLY — third-party aggregation, subject to back-revision' }
+
+  const values = clean.map(r => r.value)
+  const latest = values[values.length - 1]
+  const nDaysAgo = n => (values.length > n ? values[values.length - 1 - n] : null)
+  const netChangePct = (n) => { const past = nDaysAgo(n); return past != null && past !== 0 ? round2((latest / past - 1) * 100) : null }
+
+  return {
+    available: true,
+    total_circulating_usd: Math.round(latest),
+    net_change_30d_pct: netChangePct(30),
+    net_change_90d_pct: netChangePct(90),
+    percentile_vs_history: percentileRank(values.slice(0, -1), latest),
+    n_days_history: values.length,
+    as_of: clean[clean.length - 1].date,
+    note: 'DISCLOSED CONTEXT ONLY — third-party cross-chain aggregation (DefiLlama), subject to back-revision; a capital-flow tell, not a settled figure',
+  }
+}
+
+/**
  * Log returns of a chronological closes series. Null-skips any pair spanning
  * a non-positive close (log undefined) rather than throwing — a single bad
  * print should not void an entire correlation window.

@@ -7,7 +7,7 @@
 import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds, FK_V_GATES,
   median, stdev, pearson, pctChange, consecutiveRun, smaSlope, logReturns, alignSeries,
   percentileRank, distributionStats, realizedVol, realizedVolBlock, rollingRealizedVol,
-  rollingWilderRSI, rollingDrawdownFromATH, rollingSMADistance, deribitVolBlock, basisBlock, positioningBlock, netLiquidity,
+  rollingWilderRSI, rollingDrawdownFromATH, rollingSMADistance, deribitVolBlock, basisBlock, positioningBlock, netLiquidity, stablecoinBlock,
   dailyTrend, frStallConfirmation, frComposite, frCompanion, spotPanel, fundingBlock,
   corrSurcharge, correlationRegime, correlationFromCloses,
   fk, fr, weightedEV, evCheck, stopCoherence, adr, fngStreak,
@@ -177,6 +177,27 @@ function round2Local(x) { return Math.round(x * 100) / 100 }
   ok('magnitude check: ~$5.8T, not ~$5.8B (the 1000x failure mode this vector guards against)', nl.net_liquidity_usd_trillions > 5 && nl.net_liquidity_usd_trillions < 7)
   eq('components are echoed in their ORIGINAL (unconverted) units for audit', nl.components.rrpontsyd_usd_billions, 2.151)
   ok('cadence_note states the weekly (not daily) release schedule', nl.cadence_note.includes('WEEKLY'))
+}
+
+// ── stablecoinBlock (C5) — DefiLlama aggregate supply, third-party-labeled ─
+{
+  ok('empty rows → available:false, not a crash', stablecoinBlock([]).available === false)
+  ok('missing/malformed totalCirculatingUSD rows are dropped, not NaN-propagated', stablecoinBlock([{ date: '1', totalCirculatingUSD: {} }]).available === false)
+  // 95 days of synthetic history (no RNG): starts at 180B, +0.1%/day
+  const rows = []
+  let v = 180e9
+  for (let i = 0; i < 95; i++) { rows.push({ date: String(1700000000 + i * 86400), totalCirculatingUSD: { peggedUSD: v } }); v *= 1.001 }
+  const sc = stablecoinBlock(rows)
+  ok('available with a usable history', sc.available === true)
+  eq('total_circulating_usd is the LAST row\'s value, rounded to whole dollars', sc.total_circulating_usd, Math.round(rows[rows.length - 1].totalCirculatingUSD.peggedUSD))
+  eq('n_days_history matches the row count', sc.n_days_history, 95)
+  eq('as_of echoes the last row\'s raw date string', sc.as_of, String(1700000000 + 94 * 86400))
+  ok('net_change_30d_pct is positive for a steadily-rising series', sc.net_change_30d_pct > 0)
+  ok('net_change_90d_pct > net_change_30d_pct for a steadily-compounding series (longer window, more growth)', sc.net_change_90d_pct > sc.net_change_30d_pct)
+  ok('note explicitly labels third-party/back-revision risk, not a settled figure', sc.note.includes('third-party') && sc.note.includes('back-revision'))
+
+  const short = rows.slice(0, 10)
+  eq('net_change_30d_pct is null when history is shorter than 30 days (never a fabricated window)', stablecoinBlock(short).net_change_30d_pct, null)
 }
 ok('pearson throws on length mismatch', (() => { try { pearson([1, 2], [1]); return false } catch (e) { return true } })())
 eq('pearson perfect positive', pearson([1, 2, 3], [2, 4, 6]), 1)

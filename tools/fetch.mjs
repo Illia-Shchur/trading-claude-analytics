@@ -23,7 +23,7 @@ import { pathToFileURL } from 'node:url'
 import { wilderRSI, sma, drawdownPct, adr, fngStreak, dailyTrend, spotPanel, fundingBlock, fr,
   percentileRank, realizedVolBlock, rollingRealizedVol,
   rollingWilderRSI, rollingDrawdownFromATH, rollingSMADistance, deribitVolBlock, basisBlock,
-  positioningBlock, netLiquidity, _internal } from './lib.mjs'
+  positioningBlock, netLiquidity, stablecoinBlock, _internal } from './lib.mjs'
 const { round2 } = _internal
 
 // annualize: realized-vol annualization convention (market-data-extension
@@ -424,6 +424,11 @@ async function fetchAsset(key, { series = false } = {}) {
   return outp
 }
 
+async function defillamaStablecoinCharts() {
+  const j = await getJSON('https://stablecoins.llama.fi/stablecoincharts/all?stablecoin=1')
+  return Array.isArray(j) ? j : []
+}
+
 async function fredCSV(seriesId) {
   const r = await fetch(`https://fred.stlouisfed.org/graph/fredgraph.csv?id=${seriesId}`, UA)
   if (!r.ok) throw new Error(`${r.status}`)
@@ -452,7 +457,7 @@ async function fetchMacro() {
     // CONTEXT ONLY: bond vol often turns before equity vol (VIX).
     { key: 'move', symbol: '^MOVE', label: 'ICE BofA MOVE Index (bond vol)' },
   ]
-  const [fred, fred3mo, hyOas, nfci, walcl, rrpontsyd, wtregen, ...charts] = await Promise.all([
+  const [fred, fred3mo, hyOas, nfci, walcl, rrpontsyd, wtregen, stablecoinRows, ...charts] = await Promise.all([
     attempt('FRED DFII10', () => fredCSV('DFII10')),
     // DGS3MO = 3-month T-bill secondary-market rate — cross-check for ^IRX.
     attempt('FRED DGS3MO', () => fredCSV('DGS3MO')),
@@ -467,6 +472,12 @@ async function fetchMacro() {
     attempt('FRED WALCL', () => fredCSV('WALCL')),
     attempt('FRED RRPONTSYD', () => fredCSV('RRPONTSYD')),
     attempt('FRED WTREGEN', () => fredCSV('WTREGEN')),
+    // Aggregate stablecoin supply (market-data-extension plan, C5) —
+    // DISCLOSED CONTEXT ONLY, a capital-flow tell. Third-party cross-chain
+    // aggregation (DefiLlama), subject to back-revision — never presented
+    // as a settled figure. Macro-scope (asset-agnostic), so it lives here,
+    // not in fetchAsset().
+    attempt('DefiLlama stablecoincharts', () => defillamaStablecoinCharts()),
     ...series.map(s => attempt(`yahoo ${s.symbol}`, () => yahooChart(s.symbol, s.range || '1mo', '1d'))),
   ])
   if (fred) outp.real_yield_10y_tips = { source: 'FRED DFII10 (daily, %)', last: fred[fred.length - 1],
@@ -486,6 +497,10 @@ async function fetchMacro() {
         wtregenMillions: wtregen[wtregen.length - 1].value,
       }),
     }
+  }
+  if (stablecoinRows && stablecoinRows.length) {
+    outp.stablecoin_supply = { source: 'DefiLlama stablecoincharts/all (aggregate across all tracked stablecoins/chains)',
+      ...stablecoinBlock(stablecoinRows) }
   }
   charts.forEach((c, i) => {
     if (!c) return
