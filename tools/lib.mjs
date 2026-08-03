@@ -241,6 +241,59 @@ export function smaSlope(values, { n = 200, lookback = 20 } = {}) {
 }
 
 /**
+ * Realized volatility over the trailing `window` sessions of a chronological
+ * closes series — annualized stdev of log returns, in percent
+ * (market-data-extension plan, Tier 0/B2). DISCLOSED CONTEXT ONLY: not a
+ * scored leg or gate.
+ *
+ * `annualize` is an asset-class convention, same split as isTradingDay()'s
+ * assetClass — crypto trades 365 days/year, equities/gold ~252 — and must be
+ * supplied explicitly by the caller rather than defaulted per-asset here
+ * (lib.mjs has no concept of "which asset," fetch.mjs does).
+ * `null` (not a crash) when there is insufficient history for the window.
+ */
+export function realizedVol(closes, { window = 30, annualize = 365 } = {}) {
+  if (!Array.isArray(closes) || closes.length <= window) return null
+  const rets = logReturns(closes.slice(-(window + 1)))
+  if (rets.length < 2) return null
+  const sd = stdev(rets)
+  if (sd == null) return null
+  return Math.round(sd * Math.sqrt(annualize) * 10000) / 100
+}
+
+/**
+ * Realized-vol block: rv10/rv30/rv90 off the LATEST point in `closes`, all
+ * under the same `annualize` convention (market-data-extension plan, B2).
+ * Any window without enough history is `null`, never a value silently
+ * computed off a shorter, undisclosed window.
+ */
+export function realizedVolBlock(closes, { annualize = 365 } = {}) {
+  return {
+    rv10: realizedVol(closes, { window: 10, annualize }),
+    rv30: realizedVol(closes, { window: 30, annualize }),
+    rv90: realizedVol(closes, { window: 90, annualize }),
+    annualize_convention: annualize,
+  }
+}
+
+/**
+ * Rolling realized-vol series (market-data-extension plan, B2) — one
+ * `realizedVol` reading per trailing point in `closes`, so a LATEST reading
+ * can be percentile-ranked (percentileRank()) against its own recent
+ * history rather than judged against an absolute cut-point. Pure function;
+ * fetch.mjs (Tier 0 wiring, B3) supplies the closes array and does the
+ * percentileRank() call itself — this only produces the series.
+ */
+export function rollingRealizedVol(closes, { window = 30, annualize = 365 } = {}) {
+  const out = []
+  for (let i = window + 1; i <= closes.length; i++) {
+    const v = realizedVol(closes.slice(0, i), { window, annualize })
+    if (v != null) out.push(v)
+  }
+  return out
+}
+
+/**
  * Log returns of a chronological closes series. Null-skips any pair spanning
  * a non-positive close (log undefined) rather than throwing — a single bad
  * print should not void an entire correlation window.

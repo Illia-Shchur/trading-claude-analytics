@@ -6,7 +6,7 @@
 // ============================================================================
 import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds, FK_V_GATES,
   median, stdev, pearson, pctChange, consecutiveRun, smaSlope, logReturns, alignSeries,
-  percentileRank, distributionStats,
+  percentileRank, distributionStats, realizedVol, realizedVolBlock, rollingRealizedVol,
   dailyTrend, frStallConfirmation, frComposite, frCompanion, spotPanel, fundingBlock,
   corrSurcharge, correlationRegime, correlationFromCloses,
   fk, fr, weightedEV, evCheck, stopCoherence, adr, fngStreak,
@@ -55,6 +55,25 @@ eq('distributionStats empty → n:0, all null (not a crash, not zero-coerced)', 
   eq('distributionStats mean', ds.mean, 3)
 }
 eq('distributionStats drops nulls from n/min/max, not coerced to 0', distributionStats([null, 10, 20]).n, 2)
+
+// ── realizedVol / realizedVolBlock / rollingRealizedVol (B2) ───────────────
+{
+  // deterministic synthetic series (no RNG): alternating +1%/-1% daily moves
+  const closes = [100]
+  for (let i = 0; i < 100; i++) closes.push(closes[closes.length - 1] * (i % 2 === 0 ? 1.01 : 0.99))
+  eq('realizedVol insufficient history → null, not a crash', realizedVol(closes.slice(0, 5), { window: 30 }), null)
+  const rvCrypto = realizedVol(closes, { window: 30, annualize: 365 })
+  const rvEquity = realizedVol(closes, { window: 30, annualize: 252 })
+  ok('same window, DIFFERENT annualize factors → different results (crypto 365 vs equity/gold 252)', rvCrypto !== rvEquity && rvCrypto > rvEquity)
+  ok('annualize factor is sqrt(365/252) apart (within rounding)', Math.abs(rvCrypto / rvEquity - Math.sqrt(365 / 252)) < 0.001)
+  const block = realizedVolBlock(closes, { annualize: 365 })
+  eq('realizedVolBlock rv30 matches the direct call', block.rv30, rvCrypto)
+  ok('realizedVolBlock carries all three windows', block.rv10 != null && block.rv30 != null && block.rv90 != null)
+  eq('realizedVolBlock echoes the annualize convention used', block.annualize_convention, 365)
+  const rolling = rollingRealizedVol(closes, { window: 30, annualize: 365 })
+  eq('rollingRealizedVol: one point per trailing window past the minimum history', rolling.length, closes.length - 30)
+  eq('rollingRealizedVol\'s LAST point equals the direct realizedVol call on the full series', rolling[rolling.length - 1], rvCrypto)
+}
 ok('pearson throws on length mismatch', (() => { try { pearson([1, 2], [1]); return false } catch (e) { return true } })())
 eq('pearson perfect positive', pearson([1, 2, 3], [2, 4, 6]), 1)
 eq('pearson perfect negative', pearson([1, 2, 3], [6, 4, 2]), -1)

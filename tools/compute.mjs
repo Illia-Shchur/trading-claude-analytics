@@ -28,13 +28,17 @@
 //   node tools/compute.mjs percentile --values v1,v2,... --x N
 //        (market-data-extension plan, Tier 0 — DISCLOSED CONTEXT ONLY, not a
 //        scored leg or gate; where does x sit in its own recent distribution)
+//   node tools/compute.mjs rvol --closes c1,c2,...            [--annualize 365|252]
+//        (Tier 0 — annualized realized vol rv10/rv30/rv90 + rv30's own
+//        percentile vs its trailing history; DISCLOSED CONTEXT ONLY)
 // JSON args may also be passed as @path/to/file.json
 // ============================================================================
 import { readFileSync } from 'node:fs'
 import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds,
   fk, fr, weightedEV, evCheck, stopCoherence, adr, fngStreak,
   dailyTrend, frStallConfirmation, frComposite, frCompanion, correlationFromCloses,
-  nextNTradingDays, percentileRank, distributionStats } from './lib.mjs'
+  nextNTradingDays, percentileRank, distributionStats,
+  realizedVolBlock, rollingRealizedVol } from './lib.mjs'
 
 const [, , cmd, ...rest] = process.argv
 const args = [], flags = {}
@@ -186,6 +190,16 @@ switch (cmd) {
     out({ n: values.length, x: num(flags.x), percentile_rank: percentileRank(values, num(flags.x)), stats: distributionStats(values) })
     break
   }
+  case 'rvol': {
+    if (!flags.closes) fail('pass --closes c1,c2,... (chronological) [--annualize 365|252]')
+    const closes = nums(flags.closes)
+    const annualize = Number(flags.annualize || 365)
+    const block = realizedVolBlock(closes, { annualize })
+    const rolling = rollingRealizedVol(closes, { window: 30, annualize })
+    out({ ...block, rv30_percentile_vs_own_history: rolling.length ? percentileRank(rolling, block.rv30) : null,
+      n_closes: closes.length, note: 'context only — not a scored input or gate' })
+    break
+  }
   case 'tier1': {
     if (!flags.from) fail('pass --from <date> --sessions N')
     const sessions = Number(flags.sessions || 5)
@@ -204,5 +218,5 @@ switch (cmd) {
     break
   }
   default:
-    fail(`unknown command "${cmd || ''}" — rsi | thresholds | round | band | ev | stop-coherence | adr | streak | fr-funding | fr-cap | sma | drawdown | trend | stall | fr-composite | fr-companion | corr | tier1 | percentile (see header of tools/compute.mjs)`)
+    fail(`unknown command "${cmd || ''}" — rsi | thresholds | round | band | ev | stop-coherence | adr | streak | fr-funding | fr-cap | sma | drawdown | trend | stall | fr-composite | fr-companion | corr | tier1 | percentile | rvol (see header of tools/compute.mjs)`)
 }
