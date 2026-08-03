@@ -344,6 +344,99 @@ export function rollingSMADistance(closes, n) {
 }
 
 /**
+ * Parse a Deribit option instrument name like "BTC-28AUG26-110000-P" into
+ * {currency, expiry (ms epoch, UTC), strike, type: 'C'|'P'}. `null` on
+ * anything that doesn't match Deribit's own naming convention — a single
+ * malformed/unexpected instrument must never crash the whole book parse.
+ */
+function parseDeribitInstrument(name) {
+  const m = /^([A-Z]+)-(\d{1,2})([A-Z]{3})(\d{2})-(\d+)-([CP])$/.exec(String(name || ''))
+  if (!m) return null
+  const months = { JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5, JUL: 6, AUG: 7, SEP: 8, OCT: 9, NOV: 10, DEC: 11 }
+  const mon = months[m[3]]
+  if (mon == null) return null
+  // Deribit options expire 08:00 UTC.
+  const expiry = Date.UTC(2000 + Number(m[4]), mon, Number(m[2]), 8, 0, 0)
+  return { currency: m[1], expiry, strike: Number(m[5]), type: m[6] }
+}
+
+/**
+ * BTC/ETH options vol surface from a Deribit book-summary snapshot
+ * (market-data-extension plan, C1). DISCLOSED CONTEXT ONLY — not a scored
+ * leg or gate; promoting any of this into the rubric is a
+ * framework-calibration job.
+ *
+ * `bookRows` = raw `get_book_summary_by_currency?kind=option` result array.
+ * `dvolCandles` = raw `get_volatility_index_data` candle tuples
+ * (`[ts, open, high, low, close]`, Deribit's own shape) — the LAST candle's
+ * close is the current DVOL reading. `rv30` (percent, from
+ * realizedVolBlock()) is optional; supplying it also derives the variance
+ * risk premium (ATM IV − realized vol), the part that actually distinguishes
+ * priced fear from panicked fear.
+ *
+ * An EMPTY `bookRows`/`dvolCandles` is Deribit's own documented response for
+ * an unsupported or illiquid currency — verified live 2026-08-03: SOL is a
+ * LISTED Deribit currency (it appears in get_currencies) but its options
+ * book and DVOL both return empty arrays, not an error. A currency-list
+ * membership check is therefore NOT sufficient; this function tests the
+ * actual payload and reports `available:false` rather than fabricating a
+ * zero IV — the same "absent, not zero" discipline as ASSETS.gold's missing
+ * `funding` block.
+ *
+ * The skew is explicitly MONEYNESS-based (`|strike/spot − 1|` buckets, ~10%
+ * OTM put vs ~10% OTM call), NOT a true 25-delta risk reversal — the book
+ * summary carries no per-instrument delta, and fetching Greeks per
+ * instrument would be hundreds of calls. Naming it `rr25` would overclaim
+ * precision this data cannot support.
+ */
+export function deribitVolBlock({ dvolCandles = [], bookRows = [], rv30 = null, nowMs = Date.now(), minDaysOut = 7, maxDaysOut = 45 } = {}) {
+  const dvol = Array.isArray(dvolCandles) && dvolCandles.length ? dvolCandles[dvolCandles.length - 1][4] : null
+  const note = 'DISCLOSED CONTEXT ONLY — not a scored leg or gate. Skew is MONEYNESS-based (|strike/spot-1| buckets), NOT a true 25-delta risk reversal (book summary carries no per-instrument delta).'
+
+  const parsed = (bookRows || []).map(r => {
+    const p = parseDeribitInstrument(r && r.instrument_name)
+    return p && r.mark_iv != null && r.underlying_price != null ? { ...p, mark_iv: r.mark_iv, underlying_price: r.underlying_price } : null
+  }).filter(Boolean)
+
+  if (!parsed.length) return { available: false, reason: 'no usable option quotes — empty or illiquid book', dvol, rv30, note }
+
+  const withDays = parsed.map(p => ({ ...p, days_out: (p.expiry - nowMs) / 86400000 }))
+  const inWindow = withDays.filter(p => p.days_out >= minDaysOut && p.days_out <= maxDaysOut)
+  if (!inWindow.length) return { available: false, reason: `no expiry ${minDaysOut}-${maxDaysOut} days out`, dvol, rv30, note }
+
+  // nearest-to-midpoint expiry within the window (e.g. ~26 days for the 7-45 default)
+  const targetDays = (minDaysOut + maxDaysOut) / 2
+  const nearest = inWindow.reduce((best, p) => (Math.abs(p.days_out - targetDays) < Math.abs(best.days_out - targetDays) ? p : best))
+  const chain = inWindow.filter(p => p.expiry === nearest.expiry)
+  const spot = median(chain.map(p => p.underlying_price))
+
+  const closestByStrike = (target, type) => {
+    const pool = chain.filter(p => p.type === type)
+    return pool.length ? pool.reduce((best, p) => (Math.abs(p.strike - target) < Math.abs(best.strike - target) ? p : best)) : null
+  }
+  const atmCall = closestByStrike(spot, 'C'), atmPut = closestByStrike(spot, 'P')
+  const atmIvs = [atmCall, atmPut].filter(Boolean).map(p => p.mark_iv)
+  const atmIv = atmIvs.length ? round2(atmIvs.reduce((a, b) => a + b, 0) / atmIvs.length) : null
+
+  const putLeg = closestByStrike(spot * 0.9, 'P'), callLeg = closestByStrike(spot * 1.1, 'C')
+  const skew = (putLeg && callLeg) ? round2(putLeg.mark_iv - callLeg.mark_iv) : null
+  const vrp = (atmIv != null && rv30 != null) ? round2(atmIv - rv30) : null
+
+  return {
+    available: true, dvol,
+    expiry_used: new Date(nearest.expiry).toISOString().slice(0, 10),
+    days_out: round2(nearest.days_out),
+    spot_used: round2(spot),
+    atm_iv_pct: atmIv,
+    skew_90_110_moneyness_pct: skew,
+    skew_legs: { put_strike: putLeg ? putLeg.strike : null, call_strike: callLeg ? callLeg.strike : null },
+    rv30_pct: rv30,
+    vrp_pct: vrp,
+    note,
+  }
+}
+
+/**
  * Log returns of a chronological closes series. Null-skips any pair spanning
  * a non-positive close (log undefined) rather than throwing — a single bad
  * print should not void an entire correlation window.

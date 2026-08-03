@@ -7,7 +7,7 @@
 import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds, FK_V_GATES,
   median, stdev, pearson, pctChange, consecutiveRun, smaSlope, logReturns, alignSeries,
   percentileRank, distributionStats, realizedVol, realizedVolBlock, rollingRealizedVol,
-  rollingWilderRSI, rollingDrawdownFromATH, rollingSMADistance,
+  rollingWilderRSI, rollingDrawdownFromATH, rollingSMADistance, deribitVolBlock,
   dailyTrend, frStallConfirmation, frComposite, frCompanion, spotPanel, fundingBlock,
   corrSurcharge, correlationRegime, correlationFromCloses,
   fk, fr, weightedEV, evCheck, stopCoherence, adr, fngStreak,
@@ -94,6 +94,47 @@ eq('distributionStats drops nulls from n/min/max, not coerced to 0', distributio
   eq('rollingSMADistance last point matches a direct sma() call', smaDist[smaDist.length - 1], round2Local((6 / sma([1, 2, 3, 4, 5, 6], 3) - 1) * 100))
 }
 function round2Local(x) { return Math.round(x * 100) / 100 }
+
+// ── deribitVolBlock (C1) — Deribit options vol surface ─────────────────────
+{
+  const nowMs = Date.UTC(2026, 7, 3) // 2026-08-03, month index 7 = August
+  ok('empty book/dvol → available:false, NOT a fabricated zero (SOL-style empty response)',
+    deribitVolBlock({ dvolCandles: [], bookRows: [], nowMs }).available === false)
+  eq('empty book reason names it explicitly', deribitVolBlock({ bookRows: [], nowMs }).reason, 'no usable option quotes — empty or illiquid book')
+
+  const spot = 64000
+  const mkRow = (expiry, strike, type, iv) => ({ instrument_name: `BTC-${expiry}-${strike}-${type}`, mark_iv: iv, underlying_price: spot })
+  const rows = [
+    // 28AUG26 is ~25 days out from 2026-08-03 — inside the [7,45] window and
+    // nearest to the window's midpoint (26 days) among the in-window expiries.
+    mkRow('28AUG26', 55000, 'C', 30), mkRow('28AUG26', 60000, 'C', 28), mkRow('28AUG26', 65000, 'C', 25),
+    mkRow('28AUG26', 70000, 'C', 27), mkRow('28AUG26', 75000, 'C', 30),
+    mkRow('28AUG26', 55000, 'P', 35), mkRow('28AUG26', 60000, 'P', 30), mkRow('28AUG26', 65000, 'P', 26),
+    mkRow('28AUG26', 70000, 'P', 28), mkRow('28AUG26', 75000, 'P', 32),
+    // 4AUG26 (~1 day out) — outside the window, must be excluded from selection
+    mkRow('4AUG26', 64000, 'C', 999), mkRow('4AUG26', 64000, 'P', 999),
+    // 25SEP26 (~53 days out) — also outside the window
+    mkRow('25SEP26', 64000, 'C', 888), mkRow('25SEP26', 64000, 'P', 888),
+    // 21AUG26 (~18 days out) — inside the window but farther from the
+    // midpoint than 28AUG26, so it must NOT be the chosen chain
+    mkRow('21AUG26', 64000, 'C', 777), mkRow('21AUG26', 64000, 'P', 777),
+  ]
+  const dvolCandles = [[1, 30, 32, 29, 31], [2, 31, 33, 30, 32.5]]
+  const block = deribitVolBlock({ dvolCandles, bookRows: rows, rv30: 20, nowMs })
+  ok('available with a usable book', block.available === true)
+  eq('dvol reads the LAST candle\'s close (index 4)', block.dvol, 32.5)
+  eq('picks 28AUG26 — nearest-to-midpoint expiry INSIDE the 7-45 day window, not 21AUG26 or the out-of-window expiries', block.expiry_used, '2026-08-28')
+  eq('ATM IV averages the nearest call+put to spot (strike 65000: 25 and 26)', block.atm_iv_pct, 25.5)
+  eq('skew = ~10%-OTM put IV (strike 60000: 30) minus ~10%-OTM call IV (strike 70000: 27)', block.skew_90_110_moneyness_pct, 3)
+  eq('skew is explicitly named MONEYNESS, never rr25/25-delta', typeof block.note === 'string' && block.note.includes('MONEYNESS') && !('rr25' in block), true)
+  eq('VRP = ATM IV (25.5) - rv30 (20)', block.vrp_pct, 5.5)
+
+  const outOfWindow = deribitVolBlock({ bookRows: [mkRow('4AUG26', 64000, 'C', 50), mkRow('4AUG26', 64000, 'P', 50)], nowMs })
+  ok('no expiry in the 7-45 day window → available:false with that reason', outOfWindow.available === false && outOfWindow.reason.includes('7-45'))
+
+  const malformed = deribitVolBlock({ bookRows: [{ instrument_name: 'not-a-real-instrument', mark_iv: 20, underlying_price: 100 }], nowMs })
+  ok('a malformed instrument name is dropped, not a crash', malformed.available === false)
+}
 ok('pearson throws on length mismatch', (() => { try { pearson([1, 2], [1]); return false } catch (e) { return true } })())
 eq('pearson perfect positive', pearson([1, 2, 3], [2, 4, 6]), 1)
 eq('pearson perfect negative', pearson([1, 2, 3], [6, 4, 2]), -1)

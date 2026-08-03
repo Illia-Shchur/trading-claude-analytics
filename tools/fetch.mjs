@@ -22,17 +22,24 @@
 import { pathToFileURL } from 'node:url'
 import { wilderRSI, sma, drawdownPct, adr, fngStreak, dailyTrend, spotPanel, fundingBlock, fr,
   percentileRank, realizedVolBlock, rollingRealizedVol,
-  rollingWilderRSI, rollingDrawdownFromATH, rollingSMADistance, _internal } from './lib.mjs'
+  rollingWilderRSI, rollingDrawdownFromATH, rollingSMADistance, deribitVolBlock, _internal } from './lib.mjs'
 const { round2 } = _internal
 
 // annualize: realized-vol annualization convention (market-data-extension
 // plan, B3) — crypto trades 365 days/year, gold trades an equity-like
 // calendar (~252). Asset-class property, mirrors isTradingDay()'s
 // assetClass split in lib.mjs; NOT a scored input.
+// deribit: Deribit currency code for the options vol surface (market-data-
+// extension plan, C1). SOL and gold carry NO `deribit` key — SOL is a
+// LISTED Deribit currency but its options book / DVOL both return empty
+// arrays (verified live 2026-08-03), and gold/PAXG isn't a Deribit
+// instrument at all — so the block is ABSENT for both, never a fabricated
+// zero. Only add a `deribit` key for an asset once its book is confirmed
+// non-empty.
 const ASSETS = {
-  btc: { cg: 'bitcoin', yahoo: 'BTC-USD', fng: true, perp: 'BTCUSDT', annualize: 365,
+  btc: { cg: 'bitcoin', yahoo: 'BTC-USD', fng: true, perp: 'BTCUSDT', annualize: 365, deribit: 'BTC',
     venues: { binance: 'BTCUSDT', coinbase: 'BTC-USD', kraken: 'XBTUSD' } },
-  eth: { cg: 'ethereum', yahoo: 'ETH-USD', fng: true, perp: 'ETHUSDT', annualize: 365,
+  eth: { cg: 'ethereum', yahoo: 'ETH-USD', fng: true, perp: 'ETHUSDT', annualize: 365, deribit: 'ETH',
     venues: { binance: 'ETHUSDT', coinbase: 'ETH-USD', kraken: 'ETHUSD' } },
   sol: { cg: 'solana', yahoo: 'SOL-USD', fng: true, perp: 'SOLUSDT', annualize: 365,
     venues: { binance: 'SOLUSDT', coinbase: 'SOL-USD', kraken: 'SOLUSD' } },
@@ -101,6 +108,16 @@ function dailyAnnualizedFundingSeries(intervals) {
   return days.map(d => fr.annualizedFunding(d.values.reduce((a, b) => a + b, 0) / d.values.length))
 }
 
+async function deribitDvol(currency) {
+  const end = Date.now(), start = end - 2 * 86400e3
+  const j = await getJSON(`https://www.deribit.com/api/v2/public/get_volatility_index_data?currency=${encodeURIComponent(currency)}&start_timestamp=${start}&end_timestamp=${end}&resolution=43200`)
+  return (j.result && j.result.data) || []
+}
+async function deribitOptionBook(currency) {
+  const j = await getJSON(`https://www.deribit.com/api/v2/public/get_book_summary_by_currency?currency=${encodeURIComponent(currency)}&kind=option`)
+  return j.result || []
+}
+
 async function binanceFunding(symbol, limit) {
   const rows = await getJSON(`https://fapi.binance.com/fapi/v1/fundingRate?symbol=${encodeURIComponent(symbol)}&limit=${limit}`)
   if (!Array.isArray(rows) || rows.length === 0) throw new Error(`binance fapi: no funding history for ${symbol}`)
@@ -153,7 +170,7 @@ async function fetchAsset(key, { series = false } = {}) {
   const attempt = async (label, fn) => { try { return await fn() } catch (e) { outp.errors.push(`${label}: ${e.message}`); return null } }
 
   const venues = a.venues || {}
-  const [cgSpot, cgCoin, weekly, daily, cross, fng, binanceQ, coinbaseQ, krakenQ, funding] = await Promise.all([
+  const [cgSpot, cgCoin, weekly, daily, cross, fng, binanceQ, coinbaseQ, krakenQ, funding, dvolCandles, optionBook] = await Promise.all([
     // include_last_updated_at reuses this SAME call for the spot panel (commit
     // 7) — no new CoinGecko request.
     a.cg ? attempt('coingecko spot', () => getJSON(`https://api.coingecko.com/api/v3/simple/price?ids=${a.cg}&vs_currencies=usd&include_last_updated_at=true`)) : null,
@@ -180,6 +197,8 @@ async function fetchAsset(key, { series = false } = {}) {
     // existing shape is unchanged; the extra rows only feed the funding
     // percentile-vs-history context field (B3).
     a.perp ? attempt('binance funding', () => binanceFunding(a.perp, 1000)) : null,
+    a.deribit ? attempt('deribit dvol', () => deribitDvol(a.deribit)) : null,
+    a.deribit ? attempt('deribit option book', () => deribitOptionBook(a.deribit)) : null,
   ])
 
   // spot — cross-checked across sources; >1.5% divergence flagged
@@ -341,6 +360,18 @@ async function fetchAsset(key, { series = false } = {}) {
       const fngValues = fng.data.map(d => Number(d.value))
       ctx.fng_percentile_vs_2y = fngValues.length > 1 ? percentileRank(fngValues.slice(1), fngValues[0]) : null
       ctx.fng_history_days_available = fngValues.length
+    }
+
+    // Deribit vol surface — ABSENT (not a fabricated zero) for SOL/gold,
+    // which carry no `deribit` key on ASSETS. See deribitVolBlock()'s JSDoc
+    // for why an empty book (SOL's actual live response) is also treated as
+    // absent rather than a computed 0 IV.
+    if (a.deribit) {
+      ctx.deribit = {
+        source: `Deribit get_volatility_index_data + get_book_summary_by_currency (${a.deribit})`,
+        ...deribitVolBlock({ dvolCandles: dvolCandles || [], bookRows: optionBook || [],
+          rv30: ctx.realized_vol ? ctx.realized_vol.rv30 : null }),
+      }
     }
 
     if (Object.keys(ctx).length) {
