@@ -1653,4 +1653,24 @@ export function feedChanged(prevText, next) {
   return { changed: !same, reason: same ? 'identical except generated_at' : 'content differs' }
 }
 
+/**
+ * What counts as the snapshot's DIGESTED content — i.e. what a `tools/
+ * snapshot.mjs` run_id/sha256 is actually keyed on. `fetched_at` and each
+ * asset block's `errors[]` are stripped: a transient venue timeout, or the
+ * few seconds between two fetches, must not fork the run id for otherwise
+ * identical data. Hashing itself stays in snapshot.mjs (this file has no
+ * crypto import — NO network, NO filesystem is the whole point of lib.mjs);
+ * this function only defines the payload that goes INTO the hash.
+ */
+export function snapshotDigestPayload(snapshot) {
+  const stripVolatile = block => {
+    if (!block || typeof block !== 'object') return block
+    const { fetched_at, errors, ...rest } = block
+    return rest
+  }
+  const out = {}
+  for (const key of Object.keys(snapshot).sort()) out[key] = stripVolatile(snapshot[key])
+  return canonicalJSON(out)
+}
+
 export const _internal = { round2 }

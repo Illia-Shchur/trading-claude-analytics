@@ -17,7 +17,7 @@ import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds, FK_V
   positionFreshness, positionSnapshotCheck, positionForAsset, shortForPosition, POSITION_FRESHNESS,
   fillPrice, trancheFilled, entryLooksLikeFill, EPOCHS, ENTRY_PRICE_EPOCH,
   reportFileMeta, localToUtcISO, schemaEpochOf, signalRubric, legSpec, inferChannel,
-  inferDiscretion, gateMask, unlockFor, canonicalJSON, feedChanged, REPORT_FILE_RE } from './lib.mjs'
+  inferDiscretion, gateMask, unlockFor, canonicalJSON, feedChanged, REPORT_FILE_RE, snapshotDigestPayload } from './lib.mjs'
 
 let failures = 0
 function eq(name, got, want) {
@@ -1070,6 +1070,17 @@ ok('output ends in a trailing newline', canonicalJSON({ a: 1 }).endsWith('}\n'))
   ok('a real content change IS', feedChanged(canonicalJSON(feed), real).changed)
   ok('no existing feed is a change', feedChanged(null, feed).changed)
   ok('a corrupt existing feed is a change, not a crash', feedChanged('{not json', feed).changed)
+}
+
+// ── snapshotDigestPayload (commit 11) — fetched_at/errors are VOLATILE ─────
+{
+  const snapA = { btc: { fetched_at: '2026-08-01T10:00:00Z', errors: [], spot: { canonical: 100 } } }
+  const snapB = { btc: { fetched_at: '2026-08-01T10:05:00Z', errors: ['transient venue timeout'], spot: { canonical: 100 } } }
+  eq('fetched_at + errors[] differ but the digest payload is identical',
+    snapshotDigestPayload(snapA), snapshotDigestPayload(snapB))
+  const snapC = { btc: { fetched_at: '2026-08-01T10:00:00Z', errors: [], spot: { canonical: 101 } } }
+  ok('a REAL content change (spot.canonical) does change the payload',
+    snapshotDigestPayload(snapA) !== snapshotDigestPayload(snapC))
 }
 
 // ── verdict ─────────────────────────────────────────────────────────────────

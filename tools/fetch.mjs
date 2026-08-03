@@ -19,6 +19,7 @@
 // Every block carries source + fetched_at; failed sources land in `errors`
 // instead of killing the run (the report then follows the SKILL's NOT-FOUND rules).
 // ============================================================================
+import { pathToFileURL } from 'node:url'
 import { wilderRSI, sma, drawdownPct, adr, fngStreak, dailyTrend, spotPanel, fundingBlock, _internal } from './lib.mjs'
 const { round2 } = _internal
 
@@ -35,10 +36,26 @@ const ASSETS = {
 }
 const UA = { headers: { 'User-Agent': 'Mozilla/5.0 (trading-claude-analytics toolchain)' } }
 
-async function getJSON(url) {
-  const r = await fetch(url, UA)
-  if (!r.ok) throw new Error(`${r.status} ${url}`)
-  return r.json()
+// 8s timeout + 2 retries on network errors / 5xx only (never on 4xx — a bad
+// request or missing symbol won't fix itself by retrying). Without this a
+// single hung venue blocks the whole Promise.all forever; attempt() still
+// catches the eventual failure and routes it to errors[], so the
+// never-throws / always-exit-0 contract at the top level is unchanged.
+async function getJSON(url, { retries = 2 } = {}) {
+  let lastErr
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const r = await fetch(url, { ...UA, signal: AbortSignal.timeout(8000) })
+      if (r.ok) return r.json()
+      if (r.status < 500) throw new Error(`${r.status} ${url}`)
+      lastErr = new Error(`${r.status} ${url}`)
+    } catch (e) {
+      lastErr = e
+      if (e.message && /^4\d\d /.test(e.message)) throw e
+    }
+    if (attempt < retries) await new Promise(res => setTimeout(res, 300 * (attempt + 1)))
+  }
+  throw lastErr
 }
 async function binanceQuote(symbol) {
   const j = await getJSON(`https://api.binance.com/api/v3/ticker/24hr?symbol=${encodeURIComponent(symbol)}`)
@@ -272,13 +289,19 @@ async function fetchMacro() {
   return outp
 }
 
-const argv = process.argv.slice(2)
-const spotOnly = argv[0] === 'spot'
-const target = (spotOnly ? argv[1] : argv[0] || '').toLowerCase()
-const series = argv.includes('--series')
-if (spotOnly) {
-  if (!ASSETS[target]) { console.error(`usage: node tools/fetch.mjs spot <${Object.keys(ASSETS).join('|')}>`); process.exit(1) }
-  fetchAsset(target).then(o => console.log(JSON.stringify(o.spot, null, 2)))
-} else if (target === 'macro') fetchMacro().then(o => console.log(JSON.stringify(o, null, 2)))
-else if (ASSETS[target]) fetchAsset(target, { series }).then(o => console.log(JSON.stringify(o, null, 2)))
-else { console.error(`usage: node tools/fetch.mjs <${Object.keys(ASSETS).join('|')}|macro|spot <asset>> [--series]`); process.exit(1) }
+export { ASSETS, fetchAsset, fetchMacro }
+
+// CLI guard: only run when invoked directly (`node tools/fetch.mjs ...`), not
+// when imported by tools/snapshot.mjs or a future test harness.
+if (import.meta.url === pathToFileURL(process.argv[1] || '').href) {
+  const argv = process.argv.slice(2)
+  const spotOnly = argv[0] === 'spot'
+  const target = (spotOnly ? argv[1] : argv[0] || '').toLowerCase()
+  const series = argv.includes('--series')
+  if (spotOnly) {
+    if (!ASSETS[target]) { console.error(`usage: node tools/fetch.mjs spot <${Object.keys(ASSETS).join('|')}>`); process.exit(1) }
+    fetchAsset(target).then(o => console.log(JSON.stringify(o.spot, null, 2)))
+  } else if (target === 'macro') fetchMacro().then(o => console.log(JSON.stringify(o, null, 2)))
+  else if (ASSETS[target]) fetchAsset(target, { series }).then(o => console.log(JSON.stringify(o, null, 2)))
+  else { console.error(`usage: node tools/fetch.mjs <${Object.keys(ASSETS).join('|')}|macro|spot <asset>> [--series]`); process.exit(1) }
+}
