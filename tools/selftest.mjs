@@ -7,6 +7,7 @@
 import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds, FK_V_GATES,
   median, stdev, pearson, pctChange, consecutiveRun, smaSlope, logReturns, alignSeries,
   dailyTrend, frStallConfirmation, frComposite, frCompanion, spotPanel, fundingBlock,
+  corrSurcharge, correlationRegime, correlationFromCloses,
   fk, fr, weightedEV, evCheck, stopCoherence, adr, fngStreak,
   FK_SCORE_UNLOCK, fkPhasesUnlockedByScore, discretionValid, d5StopCheck, ratchetCheck,
   mechanicalScore, frChannel, frB, FR_SCORE_UNLOCK, FR_GATE_FLOORS, frPhasesUnlockedByScore,
@@ -271,6 +272,37 @@ ok('zero quotes → low_confidence true with a reason', spotPanel([]).low_confid
   eq('...but only 1 negative SESSION (same calendar day)', f.longest_negative_run_sessions, 1)
 }
 ok('no intervals → insufficient, not a crash', fundingBlock([]).insufficient != null)
+
+// ── correlation regime (commit 10) — label ladder is descriptive-only ──────
+eq('corr -0.1 → inverse', correlationRegime(-0.1).label, 'inverse')
+eq('corr 0.1 → decoupled', correlationRegime(0.1).label, 'decoupled')
+eq('corr 0.5 → mild', correlationRegime(0.5).label, 'mild')
+eq('corr exactly 0.7 → still mild (label edge, <=0.7)', correlationRegime(0.7).label, 'mild')
+eq('corr 0.71 → risk-on', correlationRegime(0.71).label, 'risk-on')
+ok('ONLY >0.7 triggers the surcharge — exactly 0.7 does not', correlationRegime(0.7).surcharge_applied === false && correlationRegime(0.71).surcharge_applied === true)
+eq('corrSurcharge mirrors the same >0.7 cut', [corrSurcharge(0.7), corrSurcharge(0.71)], [false, true])
+ok('Phase 2 condition is <0.8, independent of the label ladder', correlationRegime(0.75).phase2_corr_condition === true && correlationRegime(0.8).phase2_corr_condition === false)
+{
+  const nc = correlationRegime(null)
+  ok('null (not computed) routes to surcharge OFF, Phase 2 satisfied — the SKILL default', nc.surcharge_applied === false && nc.phase2_corr_condition === true)
+  eq('...and is disclosed as not computed, not silently zero', nc.label, 'not computed')
+}
+
+// ── correlationFromCloses (commit 10) — the join + returns + pearson chain ─
+{
+  // Two perfectly-correlated random walks over 10 overlapping weekday dates;
+  // crypto series also has 2 weekend dates the equity series lacks.
+  const cryptoCloses = [100, 101, 99, 98, 103, 105, 104, 108, 107, 110, 112, 111]
+  const dates = ['2026-06-15', '2026-06-16', '2026-06-17', '2026-06-18', '2026-06-19', '2026-06-20', '2026-06-21', '2026-06-22', '2026-06-23', '2026-06-24', '2026-06-25', '2026-06-26']
+  const crypto = dates.map((date, i) => ({ date, close: cryptoCloses[i] }))
+  // equity: same values on weekdays only (drop the two "weekend" dates idx 3,9 — Sat/Sun-ish stand-ins)
+  const equity = dates.filter((_, i) => i !== 3 && i !== 9).map((date, i) => ({ date, close: cryptoCloses[dates.indexOf(date)] }))
+  const c = correlationFromCloses(crypto, equity)
+  eq('identical aligned closes → corr 1', c.corr, 1)
+  eq('2 crypto-only dates dropped from the equity join', c.dropped.a, 2)
+  eq('aligned sessions = 10 (12 crypto dates - 2 weekend-only)', c.n_aligned_sessions, 10)
+}
+ok('too few aligned points → corr null, not a crash', correlationFromCloses([{ date: 'd1', close: 100 }], [{ date: 'd1', close: 100 }]).corr === null)
 
 // ── ceilThresholds — including the ETH ceil(7/9×8)=7 misprint regression ────
 eq('thresholds /9', (({ p1a, p1b, p2, p3 }) => [p1a, p1b, p2, p3])(ceilThresholds(9)), [3, 5, 6, 7])

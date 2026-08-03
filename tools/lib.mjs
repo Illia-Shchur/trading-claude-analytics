@@ -235,6 +235,50 @@ export function alignSeries(a, b) {
   return { dates, xs, ys, dropped: { a: droppedA, b: droppedB } }
 }
 
+/** corr > 0.7 is the ONLY value this function's boolean output depends on. */
+export function corrSurcharge(corr) { return corr != null && corr > 0.7 }
+
+/**
+ * FR/FK correlation-regime label + the two thresholds that actually carry
+ * consequence (FK SKILL:164 + :200). The label ladder itself — inverse /
+ * decoupled / mild / risk-on — is DESCRIPTIVE ONLY; only `> 0.7` (the
+ * cross-asset surcharge) and `< 0.8` (the Phase 2 condition) gate anything.
+ * Do not treat a label edge (0, 0.2) as a threshold — it isn't one.
+ *
+ * `corr: null` (not computed — e.g. pearson() returned null on zero
+ * variance) routes to the SKILL's documented default: surcharge OFF,
+ * Phase 2 condition satisfied, disclosed as not computed rather than guessed.
+ */
+export function correlationRegime(corr) {
+  if (corr == null) {
+    return { corr: null, label: 'not computed', surcharge_applied: false, phase2_corr_condition: true,
+      note: 'correlation not computed (insufficient data or zero variance) — surcharge OFF, Phase 2 condition satisfied, by SKILL default' }
+  }
+  const label = corr < 0 ? 'inverse' : corr < 0.2 ? 'decoupled' : corr <= 0.7 ? 'mild' : 'risk-on'
+  return { corr, label, surcharge_applied: corrSurcharge(corr), phase2_corr_condition: corr < 0.8, note: null }
+}
+
+/**
+ * End-to-end correlation from two chronological {date, close} series: joins
+ * on shared dates (alignSeries — the crypto-7d/equity-5d weekend-drop join),
+ * then pearson() on the aligned CLOSE LEVELS (matching the FK SKILL's
+ * "30-day Pearson vs SPX on overlapping sessions" convention — this is a
+ * price-level correlation, not a return correlation). `window` (trading days
+ * of OVERLAP, not raw input length) trims to the trailing N aligned points.
+ */
+export function correlationFromCloses(seriesA, seriesB, { window = null } = {}) {
+  const aligned = alignSeries(
+    seriesA.map(r => ({ date: r.date, value: r.close })),
+    seriesB.map(r => ({ date: r.date, value: r.close })),
+  )
+  const trimmed = window != null && aligned.dates.length > window
+    ? { dates: aligned.dates.slice(-window), xs: aligned.xs.slice(-window), ys: aligned.ys.slice(-window) }
+    : aligned
+  const corr = trimmed.xs.length >= 2 ? pearson(trimmed.xs, trimmed.ys) : null
+  return { ...correlationRegime(corr), n_aligned_sessions: trimmed.dates.length, dropped: aligned.dropped,
+    window_start: trimmed.dates[0] || null, window_end: trimmed.dates[trimmed.dates.length - 1] || null }
+}
+
 // ── Fallen Knives: score arithmetic ─────────────────────────────────────────
 
 /** Per-asset .5 rounding conventions (FK SKILL §4, codified 2026-07-10). */

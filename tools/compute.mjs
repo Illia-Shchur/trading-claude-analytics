@@ -23,12 +23,13 @@
 //   node tools/compute.mjs fr-composite --legs '<json {name:value}>' [--penalty N] [--discretionary N]
 //        --rounding half-up|half-down [--channel A|B] [--cap-applied] [--cap-value N]
 //   node tools/compute.mjs fr-companion --market '<json>' [--counts '<json>'] [--rounding half-up]
+//   node tools/compute.mjs corr --asset '<json array of {date,close}>' --spx '<json array of {date,close}>' [--window N]
 // JSON args may also be passed as @path/to/file.json
 // ============================================================================
 import { readFileSync } from 'node:fs'
 import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds,
   fk, fr, weightedEV, evCheck, stopCoherence, adr, fngStreak,
-  dailyTrend, frStallConfirmation, frComposite, frCompanion } from './lib.mjs'
+  dailyTrend, frStallConfirmation, frComposite, frCompanion, correlationFromCloses } from './lib.mjs'
 
 const [, , cmd, ...rest] = process.argv
 const args = [], flags = {}
@@ -169,6 +170,11 @@ switch (cmd) {
     }))
     break
   }
+  case 'corr': {
+    if (!flags.asset || !flags.spx) fail('pass --asset <json array of {date,close}> --spx <json array of {date,close}>')
+    out(correlationFromCloses(json(flags.asset), json(flags.spx), { window: flags.window != null ? Number(flags.window) : null }))
+    break
+  }
   default:
-    fail(`unknown command "${cmd || ''}" — rsi | thresholds | round | band | ev | stop-coherence | adr | streak | fr-funding | fr-cap | sma | drawdown | trend | stall | fr-composite | fr-companion (see header of tools/compute.mjs)`)
+    fail(`unknown command "${cmd || ''}" — rsi | thresholds | round | band | ev | stop-coherence | adr | streak | fr-funding | fr-cap | sma | drawdown | trend | stall | fr-composite | fr-companion | corr (see header of tools/compute.mjs)`)
 }
