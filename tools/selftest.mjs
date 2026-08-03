@@ -6,7 +6,7 @@
 // ============================================================================
 import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds, FK_V_GATES,
   median, stdev, pearson, pctChange, consecutiveRun, smaSlope, logReturns, alignSeries,
-  dailyTrend, frStallConfirmation, frComposite,
+  dailyTrend, frStallConfirmation, frComposite, frCompanion,
   fk, fr, weightedEV, evCheck, stopCoherence, adr, fngStreak,
   FK_SCORE_UNLOCK, fkPhasesUnlockedByScore, discretionValid, d5StopCheck, ratchetCheck,
   mechanicalScore, frChannel, frB, FR_SCORE_UNLOCK, FR_GATE_FLOORS, frPhasesUnlockedByScore,
@@ -110,6 +110,55 @@ eq('stall confirmed: failed new high AND closed down', frStallConfirmation({ clo
 eq('NOT confirmed: a marginal new high keeps the bounce alive', frStallConfirmation({ close: 95, priorClose: 96, high: 101, bounceHigh: 100 }).confirmed, false)
 eq('NOT confirmed: closed up even without a new high', frStallConfirmation({ close: 97, priorClose: 96, high: 98, bounceHigh: 100 }).confirmed, false)
 eq('missing input → null, not a false "no"', frStallConfirmation({ close: 95, priorClose: 96, high: 98 }), null)
+
+// ── frCompanion (commit 6) — the three 2026-08-01 acceptance fixtures ───────
+{
+  // ETH: routes B, legs {4,1,1,2,1}, score 9 → the ≥9 standalone-report tripwire.
+  const eth = frCompanion({
+    market: { pct_below_1y_ath: 25.35, ma200_falling: true, price_below_ma200: true,
+      bounce_pct: 30.85, daily_rsi: 51.78, weekly_rsi: 41.40, bounce_age_sessions: 37 },
+    counts: { resistance_count: 1, structure_count: 2, sentiment_count: 1 },
+  })
+  eq('ETH routes to Channel B', eth.channel, 'B')
+  eq('ETH Channel B legs {4,1,1,2,1}', eth.score.legs, { euphoria: 4, momentum: 1, valuation: 1, distribution: 2, vulnerability: 1 })
+  eq('ETH score = 9 (2026-08-01 pin)', eth.score.adjusted, 9)
+  ok('the ≥9 tripwire fires: standalone report owed', eth.standalone_report_owed === true)
+  ok('no missing counts → full confidence', eth.confidence === 'full')
+}
+{
+  // BTC: −50.03% off 1y, slope −3.48% (falling), price below ma200 → Channel B.
+  const btc = frCompanion({ market: { pct_below_1y_ath: 50.03, ma200_falling: true, price_below_ma200: true } })
+  eq('BTC routes to Channel B (2026-08-01 pin)', btc.channel, 'B')
+}
+{
+  // Gold: −27.52% off 1y, slope +0.52% (RISING, not falling) → 'none'/stand-down.
+  // §4A scored 2 (euphoria 1 + momentum 1, all three missing counts → 0).
+  // fr.phaseCycleCap(27.52) → 8, shown but NOT applied (stand-down doesn't cap).
+  const gold = frCompanion({
+    market: { pct_below_1y_ath: 27.52, ma200_falling: false, price_below_ma200: true,
+      fng_avg_3d: 55, weekly_rsi: 62 },
+  })
+  eq('gold routes to "none" — rising 200dma fails the B qualifier', gold.channel, 'none')
+  eq('gold §4A score = 2 (2026-08-01 pin)', gold.score.adjusted, 2)
+  eq('cap tier is 8 (fr.phaseCycleCap(27.52))', gold.cap.value, 8)
+  ok('cap NOT applied — stand-down does not cap a score it does not act on', gold.cap.applied === false)
+  eq('three missing on-chain counts flagged', gold.inputs_missing, ['mvrv_z', 'distribution_count', 'vulnerability_count'])
+  ok('partial confidence when counts are missing', gold.confidence === 'partial')
+  ok('floor 2 / ceiling 13 straddle both 9 and 12 → not dischargeable', gold.score_floor === 2 && gold.score_ceiling === 13 && gold.hard_rule_5_dischargeable === false)
+}
+{
+  // Honesty machinery: unknown OI must be null in the OUTPUT, never false —
+  // false would silently suppress the squeeze-trap escalation (fail-open).
+  const unknown = frCompanion({ market: { pct_below_1y_ath: 30, ma200_falling: true, price_below_ma200: true,
+    bounce_pct: 10, daily_rsi: 50, weekly_rsi: 40, bounce_age_sessions: 20,
+    funding_annualized_pct: -8, sustained_3_intervals: true } })
+  ok('OI unknown reports as null, not false', unknown.oi_within_5pct_of_90d_high === null)
+  eq('...but the squeeze tier escalates internally under the unknown (fail-CLOSED)', unknown.squeeze.tier, 'escalated')
+  const known = frCompanion({ market: { pct_below_1y_ath: 30, ma200_falling: true, price_below_ma200: true,
+    bounce_pct: 10, daily_rsi: 50, weekly_rsi: 40, bounce_age_sessions: 20,
+    funding_annualized_pct: -8, sustained_3_intervals: true, oi_within_5pct_of_90d_high: false } })
+  eq('known FALSE does not escalate — this is the one case allowed to skip it', known.squeeze.tier, 'base')
+}
 
 // ── ceilThresholds — including the ETH ceil(7/9×8)=7 misprint regression ────
 eq('thresholds /9', (({ p1a, p1b, p2, p3 }) => [p1a, p1b, p2, p3])(ceilThresholds(9)), [3, 5, 6, 7])

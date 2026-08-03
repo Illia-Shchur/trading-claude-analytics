@@ -564,6 +564,116 @@ export function frComposite({ legs, penalty = 0, discretionary = 0, rounding, ch
   return { leg_sum: legSum, penalty, mechanical, raw, adjusted, cap_applied: capApplied, cap_value: capValue, clamped, channel }
 }
 
+// Which `counts` key feeds which leg, per channel — the sub-conditions with
+// no classifier (on-chain / options / flows / swing-point judgment).
+const FR_COUNT_TO_LEG = {
+  A: { mvrv_z: 'valuation', distribution_count: 'distribution', vulnerability_count: 'vulnerability' },
+  B: { resistance_count: 'valuation', structure_count: 'distribution', sentiment_count: 'vulnerability' },
+}
+// The INPUT value (not the output score) that saturates each count's band —
+// mvrvZBand/resistanceBand have wider input domains than their 0-3 "count"
+// siblings, so "ceiling" must feed the band fn a saturating input, not its
+// own max score (mvrvZBand(5) is 4, not 5 — the band is strict `>5`).
+const FR_COUNT_CEILING_INPUT = {
+  mvrv_z: 6, distribution_count: 3, vulnerability_count: 3,
+  resistance_count: 4, structure_count: 3, sentiment_count: 3,
+}
+
+/**
+ * End-to-end FR companion score from one fetch run's market data plus the
+ * analyst `counts` that have no classifier and none is possible: §4A
+ * distribution (a)(b)(c), §4A vulnerability (b)(c), §4B resistance (c)(d),
+ * §4B structure (a), §4B sentiment (c), and MVRV-Z. This is the mandatory
+ * companion (Hard Rule 5) that, before this function, had to be eyeballed —
+ * nothing in the repo produced `ma200Falling`/`priceBelowMA200` for
+ * frChannel() to route on.
+ *
+ * Routes via frChannel(). Channel B scores the §4B leg formulas; Channel A
+ * AND stand-down ('none') both use §4A — 'none' still needs a headline
+ * number because Hard Rule 5's cross-validation and its own pause-condition
+ * both read it, even though nothing unlocks off a stand-down score.
+ *
+ * A missing count scores 0 (conservative, Hard Rule 6) but is recorded in
+ * `inputs_missing`; `score_floor`/`score_ceiling` bound what the score could
+ * be if every missing count took its most conservative vs its maximum value.
+ * If that range straddles 9 or 12, `hard_rule_5_dischargeable` is false — the
+ * FK SKILL's "companion cannot be computed → pause net-new long deployment
+ * only" branch applies.
+ *
+ * `oi_within_5pct_of_90d_high` unknown is reported as `null` in the output —
+ * never `false` — but INTERNALLY the squeeze-trap penalty treats an unknown
+ * as if it WERE within 5%: the alternative (treating unknown as false)
+ * suppresses the escalation, which is fail-OPEN on a protective penalty
+ * (Hard Rule 6 wants the harder-to-short reading under uncertainty).
+ */
+export function frCompanion({ market = {}, counts = {}, rounding = 'half-up' } = {}) {
+  const channel = frChannel({
+    pctBelow1yATH: market.pct_below_1y_ath,
+    ma200Falling: market.ma200_falling,
+    priceBelowMA200: market.price_below_ma200,
+  })
+  const useB = channel === 'B'
+  const countMap = FR_COUNT_TO_LEG[useB ? 'B' : 'A']
+  const missing = Object.keys(countMap).filter(k => counts[k] == null)
+
+  function buildLegs(atCeiling) {
+    const at = k => (counts[k] != null ? counts[k] : (atCeiling && missing.includes(k) ? FR_COUNT_CEILING_INPUT[k] : 0))
+    if (useB) {
+      return {
+        euphoria: frB.rallyBand(market.bounce_pct != null ? market.bounce_pct : 0),
+        momentum: frB.momentumBand(market.daily_rsi != null ? market.daily_rsi : 0, market.weekly_rsi),
+        valuation: frB.resistanceBand(at('resistance_count')),
+        distribution: frB.structureBand(at('structure_count')),
+        vulnerability: frB.sentimentBand(at('sentiment_count')),
+      }
+    }
+    return {
+      euphoria: fr.euphoriaBand(market.fng_avg_3d != null ? market.fng_avg_3d : 0),
+      momentum: fr.momentumBand(market.weekly_rsi != null ? market.weekly_rsi : 0),
+      valuation: fr.mvrvZBand(at('mvrv_z')),
+      distribution: fr.distributionBand(at('distribution_count')),
+      vulnerability: fr.vulnerabilityBand(at('vulnerability_count')),
+    }
+  }
+
+  const oiUnknown = market.oi_within_5pct_of_90d_high == null
+  const squeeze = fr.squeezeTrapPenalty({
+    fundingAnnualizedPct: market.funding_annualized_pct != null ? market.funding_annualized_pct : 0,
+    sustained3Intervals: !!market.sustained_3_intervals,
+    oiWithin5PctOf90dHigh: oiUnknown ? true : market.oi_within_5pct_of_90d_high === true,
+    singleIntervalBelowMinus7: !!market.single_interval_below_minus_7,
+  })
+  const maturity = useB ? frB.maturityPenalty(market.bounce_age_sessions != null ? market.bounce_age_sessions : 999) : 0
+  const penalty = Math.max(-4, squeeze.raw_penalty + maturity)
+
+  const capValue = market.pct_below_1y_ath != null ? fr.phaseCycleCap(market.pct_below_1y_ath) : null
+  const cap = { applied: channel === 'A' && capValue != null, value: capValue }
+
+  const legs = buildLegs(false)
+  const composite = frComposite({ legs, penalty, discretionary: 0, rounding, channel, cap })
+
+  let scoreFloor = null, scoreCeiling = null, dischargeable = true
+  if (missing.length) {
+    scoreFloor = frComposite({ legs, penalty, discretionary: 0, rounding, channel, cap }).adjusted
+    scoreCeiling = frComposite({ legs: buildLegs(true), penalty, discretionary: 0, rounding, channel, cap }).adjusted
+    const straddles = n => scoreFloor < n && scoreCeiling >= n
+    dischargeable = !(straddles(9) || straddles(12))
+  }
+
+  return {
+    channel,
+    score: { legs, penalty, mechanical: composite.mechanical, adjusted: composite.adjusted, rounding },
+    cap,
+    squeeze: { tier: squeeze.tier, gate_surcharge: squeeze.gate_surcharge },
+    inputs_missing: missing,
+    confidence: missing.length ? 'partial' : 'full',
+    score_floor: scoreFloor, score_ceiling: scoreCeiling,
+    hard_rule_5_dischargeable: dischargeable,
+    oi_within_5pct_of_90d_high: oiUnknown ? null : market.oi_within_5pct_of_90d_high,
+    standalone_report_owed: composite.adjusted >= 9,
+  }
+}
+
 /** Legacy /9 gate floors; 1A moved 4 → 3 on 2026-07-27. Convert with ceilThresholds(). */
 export const FR_GATE_FLOORS = { p1a: 3, p1b: 5, p2: 6, p3: 8 }
 
