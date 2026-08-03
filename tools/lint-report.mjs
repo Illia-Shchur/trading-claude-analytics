@@ -575,6 +575,12 @@ if (b.correlation) {
     }
     if (!c.window) warn('correlation.window missing — state the date range a numeric correlation was computed over')
     if (!c.method) warn('correlation.method missing — state the method (e.g. Pearson on daily log returns) a numeric correlation was computed with')
+    // 2026-08 (market-data-extension plan, A1): correlationFromCloses() now
+    // stamps method:'pearson_daily_log_returns' itself, so the block should
+    // read as log-returns, not price levels. Warn-only, no epoch — this
+    // catches a stale/hand-typed method string, not a computed mismatch.
+    else if (typeof c.method === 'string' && /price[\s-]?level/i.test(c.method) && !/log[\s-]?return/i.test(c.method))
+      warn(`correlation.method="${c.method}" reads as price-level correlation, but tools/lib.mjs correlationFromCloses() computes Pearson on daily log returns — update the wording or recompute`)
   }
 }
 

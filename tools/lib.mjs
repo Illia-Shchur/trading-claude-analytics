@@ -260,11 +260,19 @@ export function correlationRegime(corr) {
 
 /**
  * End-to-end correlation from two chronological {date, close} series: joins
- * on shared dates (alignSeries — the crypto-7d/equity-5d weekend-drop join),
- * then pearson() on the aligned CLOSE LEVELS (matching the FK SKILL's
- * "30-day Pearson vs SPX on overlapping sessions" convention — this is a
- * price-level correlation, not a return correlation). `window` (trading days
- * of OVERLAP, not raw input length) trims to the trailing N aligned points.
+ * on shared dates FIRST (alignSeries — the crypto-7d/equity-5d weekend-drop
+ * join), THEN takes log returns of each aligned close series, THEN pearson()
+ * on the two return series (2026-08 fix — every machine block already
+ * claimed "Pearson on daily log returns"; the code computed raw price-level
+ * Pearson instead, which is spurious between two trending series — two
+ * independently-trending series can show a high level correlation with zero
+ * genuine return co-movement). Order matters: aligning AFTER differencing
+ * would difference across a dropped weekend and manufacture a fake 2-day
+ * return sitting next to 1-day returns — so alignment happens on levels,
+ * and returns are taken from the (already date-matched) aligned arrays.
+ * `window` (trading days of OVERLAP, not raw input length) trims to the
+ * trailing N aligned CLOSES before differencing, so it still means
+ * "N sessions of overlap," not "N return observations" (which is N-1).
  */
 export function correlationFromCloses(seriesA, seriesB, { window = null } = {}) {
   const aligned = alignSeries(
@@ -274,8 +282,10 @@ export function correlationFromCloses(seriesA, seriesB, { window = null } = {}) 
   const trimmed = window != null && aligned.dates.length > window
     ? { dates: aligned.dates.slice(-window), xs: aligned.xs.slice(-window), ys: aligned.ys.slice(-window) }
     : aligned
-  const corr = trimmed.xs.length >= 2 ? pearson(trimmed.xs, trimmed.ys) : null
-  return { ...correlationRegime(corr), n_aligned_sessions: trimmed.dates.length, dropped: aligned.dropped,
+  const retX = logReturns(trimmed.xs), retY = logReturns(trimmed.ys)
+  const corr = retX.length >= 2 && retY.length >= 2 ? pearson(retX, retY) : null
+  return { ...correlationRegime(corr), method: 'pearson_daily_log_returns',
+    n_aligned_sessions: trimmed.dates.length, n_return_observations: retX.length, dropped: aligned.dropped,
     window_start: trimmed.dates[0] || null, window_end: trimmed.dates[trimmed.dates.length - 1] || null }
 }
 

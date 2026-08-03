@@ -299,11 +299,40 @@ ok('Phase 2 condition is <0.8, independent of the label ladder', correlationRegi
   // equity: same values on weekdays only (drop the two "weekend" dates idx 3,9 — Sat/Sun-ish stand-ins)
   const equity = dates.filter((_, i) => i !== 3 && i !== 9).map((date, i) => ({ date, close: cryptoCloses[dates.indexOf(date)] }))
   const c = correlationFromCloses(crypto, equity)
-  eq('identical aligned closes → corr 1', c.corr, 1)
+  eq('identical aligned closes → corr 1 (returns identical too)', c.corr, 1)
   eq('2 crypto-only dates dropped from the equity join', c.dropped.a, 2)
   eq('aligned sessions = 10 (12 crypto dates - 2 weekend-only)', c.n_aligned_sessions, 10)
+  eq('9 return observations from 10 aligned closes', c.n_return_observations, 9)
+  eq('method is stamped log-returns, not asserted by the caller', c.method, 'pearson_daily_log_returns')
 }
 ok('too few aligned points → corr null, not a crash', correlationFromCloses([{ date: 'd1', close: 100 }], [{ date: 'd1', close: 100 }]).corr === null)
+
+// ── A1 fix (2026-08): price-LEVEL correlation is spurious between two
+//    independently-trending series; log-RETURN correlation is not. Two
+//    series that both drift upward with independent day-to-day noise show a
+//    high level correlation but ~zero genuine return co-movement — this is
+//    the textbook spurious-regression case and is exactly what the machine
+//    blocks' stated method ("Pearson on daily log returns") is supposed to
+//    guard against.
+{
+  const dates = []
+  for (let i = 0; i < 60; i++) dates.push(`2026-05-${String(1 + i).padStart(2, '0')}`.slice(0, 10))
+  // deterministic pseudo-noise (no RNG — keeps the vector reproducible)
+  const noiseA = [2, -1, 3, -2, 1, -3, 2, -1, 0, 1, -2, 3]
+  const noiseB = [-3, 1, -1, 2, -2, 0, 3, -1, 2, -3, 1, 0]
+  const trendA = [], trendB = []
+  let a = 100, b = 200
+  for (let i = 0; i < 60; i++) {
+    a += 1 + noiseA[i % noiseA.length] * 0.3
+    b += 1.5 + noiseB[i % noiseB.length] * 0.3
+    trendA.push({ date: dates[i], close: Math.round(a * 100) / 100 })
+    trendB.push({ date: dates[i], close: Math.round(b * 100) / 100 })
+  }
+  const levelCorr = pearson(trendA.map(r => r.close), trendB.map(r => r.close))
+  const c = correlationFromCloses(trendA, trendB)
+  ok('two independently-trending series: RAW LEVEL corr is spuriously high (>0.9)', levelCorr > 0.9)
+  ok('...but the SHIPPED function (log returns) reads it as near-zero / mild at most, not risk-on', c.corr < 0.5)
+}
 
 // ── trading-day calendar (commit 13) ────────────────────────────────────────
 eq('weekdayOf a known Monday', weekdayOf('2026-01-19'), 'Monday')
