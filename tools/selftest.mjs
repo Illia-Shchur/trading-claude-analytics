@@ -7,7 +7,7 @@
 import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds, FK_V_GATES,
   median, stdev, pearson, pctChange, consecutiveRun, smaSlope, logReturns, alignSeries,
   percentileRank, distributionStats, realizedVol, realizedVolBlock, rollingRealizedVol,
-  rollingWilderRSI, rollingDrawdownFromATH, rollingSMADistance, deribitVolBlock, basisBlock,
+  rollingWilderRSI, rollingDrawdownFromATH, rollingSMADistance, deribitVolBlock, basisBlock, positioningBlock,
   dailyTrend, frStallConfirmation, frComposite, frCompanion, spotPanel, fundingBlock,
   corrSurcharge, correlationRegime, correlationFromCloses,
   fk, fr, weightedEV, evCheck, stopCoherence, adr, fngStreak,
@@ -148,6 +148,23 @@ function round2Local(x) { return Math.round(x * 100) / 100 }
   eq('negative funding labels "shorts pay longs"', basisBlock({ mark: 100, index: 100, fundingAnnualizedPct: -2 }).label, 'negative (shorts pay longs)')
   eq('vs_risk_free_pp is null when riskFreePct is not supplied (never a guessed 0)', basisBlock({ mark: 100, index: 99, fundingAnnualizedPct: 5 }).vs_risk_free_pp, null)
   ok('sign_convention statement matches fr.annualizedFunding()\'s own convention verbatim', b.sign_convention.includes('POSITIVE funding = longs pay shorts = carry INCOME to a short'))
+}
+
+// ── positioningBlock (C3) — Binance positioning, 30d honesty constraints ───
+{
+  const ls = [{ longShortRatio: '1.80' }, { longShortRatio: '2.00' }, { longShortRatio: '2.21' }]
+  const taker = [{ buySellRatio: '0.95' }, { buySellRatio: '1.01' }, { buySellRatio: '0.98' }]
+  const oi = [{ sumOpenInterest: '100000' }, { sumOpenInterest: '105000' }, { sumOpenInterest: '104000' }]
+  const p = positioningBlock({ longShortRows: ls, takerRows: taker, oiRows: oi })
+  eq('long_short latest = last row', p.long_short_account_ratio.latest, 2.21)
+  eq('long_short direction: rising (2.21 > 2.00)', p.long_short_account_ratio.direction, 'rising')
+  eq('taker direction: falling (0.98 < 1.01)', p.taker_buy_sell_ratio.direction, 'falling')
+  eq('oi direction: falling (104000 < 105000)', p.open_interest.direction, 'falling')
+  eq('oi_90d_high_available carried through as false, unchanged from fundingBlock() discipline', p.open_interest.oi_90d_high_available, false)
+  eq('oi_within_5pct_of_90d_high stays null, never a guessed boolean', p.open_interest.oi_within_5pct_of_90d_high, null)
+  eq('history_days reports the actual count obtained (3), never a 90d claim', p.history_days, 3)
+  ok('scope_note states single-venue/account-weighted explicitly, not just in a comment', p.scope_note.includes('SINGLE-VENUE') && p.scope_note.includes('ACCOUNT-weighted'))
+  ok('missing series → null sub-blocks, not a crash', positioningBlock({}).long_short_account_ratio === null)
 }
 ok('pearson throws on length mismatch', (() => { try { pearson([1, 2], [1]); return false } catch (e) { return true } })())
 eq('pearson perfect positive', pearson([1, 2, 3], [2, 4, 6]), 1)

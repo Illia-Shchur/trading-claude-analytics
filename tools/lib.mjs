@@ -470,6 +470,57 @@ export function basisBlock({ mark = null, index = null, fundingAnnualizedPct = n
 }
 
 /**
+ * Binance derivatives positioning context (market-data-extension plan, C3).
+ * DISCLOSED CONTEXT ONLY — not a scored leg or gate. Combines three raw
+ * Binance fapi series, each already chronological (oldest → newest), each
+ * passed as-is from the endpoint:
+ *  - `longShortRows`: futures/data/globalLongShortAccountRatio ({longShortRatio, ...})
+ *  - `takerRows`: futures/data/takerlongshortRatio ({buySellRatio, ...})
+ *  - `oiRows`: futures/data/openInterestHist ({sumOpenInterest, ...})
+ *
+ * Two honesty constraints stated IN THE OUTPUT, not only a comment — this
+ * mirrors fundingBlock()'s existing oi_90d_high_available discipline:
+ *  - Binance's own endpoints cap this history at ~30 days — `history_days`
+ *    reports the ACTUAL count obtained, never a 90-day claim.
+ *  - these are Binance-ACCOUNT-weighted, SINGLE-VENUE series — not
+ *    market-wide open interest and not a cross-exchange volume measure.
+ * `oi_90d_high_available`/`oi_within_5pct_of_90d_high` are carried through
+ * UNCHANGED from fundingBlock()'s existing null/false discipline — this
+ * function does not attempt to satisfy that 90d requirement from 30d data.
+ */
+export function positioningBlock({ longShortRows = [], takerRows = [], oiRows = [] } = {}) {
+  const nums = (rows, field) => (rows || []).map(r => Number(r && r[field])).filter(v => Number.isFinite(v))
+  const latest = arr => (arr.length ? arr[arr.length - 1] : null)
+  const direction = (hist, current) => {
+    if (current == null || hist.length < 2) return null
+    const prior = hist[hist.length - 2]
+    return current > prior ? 'rising' : current < prior ? 'falling' : 'flat'
+  }
+
+  const lsHist = nums(longShortRows, 'longShortRatio')
+  const takerHist = nums(takerRows, 'buySellRatio')
+  const oiHist = nums(oiRows, 'sumOpenInterest')
+
+  const lsNow = latest(lsHist), takerNow = latest(takerHist), oiNow = latest(oiHist)
+
+  return {
+    long_short_account_ratio: lsHist.length ? {
+      latest: lsNow, percentile_vs_history: percentileRank(lsHist.slice(0, -1), lsNow), direction: direction(lsHist, lsNow),
+    } : null,
+    taker_buy_sell_ratio: takerHist.length ? {
+      latest: takerNow, percentile_vs_history: percentileRank(takerHist.slice(0, -1), takerNow), direction: direction(takerHist, takerNow),
+    } : null,
+    open_interest: oiHist.length ? {
+      latest: oiNow, percentile_vs_history: percentileRank(oiHist.slice(0, -1), oiNow), direction: direction(oiHist, oiNow),
+      oi_90d_high_available: false, oi_within_5pct_of_90d_high: null,
+    } : null,
+    history_days: Math.max(lsHist.length, takerHist.length, oiHist.length),
+    scope_note: 'Binance-ACCOUNT-weighted, SINGLE-VENUE series (not market-wide OI, not a cross-exchange measure); history capped at ~30 days by the endpoint itself, never treated as 90d',
+    note: 'DISCLOSED CONTEXT ONLY — not a scored leg or gate',
+  }
+}
+
+/**
  * Log returns of a chronological closes series. Null-skips any pair spanning
  * a non-positive close (log undefined) rather than throwing — a single bad
  * print should not void an entire correlation window.

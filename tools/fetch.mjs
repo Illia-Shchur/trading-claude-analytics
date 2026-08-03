@@ -22,7 +22,8 @@
 import { pathToFileURL } from 'node:url'
 import { wilderRSI, sma, drawdownPct, adr, fngStreak, dailyTrend, spotPanel, fundingBlock, fr,
   percentileRank, realizedVolBlock, rollingRealizedVol,
-  rollingWilderRSI, rollingDrawdownFromATH, rollingSMADistance, deribitVolBlock, basisBlock, _internal } from './lib.mjs'
+  rollingWilderRSI, rollingDrawdownFromATH, rollingSMADistance, deribitVolBlock, basisBlock,
+  positioningBlock, _internal } from './lib.mjs'
 const { round2 } = _internal
 
 // annualize: realized-vol annualization convention (market-data-extension
@@ -108,6 +109,19 @@ function dailyAnnualizedFundingSeries(intervals) {
   return days.map(d => fr.annualizedFunding(d.values.reduce((a, b) => a + b, 0) / d.values.length))
 }
 
+async function binanceLongShortRatio(symbol, limit) {
+  const rows = await getJSON(`https://fapi.binance.com/futures/data/globalLongShortAccountRatio?symbol=${encodeURIComponent(symbol)}&period=1d&limit=${limit}`)
+  return Array.isArray(rows) ? rows : []
+}
+async function binanceTakerRatio(symbol, limit) {
+  const rows = await getJSON(`https://fapi.binance.com/futures/data/takerlongshortRatio?symbol=${encodeURIComponent(symbol)}&period=1d&limit=${limit}`)
+  return Array.isArray(rows) ? rows : []
+}
+async function binanceOpenInterestHist(symbol, limit) {
+  const rows = await getJSON(`https://fapi.binance.com/futures/data/openInterestHist?symbol=${encodeURIComponent(symbol)}&period=1d&limit=${limit}`)
+  return Array.isArray(rows) ? rows : []
+}
+
 async function binancePremiumIndex(symbol) {
   const j = await getJSON(`https://fapi.binance.com/fapi/v1/premiumIndex?symbol=${encodeURIComponent(symbol)}`)
   if (j.markPrice == null || j.indexPrice == null) throw new Error(`binance premiumIndex: missing mark/index for ${symbol}`)
@@ -176,7 +190,8 @@ async function fetchAsset(key, { series = false } = {}) {
   const attempt = async (label, fn) => { try { return await fn() } catch (e) { outp.errors.push(`${label}: ${e.message}`); return null } }
 
   const venues = a.venues || {}
-  const [cgSpot, cgCoin, weekly, daily, cross, fng, binanceQ, coinbaseQ, krakenQ, funding, dvolCandles, optionBook, premiumIndex] = await Promise.all([
+  const [cgSpot, cgCoin, weekly, daily, cross, fng, binanceQ, coinbaseQ, krakenQ, funding, dvolCandles, optionBook, premiumIndex,
+    longShortRows, takerRows, oiRows] = await Promise.all([
     // include_last_updated_at reuses this SAME call for the spot panel (commit
     // 7) — no new CoinGecko request.
     a.cg ? attempt('coingecko spot', () => getJSON(`https://api.coingecko.com/api/v3/simple/price?ids=${a.cg}&vs_currencies=usd&include_last_updated_at=true`)) : null,
@@ -207,6 +222,10 @@ async function fetchAsset(key, { series = false } = {}) {
     a.deribit ? attempt('deribit option book', () => deribitOptionBook(a.deribit)) : null,
     // same condition as funding — premiumIndex needs a perp market
     a.perp ? attempt('binance premiumIndex', () => binancePremiumIndex(a.perp)) : null,
+    // positioning (C3) — same a.perp gate; Binance fapi caps these at ~30d
+    a.perp ? attempt('binance long/short ratio', () => binanceLongShortRatio(a.perp, 30)) : null,
+    a.perp ? attempt('binance taker ratio', () => binanceTakerRatio(a.perp, 30)) : null,
+    a.perp ? attempt('binance open interest hist', () => binanceOpenInterestHist(a.perp, 30)) : null,
   ])
 
   // spot — cross-checked across sources; >1.5% divergence flagged
@@ -372,6 +391,11 @@ async function fetchAsset(key, { series = false } = {}) {
     if (premiumIndex && outp.funding) {
       ctx.basis = { source: `Binance fapi premiumIndex (${a.perp})`,
         ...basisBlock({ mark: premiumIndex.markPrice, index: premiumIndex.indexPrice, fundingAnnualizedPct: outp.funding.mean_annualized_pct }) }
+    }
+
+    if (a.perp && ((longShortRows && longShortRows.length) || (takerRows && takerRows.length) || (oiRows && oiRows.length))) {
+      ctx.positioning = { source: `Binance fapi globalLongShortAccountRatio + takerlongshortRatio + openInterestHist (${a.perp})`,
+        ...positioningBlock({ longShortRows: longShortRows || [], takerRows: takerRows || [], oiRows: oiRows || [] }) }
     }
 
     if (fng && fng.data) {
