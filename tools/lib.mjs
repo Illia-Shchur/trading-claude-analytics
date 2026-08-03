@@ -338,6 +338,21 @@ export const fr = {
   athDistanceBand(pctBelow) { return pctBelow < 5 ? 5 : pctBelow < 15 ? 3 : pctBelow < 30 ? 1 : 0 },
 
   /**
+   * §4A distribution leg, count of 3 conditions (a/b/c) → same number, clamped
+   * 0–3. Numerically identical to frB.structureBand today but kept as a
+   * SEPARATE function, not an alias: this mirrors a different SKILL section
+   * (§4A distribution vs §4B bear-structure), and an alias would let a future
+   * calibration move one band and silently move the other.
+   */
+  distributionBand(n) { return Math.max(0, Math.min(3, n | 0)) },
+
+  /**
+   * §4A vulnerability leg, count of 3 conditions (b/c + MVRV-Z) → same number,
+   * clamped 0–3. Same non-aliasing rationale as distributionBand above.
+   */
+  vulnerabilityBand(n) { return Math.max(0, Math.min(3, n | 0)) },
+
+  /**
    * Phase-of-cycle hard cap from % below 1-year ATH: >20%→cap 8 · 10–20%→cap 14 ·
    * <10%→no cap. Exact 20→14 (SKILL letter); exact 10→14 (ambiguous → conservative
    * = cap applies: a cap lowers the score, the harder-to-short direction).
@@ -520,6 +535,34 @@ export const FR_SCORE_UNLOCK_B = { p1a: 13, p1b: 15, p2: 17 }
 
 /** The ladder for a channel. Channel B has no p3 entry — the phase is unreachable. */
 export function frUnlockLadder(channel) { return channel === 'B' ? FR_SCORE_UNLOCK_B : FR_SCORE_UNLOCK }
+
+/**
+ * Score composite arithmetic — extracted verbatim from lint-report.mjs's
+ * inline score check (commit 5 swaps the linter to call this instead of
+ * reimplementing the math). Shared by FK and FR: FK calls with `penalty:0`,
+ * which collapses every FR-only term to a no-op.
+ *
+ * `mechanical` excludes `discretionary` by construction — it is what every
+ * protective rule reads (D1/S1: "discretion buys entries, never exits").
+ * `raw`/`adjusted` include it. BOTH are clamped 0–20 BEFORE any cap is
+ * applied — a cap lowers an already-valid score, it does not participate in
+ * producing one. `cap.applied` (not merely `cap` being present) gates the cap,
+ * matching the linter's `S.cap && S.cap.applied` check exactly.
+ */
+export function frComposite({ legs, penalty = 0, discretionary = 0, rounding, channel = 'A', cap = null } = {}) {
+  const legSum = Object.values(legs || {}).reduce((a, v) => a + (v || 0), 0)
+  const raw = round2(legSum + penalty + discretionary)
+  const mechanicalUnrounded = roundScore(legSum + penalty, rounding)
+  const adjustedUnrounded = roundScore(raw, rounding)
+  const mechanicalClamped = Math.max(0, Math.min(20, mechanicalUnrounded))
+  const adjustedClamped = Math.max(0, Math.min(20, adjustedUnrounded))
+  const capApplied = !!(cap && cap.applied)
+  const capValue = cap ? cap.value : null
+  const mechanical = capApplied ? Math.min(mechanicalClamped, capValue) : mechanicalClamped
+  const adjusted = capApplied ? Math.min(adjustedClamped, capValue) : adjustedClamped
+  const clamped = mechanicalClamped !== mechanicalUnrounded || adjustedClamped !== adjustedUnrounded
+  return { leg_sum: legSum, penalty, mechanical, raw, adjusted, cap_applied: capApplied, cap_value: capValue, clamped, channel }
+}
 
 /** Legacy /9 gate floors; 1A moved 4 → 3 on 2026-07-27. Convert with ceilThresholds(). */
 export const FR_GATE_FLOORS = { p1a: 3, p1b: 5, p2: 6, p3: 8 }

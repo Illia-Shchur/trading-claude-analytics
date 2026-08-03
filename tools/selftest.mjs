@@ -6,7 +6,7 @@
 // ============================================================================
 import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds, FK_V_GATES,
   median, stdev, pearson, pctChange, consecutiveRun, smaSlope, logReturns, alignSeries,
-  dailyTrend, frStallConfirmation,
+  dailyTrend, frStallConfirmation, frComposite,
   fk, fr, weightedEV, evCheck, stopCoherence, adr, fngStreak,
   FK_SCORE_UNLOCK, fkPhasesUnlockedByScore, discretionValid, d5StopCheck, ratchetCheck,
   mechanicalScore, frChannel, frB, FR_SCORE_UNLOCK, FR_GATE_FLOORS, frPhasesUnlockedByScore,
@@ -301,9 +301,68 @@ eq('daily RSI exactly 65 → lower band 3, not 4', frB.momentumBand(65, 40), 3)
 eq('weekly RSI ≥50 forces the leg to 0 however hot the daily', frB.momentumBand(72, 50), 0)
 eq('weekly RSI absent → daily alone governs', frB.momentumBand(72), 4)
 eq('resistance 4/4 → 5', frB.resistanceBand(4), 5)
+eq('resistance 3/4 → 4', frB.resistanceBand(3), 4)
+eq('resistance 2/4 → 3', frB.resistanceBand(2), 3)
 eq('resistance 1/4 → 1 (no 2-point band)', frB.resistanceBand(1), 1)
+eq('resistance 0/4 → 0', frB.resistanceBand(0), 0)
 eq('bounce younger than 8 sessions costs 2 raw', frB.maturityPenalty(3), -2)
+eq('bounce of 7 sessions still costs 2 raw (edge below 8)', frB.maturityPenalty(7), -2)
 eq('bounce of exactly 8 sessions is mature', frB.maturityPenalty(8), 0)
+eq('structureBand count 2 → 2', frB.structureBand(2), 2)
+eq('structureBand clamps above 3', frB.structureBand(5), 3)
+eq('structureBand clamps below 0', frB.structureBand(-1), 0)
+eq('sentimentBand count 2 → 2', frB.sentimentBand(2), 2)
+eq('sentimentBand clamps above 3', frB.sentimentBand(9), 3)
+
+// ── fr.distributionBand / fr.vulnerabilityBand (commit 4) ───────────────────
+// Numerically identical to frB.structureBand today but a SEPARATE function —
+// see the JSDoc on why aliasing would be wrong.
+eq('distributionBand count 2 → 2', fr.distributionBand(2), 2)
+eq('distributionBand clamps above 3', fr.distributionBand(4), 3)
+eq('distributionBand clamps below 0', fr.distributionBand(-1), 0)
+eq('vulnerabilityBand count 1 → 1', fr.vulnerabilityBand(1), 1)
+eq('vulnerabilityBand clamps above 3', fr.vulnerabilityBand(7), 3)
+
+// ── frComposite (commit 4) — extracted verbatim from lint-report.mjs's ─────
+// inline score arithmetic; commit 5 proves the linter gets the same numbers.
+{
+  // FK shape: penalty:0 collapses every FR-only term to a no-op.
+  const fkc = frComposite({ legs: { sentiment: 3, momentum: 2, valuation: 1, capitulation: 1, holder: 1 },
+    penalty: 0, discretionary: 0.5, rounding: 'half-up' })
+  eq('FK leg_sum = 8', fkc.leg_sum, 8)
+  eq('FK raw = 8 + 0 + 0.5 = 8.5', fkc.raw, 8.5)
+  eq('FK mechanical = round(8) = 8 (no discretionary, no penalty)', fkc.mechanical, 8)
+  eq('FK adjusted = round(8.5) half-up = 9', fkc.adjusted, 9)
+  ok('FK cap never applies (no cap passed)', fkc.cap_applied === false && fkc.cap_value === null)
+  ok('FK not clamped — nothing near the 0/20 band edge', fkc.clamped === false)
+}
+{
+  // FR shape with a binding cap: mechanical and adjusted both exceed cap.value
+  // before the cap, so it must visibly change BOTH.
+  const frc = frComposite({ legs: { euphoria: 3, momentum: 2, valuation: 1, distribution: 3, vulnerability: 2 },
+    penalty: -2, discretionary: 1, rounding: 'half-up', channel: 'A', cap: { applied: true, value: 8 } })
+  eq('FR leg_sum = 11', frc.leg_sum, 11)
+  eq('FR raw = 11 - 2 + 1 = 10', frc.raw, 10)
+  eq('FR mechanical pre-cap would be round(11-2)=9, capped to 8', frc.mechanical, 8)
+  eq('FR adjusted pre-cap would be round(10)=10, capped to 8', frc.adjusted, 8)
+  ok('cap_applied true, cap_value 8', frc.cap_applied === true && frc.cap_value === 8)
+  eq('channel passed through unchanged', frc.channel, 'A')
+}
+{
+  // A cap object present but NOT applied must be a no-op — matches the
+  // linter's `S.cap && S.cap.applied` check exactly, not merely `S.cap`.
+  const notApplied = frComposite({ legs: { euphoria: 5, momentum: 4, valuation: 5, distribution: 3, vulnerability: 3 },
+    penalty: 0, discretionary: 0, rounding: 'half-up', cap: { applied: false, value: 8 } })
+  eq('cap present but applied:false does not bind', notApplied.adjusted, 20)
+}
+{
+  // Both mechanical and adjusted clamp to the 0-20 band BEFORE any cap.
+  const overflow = frComposite({ legs: { euphoria: 5, momentum: 4, valuation: 5, distribution: 3, vulnerability: 3 },
+    penalty: 5, discretionary: 2, rounding: 'half-up' })
+  eq('leg_sum 20 + penalty 5 clamps mechanical to 20', overflow.mechanical, 20)
+  eq('raw 20+5+2=27 clamps adjusted to 20', overflow.adjusted, 20)
+  ok('clamped flag records that the band edge was hit', overflow.clamped === true)
+}
 
 // Score lines: cut 13/15/17 → 11/13/15; Phase 3 held at 19 and mechanical-only.
 eq('FR unlock lines', FR_SCORE_UNLOCK, { p1a: 11, p1b: 13, p2: 15, p3: 19 })

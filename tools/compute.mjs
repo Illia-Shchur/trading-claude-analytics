@@ -20,12 +20,14 @@
 //   node tools/compute.mjs trend --sessions '<json array of {date,high,low,close}>' [--spot N]
 //        [--fast 50] [--slow 200] [--slope-n 20] [--low-n 40]
 //   node tools/compute.mjs stall --close N --prior-close N --high N --bounce-high N
+//   node tools/compute.mjs fr-composite --legs '<json {name:value}>' [--penalty N] [--discretionary N]
+//        --rounding half-up|half-down [--channel A|B] [--cap-applied] [--cap-value N]
 // JSON args may also be passed as @path/to/file.json
 // ============================================================================
 import { readFileSync } from 'node:fs'
 import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds,
   fk, fr, weightedEV, evCheck, stopCoherence, adr, fngStreak,
-  dailyTrend, frStallConfirmation } from './lib.mjs'
+  dailyTrend, frStallConfirmation, frComposite } from './lib.mjs'
 
 const [, , cmd, ...rest] = process.argv
 const args = [], flags = {}
@@ -73,6 +75,8 @@ switch (cmd) {
       'fr-momentum': () => ({ band: fr.momentumBand(v) }),
       'fr-mvrv': () => ({ band: fr.mvrvZBand(v) }),
       'fr-ath': () => ({ band: fr.athDistanceBand(v) }),
+      'fr-distribution': () => ({ band: fr.distributionBand(v) }),
+      'fr-vulnerability': () => ({ band: fr.vulnerabilityBand(v) }),
     }
     if (!table[kind]) fail(`unknown band kind "${kind}" — one of ${Object.keys(table).join(', ')}`)
     out({ kind, value: v, ...table[kind]() })
@@ -142,6 +146,19 @@ switch (cmd) {
     }))
     break
   }
+  case 'fr-composite': {
+    if (!flags.legs) fail('pass --legs <json {name:value}>')
+    const cap = flags['cap-applied'] || flags['cap-value'] != null
+      ? { applied: !!flags['cap-applied'], value: flags['cap-value'] != null ? num(flags['cap-value']) : null }
+      : null
+    out(frComposite({
+      legs: json(flags.legs),
+      penalty: flags.penalty != null ? num(flags.penalty) : 0,
+      discretionary: flags.discretionary != null ? num(flags.discretionary) : 0,
+      rounding: flags.rounding, channel: flags.channel || 'A', cap,
+    }))
+    break
+  }
   default:
-    fail(`unknown command "${cmd || ''}" — rsi | thresholds | round | band | ev | stop-coherence | adr | streak | fr-funding | fr-cap | sma | drawdown | trend | stall (see header of tools/compute.mjs)`)
+    fail(`unknown command "${cmd || ''}" — rsi | thresholds | round | band | ev | stop-coherence | adr | streak | fr-funding | fr-cap | sma | drawdown | trend | stall | fr-composite (see header of tools/compute.mjs)`)
 }
