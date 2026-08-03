@@ -294,6 +294,56 @@ export function rollingRealizedVol(closes, { window = 30, annualize = 365 } = {}
 }
 
 /**
+ * Rolling Wilder RSI series (market-data-extension plan, B3) — one
+ * wilderRSI().rsi reading per trailing point in `closes`, so the LATEST
+ * weekly/daily RSI-14 can be percentile-ranked against its own history
+ * instead of judged only against the fixed FK/FR bands. Pure; drops points
+ * where wilderRSI() itself reports insufficient history (never fabricates
+ * an early reading).
+ */
+export function rollingWilderRSI(closes, period = 14) {
+  const out = []
+  for (let i = period + 1; i <= closes.length; i++) {
+    const r = wilderRSI(closes.slice(0, i), period)
+    if (r.rsi != null) out.push(r.rsi)
+  }
+  return out
+}
+
+/**
+ * Rolling drawdown-from-running-ATH series (market-data-extension plan,
+ * B3) — at each point, % below the highest close SEEN SO FAR (not the
+ * eventual full-series high, which would be look-ahead bias). Feeds the
+ * "drawdown-from-ATH percentile" context field. Pure.
+ */
+export function rollingDrawdownFromATH(closes) {
+  const out = []
+  let runningHigh = -Infinity
+  for (const c of closes) {
+    if (typeof c !== 'number') continue
+    runningHigh = Math.max(runningHigh, c)
+    out.push(drawdownPct(c, runningHigh))
+  }
+  return out
+}
+
+/**
+ * Rolling % distance from a trailing SMA(n) (market-data-extension plan,
+ * B3) — e.g. distance-to-200dma at every historical point, for percentile
+ * ranking the CURRENT distance. Pure; points before `n` closes exist are
+ * skipped, not fabricated.
+ */
+export function rollingSMADistance(closes, n) {
+  const out = []
+  for (let i = n; i <= closes.length; i++) {
+    const window = closes.slice(0, i)
+    const s = sma(window, n)
+    if (s != null && s !== 0) out.push(round2((window[window.length - 1] / s - 1) * 100))
+  }
+  return out
+}
+
+/**
  * Log returns of a chronological closes series. Null-skips any pair spanning
  * a non-positive close (log undefined) rather than throwing — a single bad
  * print should not void an entire correlation window.

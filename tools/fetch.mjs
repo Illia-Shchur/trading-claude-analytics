@@ -20,19 +20,25 @@
 // instead of killing the run (the report then follows the SKILL's NOT-FOUND rules).
 // ============================================================================
 import { pathToFileURL } from 'node:url'
-import { wilderRSI, sma, drawdownPct, adr, fngStreak, dailyTrend, spotPanel, fundingBlock, _internal } from './lib.mjs'
+import { wilderRSI, sma, drawdownPct, adr, fngStreak, dailyTrend, spotPanel, fundingBlock, fr,
+  percentileRank, realizedVolBlock, rollingRealizedVol,
+  rollingWilderRSI, rollingDrawdownFromATH, rollingSMADistance, _internal } from './lib.mjs'
 const { round2 } = _internal
 
+// annualize: realized-vol annualization convention (market-data-extension
+// plan, B3) — crypto trades 365 days/year, gold trades an equity-like
+// calendar (~252). Asset-class property, mirrors isTradingDay()'s
+// assetClass split in lib.mjs; NOT a scored input.
 const ASSETS = {
-  btc: { cg: 'bitcoin', yahoo: 'BTC-USD', fng: true, perp: 'BTCUSDT',
+  btc: { cg: 'bitcoin', yahoo: 'BTC-USD', fng: true, perp: 'BTCUSDT', annualize: 365,
     venues: { binance: 'BTCUSDT', coinbase: 'BTC-USD', kraken: 'XBTUSD' } },
-  eth: { cg: 'ethereum', yahoo: 'ETH-USD', fng: true, perp: 'ETHUSDT',
+  eth: { cg: 'ethereum', yahoo: 'ETH-USD', fng: true, perp: 'ETHUSDT', annualize: 365,
     venues: { binance: 'ETHUSDT', coinbase: 'ETH-USD', kraken: 'ETHUSD' } },
-  sol: { cg: 'solana', yahoo: 'SOL-USD', fng: true, perp: 'SOLUSDT',
+  sol: { cg: 'solana', yahoo: 'SOL-USD', fng: true, perp: 'SOLUSDT', annualize: 365,
     venues: { binance: 'SOLUSDT', coinbase: 'SOL-USD', kraken: 'SOLUSD' } },
   // Gold has no crypto-exchange venues or perp — the spot panel degrades to
   // n_synchronized:0 + low_confidence:true, and `funding` is absent, not zero.
-  gold: { yahoo: 'GC=F', crossYahoo: 'MGC=F', fng: false, athRange: '10y', venues: {} },
+  gold: { yahoo: 'GC=F', crossYahoo: 'MGC=F', fng: false, athRange: '10y', annualize: 252, venues: {} },
 }
 const UA = { headers: { 'User-Agent': 'Mozilla/5.0 (trading-claude-analytics toolchain)' } }
 
@@ -77,6 +83,24 @@ async function krakenQuote(pair) {
   return { source: 'Kraken', symbol: pair, value: Number(result.c[0]), ts: null, ts_kind: 'receipt' }
 }
 
+/**
+ * Reshape raw Binance 8h funding intervals into one mean-annualized-pct
+ * value PER CALENDAR DAY, chronological (market-data-extension plan, B3) —
+ * the history array a current funding reading is percentile-ranked against.
+ * Mirrors fundingBlock()'s own day-grouping (tools/lib.mjs) so the two never
+ * drift into different day-bucketing conventions.
+ */
+function dailyAnnualizedFundingSeries(intervals) {
+  const days = []
+  for (const iv of intervals) {
+    const key = new Date(iv.fundingTime).toISOString().slice(0, 10)
+    const pct = Number(iv.fundingRate) * 100
+    const day = days.find(d => d.key === key)
+    if (day) day.values.push(pct); else days.push({ key, values: [pct] })
+  }
+  return days.map(d => fr.annualizedFunding(d.values.reduce((a, b) => a + b, 0) / d.values.length))
+}
+
 async function binanceFunding(symbol, limit) {
   const rows = await getJSON(`https://fapi.binance.com/fapi/v1/fundingRate?symbol=${encodeURIComponent(symbol)}&limit=${limit}`)
   if (!Array.isArray(rows) || rows.length === 0) throw new Error(`binance fapi: no funding history for ${symbol}`)
@@ -88,15 +112,22 @@ async function yahooChart(symbol, range, interval) {
   const res = j.chart && j.chart.result && j.chart.result[0]
   if (!res || !res.timestamp) throw new Error(`yahoo: empty result for ${symbol}`)
   const q = res.indicators.quote[0]
+  // volume kept from here on (market-data-extension plan, B3) — Yahoo
+  // returns it and it was fetched and discarded before; purely additive,
+  // every existing consumer of a candle object ignores unknown keys.
   return res.timestamp.map((t, i) => ({ t: t * 1000, date: new Date(t * 1000).toISOString().slice(0, 10),
-    open: q.open[i], high: q.high[i], low: q.low[i], close: q.close[i] }))
+    open: q.open[i], high: q.high[i], low: q.low[i], close: q.close[i], volume: q.volume[i] }))
     .filter(c => c.close != null)
 }
 
-function weeklyBlock(candles, spot) {
-  // last candle is the in-progress week if now < candle start + 7d
+/** Drop the in-progress final candle if "now" is before its bar closes. */
+function completedCandles(candles, barMs) {
   const last = candles[candles.length - 1]
-  const lastComplete = Date.now() >= last.t + 7 * 86400e3 ? candles : candles.slice(0, -1)
+  return Date.now() >= last.t + barMs ? candles : candles.slice(0, -1)
+}
+
+function weeklyBlock(candles, spot) {
+  const lastComplete = completedCandles(candles, 7 * 86400e3)
   const closes = lastComplete.map(c => c.close)
   const rsi = wilderRSI(closes, 14)
   const rsiLive = wilderRSI(candles.map(c => c.close), 14)
@@ -133,13 +164,22 @@ async function fetchAsset(key, { series = false } = {}) {
     // tight once holidays thin GC=F's calendar.
     attempt('yahoo daily', () => yahooChart(a.yahoo, '2y', '1d')),
     a.crossYahoo ? attempt('yahoo cross-spot', () => yahooChart(a.crossYahoo, '5d', '1d')) : null,
-    a.fng ? attempt('alternative.me fng', () => getJSON('https://api.alternative.me/fng/?limit=30')) : null,
+    // limit 30 → 730: SAME endpoint, SAME single request — only the query
+    // param grows. The extra history feeds the F&G percentile-vs-2y context
+    // field (B3); outp.sentiment's existing shape (spot/avg_3d/streaks) is
+    // computed from the SAME leading entries either way and is unchanged.
+    a.fng ? attempt('alternative.me fng', () => getJSON('https://api.alternative.me/fng/?limit=730')) : null,
     venues.binance ? attempt('binance spot', () => binanceQuote(venues.binance)) : null,
     venues.coinbase ? attempt('coinbase spot', () => coinbaseQuote(venues.coinbase)) : null,
     venues.kraken ? attempt('kraken spot', () => krakenQuote(venues.kraken)) : null,
     // gold has no perp — ASSETS.gold has no `perp` symbol, so this block is
     // ABSENT from the report, never a zero standing in for "not applicable".
-    a.perp ? attempt('binance funding', () => binanceFunding(a.perp, 45)) : null,
+    // limit 45 → 1000: SAME endpoint, SAME single request, larger query
+    // param — Binance fapi caps at 1000 rows (~333 days, not the full 2y).
+    // outp.funding still calls fundingBlock(funding, {n:45}) below, so its
+    // existing shape is unchanged; the extra rows only feed the funding
+    // percentile-vs-history context field (B3).
+    a.perp ? attempt('binance funding', () => binanceFunding(a.perp, 1000)) : null,
   ])
 
   // spot — cross-checked across sources; >1.5% divergence flagged
@@ -217,11 +257,17 @@ async function fetchAsset(key, { series = false } = {}) {
   // sentiment: F&G spot, 3-day avg (the scored input), gate-1 streaks (daily prints)
   if (fng && fng.data) {
     const series = fng.data.map(d => ({ value: Number(d.value), date: new Date(Number(d.timestamp) * 1000).toISOString().slice(0, 10) }))
+    // streak input pinned to the first 30 entries (the request's old `limit`)
+    // — the request now fetches 730 for the percentile context field below,
+    // but the SCORED streak fields must reproduce byte-identically regardless
+    // of that unrelated history extension (market-data-extension plan, B3
+    // gate: no pre-existing field may change value).
+    const streakSeries = series.slice(0, 30)
     outp.sentiment = {
       source: 'alternative.me (pinned provider, raw API daily series)',
       spot: series[0].value, classification: fng.data[0].value_classification,
       avg_3d: round2((series[0].value + series[1].value + series[2].value) / 3),
-      streaks_daily_prints: { le10: fngStreak(series, 10), le15: fngStreak(series, 15), le20: fngStreak(series, 20), le25: fngStreak(series, 25) },
+      streaks_daily_prints: { le10: fngStreak(streakSeries, 10), le15: fngStreak(streakSeries, 15), le20: fngStreak(streakSeries, 20), le25: fngStreak(streakSeries, 25) },
       last_10_prints: series.slice(0, 10),
       note: 'score the 3-day average; gate-1 streak counts DAILY prints ≤15 (≥7 consecutive)',
     }
@@ -229,6 +275,78 @@ async function fetchAsset(key, { series = false } = {}) {
 
   // funding: absent (not zero) when the asset has no perp, e.g. gold
   if (funding) outp.funding = { source: `Binance fapi fundingRate (${a.perp}, ${funding.length} intervals)`, ...fundingBlock(funding) }
+
+  // context — DISCLOSED CONTEXT ONLY (market-data-extension plan, Tier 0,
+  // B1-B3). Deliberately NOT nested under score/weekly/trend so nothing
+  // downstream mistakes it for a scored input; every field here re-expresses
+  // an EXISTING metric against its own recent history. No band, gate,
+  // threshold, phase size, stop, or cap reads from this block — promoting
+  // any of it into the rubric is a framework-calibration job, not a
+  // toolchain one.
+  {
+    const ctx = {}
+    const dailyCloses = daily ? daily.map(c => c.close) : null
+
+    if (dailyCloses) {
+      ctx.realized_vol = realizedVolBlock(dailyCloses, { annualize: a.annualize })
+      const rv30Hist = rollingRealizedVol(dailyCloses, { window: 30, annualize: a.annualize })
+      ctx.realized_vol.rv30_percentile_vs_2y = rv30Hist.length ? percentileRank(rv30Hist, ctx.realized_vol.rv30) : null
+
+      const ddHist = rollingDrawdownFromATH(dailyCloses)
+      const ddCurrent = ddHist.length ? ddHist[ddHist.length - 1] : null
+      ctx.drawdown_pct_vs_2y_high = ddCurrent
+      ctx.drawdown_pct_vs_2y_high_percentile = ddHist.length ? percentileRank(ddHist, ddCurrent) : null
+      ctx.drawdown_note = 'running high WITHIN the fetched 2y daily window, not the true all-time high — see outp.ath for the ATH drawdown'
+
+      if (outp.trend && outp.trend.ma200 != null && spot != null) {
+        const distNow = round2((spot / outp.trend.ma200 - 1) * 100)
+        const smaDistHist = rollingSMADistance(dailyCloses, 200)
+        ctx.distance_to_200dma_pct = distNow
+        ctx.distance_to_200dma_percentile = smaDistHist.length ? percentileRank(smaDistHist, distNow) : null
+      }
+
+      const lastDaily = daily[daily.length - 1]
+      if (lastDaily.volume != null) {
+        // Yahoo's `volume` units are NOT consistent across tickers: crypto
+        // pairs (BTC-USD etc.) already report USD-denominated quote volume
+        // (verified live: ~$24B/day for BTC-USD, matching real-world daily
+        // dollar volume), while futures (GC=F) report CONTRACT COUNT
+        // (verified live: ~17-75k/day) — a completely different unit.
+        // Multiplying either by spot to derive "turnover_usd" would be
+        // wrong (double-counts price for crypto, or applies spot to a
+        // contract count for gold), so no such field is synthesized here.
+        // The raw value + its own percentile is unit-agnostic and safe.
+        const volHist = daily.slice(0, -1).map(c => c.volume).filter(v => v != null)
+        ctx.volume = { last: lastDaily.volume, percentile_vs_2y: volHist.length ? percentileRank(volHist, lastDaily.volume) : null,
+          units_note: 'Yahoo-reported units are asset-class-specific (crypto pairs: USD quote volume; futures like GC=F: contract count) — not converted, not comparable across assets' }
+      }
+    }
+
+    if (weekly) {
+      const weeklyCloses = completedCandles(weekly, 7 * 86400e3).map(c => c.close)
+      if (weeklyCloses.length >= 15) {
+        const rsiHist = rollingWilderRSI(weeklyCloses, 14)
+        const rsiNow = wilderRSI(weeklyCloses, 14).rsi
+        ctx.weekly_rsi14_percentile = rsiHist.length ? percentileRank(rsiHist, rsiNow) : null
+      }
+    }
+
+    if (funding && funding.length && outp.funding) {
+      const dailySeries = dailyAnnualizedFundingSeries(funding)
+      ctx.funding_annualized_percentile_vs_history = dailySeries.length ? percentileRank(dailySeries, outp.funding.mean_annualized_pct) : null
+      ctx.funding_history_days_available = dailySeries.length
+    }
+
+    if (fng && fng.data) {
+      const fngValues = fng.data.map(d => Number(d.value))
+      ctx.fng_percentile_vs_2y = fngValues.length > 1 ? percentileRank(fngValues.slice(1), fngValues[0]) : null
+      ctx.fng_history_days_available = fngValues.length
+    }
+
+    if (Object.keys(ctx).length) {
+      outp.context = { note: 'disclosed context only — NOT a scored leg or gate; promoting any of this into the rubric is a framework-calibration job', ...ctx }
+    }
+  }
 
   return outp
 }

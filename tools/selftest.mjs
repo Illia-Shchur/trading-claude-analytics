@@ -7,6 +7,7 @@
 import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds, FK_V_GATES,
   median, stdev, pearson, pctChange, consecutiveRun, smaSlope, logReturns, alignSeries,
   percentileRank, distributionStats, realizedVol, realizedVolBlock, rollingRealizedVol,
+  rollingWilderRSI, rollingDrawdownFromATH, rollingSMADistance,
   dailyTrend, frStallConfirmation, frComposite, frCompanion, spotPanel, fundingBlock,
   corrSurcharge, correlationRegime, correlationFromCloses,
   fk, fr, weightedEV, evCheck, stopCoherence, adr, fngStreak,
@@ -74,6 +75,25 @@ eq('distributionStats drops nulls from n/min/max, not coerced to 0', distributio
   eq('rollingRealizedVol: one point per trailing window past the minimum history', rolling.length, closes.length - 30)
   eq('rollingRealizedVol\'s LAST point equals the direct realizedVol call on the full series', rolling[rolling.length - 1], rvCrypto)
 }
+
+// ── rollingWilderRSI / rollingDrawdownFromATH / rollingSMADistance (B3) ────
+{
+  const closes = [100]
+  for (let i = 0; i < 60; i++) closes.push(closes[closes.length - 1] * (i % 2 === 0 ? 1.02 : 0.99))
+  const rsis = rollingWilderRSI(closes, 14)
+  eq('rollingWilderRSI: one point per trailing window past the 14+1 seed', rsis.length, closes.length - 14)
+  eq('rollingWilderRSI last point matches a direct wilderRSI call on the full series', rsis[rsis.length - 1], wilderRSI(closes, 14).rsi)
+  ok('rollingWilderRSI never returns an rsi:null placeholder', rsis.every(v => v != null))
+
+  const dd = rollingDrawdownFromATH([100, 110, 105, 90, 95])
+  eq('rollingDrawdownFromATH: running high, not full-series high (no look-ahead)', dd, [0, 0, drawdownPct(105, 110), drawdownPct(90, 110), drawdownPct(95, 110)])
+  eq('rollingDrawdownFromATH length matches input (every point has a running-high so far)', dd.length, 5)
+
+  const smaDist = rollingSMADistance([1, 2, 3, 4, 5, 6], 3)
+  eq('rollingSMADistance: first point at exactly n closes', smaDist.length, 4)
+  eq('rollingSMADistance last point matches a direct sma() call', smaDist[smaDist.length - 1], round2Local((6 / sma([1, 2, 3, 4, 5, 6], 3) - 1) * 100))
+}
+function round2Local(x) { return Math.round(x * 100) / 100 }
 ok('pearson throws on length mismatch', (() => { try { pearson([1, 2], [1]); return false } catch (e) { return true } })())
 eq('pearson perfect positive', pearson([1, 2, 3], [2, 4, 6]), 1)
 eq('pearson perfect negative', pearson([1, 2, 3], [6, 4, 2]), -1)
