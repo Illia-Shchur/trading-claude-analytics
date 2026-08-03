@@ -1,0 +1,16 @@
+{
+  "schema": "marketdata/1",
+  "note": "Hand-maintained, dated, sourced manual market inputs — ETF flows, MVRV-Z, LTH/STH supply metrics, exchange reserves, liquidations, COT. Mirrors tools/calendar-tier1.json's discipline exactly and for the same reason: this repo has no deps, no secrets story, and auto-pushes to a public remote, so these stay hand-entered rather than API-keyed (market-data-extension plan, D1). compute.mjs marketdata --asset <asset> [--max-age-days N] warns loudly when any verified_on is older than N days (default 3 — these inputs move daily/weekly, not quarterly like calendar-tier1). Every entry needs its OWN verified_on — do not bulk-copy one across entries added at different times. Deliberately NOT automated: the 2026-08-01 report run's own value came from REJECTING bad data (a stale April funding claim, a two-month-old MVRV-Z quoted at a stale price, a liquidation figure on a mismatched venue set) — an API would have swallowed all three. lint-report.mjs warns (never errors, no epoch) when a machine block's key_inputs cites one of these metrics with no backing dated entry here.",
+  "entries": [
+    { "asset": "BTC", "metric": "mvrv_z", "value": 0.41, "as_of": "2026-07-31", "source": "checkonchain.com (via web fetch, Hard Rule 1)", "verified_on": "2026-08-01" },
+    { "asset": "BTC", "metric": "realized_price", "value": 52418, "as_of": "2026-07-31", "source": "checkonchain.com (via web fetch, Hard Rule 1)", "verified_on": "2026-08-01" },
+    { "asset": "BTC", "metric": "lth_mvrv", "value": 1.27, "as_of": "2026-07-31", "source": "checkonchain.com (via web fetch, Hard Rule 1) — supply rising, reserves falling", "verified_on": "2026-08-01" },
+    { "asset": "BTC", "metric": "sth_mvrv", "value": 0.93, "as_of": "2026-07-31", "source": "checkonchain.com (via web fetch, Hard Rule 1)", "verified_on": "2026-08-01" }
+  ],
+  "known_gaps": [
+    "ETH/SOL/gold have no dated entries yet in this file — backfill on each asset's next report.",
+    "etf_flow and liquidations are NOT yet columns here (they're currently narrated inline in each report's key_inputs, e.g. etf_flow_jul31_usd_m/liquidations_jul31_network_usd_m) — add as dated entries once a stable metric-name convention is picked; lint-report.mjs's marketdata-backing check currently covers mvrv_z/realized_price/lth_mvrv/sth_mvrv only.",
+    "COT (CFTC) not populated for any asset.",
+    "Exchange reserves not populated as a standalone metric for any asset."
+  ]
+}

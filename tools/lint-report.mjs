@@ -61,7 +61,7 @@
 //   verdict: string
 //   inputs (opt): {weekly_rsi, rsi_closes, mvrv_z, fng_3d, drawdown_pct, ...}
 // ============================================================================
-import { readFileSync } from 'node:fs'
+import { readFileSync, existsSync } from 'node:fs'
 import { basename } from 'node:path'
 import { roundScore, ROUNDING, ceilThresholds, FK_V_GATES, evCheck, stopCoherence,
   discretionValid, d5StopCheck, FK_SCORE_UNLOCK, FK_DISCRETION,
@@ -581,6 +581,30 @@ if (b.correlation) {
     // catches a stale/hand-typed method string, not a computed mismatch.
     else if (typeof c.method === 'string' && /price[\s-]?level/i.test(c.method) && !/log[\s-]?return/i.test(c.method))
       warn(`correlation.method="${c.method}" reads as price-level correlation, but tools/lib.mjs correlationFromCloses() computes Pearson on daily log returns — update the wording or recompute`)
+  }
+}
+
+// marketdata.json backing (market-data-extension plan, D1) — warn-only, no
+// epoch, hygiene nudge only. tools/marketdata.json is a LOCAL FILE READ
+// (not network — the "no network" constraint on this linter is about API
+// calls, not local repo files, same as this file's own readFileSync of the
+// report itself). Checks that manual on-chain key_inputs cited by name in
+// the machine block have a corresponding dated entry for THIS asset.
+{
+  const MARKETDATA_METRICS = ['mvrv_z', 'realized_price', 'lth_mvrv', 'sth_mvrv']
+  const ki = b.key_inputs || {}
+  const citedMetrics = MARKETDATA_METRICS.filter(m => ki[m] != null)
+  if (citedMetrics.length) {
+    const mdPath = new URL('./marketdata.json', import.meta.url)
+    if (!existsSync(mdPath)) {
+      warn(`key_inputs cites ${citedMetrics.join(', ')} but tools/marketdata.json does not exist — manual on-chain inputs are unbacked by a dated entry`)
+    } else {
+      const md = JSON.parse(readFileSync(mdPath, 'utf8'))
+      const asset = String(b.asset || '').toUpperCase()
+      const entries = (md.entries || []).filter(e => e.asset === asset)
+      const missing = citedMetrics.filter(m => !entries.some(e => e.metric === m))
+      if (missing.length) warn(`key_inputs cites ${missing.join(', ')} for ${asset} with no backing tools/marketdata.json entry (metric+asset) — add a dated, sourced entry`)
+    }
   }
 }
 

@@ -25,6 +25,9 @@
 //   node tools/compute.mjs fr-companion --market '<json>' [--counts '<json>'] [--rounding half-up]
 //   node tools/compute.mjs corr --asset '<json array of {date,close}>' --spx '<json array of {date,close}>' [--window N]
 //   node tools/compute.mjs tier1 --from <date> --sessions N [--asset-class equity|crypto]
+//   node tools/compute.mjs marketdata --asset btc|eth|sol|gold [--max-age-days N]
+//        (Tier 2/D1 — dated, sourced manual on-chain inputs; warns on staleness
+//        or missing entries, same discipline as tier1)
 //   node tools/compute.mjs percentile --values v1,v2,... --x N
 //        (market-data-extension plan, Tier 0 — DISCLOSED CONTEXT ONLY, not a
 //        scored leg or gate; where does x sit in its own recent distribution)
@@ -251,6 +254,20 @@ switch (cmd) {
     }))
     break
   }
+  case 'marketdata': {
+    const assetArg = String(flags.asset || '').toUpperCase()
+    if (!assetArg) fail('pass --asset btc|eth|sol|gold [--max-age-days N]')
+    const maxAgeDays = Number(flags['max-age-days'] || 3)
+    const md = JSON.parse(readFileSync(new URL('./marketdata.json', import.meta.url), 'utf8'))
+    const entries = (md.entries || []).filter(e => e.asset === assetArg)
+    const now = new Date()
+    const warnings = []
+    if (!entries.length) warnings.push(`no marketdata.json entries for ${assetArg} — every manual metric for this asset is unbacked by a dated entry`)
+    const staleEntries = entries.filter(e => (now - new Date(`${e.verified_on}T00:00:00Z`)) / 86400000 > maxAgeDays)
+    if (staleEntries.length) warnings.push(`${staleEntries.length}/${entries.length} entries have verified_on >${maxAgeDays} days stale — re-confirm against source before relying on them`)
+    out({ asset: assetArg, max_age_days: maxAgeDays, entries, warnings })
+    break
+  }
   case 'tier1': {
     if (!flags.from) fail('pass --from <date> --sessions N')
     const sessions = Number(flags.sessions || 5)
@@ -269,5 +286,5 @@ switch (cmd) {
     break
   }
   default:
-    fail(`unknown command "${cmd || ''}" — rsi | thresholds | round | band | ev | stop-coherence | adr | streak | fr-funding | fr-cap | sma | drawdown | trend | stall | fr-composite | fr-companion | corr | tier1 | percentile | rvol | vol-surface | basis | positioning | netliq | stablecoin (see header of tools/compute.mjs)`)
+    fail(`unknown command "${cmd || ''}" — rsi | thresholds | round | band | ev | stop-coherence | adr | streak | fr-funding | fr-cap | sma | drawdown | trend | stall | fr-composite | fr-companion | corr | tier1 | percentile | rvol | vol-surface | basis | positioning | netliq | stablecoin | marketdata (see header of tools/compute.mjs)`)
 }
