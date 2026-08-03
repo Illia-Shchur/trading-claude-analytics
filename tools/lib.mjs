@@ -50,6 +50,78 @@ export function median(values) {
   return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2
 }
 
+function round3(x) { return x == null ? null : Math.round(x * 1000) / 1000 }
+
+/**
+ * Canonical spot = median of the primary source + ≥2 others (FK SKILL:166).
+ * `quotes`: [{source, symbol, value, ts, ts_kind}], ts_kind ∈
+ * 'venue' | 'receipt' | 'bar_close'.
+ *
+ * Encoded adjudications, each pinned by a selftest vector:
+ * - A `bar_close` quote (a Yahoo daily candle's last close) is ALWAYS frozen
+ *   and never enters the median — it is not a live venue print.
+ * - A stale (outside `windowMin`) quote within `spreadFlagPct` of the live
+ *   cluster's median is excluded from the median but NOT flagged (SKILL:
+ *   "need not be flagged"). A stale AND divergent quote is still shown, with
+ *   its age and an explicit EXCLUDED reason — never silently dropped.
+ * - Spread is computed over the INCLUDED set only.
+ * - Exactly `spreadFlagPct` (0.5%) is NOT `> 0.5%` — the strict SKILL letter.
+ * - Zero usable quotes → `canonical: null`, never a throw.
+ */
+export function spotPanel(quotes, { nowMs = Date.now(), windowMin = 120, spreadFlagPct = 0.5 } = {}) {
+  if (!Array.isArray(quotes) || quotes.length === 0) {
+    return { canonical: null, method: 'median', median_kind: null, n_sources: 0, n_synchronized: 0,
+      spread_pct: null, spread_gt_0_5pct: null, low_confidence: true, low_confidence_reason: 'no quotes supplied',
+      synchronized_window_min: windowMin, sources: [], excluded: [], priority_first: null, priority_first_delta_pct: null,
+      warning: 'no usable spot quotes' }
+  }
+  const windowMs = windowMin * 60000
+  const venueQuotes = quotes.filter(q => q.ts_kind !== 'bar_close')
+  const barCloseQuotes = quotes.filter(q => q.ts_kind === 'bar_close')
+  const freshVenue = venueQuotes.filter(q => q.ts == null || (nowMs - q.ts) <= windowMs)
+  const staleVenue = venueQuotes.filter(q => q.ts != null && (nowMs - q.ts) > windowMs)
+
+  const provisionalMedian = median(freshVenue.map(q => q.value))
+  const included = freshVenue.slice()
+  const excluded = []
+  for (const q of staleVenue) {
+    const ageMin = Math.round((nowMs - q.ts) / 60000)
+    const deltaPct = provisionalMedian ? Math.abs(q.value / provisionalMedian - 1) * 100 : null
+    if (deltaPct != null && deltaPct <= spreadFlagPct) {
+      excluded.push({ ...q, age_min: ageMin, reason: null,
+        note: 'stale but within tolerance of the live cluster — excluded from the median, not flagged' })
+    } else {
+      excluded.push({ ...q, age_min: ageMin, reason: `EXCLUDED — outside ${windowMin}min window, divergent` })
+    }
+  }
+  for (const q of barCloseQuotes) excluded.push({ ...q, age_min: null, reason: 'frozen bar close — never enters the median' })
+
+  const values = included.map(q => q.value)
+  const canonical = values.length ? median(values) : null
+  const spreadPct = values.length >= 2 ? round3((Math.max(...values) - Math.min(...values)) / Math.min(...values) * 100)
+    : (values.length === 1 ? 0 : null)
+  const spreadGt = spreadPct != null ? spreadPct > spreadFlagPct : null
+
+  const priorityFirst = quotes.length ? quotes[0].value : null
+  const priorityFirstDeltaPct = (canonical != null && priorityFirst != null) ? round3((priorityFirst / canonical - 1) * 100) : null
+
+  const lowConfidence = values.length < 2
+  const lowConfidenceReason = lowConfidence
+    ? (values.length === 0 ? 'no synchronized quotes available' : 'only one synchronized quote — no independent cross-check')
+    : null
+
+  return {
+    canonical, method: 'median', median_kind: `${values.length}-source`,
+    n_sources: quotes.length, n_synchronized: values.length,
+    spread_pct: spreadPct, spread_gt_0_5pct: spreadGt,
+    low_confidence: lowConfidence, low_confidence_reason: lowConfidenceReason,
+    synchronized_window_min: windowMin,
+    sources: included, excluded,
+    priority_first: priorityFirst, priority_first_delta_pct: priorityFirstDeltaPct,
+    warning: spreadGt ? `inter-source spread ${spreadPct}% > ${spreadFlagPct}% — reconcile before scoring` : null,
+  }
+}
+
 /** Sample standard deviation (n-1 denominator). null on n<2. */
 export function stdev(values) {
   if (!Array.isArray(values) || values.length < 2) return null

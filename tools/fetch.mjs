@@ -18,14 +18,19 @@
 // Every block carries source + fetched_at; failed sources land in `errors`
 // instead of killing the run (the report then follows the SKILL's NOT-FOUND rules).
 // ============================================================================
-import { wilderRSI, sma, drawdownPct, adr, fngStreak, dailyTrend, _internal } from './lib.mjs'
+import { wilderRSI, sma, drawdownPct, adr, fngStreak, dailyTrend, spotPanel, _internal } from './lib.mjs'
 const { round2 } = _internal
 
 const ASSETS = {
-  btc: { cg: 'bitcoin', yahoo: 'BTC-USD', fng: true },
-  eth: { cg: 'ethereum', yahoo: 'ETH-USD', fng: true },
-  sol: { cg: 'solana', yahoo: 'SOL-USD', fng: true },
-  gold: { yahoo: 'GC=F', crossYahoo: 'MGC=F', fng: false, athRange: '10y' },
+  btc: { cg: 'bitcoin', yahoo: 'BTC-USD', fng: true,
+    venues: { binance: 'BTCUSDT', coinbase: 'BTC-USD', kraken: 'XBTUSD' } },
+  eth: { cg: 'ethereum', yahoo: 'ETH-USD', fng: true,
+    venues: { binance: 'ETHUSDT', coinbase: 'ETH-USD', kraken: 'ETHUSD' } },
+  sol: { cg: 'solana', yahoo: 'SOL-USD', fng: true,
+    venues: { binance: 'SOLUSDT', coinbase: 'SOL-USD', kraken: 'SOLUSD' } },
+  // Gold has no crypto-exchange venues — the panel degrades to n_synchronized:0
+  // + low_confidence:true with an honest reason, not a crash.
+  gold: { yahoo: 'GC=F', crossYahoo: 'MGC=F', fng: false, athRange: '10y', venues: {} },
 }
 const UA = { headers: { 'User-Agent': 'Mozilla/5.0 (trading-claude-analytics toolchain)' } }
 
@@ -34,6 +39,26 @@ async function getJSON(url) {
   if (!r.ok) throw new Error(`${r.status} ${url}`)
   return r.json()
 }
+async function binanceQuote(symbol) {
+  const j = await getJSON(`https://api.binance.com/api/v3/ticker/24hr?symbol=${encodeURIComponent(symbol)}`)
+  if (j.lastPrice == null) throw new Error(`binance: no lastPrice for ${symbol}`)
+  return { source: 'Binance', symbol, value: Number(j.lastPrice), ts: Number(j.closeTime), ts_kind: 'venue' }
+}
+async function coinbaseQuote(product) {
+  const j = await getJSON(`https://api.exchange.coinbase.com/products/${encodeURIComponent(product)}/ticker`)
+  if (j.price == null) throw new Error(`coinbase: no price for ${product}`)
+  return { source: 'Coinbase', symbol: product, value: Number(j.price), ts: Date.parse(j.time), ts_kind: 'venue' }
+}
+async function krakenQuote(pair) {
+  const j = await getJSON(`https://api.kraken.com/0/public/Ticker?pair=${encodeURIComponent(pair)}`)
+  if (j.error && j.error.length) throw new Error(`kraken: ${j.error.join(', ')}`)
+  const result = j.result && j.result[Object.keys(j.result)[0]]
+  if (!result || !result.c) throw new Error(`kraken: no ticker for ${pair}`)
+  // Kraken's REST ticker carries no timestamp — 'receipt' (fetch-time-implicit,
+  // never excluded on staleness since there is nothing to measure staleness against).
+  return { source: 'Kraken', symbol: pair, value: Number(result.c[0]), ts: null, ts_kind: 'receipt' }
+}
+
 async function yahooChart(symbol, range, interval) {
   const j = await getJSON(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=${range}&interval=${interval}`)
   const res = j.chart && j.chart.result && j.chart.result[0]
@@ -72,8 +97,11 @@ async function fetchAsset(key, { series = false } = {}) {
   const outp = { asset: key.toUpperCase(), fetched_at: new Date().toISOString(), errors: [] }
   const attempt = async (label, fn) => { try { return await fn() } catch (e) { outp.errors.push(`${label}: ${e.message}`); return null } }
 
-  const [cgSpot, cgCoin, weekly, daily, cross, fng] = await Promise.all([
-    a.cg ? attempt('coingecko spot', () => getJSON(`https://api.coingecko.com/api/v3/simple/price?ids=${a.cg}&vs_currencies=usd`)) : null,
+  const venues = a.venues || {}
+  const [cgSpot, cgCoin, weekly, daily, cross, fng, binanceQ, coinbaseQ, krakenQ] = await Promise.all([
+    // include_last_updated_at reuses this SAME call for the spot panel (commit
+    // 7) — no new CoinGecko request.
+    a.cg ? attempt('coingecko spot', () => getJSON(`https://api.coingecko.com/api/v3/simple/price?ids=${a.cg}&vs_currencies=usd&include_last_updated_at=true`)) : null,
     a.cg ? attempt('coingecko coin/ath', () => getJSON(`https://api.coingecko.com/api/v3/coins/${a.cg}?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false`)) : null,
     attempt('yahoo weekly', () => yahooChart(a.yahoo, '5y', '1wk')),
     // 2y, not 3mo: dailyTrend() needs ≥220 daily bars for a 200dma + 20-session
@@ -82,6 +110,9 @@ async function fetchAsset(key, { series = false } = {}) {
     attempt('yahoo daily', () => yahooChart(a.yahoo, '2y', '1d')),
     a.crossYahoo ? attempt('yahoo cross-spot', () => yahooChart(a.crossYahoo, '5d', '1d')) : null,
     a.fng ? attempt('alternative.me fng', () => getJSON('https://api.alternative.me/fng/?limit=30')) : null,
+    venues.binance ? attempt('binance spot', () => binanceQuote(venues.binance)) : null,
+    venues.coinbase ? attempt('coinbase spot', () => coinbaseQuote(venues.coinbase)) : null,
+    venues.kraken ? attempt('kraken spot', () => krakenQuote(venues.kraken)) : null,
   ])
 
   // spot — cross-checked across sources; >1.5% divergence flagged
@@ -101,6 +132,26 @@ async function fetchAsset(key, { series = false } = {}) {
   const spot = sources.length ? sources[0].value : null
   outp.spot = { canonical: spot, sources, divergence_pct: divergence,
     warning: divergence != null && divergence > 1.5 ? `inter-source spread ${divergence}% > 1.5% — reconcile before scoring` : null }
+
+  // spot.panel — STEP A of the two-step canonical-spot flip (commit 7/12 of
+  // the 2026-08 toolchain-extension plan). `canonical` above is UNCHANGED
+  // (priority-first, sources[0]); this is a parallel, additive computation.
+  // FK SKILL:166 mandates "canonical spot = median of the primary source +
+  // ≥2 others" — the existing `canonical` field contradicts that rule, which
+  // is why it is not simply overwritten here.
+  const cgTs = cgSpot && cgSpot[a.cg] && cgSpot[a.cg].last_updated_at != null ? cgSpot[a.cg].last_updated_at * 1000 : null
+  const quotes = [
+    cgVal != null && { source: 'CoinGecko', symbol: a.cg, value: cgVal, ts: cgTs, ts_kind: 'venue' },
+    yahooSpot != null && { source: `Yahoo ${a.yahoo}`, symbol: a.yahoo, value: round2(yahooSpot), ts: null, ts_kind: 'bar_close' },
+    crossVal != null && a.crossYahoo && { source: `Yahoo ${a.crossYahoo}`, symbol: a.crossYahoo, value: round2(crossVal), ts: null, ts_kind: 'bar_close' },
+    binanceQ,
+    coinbaseQ,
+    krakenQ,
+  ].filter(Boolean)
+  const panel = spotPanel(quotes)
+  outp.spot.panel = panel
+  outp.spot.canonical_median = panel.canonical
+  outp.spot.method_conflict = 'spot.canonical is priority-first (sources[0]); FK SKILL:166 mandates the median — see spot.panel.canonical / spot.canonical_median. Flip pending commit 12 of the toolchain-extension plan.'
 
   // ATH / drawdown
   if (cgCoin && cgCoin.market_data) {
@@ -186,8 +237,12 @@ async function fetchMacro() {
 }
 
 const argv = process.argv.slice(2)
-const target = (argv[0] || '').toLowerCase()
+const spotOnly = argv[0] === 'spot'
+const target = (spotOnly ? argv[1] : argv[0] || '').toLowerCase()
 const series = argv.includes('--series')
-if (target === 'macro') fetchMacro().then(o => console.log(JSON.stringify(o, null, 2)))
+if (spotOnly) {
+  if (!ASSETS[target]) { console.error(`usage: node tools/fetch.mjs spot <${Object.keys(ASSETS).join('|')}>`); process.exit(1) }
+  fetchAsset(target).then(o => console.log(JSON.stringify(o.spot, null, 2)))
+} else if (target === 'macro') fetchMacro().then(o => console.log(JSON.stringify(o, null, 2)))
 else if (ASSETS[target]) fetchAsset(target, { series }).then(o => console.log(JSON.stringify(o, null, 2)))
-else { console.error(`usage: node tools/fetch.mjs <${Object.keys(ASSETS).join('|')}|macro> [--series]`); process.exit(1) }
+else { console.error(`usage: node tools/fetch.mjs <${Object.keys(ASSETS).join('|')}|macro|spot <asset>> [--series]`); process.exit(1) }

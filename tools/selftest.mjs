@@ -6,7 +6,7 @@
 // ============================================================================
 import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds, FK_V_GATES,
   median, stdev, pearson, pctChange, consecutiveRun, smaSlope, logReturns, alignSeries,
-  dailyTrend, frStallConfirmation, frComposite, frCompanion,
+  dailyTrend, frStallConfirmation, frComposite, frCompanion, spotPanel,
   fk, fr, weightedEV, evCheck, stopCoherence, adr, fngStreak,
   FK_SCORE_UNLOCK, fkPhasesUnlockedByScore, discretionValid, d5StopCheck, ratchetCheck,
   mechanicalScore, frChannel, frB, FR_SCORE_UNLOCK, FR_GATE_FLOORS, frPhasesUnlockedByScore,
@@ -158,6 +158,82 @@ eq('missing input → null, not a false "no"', frStallConfirmation({ close: 95, 
     bounce_pct: 10, daily_rsi: 50, weekly_rsi: 40, bounce_age_sessions: 20,
     funding_annualized_pct: -8, sustained_3_intervals: true, oi_within_5pct_of_90d_high: false } })
   eq('known FALSE does not escalate — this is the one case allowed to skip it', known.squeeze.tier, 'base')
+}
+
+// ── spotPanel (commit 7) — the BTC 2026-08-01 pin + encoded adjudications ──
+{
+  const NOW = Date.parse('2026-08-01T15:17:00Z')
+  const quotes = [63060.00, 63012.00, 63002.20, 62997.87].map((value, i) => ({ source: `s${i}`, value, ts: NOW, ts_kind: 'venue' }))
+  const p = spotPanel(quotes, { nowMs: NOW })
+  eq('BTC 4-venue median = 63007.10 (2026-08-01 pin)', p.canonical, 63007.1)
+  eq('spread = 0.099% (2026-08-01 pin)', p.spread_pct, 0.099)
+  ok('spread NOT flagged (< 0.5%)', p.spread_gt_0_5pct === false)
+  eq('n_synchronized = 4', p.n_synchronized, 4)
+  ok('not low-confidence with 4 sources', p.low_confidence === false)
+}
+{
+  // Exactly 0.5% spread → NOT flagged (strict > per the SKILL letter).
+  const NOW = Date.now()
+  const quotes = [{ source: 'a', value: 100, ts: NOW, ts_kind: 'venue' }, { source: 'b', value: 100.5, ts: NOW, ts_kind: 'venue' }]
+  const p = spotPanel(quotes, { nowMs: NOW })
+  eq('spread exactly 0.5%', p.spread_pct, 0.5)
+  ok('exactly 0.5% is NOT > 0.5% — not flagged', p.spread_gt_0_5pct === false)
+}
+{
+  const NOW = Date.now()
+  const quotes = [{ source: 'a', value: 100.51, ts: NOW, ts_kind: 'venue' }, { source: 'b', value: 100, ts: NOW, ts_kind: 'venue' }]
+  const p = spotPanel(quotes, { nowMs: NOW })
+  ok('spread just over 0.5% IS flagged', p.spread_gt_0_5pct === true)
+  ok('warning text names the spread and threshold', p.warning.includes('0.5%'))
+}
+{
+  // A stale quote within tolerance of the live cluster: excluded, NOT flagged.
+  const NOW = Date.now()
+  const stale = NOW - 200 * 60000 // 200min ago, outside the 120min window
+  const quotes = [
+    { source: 'live1', value: 100, ts: NOW, ts_kind: 'venue' },
+    { source: 'live2', value: 100.1, ts: NOW, ts_kind: 'venue' },
+    { source: 'stale_close', value: 100.2, ts: stale, ts_kind: 'venue' },
+  ]
+  const p = spotPanel(quotes, { nowMs: NOW })
+  eq('stale-but-close is EXCLUDED from the median', p.n_synchronized, 2)
+  const staleEntry = p.excluded.find(e => e.source === 'stale_close')
+  ok('...but its reason is null — SKILL says need not be flagged', staleEntry.reason === null)
+  eq('canonical uses only the 2 fresh quotes', p.canonical, 100.05)
+}
+{
+  // A stale AND divergent quote: excluded, but with an explicit reason + age.
+  const NOW = Date.now()
+  const stale = NOW - 200 * 60000
+  const quotes = [
+    { source: 'live1', value: 100, ts: NOW, ts_kind: 'venue' },
+    { source: 'live2', value: 100.1, ts: NOW, ts_kind: 'venue' },
+    { source: 'stale_divergent', value: 110, ts: stale, ts_kind: 'venue' },
+  ]
+  const p = spotPanel(quotes, { nowMs: NOW })
+  const staleEntry = p.excluded.find(e => e.source === 'stale_divergent')
+  ok('divergent stale quote gets an explicit EXCLUDED reason, never silently dropped', staleEntry.reason.includes('EXCLUDED'))
+  eq('...and its age is reported', staleEntry.age_min, 200)
+}
+{
+  // A Yahoo daily bar close is ALWAYS frozen — never enters the median,
+  // regardless of freshness.
+  const NOW = Date.now()
+  const quotes = [
+    { source: 'live1', value: 100, ts: NOW, ts_kind: 'venue' },
+    { source: 'live2', value: 100.1, ts: NOW, ts_kind: 'venue' },
+    { source: 'yahoo_bar', value: 100.05, ts: NOW, ts_kind: 'bar_close' },
+  ]
+  const p = spotPanel(quotes, { nowMs: NOW })
+  eq('bar_close never enters n_synchronized even though it is fresh', p.n_synchronized, 2)
+  ok('bar_close excluded reason names it as frozen', p.excluded.find(e => e.source === 'yahoo_bar').reason.includes('frozen'))
+}
+ok('zero quotes → canonical null, never a throw', spotPanel([]).canonical === null)
+ok('zero quotes → low_confidence true with a reason', spotPanel([]).low_confidence === true && !!spotPanel([]).low_confidence_reason)
+{
+  const p = spotPanel([{ source: 'only', value: 100, ts: null, ts_kind: 'receipt' }])
+  ok('a single synchronized quote is low-confidence (no independent cross-check)', p.low_confidence === true)
+  eq('...but canonical is still that one value', p.canonical, 100)
 }
 
 // ── ceilThresholds — including the ETH ceil(7/9×8)=7 misprint regression ────
