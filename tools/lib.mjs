@@ -42,6 +42,127 @@ export function drawdownPct(spot, ath) { return round2((1 - spot / ath) * 100) }
 
 function round2(x) { return x == null ? null : Math.round(x * 100) / 100 }
 
+/** Median of a numeric array. null on empty input. Even-length averages the two middle values. */
+export function median(values) {
+  if (!Array.isArray(values) || values.length === 0) return null
+  const sorted = values.slice().sort((a, b) => a - b)
+  const mid = Math.floor(sorted.length / 2)
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2
+}
+
+/** Sample standard deviation (n-1 denominator). null on n<2. */
+export function stdev(values) {
+  if (!Array.isArray(values) || values.length < 2) return null
+  const n = values.length
+  const mean = values.reduce((a, b) => a + b, 0) / n
+  const variance = values.reduce((a, v) => a + (v - mean) ** 2, 0) / (n - 1)
+  return Math.sqrt(variance)
+}
+
+/**
+ * Pearson correlation coefficient. THROWS on length mismatch (a caller bug,
+ * not a data condition). Returns null — never NaN — on zero variance in
+ * either series: a NaN would make `corr > 0.7` evaluate false, silently
+ * reading as "not risk-on" (fail-OPEN on a surcharge suppressor). null routes
+ * to the documented "not computed → surcharge OFF, disclosed" path instead.
+ */
+export function pearson(xs, ys) {
+  if (xs.length !== ys.length) throw new Error(`pearson: length mismatch (${xs.length} vs ${ys.length})`)
+  const n = xs.length
+  if (n < 2) return null
+  const mx = xs.reduce((a, b) => a + b, 0) / n
+  const my = ys.reduce((a, b) => a + b, 0) / n
+  let sxy = 0, sxx = 0, syy = 0
+  for (let i = 0; i < n; i++) {
+    const dx = xs[i] - mx, dy = ys[i] - my
+    sxy += dx * dy; sxx += dx * dx; syy += dy * dy
+  }
+  if (sxx === 0 || syy === 0) return null
+  return sxy / Math.sqrt(sxx * syy)
+}
+
+/** % change between values[values.length-1-n] and the last value. null if out of range. */
+export function pctChange(values, n) {
+  if (!Array.isArray(values) || values.length <= n || n < 1) return null
+  const from = values[values.length - 1 - n]
+  const to = values[values.length - 1]
+  if (from === 0) return null
+  return round2((to / from - 1) * 100)
+}
+
+/**
+ * Length of the trailing (or leading) run of consecutive elements satisfying
+ * `predicate`. `from: 'end'` (default) scans backward from the last element;
+ * `from: 'start'` scans forward from the first.
+ */
+export function consecutiveRun(values, predicate, { from = 'end' } = {}) {
+  if (!Array.isArray(values) || values.length === 0) return 0
+  let count = 0
+  if (from === 'end') {
+    for (let i = values.length - 1; i >= 0; i--) {
+      if (!predicate(values[i])) break
+      count++
+    }
+  } else {
+    for (let i = 0; i < values.length; i++) {
+      if (!predicate(values[i])) break
+      count++
+    }
+  }
+  return count
+}
+
+/**
+ * % slope of the n-period SMA over the trailing `lookback` periods:
+ * (sma(values, n) / sma(values.slice(0, -lookback), n) - 1) × 100.
+ * null if there is insufficient history for either SMA.
+ */
+export function smaSlope(values, { n = 200, lookback = 20 } = {}) {
+  if (!Array.isArray(values) || values.length < n + lookback) return null
+  const smaNow = sma(values, n)
+  const smaPast = sma(values.slice(0, values.length - lookback), n)
+  if (smaNow == null || smaPast == null || smaPast === 0) return null
+  return round2((smaNow / smaPast - 1) * 100)
+}
+
+/**
+ * Log returns of a chronological closes series. Null-skips any pair spanning
+ * a non-positive close (log undefined) rather than throwing — a single bad
+ * print should not void an entire correlation window.
+ */
+export function logReturns(closes) {
+  const out = []
+  for (let i = 1; i < closes.length; i++) {
+    const a = closes[i - 1], b = closes[i]
+    if (typeof a !== 'number' || typeof b !== 'number' || a <= 0 || b <= 0) continue
+    out.push(Math.log(b / a))
+  }
+  return out
+}
+
+/**
+ * Inner-join two {date, value} series on shared dates (dates are ISO strings,
+ * compared as-is). This is the correlation join: crypto trades 7 days/week,
+ * equities 5 — correlating unaligned series element-wise yields a plausible,
+ * meaningless number. Returns aligned {dates, xs, ys} plus counts of rows
+ * dropped from each side for being unmatched.
+ */
+export function alignSeries(a, b) {
+  const bByDate = new Map(b.map(row => [row.date, row.value]))
+  const dates = [], xs = [], ys = []
+  let droppedA = 0
+  for (const row of a) {
+    if (bByDate.has(row.date)) {
+      dates.push(row.date); xs.push(row.value); ys.push(bByDate.get(row.date))
+    } else {
+      droppedA++
+    }
+  }
+  const aDates = new Set(a.map(row => row.date))
+  const droppedB = b.filter(row => !aDates.has(row.date)).length
+  return { dates, xs, ys, dropped: { a: droppedA, b: droppedB } }
+}
+
 // ── Fallen Knives: score arithmetic ─────────────────────────────────────────
 
 /** Per-asset .5 rounding conventions (FK SKILL §4, codified 2026-07-10). */

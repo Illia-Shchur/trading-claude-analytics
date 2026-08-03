@@ -5,6 +5,7 @@
 // invalidates every downstream number.
 // ============================================================================
 import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds, FK_V_GATES,
+  median, stdev, pearson, pctChange, consecutiveRun, smaSlope, logReturns, alignSeries,
   fk, fr, weightedEV, evCheck, stopCoherence, adr, fngStreak,
   FK_SCORE_UNLOCK, fkPhasesUnlockedByScore, discretionValid, d5StopCheck, ratchetCheck,
   mechanicalScore, frChannel, frB, FR_SCORE_UNLOCK, FR_GATE_FLOORS, frPhasesUnlockedByScore,
@@ -22,6 +23,48 @@ function eq(name, got, want) {
   if (g !== w) { failures++; console.error(`FAIL ${name}: got ${g}, want ${w}`) }
 }
 function ok(name, cond) { if (!cond) { failures++; console.error(`FAIL ${name}`) } }
+
+// ── pure math (commit 1: pearson/median/pctChange/consecutiveRun/smaSlope/
+//    stdev/logReturns/alignSeries) ─────────────────────────────────────────
+eq('median odd-length', median([3, 1, 2]), 2)
+eq('median even-length averages the two middles', median([1, 2, 3, 4]), 2.5)
+eq('median empty → null', median([]), null)
+ok('stdev n=1 → null (need ≥2 for sample stdev)', stdev([5]) === null)
+eq('stdev of [2,4,4,4,5,5,7,9] → 2.138 (textbook sample-stdev vector)', Math.round(stdev([2, 4, 4, 4, 5, 5, 7, 9]) * 1000) / 1000, 2.138)
+ok('pearson throws on length mismatch', (() => { try { pearson([1, 2], [1]); return false } catch (e) { return true } })())
+eq('pearson perfect positive', pearson([1, 2, 3], [2, 4, 6]), 1)
+eq('pearson perfect negative', pearson([1, 2, 3], [6, 4, 2]), -1)
+ok('pearson zero-variance x → null, NOT NaN (fail-closed on the >0.7 surcharge gate)', pearson([5, 5, 5], [1, 2, 3]) === null)
+ok('pearson zero-variance y → null', pearson([1, 2, 3], [5, 5, 5]) === null)
+ok('pearson n<2 → null', pearson([1], [1]) === null)
+eq('pctChange 10→11 over 1 → 10', pctChange([10, 11], 1), 10)
+eq('pctChange n beyond array length → null', pctChange([10, 11], 5), null)
+eq('pctChange from-zero → null (div/0, not Infinity)', pctChange([0, 5], 1), null)
+eq('consecutiveRun from end, all-true tail', consecutiveRun([1, -1, -1, -1], v => v < 0), 3)
+eq('consecutiveRun from end, no trailing match → 0', consecutiveRun([-1, -1, 1], v => v < 0), 0)
+eq('consecutiveRun from start', consecutiveRun([-1, -1, 1, -1], v => v < 0, { from: 'start' }), 2)
+eq('consecutiveRun empty → 0', consecutiveRun([], v => v < 0), 0)
+{
+  // 220 points: first 200 flat at 100 (sma=100), last 20 ramp up so the
+  // trailing 200-window sma is higher than the one 20 periods back → rising.
+  const flat = Array(200).fill(100)
+  const ramp = Array.from({ length: 20 }, (_, i) => 100 + (i + 1) * 5)
+  const risingSeries = flat.concat(ramp)
+  ok('smaSlope rising series → positive %', smaSlope(risingSeries, { n: 200, lookback: 20 }) > 0)
+  const fallingSeries = Array(200).fill(100).concat(Array.from({ length: 20 }, (_, i) => 100 - (i + 1) * 5))
+  ok('smaSlope falling series → negative %', smaSlope(fallingSeries, { n: 200, lookback: 20 }) < 0)
+  eq('smaSlope insufficient history → null', smaSlope(Array(50).fill(100), { n: 200, lookback: 20 }), null)
+}
+eq('logReturns of [100,110] → ln(1.1)', logReturns([100, 110]), [Math.log(1.1)])
+eq('logReturns skips a non-positive close rather than throwing', logReturns([100, 0, 110]), [])
+{
+  const crypto = [{ date: '2026-06-19', value: 100 }, { date: '2026-06-20', value: 101 }, { date: '2026-06-21', value: 102 }, { date: '2026-06-22', value: 103 }]
+  const spx = [{ date: '2026-06-19', value: 5000 }, { date: '2026-06-20', value: 5010 }]
+  const aligned = alignSeries(crypto, spx)
+  eq('alignSeries keeps only shared dates (weekend drop)', aligned.dates, ['2026-06-19', '2026-06-20'])
+  eq('alignSeries xs/ys line up', [aligned.xs, aligned.ys], [[100, 101], [5000, 5010]])
+  eq('alignSeries reports what it dropped from each side', aligned.dropped, { a: 2, b: 0 })
+}
 
 // ── ceilThresholds — including the ETH ceil(7/9×8)=7 misprint regression ────
 eq('thresholds /9', (({ p1a, p1b, p2, p3 }) => [p1a, p1b, p2, p3])(ceilThresholds(9)), [3, 5, 6, 7])
