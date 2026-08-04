@@ -7,7 +7,8 @@
 import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds, FK_V_GATES,
   median, stdev, pearson, pctChange, consecutiveRun, smaSlope, logReturns, alignSeries,
   percentileRank, distributionStats, realizedVol, realizedVolBlock, rollingRealizedVol,
-  rollingWilderRSI, rollingDrawdownFromATH, rollingSMADistance, deribitVolBlock, basisBlock, positioningBlock, netLiquidity, stablecoinBlock, tripwireDiff,
+  rollingWilderRSI, rollingDrawdownFromATH, rollingSMADistance, rollingBouncePct, rollingTrailingHighDistance,
+  deribitVolBlock, basisBlock, positioningBlock, netLiquidity, stablecoinBlock, tripwireDiff,
   dailyTrend, frStallConfirmation, frComposite, frCompanion, spotPanel, fundingBlock,
   corrSurcharge, correlationRegime, correlationFromCloses,
   fk, fr, weightedEV, evCheck, stopCoherence, adr, fngStreak,
@@ -92,6 +93,25 @@ eq('distributionStats drops nulls from n/min/max, not coerced to 0', distributio
   const smaDist = rollingSMADistance([1, 2, 3, 4, 5, 6], 3)
   eq('rollingSMADistance: first point at exactly n closes', smaDist.length, 4)
   eq('rollingSMADistance last point matches a direct sma() call', smaDist[smaDist.length - 1], round2Local((6 / sma([1, 2, 3, 4, 5, 6], 3) - 1) * 100))
+
+  // rollingBouncePct / rollingTrailingHighDistance (FR-parity plan, FR4) —
+  // FIXED trailing windows, unlike rollingDrawdownFromATH's running-since-
+  // start high.
+  const bounceCloses = [100, 90, 80, 70, 60, 65, 75, 90]
+  const bounce = rollingBouncePct(bounceCloses, 3)
+  eq('rollingBouncePct: first point at exactly lowN closes', bounce.length, bounceCloses.length - 3 + 1)
+  // at i=8 (last), trailing-3 window is [70,60,65] closes[5,6,7]? window = closes.slice(5,8)=[65,75,90], low=65, close=90 -> (90/65-1)*100
+  eq('rollingBouncePct last point: close vs the low of the trailing 3-close window', bounce[bounce.length - 1], round2Local((90 / 65 - 1) * 100))
+  ok('rollingBouncePct is windowed (bounce off a TRAILING low), not a running-since-start low', bounce[0] !== bounce[bounce.length - 1])
+
+  const highCloses = [50, 60, 70, 65, 55, 45, 40]
+  const highDist = rollingTrailingHighDistance(highCloses, 3)
+  eq('rollingTrailingHighDistance: first point at exactly windowN closes', highDist.length, highCloses.length - 3 + 1)
+  // last point: window = closes.slice(4,7)=[55,45,40] excludes itself? No — window
+  // is the trailing 3 closes ENDING at closes[i-1]: slice(4,7)=[55,45,40], high=55.
+  eq('rollingTrailingHighDistance last point: close vs the high of the trailing 3-close window', highDist[highDist.length - 1], drawdownPct(40, 55))
+  ok('rollingTrailingHighDistance is windowed (a TRAILING high) — differs from rollingDrawdownFromATH\'s running-since-start high once the series has fallen off its early peak',
+    highDist[highDist.length - 1] !== rollingDrawdownFromATH(highCloses)[highCloses.length - 1])
 }
 function round2Local(x) { return Math.round(x * 100) / 100 }
 

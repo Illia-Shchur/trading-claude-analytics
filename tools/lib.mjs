@@ -344,6 +344,48 @@ export function rollingSMADistance(closes, n) {
 }
 
 /**
+ * Rolling bounce-% series (FR-parity plan, FR4) — at each point, % the
+ * current close sits above the LOW of the trailing `lowN` closes (a
+ * closes-only proxy for dailyTrend()'s `trend.bounce_pct`, which uses
+ * session lows; this is what a 2y CLOSE-only series can support). Feeds the
+ * "is this bounce big FOR THIS ASSET" percentile — §4B's rally leg has the
+ * largest max (5) and its band edges are fixed absolute percentages. FIXED
+ * `lowN`-session TRAILING window (a rolling low, not a running-since-start
+ * one) — matches rollingSMADistance()'s windowed style, unlike
+ * rollingDrawdownFromATH()'s running-high style. Pure.
+ */
+export function rollingBouncePct(closes, lowN = 40) {
+  const out = []
+  for (let i = lowN; i <= closes.length; i++) {
+    const window = closes.slice(i - lowN, i)
+    const low = Math.min(...window)
+    if (low > 0) out.push(round2((closes[i - 1] / low - 1) * 100))
+  }
+  return out
+}
+
+/**
+ * Rolling %-below-trailing-high series (FR-parity plan, FR4) — at each
+ * point, % below the HIGH of the trailing `windowN` closes (a FIXED
+ * trailing window, unlike rollingDrawdownFromATH()'s running-since-start
+ * high). Feeds a percentile context for `high_1y.pct_below` — the FR
+ * phase-of-cycle cap's own input, today judged only against the fixed
+ * 10%/20% cap tiers. This is a CLOSES-only proxy over the fetched daily
+ * window, not the weekly-high computation `outp.high_1y` itself uses — the
+ * two are related, not identical, and the emitted note says so explicitly
+ * rather than implying equivalence. Pure.
+ */
+export function rollingTrailingHighDistance(closes, windowN = 365) {
+  const out = []
+  for (let i = windowN; i <= closes.length; i++) {
+    const window = closes.slice(i - windowN, i)
+    const high = Math.max(...window)
+    if (high > 0) out.push(drawdownPct(closes[i - 1], high))
+  }
+  return out
+}
+
+/**
  * Parse a Deribit option instrument name like "BTC-28AUG26-110000-P" into
  * {currency, expiry (ms epoch, UTC), strike, type: 'C'|'P'}. `null` on
  * anything that doesn't match Deribit's own naming convention — a single

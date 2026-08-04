@@ -22,7 +22,8 @@
 import { pathToFileURL } from 'node:url'
 import { wilderRSI, sma, drawdownPct, adr, fngStreak, dailyTrend, spotPanel, fundingBlock, fr,
   percentileRank, realizedVolBlock, rollingRealizedVol,
-  rollingWilderRSI, rollingDrawdownFromATH, rollingSMADistance, deribitVolBlock, basisBlock,
+  rollingWilderRSI, rollingDrawdownFromATH, rollingSMADistance, rollingBouncePct, rollingTrailingHighDistance,
+  deribitVolBlock, basisBlock,
   positioningBlock, netLiquidity, stablecoinBlock, _internal } from './lib.mjs'
 const { round2 } = _internal
 
@@ -364,6 +365,29 @@ async function fetchAsset(key, { series = false } = {}) {
         const smaDistHist = rollingSMADistance(dailyCloses, 200)
         ctx.distance_to_200dma_pct = distNow
         ctx.distance_to_200dma_percentile = smaDistHist.length ? percentileRank(smaDistHist, distNow) : null
+      }
+
+      // FR-parity plan, FR4: the three FR-only metrics that never got a
+      // percentile — weekly RSI got one (below), but Channel B's momentum
+      // leg scores the DAILY RSI; the rally leg (§4B's largest, max 5) and
+      // the phase-of-cycle cap input both judge an absolute % against fixed
+      // band edges with no sense of where it sits for THIS asset.
+      if (outp.trend && !outp.trend.insufficient && outp.trend.rsi14 != null) {
+        const dailyRsiHist = rollingWilderRSI(dailyCloses, 14)
+        ctx.daily_rsi14_percentile_vs_2y = dailyRsiHist.length ? percentileRank(dailyRsiHist, outp.trend.rsi14) : null
+      }
+      if (outp.trend && !outp.trend.insufficient && outp.trend.bounce_pct != null) {
+        // CLOSES-only proxy for trend.bounce_pct (which uses session LOWS) —
+        // rollingBouncePct()'s own JSDoc states the distinction; not claimed
+        // to be bit-identical to the scored leg, only distributionally close
+        // enough to rank the CURRENT reading against.
+        const bounceHist = rollingBouncePct(dailyCloses, 40)
+        ctx.bounce_pct_percentile_vs_2y = bounceHist.length ? percentileRank(bounceHist, outp.trend.bounce_pct) : null
+      }
+      if (outp.high_1y && outp.high_1y.pct_below != null && dailyCloses.length > 365) {
+        const highHist = rollingTrailingHighDistance(dailyCloses, 365)
+        ctx.high_1y_pct_below_percentile_vs_2y = highHist.length ? percentileRank(highHist, outp.high_1y.pct_below) : null
+        ctx.high_1y_pct_below_percentile_note = 'proxy: a 365-daily-CLOSE trailing-high window over the fetched 2y series, not the weekly-high computation outp.high_1y itself uses — related, not identical'
       }
 
       const lastDaily = daily[daily.length - 1]
