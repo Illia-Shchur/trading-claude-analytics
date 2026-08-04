@@ -128,6 +128,21 @@ function round2Local(x) { return Math.round(x * 100) / 100 }
   eq('skew = ~10%-OTM put IV (strike 60000: 30) minus ~10%-OTM call IV (strike 70000: 27)', block.skew_90_110_moneyness_pct, 3)
   eq('skew is explicitly named MONEYNESS, never rr25/25-delta', typeof block.note === 'string' && block.note.includes('MONEYNESS') && !('rr25' in block), true)
   eq('VRP = ATM IV (25.5) - rv30 (20)', block.vrp_pct, 5.5)
+  ok('skew_sign_convention states POSITIVE = put richer = downside hedging bid (FR-parity plan, FR2)',
+    typeof block.skew_sign_convention === 'string' && block.skew_sign_convention.includes('downside hedging bid'))
+  ok('...and that a blow-off COMPRESSES/inverts the skew, not richens it', block.skew_sign_convention.includes('COMPRESSING') && block.skew_sign_convention.includes('INVERTING'))
+
+  // Live pin (2026-08-04, BTC 28AUG26 ~23.5d): put-90 IV 37.82 vs call-110 IV
+  // 29.41 -> skew +8.41, ordinary put skew. Same sign as the synthetic vector
+  // above — this is the live magnitude, not a different convention.
+  const liveRows = [
+    { instrument_name: 'BTC-28AUG26-58000-P', mark_iv: 37.82, underlying_price: 64440.2 },
+    { instrument_name: 'BTC-28AUG26-71000-C', mark_iv: 29.41, underlying_price: 64440.2 },
+    { instrument_name: 'BTC-28AUG26-64000-C', mark_iv: 31.2, underlying_price: 64440.2 },
+    { instrument_name: 'BTC-28AUG26-64000-P', mark_iv: 31.2, underlying_price: 64440.2 },
+  ]
+  const liveBlock = deribitVolBlock({ bookRows: liveRows, nowMs: Date.UTC(2026, 7, 4, 20) })
+  eq('live BTC skew pin (2026-08-04): +8.41, put side richer', liveBlock.skew_90_110_moneyness_pct, 8.41)
 
   const outOfWindow = deribitVolBlock({ bookRows: [mkRow('4AUG26', 64000, 'C', 50), mkRow('4AUG26', 64000, 'P', 50)], nowMs })
   ok('no expiry in the 7-45 day window → available:false with that reason', outOfWindow.available === false && outOfWindow.reason.includes('7-45'))
