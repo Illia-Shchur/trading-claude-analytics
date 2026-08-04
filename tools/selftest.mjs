@@ -502,8 +502,76 @@ ok('zero quotes → low_confidence true with a reason', spotPanel([]).low_confid
   const f = fundingBlock(intervals)
   eq('3 negative INTERVALS', f.longest_negative_run_intervals, 3)
   eq('...but only 1 negative SESSION (same calendar day)', f.longest_negative_run_sessions, 1)
+  // -0.0001 fraction = -0.01%/8h = -10.95% annualized: deep enough to trip BOTH
+  // squeeze thresholds, so this block doubles as the positive case.
+  eq('3 consecutive intervals below -5% annualized', f.longest_run_below_minus5_annualized_intervals, 3)
+  ok('sustained3_below_minus5 fires at exactly 3', f.sustained3_below_minus5 === true)
+  ok('a -10.95% print also trips the -7% single-interval escalation', f.single_interval_below_minus7 === true)
+  eq('most recent -7% print is the LAST interval (0 ago)', f.most_recent_below_minus7_intervals_ago, 0)
 }
-ok('no intervals → insufficient, not a crash', fundingBlock([]).insufficient != null)
+{
+  // Unit trap 3 — THE trap this pair exists to pin (FR-parity plan, FR1).
+  // fundingRate -0.00001 = -0.001%/8h = -1.095% ANNUALIZED: unambiguously
+  // negative, nowhere near the squeeze-trap penalty's -5% line. Reading
+  // longest_negative_run_intervals as fr.squeezeTrapPenalty()'s
+  // `sustained3Intervals` would fire a -2 raw penalty and, in Channel B, void
+  // the gate-8 veto on funding that is ~5x too shallow to qualify. Asserted as
+  // a PAIR so the two can never be confused again.
+  const start = Date.parse('2026-07-20T00:00:00Z')
+  const intervals = Array.from({ length: 6 }, (_, i) => ({ fundingRate: '-0.00001', fundingTime: start + i * 8 * 3600e3 }))
+  const f = fundingBlock(intervals)
+  eq('6 merely-NEGATIVE intervals (the FK capitulation-(b) field)', f.longest_negative_run_intervals, 6)
+  eq('...but 0 intervals below -5% annualized (the squeeze-trap field)', f.longest_run_below_minus5_annualized_intervals, 0)
+  ok('sustained3_below_minus5 is FALSE despite a 6-interval negative run', f.sustained3_below_minus5 === false)
+  eq('each interval annualizes to -1.09%, nowhere near -5%', f.min_interval_annualized_pct, -1.09)
+  ok('no -7% escalation either', f.single_interval_below_minus7 === false)
+  ok('...and its recency is null, not 0 (absent, never "just happened")', f.most_recent_below_minus7_intervals_ago === null)
+  ok('threshold_note names the per-8h equivalent of -5%/yr', /0\.004566/.test(f.threshold_note))
+}
+{
+  // Edge: exactly -5% annualized does NOT fire — strict `<`, matching
+  // fr.squeezeTrapPenalty()'s own comparison and the SKILL letter. This
+  // function does not re-adjudicate the edge; a mismatch between the field and
+  // the function it feeds would be its own bug.
+  const start = Date.parse('2026-07-20T00:00:00Z')
+  const exactly5 = -5 / (3 * 365) / 100 // fraction whose annualized value is exactly -5
+  const intervals = Array.from({ length: 4 }, (_, i) => ({ fundingRate: String(exactly5), fundingTime: start + i * 8 * 3600e3 }))
+  const f = fundingBlock(intervals)
+  eq('annualizes to exactly -5.00%', f.min_interval_annualized_pct, -5)
+  eq('exactly -5% → run of 0 (strict <, SKILL letter)', f.longest_run_below_minus5_annualized_intervals, 0)
+  ok('...so sustained3_below_minus5 stays false at the edge', f.sustained3_below_minus5 === false)
+}
+{
+  // A stale -7% print must not read as "prints <-7% in a single interval" with
+  // no recency attached: the boolean scans the window, the age field discloses.
+  const start = Date.parse('2026-07-20T00:00:00Z')
+  const intervals = [
+    { fundingRate: '-0.0001', fundingTime: start }, // -10.95% annualized, oldest
+    ...Array.from({ length: 5 }, (_, i) => ({ fundingRate: '0.0001', fundingTime: start + (i + 1) * 8 * 3600e3 })),
+  ]
+  const f = fundingBlock(intervals)
+  ok('single_interval_below_minus7 true over the window', f.single_interval_below_minus7 === true)
+  eq('...but it was 5 intervals ago, and says so', f.most_recent_below_minus7_intervals_ago, 5)
+  ok('trailing run below -5% is 0 — the tape has flipped positive', f.longest_run_below_minus5_annualized_intervals === 0)
+}
+{
+  // fr.squeezeTrapPenalty consumes the boolean above. Pin the three tiers so
+  // the CLI path (compute.mjs squeeze) and the field agree.
+  const base = fr.squeezeTrapPenalty({ fundingAnnualizedPct: -6.2, sustained3Intervals: true })
+  eq('base tier: -2 raw, +1 gate surcharge', base.gate_surcharge, 1)
+  eq('base tier raw penalty', base.raw_penalty, -2)
+  const esc = fr.squeezeTrapPenalty({ fundingAnnualizedPct: -6.2, sustained3Intervals: true, oiWithin5PctOf90dHigh: true })
+  eq('escalated by the OI conjunct: +2 gate surcharge', esc.gate_surcharge, 2)
+  const imm = fr.squeezeTrapPenalty({ fundingAnnualizedPct: -1, sustained3Intervals: false, singleIntervalBelowMinus7: true, oiWithin5PctOf90dHigh: true })
+  eq('-7% single interval + OI conjunct fires IMMEDIATELY without 3-interval confirmation', imm.tier, 'escalated')
+  const none = fr.squeezeTrapPenalty({ fundingAnnualizedPct: -6.2, sustained3Intervals: false })
+  eq('below -5% but NOT sustained → no penalty', none.tier, 'none')
+}
+{
+  const f = fundingBlock([])
+  ok('no intervals → insufficient, not a crash', f.insufficient != null)
+  ok('...and no squeeze field is emitted as a false-as-fact', f.sustained3_below_minus5 === undefined && f.single_interval_below_minus7 === undefined)
+}
 
 // ── correlation regime (commit 10) — label ladder is descriptive-only ──────
 eq('corr -0.1 → inverse', correlationRegime(-0.1).label, 'inverse')

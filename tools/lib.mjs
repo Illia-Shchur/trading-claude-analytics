@@ -1363,6 +1363,26 @@ export function frRatchetCheck(oldValue, newValue, { tier = 'stop' } = {}) {
  * endpoint serves ~30 days, but fr.squeezeTrapPenalty() wants a 90-day high.
  * `oi_within_5pct_of_90d_high` stays `null` — a 30-day number must never
  * pass itself off as a 90-day one.
+ *
+ * THE THIRD UNIT TRAP (added 2026-08-05, FR-parity plan): the SKILL's
+ * squeeze-trap penalty fires on funding annualized **< −5%** sustained ≥3
+ * consecutive intervals, and fr.squeezeTrapPenalty() takes that as a
+ * caller-supplied `sustained3Intervals` boolean. Until now the only run this
+ * block emitted was `longest_negative_run_intervals`, which counts MERELY
+ * NEGATIVE prints — and −5% annualized is −0.004566% per 8h, so that field is
+ * a ~1000× looser bar than the one the penalty needs. Reading it as the
+ * penalty's input produces a false −2 and, in Channel B, a false gate-8 veto
+ * (the only gate in either framework that voids an unlock on its own). The
+ * correctly-thresholded runs are now emitted alongside it.
+ *
+ * `longest_negative_run_intervals` is KEPT and is not wrong — it answers FK's
+ * question (capitulation-(b) genuinely counts merely-negative prints). The two
+ * are distinguished by name and by `threshold_note`, not by replacement:
+ * renaming would break every stored snapshot and report for no gain.
+ *
+ * The `< -5` and `< -7` comparisons are STRICT, matching fr.squeezeTrapPenalty()
+ * and the SKILL letter exactly. This function does not re-adjudicate the edge:
+ * a mismatch between the field and the function it feeds would be its own bug.
  */
 export function fundingBlock(intervals, { n = 45 } = {}) {
   if (!Array.isArray(intervals) || intervals.length === 0) {
@@ -1380,6 +1400,15 @@ export function fundingBlock(intervals, { n = 45 } = {}) {
   }
   const dailyAvgPct = days.map(d => d.values.reduce((a, b) => a + b, 0) / d.values.length)
 
+  // Per-INTERVAL annualized rate — the unit the squeeze-trap penalty's -5%/-7%
+  // thresholds are written in. Annualizing each interval separately (rather
+  // than thresholding the mean) is what "sustained >=3 consecutive intervals"
+  // actually asks for.
+  const annualizedPer8h = per8hPct.map(v => fr.annualizedFunding(v))
+  const runBelowMinus5 = consecutiveRun(annualizedPer8h, v => v < -5, { from: 'end' })
+  const idxBelowMinus7 = annualizedPer8h.map((v, i) => (v < -7 ? i : -1)).filter(i => i >= 0)
+  const lastBelowMinus7 = idxBelowMinus7.length ? idxBelowMinus7[idxBelowMinus7.length - 1] : null
+
   return {
     n_intervals: used.length,
     n_sessions: days.length,
@@ -1387,9 +1416,16 @@ export function fundingBlock(intervals, { n = 45 } = {}) {
     mean_annualized_pct: fr.annualizedFunding(meanPer8hPct),
     longest_negative_run_intervals: consecutiveRun(per8hPct, v => v < 0, { from: 'end' }),
     longest_negative_run_sessions: consecutiveRun(dailyAvgPct, v => v < 0, { from: 'end' }),
+    // ── squeeze-trap / gate-8 inputs (FR SKILL §4 penalty) ──
+    longest_run_below_minus5_annualized_intervals: runBelowMinus5,
+    sustained3_below_minus5: runBelowMinus5 >= 3,
+    min_interval_annualized_pct: annualizedPer8h.length ? Math.min(...annualizedPer8h) : null,
+    single_interval_below_minus7: lastBelowMinus7 !== null,
+    most_recent_below_minus7_intervals_ago: lastBelowMinus7 === null ? null : (annualizedPer8h.length - 1) - lastBelowMinus7,
     oi_90d_high_available: false,
     oi_within_5pct_of_90d_high: null,
     sign_convention: 'POSITIVE funding = longs pay shorts = carry INCOME to a short (FR SKILL, Jul 2026)',
+    threshold_note: 'sustained3_below_minus5 is the boolean fr.squeezeTrapPenalty({sustained3Intervals}) wants: >=3 consecutive intervals each ANNUALIZED below -5% (= -0.004566% per 8h). longest_negative_run_intervals counts MERELY NEGATIVE prints (FK capitulation-(b)) and is a ~1000x looser bar — it must never be read as the squeeze-trap input. single_interval_below_minus7 scans the whole used window; most_recent_below_minus7_intervals_ago exposes its recency so a stale print is not read as "prints".',
   }
 }
 

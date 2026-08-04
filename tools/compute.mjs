@@ -16,6 +16,11 @@
 //   node tools/compute.mjs streak --values 14,15,12,18 --threshold 15      (newest first)
 //   node tools/compute.mjs fr-funding --per8h 0.0053
 //   node tools/compute.mjs fr-cap --spot 64400 --ath1y 73800
+//   node tools/compute.mjs squeeze --funding-annualized -6.2 [--sustained3]
+//        [--oi-within-5pct] [--single-below-7]
+//        (FR SKILL §4 squeeze-trap penalty — Channel B gate 8 is a VETO.
+//        Take --sustained3 from fundingBlock()'s `sustained3_below_minus5`,
+//        never from `longest_negative_run_intervals`.)
 //   node tools/compute.mjs sma --values 1,2,3,4 --n 2
 //   node tools/compute.mjs trend --sessions '<json array of {date,high,low,close}>' [--spot N]
 //        [--fast 50] [--slow 200] [--slope-n 20] [--low-n 40]
@@ -141,6 +146,25 @@ switch (cmd) {
     const per8h = num(flags.per8h)
     const annualized = fr.annualizedFunding(per8h)
     out({ per8h_pct: per8h, annualized_pct: annualized, monthly_pct: Math.round(annualized / 12 * 100) / 100,
+      sign_convention: 'POSITIVE funding = longs pay shorts = carry INCOME to a short (FR SKILL, Jul 2026)' })
+    break
+  }
+  // The FR squeeze-trap penalty (SKILL §4) — the only gate in either framework
+  // that voids an unlock on its own (Channel B gate 8), and until now the one
+  // number with no CLI path. Pass --sustained3 from fundingBlock()'s
+  // `sustained3_below_minus5`, NOT from `longest_negative_run_intervals`
+  // (merely-negative prints — a ~1000x looser bar; see that function's
+  // threshold_note).
+  case 'squeeze': {
+    const annualized = num(flags['funding-annualized'])
+    const inputs = {
+      fundingAnnualizedPct: annualized,
+      sustained3Intervals: flags.sustained3 === true || flags.sustained3 === 'true',
+      oiWithin5PctOf90dHigh: flags['oi-within-5pct'] === true || flags['oi-within-5pct'] === 'true',
+      singleIntervalBelowMinus7: flags['single-below-7'] === true || flags['single-below-7'] === 'true',
+    }
+    out({ inputs, ...fr.squeezeTrapPenalty(inputs),
+      note: 'base tier: annualized < -5% AND sustained >=3 consecutive intervals → -2 raw + 1 gate surcharge. Escalated (+2 surcharge) if OI is additionally within 5% of its 90-day high, or immediately on a single interval < -7% with that same OI conjunct. In Channel B this penalty darkens gate 8, which VOIDS the unlock regardless of gate count.',
       sign_convention: 'POSITIVE funding = longs pay shorts = carry INCOME to a short (FR SKILL, Jul 2026)' })
     break
   }
@@ -286,5 +310,5 @@ switch (cmd) {
     break
   }
   default:
-    fail(`unknown command "${cmd || ''}" — rsi | thresholds | round | band | ev | stop-coherence | adr | streak | fr-funding | fr-cap | sma | drawdown | trend | stall | fr-composite | fr-companion | corr | tier1 | percentile | rvol | vol-surface | basis | positioning | netliq | stablecoin | marketdata (see header of tools/compute.mjs)`)
+    fail(`unknown command "${cmd || ''}" — rsi | thresholds | round | band | ev | stop-coherence | adr | streak | fr-funding | fr-cap | squeeze | sma | drawdown | trend | stall | fr-composite | fr-companion | corr | tier1 | percentile | rvol | vol-surface | basis | positioning | netliq | stablecoin | marketdata (see header of tools/compute.mjs)`)
 }
