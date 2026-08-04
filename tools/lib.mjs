@@ -602,6 +602,61 @@ export function netLiquidity({ walclMillions = null, rrpontsydBillions = null, w
  * history — labeled explicitly as THIRD-PARTY, cross-chain aggregation
  * subject to back-revision, never presented as a settled point figure.
  */
+/**
+ * Spot-borrow context from a Bitfinex margin-funding ticker (FR-parity plan,
+ * FR5). DISCLOSED CONTEXT ONLY — not a scored leg or gate; FR SKILL §2's
+ * Carry row, §2.5's smaller-alt row, and the Carry Cost Ledger all mandate a
+ * spot-borrow cell with no source ever pinned for it.
+ *
+ * `ticker` is Bitfinex's own raw `GET /v2/ticker/f<CCY>` array shape:
+ * [FRR, BID, BID_PERIOD, BID_SIZE, ASK, ASK_PERIOD, ASK_SIZE, ...]. FRR is a
+ * DAILY rate FRACTION (e.g. 3.56e-8 for BTC) — annualizing it is ×100 for
+ * percent then ×365 for the year, the SAME class of unit trap the Binance
+ * fundingRate fraction-vs-percent trap already guards against, so both
+ * conversions happen INSIDE this function rather than left to a caller. The
+ * output keeps 8 decimal places (not the usual round2) because these rates
+ * are genuinely this small (BTC ~0.0013%/yr) — round2 would floor every one
+ * of them to 0.00 and silently discard the reading, and even 6dp double-
+ * rounds a chained daily->annualized computation into a double-digit
+ * relative error. `annualized_pct` is computed directly from `frr`, never
+ * chained off the already-rounded `daily_rate_pct`.
+ *
+ * Three caveats stated IN THE OUTPUT, not only a comment — mirrors
+ * positioningBlock()'s scope_note discipline:
+ *  1. SINGLE VENUE.
+ *  2. a LENDING book, not necessarily the venue a short is actually borrowed
+ *     on — this is a market-rate proxy, not the analyst's real borrow cost.
+ *  3. frequently THIN (bid_size/ask_size are emitted so a sub-1-unit quote
+ *     is visible as the noise it is, not read as a real market rate).
+ */
+export function borrowBlock(ticker) {
+  const note = 'DISCLOSED CONTEXT ONLY — not a scored leg or gate. Bitfinex margin-funding book: a SINGLE VENUE, and a LENDING book — not necessarily the venue a short is actually borrowed on. Frequently THIN (see bid_size/ask_size) — a single large quote can move the headline rate; check the size before reading the rate as a real market.'
+  if (!Array.isArray(ticker) || ticker.length < 7 || typeof ticker[0] !== 'number') {
+    return { available: false, reason: 'malformed or missing Bitfinex funding ticker', note }
+  }
+  const [frr, bid, bidPeriodDays, bidSize, ask, askPeriodDays, askSize] = ticker
+  // 8 decimal places, not the usual round2/6 — these rates are genuinely
+  // this small (BTC ~1e-6 %/day) and rounding EACH stage independently
+  // (rather than chaining annualized off an already-rounded daily figure)
+  // avoids compounding a coarse rounding into a large relative error.
+  const r8 = v => (typeof v === 'number' ? Math.round(v * 1e8) / 1e8 : null)
+  const dailyRatePct = r8(frr * 100)
+  const annualizedPct = r8(frr * 100 * 365)
+  return {
+    available: true,
+    daily_rate_pct: dailyRatePct,
+    annualized_pct: annualizedPct,
+    bid_pct: r8(typeof bid === 'number' ? bid * 100 : null),
+    bid_period_days: typeof bidPeriodDays === 'number' ? bidPeriodDays : null,
+    bid_size: typeof bidSize === 'number' ? round2(bidSize) : null,
+    ask_pct: r8(typeof ask === 'number' ? ask * 100 : null),
+    ask_period_days: typeof askPeriodDays === 'number' ? askPeriodDays : null,
+    ask_size: typeof askSize === 'number' ? round2(askSize) : null,
+    scope_note: 'single-venue Bitfinex margin-FUNDING (lending) book, not necessarily the short\'s actual borrow venue; ~daily FRR annualized ×365 (simple, matching the fr-funding annualization convention)',
+    note,
+  }
+}
+
 export function stablecoinBlock(rows) {
   const clean = (rows || [])
     .map(r => ({ date: r && r.date, value: r && r.totalCirculatingUSD ? Number(r.totalCirculatingUSD.peggedUSD) : NaN }))

@@ -24,7 +24,7 @@ import { wilderRSI, sma, drawdownPct, adr, fngStreak, dailyTrend, spotPanel, fun
   percentileRank, realizedVolBlock, rollingRealizedVol,
   rollingWilderRSI, rollingDrawdownFromATH, rollingSMADistance, rollingBouncePct, rollingTrailingHighDistance,
   deribitVolBlock, basisBlock,
-  positioningBlock, netLiquidity, stablecoinBlock, _internal } from './lib.mjs'
+  positioningBlock, netLiquidity, stablecoinBlock, borrowBlock, _internal } from './lib.mjs'
 const { round2 } = _internal
 
 // annualize: realized-vol annualization convention (market-data-extension
@@ -38,12 +38,16 @@ const { round2 } = _internal
 // instrument at all — so the block is ABSENT for both, never a fabricated
 // zero. Only add a `deribit` key for an asset once its book is confirmed
 // non-empty.
+// bitfinexFunding: Bitfinex margin-funding ticker symbol for the spot-borrow
+// context (FR-parity plan, FR5). Gold carries NO key — Bitfinex has no
+// bullion funding market — so the block is ABSENT, not zero, same
+// discipline as gold's missing `funding` block.
 const ASSETS = {
-  btc: { cg: 'bitcoin', yahoo: 'BTC-USD', fng: true, perp: 'BTCUSDT', annualize: 365, deribit: 'BTC',
+  btc: { cg: 'bitcoin', yahoo: 'BTC-USD', fng: true, perp: 'BTCUSDT', annualize: 365, deribit: 'BTC', bitfinexFunding: 'fBTC',
     venues: { binance: 'BTCUSDT', coinbase: 'BTC-USD', kraken: 'XBTUSD' } },
-  eth: { cg: 'ethereum', yahoo: 'ETH-USD', fng: true, perp: 'ETHUSDT', annualize: 365, deribit: 'ETH',
+  eth: { cg: 'ethereum', yahoo: 'ETH-USD', fng: true, perp: 'ETHUSDT', annualize: 365, deribit: 'ETH', bitfinexFunding: 'fETH',
     venues: { binance: 'ETHUSDT', coinbase: 'ETH-USD', kraken: 'ETHUSD' } },
-  sol: { cg: 'solana', yahoo: 'SOL-USD', fng: true, perp: 'SOLUSDT', annualize: 365,
+  sol: { cg: 'solana', yahoo: 'SOL-USD', fng: true, perp: 'SOLUSDT', annualize: 365, bitfinexFunding: 'fSOL',
     venues: { binance: 'SOLUSDT', coinbase: 'SOL-USD', kraken: 'SOLUSD' } },
   // Gold has no crypto-exchange venues or perp — the spot panel degrades to
   // n_synchronized:0 + low_confidence:true, and `funding` is absent, not zero.
@@ -129,6 +133,14 @@ async function binancePremiumIndex(symbol) {
   return { markPrice: Number(j.markPrice), indexPrice: Number(j.indexPrice) }
 }
 
+async function bitfinexFundingTicker(symbol) {
+  // Bitfinex's own raw ticker array shape — see borrowBlock()'s JSDoc for the
+  // field layout. Keyless, no auth. A missing/delisted symbol 404s, which
+  // getJSON() throws on 4xx (never retries) and attempt() routes to errors[].
+  const j = await getJSON(`https://api-pub.bitfinex.com/v2/ticker/${encodeURIComponent(symbol)}`)
+  return Array.isArray(j) ? j : []
+}
+
 async function deribitDvol(currency) {
   const end = Date.now(), start = end - 2 * 86400e3
   const j = await getJSON(`https://www.deribit.com/api/v2/public/get_volatility_index_data?currency=${encodeURIComponent(currency)}&start_timestamp=${start}&end_timestamp=${end}&resolution=43200`)
@@ -192,7 +204,7 @@ async function fetchAsset(key, { series = false } = {}) {
 
   const venues = a.venues || {}
   const [cgSpot, cgCoin, weekly, daily, cross, fng, binanceQ, coinbaseQ, krakenQ, funding, dvolCandles, optionBook, premiumIndex,
-    longShortRows, takerRows, oiRows] = await Promise.all([
+    longShortRows, takerRows, oiRows, borrowTicker] = await Promise.all([
     // include_last_updated_at reuses this SAME call for the spot panel (commit
     // 7) — no new CoinGecko request.
     a.cg ? attempt('coingecko spot', () => getJSON(`https://api.coingecko.com/api/v3/simple/price?ids=${a.cg}&vs_currencies=usd&include_last_updated_at=true`)) : null,
@@ -227,6 +239,9 @@ async function fetchAsset(key, { series = false } = {}) {
     a.perp ? attempt('binance long/short ratio', () => binanceLongShortRatio(a.perp, 30)) : null,
     a.perp ? attempt('binance taker ratio', () => binanceTakerRatio(a.perp, 30)) : null,
     a.perp ? attempt('binance open interest hist', () => binanceOpenInterestHist(a.perp, 30)) : null,
+    // spot borrow (FR5) — gold has no bitfinexFunding key, so the block is
+    // ABSENT, not zero, same discipline as gold's missing `funding`.
+    a.bitfinexFunding ? attempt('bitfinex funding ticker', () => bitfinexFundingTicker(a.bitfinexFunding)) : null,
   ])
 
   // spot — cross-checked across sources; >1.5% divergence flagged
@@ -435,6 +450,12 @@ async function fetchAsset(key, { series = false } = {}) {
     if (a.perp && ((longShortRows && longShortRows.length) || (takerRows && takerRows.length) || (oiRows && oiRows.length))) {
       ctx.positioning = { source: `Binance fapi globalLongShortAccountRatio + takerlongshortRatio + openInterestHist (${a.perp})`,
         ...positioningBlock({ longShortRows: longShortRows || [], takerRows: takerRows || [], oiRows: oiRows || [] }) }
+    }
+
+    // spot borrow (FR-parity plan, FR5) — ABSENT for gold, which has no
+    // bitfinexFunding key on ASSETS.
+    if (a.bitfinexFunding) {
+      ctx.borrow = { source: `Bitfinex margin funding (${a.bitfinexFunding})`, ...borrowBlock(borrowTicker || []) }
     }
 
     if (fng && fng.data) {

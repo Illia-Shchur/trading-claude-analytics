@@ -8,7 +8,7 @@ import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds, FK_V
   median, stdev, pearson, pctChange, consecutiveRun, smaSlope, logReturns, alignSeries,
   percentileRank, distributionStats, realizedVol, realizedVolBlock, rollingRealizedVol,
   rollingWilderRSI, rollingDrawdownFromATH, rollingSMADistance, rollingBouncePct, rollingTrailingHighDistance,
-  deribitVolBlock, basisBlock, positioningBlock, netLiquidity, stablecoinBlock, tripwireDiff,
+  deribitVolBlock, basisBlock, positioningBlock, netLiquidity, stablecoinBlock, borrowBlock, tripwireDiff,
   dailyTrend, frStallConfirmation, frComposite, frCompanion, spotPanel, fundingBlock,
   corrSurcharge, correlationRegime, correlationFromCloses,
   fk, fr, weightedEV, evCheck, stopCoherence, adr, fngStreak,
@@ -212,6 +212,36 @@ function round2Local(x) { return Math.round(x * 100) / 100 }
   ok('magnitude check: ~$5.8T, not ~$5.8B (the 1000x failure mode this vector guards against)', nl.net_liquidity_usd_trillions > 5 && nl.net_liquidity_usd_trillions < 7)
   eq('components are echoed in their ORIGINAL (unconverted) units for audit', nl.components.rrpontsyd_usd_billions, 2.151)
   ok('cadence_note states the weekly (not daily) release schedule', nl.cadence_note.includes('WEEKLY'))
+}
+
+// ── borrowBlock (FR-parity plan, FR5) — Bitfinex spot-borrow, live pins ────
+{
+  ok('malformed ticker → available:false, not a crash', borrowBlock(null).available === false)
+  ok('short array → available:false', borrowBlock([1, 2]).available === false)
+  ok('non-numeric FRR → available:false', borrowBlock(['x', 0, 0, 0, 0, 0, 0]).available === false)
+
+  // Live pins (2026-08-04): fBTC/fETH/fSOL raw Bitfinex ticker arrays.
+  // FRR is a DAILY rate FRACTION — the unit trap this function exists to
+  // catch is the SAME class as the Binance fundingRate fraction-vs-percent
+  // trap (fundingBlock): ×100 for percent, ×365 for the year, both INSIDE
+  // the function, never left to a caller.
+  const btcTicker = [3.5616438356164384e-8, 1.1e-8, 120, 0.59580401, 3.4e-8, 2, 1215.53452925]
+  const btc = borrowBlock(btcTicker)
+  ok('BTC available', btc.available === true)
+  eq('BTC annualized ~0.0013%/yr (daily FRR × 100 × 365)', btc.annualized_pct, 0.0013)
+  eq('BTC bid_size exposes the THIN book (0.5958... BTC)', btc.bid_size, 0.6)
+  ok('scope_note states single-venue + lending-book, not the short\'s actual venue', btc.scope_note.includes('single-venue') && btc.scope_note.includes('not necessarily'))
+
+  const ethTicker = [0.000010378082191780821, 2e-7, 5, 0.3, 3.756e-7, 2, 5820.79569369]
+  const eth = borrowBlock(ethTicker)
+  eq('ETH annualized ~0.38%/yr', eth.annualized_pct, 0.3788)
+
+  const solTicker = [0.00005031780821917808, 0, 0, 0, 0.00004999, 2, 12765.80447455]
+  const sol = borrowBlock(solTicker)
+  eq('SOL annualized ~1.84%/yr', sol.annualized_pct, 1.8366)
+  eq('SOL bid_size is genuinely 0 (no live bid at probe time) — the thinness this caveat exists for', sol.bid_size, 0)
+
+  ok('note names all three caveats: single venue, lending book, thin book', /SINGLE VENUE/.test(btc.note) && /LENDING/.test(btc.note) && /THIN/.test(btc.note))
 }
 
 // ── stablecoinBlock (C5) — DefiLlama aggregate supply, third-party-labeled ─

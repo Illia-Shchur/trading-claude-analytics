@@ -50,6 +50,9 @@
 //   node tools/compute.mjs netliq --walcl N --rrpontsyd N --wtregen N
 //        (Tier 1/C4 — WALCL/WTREGEN in FRED's $ MILLIONS, rrpontsyd in FRED's
 //        $ BILLIONS — units converted INSIDE netLiquidity(); DISCLOSED CONTEXT ONLY)
+//   node tools/compute.mjs borrow --ticker <@file.json|json>
+//        (FR-parity plan, FR5 — Bitfinex spot-borrow: raw GET /v2/ticker/f<CCY>
+//        array; single-venue lending book, DISCLOSED CONTEXT ONLY)
 //   node tools/compute.mjs stablecoin --rows <@file.json|json>
 //        (Tier 1/C5 — DefiLlama aggregate supply; third-party, back-revision
 //        risk disclosed; DISCLOSED CONTEXT ONLY)
@@ -61,7 +64,7 @@ import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds,
   dailyTrend, frStallConfirmation, frComposite, frCompanion, correlationFromCloses,
   nextNTradingDays, percentileRank, distributionStats,
   realizedVolBlock, rollingRealizedVol, deribitVolBlock, basisBlock, positioningBlock,
-  netLiquidity, stablecoinBlock } from './lib.mjs'
+  netLiquidity, stablecoinBlock, borrowBlock } from './lib.mjs'
 
 const [, , cmd, ...rest] = process.argv
 const args = [], flags = {}
@@ -251,6 +254,11 @@ switch (cmd) {
     }))
     break
   }
+  case 'borrow': {
+    if (!flags.ticker) fail('pass --ticker <@file.json|json array> (raw Bitfinex GET /v2/ticker/f<CCY> shape)')
+    out(borrowBlock(json(flags.ticker)))
+    break
+  }
   case 'stablecoin': {
     if (!flags.rows) fail('pass --rows <@file.json|json> (raw DefiLlama stablecoincharts/all array)')
     out(stablecoinBlock(json(flags.rows)))
@@ -310,5 +318,5 @@ switch (cmd) {
     break
   }
   default:
-    fail(`unknown command "${cmd || ''}" — rsi | thresholds | round | band | ev | stop-coherence | adr | streak | fr-funding | fr-cap | squeeze | sma | drawdown | trend | stall | fr-composite | fr-companion | corr | tier1 | percentile | rvol | vol-surface | basis | positioning | netliq | stablecoin | marketdata (see header of tools/compute.mjs)`)
+    fail(`unknown command "${cmd || ''}" — rsi | thresholds | round | band | ev | stop-coherence | adr | streak | fr-funding | fr-cap | squeeze | sma | drawdown | trend | stall | fr-composite | fr-companion | corr | tier1 | percentile | rvol | vol-surface | basis | positioning | netliq | stablecoin | marketdata | borrow (see header of tools/compute.mjs)`)
 }
