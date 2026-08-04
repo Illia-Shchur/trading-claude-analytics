@@ -5,9 +5,15 @@
 // alternative.me (Fear & Greed), FRED fredgraph CSV (10y TIPS real yield).
 // Farside (ETF flows) is Cloudflare-blocked — ETF flows, on-chain, and news
 // remain WebSearch/WebFetch jobs per Hard Rule 1; this tool does NOT replace them.
+// spx/ndx (FR-parity plan, FR7): shaped identically to `gold` — Yahoo-only,
+// no perp/venues/fng/deribit/bitfinexFunding, every derivatives and crypto-
+// sentiment block ABSENT by construction. Adding them makes a Flying Rocket
+// out-of-scope adaptation (already adopted for gold/UNI/SPX) reproducible
+// from the committed repo; it does NOT put an index in FR's declared scope
+// — the SKILL's §2.5 caveat and mandatory ADAPTED labeling are untouched.
 //
 // Usage:
-//   node tools/fetch.mjs btc|eth|sol|gold [--series] → spot cross-check, ATH/drawdown,
+//   node tools/fetch.mjs btc|eth|sol|gold|spx|ndx [--series] → spot cross-check, ATH/drawdown,
 //       weekly closes + Wilder RSI-14 + 200-week SMA (±8% gate-6 check),
 //       daily sessions (2y) + 5-day ADR + `trend` block (RSI-14, 50/200dma,
 //       200dma slope, 40-session low/bounce/age — every frChannel()/frB.*
@@ -52,6 +58,18 @@ const ASSETS = {
   // Gold has no crypto-exchange venues or perp — the spot panel degrades to
   // n_synchronized:0 + low_confidence:true, and `funding` is absent, not zero.
   gold: { yahoo: 'GC=F', crossYahoo: 'MGC=F', fng: false, athRange: '10y', annualize: 252, venues: {} },
+  // spx/ndx (FR-parity plan, FR7): FR has run on non-crypto assets five
+  // times (gold ×2, UNI ×2, SPX) and until now none of them were
+  // reproducible from the committed repo — the 2026-08-04 SPX report states
+  // its backbone came from "a scratchpad ASSETS entry shaped exactly like
+  // gold." Shaped identically to gold on purpose: Yahoo-only, no perp, no
+  // venues, no fng, no deribit, no bitfinexFunding — every derivatives and
+  // crypto-sentiment block is ABSENT by construction, exactly as gold
+  // degrades today. Adding these does NOT put an index in FR's scope — the
+  // SKILL's §2.5 scope caveat and the mandatory ADAPTED labeling are
+  // untouched; this only makes an already-adopted adaptation reproducible.
+  spx: { yahoo: '^GSPC', crossYahoo: 'ES=F', fng: false, athRange: '10y', annualize: 252, venues: {} },
+  ndx: { yahoo: '^NDX', crossYahoo: 'NQ=F', fng: false, athRange: '10y', annualize: 252, venues: {} },
 }
 const UA = { headers: { 'User-Agent': 'Mozilla/5.0 (trading-claude-analytics toolchain)' } }
 
