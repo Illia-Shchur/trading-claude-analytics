@@ -50,6 +50,10 @@
 //   node tools/compute.mjs netliq --walcl N --rrpontsyd N --wtregen N
 //        (Tier 1/C4 — WALCL/WTREGEN in FRED's $ MILLIONS, rrpontsyd in FRED's
 //        $ BILLIONS — units converted INSIDE netLiquidity(); DISCLOSED CONTEXT ONLY)
+//   node tools/compute.mjs short-ev --directional-ev N --funding-annualized N
+//        --hold-days N [--target-gain-pct N]
+//        (FR SKILL §5/§6 — carry zero-floor + the +3% minimum-edge filter +
+//        the 40%-of-target carry veto; NOT disclosed context, two real gates)
 //   node tools/compute.mjs borrow --ticker <@file.json|json>
 //        (FR-parity plan, FR5 — Bitfinex spot-borrow: raw GET /v2/ticker/f<CCY>
 //        array; single-venue lending book, DISCLOSED CONTEXT ONLY)
@@ -64,7 +68,7 @@ import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds,
   dailyTrend, frStallConfirmation, frComposite, frCompanion, correlationFromCloses,
   nextNTradingDays, percentileRank, distributionStats,
   realizedVolBlock, rollingRealizedVol, deribitVolBlock, basisBlock, positioningBlock,
-  netLiquidity, stablecoinBlock, borrowBlock } from './lib.mjs'
+  netLiquidity, stablecoinBlock, borrowBlock, shortEV } from './lib.mjs'
 
 const [, , cmd, ...rest] = process.argv
 const args = [], flags = {}
@@ -254,6 +258,17 @@ switch (cmd) {
     }))
     break
   }
+  case 'short-ev': {
+    if (flags['directional-ev'] == null || flags['funding-annualized'] == null || flags['hold-days'] == null)
+      fail('pass --directional-ev N --funding-annualized N --hold-days N [--target-gain-pct N]')
+    out(shortEV({
+      directionalEV: num(flags['directional-ev']),
+      fundingAnnualizedPct: num(flags['funding-annualized']),
+      holdDays: num(flags['hold-days']),
+      targetGainPct: flags['target-gain-pct'] != null ? num(flags['target-gain-pct']) : null,
+    }))
+    break
+  }
   case 'borrow': {
     if (!flags.ticker) fail('pass --ticker <@file.json|json array> (raw Bitfinex GET /v2/ticker/f<CCY> shape)')
     out(borrowBlock(json(flags.ticker)))
@@ -318,5 +333,5 @@ switch (cmd) {
     break
   }
   default:
-    fail(`unknown command "${cmd || ''}" — rsi | thresholds | round | band | ev | stop-coherence | adr | streak | fr-funding | fr-cap | squeeze | sma | drawdown | trend | stall | fr-composite | fr-companion | corr | tier1 | percentile | rvol | vol-surface | basis | positioning | netliq | stablecoin | marketdata | borrow (see header of tools/compute.mjs)`)
+    fail(`unknown command "${cmd || ''}" — rsi | thresholds | round | band | ev | stop-coherence | adr | streak | fr-funding | fr-cap | squeeze | sma | drawdown | trend | stall | fr-composite | fr-companion | corr | tier1 | percentile | rvol | vol-surface | basis | positioning | netliq | stablecoin | marketdata | borrow | short-ev (see header of tools/compute.mjs)`)
 }

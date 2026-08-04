@@ -8,7 +8,7 @@ import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds, FK_V
   median, stdev, pearson, pctChange, consecutiveRun, smaSlope, logReturns, alignSeries,
   percentileRank, distributionStats, realizedVol, realizedVolBlock, rollingRealizedVol,
   rollingWilderRSI, rollingDrawdownFromATH, rollingSMADistance, rollingBouncePct, rollingTrailingHighDistance,
-  deribitVolBlock, basisBlock, positioningBlock, netLiquidity, stablecoinBlock, borrowBlock, tripwireDiff,
+  deribitVolBlock, basisBlock, positioningBlock, netLiquidity, stablecoinBlock, borrowBlock, shortEV, tripwireDiff,
   dailyTrend, frStallConfirmation, frComposite, frCompanion, spotPanel, fundingBlock,
   corrSurcharge, correlationRegime, correlationFromCloses,
   fk, fr, weightedEV, evCheck, stopCoherence, adr, fngStreak,
@@ -242,6 +242,47 @@ function round2Local(x) { return Math.round(x * 100) / 100 }
   eq('SOL bid_size is genuinely 0 (no live bid at probe time) — the thinness this caveat exists for', sol.bid_size, 0)
 
   ok('note names all three caveats: single venue, lending book, thin book', /SINGLE VENUE/.test(btc.note) && /LENDING/.test(btc.note) && /THIN/.test(btc.note))
+}
+
+// ── shortEV (FR-parity plan, FR6) — carry zero-floor + both vetoes ─────────
+{
+  ok('missing inputs → available:false, not a crash', shortEV({}).available === false)
+
+  // The whole POINT of the zero-floor: positive (income) funding would let
+  // the TRUE total clear the +3% filter, but the FLOORED total (what gates
+  // actually read) must not benefit from it.
+  // carry_true = 10 × (90/365) = 2.4658 → total_true = 1 + 2.4658 = 3.4658 (would pass)
+  // carry_floored = min(2.4658, 0) = 0 → total_for_gates = 1 + 0 = 1 (fails)
+  const incomeCase = shortEV({ directionalEV: 1, fundingAnnualizedPct: 10, holdDays: 90 })
+  ok('positive funding: floor applied (true != floored)', incomeCase.carry_floor_applied === true)
+  eq('carry_ev_pct_floored is exactly 0 for income, never negative-of-income', incomeCase.carry_ev_pct_floored, 0)
+  ok('TRUE total would clear +3%...', incomeCase.total_short_ev_true > 3)
+  ok('...but the FLOORED total (what the filter actually reads) does NOT — the floor is doing its job', incomeCase.passes_min_edge_filter === false)
+
+  // Negative (cost) funding: true and floored AGREE — a real cost counts in
+  // full either way, the floor only ever suppresses INCOME.
+  // carry = -5 × (90/365) = -1.2329 → total = 6 - 1.2329 = 4.7671 (passes)
+  const costCase = shortEV({ directionalEV: 6, fundingAnnualizedPct: -5, holdDays: 90 })
+  ok('negative funding: floor NOT applied (cost counts in full both ways)', costCase.carry_floor_applied === false)
+  eq('true and floored carry are identical for a real cost', costCase.carry_ev_pct_true, costCase.carry_ev_pct_floored)
+  ok('total clears +3% on a genuine cost-adjusted edge', costCase.passes_min_edge_filter === true)
+
+  // Carry EXACTLY 40% of target → veto NOT fired (strict >, SKILL letter:
+  // "if carry > 40% of target"). holdDays=365 so carry_ev_pct = fundingAnnualizedPct verbatim.
+  const exactly40 = shortEV({ directionalEV: 6, fundingAnnualizedPct: -4, holdDays: 365, targetGainPct: 10 })
+  eq('carry_pct_of_target is exactly 40', exactly40.carry_pct_of_target, 40)
+  ok('exactly 40% does NOT fire the veto (strict >)', exactly40.carry_veto === false)
+  const over40 = shortEV({ directionalEV: 6, fundingAnnualizedPct: -4.01, holdDays: 365, targetGainPct: 10 })
+  ok('just over 40% DOES fire the veto', over40.carry_veto === true)
+
+  // Total EXACTLY +3% → filter NOT cleared (strict >, SKILL letter: "must
+  // EXCEED +3%"). Income floored to 0, so total_for_gates = directionalEV.
+  const exactly3 = shortEV({ directionalEV: 3, fundingAnnualizedPct: 5, holdDays: 365 })
+  eq('total_short_ev_for_gates is exactly 3 (income floored to 0)', exactly3.total_short_ev_for_gates, 3)
+  ok('exactly +3% does NOT clear the filter (strict >)', exactly3.passes_min_edge_filter === false)
+
+  ok('carry_pct_of_target/carry_veto are null, not 0/false-as-fact, when no target is supplied', exactly3.carry_pct_of_target === null && exactly3.carry_veto === null)
+  ok('sign_convention and ledger_note are both present and distinct', typeof incomeCase.sign_convention === 'string' && incomeCase.ledger_note.includes('ACCOUNT CASHFLOW') && incomeCase.ledger_note.includes('INVERTS'))
 }
 
 // ── stablecoinBlock (C5) — DefiLlama aggregate supply, third-party-labeled ─

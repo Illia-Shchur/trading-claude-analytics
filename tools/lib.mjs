@@ -681,6 +681,73 @@ export function stablecoinBlock(rows) {
 }
 
 /**
+ * Short EV with the carry zero-floor and the FR SKILL's two carry-side
+ * vetoes (FR-parity plan, FR6). Mirrors §5/§6 LETTER-FOR-LETTER — this is
+ * NOT disclosed context, it computes two of the framework's actual gate
+ * checks (the +3% minimum-edge filter and the 40%-of-target carry veto),
+ * today done as hand arithmetic across three separately-documented sign
+ * conventions.
+ *
+ * `directionalEV` is supplied by the caller (e.g. weightedEV()'s output on
+ * the report's own scenario grid) — this function does not derive it.
+ * `fundingAnnualizedPct` is the SAME market-rate convention as
+ * fr.annualizedFunding()/basisBlock() (POSITIVE = longs pay shorts = carry
+ * INCOME to a short). Carry EV (%) = fundingAnnualizedPct × (holdDays/365),
+ * per §5's own formula.
+ *
+ * Zero-floor on carry INCOME (§5, Jul 2026 correction): for the two GATE
+ * checks only, carry income is floored at ZERO — `carry_ev_pct_floored =
+ * min(carry_ev_pct_true, 0)`, so a real cost (negative) still counts in
+ * full but an income (positive) can never help a short clear the filter or
+ * shrink the veto. The headline `*_true` figures are the UNFLOORED signed
+ * values, always printed alongside for transparency — the floor exists at
+ * the two decision points, not in the reported EV itself.
+ *
+ * `passes_min_edge_filter` is `total_short_ev_for_gates > 3` — STRICT `>`;
+ * the SKILL says the filter must be "exceeded", so exactly +3% does NOT
+ * clear it. `carry_veto` is `carry_pct_of_target > 40` — also STRICT; the
+ * SKILL says "if carry > 40% of target gain", so exactly 40% does NOT fire.
+ * Neither edge is re-adjudicated here differently from the SKILL letter.
+ *
+ * `ledger_note` names the THIRD documented sign trap in this repo (after
+ * the Jul-2026 funding correction and the FR2 skew-sign pin): the position
+ * snapshot's `funding_usd` is ACCOUNT CASHFLOW (negative = paid out of the
+ * account, whichever side it's on) and inverts against this MARKET-RATE
+ * convention. It fills the realized Carry-Cost-Ledger column (§6) and
+ * NOTHING computed here.
+ */
+export function shortEV({ directionalEV = null, fundingAnnualizedPct = null, holdDays = null, targetGainPct = null } = {}) {
+  if (typeof directionalEV !== 'number' || typeof fundingAnnualizedPct !== 'number' || typeof holdDays !== 'number') {
+    return { available: false, reason: 'directionalEV/fundingAnnualizedPct/holdDays required',
+      sign_convention: 'POSITIVE funding = longs pay shorts = carry INCOME to a short (FR SKILL, Jul 2026)' }
+  }
+  const carryEvPctTrue = round2(fundingAnnualizedPct * (holdDays / 365))
+  const carryEvPctFloored = Math.min(carryEvPctTrue, 0)
+  const totalShortEvTrue = round2(directionalEV + carryEvPctTrue)
+  const totalShortEvForGates = round2(directionalEV + carryEvPctFloored)
+  const passesMinEdgeFilter = totalShortEvForGates > 3
+
+  const hasTarget = typeof targetGainPct === 'number' && targetGainPct > 0
+  const carryPctOfTarget = hasTarget ? round2(Math.abs(carryEvPctFloored) / targetGainPct * 100) : null
+  const carryVeto = carryPctOfTarget != null ? carryPctOfTarget > 40 : null
+
+  return {
+    available: true,
+    directional_ev_pct: round2(directionalEV),
+    carry_ev_pct_true: carryEvPctTrue,
+    carry_ev_pct_floored: carryEvPctFloored,
+    carry_floor_applied: carryEvPctTrue !== carryEvPctFloored,
+    total_short_ev_true: totalShortEvTrue,
+    total_short_ev_for_gates: totalShortEvForGates,
+    passes_min_edge_filter: passesMinEdgeFilter,
+    carry_pct_of_target: carryPctOfTarget,
+    carry_veto: carryVeto,
+    sign_convention: 'POSITIVE funding = longs pay shorts = carry INCOME to a short (FR SKILL, Jul 2026) — identical convention to fr.annualizedFunding()/basisBlock()',
+    ledger_note: 'the position snapshot\'s funding_usd is ACCOUNT CASHFLOW (negative = paid OUT of the account, whichever side the position is on) and INVERTS against this MARKET-RATE convention — use the ledger figure ONLY to fill the realized Carry-Cost-Ledger column (SKILL §6), never here',
+  }
+}
+
+/**
  * Snapshot-to-snapshot boundary-crossing diff (market-data-extension plan,
  * D2). Pure — `tools/tripwire.mjs` does the file I/O, this does the
  * comparison. Reports ONLY scoring-relevant crossings, each via the
