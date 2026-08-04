@@ -279,6 +279,68 @@ function round2Local(x) { return Math.round(x * 100) / 100 }
 
   ok('an asset present only in `next` (not `prev`) is skipped, not a crash', tripwireDiff({}, { eth: { sentiment: { avg_3d: 10 } } }).n_crossings === 0)
   eq('the "macro" key is never treated as an asset', tripwireDiff({ macro: {} }, { macro: {} }).n_crossings, 0)
+
+  // ── FR-parity plan, FR3: Channel B / FR-only crossings ──────────────────
+
+  // fr_euphoria_band: 55 (band 1, 50-59) -> 65 (band 2, 60-69)
+  const euphoriaCross = tripwireDiff({ btc: { sentiment: { avg_3d: 55 } } }, { btc: { sentiment: { avg_3d: 65 } } })
+  eq('fr euphoria band crossing is reported', euphoriaCross.n_crossings, 1)
+  eq('crossing type is fr_euphoria_band', euphoriaCross.crossings[0].type, 'fr_euphoria_band')
+
+  // fr_momentum_band: weekly RSI 62 (band 1, 60-65) -> 68 (band 2, 65-70)
+  const frMomCross = tripwireDiff({ btc: { weekly: { rsi14: { rsi: 62 } } } }, { btc: { weekly: { rsi14: { rsi: 68 } } } })
+  ok('fr_momentum_band crossing is reported (distinct from fk_momentum_band)', frMomCross.crossings.some(c => c.type === 'fr_momentum_band'))
+
+  // frb_weekly_rsi50_qualifier: weekly RSI 48 -> 52 crosses the >=50 hard qualifier
+  const rsi50Cross = tripwireDiff({ btc: { weekly: { rsi14: { rsi: 48 } } } }, { btc: { weekly: { rsi14: { rsi: 52 } } } })
+  ok('frb_weekly_rsi50_qualifier crossing is reported', rsi50Cross.crossings.some(c => c.type === 'frb_weekly_rsi50_qualifier'))
+
+  // frb_rally_band: bounce_pct 20% (band 3, >18) -> 30% (band 4, >25)
+  const rallyCross = tripwireDiff(
+    { btc: { trend: { insufficient: null, bounce_pct: 20 } } },
+    { btc: { trend: { insufficient: null, bounce_pct: 30 } } },
+  )
+  eq('frb_rally_band crossing is reported', rallyCross.n_crossings, 1)
+  eq('crossing type is frb_rally_band', rallyCross.crossings[0].type, 'frb_rally_band')
+
+  // frb_momentum_band: daily RSI 50 (band 1, >45) -> 60 (band 2, >52), weekly RSI
+  // held at 40 (<50) in both so the qualifier does not confound this check
+  const frbMomCross = tripwireDiff(
+    { btc: { trend: { insufficient: null, rsi14: 50 }, weekly: { rsi14: { rsi: 40 } } } },
+    { btc: { trend: { insufficient: null, rsi14: 60 }, weekly: { rsi14: { rsi: 40 } } } },
+  )
+  ok('frb_momentum_band crossing is reported', frbMomCross.crossings.some(c => c.type === 'frb_momentum_band'))
+
+  // frb_maturity_penalty: bounce_age_sessions 5 (<8, -2 penalty) -> 10 (>=8, 0)
+  const maturityCross = tripwireDiff(
+    { btc: { trend: { insufficient: null, bounce_age_sessions: 5 } } },
+    { btc: { trend: { insufficient: null, bounce_age_sessions: 10 } } },
+  )
+  eq('frb_maturity_penalty crossing is reported', maturityCross.n_crossings, 1)
+  eq('crossing type is frb_maturity_penalty', maturityCross.crossings[0].type, 'frb_maturity_penalty')
+
+  // fr_gate8_sustained_negative: the SCORING-relevant funding boundary
+  // (Channel B gate 8), distinct from the informational funding_sign check
+  const gate8Cross = tripwireDiff(
+    { btc: { funding: { mean_annualized_pct: -2, sustained3_below_minus5: false } } },
+    { btc: { funding: { mean_annualized_pct: -6, sustained3_below_minus5: true } } },
+  )
+  ok('fr_gate8_sustained_negative crossing is reported', gate8Cross.crossings.some(c => c.type === 'fr_gate8_sustained_negative'))
+  ok('funding_sign does NOT also fire (both readings are negative, no sign flip)', !gate8Cross.crossings.some(c => c.type === 'funding_sign'))
+
+  // Fail-closed: a prev snapshot predating FR1/FR4 (missing the new field
+  // entirely) must yield NO crossing, never a crossing from an assumed
+  // default (Hard Rule 6).
+  const missingFieldCross = tripwireDiff(
+    { btc: { funding: { mean_annualized_pct: -2 } } }, // no sustained3_below_minus5 at all
+    { btc: { funding: { mean_annualized_pct: -6, sustained3_below_minus5: true } } },
+  )
+  ok('missing sustained3_below_minus5 on prev -> no fr_gate8 crossing fabricated', !missingFieldCross.crossings.some(c => c.type === 'fr_gate8_sustained_negative'))
+  const missingTrendCross = tripwireDiff(
+    { btc: {} }, // no trend block at all (e.g. insufficient sessions on the prior run)
+    { btc: { trend: { insufficient: null, bounce_pct: 30, rsi14: 60, bounce_age_sessions: 10 }, weekly: { rsi14: { rsi: 40 } } } },
+  )
+  eq('missing prev.trend -> zero frB crossings fabricated from nothing', missingTrendCross.n_crossings, 0)
 }
 ok('pearson throws on length mismatch', (() => { try { pearson([1, 2], [1]); return false } catch (e) { return true } })())
 eq('pearson perfect positive', pearson([1, 2, 3], [2, 4, 6]), 1)

@@ -598,6 +598,18 @@ export function stablecoinBlock(rows) {
  *
  * Every crossing types are DISCLOSURE — "a boundary moved," not a
  * recommendation. This does not compute or move any score itself.
+ *
+ * FR-parity plan (FR3, 2026-08-05) added the Channel B / FR-only crossings
+ * that were entirely missing: `fr_euphoria_band`, `fr_momentum_band`,
+ * `frb_rally_band`, `frb_momentum_band`, `frb_weekly_rsi50_qualifier` (the
+ * §4B hard qualifier zeroing the momentum leg — a distinct event from a
+ * band-to-band delta, given its own type), `frb_maturity_penalty`, and
+ * `fr_gate8_sustained_negative` (FR1's `funding.sustained3_below_minus5` —
+ * the actual scoring-relevant funding boundary; the pre-existing
+ * `funding_sign` crossing is informational only, read by FK capitulation,
+ * and was never a gate). Every new check requires the field on BOTH
+ * snapshots — a prev snapshot predating FR1/FR4 (or missing the block for
+ * any reason) yields NO crossing, never one from an assumed default.
  */
 export function tripwireDiff(prevSnapshot, nextSnapshot, { checkpoints = {} } = {}) {
   const crossings = []
@@ -642,6 +654,58 @@ export function tripwireDiff(prevSnapshot, nextSnapshot, { checkpoints = {} } = 
     if (p.funding && n.funding && p.funding.mean_annualized_pct != null && n.funding.mean_annualized_pct != null) {
       const from = Math.sign(p.funding.mean_annualized_pct), to = Math.sign(n.funding.mean_annualized_pct)
       if (from !== to) crossings.push({ asset: AS, type: 'funding_sign', from, to, prev_value: p.funding.mean_annualized_pct, next_value: n.funding.mean_annualized_pct })
+    }
+
+    // ── FR-parity plan, FR3: Channel B / FR-only crossings ─────────────────
+    // funding_sign above is informational only (FK capitulation reads it) —
+    // it was never the scoring-relevant funding boundary. This block adds the
+    // one that is: FR1's sustained3_below_minus5, plus every §4A/§4B band edge
+    // the tripwire had no coverage for at all. Every check requires BOTH
+    // snapshots to carry the field — a prev snapshot predating FR1/FR4 (or any
+    // transient fetch gap) yields NO crossing, never a crossing from an
+    // assumed default (fail-closed, Hard Rule 6).
+
+    if (p.sentiment && n.sentiment && p.sentiment.avg_3d != null && n.sentiment.avg_3d != null) {
+      const from = fr.euphoriaBand(p.sentiment.avg_3d), to = fr.euphoriaBand(n.sentiment.avg_3d)
+      if (from !== to) crossings.push({ asset: AS, type: 'fr_euphoria_band', from, to, prev_value: p.sentiment.avg_3d, next_value: n.sentiment.avg_3d })
+    }
+
+    if (p.weekly && n.weekly && p.weekly.rsi14 && n.weekly.rsi14 && p.weekly.rsi14.rsi != null && n.weekly.rsi14.rsi != null) {
+      const from = fr.momentumBand(p.weekly.rsi14.rsi), to = fr.momentumBand(n.weekly.rsi14.rsi)
+      if (from !== to) crossings.push({ asset: AS, type: 'fr_momentum_band', from, to, prev_value: p.weekly.rsi14.rsi, next_value: n.weekly.rsi14.rsi })
+
+      // The weekly-RSI>=50 hard qualifier (SKILL §4B) zeroes frB.momentumBand
+      // outright — a genuinely different event from a band-to-band delta, so
+      // it gets its own crossing type rather than being folded into
+      // frb_momentum_band below.
+      const qFrom = p.weekly.rsi14.rsi >= 50, qTo = n.weekly.rsi14.rsi >= 50
+      if (qFrom !== qTo) crossings.push({ asset: AS, type: 'frb_weekly_rsi50_qualifier', from: qFrom, to: qTo, prev_value: p.weekly.rsi14.rsi, next_value: n.weekly.rsi14.rsi })
+    }
+
+    if (p.trend && n.trend && !p.trend.insufficient && !n.trend.insufficient) {
+      if (p.trend.bounce_pct != null && n.trend.bounce_pct != null) {
+        const from = frB.rallyBand(p.trend.bounce_pct), to = frB.rallyBand(n.trend.bounce_pct)
+        if (from !== to) crossings.push({ asset: AS, type: 'frb_rally_band', from, to, prev_value: p.trend.bounce_pct, next_value: n.trend.bounce_pct })
+      }
+
+      if (p.trend.rsi14 != null && n.trend.rsi14 != null && p.weekly && n.weekly && p.weekly.rsi14 && n.weekly.rsi14
+          && p.weekly.rsi14.rsi != null && n.weekly.rsi14.rsi != null) {
+        const from = frB.momentumBand(p.trend.rsi14, p.weekly.rsi14.rsi), to = frB.momentumBand(n.trend.rsi14, n.weekly.rsi14.rsi)
+        if (from !== to) crossings.push({ asset: AS, type: 'frb_momentum_band', from, to, prev_value: p.trend.rsi14, next_value: n.trend.rsi14 })
+      }
+
+      if (p.trend.bounce_age_sessions != null && n.trend.bounce_age_sessions != null) {
+        const from = frB.maturityPenalty(p.trend.bounce_age_sessions), to = frB.maturityPenalty(n.trend.bounce_age_sessions)
+        if (from !== to) crossings.push({ asset: AS, type: 'frb_maturity_penalty', from, to, prev_value: p.trend.bounce_age_sessions, next_value: n.trend.bounce_age_sessions })
+      }
+    }
+
+    if (p.funding && n.funding && typeof p.funding.sustained3_below_minus5 === 'boolean' && typeof n.funding.sustained3_below_minus5 === 'boolean'
+        && p.funding.sustained3_below_minus5 !== n.funding.sustained3_below_minus5) {
+      // The SCORING-relevant funding boundary (Channel B gate 8 — the only
+      // gate in either framework that voids an unlock on its own), as
+      // distinct from funding_sign above.
+      crossings.push({ asset: AS, type: 'fr_gate8_sustained_negative', from: p.funding.sustained3_below_minus5, to: n.funding.sustained3_below_minus5 })
     }
 
     const cp = checkpoints[a]

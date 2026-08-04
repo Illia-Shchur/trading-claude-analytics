@@ -1,13 +1,18 @@
 // ============================================================================
 // tools/tripwire.mjs — snapshot-to-snapshot boundary-crossing tripwire
-// (market-data-extension plan, D2). Reads the two NEWEST stored
+// (market-data-extension plan, D2; Channel B / FR-only crossings added by
+// the FR-parity plan, FR3, 2026-08-05). Reads the two NEWEST stored
 // tools/snapshot.mjs records and reports only SCORING-RELEVANT crossings —
-// band edges, gate-6, frChannel routing, funding sign, F&G gate-1 streak
-// threshold, the FR phase-of-cycle cap tier, and (optionally) a
-// report-authored checkpoint's distance-to-line in whole ADR units — via
-// tripwireDiff() in tools/lib.mjs, which does the actual comparison using
-// the SAME fk.*/fr.*/frChannel classifiers a report would use. This file
-// only does file I/O; no reimplementation of a band or gate lives here.
+// FK band edges, gate-6, frChannel routing, the FR phase-of-cycle cap tier,
+// F&G gate-1 streak threshold, FR §4A euphoria/momentum band edges, every
+// §4B Channel B band edge (rally, momentum, the weekly-RSI>=50 hard
+// qualifier, the bounce-maturity penalty), the ACTUAL scoring-relevant
+// funding boundary (gate 8's sustained3_below_minus5 — funding_sign is kept
+// but is informational only), and (optionally) a report-authored
+// checkpoint's distance-to-line in whole ADR units — via tripwireDiff() in
+// tools/lib.mjs, which does the actual comparison using the SAME
+// fk.*/fr.*/frB.*/frChannel classifiers a report would use. This file only
+// does file I/O; no reimplementation of a band or gate lives here.
 //
 // This is DISCLOSURE, not a recommendation, and it computes/moves no score
 // itself. NO NETWORK — reads stored snapshot.json files only. NO WRITES
