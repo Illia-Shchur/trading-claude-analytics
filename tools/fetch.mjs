@@ -29,7 +29,7 @@ import { pathToFileURL } from 'node:url'
 import { wilderRSI, sma, drawdownPct, adr, fngStreak, dailyTrend, spotPanel, fundingBlock, fr,
   percentileRank, realizedVolBlock, rollingRealizedVol,
   rollingWilderRSI, rollingDrawdownFromATH, rollingSMADistance, rollingBouncePct, rollingTrailingHighDistance,
-  deribitVolBlock, basisBlock, sentimentProxyBlock,
+  deribitVolBlock, basisBlock, sentimentProxyBlock, proximityPanel,
   positioningBlock, netLiquidity, stablecoinBlock, borrowBlock, _internal } from './lib.mjs'
 const { round2 } = _internal
 
@@ -562,6 +562,14 @@ async function fetchAsset(key, { series = false } = {}) {
         ctx.sentiment_proxy = { source: `Yahoo ${[sp.vol, sp.cef, sp.cefRef].filter(Boolean).join(' + ')}`, ...block }
       }
     }
+
+    // Distance to every consequential boundary (§9.2 item 4 of the 2026-08-05
+    // gold report). tripwireDiff() only fires AFTER a crossing, so a metric
+    // can sit a hair from a routing change for several reports with the board
+    // silent. Reads the same classifiers the frameworks already score with —
+    // no new rubric, and explicitly not a trigger. Built LAST so it sees the
+    // fully-assembled spot/weekly/trend/high_1y/sentiment blocks.
+    ctx.proximity = proximityPanel(outp)
 
     // Deribit vol surface — ABSENT (not a fabricated zero) for SOL/gold,
     // which carry no `deribit` key on ASSETS. See deribitVolBlock()'s JSDoc

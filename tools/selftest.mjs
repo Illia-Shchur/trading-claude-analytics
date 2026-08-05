@@ -22,7 +22,7 @@ import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds, frTh
   fillPrice, trancheFilled, entryLooksLikeFill, EPOCHS, ENTRY_PRICE_EPOCH,
   reportFileMeta, localToUtcISO, schemaEpochOf, signalRubric, legSpec, inferChannel,
   inferDiscretion, gateMask, unlockFor, canonicalJSON, feedChanged, REPORT_FILE_RE, snapshotDigestPayload,
-  weekdayOf, isTradingDay, nextNTradingDays, tradingDaysBetween, sentimentProxyBlock } from './lib.mjs'
+  weekdayOf, isTradingDay, nextNTradingDays, tradingDaysBetween, sentimentProxyBlock, proximityPanel } from './lib.mjs'
 import { completedCandles, weeklyBlock } from './fetch.mjs'
 
 let failures = 0
@@ -1718,6 +1718,69 @@ ok('output ends in a trailing newline', canonicalJSON({ a: 1 }).endsWith('}\n'))
     short.cef_premium === undefined)
   ok('an empty call yields neither proxy, and still declares scored:false',
     sentimentProxyBlock({}).vol_index === undefined && sentimentProxyBlock({}).scored === false)
+}
+
+// ── proximityPanel — §9.2 item 4, distance-to-boundary (added 2026-08-05).
+//    Fixture is the REAL gold fetch of 2026-08-05, the report that raised the
+//    blind spot. The panel must reproduce that report's own two observations
+//    (FR Channel A within a few percent of price; the 200dma slope flattening
+//    toward its sign flip) and must never present itself as a trigger. ──────
+{
+  const goldSnap = {
+    spot: { canonical: 4310.0 },
+    high_1y: { value: 5586.2, pct_below: 22.83 },
+    weekly: { rsi14: { rsi: 38.98 }, sma_200w: { value: 2843.68, pct_vs_spot: 51.59, within_8pct: false } },
+    trend: { insufficient: null, ma200_slope20_pct: 0.35, ma200_falling: false },
+  }
+  const p = proximityPanel(goldSnap)
+  const by = id => p.items.find(i => i.id === id)
+
+  // The two the report itself flagged as untracked.
+  eq('FR Channel A eligibility gap is 2.83pp of trailing-1y distance', by('fr_channel_A_eligibility').gap, 2.83)
+  eq("...and is expressed as the price move it actually requires", by("fr_channel_A_eligibility").price_move_required_pct, 3.69)
+  eq('Channel A is NOT yet crossed at 22.83 > 20', by('fr_channel_A_eligibility').crossed, false)
+  eq('200dma slope sits 0.35pp from the sign flip', by('ma200_slope_sign_flip').gap, 0.35)
+  eq('...and is correctly read as flattening TOWARD a falling 200dma',
+    by('ma200_slope_sign_flip').direction, 'flattening toward a FALLING 200dma')
+  eq('the slope has not flipped yet', by('ma200_slope_sign_flip').crossed, false)
+
+  // The one the report did NOT notice: weekly RSI 38.98 is a single point
+  // from 40, where the FK momentum leg drops 2 -> 1.
+  eq('weekly RSI is 1.02 points from the next FK momentum edge', by('fk_momentum_band_edge').gap, 1.02)
+  eq('crossing it costs a momentum band', by('fk_momentum_band_edge').consequence,
+    'FK momentum leg drops from 2 to 1')
+
+  // Boundaries genuinely far away must NOT be flagged near — a panel that
+  // calls everything near is the same as no panel.
+  ok('gate 6 at 51.59% from the 200-week MA is NOT near', by('fk_gate6_200w_band').near === false)
+  ok('the RSI-50 FR-B qualifier (11 points away) is NOT near', by('frb_weekly_rsi50_qualifier').near === false)
+  ok('the nearest boundary is the 200dma slope flip', p.nearest === 'ma200_slope_sign_flip')
+  ok('items are sorted by absolute gap', p.items.every((it, i, a) => i === 0 || Math.abs(a[i - 1].gap) <= Math.abs(it.gap)))
+
+  // Non-negotiable: proximity is context, never an authorization.
+  ok('the panel states it is NOT a trigger', /NOT a trigger/.test(p.note))
+  ok('the panel states it adds no new rubric', /no new rubric/.test(p.note))
+  // RSI/sentiment edges must NOT fabricate a price-move number.
+  ok('RSI edges carry no invented price_move_required_pct',
+    by('fk_momentum_band_edge').price_move_required_pct === null &&
+    by('frb_weekly_rsi50_qualifier').price_move_required_pct === null)
+
+  // Degradation: a snapshot with nothing usable yields an EMPTY panel, not a
+  // fabricated set of zero-gap (and therefore maximally "near") boundaries.
+  eq('an empty snapshot yields no items', proximityPanel({}).items.length, 0)
+  eq('...and no nearest boundary', proximityPanel({}).nearest, null)
+  eq('a null snapshot degrades without throwing', proximityPanel(null).items.length, 0)
+
+  // A crossed boundary reports crossed:true and is never also "near".
+  const crossed = proximityPanel({ spot: { canonical: 100 },
+    high_1y: { value: 105, pct_below: 4.76 },
+    trend: { ma200_slope20_pct: -0.2 } })
+  ok('a trailing-1y distance inside 20 reports the channel CROSSED',
+    crossed.items.find(i => i.id === 'fr_channel_A_eligibility').crossed === true)
+  ok('a crossed boundary is never flagged near',
+    crossed.items.filter(i => i.crossed).every(i => i.near === false))
+  ok('a NEGATIVE 200dma slope reports the flip already crossed',
+    crossed.items.find(i => i.id === 'ma200_slope_sign_flip').crossed === true)
 }
 
 // ── verdict ─────────────────────────────────────────────────────────────────

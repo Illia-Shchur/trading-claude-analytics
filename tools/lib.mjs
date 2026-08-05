@@ -855,6 +855,146 @@ export function shortEV({ directionalEV = null, fundingAnnualizedPct = null, hol
  * snapshots — a prev snapshot predating FR1/FR4 (or missing the block for
  * any reason) yields NO crossing, never one from an assumed default.
  */
+/**
+ * PROXIMITY PANEL — DISCLOSED CONTEXT ONLY, no band/gate/threshold/phase-size/
+ * stop/cap reads from it. The complement of `tripwireDiff()`: the tripwire
+ * fires once a boundary has ALREADY been crossed, so a metric can sit a
+ * hair from a consequential edge for several reports and the board stays
+ * silent. Closes §9.2 item 4 of the 2026-08-05 gold report ("Proximity to a
+ * routing change ... No FK input tracks this"), which observed the FR
+ * companion sitting a few percent from restoring Channel A eligibility and
+ * the 200dma slope flattening toward its sign flip, with nothing in either
+ * framework tracking either fact.
+ *
+ * This adds NO new rubric: every threshold below is read from the SAME
+ * classifiers and constants the frameworks already score with. It reports
+ * only WHERE THE CURRENT READING SITS relative to an edge that already has
+ * consequence. Nothing here changes a score, and a report may not cite it as
+ * a reason to deploy — proximity is not a trigger, it is a heads-up that the
+ * NEXT report may route differently.
+ *
+ * `price_move_required_pct` is emitted only where the boundary is invertible
+ * in price (trailing-1y distance, 200-week SMA distance). RSI and sentiment
+ * edges are deliberately left without one — inverting Wilder RSI to a price
+ * needs a path, not a level, and a single fabricated number there would read
+ * as far more precise than it is.
+ */
+export function proximityPanel(snap) {
+  const items = []
+  if (!snap) return { note: 'no snapshot', items }
+  const spot = snap.spot ? (snap.spot.canonical != null ? snap.spot.canonical : snap.spot.canonical_median) : null
+
+  const push = o => { if (o && Number.isFinite(o.gap)) items.push(o) }
+
+  // FR Channel A eligibility + the phase-of-cycle cap tiers, both keyed off
+  // the SAME trailing-1y distance (frChannel: <=20 -> A; phaseCycleCap: >20
+  // -> 8, >=10 -> 14). A price RALLY shrinks pct_below toward these edges.
+  if (snap.high_1y && snap.high_1y.pct_below != null && snap.high_1y.value) {
+    const pb = snap.high_1y.pct_below
+    for (const [thr, id, consequence] of [
+      [20, 'fr_channel_A_eligibility', 'FR routes Channel A instead of B/stand-down (frChannel)'],
+      [20, 'fr_phase_cycle_cap_8_to_14', 'FR phase-of-cycle cap loosens from 8% to 14% (fr.phaseCycleCap)'],
+      [10, 'fr_phase_cycle_cap_14_to_uncapped', 'FR phase-of-cycle cap lifts entirely (fr.phaseCycleCap -> null)'],
+    ]) {
+      const targetPx = snap.high_1y.value * (1 - thr / 100)
+      push({ id, metric: 'high_1y.pct_below', value: pb, threshold: thr,
+        gap: round2(pb - thr), gap_units: 'percentage points',
+        direction: pb > thr ? 'needs price UP' : 'already past — currently on the far side',
+        price_move_required_pct: spot ? round2((targetPx / spot - 1) * 100) : null,
+        crossed: pb <= thr, consequence })
+    }
+  }
+
+  // Gate 6: price within +/-8% of the 200-week SMA, above OR below. The gap
+  // is to the NEAR edge of the band, so it is signed toward whichever side
+  // price would have to travel.
+  if (snap.weekly && snap.weekly.sma_200w && snap.weekly.sma_200w.pct_vs_spot != null) {
+    const d = snap.weekly.sma_200w.pct_vs_spot   // spot vs SMA, %
+    const inBand = Math.abs(d) <= 8
+    const edge = d >= 0 ? 8 : -8
+    push({ id: 'fk_gate6_200w_band', metric: 'weekly.sma_200w.pct_vs_spot', value: d, threshold: edge,
+      gap: round2(Math.abs(d) - 8), gap_units: 'percentage points',
+      direction: inBand ? 'inside the band' : (d > 0 ? 'needs price DOWN' : 'needs price UP'),
+      price_move_required_pct: (spot && snap.weekly.sma_200w.value)
+        ? round2((snap.weekly.sma_200w.value * (1 + edge / 100) / spot - 1) * 100) : null,
+      crossed: inBand, consequence: 'FK gate 6 (200-week MA proximity) lights' })
+  }
+
+  // 200dma slope sign — the flattening the gold report flagged. `ma200_falling`
+  // is a strict `<0` in dailyTrend(), so 0 is the flip and the slope's own
+  // magnitude IS the distance to it.
+  if (snap.trend && !snap.trend.insufficient && snap.trend.ma200_slope20_pct != null) {
+    const s = snap.trend.ma200_slope20_pct
+    push({ id: 'ma200_slope_sign_flip', metric: 'trend.ma200_slope20_pct', value: s, threshold: 0,
+      gap: round2(Math.abs(s)), gap_units: 'percentage points of 20-session slope',
+      direction: s > 0 ? 'flattening toward a FALLING 200dma' : 'steepening away from the flip',
+      price_move_required_pct: null, crossed: s < 0,
+      consequence: 'ma200_falling flips -> FR Channel B structure input, frChannel routing' })
+  }
+
+  // Weekly RSI: the next FK momentum-band edge, and FR-B's weekly-RSI>=50
+  // hard qualifier (which zeroes an entire FR-B leg on its own).
+  if (snap.weekly && snap.weekly.rsi14 && snap.weekly.rsi14.rsi != null) {
+    const r = snap.weekly.rsi14.rsi
+    // FK band edges belong to the HIGHER-score band (`<=40 -> 2`), so the leg
+    // is lost by EXCEEDING the edge, not by reaching it. The consequence is
+    // therefore evaluated a hair PAST the edge — reading it AT the edge
+    // reports "drops from 2 to 2" and silently hides the transition.
+    const edges = [30, 35, 40, 45].filter(e => e >= r)
+    if (edges.length) {
+      const e = edges[0]
+      push({ id: 'fk_momentum_band_edge', metric: 'weekly.rsi14.rsi', value: r, threshold: e,
+        gap: round2(e - r), gap_units: 'RSI points',
+        direction: 'needs RSI ABOVE this edge to LOSE a band (an exact edge keeps the higher band)',
+        price_move_required_pct: null, crossed: false,
+        consequence: `FK momentum leg drops from ${fk.momentumBand(r).band} to ${fk.momentumBand(e + 1e-9).band}` })
+    }
+    push({ id: 'frb_weekly_rsi50_qualifier', metric: 'weekly.rsi14.rsi', value: r, threshold: 50,
+      gap: round2(50 - r), gap_units: 'RSI points',
+      direction: r < 50 ? 'needs RSI UP' : 'already at/above',
+      price_move_required_pct: null, crossed: r >= 50,
+      consequence: 'FR-B momentum leg forced to 0 (weekly RSI >= 50 hard qualifier)' })
+  }
+
+  // FK sentiment band edges + the gate-1 streak threshold's own band.
+  if (snap.sentiment && snap.sentiment.avg_3d != null) {
+    const v = snap.sentiment.avg_3d
+    const edges = [10, 15, 25, 35, 50]
+    const next = edges.find(e => e >= v)
+    if (next != null && next !== v) {
+      push({ id: 'fk_sentiment_band_edge', metric: 'sentiment.avg_3d', value: v, threshold: next,
+        gap: round2(next - v), gap_units: 'index points', direction: 'needs F&G UP to LOSE a band',
+        price_move_required_pct: null, crossed: false,
+        consequence: `FK sentiment leg drops from ${fk.sentimentBand(v)} to ${fk.sentimentBand(next)}` })
+    }
+  }
+
+  // "Near" is a PER-METRIC band, not a percentage of the threshold's own
+  // magnitude. Scaling by magnitude is incoherent across units: 25% of the
+  // RSI-50 qualifier is 12.5 RSI points — most of a band's width — while 25%
+  // of a 0 threshold is 0, so a slope could never register. A panel that
+  // calls everything near is the same as no panel.
+  const NEAR_BAND = {
+    'percentage points': 5,
+    'percentage points of 20-session slope': 0.5,
+    'RSI points': 3,
+    'index points': 3,
+  }
+  for (const it of items) {
+    const band = NEAR_BAND[it.gap_units]
+    it.near = !it.crossed && band != null && Math.abs(it.gap) <= band
+    it.near_band = band != null ? band : null
+  }
+  items.sort((a, b) => Math.abs(a.gap) - Math.abs(b.gap))
+  return {
+    note: 'DISCLOSED CONTEXT ONLY — not a scored input and NOT a trigger. Proximity to a boundary is a heads-up that the NEXT report may route differently; it never authorizes a deployment on its own. Adds no new rubric: every threshold is read from the classifiers the frameworks already score with.',
+    near_bands: NEAR_BAND,
+    nearest: items.length ? items[0].id : null,
+    near_count: items.filter(i => i.near).length,
+    items,
+  }
+}
+
 export function tripwireDiff(prevSnapshot, nextSnapshot, { checkpoints = {} } = {}) {
   const crossings = []
   const assets = Object.keys(nextSnapshot || {}).filter(k => k !== 'macro' && prevSnapshot && prevSnapshot[k])
