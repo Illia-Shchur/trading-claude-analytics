@@ -1,8 +1,8 @@
 {
   "counts": {
-    "files_in_reports_dir": 123,
+    "files_in_reports_dir": 124,
     "framework_reports": 118,
-    "non_framework_files_ignored": 5,
+    "non_framework_files_ignored": 6,
     "signals": 52,
     "skipped_no_machine_block": 66,
     "skipped_post_epoch_missing_block": 0,
@@ -14,11 +14,15 @@
     "entry_price": "2026-07-29",
     "machine_block": "2026-07-11"
   },
-  "generated_at": "2026-08-05T14:49:41Z",
+  "generated_at": "2026-08-05T20:21:00Z",
   "generated_by": "tools/export-signals.mjs",
   "ignored_files": [
     {
       "file": "calibration_ledger.md",
+      "reason": "filename does not match <asset>_<framework>_YYYYMMDD_HHMM.md"
+    },
+    {
+      "file": "fallen_knives_calibration_20260805.md",
       "reason": "filename does not match <asset>_<framework>_YYYYMMDD_HHMM.md"
     },
     {
