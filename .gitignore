@@ -27,3 +27,7 @@ position-snapshot.*.json
 /data/
 *.snapshot.json
 exports/*.tmp
+
+# framework-calibration run scratch (corpus slices, digests, manifests) —
+# reproducible from reports/ on demand, not repo state.
+/.calib-run/

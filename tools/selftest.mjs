@@ -24,6 +24,8 @@ import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds, frTh
   inferDiscretion, gateMask, unlockFor, canonicalJSON, feedChanged, REPORT_FILE_RE, snapshotDigestPayload,
   weekdayOf, isTradingDay, nextNTradingDays, tradingDaysBetween, sentimentProxyBlock, proximityPanel } from './lib.mjs'
 import { completedCandles, weeklyBlock } from './fetch.mjs'
+import { dropMachineBlock, dropVerifiedDataSection, projectDigest } from './calib-corpus.mjs'
+import { validateRegistry, matchRejections, VERDICTS, SCHEMA as REGISTRY_SCHEMA } from './calib-registry.mjs'
 
 let failures = 0
 function eq(name, got, want) {
@@ -1781,6 +1783,119 @@ ok('output ends in a trailing newline', canonicalJSON({ a: 1 }).endsWith('}\n'))
     crossed.items.filter(i => i.crossed).every(i => i.near === false))
   ok('a NEGATIVE 200dma slope reports the flip already crossed',
     crossed.items.find(i => i.id === 'ma200_slope_sign_flip').crossed === true)
+}
+
+// ── calib-corpus.mjs: byte-reconciled slicing, fail-open on non-match ─────
+{
+  const FIXTURE = [
+    '# 🔪 FALLEN KNIVES ANALYTICS — BTC — 2026-08-05',
+    '',
+    '## 1. What this report decides',
+    '',
+    'Nothing new gets bought this report.',
+    '',
+    '## 2. Verified Live Data Points — BTC',
+    '',
+    'Spot: $64,404.43 (median of 4 venues).',
+    'Sentiment: F&G 27.',
+    '',
+    '## 3. Critical Developments',
+    '',
+    'Nothing material since the last report.',
+    '',
+    '---',
+    '',
+    '```json machine',
+    '{"schema":"report-machine/1","score":{"mechanical":11,"adjusted":10}}',
+    '```',
+    '',
+  ].join('\n')
+
+  const mb = dropMachineBlock(FIXTURE)
+  ok('machine block detected', mb.dropped !== null)
+  ok('machine block sha256 present', typeof mb.dropped.sha256 === 'string' && mb.dropped.sha256.length === 64)
+  ok('slice after machine-block drop still has §1 heading', /## 1\. What this report decides/.test(mb.text))
+  ok('slice after machine-block drop has no fenced json left', !/```json machine/.test(mb.text))
+
+  const vd = dropVerifiedDataSection(mb.text)
+  ok('verified-data section matched by TEXT (not by its number)', vd.dropped !== null)
+  eq('matched heading text', vd.dropped.heading, '## 2. Verified Live Data Points — BTC')
+  ok('§2 body ("Spot: $64,404.43") removed from the slice', !/Spot: \$64,404\.43/.test(vd.text))
+  ok('§1 survives the §2 drop', /Nothing new gets bought/.test(vd.text))
+  ok('§3 survives the §2 drop (next top-level heading correctly bounded the removal)', /## 3\. Critical Developments/.test(vd.text) && /Nothing material since/.test(vd.text))
+
+  const totalBytes = Buffer.byteLength(FIXTURE, 'utf8')
+  const sliceBytes = Buffer.byteLength(vd.text, 'utf8')
+  const droppedBytes = mb.dropped.bytes + vd.dropped.bytes
+  ok('byte reconciliation: slice + dropped ≈ original (±8B fence/newline slop)',
+    Math.abs((sliceBytes + droppedBytes) - totalBytes) <= 8)
+
+  const digest = projectDigest(mb.dropped.raw)
+  ok('digest projects the machine block numerics', digest.ok === true)
+  eq('digest carries the mechanical score', digest.score.mechanical, 11)
+
+  // Fail-open: no machine block at all (pre-epoch report) — pass through whole.
+  const NO_BLOCK = '# Old report\n\n## 2. Verified Live Data Points\n\nSpot $50,000.\n\n## 3. Section\n\nBody.\n'
+  const mbNone = dropMachineBlock(NO_BLOCK)
+  eq('no machine block → dropped is null (fail-open)', mbNone.dropped, null)
+  eq('no machine block → text passes through unchanged', mbNone.text, NO_BLOCK)
+
+  // Fail-open: an unparseable machine block still slices cleanly (structural
+  // regex match, not JSON validation) — but projectDigest reports ok:false
+  // rather than throwing, and callers must fall back to passing the report
+  // through whole rather than crash the corpus run.
+  const BAD_JSON = '# Report\n\n## 1. Body\n\nText.\n\n---\n\n```json machine\n{not valid json,,,}\n```\n'
+  const mbBad = dropMachineBlock(BAD_JSON)
+  ok('structurally-fenced but invalid JSON is still detected as a block', mbBad.dropped !== null)
+  const digestBad = projectDigest(mbBad.dropped.raw)
+  eq('unparseable machine block → digest reports ok:false, never throws', digestBad.ok, false)
+  ok('unparseable machine block → digest carries an error string', typeof digestBad.error === 'string')
+
+  // Fail-open: a heading that does not match the known pattern is left alone —
+  // a missed match costs tokens (report passes through further than usual),
+  // never coverage (content is never silently dropped).
+  const WEIRD_HEADING = '# Report\n\n## Live Data (no number, no "Points")\n\nSpot $1.\n\n## 2. Other\n\nBody.\n'
+  const vdWeird = dropVerifiedDataSection(WEIRD_HEADING)
+  eq('a non-matching heading variant is NOT dropped (fail-open)', vdWeird.dropped, null)
+  eq('...and the text passes through completely unchanged', vdWeird.text, WEIRD_HEADING)
+}
+
+// ── calib-registry.mjs: schema validation + keyword-overlap matcher ───────
+{
+  eq('registry schema constant', REGISTRY_SCHEMA, 'calibration-registry/1')
+
+  const goodEntry = { date: '2026-08-05b', run_id: 'r1', framework: 'fallen_knives', surface: 'scoring-and-gates',
+    name: 'Signed gate 9', verdict: 'rejected', why: 'Adds gate credit, loosens unlocks on the long side.', revalidations: [] }
+  const good = validateRegistry({ schema: REGISTRY_SCHEMA, entries: [goodEntry] })
+  ok('a well-formed registry validates clean', good.ok === true)
+
+  const missingField = { ...goodEntry }; delete missingField.why
+  const badMissing = validateRegistry({ schema: REGISTRY_SCHEMA, entries: [missingField] })
+  ok('a missing required field fails validation', badMissing.ok === false)
+  ok('...and names the missing field', badMissing.errors.some(e => e.includes('why')))
+
+  const badVerdict = { ...goodEntry, verdict: 'sort-of-adopted' }
+  const badV = validateRegistry({ schema: REGISTRY_SCHEMA, entries: [badVerdict] })
+  ok('an out-of-enum verdict fails validation', badV.ok === false)
+  ok('every real verdict value is accepted', VERDICTS.includes('adopted') && VERDICTS.includes('rejected') && VERDICTS.includes('withheld') && VERDICTS.includes('unadjudicated'))
+
+  const badDate = { ...goodEntry, date: '08-05-2026' }
+  const badD = validateRegistry({ schema: REGISTRY_SCHEMA, entries: [badDate] })
+  ok('a non-YYYY-MM-DD date fails validation', badD.ok === false)
+
+  const reg = { schema: REGISTRY_SCHEMA, entries: [
+    { date: '2026-08-05b', run_id: 'r1', framework: 'fallen_knives', surface: 'scoring-and-gates',
+      name: 'Weekly-vs-daily RSI divergence leg or gate', verdict: 'rejected',
+      why: 'Non-monotone out-of-sample, three sign changes.' },
+    { date: '2026-08-05b', run_id: 'r1', framework: 'fallen_knives', surface: 'capital-deployment',
+      name: 'Entry-zone ratchet', verdict: 'adopted_with_modification', why: 'Codifies practice.' },
+  ] }
+  const hitsRSI = matchRejections('weekly RSI divergence', reg)
+  ok('matcher finds a rejected tune sharing significant keywords', hitsRSI.length === 1 && hitsRSI[0].entry.name.includes('RSI'))
+  const hitsRatchet = matchRejections('entry zone ratchet capital deployment', reg)
+  eq('matcher never surfaces an ADOPTED tune as a rejection lookalike', hitsRatchet.length, 0)
+  const hitsNone = matchRejections('gate', reg)
+  eq('a single short stopword-only query returns no match (needs ≥2 overlapping significant tokens)', hitsNone.length, 0)
 }
 
 // ── verdict ─────────────────────────────────────────────────────────────────

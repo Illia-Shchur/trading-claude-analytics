@@ -1,0 +1,241 @@
+// ============================================================================
+// tools/calib-corpus.mjs — deterministic corpus selection + slicing for
+// framework-calibration. Replaces the backtest workflow template's hand-typed
+// REPORT_FILES array (⟨EDIT 3⟩) with a code-derived corpus, and replaces
+// LLM-read numeric extraction with a projection of the already-structured
+// ```json machine block (schema report-machine/1).
+//
+//   node tools/calib-corpus.mjs --since YYYY-MM-DD [--until YYYY-MM-DD]
+//                                [--framework fallen_knives|flying_rocket]
+//                                [--asset btc,eth,gold] [--out .calib-run/<dir>]
+//
+// Emits into --out (default .calib-run/<since>):
+//   corpus.json    — REPORT_FILES replacement: parsed identity + byte accounting
+//   manifest.json  — coverage disclosure: what was dropped, why, aggregate reduction
+//   <file>.slice.md   — report text minus the machine block minus the
+//                        "Verified Live Data Points" section (present only when
+//                        something was actually droppable)
+//   <file>.digest.json — numeric projection of the machine block (present only
+//                        when the report has one)
+//
+// Why drop-list, not keep-list: measured section numbering is NOT stable across
+// the corpus (8-14 numbered top-level sections; heading text for the data
+// section varies too — "Verified Live Data Points", "... — SOL", "... (Jun 17
+// close)"). A keep-list of "prediction sections" would silently break on the
+// next report that renumbers. A drop-list matched by heading TEXT (not number)
+// degrades safely: anything unmatched passes through whole, so a missed match
+// costs tokens, never coverage.
+//
+// Fail-open, always: an unparseable or absent machine block, or a
+// non-matching data-section heading, means "pass the report through
+// unmodified" and a loud manifest flag — never a silent drop of content.
+//
+// Filename-first scan, mirroring export-signals.mjs: reportFileMeta() is the
+// ONLY membership test. calibration_ledger.md quotes the ```json machine
+// fence in prose; retrospective/calibration memo filenames don't match
+// REPORT_FILE_RE and are excluded structurally, not by an exclude-list.
+// ============================================================================
+import { readFileSync, writeFileSync, readdirSync, mkdirSync, existsSync } from 'node:fs'
+import { join, resolve, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { createHash } from 'node:crypto'
+import { reportFileMeta, canonicalJSON } from './lib.mjs'
+
+const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+const REPORTS_DIR = join(REPO, 'reports')
+
+// ── the sections we know how to drop, matched by heading TEXT not number ────
+// "combined_*" reports (multi-asset) have no framework/asset in the filename
+// stem in the same position the single-asset reports do, but reportFileMeta's
+// REPORT_FILE_RE requires <asset>_<framework>_YYYYMMDD_HHMM.md — "combined" IS
+// a valid asset token there (no underscore), so it parses with asset=COMBINED;
+// callers that want MULTI semantics remap it, matching the workflow template.
+export const MACHINE_BLOCK_RE = /\n?---\s*\n\n```json machine\s*\n([\s\S]*?)```\s*$/
+export const VERIFIED_DATA_HEADING_RE = /^##\s+\d+\.\s+Verified Live Data(?: Points)?\b.*$/m
+export const NEXT_TOP_HEADING_RE = /^##\s+\d+\./m
+
+function sha256(s) { return createHash('sha256').update(s, 'utf8').digest('hex') }
+
+/** Drop the machine block (if present) from the end of the text. */
+export function dropMachineBlock(text) {
+  const m = MACHINE_BLOCK_RE.exec(text)
+  if (!m) return { text, dropped: null }
+  const blockText = m[1]
+  const sliced = text.slice(0, m.index) + '\n'
+  return { text: sliced, dropped: { bytes: Buffer.byteLength(m[0], 'utf8'), sha256: sha256(blockText), raw: blockText } }
+}
+
+/**
+ * Drop the "Verified Live Data Points" section: from its heading to the next
+ * top-level numbered "## N." heading, or EOF if it's the last section.
+ * Heading matched by TEXT, never by section number — measured numbering is
+ * NOT stable across the corpus (§2 in most reports, §1 in at least one).
+ */
+export function dropVerifiedDataSection(text) {
+  const hm = VERIFIED_DATA_HEADING_RE.exec(text)
+  if (!hm) return { text, dropped: null }
+  const start = hm.index
+  NEXT_TOP_HEADING_RE.lastIndex = 0
+  let end = text.length
+  const rest = text.slice(start + hm[0].length)
+  const nm = NEXT_TOP_HEADING_RE.exec(rest)
+  if (nm) end = start + hm[0].length + nm.index
+  const removed = text.slice(start, end)
+  const sliced = text.slice(0, start) + text.slice(end)
+  return { text: sliced, dropped: { bytes: Buffer.byteLength(removed, 'utf8'), heading: hm[0].trim() } }
+}
+
+/** Project the machine block's numeric fields — the fields extraction agents
+ *  no longer need to read, because they're already structured. Long prose
+ *  fields are truncated with a pointer; the prose itself survives in the slice. */
+export function projectDigest(raw) {
+  let b
+  try { b = JSON.parse(raw) } catch (e) { return { ok: false, error: `unparseable machine block: ${e.message}` } }
+  const truncate = (s, n = 160) => (typeof s === 'string' && s.length > n ? s.slice(0, n) + `…[${s.length}ch, see slice prose]` : s)
+  const tranches = (b.deployment?.tranches || []).map(t => ({
+    phase: t.phase, pct: t.pct, discretionary: t.discretionary ?? null,
+    deployed: t.deployed ?? (typeof t.entry_price === 'number' ? true : null),
+    entry_price: typeof t.entry_price === 'number' ? t.entry_price : null,
+    entry_note: truncate(t.entry),
+  }))
+  return {
+    ok: true,
+    schema: b.schema ?? null,
+    framework: b.framework ?? null, asset: b.asset ?? null, date: b.date ?? null,
+    spot: b.spot?.value ?? null,
+    score: { legs: b.score?.legs ?? null, discretionary: b.score?.discretionary ?? null,
+      mechanical: b.score?.mechanical ?? null, raw: b.score?.raw ?? null, adjusted: b.score?.adjusted ?? null },
+    gates: { active: b.gates?.active ?? null, na: b.gates?.na ?? null, passed: b.gates?.passed ?? null },
+    ev: { scenarios: (b.ev?.scenarios || []).map(s => ({ name: s.name, p: s.p, low: s.low, high: s.high })),
+      stated_ev: b.ev?.stated_ev ?? null, vs_spot_pct: b.ev?.vs_spot_pct ?? null },
+    deployment: { deployed_pct: b.deployment?.deployed_pct ?? null, dry_pct: b.deployment?.dry_pct ?? null, tranches },
+    stops: { catastrophic: b.stops?.catastrophic ?? null, deepest_zone_floor: b.stops?.deepest_zone_floor ?? null,
+      compound: b.stops?.compound ?? null, checkpoint: b.stops?.checkpoint
+        ? { date: b.stops.checkpoint.date, line: b.stops.checkpoint.line, condition: b.stops.checkpoint.condition }
+        : null },
+    companion_fr: b.companion_fr ? { score: b.companion_fr.score ?? null, channel: b.companion_fr.channel ?? null } : null,
+    companion_fk: b.companion_fk ? { score: b.companion_fk.score ?? null } : null,
+    position: b.position ? { band: b.position.band ?? null, cold_start: b.position.cold_start ?? null } : null,
+    verdict_note: truncate(b.verdict, 220),
+  }
+}
+
+// ── CLI ─────────────────────────────────────────────────────────────────────
+// Guarded the same way as calib-registry.mjs: compared as resolved filesystem
+// paths (not raw URL strings), because this repo's path contains spaces,
+// which percent-encode in import.meta.url but not in process.argv[1].
+const isMain = fileURLToPath(import.meta.url) === resolve(process.argv[1] || '')
+if (isMain) {
+const argv = process.argv.slice(2)
+const opt = (name, fallback = null) => { const i = argv.indexOf(name); return i >= 0 && argv[i + 1] !== undefined ? argv[i + 1] : fallback }
+const since = opt('--since')
+const until = opt('--until', null)
+const frameworkFilter = opt('--framework', null) // 'fallen_knives' | 'flying_rocket' | null=both
+const assetFilter = (opt('--asset', null) || '').split(',').map(s => s.trim().toUpperCase()).filter(Boolean)
+const outDir = resolve(REPO, opt('--out', `.calib-run/${since || 'all'}`))
+
+if (!since) {
+  console.error('usage: node tools/calib-corpus.mjs --since YYYY-MM-DD [--until YYYY-MM-DD] [--framework fallen_knives|flying_rocket] [--asset btc,eth,gold] [--out .calib-run/<dir>]')
+  process.exit(1)
+}
+if (frameworkFilter && !['fallen_knives', 'flying_rocket'].includes(frameworkFilter)) {
+  console.error(`--framework must be fallen_knives or flying_rocket, got "${frameworkFilter}"`)
+  process.exit(1)
+}
+
+// ── scan ────────────────────────────────────────────────────────────────────
+if (!existsSync(REPORTS_DIR)) { console.error(`reports dir not found: ${REPORTS_DIR}`); process.exit(1) }
+const files = readdirSync(REPORTS_DIR).filter(f => f.endsWith('.md')).sort()
+
+const corpus = []
+const ignored = []
+let bytesTotal = 0, bytesSliced = 0, withMachineBlock = 0, withoutMachineBlock = 0, sectionDropFailures = 0
+
+for (const file of files) {
+  const meta = reportFileMeta(file)
+  if (!meta.ok) { ignored.push({ file, reason: meta.reason }); continue }
+  if (meta.date < since) continue
+  if (until && meta.date > until) continue
+  if (frameworkFilter && meta.framework !== frameworkFilter) continue
+  const asset = meta.asset === 'COMBINED' ? 'MULTI' : meta.asset
+  if (assetFilter.length && !assetFilter.includes(asset) && asset !== 'MULTI') continue
+
+  const raw = readFileSync(join(REPORTS_DIR, file), 'utf8')
+  const totalBytes = Buffer.byteLength(raw, 'utf8')
+  bytesTotal += totalBytes
+
+  const mb = dropMachineBlock(raw)
+  const vd = dropVerifiedDataSection(mb.text)
+
+  let digest = null
+  if (mb.dropped) { withMachineBlock++; digest = projectDigest(mb.dropped.raw) }
+  else withoutMachineBlock++
+  if (!vd.dropped) sectionDropFailures++
+
+  const sliceText = vd.text
+  const sliceBytes = Buffer.byteLength(sliceText, 'utf8')
+  bytesSliced += sliceBytes
+
+  const droppedBytes = (mb.dropped?.bytes || 0) + (vd.dropped?.bytes || 0)
+  const reconciled = Math.abs((sliceBytes + droppedBytes) - totalBytes) <= 8 // fence/newline slop
+
+  const entry = {
+    f: file, a: asset, t: meta.framework, d: meta.date, at_utc: meta.at_utc, schema_epoch: meta.schema_epoch,
+    bytes_total: totalBytes, bytes_slice: sliceBytes,
+    machine_block: mb.dropped ? { present: true, bytes: mb.dropped.bytes, sha256: mb.dropped.sha256 } : { present: false },
+    verified_data_section: vd.dropped ? { present: true, bytes: vd.dropped.bytes, heading: vd.dropped.heading } : { present: false, note: 'no matching heading found — nothing dropped from this section, report passed through further than usual' },
+    bytes_dropped: droppedBytes,
+    reduction_pct: totalBytes ? Math.round((droppedBytes / totalBytes) * 1000) / 10 : 0,
+    byte_reconciliation_ok: reconciled,
+  }
+  corpus.push(entry)
+
+  if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true })
+  writeFileSync(join(outDir, `${file}.slice.md`),
+    `<!-- calib-corpus slice of ${file}. Dropped: ` +
+    `${mb.dropped ? `machine block (${mb.dropped.bytes}B)` : 'no machine block'}` +
+    `${vd.dropped ? `, "${vd.dropped.heading}" section (${vd.dropped.bytes}B)` : ', no verified-data section matched'}` +
+    ` -->\n\n` + sliceText, 'utf8')
+  if (digest) writeFileSync(join(outDir, `${file}.digest.json`), canonicalJSON(digest) + '\n', 'utf8')
+
+  if (!reconciled) {
+    console.error(`WARNING — byte reconciliation failed for ${file}: total=${totalBytes} slice=${sliceBytes} dropped=${droppedBytes}`)
+  }
+}
+
+if (!corpus.length) {
+  console.error(`no reports matched --since ${since}${until ? ` --until ${until}` : ''}${frameworkFilter ? ` --framework ${frameworkFilter}` : ''}${assetFilter.length ? ` --asset ${assetFilter.join(',')}` : ''}`)
+  process.exit(1)
+}
+
+if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true })
+writeFileSync(join(outDir, 'corpus.json'), canonicalJSON({ schema: 'calib-corpus/1', filters: { since, until, framework: frameworkFilter, asset: assetFilter.length ? assetFilter : null }, reports: corpus }) + '\n', 'utf8')
+
+const manifest = {
+  schema: 'calib-corpus-manifest/1',
+  generated_at: new Date().toISOString(),
+  filters: { since, until, framework: frameworkFilter, asset: assetFilter.length ? assetFilter : null },
+  out_dir: outDir,
+  counts: {
+    reports_selected: corpus.length,
+    with_machine_block: withMachineBlock,
+    without_machine_block: withoutMachineBlock,
+    verified_data_section_not_matched: sectionDropFailures,
+    files_ignored_non_report: ignored.length,
+  },
+  bytes: {
+    total: bytesTotal, sliced: bytesSliced, dropped: bytesTotal - bytesSliced,
+    reduction_pct: bytesTotal ? Math.round(((bytesTotal - bytesSliced) / bytesTotal) * 1000) / 10 : 0,
+  },
+  byte_reconciliation_failures: corpus.filter(c => !c.byte_reconciliation_ok).map(c => c.f),
+  ignored_files_sample: ignored.slice(0, 10),
+}
+writeFileSync(join(outDir, 'manifest.json'), canonicalJSON(manifest) + '\n', 'utf8')
+
+console.error(`calib-corpus: ${corpus.length} report(s) selected, ${withMachineBlock} with machine block, ${withoutMachineBlock} without.`)
+console.error(`  bytes: ${bytesTotal} -> ${bytesSliced} (${manifest.bytes.reduction_pct}% reduction)`)
+if (sectionDropFailures) console.error(`  WARNING — ${sectionDropFailures} report(s) had no matching "Verified Live Data" heading — passed through further than usual`)
+if (manifest.byte_reconciliation_failures.length) console.error(`  WARNING — byte reconciliation failed for: ${manifest.byte_reconciliation_failures.join(', ')}`)
+console.error(`  wrote ${outDir}/corpus.json, manifest.json, and per-report .slice.md${withMachineBlock ? '/.digest.json' : ''}`)
+process.exit(0)
+}

@@ -1,0 +1,217 @@
+{
+  "entries": [
+    {
+      "date": "2026-06-11",
+      "framework": "both",
+      "memo": "reports/strategy_retrospective_20260611.md",
+      "name": "2026-06-11 rejected set (17 tunes)",
+      "revalidations": [
+        {
+          "date": "2026-07-04",
+          "note": "all 17 prior rejections held per the 2026-07-04 ledger entry",
+          "verdict": "held"
+        }
+      ],
+      "run_id": "backfill-20260611",
+      "source": "ledger-prose",
+      "surface": "aggregate",
+      "verdict": "rejected",
+      "why": "Individual tune names are not decomposed in the ledger line (count only). See the memo for the full per-tune list."
+    },
+    {
+      "date": "2026-06-11",
+      "framework": "both",
+      "memo": "reports/strategy_retrospective_20260611.md",
+      "name": "2026-06-11 adopted set (11 tunes, adopted-with-modification)",
+      "revalidations": [
+        {
+          "date": "2026-07-04",
+          "note": "15 validated / 4 not-exercised / 0 harmful per the 2026-07-04 ledger entry",
+          "verdict": "mostly_validated"
+        }
+      ],
+      "run_id": "backfill-20260611",
+      "source": "ledger-prose",
+      "surface": "aggregate",
+      "verdict": "adopted_with_modification",
+      "why": "Deep-Value Override re-anchored (8% + fresh lower-low + worsening-flows veto) and throttled; probability grid flattened (Rally 50->38 at scores 15-17); compound thesis stops placed below the deepest buy zone; computed companion score made mandatory; FR received tightening-or-neutral mirrors only. Individual tune names not decomposed in the ledger line; see memo for the full list."
+    },
+    {
+      "date": "2026-07-04",
+      "framework": "both",
+      "memo": "reports/strategy_retrospective_20260704.md",
+      "name": "2026-07-04 rejected set (41 tunes)",
+      "revalidations": [],
+      "run_id": "backfill-20260704",
+      "source": "ledger-prose",
+      "surface": "aggregate",
+      "verdict": "rejected",
+      "why": "Individual tune names are not decomposed in the ledger line (count only). See the memo for the full per-tune list."
+    },
+    {
+      "date": "2026-07-04",
+      "framework": "both",
+      "memo": "reports/strategy_retrospective_20260704.md",
+      "name": "2026-07-04 adopted set (38 tunes, adopted-with-modification)",
+      "revalidations": [
+        {
+          "date": "2026-08-05",
+          "note": "FR side: 4 validated / 1 harmful-in-effect / 1 not-exercised per flying_rocket_calibration_20260805.md. The harmful-in-effect item is the fixed non-crypto gate schema mandate, which specified no mechanism to fix it (four reports produced four denominators) — repaired on 2026-08-05, not reversed.",
+          "verdict": "mixed"
+        }
+      ],
+      "run_id": "backfill-20260704",
+      "source": "ledger-prose",
+      "surface": "aggregate",
+      "verdict": "adopted_with_modification",
+      "why": "FK data-integrity + stop-discipline + EV/scoring hardening (metric-history continuity, sentiment provider pinning, gold/low-vol asset adaptation, Stop Migration Ledger, re-scoped buy-zone coherence check, terminal-vs-extreme reconciliation, gate reachability disclosure); FR corrected an inverted funding-carry sign convention + zero-floored carry income, decoupled the squeeze-trap penalty from its OI conjunct, added a Cover-Trigger Preflight veto (S7), symmetrized the Verdict-Confidence Collar, ported the single-observation durability lock (Principle 13). Individual tune names not decomposed in the ledger line; see memo for the full list."
+    },
+    {
+      "date": "2026-08-05",
+      "framework": "flying_rocket",
+      "memo": "reports/flying_rocket_calibration_20260805.md",
+      "name": "Forward-P/E valuation substitution for the non-crypto MVRV-Z analogue",
+      "revalidations": [],
+      "run_id": "backfill-20260805-fr",
+      "surface": "valuation-substitution",
+      "verdict": "rejected",
+      "why": "Live data shows forward P/E 19.6 (approx. its own 5y/10y averages) and CAPE 41.9 (approx. 29% above long-run average, near a 150y record) are both simultaneously true, and the MVRV-Z analogue chosen for this framework is CAPE, not forward P/E. Forward P/E would have scored the 2026-08-04 SPX leg at the Oct-2007-top level and capped the equity ceiling at 12 against unlock lines of 11/13. The motivating premise (that the leg over-credits by ~4 points) is not supported by the live cross-check; the leg is recorded as correctly scored."
+    },
+    {
+      "date": "2026-08-05",
+      "framework": "flying_rocket",
+      "memo": "reports/flying_rocket_calibration_20260805.md",
+      "name": "Non-crypto gate schema frozen per class (N/A {4,6,9} -> denominator 6, linter-enforced)",
+      "note": "ledger records 5 of the 6 adopted items as adopted-with-modification without naming which one shipped unmodified; per-tune split not preserved here.",
+      "revalidations": [],
+      "run_id": "backfill-20260805-fr",
+      "surface": "scoring-and-gates",
+      "verdict": "adopted",
+      "why": "Repairs the 2026-07-04 mandate that specified a fixed schema with no mechanism to enforce it; four non-crypto reports had produced four different denominators."
+    },
+    {
+      "date": "2026-08-05",
+      "framework": "flying_rocket",
+      "memo": "reports/flying_rocket_calibration_20260805.md",
+      "name": "ATH-distance valuation fallback capped at 3 unless a pinned long-run measure is >= 90th percentile of >= 50 years",
+      "revalidations": [],
+      "run_id": "backfill-20260805-fr",
+      "surface": "scoring-and-gates",
+      "verdict": "adopted",
+      "why": "Equity -> Shiller CAPE, metals -> CPI-deflated real price. Prevents the fallback from over-crediting a leg that a purpose-built long-run measure would score lower."
+    },
+    {
+      "date": "2026-08-05",
+      "framework": "flying_rocket",
+      "memo": "reports/flying_rocket_calibration_20260805.md",
+      "name": "Rounding pinned for non-crypto assets (spx/ndx half-down, no longer report-overridable)",
+      "revalidations": [],
+      "run_id": "backfill-20260805-fr",
+      "surface": "data-integrity",
+      "verdict": "adopted",
+      "why": "Removes a per-report discretion point in a rounding rule that should be mechanical."
+    },
+    {
+      "date": "2026-08-05",
+      "framework": "flying_rocket",
+      "memo": "reports/flying_rocket_calibration_20260805.md",
+      "name": "Untransferable crypto-native thresholds resolve to NOT MET on non-crypto calendar days",
+      "revalidations": [],
+      "run_id": "backfill-20260805-fr",
+      "surface": "scoring-and-gates",
+      "verdict": "adopted",
+      "why": "A crypto-only gate condition that cannot be evaluated on a non-crypto asset must not default to passing."
+    },
+    {
+      "date": "2026-08-05",
+      "framework": "flying_rocket",
+      "memo": "reports/flying_rocket_calibration_20260805.md",
+      "name": "Channel B declared unavailable and Phase 3 unreachable on non-crypto (ceiling 18 < unlock 19)",
+      "revalidations": [],
+      "run_id": "backfill-20260805-fr",
+      "surface": "capital-deployment",
+      "verdict": "adopted",
+      "why": "Non-crypto's non-crypto gate schema mechanically caps the composite below the Phase 3 unlock line; declaring the ceiling explicitly prevents a future report from treating the gap as an oversight to route around."
+    },
+    {
+      "date": "2026-08-05",
+      "framework": "flying_rocket",
+      "memo": "reports/flying_rocket_calibration_20260805.md",
+      "name": "Squeeze-trap penalty prints as MISSING PROTECTION rather than penalty:0 when the input is unavailable",
+      "revalidations": [],
+      "run_id": "backfill-20260805-fr",
+      "surface": "data-integrity",
+      "verdict": "adopted",
+      "why": "penalty:0 is indistinguishable from 'checked, found no squeeze risk'; the non-crypto path structurally cannot check it at all, and the two must not read the same."
+    },
+    {
+      "date": "2026-08-05b",
+      "framework": "fallen_knives",
+      "memo": "reports/fallen_knives_calibration_20260805.md",
+      "name": "Entry-zone ratchet (SS6, entry-side, restrictive)",
+      "revalidations": [],
+      "run_id": "backfill-20260805b-fk",
+      "surface": "capital-deployment",
+      "verdict": "adopted_with_modification",
+      "why": "An unlock authorizes a tranche inside its named zone only; a re-anchor is not itself an unlock; downward re-anchoring runs the coherence check + D6 exception 1; upward re-anchoring needs >=5 consecutive closes above the shelf + zone top below spot + a void condition, and may never raise the number the coherence check runs against. The Deep-Value Override is exempt (its trigger anchors to the last fill's blended cost, not the next zone) — the skeptic panel caught that the as-originally-proposed clause would have blocked the real $59,110 / -9.1%-off-basis Override firing, re-creating the unreachability the Jun-2026 re-anchor removed. Codifies thrice-exercised practice (ETH Jul-2->Jul-10, BTC Jul-2, gold Aug-5) that lived nowhere in the SKILL."
+    },
+    {
+      "date": "2026-08-05b",
+      "framework": "fallen_knives",
+      "memo": "reports/fallen_knives_calibration_20260805.md",
+      "name": "Weekly-vs-daily RSI divergence leg or gate (spread and absolute constructions)",
+      "revalidations": [],
+      "run_id": "backfill-20260805b-fk",
+      "surface": "scoring-and-gates",
+      "verdict": "rejected",
+      "why": "Spread construction is anti-correlated with weekly RSI by construction, so it bites hardest at maximum washout and would knock the score below the Deep-Value Override's mechanical >=15 arming bar at the lows — this framework's own documented past failure mode. Absolute construction fires 2 of 19 reports, both already gate-blocked; out-of-sample over 2 years x 4 assets the gradient is non-monotone with three sign changes, per-asset signs disagree (ETH +7.40%, SOL -1.89%), and gold has exactly one qualifying day in two years (2026-08-05 itself)."
+    },
+    {
+      "date": "2026-08-05b",
+      "framework": "fallen_knives",
+      "memo": "reports/fallen_knives_calibration_20260805.md",
+      "name": "Breakout/volume leg or gate",
+      "revalidations": [],
+      "run_id": "backfill-20260805b-fk",
+      "surface": "scoring-and-gates",
+      "verdict": "rejected",
+      "why": "An anti-gate variant has no mechanism; a leg-level variant double-keys volume with capitulation-(a)/gate 7."
+    },
+    {
+      "date": "2026-08-05b",
+      "framework": "fallen_knives",
+      "memo": "reports/fallen_knives_calibration_20260805.md",
+      "name": "Negative drawdown tier",
+      "revalidations": [],
+      "run_id": "backfill-20260805b-fk",
+      "surface": "scoring-and-gates",
+      "verdict": "rejected",
+      "why": "Roughly 9 percentage points from ever firing in the corpus."
+    },
+    {
+      "date": "2026-08-05b",
+      "framework": "fallen_knives",
+      "memo": "reports/fallen_knives_calibration_20260805.md",
+      "name": "Macro leg (composite max 20 -> 22)",
+      "revalidations": [],
+      "run_id": "backfill-20260805b-fk",
+      "surface": "scoring-and-gates",
+      "verdict": "rejected",
+      "why": "Silently loosens roughly 17 absolute thresholds that are defined against the current 20-point ceiling."
+    },
+    {
+      "date": "2026-08-05b",
+      "framework": "fallen_knives",
+      "memo": "reports/fallen_knives_calibration_20260805.md",
+      "name": "Signed gate 9",
+      "revalidations": [],
+      "run_id": "backfill-20260805b-fk",
+      "surface": "scoring-and-gates",
+      "verdict": "rejected",
+      "why": "Adding gate credit loosens unlocks on the long side; gate 9's predicate is asset-relative and already resolved differently for gold vs BTC without needing a sign."
+    }
+  ],
+  "note": "Append-only structured record of every adopted/rejected/withheld/unadjudicated tune from every framework-calibration run. Replaces the per-run agent that re-derived the prior-rejection list from prose memos each calibration — code now matches a proposed tune's name/surface against `verdict:\"rejected\"` entries here instead of trusting prompt text to hold the line. The prose ledger (calibration_ledger.md) stays the human-readable narrative history; this file is its structured, enforcement-grade twin. Entries with `source:\"ledger-prose\"` are backfilled from a ledger line that only carried an aggregate count (e.g. \"17 rejected\") with no per-tune breakdown in the ledger itself — the memo is pointed to rather than inventing tune identities. Maintained by tools/calib-registry.mjs.",
+  "schema": "calibration-registry/1"
+}
+
