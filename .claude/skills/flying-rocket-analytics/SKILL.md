@@ -663,6 +663,16 @@ A non-crypto read carries the **ADAPTED / OUT OF SCOPE banner** in its header, f
 
 **9. Mandatory disclosure line.** Every adapted non-crypto report names **which of Hard Rule 6's seven never-relax items are inert or unevaluable in that run**, and why. On an equity index that is at minimum the funding veto gate (§6) and the carry veto (§8); the size cap is additionally unenforceable in practice, since there is no ledger counterpart and the position is therefore `UNTAGGED` and cannot resolve a phase-dependent precondition. A framework that cannot enforce four of its seven untouchables on an asset class should say so in every report on that asset class.
 
+**10. Standing N=1 caveat — print it verbatim, until it expires.** Every adapted non-crypto report carries this line:
+
+> **N=1, and weaker than usual:** four reports, zero trades, zero realized P&L on this asset class — and Flying Rocket is still N=0 on realized money on its native class. Re-grade at the first non-crypto report that reaches a non-stand-down score; there has never been one.
+
+**Retirement condition.** The caveat is **self-expiring**. It is retired by the first adapted non-crypto report whose **adjusted score reaches the Channel A Phase 1A line of 11** — whether or not the gates, the §7 preflight or the minimum-edge filter then veto the trade. That threshold is the trigger because it is the first moment these substitutions bear weight on a decision instead of being academic: below it every non-crypto read has been a stand-down that the rubric could not have gotten wrong in the expensive direction.
+
+The report that trips it must, in the same session: (a) state that the caveat's condition has fired and that this is the class's first non-stand-down score; (b) **delete this item 10 from the SKILL** and record the deletion in the Framework Revision Log with the triggering report's filename; and (c) **run `framework-calibration` on this framework before any tranche on that asset fills.** A first score is evidence that the adaptation is live, not evidence that it is calibrated.
+
+**What expires is the caveat, and nothing else.** Items 1–9 are restrictions, not disclosures, and they survive the retirement untouched — the frozen schema, the valuation ceiling, the pinned rounding, the NOT-MET rule, Channel B's unavailability, Phase 3's unreachability, the two inert protections and the Hard-Rule-6 disclosure line all remain in force. Deleting the annex, or any part of it other than this item, is a loosening and is out of scope for the report that trips the trigger.
+
 ## Analytical Principles
 
 1. **Shorting is not the mirror of longing.** Carry bleeds, drift hurts, squeezes kill. Operate with more humility.
@@ -762,7 +772,9 @@ English by default. Russian on explicit user request. Default: English. Ask only
 
 **Toolchain, co-landed per CLAUDE.md's lib/SKILL rule:** `ROUNDING` gains the equity-index pins; `FR_NONCRYPTO_CLASS` / `FR_NONCRYPTO_NA` / `frNonCryptoClass()` encode the frozen schema; `frThresholds()` is the FR gate converter (`compute.mjs thresholds --fr`) — the existing `ceilThresholds` is the **Fallen Knives** one, whose p3 fraction is 7/9 against FR's 8/9, so the report-facing tool understated FR's deepest floor by one at active 8 and 9 (the linter always read `FR_GATE_FLOORS` and was never wrong). `lint-report.mjs` now errors on a gate-schema deviation and on a report overriding a pinned rounding convention — both previously unchecked, which is why `ROUNDING` was advisory and `gates.na` content was entirely unvalidated. Epoch **2026-08-05**, so all four existing non-crypto reports warn rather than fail; each trips exactly the rule it broke (1642 the schema, 2234 the rounding) and a post-epoch copy errors. `selftest.mjs` passes.
 
-**N=1, and weaker than usual.** Four reports, **zero trades, zero realized P&L** on this asset class — and the framework is still N=0 on realized money on its *native* class. Two of the four are one day old. Re-grade after the first non-crypto report that reaches a non-stand-down score; there have been none.
+**N=1, and weaker than usual.** Four reports, **zero trades, zero realized P&L** on this asset class — and the framework is still N=0 on realized money on its *native* class. Two of the four are one day old.
+
+**This caveat is now a rule, not a closing remark (annex item 10, owner-directed same day).** Every adapted non-crypto report prints it verbatim, and it is **self-expiring**: the first such report whose adjusted score reaches the Channel A Phase 1A line of **11** — vetoed or not — retires it, deletes item 10, logs the deletion here with the triggering report's filename, and triggers a `framework-calibration` re-grade before any tranche on that asset fills. A caveat that outlives its own evidence becomes boilerplate that readers skip; one that names the condition under which it stops being true does not. **Only item 10 expires** — items 1–9 are restrictions and survive it untouched.
 
 ### 2026-07-29 — Fill encoding: four of Hard Rule 6's seven were unenforced
 
