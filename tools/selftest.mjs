@@ -4,7 +4,8 @@
 // framework-calibration runs this before any workflow; a failing toolchain
 // invalidates every downstream number.
 // ============================================================================
-import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds, FK_V_GATES,
+import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds, frThresholds, FK_V_GATES,
+  frNonCryptoClass, FR_NONCRYPTO_NA, NONCRYPTO_SCHEMA_EPOCH,
   median, stdev, pearson, pctChange, consecutiveRun, smaSlope, logReturns, alignSeries,
   percentileRank, distributionStats, realizedVol, realizedVolBlock, rollingRealizedVol,
   rollingWilderRSI, rollingDrawdownFromATH, rollingSMADistance, rollingBouncePct, rollingTrailingHighDistance,
@@ -1605,6 +1606,45 @@ ok('output ends in a trailing newline', canonicalJSON({ a: 1 }).endsWith('}\n'))
   const snapC = { btc: { fetched_at: '2026-08-01T10:00:00Z', errors: [], spot: { canonical: 101 } } }
   ok('a REAL content change (spot.canonical) does change the payload',
     snapshotDigestPayload(snapA) !== snapshotDigestPayload(snapC))
+}
+
+// ── FR non-crypto calibration (2026-08-05) ──────────────────────────────────
+{
+  // T4 — pinned rounding for equity indices. half-down resolves a .5 AWAY
+  // from an unlock (FR) and away from a deploy (FK): conservative on both.
+  eq('spx rounding pinned half-down', ROUNDING.spx, 'half-down')
+  eq('ndx rounding pinned half-down', ROUNDING.ndx, 'half-down')
+  eq('sp500 alias pinned too (machine blocks write asset:"SP500")', ROUNDING.sp500, 'half-down')
+  eq('half-down on 6.5 → 6 (sp500_flying_rocket_20260804_1642 raw)', roundScore(6.5, ROUNDING.spx), 6)
+  eq('half-up on the same raw would have given 7', roundScore(6.5, 'half-up'), 7)
+  eq('prior pins UNCHANGED — no reversal without evidence of harm',
+    [ROUNDING.btc, ROUNDING.eth, ROUNDING.gold], ['half-up', 'half-down', 'half-up'])
+
+  // Finding B — frThresholds is the FR converter; ceilThresholds is FK's.
+  // They diverge ONLY at p3 (FR legacy 8/9 vs FK 7/9), and only where the
+  // ceil lands differently: active 8 and 9.
+  eq('FR p3 floor at active 9 is 8, not FK-7', frThresholds(9).p3, 8)
+  eq('FK p3 floor at active 9 is 7', ceilThresholds(9).p3, 7)
+  eq('FR p3 floor at active 8 is 8', frThresholds(8).p3, 8)
+  eq('FR floors at active 6 (the frozen non-crypto denominator)',
+    [frThresholds(6).p1a, frThresholds(6).p1b, frThresholds(6).p2, frThresholds(6).p3], [2, 4, 4, 6])
+  eq('FR floors at active 7 (the denominator sp500_..._1642 used)',
+    [frThresholds(7).p1a, frThresholds(7).p1b, frThresholds(7).p2, frThresholds(7).p3], [3, 4, 5, 7])
+  eq('FR floors at active 9 match FR_GATE_FLOORS exactly',
+    [frThresholds(9).p1a, frThresholds(9).p1b, frThresholds(9).p2, frThresholds(9).p3],
+    [FR_GATE_FLOORS.p1a, FR_GATE_FLOORS.p1b, FR_GATE_FLOORS.p2, FR_GATE_FLOORS.p3])
+
+  // T2 — the frozen non-crypto N/A schema. Four reports produced four
+  // denominators; the class map is what makes the freeze enforceable.
+  eq('spx → equity_index', frNonCryptoClass('spx'), 'equity_index')
+  eq('SP500 (machine-block casing) → equity_index', frNonCryptoClass('SP500'), 'equity_index')
+  eq('gold → metals', frNonCryptoClass('gold'), 'metals')
+  eq('btc is NOT a non-crypto class', frNonCryptoClass('btc'), null)
+  eq('eth is NOT a non-crypto class', frNonCryptoClass('eth'), null)
+  eq('equity_index N/A set frozen at {4,6,9}', FR_NONCRYPTO_NA.equity_index, [4, 6, 9])
+  eq('metals N/A set frozen at {4,6,9}', FR_NONCRYPTO_NA.metals, [4, 6, 9])
+  eq('both non-crypto classes imply active denominator 6',
+    [9 - FR_NONCRYPTO_NA.equity_index.length, 9 - FR_NONCRYPTO_NA.metals.length], [6, 6])
 }
 
 // ── verdict ─────────────────────────────────────────────────────────────────

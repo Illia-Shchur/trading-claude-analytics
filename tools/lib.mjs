@@ -981,7 +981,15 @@ export function correlationFromCloses(seriesA, seriesB, { window = null } = {}) 
 // ── Fallen Knives: score arithmetic ─────────────────────────────────────────
 
 /** Per-asset .5 rounding conventions (FK SKILL §4, codified 2026-07-10). */
-export const ROUNDING = { btc: 'half-up', gold: 'half-up', eth: 'half-down' }
+export const ROUNDING = {
+  btc: 'half-up', gold: 'half-up', eth: 'half-down',
+  // Equity indices pinned 2026-08-05 (FR non-crypto calibration). half-down
+  // resolves a .5 AWAY from an unlock on FR and away from a deploy on FK — the
+  // conservative direction on both sides of the book. Pinned because the two
+  // SPX reports of 2026-08-04 declared DIFFERENT conventions (half-down at
+  // 16:42, half-up at 22:34) on the same asset, same day, same data.
+  spx: 'half-down', sp500: 'half-down', ndx: 'half-down', nasdaq: 'half-down',
+}
 
 /** Round a raw composite per convention: 'half-up' | 'half-down'. */
 export function roundScore(raw, convention) {
@@ -1009,6 +1017,55 @@ export function ceilThresholds(active) {
 
 /** The six [V] gates on the FK board. */
 export const FK_V_GATES = [1, 2, 3, 4, 7, 8]
+
+/**
+ * FR phase gate thresholds = ceil(FR_GATE_FLOORS/9 × active_denominator).
+ * DISTINCT FROM ceilThresholds() ABOVE, which is the FALLEN KNIVES converter:
+ * FK's legacy p3 floor is 7/9, FR's is 8/9, so the FK tool understates FR's
+ * deepest floor by one at active 8 and 9. The FR linter has always used
+ * FR_GATE_FLOORS directly and is unaffected; this exists so the REPORT-FACING
+ * `compute.mjs thresholds --fr` prints the floors an FR report is required to
+ * publish (§4). Found 2026-08-05: sp500_flying_rocket_20260804_2234 caught the
+ * discrepancy by hand and said so; the next report might not have.
+ */
+export function frThresholds(active) {
+  if (!Number.isInteger(active) || active < 1 || active > 9) throw new Error('active denominator must be an integer 1–9')
+  return {
+    active,
+    p1a: Math.ceil(FR_GATE_FLOORS.p1a / 9 * active),
+    p1b: Math.ceil(FR_GATE_FLOORS.p1b / 9 * active),
+    p2: Math.ceil(FR_GATE_FLOORS.p2 / 9 * active),
+    p3: Math.ceil(FR_GATE_FLOORS.p3 / 9 * active),
+  }
+}
+
+/**
+ * Non-crypto asset classes covered by the FR SKILL's "Adapted Non-Crypto
+ * Reads" annex (2026-08-05). These assets are OUT OF DECLARED SCOPE — the map
+ * exists to make the annex's restrictions enforceable, not to grant coverage.
+ */
+export const FR_NONCRYPTO_CLASS = {
+  spx: 'equity_index', sp500: 'equity_index', ndx: 'equity_index', nasdaq: 'equity_index',
+  gold: 'metals', xau: 'metals', paxg: 'metals', silver: 'metals', xag: 'metals',
+}
+
+/**
+ * The FROZEN N/A gate set per non-crypto class, and the active denominator it
+ * implies. Gates 4 (perp funding) and 6 (Coinbase Premium) have no instrument
+ * in ANY market state; gate 9 (BTC-dominance / altseason rotation) is an
+ * intra-crypto rotation construct whose only non-crypto substitute — sector or
+ * safe-haven leadership — restates gate 8's breadth logic rather than adding
+ * independent evidence, so it is N/A rather than a free extra gate.
+ *
+ * Pinned because the four non-crypto reports produced FOUR denominators (gold
+ * 7, gold "~6", SPX 7, SPX 6) — a per-report knob on a protective floor.
+ */
+export const FR_NONCRYPTO_NA = { equity_index: [4, 6, 9], metals: [4, 6, 9] }
+
+/** Resolve an asset string to its non-crypto class, or null if crypto/unknown. */
+export function frNonCryptoClass(asset) {
+  return FR_NONCRYPTO_CLASS[String(asset || '').toLowerCase()] || null
+}
 
 /**
  * FK phase SCORE unlock lines (SKILL §6). Cut 2026-07-27 under owner agility
@@ -2134,10 +2191,17 @@ export const EPOCHS = {
   // broken — every report in the corpus predates this epoch and keeps the
   // warn-only tolerant read; only a report dated on/after it must comply.
   companionFR: '2026-08-03',
+  // Frozen non-crypto gate schema + pinned rounding (FR non-crypto
+  // calibration). Set to the ship date on the same principle as every epoch
+  // above: the four existing non-crypto reports predate it and keep the
+  // warn-only read, so none is retroactively broken; only a report dated
+  // on/after it must comply.
+  nonCryptoSchema: '2026-08-05',
 }
 export const MACHINE_BLOCK_EPOCH = EPOCHS.machineBlock
 export const DISCRETION_EPOCH = EPOCHS.discretionAndTwoChannel
 export const ENTRY_PRICE_EPOCH = EPOCHS.entryPrice
+export const NONCRYPTO_SCHEMA_EPOCH = EPOCHS.nonCryptoSchema
 export const COMPANION_FR_EPOCH = EPOCHS.companionFR
 
 /** Reports are timestamped in local EST/EDT per the repo's Output Convention. */

@@ -5,7 +5,10 @@
 //
 // Usage:
 //   node tools/compute.mjs rsi 61234,60050,...            [--period 14]
-//   node tools/compute.mjs thresholds 9|8
+//   node tools/compute.mjs thresholds 9|8 [--fr]
+//        (default = the FALLEN KNIVES converter, p3 = 7/9. Pass --fr on a
+//        Flying Rocket report: FR's legacy p3 floor is 8/9, so the default
+//        understates FR's deepest floor by one at active 8 and 9.)
 //   node tools/compute.mjs round 12.5 --asset btc          (or --convention half-up|half-down)
 //   node tools/compute.mjs band <fk-sentiment|fk-momentum|fk-mvrv|fk-drawdown|fk-gold|fr-euphoria|fr-momentum|fr-mvrv|fr-ath> <value>
 //                          [--low-confidence] [--cot-flush]
@@ -63,7 +66,7 @@
 // JSON args may also be passed as @path/to/file.json
 // ============================================================================
 import { readFileSync } from 'node:fs'
-import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds,
+import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds, frThresholds,
   fk, fr, weightedEV, evCheck, stopCoherence, adr, fngStreak,
   dailyTrend, frStallConfirmation, frComposite, frCompanion, correlationFromCloses,
   nextNTradingDays, percentileRank, distributionStats,
@@ -92,7 +95,12 @@ switch (cmd) {
     break
   }
   case 'thresholds': {
-    out(ceilThresholds(num(args[0] ?? 9)))
+    // --fr selects the FLYING ROCKET converter. The default is the Fallen
+    // Knives one, whose legacy p3 floor is 7/9 against FR's 8/9 — so on an FR
+    // report the default understates the deepest floor by one at active 8 and
+    // 9. The FR linter reads FR_GATE_FLOORS directly and was never wrong; this
+    // flag makes the report-facing number match what the linter enforces.
+    out(flags.fr ? frThresholds(num(args[0] ?? 9)) : ceilThresholds(num(args[0] ?? 9)))
     break
   }
   case 'round': {

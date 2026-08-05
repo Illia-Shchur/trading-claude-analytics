@@ -67,7 +67,8 @@ import { roundScore, ROUNDING, ceilThresholds, FK_V_GATES, evCheck, stopCoherenc
   discretionValid, d5StopCheck, FK_SCORE_UNLOCK, FK_DISCRETION,
   s5StopCheck, frRatchetCheck, FR_S5, FR_CHANNEL_B,
   frUnlockLadder, FR_GATE_FLOORS, frStopBand, FR_MAX_PER_ASSET_PCT,
-  fillPrice, trancheFilled, entryLooksLikeFill, ENTRY_PRICE_EPOCH, frComposite, COMPANION_FR_EPOCH } from './lib.mjs'
+  fillPrice, trancheFilled, entryLooksLikeFill, ENTRY_PRICE_EPOCH, frComposite, COMPANION_FR_EPOCH,
+  frNonCryptoClass, FR_NONCRYPTO_NA, NONCRYPTO_SCHEMA_EPOCH } from './lib.mjs'
 
 const round2 = n => Math.round(n * 100) / 100
 
@@ -184,6 +185,15 @@ else if (typeof S.raw === 'number') {
   // 20% Phase-3 short passed with two warnings.
   if (!conv) (String(b.date) >= DISCRETION_EPOCH ? err : warn)('score.rounding not declared and asset has no pinned convention — declare one, or the entire score arithmetic goes unchecked (§4)')
   else {
+    // A PINNED convention is not advisory. Until 2026-08-05 the report's own
+    // `score.rounding` silently won over ROUNDING[asset], so pinning a new
+    // asset changed nothing a report could not override — which is exactly
+    // what happened: the two SPX reports of 2026-08-04 declared half-down and
+    // half-up on the same asset, same day, same data.
+    const pinned = ROUNDING[String(b.asset || '').toLowerCase()]
+    if (pinned && S.rounding && S.rounding !== pinned)
+      (String(b.date) >= NONCRYPTO_SCHEMA_EPOCH ? err : warn)(
+        `score.rounding="${S.rounding}" conflicts with the pinned convention for ${b.asset} ("${pinned}") — a pinned rounding convention may not be overridden per report (§4)`)
     let expected = roundScore(S.raw, conv)
     // Both layers: the discretionary term can push the raw composite outside
     // 0–20; the adjusted score is clamped to the band before any cap applies.
@@ -204,6 +214,23 @@ else {
   const overlap = G.passed.filter(g => na.includes(g))
   if (overlap.length) err(`gates ${overlap.join(', ')} are both passed and N/A`)
   if (G.passed.length > G.active) err(`${G.passed.length} gates passed > ${G.active} active`)
+  // Frozen non-crypto gate schema (FR SKILL, "Adapted Non-Crypto Reads"
+  // annex, 2026-08-05). Until now the CONTENT of gates.na was entirely
+  // unchecked — only `active === 9 − na.length` was verified — so any N/A set
+  // linted clean. The four non-crypto reports produced four denominators
+  // (gold 7, gold "~6", SPX 7, SPX 6), and the denominator scales every phase
+  // floor through the ceil conversion, making it a per-report knob on a
+  // protective threshold. The schema is frozen per CLASS, not per report.
+  if (FW === 'flying_rocket') {
+    const cls = frNonCryptoClass(b.asset)
+    if (cls) {
+      const want = FR_NONCRYPTO_NA[cls]
+      const got = [...na].sort((x, y) => x - y)
+      if (JSON.stringify(got) !== JSON.stringify(want))
+        (String(b.date) >= NONCRYPTO_SCHEMA_EPOCH ? err : warn)(
+          `gates.na=[${got.join(', ')}] but the frozen ${cls} schema is [${want.join(', ')}] (active ${9 - want.length}) — the non-crypto N/A set is fixed per asset class and may only change via a disclosed schema-revision note in the SKILL, never per report (FR annex)`)
+    }
+  }
   if (FW === 'fallen_knives') {
     const th = ceilThresholds(G.active)
     const vPassed = G.passed.filter(g => FK_V_GATES.includes(g)).length
