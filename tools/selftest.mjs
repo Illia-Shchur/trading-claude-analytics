@@ -22,7 +22,8 @@ import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds, frTh
   fillPrice, trancheFilled, entryLooksLikeFill, EPOCHS, ENTRY_PRICE_EPOCH,
   reportFileMeta, localToUtcISO, schemaEpochOf, signalRubric, legSpec, inferChannel,
   inferDiscretion, gateMask, unlockFor, canonicalJSON, feedChanged, REPORT_FILE_RE, snapshotDigestPayload,
-  weekdayOf, isTradingDay, nextNTradingDays, tradingDaysBetween } from './lib.mjs'
+  weekdayOf, isTradingDay, nextNTradingDays, tradingDaysBetween, sentimentProxyBlock } from './lib.mjs'
+import { completedCandles, weeklyBlock } from './fetch.mjs'
 
 let failures = 0
 function eq(name, got, want) {
@@ -1645,6 +1646,78 @@ ok('output ends in a trailing newline', canonicalJSON({ a: 1 }).endsWith('}\n'))
   eq('metals N/A set frozen at {4,6,9}', FR_NONCRYPTO_NA.metals, [4, 6, 9])
   eq('both non-crypto classes imply active denominator 6',
     [9 - FR_NONCRYPTO_NA.equity_index.length, 9 - FR_NONCRYPTO_NA.metals.length], [6, 6])
+}
+
+// ── completedCandles / weeklyBlock — weekly bar boundary artifact (fixed
+//    2026-08-05: Yahoo emitted an extra live-session stub bar for GC=F
+//    alongside the still-open current-week bar; a "drop only the final bar"
+//    heuristic left the in-progress week inside the completed set, moving
+//    gold's momentum leg 2→1 and the mechanical score 8→7, which would have
+//    satisfied the compound stop's score axis on a bar-count artifact, not
+//    evidence. Fixture: real GC=F weekly closes captured 2026-08-05, closes
+//    rounded to cents — 263 candles ending in the live-session stub) ────────
+{
+  const gcWeeklyRaw = [[1627876800000,1760],[1628481600000,1775.2],[1629086400000,1781],[1629691200000,1816.6],[1630296000000,1830.9],[1630900800000,1789.6],[1631505600000,1749.4],[1632110400000,1749.7],[1632715200000,1757],[1633320000000,1756.3],[1633924800000,1767.2],[1634529600000,1795.5],[1635134400000,1783],[1635739200000,1816.4],[1636347600000,1867.9],[1636952400000,1851.2],[1637557200000,1785.3],[1638162000000,1782],[1638766800000,1782.9],[1639371600000,1803.8],[1639976400000,1811.2],[1640581200000,1827.5],[1641186000000,1797],[1641790800000,1816.5],[1642395600000,1831.8],[1643000400000,1784.9],[1643605200000,1806.6],[1644210000000,1840.8],[1644814800000,1898.6],[1645419600000,1886.5],[1646024400000,1965.1],[1646629200000,1982.7],[1647230400000,1928.2],[1647835200000,1953.8],[1648440000000,1919.1],[1649044800000,1941.6],[1649649600000,1970.9],[1650254400000,1931],[1650859200000,1909.3],[1651464000000,1881.2],[1652068800000,1807.4],[1652673600000,1841.8],[1653278400000,1851.3],[1653883200000,1845.4],[1654488000000,1871.5],[1655092800000,1835.6],[1655697600000,1826.5],[1656302400000,1798.9],[1656907200000,1740.6],[1657512000000,1702.4],[1658116800000,1727.1],[1658721600000,1762.9],[1659326400000,1772.9],[1659931200000,1798.6],[1660536000000,1747.6],[1661140800000,1736.1],[1661745600000,1709.8],[1662350400000,1716.2],[1662955200000,1671.7],[1663560000000,1645.3],[1664164800000,1662.4],[1664769600000,1700.5],[1665374400000,1641.7],[1665979200000,1651],[1666584000000,1639.6],[1667188800000,1672.5],[1667797200000,1766],[1668402000000,1751.9],[1669006800000,1753.3],[1669611600000,1795.9],[1670216400000,1798.1],[1670821200000,1790],[1671426000000,1795.9],[1672030800000,1819.7],[1672635600000,1864.2],[1673240400000,1918.4],[1673845200000,1926.4],[1674450000000,1928.6],[1675054800000,1862.9],[1675659600000,1862.8],[1676264400000,1840.4],[1676869200000,1808.8],[1677474000000,1847.7],[1678078800000,1862],[1678680000000,1969.8],[1679284800000,1982.1],[1679889600000,1969],[1680494400000,2011.9],[1681099200000,2002.2],[1681704000000,1979.5],[1682308800000,1990.1],[1682913600000,2017.4],[1683518400000,2014.5],[1684123200000,1978.7],[1684728000000,1944.1],[1685332800000,1952.4],[1685937600000,1962.2],[1686542400000,1958.4],[1687147200000,1919.1],[1687752000000,1921.1],[1688356800000,1926.2],[1688961600000,1960.1],[1689566400000,1964.3],[1690171200000,1960.4],[1690776000000,1939.6],[1691380800000,1912.9],[1691985600000,1886.1],[1692590400000,1911.1],[1693195200000,1939.8],[1693800000000,1918.4],[1694404800000,1923.7],[1695009600000,1925.4],[1695614400000,1848.1],[1696219200000,1830.2],[1696824000000,1927.4],[1697428800000,1982.5],[1698033600000,1988.6],[1698638400000,1991.5],[1699246800000,1932.6],[1699851600000,1981.6],[1700456400000,2002.2],[1701061200000,2071],[1701666000000,1998.3],[1702270800000,2021.1],[1702875600000,2057.1],[1703480400000,2062.4],[1704085200000,2042.4],[1704690000000,2046.7],[1705294800000,2026.5],[1705899600000,2016.8],[1706504400000,2036.1],[1707109200000,2023.3],[1707714000000,2011.5],[1708318800000,2038.6],[1708923600000,2086.9],[1709528400000,2178.6],[1710129600000,2157.3],[1710734400000,2158.1],[1711339200000,2217.4],[1711944000000,2325.7],[1712548800000,2356.2],[1713153600000,2398.4],[1713758400000,2334.8],[1714363200000,2299],[1714968000000,2367.3],[1715572800000,2412.2],[1716177600000,2332.5],[1716782400000,2322.9],[1717387200000,2305.2],[1717992000000,2331.4],[1718596800000,2316.4],[1719201600000,2327.7],[1719806400000,2388.5],[1720411200000,2414],[1721016000000,2395.5],[1721620800000,2380],[1722225600000,2425.7],[1722830400000,2432.1],[1723435200000,2498.6],[1724040000000,2508.4],[1724644800000,2493.8],[1725249600000,2493.5],[1725854400000,2581.3],[1726459200000,2619.9],[1727064000000,2644.3],[1727668800000,2645.8],[1728273600000,2657.6],[1728878400000,2713.7],[1729483200000,2740.9],[1730088000000,2738.6],[1730696400000,2687.5],[1731301200000,2565.7],[1731906000000,2709.9],[1732510800000,2657],[1733115600000,2638.6],[1733720400000,2656],[1734325200000,2628.7],[1734930000000,2617.2],[1735534800000,2645],[1736139600000,2708.5],[1736744400000,2744.3],[1737349200000,2777.3],[1737954000000,2812.5],[1738558800000,2867.3],[1739163600000,2883.6],[1739768400000,2937.6],[1740373200000,2836.8],[1740978000000,2904.7],[1741579200000,2994.5],[1742184000000,3018.2],[1742788800000,3086.5],[1743393600000,3012],[1743998400000,3222.2],[1744603200000,3308.7],[1745208000000,3282.4],[1745812800000,3231.9],[1746417600000,3335.4],[1747022400000,3182],[1747627200000,3363.6],[1748232000000,3288.9],[1748836800000,3322.7],[1749441600000,3431.2],[1750046400000,3368.1],[1750651200000,3273.7],[1751256000000,3332.5],[1751860800000,3356],[1752465600000,3353],[1753070400000,3334],[1753675200000,3347.7],[1754280000000,3439.1],[1754884800000,3336],[1755489600000,3374.4],[1756094400000,3473.7],[1756699200000,3613.2],[1757304000000,3649.4],[1757908800000,3671.5],[1758513600000,3775.3],[1759118400000,3880.8],[1759723200000,3975.9],[1760328000000,4189.9],[1760932800000,4118.4],[1761537600000,3982.2],[1762146000000,3999.4],[1762750800000,4087.6],[1763355600000,4076.7],[1763960400000,4218.3],[1764565200000,4212.9],[1765170000000,4300.1],[1765774800000,4361.4],[1766379600000,4529.1],[1766984400000,4314.4],[1767589200000,4490.3],[1768194000000,4588.4],[1768798800000,4976.2],[1769403600000,4713.9],[1770008400000,4951.2],[1770613200000,5022],[1771218000000,5059.3],[1771822800000,5230.5],[1772427600000,5146.1],[1773028800000,5052.5],[1773633600000,4570.4],[1774238400000,4492],[1774843200000,4651.5],[1775448000000,4761.9],[1776052800000,4857.6],[1776657600000,4722.3],[1777262400000,4629.9],[1777867200000,4720.4],[1778472000000,4555.8],[1779076800000,4521],[1779681600000,4560.5],[1780286400000,4337.1],[1780891200000,4215],[1781496000000,4145.3],[1782100800000,4078.7],[1782705600000,4174.6],[1783310400000,4104.1],[1783915200000,4012.7],[1784520000000,4067.6],[1785124800000,4049.1],[1785729600000,4095.4],[1785940981000,4297.5]]
+
+  const toCandles = pairs => pairs.map(([t, close], i) => ({ t, close, date: new Date(t).toISOString().slice(0, 10) }))
+  const stub = toCandles(gcWeeklyRaw)          // 263 rows: ...07-27, 08-03 (open), 08-05 (live-session stub)
+  const noStub = stub.slice(0, 262)            // 262 rows: ...07-27, 08-03 (open) — the ordinary single-trailing-incomplete-bar case
+  const NOW = stub[stub.length - 1].t + 1000   // just after the stub bar prints; both 08-03 and 08-05 weeks are still open
+
+  eq('extra-stub case: 263 candles -> 261 completed (BOTH the stub and the still-open 08-03 week are dropped)',
+    completedCandles(stub, 7 * 86400e3, NOW).length, 261)
+  eq('normal case (no stub): 262 candles -> 261 completed (only the single open trailing week is dropped)',
+    completedCandles(noStub, 7 * 86400e3, NOW).length, 261)
+  eq('last_completed_week names the TRUE completed week, not whatever bar was second-to-last',
+    completedCandles(stub, 7 * 86400e3, NOW)[260].date, '2026-07-27')
+
+  const wb = weeklyBlock(stub, 4297.5, NOW)
+  eq('gold weekly RSI on the correct 261-close basis reproduces the prior reports\' print: 38.98', wb.rsi14.rsi, 38.98)
+  eq('completed_closes is 261, not 262 or 263', wb.completed_closes, 261)
+  ok('momentum band on the CORRECT rsi14 is 2 (<=40)', fk.momentumBand(wb.rsi14.rsi).band === 2)
+  ok('momentum band is NOT 1 — the 262-close artifact value (41.03) must not leak through', fk.momentumBand(wb.rsi14.rsi).band !== 1)
+  ok('the toolchain artifact itself: computing over 262 closes (including the in-progress week) DOES return 41.03 -> band 1',
+    fk.momentumBand(wilderRSI(noStub.map(c => c.close), 14).rsi).band === 1)
+}
+
+// ── sentimentProxyBlock — UNSCORED gold sentiment context (added 2026-08-05).
+//    Guards the two properties that keep this out of the rubric: it must stay
+//    flagged scored:false, and the CEF premium must isolate the trust's own
+//    richness rather than re-expressing the underlying's price move. ────────
+{
+  // A reference series that TRIPLES while the trust tracks it exactly: the
+  // premium must read ~0 throughout. If the underlying's move leaked into
+  // the premium this would print a large number and the block would be a
+  // disguised momentum input — the thing the double-key rule forbids.
+  const n = 400
+  const ref = Array.from({ length: n }, (_, i) => 100 * (1 + 2 * i / (n - 1)))
+  const trackedExactly = ref.map(v => v * 0.1)
+  const flat = sentimentProxyBlock({ cefCloses: trackedExactly, refCloses: ref, baselineWindow: 250 })
+  eq('CEF premium is ~0 when the trust tracks a TRIPLING reference exactly (underlying price cancels)',
+    flat.cef_premium.premium_pct, 0)
+  eq('a perfectly-tracking trust is classified PREMIUM only by sign convention at exactly 0',
+    flat.cef_premium.sign, 'PREMIUM')
+
+  // Same reference, but the trust slips to a 3% discount over the last 40
+  // sessions — the premium must go NEGATIVE and be flagged a DISCOUNT.
+  const slipped = trackedExactly.map((v, i) => (i >= n - 40 ? v * 0.97 : v))
+  const disc = sentimentProxyBlock({ cefCloses: slipped, refCloses: ref, baselineWindow: 250 })
+  ok('a trust slipping to a discount prints a NEGATIVE premium', disc.cef_premium.premium_pct < 0)
+  eq('and is flagged DISCOUNT', disc.cef_premium.sign, 'DISCOUNT')
+
+  // The non-negotiable: this block may never present itself as scoreable.
+  ok('sentimentProxyBlock is flagged scored:false', disc.scored === false)
+  ok('the note states the sentiment leg keeps its NOT-FOUND fallback of 2',
+    /fallback of 2/.test(disc.note))
+  ok('the vol index carries its direction-blind warning (GVZ is NOT a fear gauge)',
+    /direction-blind/.test(sentimentProxyBlock({ volCloses: Array.from({ length: 600 }, (_, i) => 15 + (i % 7)) }).vol_index.interpretation))
+
+  // Degradation: too little history must yield ABSENCE, never a fabricated 0.
+  const short = sentimentProxyBlock({ cefCloses: trackedExactly.slice(0, 100), refCloses: ref.slice(0, 100) })
+  ok('too few closes for the baseline window -> cef_premium ABSENT, not a fabricated 0',
+    short.cef_premium === undefined)
+  ok('an empty call yields neither proxy, and still declares scored:false',
+    sentimentProxyBlock({}).vol_index === undefined && sentimentProxyBlock({}).scored === false)
 }
 
 // ── verdict ─────────────────────────────────────────────────────────────────

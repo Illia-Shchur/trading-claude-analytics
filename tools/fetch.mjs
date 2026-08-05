@@ -29,7 +29,7 @@ import { pathToFileURL } from 'node:url'
 import { wilderRSI, sma, drawdownPct, adr, fngStreak, dailyTrend, spotPanel, fundingBlock, fr,
   percentileRank, realizedVolBlock, rollingRealizedVol,
   rollingWilderRSI, rollingDrawdownFromATH, rollingSMADistance, rollingBouncePct, rollingTrailingHighDistance,
-  deribitVolBlock, basisBlock,
+  deribitVolBlock, basisBlock, sentimentProxyBlock,
   positioningBlock, netLiquidity, stablecoinBlock, borrowBlock, _internal } from './lib.mjs'
 const { round2 } = _internal
 
@@ -57,7 +57,17 @@ const ASSETS = {
     venues: { binance: 'SOLUSDT', coinbase: 'SOL-USD', kraken: 'SOLUSD' } },
   // Gold has no crypto-exchange venues or perp — the spot panel degrades to
   // n_synchronized:0 + low_confidence:true, and `funding` is absent, not zero.
-  gold: { yahoo: 'GC=F', crossYahoo: 'MGC=F', fng: false, athRange: '10y', annualize: 252, venues: {} },
+  // sentimentProxy: UNSCORED regime context standing in for the F&G block a
+  // non-crypto asset can never have. `vol` = a CBOE volatility index, `cef` =
+  // a CLOSED-end trust whose premium/discount to `cefRef` isolates what
+  // investors pay over the underlying. Only gold carries it: PHYS is a real
+  // closed-end trust (its premium moves), whereas an open-ended ETF is
+  // arb-pinned and its "premium" is noise by construction — the GLD control
+  // that validated this block. See sentimentProxyBlock() in lib.mjs for the
+  // 10y evidence on why BOTH proxies stay unscored. SPX/NDX get no key: ^VIX
+  // is already fetched by `macro`, and neither has a closed-end analogue.
+  gold: { yahoo: 'GC=F', crossYahoo: 'MGC=F', fng: false, athRange: '10y', annualize: 252, venues: {},
+    sentimentProxy: { vol: '^GVZ', cef: 'PHYS', cefRef: 'GC=F' } },
   // spx/ndx (FR-parity plan, FR7): FR has run on non-crypto assets five
   // times (gold ×2, UNI ×2, SPX) and until now none of them were
   // reproducible from the committed repo — the 2026-08-04 SPX report states
@@ -188,14 +198,23 @@ async function yahooChart(symbol, range, interval) {
     .filter(c => c.close != null)
 }
 
-/** Drop the in-progress final candle if "now" is before its bar closes. */
-function completedCandles(candles, barMs) {
-  const last = candles[candles.length - 1]
-  return Date.now() >= last.t + barMs ? candles : candles.slice(0, -1)
+/**
+ * Drop every trailing candle whose bar has not yet closed (t + barMs > now),
+ * walking back from the end. Do NOT assume exactly one incomplete trailing
+ * bar — Yahoo's weekly endpoint can emit an extra live-session stub bar
+ * ALONGSIDE the still-open current-week bar (observed 2026-08-05: GC=F's
+ * last two weekly rows were both open — an 08-03 in-progress week bar AND
+ * an 08-05 stub — and a "drop only the final bar" heuristic left the
+ * in-progress week inside the completed set, moving a scored RSI leg).
+ */
+function completedCandles(candles, barMs, now = Date.now()) {
+  let end = candles.length
+  while (end > 0 && now < candles[end - 1].t + barMs) end--
+  return candles.slice(0, end)
 }
 
-function weeklyBlock(candles, spot) {
-  const lastComplete = completedCandles(candles, 7 * 86400e3)
+function weeklyBlock(candles, spot, now = Date.now()) {
+  const lastComplete = completedCandles(candles, 7 * 86400e3, now)
   const closes = lastComplete.map(c => c.close)
   const rsi = wilderRSI(closes, 14)
   const rsiLive = wilderRSI(candles.map(c => c.close), 14)
@@ -321,11 +340,42 @@ async function fetchAsset(key, { series = false } = {}) {
     outp.ath = { value: md.ath.usd, date: md.ath_date.usd.slice(0, 10),
       drawdown_pct: spot ? drawdownPct(spot, md.ath.usd) : round2(-md.ath_change_percentage.usd), source: 'CoinGecko' }
   } else if (a.athRange && spot) {
-    const long = await attempt(`yahoo ${a.athRange} high`, () => yahooChart(a.yahoo, a.athRange, '1wk'))
+    // The window high is only a DRAWDOWN DENOMINATOR if nothing before the
+    // window traded higher. Every gold report to date has had to carry
+    // "10y window high, not a verified ATH" as a standing stale-input debt
+    // item; that debt is resolvable by fetching the pre-window history and
+    // CHECKING, rather than disclaiming. Yahoo's `max`/`1mo` series reaches
+    // back to 2000-09 for GC=F, 1984-12 for ^GSPC, 1985-10 for ^NDX, so the
+    // check is real for all three (verified 2026-08-05: gold's pre-window
+    // max was 1828.50 @ 2011-08 vs a 5586.20 in-window high — the 10y
+    // window provably DOES contain gold's all-time high, and the 2011
+    // bull-market peak the disclaimer was worried about is nowhere near).
+    // Monthly bars can clip an intra-month spike, so the comparison is
+    // deliberately one-sided: it can only ever CONFIRM that the window
+    // dominates by a margin, never silently overturn it.
+    const [long, full] = await Promise.all([
+      attempt(`yahoo ${a.athRange} high`, () => yahooChart(a.yahoo, a.athRange, '1wk')),
+      attempt(`yahoo max high (ATH verification)`, () => yahooChart(a.yahoo, 'max', '1mo')),
+    ])
     if (long) {
       const hi = long.reduce((m, c) => (c.high != null && c.high > m.high ? c : m), { high: -Infinity })
-      outp.ath = { value: round2(hi.high), date: hi.date, drawdown_pct: drawdownPct(spot, hi.high),
-        source: `Yahoo ${a.yahoo} ${a.athRange} weekly high — NOT all-time; flag the window in the report` }
+      const ath = { value: round2(hi.high), date: hi.date, drawdown_pct: drawdownPct(spot, hi.high) }
+      const cutoff = long[0] ? long[0].t : null
+      const pre = full && cutoff ? full.filter(c => c.t < cutoff && c.high != null) : []
+      if (pre.length) {
+        const preHi = pre.reduce((m, c) => (c.high > m.high ? c : m), { high: -Infinity })
+        ath.all_time_verified = preHi.high < hi.high
+        ath.pre_window_high = { value: round2(preHi.high), date: preHi.date,
+          history_from: full[0].date, bars: pre.length }
+        ath.source = ath.all_time_verified
+          ? `Yahoo ${a.yahoo} ${a.athRange} weekly high — VERIFIED all-time: pre-window max ${round2(preHi.high)} @ ${preHi.date} (monthly bars back to ${full[0].date}) is below it`
+          : `Yahoo ${a.yahoo} ${a.athRange} weekly high — NOT all-time: ${round2(preHi.high)} @ ${preHi.date} traded higher BEFORE the window; the drawdown denominator understates the true ATH drawdown`
+      } else {
+        // No pre-window history fetched — the old disclaimer stands verbatim.
+        ath.all_time_verified = null
+        ath.source = `Yahoo ${a.yahoo} ${a.athRange} weekly high — NOT all-time (pre-window history unavailable); flag the window in the report`
+      }
+      outp.ath = ath
     }
   }
   // 1-year high (Flying Rocket phase-of-cycle cap input)
@@ -482,6 +532,37 @@ async function fetchAsset(key, { series = false } = {}) {
       ctx.fng_history_days_available = fngValues.length
     }
 
+    // Sentiment PROXIES for an asset with no F&G (gold). Disclosed context
+    // only — see sentimentProxyBlock()'s JSDoc for the 10y test that keeps
+    // both of these OUT of the scored sentiment leg. Fetched here rather
+    // than in the main Promise.all because the CEF premium needs the two
+    // series date-ALIGNED, which is easier to do once against a single
+    // reference pull than to thread through the shared fetch fan-out.
+    if (a.sentimentProxy) {
+      const sp = a.sentimentProxy
+      const [volC, cefC, refC] = await Promise.all([
+        sp.vol ? attempt(`yahoo ${sp.vol} (sentiment proxy)`, () => yahooChart(sp.vol, '5y', '1d')) : null,
+        sp.cef ? attempt(`yahoo ${sp.cef} (sentiment proxy)`, () => yahooChart(sp.cef, '5y', '1d')) : null,
+        sp.cefRef ? attempt(`yahoo ${sp.cefRef} (sentiment proxy ref)`, () => yahooChart(sp.cefRef, '5y', '1d')) : null,
+      ])
+      // Inner-join on date: a missing session on either leg would otherwise
+      // silently shift the ratio by one bar and fabricate a premium swing.
+      let cefCloses = null, refCloses = null
+      if (cefC && refC) {
+        const refByDate = new Map(refC.map(c => [c.date, c.close]))
+        const paired = cefC.filter(c => refByDate.has(c.date))
+        cefCloses = paired.map(c => c.close)
+        refCloses = paired.map(c => refByDate.get(c.date))
+      }
+      const block = sentimentProxyBlock({
+        volCloses: volC ? volC.map(c => c.close) : null,
+        cefCloses, refCloses,
+      })
+      if (block.vol_index || block.cef_premium) {
+        ctx.sentiment_proxy = { source: `Yahoo ${[sp.vol, sp.cef, sp.cefRef].filter(Boolean).join(' + ')}`, ...block }
+      }
+    }
+
     // Deribit vol surface — ABSENT (not a fabricated zero) for SOL/gold,
     // which carry no `deribit` key on ASSETS. See deribitVolBlock()'s JSDoc
     // for why an empty book (SOL's actual live response) is also treated as
@@ -603,7 +684,7 @@ async function fetchMacro() {
   return outp
 }
 
-export { ASSETS, fetchAsset, fetchMacro }
+export { ASSETS, fetchAsset, fetchMacro, completedCandles, weeklyBlock }
 
 // CLI guard: only run when invoked directly (`node tools/fetch.mjs ...`), not
 // when imported by tools/snapshot.mjs or a future test harness.

@@ -277,6 +277,86 @@ export function realizedVolBlock(closes, { annualize = 365 } = {}) {
 }
 
 /**
+ * Non-crypto sentiment PROXY panel — DISCLOSED REGIME CONTEXT ONLY, never a
+ * scored leg input. This exists because gold has no Alternative.me F&G, and
+ * every gold report to date has scored the sentiment leg at the NOT-FOUND
+ * fallback of 2 while asserting that no free daily gold fear instrument
+ * exists. Two candidates were tested against 10y of daily data on
+ * 2026-08-05, and BOTH FAILED as scored inputs — that evidence is why this
+ * block is context and not a leg:
+ *
+ *   1. GVZ (CBOE gold-ETF volatility index). No contrarian gradient at all.
+ *      Forward 20d gold returns by GVZ percentile bucket ran 1.10 / 1.39 /
+ *      1.20 / 0.54 / 1.20 / 1.48 % — flat noise. A volatility index is
+ *      direction-blind: gold IV spikes on crisis-bid melt-UPS as readily as
+ *      on flushes, so a high print cannot be read as fear. The prior
+ *      reports' refusal to score it is CONFIRMED, now on evidence.
+ *
+ *   2. PHYS closed-end premium/discount (Sprott Physical Gold Trust market
+ *      price vs its own metal value). Structurally the right shape — gold's
+ *      own price cancels in the ratio, so it isolates what investors will
+ *      pay OVER metal, and it is neither positioning (not COT, so no
+ *      double-key with capitulation-(b)/gate 1) nor a transform of the
+ *      closes the momentum/valuation legs already read. It showed a clean
+ *      full-sample gradient (60d fwd 5.40 -> 2.61 % from discount to
+ *      premium, 75% -> 61% win) and an arb-pinned GLD control confirmed the
+ *      construction does not manufacture it. It STILL FAILS: split-half, the
+ *      2018-21 era INVERTS (deep-discount 60d fwd -1.48%, 36% win) while
+ *      2022-26 gives +7.71%, 82%. The deep-discount tail returns 3.67% vs a
+ *      3.59% UNCONDITIONAL baseline — no edge — and its 140 qualifying days
+ *      are only 16 distinct episodes, so effective N is ~16. That is the
+ *      framework's own "overfit to one regime" rejection category.
+ *
+ * So: surfaced every report as disclosed context, explicitly unscored. The
+ * sentiment leg keeps its fallback of 2. Promoting either of these into the
+ * rubric is a framework-calibration job with adversarial refutation, not a
+ * toolchain one — and on today's evidence it would be rejected.
+ *
+ * `baselineWindow` detrends the CEF ratio against its own trailing mean
+ * (Sprott's ~0.4%/yr fee drift would otherwise contaminate a raw level);
+ * both the baseline and the percentile window are strictly TRAILING, so
+ * there is no lookahead.
+ */
+export function sentimentProxyBlock({ volCloses = null, cefCloses = null, refCloses = null,
+  baselineWindow = 250, percentileWindow = 504 } = {}) {
+  const out = { scored: false,
+    note: 'DISCLOSED REGIME CONTEXT ONLY — not a scored leg input. Both proxies were tested over 10y on 2026-08-05 and failed as scored inputs (GVZ: no gradient; PHYS premium: era-dependent, effective N~16). The sentiment leg keeps its NOT-FOUND fallback of 2.' }
+
+  if (volCloses && volCloses.length) {
+    const last = volCloses[volCloses.length - 1]
+    const hist = volCloses.slice(-percentileWindow - 1, -1)
+    out.vol_index = { last: round2(last),
+      percentile_vs_2y: hist.length ? percentileRank(hist, last) : null,
+      history_days: volCloses.length,
+      interpretation: 'direction-blind — a high print means turbulence, NOT fear; never read as a fear signal' }
+  }
+
+  // CEF premium: the trust's market price relative to the metal it holds.
+  // Detrended against its own trailing baseline, so the reading is "rich or
+  // cheap vs its own recent norm", not an absolute NAV premium (which would
+  // need Sprott's published NAV — no stable free daily endpoint exists).
+  if (cefCloses && refCloses && cefCloses.length === refCloses.length && cefCloses.length > baselineWindow) {
+    const ratio = cefCloses.map((v, i) => (refCloses[i] ? v / refCloses[i] : null))
+    const prem = ratio.map((v, i) => {
+      if (v == null || i < baselineWindow - 1) return null
+      let s = 0, n = 0
+      for (let k = i - baselineWindow + 1; k <= i; k++) { if (ratio[k] != null) { s += ratio[k]; n++ } }
+      return n === baselineWindow ? round2((v / (s / n) - 1) * 100) : null
+    })
+    const last = prem[prem.length - 1]
+    if (last != null) {
+      const hist = prem.slice(-percentileWindow - 1, -1).filter(v => v != null)
+      out.cef_premium = { premium_pct: last,
+        percentile_vs_2y: hist.length ? percentileRank(hist, last) : null,
+        baseline_window_days: baselineWindow, history_days: prem.filter(v => v != null).length,
+        sign: last < 0 ? 'DISCOUNT' : 'PREMIUM',
+        interpretation: 'discount = investors paying below metal value (fear-shaped); UNSCORED — the signal is era-dependent and did not survive split-half validation' }
+    }
+  }
+  return out
+}
+
+/**
  * Rolling realized-vol series (market-data-extension plan, B2) — one
  * `realizedVol` reading per trailing point in `closes`, so a LATEST reading
  * can be percentile-ranked (percentileRank()) against its own recent
