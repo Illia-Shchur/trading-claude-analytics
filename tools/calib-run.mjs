@@ -314,6 +314,25 @@ function positionText(run) {
 }
 function anchorsText(run) { return run.anchors || '(no live anchors supplied)' }
 
+// Which calibration is this corpus window the out-of-sample test OF, and from which date do
+// post-calibration reports count? The corpus window start is the authority: `calib-corpus.mjs
+// --since <date>` is invoked with the target calibration's date, so every report in the corpus
+// is by construction post-target. Anchoring instead to max(priorCalibrations.date) — as this
+// did until 2026-08-06 — silently empties the series whenever a LATER `scoped` or `meta` entry
+// exists, which is exactly the case when a run reaches back to re-validate an older `full`
+// calibration that a scoped run skipped. That produced an empty series and a re-validator with
+// nothing to grade: a silent coverage hole of the precise kind this pipeline exists to prevent.
+export function postCalibrationBoundary(corpus, priorCalibrations) {
+  const dates = (corpus || []).map(r => r && r.d).filter(Boolean).sort()
+  const corpusStart = dates[0] || ''
+  const calDates = (priorCalibrations || []).map(p => p && p.date).filter(Boolean).sort()
+  if (!corpusStart) return { boundary: calDates.slice(-1)[0] || '', target: calDates.slice(-1)[0] || '' }
+  // The target is the newest calibration at or before the corpus start (that is the one whose
+  // tunes the window tests); fall back to the corpus start itself when none is on record.
+  const target = calDates.filter(d => d.slice(0, 10) <= corpusStart).slice(-1)[0] || corpusStart
+  return { boundary: corpusStart, target }
+}
+
 function planGrade(runDir, run) {
   const extractJoined = JSON.parse(readFileSync(join(phaseDir(runDir, 'extract'), 'joined.json'), 'utf8'))
   const extracts = extractJoined.extracts
@@ -342,7 +361,7 @@ function planGrade(runDir, run) {
   tasks.push({ ...writePromptTask(dir, crossvalId, run.models.grade,
     `task_id: ${crossvalId}\n\nAssess cross-framework / cross-validation discipline (inverse-companion consistency, if applicable). Was the inverse score actually COMPUTED each report or eyeballed? Did the check go stale precisely when it mattered most? Should a computed companion score be mandatory?\nReport series (slim):\n${JSON.stringify(extracts.map(e => ({ file: e.file, asset: e.asset, framework: e.framework, date: e.report_date, score: e.digest?.score, ev: e.digest?.ev })))}\n\nReturn JSON: {"crossval": "<concise prose with a clear recommendation>"}`),
     kind: 'crossval' })
-  const lastCalDate = (run.priorCalibrations || []).map(p => p.date).sort().slice(-1)[0] || ''
+  const { boundary: lastCalDate, target: revalTarget } = postCalibrationBoundary(run.corpus || [], run.priorCalibrations || [])
   if (run.mode === 'full' && (run.priorCalibrations || []).length) {
     const priorId = 'grade-prior-tunes'
     tasks.push({ ...writePromptTask(dir, priorId, run.models.grade,
@@ -350,7 +369,13 @@ function planGrade(runDir, run) {
       `You are re-validating the PRIOR calibration(s) of this framework — the calibrator grades itself before it grades the framework.\n` +
       `Prior calibration artifacts — Read each memo: ${run.priorCalibrations.map(p => `${p.retro} (${p.date}: ${p.summary})`).join(' ; ')}\n` +
       `Also Read the "Framework Revision Log" section in: ${run.targetSkills.join(' ; ')}\n${anchorsText(run)}\n\n` +
-      `Post-calibration report series (slim):\n${JSON.stringify(extracts.filter(e => !lastCalDate || e.report_date > lastCalDate).map(e => ({ file: e.file, asset: e.asset, framework: e.framework, date: e.report_date, score: e.digest?.score, stance: e.stance })))}\n\n` +
+      `RE-VALIDATION TARGET: the calibration dated ${revalTarget || '(unknown)'} — this corpus window is its out-of-sample test. ` +
+      `Grade ITS adopted tunes. A LATER calibration may exist in the prior-calibration list (a scoped or meta run); do not mistake it for the target.\n` +
+      (() => {
+        const series = extracts.filter(e => !lastCalDate || e.report_date >= lastCalDate)
+        if (!series.length) return `Post-calibration report series: EMPTY — no report in the corpus post-dates ${lastCalDate}. Report every tune as not_exercised and say so loudly in "overall"; do NOT invent behavioural evidence.\n\n`
+        return `Post-calibration report series (slim), ${series.length} report(s):\n${JSON.stringify(series.map(e => ({ file: e.file, asset: e.asset, framework: e.framework, date: e.report_date, score: e.digest?.score, stance: e.stance })))}\n\n`
+      })() +
       `For EVERY tune the prior calibration ADOPTED: did the changed rule show up in subsequent reports' behavior? Verdict: validated / harmful / not_exercised / indeterminate, with quantified evidence (<=25 words). ` +
       `Also list prior predictions graded "untested" that have since RESOLVED, with new verdicts. (The rejected-tune list is supplied deterministically via args.priorRejections — do not re-derive it.)\n\n` +
       `Return JSON matching this shape:\n${JSON.stringify(SCHEMAS.PRIOR_GRADE)}`),

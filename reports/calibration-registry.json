@@ -209,6 +209,127 @@
       "surface": "scoring-and-gates",
       "verdict": "rejected",
       "why": "Adding gate credit loosens unlocks on the long side; gate 9's predicate is asset-relative and already resolved differently for gold vs BTC without needing a sign."
+    },
+    {
+      "date": "2026-08-06",
+      "framework": "fallen_knives",
+      "memo": "reports/fallen_knives_calibration_20260806.md",
+      "name": "Score-line vacuity & binding-constraint audit (SS4, disclosure-only, one-directional)",
+      "revalidations": [],
+      "run_id": "run-2026-08-06-9rls",
+      "surface": "scoring-and-gates",
+      "verdict": "adopted_with_modification",
+      "why": "Score-axis mirror of the gate-reachability disclosure: attainable ceiling re-derived per report, every governing score line tagged LIVE/VACUOUS-FALSE/VACUOUS-PERMISSIVE/VACUOUS-BLOCKING against the score it actually reads (adjusted vs mechanical), binding axis named. One-directional. Deep-Value Override explicitly exempt so a vacuity tag can never bar its >=15 arming line from firing."
+    },
+    {
+      "date": "2026-08-06",
+      "framework": "fallen_knives",
+      "memo": "reports/fallen_knives_calibration_20260806.md",
+      "name": "EV sign attribution: symmetrized momentum-contradiction disclosure + geometry-vs-weight decomposition",
+      "revalidations": [],
+      "run_id": "run-2026-08-06-9rls",
+      "surface": "forecast-calibration",
+      "verdict": "adopted_with_modification",
+      "why": "The trailing-2-week contradiction disclosure named only the bullish failure mode; the bearish one is what actually ran (BTC 15 consecutive negative machine-block EV-vs-spot prints into a +4.3% window). Negative EV must now decompose per scenario and state whether probability weight or band distance carries the sign; geometry-driven reads inform sizing DOWNWARD only. Non-dissolution clause blocks the label from dissolving the EV-floor check, the collar, or terminal-vs-extreme reconciliation."
+    },
+    {
+      "date": "2026-08-06",
+      "framework": "fallen_knives",
+      "memo": "reports/fallen_knives_calibration_20260806.md",
+      "name": "EV Calibration Line: per-asset forecast scorecard with same-sign-streak tripwire and EV demotion",
+      "revalidations": [],
+      "run_id": "run-2026-08-06-9rls",
+      "surface": "forecast-calibration",
+      "verdict": "adopted_with_modification",
+      "why": "The framework grades its analyst (D7) and had never graded itself. >=5-distinct-report-date same-sign streak contradicted by realized price forces an on-record systematic-bias statement. Default consequence is demotion of EV to corroborative-only (cannot lift the Verdict-Confidence Collar); band re-derivation requires a cited realized trend-structure event and does NOT reset the streak. Those two constraints are bundled — unbundling re-opens a bounce-chasing hazard."
+    },
+    {
+      "date": "2026-08-06",
+      "framework": "fallen_knives",
+      "memo": "reports/fallen_knives_calibration_20260806.md",
+      "name": "Discharge clock on the standalone-FR obligation (SS4)",
+      "revalidations": [],
+      "run_id": "run-2026-08-06-9rls",
+      "surface": "data-integrity",
+      "verdict": "adopted_with_modification",
+      "why": "Flying Rocket produced zero live reports across the whole window, so Hard Rule 5's inverse-consistency cross-check had no live companion for two full calibration cycles. An owed companion report may no longer roll forward on prose."
+    },
+    {
+      "date": "2026-08-06",
+      "framework": "fallen_knives",
+      "memo": "reports/fallen_knives_calibration_20260806.md",
+      "name": "Expire the frozen FR-coverage claim in the 2026-07-04 revision log",
+      "revalidations": [],
+      "run_id": "run-2026-08-06-9rls",
+      "surface": "data-integrity",
+      "verdict": "adopted_with_modification",
+      "why": "A coverage claim frozen at 2026-07-04 was still readable as current after two cycles of FR silence. It now expires, and a stale coverage claim may not be quoted as current."
+    },
+    {
+      "date": "2026-08-06",
+      "framework": "fallen_knives",
+      "memo": "reports/fallen_knives_calibration_20260806.md",
+      "name": "Fill corroboration: LEDGER-CONFIRMED vs UNVERIFIED tranche state",
+      "revalidations": [],
+      "run_id": "run-2026-08-06-9rls",
+      "surface": "capital-deployment",
+      "verdict": "withheld",
+      "why": "WITHHELD at pre-apply, not rejected on merit. Targets the run's largest defect (BTC narrated a filled 10% Phase 1A @ ~$65K across 9 reports, ETH HOLD ~5% @ ~$1,844 across 7, ledger shows dust and no FK tag). Incompatible with the sibling Fill-corroboration clock: this one KEEPS an unverified tranche deployed:true with its stop and LIFO ordering, the sibling RETIRES it to UNFILLED with deployed_pct 0 and forbids it anchoring a stop. Neither ships alone. Heavy toolchain coupling (lib.mjs + lint-report.mjs + selftest.mjs + export-signals.mjs with a feed schema bump) could not land this commit. NEXT RUN MUST ADJUDICATE THE TWO DESIGNS AGAINST EACH OTHER BEFORE PANELLING EITHER."
+    },
+    {
+      "date": "2026-08-06",
+      "framework": "fallen_knives",
+      "memo": "reports/fallen_knives_calibration_20260806.md",
+      "name": "Fill-corroboration clock (SS6, Hard Rule 8) — a narrated fill decays to Hard Rule 4's default",
+      "revalidations": [],
+      "run_id": "run-2026-08-06-9rls",
+      "surface": "data-integrity",
+      "verdict": "withheld",
+      "why": "WITHHELD at pre-apply as the incompatible sibling of the LEDGER-CONFIRMED/UNVERIFIED tune — same object, opposite terminal state (retire to UNFILLED vs indefinite UNVERIFIED banner). Requires lint-report.mjs in the same commit. Same instruction to the next run: adjudicate the two designs against each other first."
+    },
+    {
+      "date": "2026-08-06",
+      "framework": "fallen_knives",
+      "memo": "reports/fallen_knives_calibration_20260806.md",
+      "name": "Gold COT washout bar: fixed contract count -> regime-relative distributional bar",
+      "revalidations": [],
+      "run_id": "run-2026-08-06-9rls",
+      "surface": "scoring-and-gates",
+      "verdict": "rejected",
+      "why": "A distributional bar recomputed on a regime that has itself shifted is self-referential — it loosens exactly when positioning normalizes at a new extreme. The fixed contract count is what keeps the gold Phase-2 unlock honest; gold's deep tranches are already score-bound rather than gate-bound."
+    },
+    {
+      "date": "2026-08-06",
+      "framework": "fallen_knives",
+      "memo": "reports/fallen_knives_calibration_20260806.md",
+      "name": "Compound-stop score-axis degeneracy disclosure",
+      "revalidations": [],
+      "run_id": "run-2026-08-06-9rls",
+      "surface": "capital-deployment",
+      "verdict": "rejected",
+      "why": "Rejected on a false premise by its solo panel. The tune claimed the SKILL is silent on the continuously-satisfied score axis, but SKILL.md legislates exactly that case and the tune quoted it with the polarity INVERTED: the score key is a BRAKE on a conjunctive stop, so a continuously-satisfied key makes the stop fire MORE readily, not less. A load-bearing cited figure ('23-41% away') was also unreproducible against printed reports. A narrowed, re-polarised residue survives inside the adopted vacuity-audit tune."
+    },
+    {
+      "date": "2026-08-06",
+      "framework": "fallen_knives",
+      "memo": "reports/fallen_knives_calibration_20260806.md",
+      "name": "Key-Trigger decay: retire a causal channel falsified by its own consequent",
+      "revalidations": [],
+      "run_id": "run-2026-08-06-9rls",
+      "surface": "forecast-calibration",
+      "verdict": "rejected",
+      "why": "Would have auto-retired gold's real-yield channel precisely when it was about to matter, and offered no mechanism distinguishing a falsified channel from a merely slow one. The underlying observation (gold's stated causal model — real yields must roll over — was wrong on every test while the rally happened anyway) is real and is recorded in the memo instead."
+    },
+    {
+      "date": "2026-08-06",
+      "framework": "fallen_knives",
+      "memo": "reports/fallen_knives_calibration_20260806.md",
+      "name": "Reconcile the 2026-07-04 adopted-tune count to the nameable mechanisms",
+      "revalidations": [],
+      "run_id": "run-2026-08-06-9rls",
+      "surface": "data-integrity",
+      "verdict": "rejected",
+      "why": "The discrepancy is real — the 2026-07-04 revision log enumerates 36 nameable mechanisms against a '38 adopted-with-modification' headline — but silently renumbering a historical log entry is worse than the inconsistency. Recorded in the 2026-08-06 memo and revision log instead of edited into the past."
     }
   ],
   "note": "Append-only structured record of every adopted/rejected/withheld/unadjudicated tune from every framework-calibration run. Replaces the per-run agent that re-derived the prior-rejection list from prose memos each calibration — code now matches a proposed tune's name/surface against `verdict:\"rejected\"` entries here instead of trusting prompt text to hold the line. The prose ledger (calibration_ledger.md) stays the human-readable narrative history; this file is its structured, enforcement-grade twin. Entries with `source:\"ledger-prose\"` are backfilled from a ledger line that only carried an aggregate count (e.g. \"17 rejected\") with no per-tune breakdown in the ledger itself — the memo is pointed to rather than inventing tune identities. Maintained by tools/calib-registry.mjs.",

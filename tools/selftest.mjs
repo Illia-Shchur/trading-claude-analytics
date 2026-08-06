@@ -26,7 +26,7 @@ import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds, frTh
 import { completedCandles, weeklyBlock } from './fetch.mjs'
 import { dropMachineBlock, dropVerifiedDataSection, dropCompositeScoreSection, projectDigest, isEventReport, selectWithCap } from './calib-corpus.mjs'
 import { validateRegistry, matchRejections, VERDICTS, SCHEMA as REGISTRY_SCHEMA } from './calib-registry.mjs'
-import { validateSchema, SCHEMAS, PHASES, zeroTuneDiagnoses, mergeStrictestWins, applyTriageClusters } from './calib-run.mjs'
+import { validateSchema, SCHEMAS, PHASES, zeroTuneDiagnoses, mergeStrictestWins, applyTriageClusters, postCalibrationBoundary } from './calib-run.mjs'
 
 let failures = 0
 function eq(name, got, want) {
@@ -1981,6 +1981,32 @@ ok('output ends in a trailing newline', canonicalJSON({ a: 1 }).endsWith('}\n'))
     ev_calibration: '', deployment_quality: '', stop_analysis: '', realized_pnl_note: '', overall: '' }
   const errs4 = validateSchema(badGradeEnum, SCHEMAS.GRADE)
   ok('an out-of-enum verdict nested inside prediction_grades[] is caught', errs4.some(e => e.includes('verdict')))
+}
+
+// ── calib-run.mjs: postCalibrationBoundary (prior-tune re-validation window) ───
+// Regression: on 2026-08-06 the boundary was max(priorCalibrations.date), so a later `scoped`
+// (2026-08-05b) and `meta` (2026-08-06) entry pushed it past every report in a corpus that
+// deliberately reached back to 2026-07-04 — the re-validator received an EMPTY series and had
+// nothing to grade. The corpus window start is the authority.
+{
+  const corpus = [{ d: '2026-07-04' }, { d: '2026-07-18' }, { d: '2026-08-05' }]
+  const priors = [{ date: '2026-06-11' }, { date: '2026-07-04' }, { date: '2026-08-05b' }, { date: '2026-08-06' }]
+  const r = postCalibrationBoundary(corpus, priors)
+  eq('postCalibrationBoundary: boundary is the corpus window start, not the newest prior entry', r.boundary, '2026-07-04')
+  eq('postCalibrationBoundary: target is the newest calibration at or before the corpus start', r.target, '2026-07-04')
+  ok('postCalibrationBoundary: the whole corpus survives the >= boundary filter',
+    corpus.filter(c => c.d >= r.boundary).length === 3)
+  ok('postCalibrationBoundary: a later scoped/meta entry can no longer empty the series',
+    corpus.filter(c => c.d > '2026-08-06').length === 0 && corpus.filter(c => c.d >= r.boundary).length === 3)
+
+  const r2 = postCalibrationBoundary([], priors)
+  eq('postCalibrationBoundary: empty corpus falls back to the newest prior calibration', r2.boundary, '2026-08-06')
+
+  const r3 = postCalibrationBoundary([{ d: '2026-05-01' }], priors)
+  eq('postCalibrationBoundary: corpus predating every calibration targets the corpus start itself', r3.target, '2026-05-01')
+
+  const r4 = postCalibrationBoundary(corpus, [])
+  eq('postCalibrationBoundary: no prior calibrations → target is the corpus start', r4.target, '2026-07-04')
 }
 
 // ── calib-run.mjs: zeroTuneDiagnoses / mergeStrictestWins / applyTriageClusters ─
