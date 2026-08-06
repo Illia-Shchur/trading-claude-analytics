@@ -1,6 +1,18 @@
 // ============================================================================
 // framework-calibration — adversarial backtest workflow (TEMPLATE, lean v3)
 // ----------------------------------------------------------------------------
+// STATUS (2026-08-06): this template is the `Workflow`-available path only.
+// `tools/calib-run.mjs` is the canonical execution path and the reference
+// implementation — see SKILL.md "Running a calibration" / "If Workflow is
+// available". `Workflow` has been unavailable in 2 of the last 3 real
+// invocations of this skill (2026-08-05, 2026-08-05b) and in the session
+// that built calib-run.mjs. This file cannot import calib-run.mjs's logic (a
+// Workflow script has no filesystem access), so the two are maintained in
+// parallel and CAN DRIFT — before relying on this file, re-verify its phase
+// barrier / null-adversary gating / strictest-wins merge / triage rebuild
+// behavior by hand against tools/selftest.mjs's orchestration vectors, which
+// pin calib-run.mjs's pure functions, not this template.
+//
 // v3 (2026-08): args-driven, not hand-filled. The caller runs two deterministic
 // tools BEFORE invoking this workflow and passes their output straight through
 // as `args` — the same pattern ~/.claude/workflows/poker-hand-analysis.js uses

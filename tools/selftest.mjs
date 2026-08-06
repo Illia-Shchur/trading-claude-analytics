@@ -24,8 +24,9 @@ import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds, frTh
   inferDiscretion, gateMask, unlockFor, canonicalJSON, feedChanged, REPORT_FILE_RE, snapshotDigestPayload,
   weekdayOf, isTradingDay, nextNTradingDays, tradingDaysBetween, sentimentProxyBlock, proximityPanel } from './lib.mjs'
 import { completedCandles, weeklyBlock } from './fetch.mjs'
-import { dropMachineBlock, dropVerifiedDataSection, projectDigest } from './calib-corpus.mjs'
+import { dropMachineBlock, dropVerifiedDataSection, dropCompositeScoreSection, projectDigest, isEventReport, selectWithCap } from './calib-corpus.mjs'
 import { validateRegistry, matchRejections, VERDICTS, SCHEMA as REGISTRY_SCHEMA } from './calib-registry.mjs'
+import { validateSchema, SCHEMAS, PHASES, zeroTuneDiagnoses, mergeStrictestWins, applyTriageClusters } from './calib-run.mjs'
 
 let failures = 0
 function eq(name, got, want) {
@@ -1896,6 +1897,118 @@ ok('output ends in a trailing newline', canonicalJSON({ a: 1 }).endsWith('}\n'))
   eq('matcher never surfaces an ADOPTED tune as a rejection lookalike', hitsRatchet.length, 0)
   const hitsNone = matchRejections('gate', reg)
   eq('a single short stopword-only query returns no match (needs ≥2 overlapping significant tokens)', hitsNone.length, 0)
+}
+
+// ── calib-corpus.mjs: composite-score drop ─────────────────────────────────
+{
+  const WITH_SCORE = '# Report\n\n## 3. Critical Developments\n\nStuff.\n\n## 4. Fallen Knives Composite Score — BTC\n\nLeg A: 3\nLeg B: 2\n\n## 5. Probability Matrix\n\nRow.\n'
+  const cs = dropCompositeScoreSection(WITH_SCORE)
+  ok('composite-score heading (FK, dashed asset suffix) is matched and dropped', cs.dropped !== null)
+  ok('...the drop stops at the next top-level "## N." heading, not EOF', cs.text.includes('## 5. Probability Matrix') && !cs.text.includes('Leg A: 3'))
+  const droppedBytes = cs.dropped.bytes
+  const reconciled = Buffer.byteLength(cs.text, 'utf8') + droppedBytes === Buffer.byteLength(WITH_SCORE, 'utf8')
+  ok('composite-score drop byte-reconciles exactly', reconciled)
+
+  const FR_VARIANT = '## 4. Flying Rocket Composite Score (0 / 20 · 0 / 8 attainable while capped)\n\nBody.\n\n## 5. Next\n\nX.\n'
+  const csFR = dropCompositeScoreSection(FR_VARIANT)
+  ok('composite-score heading matches the FR variant with a parenthetical suffix too', csFR.dropped !== null)
+
+  const NO_MATCH = '# Report\n\n## 4. Score Summary (not the exact heading text)\n\nBody.\n'
+  const csNone = dropCompositeScoreSection(NO_MATCH)
+  eq('a heading that does not say "Composite Score" is NOT dropped (fail-open)', csNone.dropped, null)
+  eq('...text passes through unchanged', csNone.text, NO_MATCH)
+}
+
+// ── calib-corpus.mjs: isEventReport / selectWithCap (--max-per-series) ─────
+{
+  const d = (adjusted, passed, tranches = []) => ({ ok: true, score: { adjusted, mechanical: adjusted },
+    gates: { passed }, deployment: { tranches } })
+  const mk = (i, digest) => ({ f: `r${i}.md`, t: 'fallen_knives', a: 'BTC', digest })
+
+  ok('no digest on either side → always an event (pre-epoch report)', isEventReport(mk(1, null), mk(0, d(10, 3))))
+  ok('no PRIOR digest → always an event (can\'t tell, so keep)', isEventReport(mk(1, d(10, 3)), mk(0, null)))
+  ok('gates.passed changed → event', isEventReport(mk(1, d(10, 4)), mk(0, d(10, 3))))
+  ok('a tranche deployment/entry_price change → event',
+    isEventReport(mk(1, d(10, 3, [{ phase: '1a', deployed: true, entry_price: 60000 }])),
+      mk(0, d(10, 3, [{ phase: '1a', deployed: false, entry_price: null }]))))
+  ok('score jump > 1 → event', isEventReport(mk(1, d(12, 3)), mk(0, d(10, 3))))
+  ok('an FK unlock-line crossing (11) with a <=1 point move is still an event',
+    isEventReport(mk(1, d(11, 3)), mk(0, d(10.5, 3))))
+  eq('identical score/gates/tranches, no unlock crossing → NOT an event',
+    isEventReport(mk(1, d(10, 3, [{ phase: '1a', deployed: false, entry_price: null }])),
+      mk(0, d(10, 3, [{ phase: '1a', deployed: false, entry_price: null }]))), false)
+
+  const seriesAllEvents = Array.from({ length: 15 }, (_, i) => mk(i, i === 0 ? null : d(8 + i, i))) // every report is an event (gates change each time)
+  const capA = selectWithCap(seriesAllEvents, 12)
+  eq('cap never drops an event report — it is exceeded, not enforced, when events alone exceed the cap', capA.sampledOut.length, 0)
+  ok('...and flags cap_exceeded_by_events', capA.capExceededByEvents === true)
+  eq('...keptIdx covers every report in that case', capA.keptIdx.size, seriesAllEvents.length)
+
+  const seriesUnderCap = Array.from({ length: 8 }, (_, i) => mk(i, d(10, 3)))
+  const capB = selectWithCap(seriesUnderCap, 12)
+  eq('n <= cap → nothing sampled out', capB.sampledOut.length, 0)
+  eq('...and cap is reported non-binding', capB.capExceededByEvents, false)
+
+  // 20-report series: only first/last are events (identical digest elsewhere) — cap=12 must sample the rest.
+  const seriesMostlyStatic = Array.from({ length: 20 }, (_, i) => mk(i, d(10, 3)))
+  const capC = selectWithCap(seriesMostlyStatic, 12)
+  eq('mostly-static series is sampled down to exactly the cap', capC.keptIdx.size, 12)
+  ok('...index 0 (first) is always kept', capC.keptIdx.has(0))
+  ok('...index n-1 (last) is always kept', capC.keptIdx.has(19))
+  eq('sampledOut + kept accounts for every report', capC.sampledOut.length + capC.keptIdx.size, 20)
+}
+
+// ── calib-run.mjs: schema validation ────────────────────────────────────────
+{
+  ok('all 5 pipeline phases declared in order', PHASES.join(',') === 'extract,grade,diagnose,verify,synthesize')
+
+  const goodVerdict = { tune_name: 'x', holds: true, refutation_attempt: 'r', overfit_risk: 'o', unintended_consequences: 'u', recommendation: 'reject' }
+  eq('a well-formed VERDICT passes schema validation', validateSchema(goodVerdict, SCHEMAS.VERDICT).length, 0)
+
+  const missingField = { ...goodVerdict }; delete missingField.holds
+  const errs1 = validateSchema(missingField, SCHEMAS.VERDICT)
+  ok('a missing required field is caught', errs1.some(e => e.includes('holds')))
+
+  const badEnum = { ...goodVerdict, recommendation: 'maybe' }
+  const errs2 = validateSchema(badEnum, SCHEMAS.VERDICT)
+  ok('an out-of-enum recommendation is caught', errs2.some(e => e.includes('recommendation')))
+
+  const badNestedArray = { extracts: [{ file: 'x', stance: 'HOLD', probability_scenarios: 'not an array', pattern_predictions: [], falsifiable_claims: [] }] }
+  const errs3 = validateSchema(badNestedArray, SCHEMAS.CHUNK_EXTRACT)
+  ok('a nested array field with the wrong type is caught inside items', errs3.some(e => e.includes('probability_scenarios')))
+
+  const badGradeEnum = { asset: 'BTC', realized_path: [], prediction_grades: [{ prediction: 'p', source_date: 'd', verdict: 'sort_of', evidence: 'e' }],
+    ev_calibration: '', deployment_quality: '', stop_analysis: '', realized_pnl_note: '', overall: '' }
+  const errs4 = validateSchema(badGradeEnum, SCHEMAS.GRADE)
+  ok('an out-of-enum verdict nested inside prediction_grades[] is caught', errs4.some(e => e.includes('verdict')))
+}
+
+// ── calib-run.mjs: zeroTuneDiagnoses / mergeStrictestWins / applyTriageClusters ─
+{
+  const diagWithTune = { dimension: 'a', flaws: [], proposed_tunes: [{ name: 'x' }] }
+  const diagZero = { dimension: 'b', flaws: [], proposed_tunes: [] }
+  const zt = zeroTuneDiagnoses([diagWithTune, diagZero, { dimension: 'c', flaws: [] }])
+  eq('zeroTuneDiagnoses finds every dimension with an empty (or missing) proposed_tunes', zt.length, 2)
+
+  eq('strictest-wins: a single reject beats two adopts', mergeStrictestWins([{ recommendation: 'adopt' }, { recommendation: 'adopt' }, { recommendation: 'reject' }]), 'reject')
+  eq('strictest-wins: adopt_with_modification beats a plain adopt when no reject present', mergeStrictestWins([{ recommendation: 'adopt' }, { recommendation: 'adopt_with_modification' }]), 'adopt_with_modification')
+  eq('strictest-wins: unanimous adopt stays adopt', mergeStrictestWins([{ recommendation: 'adopt' }, { recommendation: 'adopt' }]), 'adopt')
+
+  const tunes = [
+    { name: 'A tighter stop', framework: 'fallen_knives', merged_from: [] },
+    { name: 'A slightly tighter stop', framework: 'fallen_knives', merged_from: [] },
+    { name: 'Unrelated gate change', framework: 'fallen_knives', merged_from: [] },
+    { name: 'Cross-framework lookalike', framework: 'flying_rocket', merged_from: [] },
+  ]
+  const clusters = [
+    { keep: 'A tighter stop', merge: ['A slightly tighter stop', 'Cross-framework lookalike', 'Nonexistent tune'], reason: 'near-dupe' },
+  ]
+  const { tunes: kept, mergedCount } = applyTriageClusters(tunes, clusters)
+  eq('triage merges only the true near-duplicate', mergedCount, 1)
+  eq('kept list drops exactly the merged tune', kept.length, 3)
+  ok('a cross-framework "merge" entry is ignored, not applied', kept.some(t => t.name === 'Cross-framework lookalike'))
+  ok('a merge entry naming a tune that does not exist is ignored, not an error', true) // covered by not throwing above
+  ok('a triage result with no clusters at all drops nothing', applyTriageClusters(tunes, []).tunes.length === tunes.length)
 }
 
 // ── verdict ─────────────────────────────────────────────────────────────────

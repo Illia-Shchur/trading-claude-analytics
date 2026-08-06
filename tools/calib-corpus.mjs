@@ -39,7 +39,7 @@ import { readFileSync, writeFileSync, readdirSync, mkdirSync, existsSync } from 
 import { join, resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createHash } from 'node:crypto'
-import { reportFileMeta, canonicalJSON } from './lib.mjs'
+import { reportFileMeta, canonicalJSON, FK_SCORE_UNLOCK, frUnlockLadder } from './lib.mjs'
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const REPORTS_DIR = join(REPO, 'reports')
@@ -52,6 +52,7 @@ const REPORTS_DIR = join(REPO, 'reports')
 // callers that want MULTI semantics remap it, matching the workflow template.
 export const MACHINE_BLOCK_RE = /\n?---\s*\n\n```json machine\s*\n([\s\S]*?)```\s*$/
 export const VERIFIED_DATA_HEADING_RE = /^##\s+\d+\.\s+Verified Live Data(?: Points)?\b.*$/m
+export const COMPOSITE_SCORE_HEADING_RE = /^##\s+\d+[a-z]?\.\s+(?:Fallen Knives|Flying Rocket)\s+Composite Score\b.*$/m
 export const NEXT_TOP_HEADING_RE = /^##\s+\d+\./m
 
 function sha256(s) { return createHash('sha256').update(s, 'utf8').digest('hex') }
@@ -72,7 +73,23 @@ export function dropMachineBlock(text) {
  * NOT stable across the corpus (§2 in most reports, §1 in at least one).
  */
 export function dropVerifiedDataSection(text) {
-  const hm = VERIFIED_DATA_HEADING_RE.exec(text)
+  return dropSectionByHeading(text, VERIFIED_DATA_HEADING_RE)
+}
+
+/**
+ * Drop the "<Framework> Composite Score" section the same way — every leg
+ * value it carries is already in the machine block's `score.legs`, and
+ * skeptics/graders are already instructed to Read the source report when a
+ * number is load-bearing. Same drop-list-by-heading-text, fail-open, byte-
+ * reconciled discipline as the Verified-Live-Data section.
+ */
+export function dropCompositeScoreSection(text) {
+  return dropSectionByHeading(text, COMPOSITE_SCORE_HEADING_RE)
+}
+
+function dropSectionByHeading(text, headingRe) {
+  headingRe.lastIndex = 0
+  const hm = headingRe.exec(text)
   if (!hm) return { text, dropped: null }
   const start = hm.index
   NEXT_TOP_HEADING_RE.lastIndex = 0
@@ -120,6 +137,57 @@ export function projectDigest(raw) {
   }
 }
 
+/**
+ * Event-preserving series sampler for --max-per-series. `reports` is one
+ * series (same framework+asset), in chronological order, each carrying a
+ * `.digest` (possibly null for pre-epoch reports). Keeps index 0, index n-1,
+ * and every "event" report; if that alone exceeds `cap`, keeps ALL of them
+ * (an event is never dropped to satisfy the cap) and flags
+ * `capExceededByEvents`. Otherwise evenly samples the non-event remainder up
+ * to `cap`. Returns { keptIdx: Set<number>, sampledOut: string[] (filenames),
+ * capExceededByEvents: boolean }.
+ *
+ * An "event": no digest (can't tell — always keep), gates.passed changed,
+ * any tranche's {deployed, entry_price, stop} changed, |Δadjusted-or-
+ * mechanical| > 1, or an unlock-line (FK 8/11/15/17, FR ladder) was crossed.
+ */
+export function isEventReport(report, prev) {
+  const d = report.digest
+  if (!d || d.ok === false) return true
+  if (!prev || !prev.digest || prev.digest.ok === false) return true
+  const pd = prev.digest
+  if ((d.gates?.passed ?? null) !== (pd.gates?.passed ?? null)) return true
+  const trancheKey = t => `${t.phase}:${t.deployed ? 1 : 0}:${t.entry_price ?? ''}`
+  const tNow = JSON.stringify((d.deployment?.tranches || []).map(trancheKey))
+  const tPrev = JSON.stringify((pd.deployment?.tranches || []).map(trancheKey))
+  if (tNow !== tPrev) return true
+  const scoreOf = s => s?.score?.adjusted ?? s?.score?.mechanical ?? null
+  const sNow = scoreOf(d), sPrev = scoreOf(pd)
+  if (sNow != null && sPrev != null) {
+    if (Math.abs(sNow - sPrev) > 1) return true
+    const ladder = report.t === 'fallen_knives' ? Object.values(FK_SCORE_UNLOCK) : Object.values(frUnlockLadder())
+    for (const L of ladder) if ((sNow >= L) !== (sPrev >= L)) return true
+  }
+  return false
+}
+
+export function selectWithCap(reportsInSeries, cap) {
+  const n = reportsInSeries.length
+  if (n <= cap) return { keptIdx: new Set(reportsInSeries.map((_, i) => i)), sampledOut: [], capExceededByEvents: false }
+  const eventIdx = new Set()
+  reportsInSeries.forEach((r, i) => { if (i === 0 || i === n - 1 || isEventReport(r, reportsInSeries[i - 1])) eventIdx.add(i) })
+  if (eventIdx.size >= cap) {
+    return { keptIdx: eventIdx, sampledOut: reportsInSeries.filter((_, i) => !eventIdx.has(i)).map(r => r.f), capExceededByEvents: true }
+  }
+  const nonEvent = reportsInSeries.map((_, i) => i).filter(i => !eventIdx.has(i))
+  const slotsLeft = cap - eventIdx.size
+  const stride = nonEvent.length / slotsLeft
+  const kept = new Set(eventIdx)
+  for (let k = 0; k < slotsLeft; k++) kept.add(nonEvent[Math.min(nonEvent.length - 1, Math.round(k * stride))])
+  const sampledOut = reportsInSeries.filter((_, i) => !kept.has(i)).map(r => r.f)
+  return { keptIdx: kept, sampledOut, capExceededByEvents: false }
+}
+
 // ── CLI ─────────────────────────────────────────────────────────────────────
 // Guarded the same way as calib-registry.mjs: compared as resolved filesystem
 // paths (not raw URL strings), because this repo's path contains spaces,
@@ -133,9 +201,10 @@ const until = opt('--until', null)
 const frameworkFilter = opt('--framework', null) // 'fallen_knives' | 'flying_rocket' | null=both
 const assetFilter = (opt('--asset', null) || '').split(',').map(s => s.trim().toUpperCase()).filter(Boolean)
 const outDir = resolve(REPO, opt('--out', `.calib-run/${since || 'all'}`))
+const maxPerSeries = opt('--max-per-series', null) !== null ? parseInt(opt('--max-per-series'), 10) : 12
 
 if (!since) {
-  console.error('usage: node tools/calib-corpus.mjs --since YYYY-MM-DD [--until YYYY-MM-DD] [--framework fallen_knives|flying_rocket] [--asset btc,eth,gold] [--out .calib-run/<dir>]')
+  console.error('usage: node tools/calib-corpus.mjs --since YYYY-MM-DD [--until YYYY-MM-DD] [--framework fallen_knives|flying_rocket] [--asset btc,eth,gold] [--max-per-series N] [--out .calib-run/<dir>]')
   process.exit(1)
 }
 if (frameworkFilter && !['fallen_knives', 'flying_rocket'].includes(frameworkFilter)) {
@@ -143,14 +212,12 @@ if (frameworkFilter && !['fallen_knives', 'flying_rocket'].includes(frameworkFil
   process.exit(1)
 }
 
-// ── scan ────────────────────────────────────────────────────────────────────
+// ── scan (pass 1: identify candidates + parse digests, no writes yet) ───────
 if (!existsSync(REPORTS_DIR)) { console.error(`reports dir not found: ${REPORTS_DIR}`); process.exit(1) }
 const files = readdirSync(REPORTS_DIR).filter(f => f.endsWith('.md')).sort()
 
-const corpus = []
+const candidates = []
 const ignored = []
-let bytesTotal = 0, bytesSliced = 0, withMachineBlock = 0, withoutMachineBlock = 0, sectionDropFailures = 0
-
 for (const file of files) {
   const meta = reportFileMeta(file)
   if (!meta.ok) { ignored.push({ file, reason: meta.reason }); continue }
@@ -161,29 +228,63 @@ for (const file of files) {
   if (assetFilter.length && !assetFilter.includes(asset) && asset !== 'MULTI') continue
 
   const raw = readFileSync(join(REPORTS_DIR, file), 'utf8')
+  const mb = dropMachineBlock(raw)
+  const digest = mb.dropped ? projectDigest(mb.dropped.raw) : null
+  candidates.push({ f: file, a: asset, t: meta.framework, d: meta.date, at_utc: meta.at_utc,
+    schema_epoch: meta.schema_epoch, raw, digest })
+}
+candidates.sort((x, y) => x.d < y.d ? -1 : x.d > y.d ? 1 : 0)
+
+// ── pass 2: apply --max-per-series per series (event-preserving) ───────────
+const bySeries = {}
+for (const c of candidates) (bySeries[`${c.t}|${c.a}`] ??= []).push(c)
+const sampledOutAll = []
+const capExceededSeries = []
+const keepSet = new Set()
+for (const key of Object.keys(bySeries)) {
+  const series = bySeries[key]
+  const { keptIdx, sampledOut, capExceededByEvents } = selectWithCap(series, maxPerSeries)
+  series.forEach((c, i) => { if (keptIdx.has(i)) keepSet.add(c) })
+  if (sampledOut.length) sampledOutAll.push(...sampledOut.map(f => ({ file: f, series: key })))
+  if (capExceededByEvents) capExceededSeries.push(key)
+}
+const selected = candidates.filter(c => keepSet.has(c))
+
+if (!selected.length) {
+  console.error(`no reports matched --since ${since}${until ? ` --until ${until}` : ''}${frameworkFilter ? ` --framework ${frameworkFilter}` : ''}${assetFilter.length ? ` --asset ${assetFilter.join(',')}` : ''}`)
+  process.exit(1)
+}
+
+// ── pass 3: slice + write, only for the selected reports ───────────────────
+const corpus = []
+let bytesTotal = 0, bytesSliced = 0, withMachineBlock = 0, withoutMachineBlock = 0, sectionDropFailures = 0
+
+for (const c of selected) {
+  const { f: file, raw } = c
   const totalBytes = Buffer.byteLength(raw, 'utf8')
   bytesTotal += totalBytes
 
   const mb = dropMachineBlock(raw)
   const vd = dropVerifiedDataSection(mb.text)
+  const cs = dropCompositeScoreSection(vd.text)
 
-  let digest = null
-  if (mb.dropped) { withMachineBlock++; digest = projectDigest(mb.dropped.raw) }
+  if (mb.dropped) withMachineBlock++
   else withoutMachineBlock++
   if (!vd.dropped) sectionDropFailures++
 
-  const sliceText = vd.text
+  const sliceText = cs.text
   const sliceBytes = Buffer.byteLength(sliceText, 'utf8')
   bytesSliced += sliceBytes
 
-  const droppedBytes = (mb.dropped?.bytes || 0) + (vd.dropped?.bytes || 0)
+  const droppedBytes = (mb.dropped?.bytes || 0) + (vd.dropped?.bytes || 0) + (cs.dropped?.bytes || 0)
   const reconciled = Math.abs((sliceBytes + droppedBytes) - totalBytes) <= 8 // fence/newline slop
 
   const entry = {
-    f: file, a: asset, t: meta.framework, d: meta.date, at_utc: meta.at_utc, schema_epoch: meta.schema_epoch,
+    f: file, a: c.a, t: c.t, d: c.d, at_utc: c.at_utc, schema_epoch: c.schema_epoch,
     bytes_total: totalBytes, bytes_slice: sliceBytes,
     machine_block: mb.dropped ? { present: true, bytes: mb.dropped.bytes, sha256: mb.dropped.sha256 } : { present: false },
     verified_data_section: vd.dropped ? { present: true, bytes: vd.dropped.bytes, heading: vd.dropped.heading } : { present: false, note: 'no matching heading found — nothing dropped from this section, report passed through further than usual' },
+    composite_score_section: cs.dropped ? { present: true, bytes: cs.dropped.bytes, heading: cs.dropped.heading } : { present: false },
     bytes_dropped: droppedBytes,
     reduction_pct: totalBytes ? Math.round((droppedBytes / totalBytes) * 1000) / 10 : 0,
     byte_reconciliation_ok: reconciled,
@@ -195,17 +296,13 @@ for (const file of files) {
     `<!-- calib-corpus slice of ${file}. Dropped: ` +
     `${mb.dropped ? `machine block (${mb.dropped.bytes}B)` : 'no machine block'}` +
     `${vd.dropped ? `, "${vd.dropped.heading}" section (${vd.dropped.bytes}B)` : ', no verified-data section matched'}` +
+    `${cs.dropped ? `, "${cs.dropped.heading}" section (${cs.dropped.bytes}B)` : ''}` +
     ` -->\n\n` + sliceText, 'utf8')
-  if (digest) writeFileSync(join(outDir, `${file}.digest.json`), canonicalJSON(digest) + '\n', 'utf8')
+  if (c.digest) writeFileSync(join(outDir, `${file}.digest.json`), canonicalJSON(c.digest) + '\n', 'utf8')
 
   if (!reconciled) {
     console.error(`WARNING — byte reconciliation failed for ${file}: total=${totalBytes} slice=${sliceBytes} dropped=${droppedBytes}`)
   }
-}
-
-if (!corpus.length) {
-  console.error(`no reports matched --since ${since}${until ? ` --until ${until}` : ''}${frameworkFilter ? ` --framework ${frameworkFilter}` : ''}${assetFilter.length ? ` --asset ${assetFilter.join(',')}` : ''}`)
-  process.exit(1)
 }
 
 if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true })
@@ -214,7 +311,7 @@ writeFileSync(join(outDir, 'corpus.json'), canonicalJSON({ schema: 'calib-corpus
 const manifest = {
   schema: 'calib-corpus-manifest/1',
   generated_at: new Date().toISOString(),
-  filters: { since, until, framework: frameworkFilter, asset: assetFilter.length ? assetFilter : null },
+  filters: { since, until, framework: frameworkFilter, asset: assetFilter.length ? assetFilter : null, max_per_series: maxPerSeries },
   out_dir: outDir,
   counts: {
     reports_selected: corpus.length,
@@ -222,6 +319,7 @@ const manifest = {
     without_machine_block: withoutMachineBlock,
     verified_data_section_not_matched: sectionDropFailures,
     files_ignored_non_report: ignored.length,
+    sampled_out_by_cap: sampledOutAll.length,
   },
   bytes: {
     total: bytesTotal, sliced: bytesSliced, dropped: bytesTotal - bytesSliced,
@@ -229,6 +327,8 @@ const manifest = {
   },
   byte_reconciliation_failures: corpus.filter(c => !c.byte_reconciliation_ok).map(c => c.f),
   ignored_files_sample: ignored.slice(0, 10),
+  sampled_out: sampledOutAll,
+  cap_exceeded_by_events: capExceededSeries,
 }
 writeFileSync(join(outDir, 'manifest.json'), canonicalJSON(manifest) + '\n', 'utf8')
 
@@ -236,6 +336,8 @@ console.error(`calib-corpus: ${corpus.length} report(s) selected, ${withMachineB
 console.error(`  bytes: ${bytesTotal} -> ${bytesSliced} (${manifest.bytes.reduction_pct}% reduction)`)
 if (sectionDropFailures) console.error(`  WARNING — ${sectionDropFailures} report(s) had no matching "Verified Live Data" heading — passed through further than usual`)
 if (manifest.byte_reconciliation_failures.length) console.error(`  WARNING — byte reconciliation failed for: ${manifest.byte_reconciliation_failures.join(', ')}`)
+if (sampledOutAll.length) console.error(`  --max-per-series ${maxPerSeries}: sampled out ${sampledOutAll.length} report(s) — see manifest.json "sampled_out"`)
+if (capExceededSeries.length) console.error(`  --max-per-series ${maxPerSeries}: cap non-binding (event reports alone exceeded it) for: ${capExceededSeries.join(', ')}`)
 console.error(`  wrote ${outDir}/corpus.json, manifest.json, and per-report .slice.md${withMachineBlock ? '/.digest.json' : ''}`)
 process.exit(0)
 }
