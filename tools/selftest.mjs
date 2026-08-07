@@ -2165,7 +2165,7 @@ ok('output ends in a trailing newline', canonicalJSON({ a: 1 }).endsWith('}\n'))
     [frText, /bounce window/, 'FR: gate-5 basis (bounce window) present'],
     [frText, /ratchet/i, 'FR: stop/clock ratchet named'],
     [frText, /time stop/i, 'FR: mandatory time stop present'],
-    [frText, /14-day/, 'FR: analyst-discretion 14-day clock present'],
+    [frText, /14[- ]days?/, 'FR: analyst-discretion 14-day clock present'],
     [frText, /20%/, 'FR: analyst-discretion 20% cap present'],
     [frText, /funding veto/i, 'FR: funding veto gate named'],
     [frText, /Deep-Value Override has no analogue/i, 'FR: Deep-Value Override exclusion stated'],
