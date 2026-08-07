@@ -297,7 +297,7 @@ async function fetchAsset(key, { series = false } = {}) {
   }
   // spot.panel — the canonical-spot computation. STEP B of the two-step flip
   // (commit 12/12 of the 2026-08 toolchain-extension plan) landed 2026-08-03:
-  // `spot.canonical` is now the PANEL MEDIAN, per FK SKILL:166 ("canonical
+  // `spot.canonical` is now the PANEL MEDIAN, per FK SKILL [R:canonical-spot] ("canonical
   // spot = median of the primary source + ≥2 others"). Step A (commit 7) added
   // the panel alongside a priority-first `canonical`; the two coexisted for one
   // live report run (btc/eth_fallen_knives_20260803_1411, which used the median

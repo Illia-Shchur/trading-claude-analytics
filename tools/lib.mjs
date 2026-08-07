@@ -53,7 +53,7 @@ export function median(values) {
 function round3(x) { return x == null ? null : Math.round(x * 1000) / 1000 }
 
 /**
- * Canonical spot = median of the primary source + ≥2 others (FK SKILL:166).
+ * Canonical spot = median of the primary source + ≥2 others (FK SKILL [R:canonical-spot]).
  * `quotes`: [{source, symbol, value, ts, ts_kind}], ts_kind ∈
  * 'venue' | 'receipt' | 'bar_close'.
  *
@@ -1149,7 +1149,7 @@ export function corrSurcharge(corr) { return corr != null && corr > 0.7 }
 
 /**
  * FR/FK correlation-regime label + the two thresholds that actually carry
- * consequence (FK SKILL:164 + :200). The label ladder itself — inverse /
+ * consequence (FK SKILL [R:corr-surcharge] + [R:phase2-corr-cap]). The label ladder itself — inverse /
  * decoupled / mild / risk-on — is DESCRIPTIVE ONLY; only `> 0.7` (the
  * cross-asset surcharge) and `< 0.8` (the Phase 2 condition) gate anything.
  * Do not treat a label edge (0, 0.2) as a threshold — it isn't one.

@@ -2090,6 +2090,92 @@ ok('output ends in a trailing newline', canonicalJSON({ a: 1 }).endsWith('}\n'))
   }
 }
 
+// ── SKILL compaction (2026-08-07): [R:*] resolution, CLAUDE.md coupling guard, ──
+// ── presence invariants ──────────────────────────────────────────────────────
+//    The compaction plan replaces line-number/heading-anchor cross-references
+//    with `[R:rule-name]` tags and moves several blocks behind CLAUDE.md
+//    pointers. Neither failure mode (a reference to a tag that was never
+//    defined, or a pointer to a CLAUDE.md line that quietly changed) shows up
+//    in a score/gate calculation — lint-report.mjs and the vectors above don't
+//    see it. These are prose invariants; they can only be checked by grepping
+//    the actual files, not by re-deriving a number.
+{
+  const repoRoot = fileURLToPath(new URL('..', import.meta.url))
+  const fkSkill = `${repoRoot}.claude/skills/fallen-knives-analytics/SKILL.md`
+  const frSkill = `${repoRoot}.claude/skills/flying-rocket-analytics/SKILL.md`
+  const claudeMd = `${repoRoot}CLAUDE.md`
+  const fkText = existsSync(fkSkill) ? readFileSync(fkSkill, 'utf8') : ''
+  const frText = existsSync(frSkill) ? readFileSync(frSkill, 'utf8') : ''
+  const claudeText = existsSync(claudeMd) ? readFileSync(claudeMd, 'utf8') : ''
+
+  // [R:*] resolution: every reference (`[R:x]` not immediately preceded by `**`,
+  // i.e. not itself the definition site) must resolve to exactly one `**[R:x]**`
+  // definition, searched across BOTH skill files (a reference in FR may point at
+  // a tag defined in FK, e.g. [R:canonical-spot]).
+  function checkRuleIdResolution(label, text, allText) {
+    const refs = [...text.matchAll(/\[R:([a-z0-9-]+)\]/g)]
+    if (refs.length === 0) { ok(`${label}: has no [R:*] tags yet (fine — introduced lazily)`, true); return }
+    for (const m of refs) {
+      const id = m[1]
+      const defPattern = new RegExp(`\\*\\*\\[R:${id}\\]`, 'g')
+      const defCount = (allText.match(defPattern) || []).length
+      eq(`${label}: [R:${id}] resolves to exactly one **[R:${id}]** definition`, defCount, 1)
+    }
+  }
+  const combined = fkText + '\n' + frText
+  checkRuleIdResolution('FK', fkText, combined)
+  checkRuleIdResolution('FR', frText, combined)
+
+  // CLAUDE.md coupling guard. Stage 2 replaces byte-identical Hard Rule 8 blocks
+  // in both SKILLs with pointers into CLAUDE.md. A pointer is only as good as
+  // the thing it points at — if CLAUDE.md's custody/basis literals ever drift
+  // or get deleted, the SKILLs silently lose content nobody notices is gone.
+  for (const status of ['RECONCILED', 'EXPLAINED_BY_EXTERNAL_TRANSFER', 'EXPLAINED_BY_SYNTHETIC_OPENING_BALANCE', 'UNEXPLAINED']) {
+    ok(`CLAUDE.md still defines custody.status literal ${status}`, claudeText.includes(status))
+  }
+  ok('CLAUDE.md still defines basis.reliable', claudeText.includes('basis.reliable'))
+  ok('CLAUDE.md still discloses the PAXG gold alias', claudeText.includes('PAXG'))
+  ok('CLAUDE.md still states Hard Rule 8 (fresh ledger is the position of record)', /Hard Rule 8/.test(claudeText) && /position of record/i.test(claudeText))
+
+  // Presence invariants for load-bearing numbers/phrases the linter can't grade
+  // (it validates a report's machine block, not the SKILL prose that produced
+  // it). Each of these is a specific band/threshold/cap that a compaction pass
+  // could accidentally thin out while "just" tightening prose around it.
+  const presenceChecks = [
+    [fkText, /mechanical.{0,60}≥\s*17/, 'FK: Phase 3 reads the mechanical score, ≥17'],
+    [fkText, /10\s*\/\s*15\s*\/\s*30\s*\/\s*45/, 'FK: pyramid split 10/15/30/45'],
+    [fkText, />\s*0\.7/, 'FK: correlation surcharge >0.7 threshold'],
+    [fkText, /<\s*0\.8/, 'FK: Phase 2 corr <0.8 cap'],
+    [fkText, /Deep-Value Override/, 'FK: Deep-Value Override named'],
+    [fkText, /Analyst Discretion/, 'FK: Analyst Discretion Layer named'],
+    [fkText, /basis\.reliable/, 'FK: basis.reliable referenced'],
+    [fkText, /custody/, 'FK: custody concept referenced'],
+    [fkText, /canonical spot/i, 'FK: canonical spot concept present'],
+    [fkText, /EXCLUDED/, 'FK: stale-quote EXCLUDED tag rule present'],
+    [fkText, /ceil\(/, 'FK: gate ceil() formula present'],
+    [frText, /5\s*\/\s*10\s*\/\s*15\s*\/\s*20/, 'FR: pyramid split 5/10/15/20'],
+    [frText, /50%/, 'FR: 50% short-book cap'],
+    [frText, /30%/, 'FR: Channel B 30% sub-cap'],
+    [frText, /carry\s*>\s*40%/i, 'FR: carry veto >40%'],
+    [frText, /1\.5\s*×\s*ADR/, 'FR: 1.5×ADR stop-distance floor'],
+    [frText, /Channel B/, 'FR: Channel B named'],
+    [frText, /Channel A/, 'FR: Channel A named'],
+    [frText, /current session high/, 'FR: gate-1 basis (current session high) present'],
+    [frText, /bounce_age_sessions/, 'FR: gate-2 basis (bounce_age_sessions) present'],
+    [frText, /bounce window/, 'FR: gate-5 basis (bounce window) present'],
+    [frText, /ratchet/i, 'FR: stop/clock ratchet named'],
+    [frText, /time stop/i, 'FR: mandatory time stop present'],
+    [frText, /14-day/, 'FR: analyst-discretion 14-day clock present'],
+    [frText, /20%/, 'FR: analyst-discretion 20% cap present'],
+    [frText, /funding veto/i, 'FR: funding veto gate named'],
+    [frText, /Deep-Value Override has no analogue/i, 'FR: Deep-Value Override exclusion stated'],
+    [frText, /Phase 3/, 'FR: Phase 3 (bear-continuation exclusion) referenced'],
+    [frText, /basis\.reliable/, 'FR: basis.reliable referenced'],
+    [frText, /custody/, 'FR: custody concept referenced'],
+  ]
+  for (const [text, re, label] of presenceChecks) ok(label, re.test(text))
+}
+
 // ── calib-run.mjs: zeroTuneDiagnoses / mergeStrictestWins / applyTriageClusters ─
 {
   const diagWithTune = { dimension: 'a', flaws: [], proposed_tunes: [{ name: 'x' }] }
