@@ -314,6 +314,24 @@ function positionText(run) {
 }
 function anchorsText(run) { return run.anchors || '(no live anchors supplied)' }
 
+// Each framework's revision log was relocated OUT of its SKILL.md on 2026-08-07 into a
+// sibling REVISION-LOG.md: it had grown to 30% (FK) / 24% (FR) of the skill and was loaded
+// into context on every REPORT run, while every reader of it is calibration-time — these
+// prompts. Derived from targetSkills rather than hardcoded so a renamed or added framework
+// cannot silently lose its log; `revisionLogsText` states the fallback explicitly instead of
+// emitting a path that may not exist, because a re-validator handed a missing file writes
+// "not_exercised" for everything, which is indistinguishable from a real finding.
+export function revisionLogPaths(targetSkills) {
+  return (targetSkills || []).map(s => s.replace(/SKILL\.md$/, 'REVISION-LOG.md'))
+}
+function revisionLogsText(run) {
+  const paths = revisionLogPaths(run.targetSkills)
+  if (!paths.length) return '(no target skill supplied — no revision log to read)'
+  return `${paths.join(' ; ')}\n` +
+    `If a path above does not exist, the log may still be an inline "## Framework Revision Log" section of the SKILL itself (pre-2026-08-07 layout) — read it there. ` +
+    `Do NOT proceed as though the framework has no adopted-tune history: an empty history and an unreadable one are different findings, and reporting the second as the first is the exact failure this pipeline exists to catch.`
+}
+
 // Which calibration is this corpus window the out-of-sample test OF, and from which date do
 // post-calibration reports count? The corpus window start is the authority: `calib-corpus.mjs
 // --since <date>` is invoked with the target calibration's date, so every report in the corpus
@@ -368,7 +386,7 @@ function planGrade(runDir, run) {
       `task_id: ${priorId}\n\n` +
       `You are re-validating the PRIOR calibration(s) of this framework — the calibrator grades itself before it grades the framework.\n` +
       `Prior calibration artifacts — Read each memo: ${run.priorCalibrations.map(p => `${p.retro} (${p.date}: ${p.summary})`).join(' ; ')}\n` +
-      `Also Read the "Framework Revision Log" section in: ${run.targetSkills.join(' ; ')}\n${anchorsText(run)}\n\n` +
+      `Also Read the framework revision log(s): ${revisionLogsText(run)}\n${anchorsText(run)}\n\n` +
       `RE-VALIDATION TARGET: the calibration dated ${revalTarget || '(unknown)'} — this corpus window is its out-of-sample test. ` +
       `Grade ITS adopted tunes. A LATER calibration may exist in the prior-calibration list (a scoped or meta run); do not mistake it for the target.\n` +
       (() => {
@@ -683,7 +701,7 @@ function planVerifyPanels(runDir, run, tunes) {
   })
   const auditTaskId = 'verify-applied-edits-audit'
   const auditBody = `task_id: ${auditTaskId}\n\n` +
-    `Audit the parameter edits ALREADY APPLIED to these skill file(s): ${run.targetSkills.join(' ; ')}. Read each, focused on "## Framework Revision Log".\n${anchorsText(run)}\n\n` +
+    `Audit the parameter edits ALREADY APPLIED to these skill file(s): ${run.targetSkills.join(' ; ')}. Read each — the applied rule lives in the OPERATIVE text (§4/§5/§6), and its provenance entry lives in the sibling revision log: ${revisionLogsText(run)}\n${anchorsText(run)}\n\n` +
     `Evaluate: internal consistency; reachability of any new trigger; throttle/runaway safety; for an inverse-companion framework, were dangerous mirrors correctly withheld; toolchain coupling drift; concrete remaining edits needed.\n\n` +
     `Return JSON: {"editAudit": "<detailed prose>"}`
   tasks.push({ ...writePromptTask(dir, auditTaskId, run.models.verify, auditBody), kind: 'edit_audit' })

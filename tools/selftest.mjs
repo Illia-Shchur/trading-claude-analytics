@@ -27,7 +27,9 @@ import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds, frTh
 import { completedCandles, weeklyBlock } from './fetch.mjs'
 import { dropMachineBlock, dropVerifiedDataSection, dropCompositeScoreSection, projectDigest, isEventReport, selectWithCap } from './calib-corpus.mjs'
 import { validateRegistry, matchRejections, VERDICTS, SCHEMA as REGISTRY_SCHEMA } from './calib-registry.mjs'
-import { validateSchema, SCHEMAS, PHASES, zeroTuneDiagnoses, mergeStrictestWins, applyTriageClusters, postCalibrationBoundary } from './calib-run.mjs'
+import { existsSync, readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import { validateSchema, SCHEMAS, PHASES, zeroTuneDiagnoses, mergeStrictestWins, applyTriageClusters, postCalibrationBoundary, revisionLogPaths } from './calib-run.mjs'
 
 let failures = 0
 function eq(name, got, want) {
@@ -2048,6 +2050,44 @@ ok('output ends in a trailing newline', canonicalJSON({ a: 1 }).endsWith('}\n'))
 
   const r4 = postCalibrationBoundary(corpus, [])
   eq('postCalibrationBoundary: no prior calibrations → target is the corpus start', r4.target, '2026-07-04')
+}
+
+// ── calib-run.mjs: revisionLogPaths — the 2026-08-07 relocation ────────────────
+//    Each framework's revision log moved OUT of its SKILL.md (30% of FK, 24% of
+//    FR, loaded on every REPORT run while every reader is calibration-time) into
+//    a sibling REVISION-LOG.md. These vectors are the tripwire against silently
+//    orphaning it: a re-validator handed a missing log writes `not_exercised`
+//    for every mechanism, which is indistinguishable from a real finding — the
+//    same class of silent coverage hole postCalibrationBoundary was fixed for.
+{
+  eq('revisionLogPaths derives the sibling from SKILL.md, not a hardcoded path',
+    revisionLogPaths(['/x/.claude/skills/fallen-knives-analytics/SKILL.md']),
+    ['/x/.claude/skills/fallen-knives-analytics/REVISION-LOG.md'])
+  eq('revisionLogPaths maps every target skill, not just the first',
+    revisionLogPaths(['/a/SKILL.md', '/b/SKILL.md']), ['/a/REVISION-LOG.md', '/b/REVISION-LOG.md'])
+  eq('revisionLogPaths on no targets is empty, never a bogus path', revisionLogPaths([]), [])
+  eq('revisionLogPaths tolerates a null target list', revisionLogPaths(null), [])
+  eq('only a trailing SKILL.md is rewritten — a path merely containing it is left alone',
+    revisionLogPaths(['/skills/SKILL.md.bak']), ['/skills/SKILL.md.bak'])
+
+  // The real files must exist and carry their entries. A relocation that lands
+  // an empty or entry-less log is worse than none: it reads as a framework with
+  // no adopted-tune history.
+  const repoRoot = fileURLToPath(new URL('..', import.meta.url))
+  for (const [fw, minEntries] of [['fallen-knives-analytics', 12], ['flying-rocket-analytics', 10]]) {
+    const skill = `${repoRoot}.claude/skills/${fw}/SKILL.md`
+    const [log] = revisionLogPaths([skill])
+    const present = existsSync(log)
+    eq(`${fw}: REVISION-LOG.md exists at the derived path`, present, true)
+    // Guarded: a missing log must fail THIS vector, not throw and abort every
+    // vector after it. A suite that dies on the first orphaned file hides the
+    // rest of its own coverage.
+    const body = present ? readFileSync(log, 'utf8') : ''
+    const entries = (body.match(/^### /gm) || []).length
+    eq(`${fw}: log retains ≥${minEntries} dated entries (relocation lost nothing)`, entries >= minEntries, true)
+    eq(`${fw}: SKILL.md no longer carries the log inline`,
+      existsSync(skill) && /^### 2026-0\d-\d\d/m.test(readFileSync(skill, 'utf8')), false)
+  }
 }
 
 // ── calib-run.mjs: zeroTuneDiagnoses / mergeStrictestWins / applyTriageClusters ─
