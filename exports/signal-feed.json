@@ -1,9 +1,9 @@
 {
   "counts": {
-    "files_in_reports_dir": 128,
-    "framework_reports": 121,
+    "files_in_reports_dir": 129,
+    "framework_reports": 122,
     "non_framework_files_ignored": 7,
-    "signals": 55,
+    "signals": 56,
     "skipped_no_machine_block": 66,
     "skipped_post_epoch_missing_block": 0,
     "skipped_unparseable": 0
@@ -14,7 +14,7 @@
     "entry_price": "2026-07-29",
     "machine_block": "2026-07-11"
   },
-  "generated_at": "2026-08-06T22:57:28Z",
+  "generated_at": "2026-08-07T07:19:44Z",
   "generated_by": "tools/export-signals.mjs",
   "ignored_files": [
     {
@@ -10801,7 +10801,7 @@
       "channel": null,
       "channel_inference_basis": "Fallen Knives has no channel dimension",
       "channel_inferred": false,
-      "content_sha256": "3369bf168b75b4664badb7146be61f512ccda62faca94551e3eb771d74b6aa9e",
+      "content_sha256": "577d0cca7c221698f8e8c4261c5ce667086c4720feb1ea8b105ba72f83c5f0b6",
       "deployment": {
         "deployed_pct": "0",
         "dry_pct": "100",
@@ -11022,6 +11022,238 @@
         "stance": "PHASE 1A AUTHORIZED, EXECUTION BLOCKED ON THE LEDGER, 100% DRY",
         "trailing_2w_note": "$65,044.81 close on 2026-07-23 -> $64,310.31. The negative EV is printed during a NEGATIVE two-week move - the two agree in sign, so there is no momentum contradiction to flag in either direction. Disclosed symmetrically per the 2026-08-06 rule.",
         "trailing_2w_realized_pct": -1.13
+      }
+    },
+    {
+      "asset": "ETH",
+      "channel": null,
+      "channel_inference_basis": "Fallen Knives has no channel dimension",
+      "channel_inferred": false,
+      "content_sha256": "64cdfffb8384ee7beaee80428f19abd206278b7233982230e9a9c2567c2b0bd9",
+      "deployment": {
+        "deployed_pct": "0",
+        "dry_pct": "100",
+        "filled_detection": "deployed === true || typeof entry_price === \"number\" || typeof entry === \"number\"",
+        "filled_detection_caveat": "before the entry_price epoch (2026-07-29) no tranche in this corpus carried deployed:true or a numeric entry — 152/152 tranches across 39 reports encode `entry` as prose — so filled_tranche_count is structurally 0 on every pre-epoch signal. It is an artifact of the old schema, not an observation that nothing was filled.",
+        "filled_tranche_count": 0,
+        "throttle_released": false,
+        "tranche_count": 4,
+        "tranches": [
+          {
+            "channel": null,
+            "channel_regime": null,
+            "deployed": false,
+            "discretionary": false,
+            "entry": "1800-1880 RESTING LADDER BELOW SPOT. Spot 1902.54 sits $22.54 ABOVE the zone top, so under the 2026-08-05 entry-zone ratchet NO tranche fills here regardless of unlock state - an unlock is not a licence to buy at any price. Separately NOT UNLOCKED: gate count 2/8 < 3 required, short by EXACTLY ONE, so the D2 conviction path is AVAILABLE and was DECLINED for the FOURTH consecutive report (see discretion.d2_detail - the leading ground is now that it would authorize an unfillable tranche). Upward re-anchoring CONSIDERED and DECLINED: a ~1840 shelf has SIX consecutive closes above it (08-01 1843.42 through 08-06 1902.52), clearing the >=5 floor, and a re-anchored top could sit below spot - declined on judgment because moving a buy zone up to chase a 39-session-old +22.84% counter-trend bounce is what the constrained direction is constrained against. NO entry_price: position.mjs returns EXIT 1 / band EXPIRED at 126.7h so this is a COLD START under Hard Rule 4 and the narrated '~5% filled at ~1844 plus ~5% laddered 1800-1825' is UNVERIFIED in BOTH directions",
+            "entry_price": null,
+            "filled": false,
+            "pct": "10",
+            "phase": "1A",
+            "prior_stop": null,
+            "prior_time_stop": null,
+            "stop": null,
+            "time_stop": null
+          },
+          {
+            "channel": null,
+            "channel_regime": null,
+            "deployed": false,
+            "discretionary": false,
+            "entry": "1600-1750 BLOCKED ON BOTH AXES. Score: adjusted 10 < 11 (the D1 -0.5 removes the crossing mechanical 11 makes). Gates: 2/8 < 5 required and [V] 2 < 3 - short THREE gates and one [V] gate independently, so the D1 term has ZERO capital effect. D2 unavailable (short by three, not exactly one; the [V] floor also fails, which D2 may never substitute for). Gates bind harder than score",
+            "entry_price": null,
+            "filled": false,
+            "pct": "15",
+            "phase": "1B",
+            "prior_stop": null,
+            "prior_time_stop": null,
+            "stop": null,
+            "time_stop": null
+          },
+          {
+            "channel": null,
+            "channel_regime": null,
+            "deployed": false,
+            "discretionary": false,
+            "entry": "1450-1600 frozen (adjusted 10<15, gates 2/8<6; corr condition would PASS at 0.252<0.80 but is not reached)",
+            "entry_price": null,
+            "filled": false,
+            "pct": "30",
+            "phase": "2",
+            "prior_stop": null,
+            "prior_time_stop": null,
+            "stop": null,
+            "time_stop": null
+          },
+          {
+            "channel": null,
+            "channel_regime": null,
+            "deployed": false,
+            "discretionary": false,
+            "entry": "dry (mechanical 11<17, gates 2/8<7; no analyst channel reaches this tranche)",
+            "entry_price": null,
+            "filled": false,
+            "pct": "45",
+            "phase": "3",
+            "prior_stop": null,
+            "prior_time_stop": null,
+            "stop": null,
+            "time_stop": null
+          }
+        ]
+      },
+      "ev": {
+        "scenarios": [
+          {
+            "high": "2160",
+            "low": "1960",
+            "mid": null,
+            "name": "Rally",
+            "p": "27"
+          },
+          {
+            "high": "1960",
+            "low": "1800",
+            "mid": null,
+            "name": "Range",
+            "p": "38"
+          },
+          {
+            "high": "1800",
+            "low": "1650",
+            "mid": null,
+            "name": "Retest",
+            "p": "22"
+          },
+          {
+            "high": "1650",
+            "low": "1450",
+            "mid": null,
+            "name": "Bear",
+            "p": "13"
+          }
+        ],
+        "stated_ev_usd": "1851.6",
+        "vs_spot_pct": "-2.68"
+      },
+      "framework": "fallen_knives",
+      "gates": {
+        "active": 8,
+        "na": [
+          5
+        ],
+        "passed": [
+          3,
+          8
+        ],
+        "passed_count": 2,
+        "passed_mask": 132
+      },
+      "regime": null,
+      "report_at_derivation": "derived by interpreting the filename's HHMM in America/New_York (the repo's Output Convention) — the machine block carries a date but no time field, and (asset, framework, date) collides (btc/eth × fallen_knives on 2026-07-14 and 2026-07-18), so report_file is the primary key",
+      "report_at_utc": "2026-08-06T22:36:00Z",
+      "report_date": "2026-08-06",
+      "report_file": "eth_fallen_knives_20260806_1836.md",
+      "report_local_time": "18:36",
+      "report_zone": "America/New_York",
+      "rubric": "FK/1",
+      "schema_epoch": "discretion_and_two_channel",
+      "score": {
+        "adjusted": "10",
+        "cap_applied": false,
+        "cap_value": null,
+        "discretionary": "-0.5",
+        "discretionary_inferred": false,
+        "inference_basis": "declared in the machine block",
+        "legs": [
+          {
+            "block_key": "sentiment",
+            "max": 5,
+            "min": 0,
+            "ordinal": 1,
+            "rubric_name": "sentiment",
+            "value": "2"
+          },
+          {
+            "block_key": "momentum",
+            "max": 4,
+            "min": 0,
+            "ordinal": 2,
+            "rubric_name": "momentum",
+            "value": "1"
+          },
+          {
+            "block_key": "valuation",
+            "max": 5,
+            "min": -2,
+            "ordinal": 3,
+            "rubric_name": "valuation",
+            "value": "5"
+          },
+          {
+            "block_key": "capitulation",
+            "max": 3,
+            "min": 0,
+            "ordinal": 4,
+            "rubric_name": "capitulation",
+            "value": "0"
+          },
+          {
+            "block_key": "holder",
+            "max": 3,
+            "min": 0,
+            "ordinal": 5,
+            "rubric_name": "holder_behavior",
+            "value": "3"
+          }
+        ],
+        "mechanical": "11",
+        "mechanical_inferred": false,
+        "penalty": null,
+        "raw": "10.5",
+        "rounding": "half-down"
+      },
+      "spot_source": "median of 3 synchronized live quotes: Binance ETHUSDT $1,904.10 / Coinbase ETH-USD $1,902.54 / Kraken ETHUSD $1,902.30 (venue timestamps within a ~2-second band, 2026-08-06T22:36Z); spread 0.095%, all live; Yahoo ETH-USD $1,902.52 EXCLUDED as a frozen bar close. CoinGecko FETCH FAILED (HTTP 429) on both spot and ATH endpoints - disclosed, NOT substituted from memory; three synchronized quotes still clear the primary-plus-two bar so no low-confidence demotion applies",
+      "spot_usd": "1902.54",
+      "stops": {
+        "catastrophic": "1300",
+        "checkpoint": {
+          "adr": "52.34",
+          "adr_sessions": "2026-08-01, 08-02, 08-03, 08-04, 08-05 - the in-progress 2026-08-06 session EXCLUDED as not a full session at 22:36Z, lookback extended one session to reach five full ones, exclusion disclosed inline (compute.mjs adr --exclude 2026-08-06)",
+          "calendar_validation": "2026-08-09 is a Sunday, a valid weekly-close boundary for a 24/7 venue; no restatement applied; date computed and validated BEFORE any distance language",
+          "closes_below": "0",
+          "condition": ">=2 consecutive weekly closes <1350 AND mechanical score <12",
+          "date": "2026-08-09",
+          "dist_x_adr": "10.56",
+          "line": "1350",
+          "side": "spot 40.93% above line; structurally cannot fire (0 of 2 required closes exist, and one weekly close cannot supply two). Tier-1 release BEFORE this checkpoint: YES - Employment Situation / July nonfarm payrolls Fri 2026-08-07 08:30 ET (BLS schedule, verified), named in the falsifier: a hot print pushes September hike odds above the current 62-76% and pressures ETH toward the 50dma at 1790.26; a soft print cuts them and puts the 200dma at 2066.88 in play. NFP cannot produce two sub-1350 weekly closes by 2026-08-09. Next tier-1 after: CPI Wed 2026-08-12 08:30 ET (BLS CPI schedule, verified). NON-MACRO DATED BINARY inside the same window and more ETH-relevant: the CLARITY Act's 2026-08-10 Senate cliff."
+        },
+        "compound": {
+          "price": "1350",
+          "score_line": "12"
+        },
+        "deepest_zone_floor": "1450",
+        "migration": [],
+        "note": "NO stop parameter changed value in either direction. Mechanical score 11<12, so the compound stop's score axis IS satisfied - the stop is effectively single-key and price-gated at $1,350, which makes it fire MORE readily, not less (section 4.2 tags this line VACUOUS-PERMISSIVE on all 8 trailing report dates and discloses it in that direction). The D1 -0.5 has ZERO effect: the compound stop reads the MECHANICAL leg sum per the 2026-07-27 governing rule, and the symmetry holds in both directions. CHECKED, not assumed. CARRIED AND STILL TRUE: ETH is 1.96 RSI points from restoring the second key - a weekly RSI print below 40.0 takes the momentum leg 1->2, the composite 11->12, and the score axis from satisfied to unsatisfied. Cheapest available upgrade to this book's stop quality, and it arrives on WEAKNESS. Coherence: catastrophic $1,300 strictly below deepest named zone floor $1,450 = PASS (compute.mjs stop-coherence pass:true). The DECLINED upward entry-zone re-anchor could not have raised this input in any case - the deeper zones stay named and 1450 remains the tested number. No D5 stops - zero analyst-channel tranches; the available D2 unlock was declined so no D5 stop attaches. Max drawdown spot-to-compound-line -29.05%, disclosed; purchases no loosening under D6. D6 ratchet: compliant."
+      },
+      "unlock": {
+        "highest_phase_unlocked_by_score": "p1a",
+        "ladder": "FK",
+        "p1a": 8,
+        "p1b": 11,
+        "p2": 15,
+        "p3": 17,
+        "p3_note": "Phase 3 reads the MECHANICAL score — no analyst channel reaches it"
+      },
+      "verdict": {
+        "collar_applies": true,
+        "collar_basis": "The bull/bear scorecard is DEAD BALANCED at 7-7, within 1 of balanced - the collar engages on that branch alone. The EV branch would nominally NOT engage (|EV-vs-spot| 2.68% >= 2%), but the EV is DEMOTED under the section 5.4 tripwire and a demoted EV does not satisfy the collar's EV branch, so the collar stays ON one-directionally. MECHANICAL score 11 is outside the 6-10 band. No directional regime resolution is declared; every forward claim in section 12 carries an IF->THEN and a named falsifier. Strong-claim unlock (mechanical >=15 OR a realized trend-structure event) is NOT met.",
+        "cross_validation_citable": true,
+        "cross_validation_citable_basis": "Consistent and unqualified - the standalone FR obligation is DISCHARGED by reports/eth_flying_rocket_20260806_1844.md, so the 2026-08-06 discharge clock does not fire and the Hard Rule 5 line carries full evidentiary weight. Section 12 cites it: two frameworks reading the same tape from opposite sides both conclude do-nothing-here.",
+        "ev_citable": false,
+        "ev_citable_basis": "DEMOTED to corroborative-only under the section 5.4 EV Calibration Line tripwire. The EV is printed and decomposed but carries no stance and is not cited as the reason for any deploy or decline.",
+        "stance": "100% DRY, PHASE 1A LADDER RESTING BELOW SPOT",
+        "trailing_2w_note": "$1,877.10 close on 2026-07-23 -> $1,902.54. A NEGATIVE EV is printed during a POSITIVE two-week move - the contradiction is disclosed EXPLICITLY, per the branch of the rule that was silent until the 2026-08-06 symmetrization and that is precisely the failure mode running on this asset.",
+        "trailing_2w_realized_pct": 1.36
       }
     },
     {
