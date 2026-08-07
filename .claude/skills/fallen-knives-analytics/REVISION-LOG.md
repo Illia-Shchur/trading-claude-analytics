@@ -8,6 +8,21 @@ Read by: `tools/calib-run.mjs` (prior-tune re-validation + pre-apply audit) and 
 
 ---
 
+### 2026-08-07 — SKILL compaction Stage 1: conflicts fixed (C1–C4, C6–C9); C5 flagged, not resolved
+
+Part of a 6-stage compaction pass (Stage 0 fixed rotted line-number pointers with a new `[R:rule-name]` tag convention; this stage fixes cross-file content conflicts found during the compaction audit, before any deduplication — dedup first would have frozen whichever copy happened to survive). Applied fixes, all evidence-driven (code and/or Flying Rocket's mirror was already correct):
+
+- **C3 (highest severity — live-wrong today):** the Score Interpretation table's header read "Adjusted Score" and its 17–19 row read "Phases 1A–3 eligible" unconditionally, contradicting the governing D1 rule, §6's Phase 3 unlock (mechanical ≥17), and `lib.mjs`'s `unlockFor()`. A mechanical 15 plus a +2 discretionary term could misread the table as authorizing the 45% tranche. Flying Rocket's own mirror table already carried correct wording ("Score — adjusted, except the 19+ row which is mechanical"); FK never inherited that fix. Table header and row corrected, with a dated note explaining the divergence never actually changed which text was operative (§6 always governed) but was a live footgun regardless.
+- **C4:** added Phase 3's mechanical ≥17 arming condition explicitly to the governing rule's "every protective rule reads MECHANICAL" enumeration (same root cause as C3).
+- **C1:** the Hard Rule 5 cross-validation section cited a stale FR Phase 1A floor ("≥13") — FR cut Channel A's 1A floor to ≥11 on 2026-07-27; Channel B kept ≥13. Corrected to state both.
+- **C2:** Principle 3's own confirmation test (reclaim of a major MA **or a confirmed higher-high**) shared the name "trend-structure repair" with a *different* test used at §5's Rally cap and trend residual (major-MA reclaim **or a confirmed higher-low**) — a stricter and a looser bar sharing one name. Renamed Principle 3's test to "trend-reversal confirmation" without moving either bar; unifying on higher-low would have been a silent loosening.
+- **C9:** the Language section's wording ("per user preference") was looser than Flying Rocket's ("on explicit user request"); aligned FK to FR's stricter wording.
+
+Cross-file fixes affecting Flying Rocket, logged there too: **C6** (FR falsely claimed FK carries a reciprocal "prior FR forecast check" obligation — zero hits on grep; deleted, not added to FK, since adding it would be a new rule) and **C7** (FR's canonical-spot rule was labeled a "mirror" of FK's; corrected to a real pointer at FK's new `[R:canonical-spot]` tag plus FR's genuine deltas — FR lacks FK's synchronized-quote window and EXCLUDED-tag machinery, so this correction is **silently tightening** FR, not loosening it: it now inherits the AND-conjunct FK actually enforces).
+
+**C5 left unresolved, per owner decision (2026-08-07).** Fallen Knives' cross-validation section (Hard Rule 5) requires a standalone FR report when the FK score crosses a phase-unlock threshold. Flying Rocket's own mandatory-re-check trigger list explicitly excludes that same FK crossing as a trigger. Both sides now carry a short dated note flagging the contradiction rather than picking a side. **Flagged for the next `framework-calibration` run:** adjudicate whether FK's obligation or FR's exclusion is correct using the report series as evidence — which side actually fired historically, whether the "different discipline tier under Hard Rule 6" FR cites is real or post-hoc, and whether the trigger lists have simply drifted independently in both directions since they were last synchronized.
+
+No change to any Fallen Knives / Flying Rocket rubric, band, threshold, stop, or cap.
 
 ### 2026-08-06 — Full calibration, 49 reports (2026-07-04 → 2026-08-05): the forecast layer gets graded; the fill-corroboration hole is documented, not closed
 

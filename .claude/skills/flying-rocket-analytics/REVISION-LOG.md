@@ -8,6 +8,16 @@ Read by: `tools/calib-run.mjs` (prior-tune re-validation + pre-apply audit) and 
 
 ---
 
+### 2026-08-07 — SKILL compaction Stage 1: conflicts fixed (C6–C9 affecting FR); C5 flagged, not resolved
+
+Part of a 6-stage compaction pass on both frameworks' SKILL files (Stage 0 fixed rotted line-number pointers with a new `[R:rule-name]` tag convention; this stage fixes cross-file content conflicts found during the compaction audit, before any deduplication). Fixes landing in this file:
+
+- **C6:** the Stand-down accountability paragraph claimed Fallen Knives carries a reciprocal "prior FR forecast check" obligation. It does not — zero grep hits in the FK SKILL. Deleted the false claim rather than adding the obligation to FK, since adding a new obligation is not a compaction.
+- **C7:** the canonical-spot reconciliation paragraph was labeled a "mirror" of Fallen Knives — overstating the symmetry. FK's rule (now tagged `[R:canonical-spot]`) additionally carries a synchronized-quote window (2hr), explicit live/frozen-stale row labelling, and an EXCLUDED-tag requirement for divergent stale quotes that FR's paragraph never had. Corrected to a real pointer plus FR's genuine deltas (Total Short EV naming, no separate <3-quotes carve-out). **This silently tightens FR** — an FR report now inherits the AND-conjunct (sign flip AND |median EV| < spread) FK actually enforces, not the looser reading this paragraph previously implied by omission. Also corrected on the FK side (C8, C9 — the Score Interpretation ladder table gained an explicit "Channel A ladder" label since Channel B reads different floors, and FK's Language section wording was loosened relative to FR's; FK inherited FR's stricter wording instead).
+
+**C5 left unresolved, per owner decision (2026-08-07).** The mandatory re-check trigger list here explicitly excludes an FK score-threshold crossing as a trigger ("belongs to a different discipline tier under Hard Rule 6"). Fallen Knives' Hard Rule 5 cross-validation section requires exactly that — a standalone FR report when the FK score crosses a phase-unlock threshold. Both sides now carry a short dated note flagging the contradiction rather than picking a side. **Flagged for the next `framework-calibration` run:** adjudicate using the report series as evidence — which side actually fired historically, whether the "different discipline tier" claim is real or post-hoc, and whether the two trigger lists have simply drifted independently since they were last synchronized.
+
+No change to any Fallen Knives / Flying Rocket rubric, band, threshold, stop, or cap.
 
 ### 2026-08-07 — Channel B gate measurement basis declared (§4)
 
