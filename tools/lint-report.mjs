@@ -29,6 +29,12 @@
 //   regime  (FR, required when channel="B"):
 //           {pct_below_1y_ath (>20), ma200_falling: true, price_below_ma200: true}
 //   gates: {active, na:[...], passed:[...]}            gate numbers 1–9
+//          FR channel="B" additionally (from 2026-08-07, FR §4):
+//            measurement: {"1":"current_session_high","2":"low_to_current",
+//                          "5":"bounce_window"}     the declared basis, cited
+//            alt_reading: {gate, basis, passed:[…]}  ONLY when the alternative
+//                          reading flips that gate's verdict — carries its own
+//                          gate list so the count under each is checkable
 //   ev: {scenarios:[{name,p,low,high|mid}], stated_ev, vs_spot_pct}
 //   deployment: {deployed_pct, dry_pct, throttle_released(FK opt bool — a [T] gate
 //                relit or a confirmed higher-low printed, releasing the 40%/25% caps),
@@ -68,7 +74,8 @@ import { roundScore, ROUNDING, ceilThresholds, FK_V_GATES, evCheck, stopCoherenc
   s5StopCheck, frRatchetCheck, FR_S5, FR_CHANNEL_B,
   frUnlockLadder, FR_GATE_FLOORS, frStopBand, FR_MAX_PER_ASSET_PCT,
   fillPrice, trancheFilled, entryLooksLikeFill, ENTRY_PRICE_EPOCH, frComposite, COMPANION_FR_EPOCH,
-  frNonCryptoClass, FR_NONCRYPTO_NA, NONCRYPTO_SCHEMA_EPOCH } from './lib.mjs'
+  frNonCryptoClass, FR_NONCRYPTO_NA, NONCRYPTO_SCHEMA_EPOCH,
+  FR_B_GATE_BASIS, GATE_MEASUREMENT_EPOCH } from './lib.mjs'
 
 const round2 = n => Math.round(n * 100) / 100
 
@@ -229,6 +236,42 @@ else {
       if (JSON.stringify(got) !== JSON.stringify(want))
         (String(b.date) >= NONCRYPTO_SCHEMA_EPOCH ? err : warn)(
           `gates.na=[${got.join(', ')}] but the frozen ${cls} schema is [${want.join(', ')}] (active ${9 - want.length}) — the non-crypto N/A set is fixed per asset class and may only change via a disclosed schema-revision note in the SKILL, never per report (FR annex)`)
+    }
+  }
+  // Declared Channel B gate measurement basis (FR §4 "Gate measurement
+  // convention", 2026-08-07). Gates 1, 2 and 5 name quantities with more than
+  // one defensible endpoint/window; until this epoch none was declared, and on
+  // 2026-08-06 the choice alone moved BTC 7/9 → 5/9 and ETH 7/9 → 6/9 — across
+  // Channel B's Phase 2 floor of 6. The gate COUNT is a protective threshold,
+  // so an undeclared convention is a per-report knob on one. Frozen the same
+  // way the non-crypto N/A schema was: the basis is fixed by the SKILL, cited
+  // per report, and may only move via a disclosed SKILL revision.
+  if (FW === 'flying_rocket' && b.channel === 'B') {
+    const M = G.measurement || {}
+    const post = String(b.date) >= GATE_MEASUREMENT_EPOCH
+    for (const [gate, want] of Object.entries(FR_B_GATE_BASIS)) {
+      const got = M[gate]
+      if (got === undefined)
+        (post ? err : warn)(`gates.measurement.${gate} missing — Channel B gate ${gate} has more than one defensible reading and the report must cite the declared one ("${want}") (FR §4, ${GATE_MEASUREMENT_EPOCH})`)
+      else if (got !== want)
+        (post ? err : warn)(`gates.measurement.${gate}=${JSON.stringify(got)} but the declared basis is "${want}" — a report may not re-measure a gate on its own convention; this is fixed by the SKILL and moves only via a disclosed revision (FR §4)`)
+    }
+    // Rule 4: when two readings disagree on the VERDICT, both are printed with
+    // the gate count under each. Only the disagreeing case carries the burden.
+    const alt = G.alt_reading
+    if (alt !== undefined) {
+      if (typeof alt !== 'object' || alt === null || !Array.isArray(alt.passed) || typeof alt.gate !== 'number')
+        (post ? err : warn)('gates.alt_reading must be {gate:<n>, basis:"…", passed:[…]} — the disclosed alternative needs its own gate list so the count under each reading is checkable (FR §4)')
+      else {
+        if (!Object.hasOwn(FR_B_GATE_BASIS, String(alt.gate)))
+          (post ? err : warn)(`gates.alt_reading.gate=${alt.gate} is not one of the ambiguous Channel B gates {${Object.keys(FR_B_GATE_BASIS).join(', ')}} (FR §4)`)
+        if (alt.basis === FR_B_GATE_BASIS[String(alt.gate)])
+          (post ? err : warn)(`gates.alt_reading.basis="${alt.basis}" is the DECLARED basis, not an alternative — alt_reading exists to disclose the reading that did NOT govern (FR §4)`)
+        const sameCount = Array.isArray(alt.passed) && alt.passed.length === G.passed.length
+        const sameSet = sameCount && alt.passed.every(g => G.passed.includes(g))
+        if (sameSet)
+          (post ? err : warn)('gates.alt_reading is identical to the governing board — rule 4 asks for it only when the two readings DISAGREE on a verdict; drop it (FR §4)')
+      }
     }
   }
   if (FW === 'fallen_knives') {

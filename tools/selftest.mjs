@@ -6,6 +6,7 @@
 // ============================================================================
 import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds, frThresholds, FK_V_GATES,
   frNonCryptoClass, FR_NONCRYPTO_NA, NONCRYPTO_SCHEMA_EPOCH,
+  FR_B_GATE_BASIS, GATE_MEASUREMENT_EPOCH,
   median, stdev, pearson, pctChange, consecutiveRun, smaSlope, logReturns, alignSeries,
   percentileRank, distributionStats, realizedVol, realizedVolBlock, rollingRealizedVol,
   rollingWilderRSI, rollingDrawdownFromATH, rollingSMADistance, rollingBouncePct, rollingTrailingHighDistance,
@@ -1649,6 +1650,46 @@ ok('output ends in a trailing newline', canonicalJSON({ a: 1 }).endsWith('}\n'))
   eq('metals N/A set frozen at {4,6,9}', FR_NONCRYPTO_NA.metals, [4, 6, 9])
   eq('both non-crypto classes imply active denominator 6',
     [9 - FR_NONCRYPTO_NA.equity_index.length, 9 - FR_NONCRYPTO_NA.metals.length], [6, 6])
+
+  // T3 — the declared Channel B gate measurement basis (FR §4, 2026-08-07).
+  // Same disease as T2 one level over: T2 froze the DENOMINATOR (which gates
+  // are active), this pins the NUMERATOR (which gates pass). On 2026-08-06 an
+  // undeclared convention alone moved BTC 7/9 → 5/9 and ETH 7/9 → 6/9 on the
+  // same tape — across Channel B's Phase 2 floor of 6.
+  eq('gate 1 basis inherits the §4B Rally Extension leg, NOT the bounce high',
+    FR_B_GATE_BASIS[1], 'current_session_high')
+  eq('gate 2 basis is the tool field, low→current', FR_B_GATE_BASIS[2], 'low_to_current')
+  eq('gate 5 "rejected from" is windowed to the bounce', FR_B_GATE_BASIS[5], 'bounce_window')
+  eq('exactly three Channel B gates carry a declared basis (3 is pinned in its own text)',
+    Object.keys(FR_B_GATE_BASIS).sort(), ['1', '2', '5'])
+  eq('gate measurement epoch is the ship date — no existing report retroactively broken',
+    GATE_MEASUREMENT_EPOCH, '2026-08-07')
+  eq('every declared basis is a non-empty string',
+    Object.values(FR_B_GATE_BASIS).every(v => typeof v === 'string' && v.length > 0), true)
+
+  // The rolled-over case the convention is written for: a bounce that topped
+  // out and has been decaying since, so low→current and low→bounce-high give
+  // different numbers and gate 2 turns on which one is read. dailyTrend must
+  // emit BOTH — discarding `sessions_low_to_high` is what made the 08-06 swing
+  // unauditable. Fixture reproduces the BTC/ETH shape: low at the window head,
+  // peak 20 sessions later, decaying for the remaining 19.
+  {
+    const s = []
+    for (let i = 0; i < 220; i++) { const c = 200 - i * 0.6364; s.push({ high: c + 1, low: c - 1, close: c }) }
+    s.push({ high: 53, low: 50, close: 52 })                                   // i=220, the 40-session low
+    for (let i = 1; i <= 20; i++) { const c = 52 + i * 0.65; s.push({ high: c + 1, low: c - 1, close: c }) } // peak at i=240
+    for (let i = 1; i <= 19; i++) { const c = 65 - i * 0.35; s.push({ high: c + 0.5, low: c - 1, close: c }) } // decay
+    const t = dailyTrend(s, { spot: 58 })
+    eq('rolled-over fixture: 40-session low found at the window head', t.low_40s, 50)
+    eq('bounce_age_sessions counts low→CURRENT (39, past the ≤35 bar)', t.bounce_age_sessions, 39)
+    eq('sessions_low_to_high counts low→BOUNCE HIGH (20, inside the bar)', t.sessions_low_to_high, 20)
+    eq('the two readings genuinely disagree — this is the gate-2 swing',
+      t.bounce_age_sessions !== t.sessions_low_to_high, true)
+    eq('the rolled-over disclosure condition holds (high is behind us)',
+      t.sessions_low_to_high < t.bounce_age_sessions, true)
+    eq('both readings emitted, neither discarded',
+      [t.bounce_age_sessions != null, t.sessions_low_to_high != null], [true, true])
+  }
 }
 
 // ── completedCandles / weeklyBlock — weekly bar boundary artifact (fixed

@@ -2417,12 +2417,39 @@ export const EPOCHS = {
   // warn-only read, so none is retroactively broken; only a report dated
   // on/after it must comply.
   nonCryptoSchema: '2026-08-05',
+  // Declared Channel B gate measurement basis (FR §4 "Gate measurement
+  // convention"). Gates 1, 2 and 5 each name a quantity with more than one
+  // defensible endpoint/window and declared none; on 2026-08-06 that swung
+  // BTC 7/9 → 5/9 and ETH 7/9 → 6/9 on the same tape, across Channel B's
+  // Phase 2 floor of 6. Same failure mode as nonCryptoSchema one level over:
+  // that froze the DENOMINATOR (which gates are active), this pins the
+  // NUMERATOR (which gates pass). Ship-date epoch on the same principle —
+  // every existing report predates it and keeps the warn-only read.
+  gateMeasurement: '2026-08-07',
 }
 export const MACHINE_BLOCK_EPOCH = EPOCHS.machineBlock
 export const DISCRETION_EPOCH = EPOCHS.discretionAndTwoChannel
 export const ENTRY_PRICE_EPOCH = EPOCHS.entryPrice
 export const NONCRYPTO_SCHEMA_EPOCH = EPOCHS.nonCryptoSchema
 export const COMPANION_FR_EPOCH = EPOCHS.companionFR
+export const GATE_MEASUREMENT_EPOCH = EPOCHS.gateMeasurement
+
+/**
+ * The declared measurement basis for each ambiguous Channel B gate (FR §4).
+ * Values are the ONLY accepted bases — a report may not invent a third.
+ * Gate 1 inherits §4B's Rally Extension leg ("current session high"), so the
+ * `bounce_high` reading that reports used before 2026-08-06 is not an
+ * alternative convention but an error. Gate 2 takes the tool's own
+ * `bounce_age_sessions` (low→current). Gate 5 windows "rejected from" to the
+ * bounce window. Each is the harder-to-short reading of its pair, per Hard
+ * Rule 6 — the convention may be re-argued by a calibration on evidence, but
+ * never by a report at the moment it is inconvenient.
+ */
+export const FR_B_GATE_BASIS = {
+  1: 'current_session_high',
+  2: 'low_to_current',
+  5: 'bounce_window',
+}
 
 /** Reports are timestamped in local EST/EDT per the repo's Output Convention. */
 export const REPORT_ZONE = 'America/New_York'
