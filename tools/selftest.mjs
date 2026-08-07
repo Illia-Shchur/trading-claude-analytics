@@ -2167,13 +2167,31 @@ ok('output ends in a trailing newline', canonicalJSON({ a: 1 }).endsWith('}\n'))
     [frText, /time stop/i, 'FR: mandatory time stop present'],
     [frText, /14[- ]days?/, 'FR: analyst-discretion 14-day clock present'],
     [frText, /20%/, 'FR: analyst-discretion 20% cap present'],
-    [frText, /funding veto/i, 'FR: funding veto gate named'],
+    [frText, /gate 8 is the only gate.{0,40}voids an unlock/i, 'FR: funding veto gate (gate 8) named'],
     [frText, /Deep-Value Override has no analogue/i, 'FR: Deep-Value Override exclusion stated'],
     [frText, /Phase 3/, 'FR: Phase 3 (bear-continuation exclusion) referenced'],
     [frText, /basis\.reliable/, 'FR: basis.reliable referenced'],
     [frText, /custody/, 'FR: custody concept referenced'],
   ]
   for (const [text, re, label] of presenceChecks) ok(label, re.test(text))
+
+  // NON-CRYPTO-ANNEX.md gate (Stage 5, 2026-08-07): the annex moved out of
+  // FR SKILL.md behind a hard STOP-and-Read instruction. The same orphaning
+  // risk the revisionLogPaths vectors guard against applies here — a missing
+  // or gutted annex is a report proceeding on a non-crypto asset with none
+  // of the ten binding restrictions applied, and nothing else would catch it.
+  const annexPath = `${repoRoot}.claude/skills/flying-rocket-analytics/NON-CRYPTO-ANNEX.md`
+  const annexPresent = existsSync(annexPath)
+  ok('NON-CRYPTO-ANNEX.md exists at the derived sibling path', annexPresent)
+  const annexText = annexPresent ? readFileSync(annexPath, 'utf8') : ''
+  ok('FR SKILL.md points at NON-CRYPTO-ANNEX.md with a hard STOP instruction',
+    /STOP before producing any number and Read `NON-CRYPTO-ANNEX\.md`/.test(frText))
+  ok('FR SKILL.md no longer carries the ten-item annex inline',
+    !/\*\*10\. Standing N=1 caveat/.test(frText))
+  for (let n = 1; n <= 10; n++) {
+    ok(`NON-CRYPTO-ANNEX.md retains item ${n}`, new RegExp(`\\*\\*${n}\\.\\s`).test(annexText))
+  }
+  ok('NON-CRYPTO-ANNEX.md still names FR_NONCRYPTO_NA (item 1, code-enforced)', /FR_NONCRYPTO_NA/.test(annexText))
 }
 
 // ── calib-run.mjs: zeroTuneDiagnoses / mergeStrictestWins / applyTriageClusters ─

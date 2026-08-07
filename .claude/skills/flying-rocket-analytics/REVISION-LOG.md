@@ -8,6 +8,18 @@ Read by: `tools/calib-run.mjs` (prior-tune re-validation + pre-apply audit) and 
 
 ---
 
+### 2026-08-07 — SKILL compaction Stage 5: non-crypto annex gated behind a hard Read
+
+Moved the "Adapted Non-Crypto Reads (OUT OF DECLARED SCOPE)" section (ten binding restrictions on gold/SPX/NDX adaptations, ~9,700 ch) out of `flying-rocket-analytics/SKILL.md` into a new sibling file, `NON-CRYPTO-ANNEX.md`. Unlike the Hard Rule 8 pointer (Stage 2) or this log itself, this section is loaded on **zero** crypto reports and **all** non-crypto ones — applicability is knowable at turn 0 from the asset name, not discovered mid-report, so it's safe to gate behind a Read rather than a CLAUDE.md pointer (CLAUDE.md is auto-loaded on every report regardless of asset, which would cost the crypto majority instead of saving it).
+
+The inline replacement is a hard STOP: "If the requested asset is not crypto: STOP before producing any number and Read `NON-CRYPTO-ANNEX.md` in full... A non-crypto read produced without reading it is invalid and must not be published." Item 10's self-deletion instruction ("delete this item 10 from the SKILL") was retargeted to "from this annex" since the annex is now where item 10 lives.
+
+**Residual risk, corrected in this pass:** the annex previously said "applies to 4 of 23 historical FR reports (17%)" nowhere explicitly — added that framing directly into the annex's closing note, correcting an implicit "near 0%" impression. Also stated plainly: only items 1 (`FR_NONCRYPTO_NA`) and 4 (pinned rounding) are code-enforced in `tools/lint-report.mjs`; items 2, 3, 5–10 are prose-only, and the two drift symptoms that actually materialized (denominator drift, rounding drift) are both in the enforced pair.
+
+New selftest.mjs guard: the annex file's existence, all ten items' presence, `FR_NONCRYPTO_NA`'s citation, and the SKILL's hard-Read pointer are all checked — the same orphaning-risk pattern the `revisionLogPaths` vectors already guard for the Framework Revision Log, applied here because a missing or gutted annex means a non-crypto report proceeding with none of its ten restrictions and nothing else catching it.
+
+FR SKILL.md -9,014 ch. No change to any rubric, band, threshold, stop, or cap.
+
 ### 2026-08-07 — SKILL compaction Stage 1: conflicts fixed (C6–C9 affecting FR); C5 flagged, not resolved
 
 Part of a 6-stage compaction pass on both frameworks' SKILL files (Stage 0 fixed rotted line-number pointers with a new `[R:rule-name]` tag convention; this stage fixes cross-file content conflicts found during the compaction audit, before any deduplication). Fixes landing in this file:
