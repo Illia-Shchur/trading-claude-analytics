@@ -123,8 +123,11 @@ if (target === 'all') {
 
 const projected = positionForAsset(snap, target)
 if (!projected.covered) {
-  emit({ ...base, ok: false, asset: projected.asset, covered: false, reason: projected.reason,
-    note: projected.note })
+  // Spread the FULL projection, not a hand-picked subset — a not-covered
+  // asset with an alias (e.g. gold → PAXG) must still surface
+  // requested_asset/ledger_asset/alias_note per Hard Rule 8; cherry-picking
+  // fields here previously dropped them silently.
+  emit({ ...base, ...projected, ok: false, covered: false })
   // Exit 2 is its own code precisely so "not covered" can never be confused with
   // "expired" upstream — they route to different report language.
   process.exit(2)
