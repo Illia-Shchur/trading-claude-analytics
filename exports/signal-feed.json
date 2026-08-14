@@ -1,9 +1,9 @@
 {
   "counts": {
-    "files_in_reports_dir": 140,
-    "framework_reports": 133,
+    "files_in_reports_dir": 141,
+    "framework_reports": 134,
     "non_framework_files_ignored": 7,
-    "signals": 67,
+    "signals": 68,
     "skipped_no_machine_block": 66,
     "skipped_post_epoch_missing_block": 0,
     "skipped_unparseable": 0
@@ -15,7 +15,7 @@
     "machine_block": "2026-07-11",
     "report_phase_registry": "report-phase-registry/1"
   },
-  "generated_at": "2026-08-14T09:27:04Z",
+  "generated_at": "2026-08-14T13:01:11Z",
   "generated_by": "tools/export-signals.mjs",
   "ignored_files": [
     {
@@ -18692,6 +18692,231 @@
         "p3_note": "Phase 3 reads the MECHANICAL score — no analyst channel reaches it"
       },
       "verdict": "OBSERVE — adjusted 9/20, gates 2/8, 100% dry cold start. Phase 1A mechanically gate-blocked; D2 near-miss available and declined. Collar ON."
+    },
+    {
+      "asset": "SP500",
+      "channel": "A",
+      "channel_inference_basis": "declared in the machine block",
+      "channel_inferred": false,
+      "content_sha256": "140c07bed27b5bb3863a49bb886c0e3e417dd40e6851ba91ed1a98f1d7deebd0",
+      "deployment": {
+        "deployed_pct": "0",
+        "dry_pct": "100",
+        "filled_detection": "deployed === true || typeof entry_price === \"number\" || typeof entry === \"number\"",
+        "filled_detection_caveat": "before the entry_price epoch (2026-07-29) no tranche in this corpus carried deployed:true or a numeric entry — 152/152 tranches across 39 reports encode `entry` as prose — so filled_tranche_count is structurally 0 on every pre-epoch signal. It is an artifact of the old schema, not an observation that nothing was filled.",
+        "filled_tranche_count": 0,
+        "throttle_released": false,
+        "tranche_count": 0,
+        "tranches": []
+      },
+      "ev": {
+        "scenarios": [
+          {
+            "high": "8344.92",
+            "low": "7954.97",
+            "mid": null,
+            "name": "Continued Rally",
+            "p": "45"
+          },
+          {
+            "high": "7954.97",
+            "low": "7643.01",
+            "mid": null,
+            "name": "Range / digest",
+            "p": "35"
+          },
+          {
+            "high": "7507.75",
+            "low": "7070.35",
+            "mid": null,
+            "name": "Mean-Revert to 200dma-50dma",
+            "p": "15"
+          },
+          {
+            "high": "7019.09",
+            "low": "6395.17",
+            "mid": null,
+            "name": "Bear Reversal",
+            "p": "5"
+          }
+        ],
+        "stated_ev_usd": "7825.85",
+        "vs_spot_pct": "0.34"
+      },
+      "framework": "flying_rocket",
+      "gates": {
+        "active": 6,
+        "na": [
+          4,
+          6,
+          9
+        ],
+        "passed": [
+          3
+        ],
+        "passed_count": 1,
+        "passed_mask": 4
+      },
+      "regime": {
+        "ma200_falling": false,
+        "pct_below_1y_ath": "0.23",
+        "price_below_ma200": false
+      },
+      "report_at_derivation": "derived by interpreting the filename's HHMM in America/New_York (the repo's Output Convention) — the machine block carries a date but no time field, and (asset, framework, date) collides (btc/eth × fallen_knives on 2026-07-14 and 2026-07-18), so report_file is the primary key",
+      "report_at_utc": "2026-08-14T12:54:00Z",
+      "report_date": "2026-08-14",
+      "report_file": "sp500_flying_rocket_20260814_0854.md",
+      "report_local_time": "08:54",
+      "report_zone": "America/New_York",
+      "rubric": "FR-A/1",
+      "schema_epoch": "discretion_and_two_channel",
+      "score": {
+        "adjusted": "10",
+        "cap_applied": false,
+        "cap_value": null,
+        "discretionary": "0",
+        "discretionary_inferred": false,
+        "inference_basis": "declared in the machine block",
+        "legs": [
+          {
+            "block_key": "euphoria",
+            "max": 5,
+            "min": 0,
+            "ordinal": 1,
+            "rubric_name": "euphoria",
+            "value": "2"
+          },
+          {
+            "block_key": "momentum",
+            "max": 4,
+            "min": 0,
+            "ordinal": 2,
+            "rubric_name": "momentum",
+            "value": "2"
+          },
+          {
+            "block_key": "valuation",
+            "max": 5,
+            "min": 0,
+            "ordinal": 3,
+            "rubric_name": "valuation",
+            "value": "5"
+          },
+          {
+            "block_key": "distribution",
+            "max": 3,
+            "min": 0,
+            "ordinal": 4,
+            "rubric_name": "distribution",
+            "value": "0"
+          },
+          {
+            "block_key": "vulnerability",
+            "max": 3,
+            "min": 0,
+            "ordinal": 5,
+            "rubric_name": "vulnerability",
+            "value": "1"
+          }
+        ],
+        "mechanical": "10",
+        "mechanical_inferred": false,
+        "penalty": "0",
+        "raw": "10",
+        "rounding": "half-down"
+      },
+      "spot_source": "Yahoo ^GSPC 2026-08-13 close, priority_first_fallback; corroborated by AP. Tool panel low_confidence=true because no synchronized cash quotes; Yahoo ES=F 7828.25 is a different instrument and 0.38% above cash.",
+      "spot_usd": "7798.99",
+      "stops": null,
+      "tagging": {
+        "active_tags": [],
+        "channel": "A",
+        "framework": "flying_rocket",
+        "instrument_class": "non_crypto_derivative",
+        "mode": "phase_registry",
+        "registry": {
+          "asset": "SP500",
+          "channel": "A",
+          "entries": [
+            {
+              "asset": "SP500",
+              "canonical_tag": "FR-A-1A-SP500-20260814-0854",
+              "decision": "STAND_DOWN",
+              "instrument_class": "non_crypto_derivative",
+              "phase": "1A",
+              "report_date": "2026-08-14",
+              "report_file": "sp500_flying_rocket_20260814_0854.md",
+              "report_local_time": "08:54",
+              "report_version": "report-machine/1"
+            },
+            {
+              "asset": "SP500",
+              "canonical_tag": "FR-A-1B-SP500-20260814-0854",
+              "decision": "STAND_DOWN",
+              "instrument_class": "non_crypto_derivative",
+              "phase": "1B",
+              "report_date": "2026-08-14",
+              "report_file": "sp500_flying_rocket_20260814_0854.md",
+              "report_local_time": "08:54",
+              "report_version": "report-machine/1"
+            },
+            {
+              "asset": "SP500",
+              "canonical_tag": "FR-A-2-SP500-20260814-0854",
+              "decision": "STAND_DOWN",
+              "instrument_class": "non_crypto_derivative",
+              "phase": "2",
+              "report_date": "2026-08-14",
+              "report_file": "sp500_flying_rocket_20260814_0854.md",
+              "report_local_time": "08:54",
+              "report_version": "report-machine/1"
+            },
+            {
+              "asset": "SP500",
+              "canonical_tag": "FR-A-3-SP500-20260814-0854",
+              "decision": "STAND_DOWN",
+              "instrument_class": "non_crypto_derivative",
+              "phase": "3",
+              "report_date": "2026-08-14",
+              "report_file": "sp500_flying_rocket_20260814_0854.md",
+              "report_local_time": "08:54",
+              "report_version": "report-machine/1"
+            }
+          ],
+          "framework": "flying_rocket",
+          "instrument_class": "non_crypto_derivative",
+          "report_date": "2026-08-14",
+          "report_file": "sp500_flying_rocket_20260814_0854.md",
+          "report_local_time": "08:54",
+          "report_version": "report-machine/1",
+          "report_zone": "America/New_York",
+          "schema": "report-phase-registry/1",
+          "version": "1"
+        },
+        "report_asset": "SP500",
+        "report_date": "2026-08-14",
+        "report_file": "sp500_flying_rocket_20260814_0854.md",
+        "report_local_time": "08:54",
+        "report_version": "report-machine/1",
+        "reserved_tags": [
+          "FR-A-1A-SP500-20260814-0854",
+          "FR-A-1B-SP500-20260814-0854",
+          "FR-A-2-SP500-20260814-0854",
+          "FR-A-3-SP500-20260814-0854"
+        ],
+        "status": "REGISTERED",
+        "venue": "Binance derivatives"
+      },
+      "unlock": {
+        "highest_phase_unlocked_by_score": null,
+        "ladder": "FR-A",
+        "p1a": 11,
+        "p1b": 13,
+        "p2": 15,
+        "p3": 19,
+        "p3_note": "Phase 3 reads the MECHANICAL score — no analyst channel reaches it"
+      },
+      "verdict": "STAND DOWN. ADAPTED / OUT-OF-SCOPE SPX read under NON-CRYPTO-ANNEX.md, read in full before any number. Channel A uncapped; Channel B unavailable; Phase 3 unreachable. Mechanical 10, discretionary 0.0, adjusted 10, gates 1/6 against effective Phase-1A floor 3, Total Short EV -0.19% true and -0.34% for gates. Score below 11, gates two short, and +3% edge filter fails. No tranche authorized; all phases dry. Annex item-10 retirement condition not tripped. Squeeze-trap penalty is a missing protection, not a measured zero; machine penalty 0 exists only for schema arithmetic. Hard Rule 6 impairments: size-cap reconciliation unavailable, two cover triggers unevaluable, carry veto structurally unreachable, and funding veto has no instrument. FK companion computed 0/20 from same fetch; inverse relationship holds and force-cover is not live. Position ledger expired and has no SPX mapping; no zero position inferred."
     }
   ],
   "skipped": [
