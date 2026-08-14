@@ -40,7 +40,9 @@
 //                relit or a confirmed higher-low printed, releasing the 40%/25% caps),
 //                tranches:[{phase,pct,entry,entry_price(opt num),deployed(opt bool),
 //                stop(FR/FK-discretionary), time_stop(FR), discretionary(FK bool),
-//                channel(FK: "D1"|"D2"|"override")}]}
+//                channel(FK: "D1"|"D2"|"override")]}
+//   tagging (required from 2026-08-12): {mode:"phase_registry",
+//             instrument_class, active_tags:[], reserved_tags:[], status}
 //         A tranche is FILLED — and its score unlock line, gate floor, stop
 //         band, size cap and ratchet enforced — when `deployed:true` or a
 //         numeric `entry_price` (or a numeric legacy `entry`) is present. Dry
@@ -86,6 +88,7 @@ if (!file) { console.error('usage: node tools/lint-report.mjs <report.md> [--leg
 // Ship date of the Analyst Discretion Layer (FK SKILL D1–D6). Reports dated
 // before it are linted under the prior schema; on/after, its fields are hard.
 const DISCRETION_EPOCH = '2026-07-27'
+const TAG_EPOCH = '2026-08-12'
 
 const errors = [], warnings = []
 const err = m => errors.push(m)
@@ -302,6 +305,43 @@ const D = b.deployment || {}
 if (typeof D.deployed_pct === 'number' && typeof D.dry_pct === 'number' && Math.abs(D.deployed_pct + D.dry_pct - 100) > 0.01)
   err(`deployed_pct + dry_pct = ${D.deployed_pct + D.dry_pct}, not 100`)
 const tranches = D.tranches || []
+
+// ── canonical tag registry (2026-08-12) ─────────────────────────────────────
+// Tags are required metadata for every new report, including adapted
+// non-crypto derivative reports. A reserved tag is not evidence of a fill;
+// active_tags must remain empty when no tranche is authorized or filled.
+{
+  const postTags = String(b.date) >= TAG_EPOCH
+  const T = b.tagging || {}
+  const allowed = new Set([
+    'FK-P1A', 'FK-P1B', 'FK-P2', 'FK-P3', 'FK-OVR', 'FK-D1', 'FK-D2',
+    'FR-A-1A', 'FR-A-1B', 'FR-A-2', 'FR-A-3',
+    'FR-B-1A', 'FR-B-1B', 'FR-B-2', 'FR-S1', 'FR-S2', 'UNFRAMED'
+  ])
+  const arrays = [['active_tags', T.active_tags], ['reserved_tags', T.reserved_tags]]
+  if (!T || T.mode !== 'phase_registry') {
+    (postTags ? err : warn)(`tagging.mode must be "phase_registry" — every report carries a canonical tag registry (report-machine/1, ${TAG_EPOCH})`)
+  }
+  if (!['crypto', 'non_crypto_derivative', 'non_crypto_cash'].includes(T.instrument_class)) {
+    (postTags ? err : warn)(`tagging.instrument_class must be "crypto", "non_crypto_derivative" or "non_crypto_cash"`)
+  }
+  for (const [name, value] of arrays) {
+    if (!Array.isArray(value)) {
+      (postTags ? err : warn)(`tagging.${name} must be an array of canonical ledger tags`)
+      continue
+    }
+    for (const tag of value) if (!allowed.has(tag))
+      err(`tagging.${name} contains unknown tag ${JSON.stringify(tag)}`)
+  }
+  if (Array.isArray(T.reserved_tags) && T.reserved_tags.length === 0)
+    (postTags ? err : warn)('tagging.reserved_tags is empty — every report must publish at least one applicable tag, even when all phases are dry')
+  const active = Array.isArray(T.active_tags) ? T.active_tags : []
+  const filled = tranches.filter(trancheFilled)
+  if (filled.length === 0 && active.length > 0)
+    err(`tagging.active_tags=${JSON.stringify(active)} but deployment has no filled tranche — reserved tags are not live positions`)
+  if (filled.length > 0 && active.length === 0)
+    err('deployment contains a filled tranche but tagging.active_tags is empty — every fill needs its canonical ledger tag')
+}
 
 // ── fill encoding (report-machine/1 extension, 2026-07-29) ──────────────────
 // A fill must be MACHINE-VISIBLE, or none of the mechanical discipline below
