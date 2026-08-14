@@ -77,7 +77,9 @@ import { roundScore, ROUNDING, ceilThresholds, FK_V_GATES, evCheck, stopCoherenc
   frUnlockLadder, FR_GATE_FLOORS, frStopBand, FR_MAX_PER_ASSET_PCT,
   fillPrice, trancheFilled, entryLooksLikeFill, ENTRY_PRICE_EPOCH, frComposite, COMPANION_FR_EPOCH,
   frNonCryptoClass, FR_NONCRYPTO_NA, NONCRYPTO_SCHEMA_EPOCH,
-  FR_B_GATE_BASIS, GATE_MEASUREMENT_EPOCH } from './lib.mjs'
+  FR_B_GATE_BASIS, GATE_MEASUREMENT_EPOCH,
+  reportFileMeta, reportPhaseRegistryIssues, buildReportPhaseRegistry,
+  REPORT_PHASE_DECISIONS, REPORT_PHASE_INSTRUMENT_CLASSES } from './lib.mjs'
 
 const round2 = n => Math.round(n * 100) / 100
 
@@ -98,8 +100,8 @@ const text = readFileSync(file, 'utf8')
 const name = basename(file)
 
 // ── filename convention ─────────────────────────────────────────────────────
-const fm = name.match(/^([a-z0-9]+)_(fallen_knives|flying_rocket)_(\d{4})(\d{2})(\d{2})_(\d{4})\.md$/)
-if (!fm) err(`filename "${name}" does not match asset_framework_YYYYMMDD_HHMM.md`)
+const meta = reportFileMeta(name)
+if (!meta.ok) err(`filename "${name}" does not match asset_framework_YYYYMMDD_HHMM.md`)
 
 // ── machine block ───────────────────────────────────────────────────────────
 const bm = text.match(/```json machine\s*\n([\s\S]*?)```/)
@@ -115,11 +117,10 @@ const FW = b.framework
 if (!['fallen_knives', 'flying_rocket'].includes(FW)) err(`framework "${FW}" invalid`)
 
 // identity vs filename
-if (fm) {
-  if (fm[1] !== String(b.asset || '').toLowerCase()) err(`asset mismatch: filename "${fm[1]}" vs block "${b.asset}"`)
-  if (fm[2] !== FW) err(`framework mismatch: filename "${fm[2]}" vs block "${FW}"`)
-  const fdate = `${fm[3]}-${fm[4]}-${fm[5]}`
-  if (fdate !== b.date) err(`date mismatch: filename ${fdate} vs block ${b.date}`)
+if (meta.ok) {
+  if (meta.asset !== String(b.asset || '').toUpperCase()) err(`asset mismatch: filename "${meta.asset}" vs block "${b.asset}"`)
+  if (meta.framework !== FW) err(`framework mismatch: filename "${meta.framework}" vs block "${FW}"`)
+  if (meta.date !== b.date) err(`date mismatch: filename ${meta.date} vs block ${b.date}`)
 }
 if (!b.spot || typeof b.spot.value !== 'number') err('spot.value missing')
 if (b.spot && !b.spot.source) warn('spot.source missing — every figure carries source + timestamp (Hard Rule 1)')
@@ -306,41 +307,38 @@ if (typeof D.deployed_pct === 'number' && typeof D.dry_pct === 'number' && Math.
   err(`deployed_pct + dry_pct = ${D.deployed_pct + D.dry_pct}, not 100`)
 const tranches = D.tranches || []
 
-// ── canonical tag registry (2026-08-12) ─────────────────────────────────────
-// Tags are required metadata for every new report, including adapted
-// non-crypto derivative reports. A reserved tag is not evidence of a fill;
-// active_tags must remain empty when no tranche is authorized or filled.
+// ── immutable report-phase registry (2026-08-12) ───────────────────────────
+// The registry describes the report's authorization state. It is deliberately
+// independent of deployment/fill fields: a later deal fill cannot mutate the
+// report's published decision, and a reserved tag is not evidence of a fill.
 {
   const postTags = String(b.date) >= TAG_EPOCH
   const T = b.tagging || {}
-  const allowed = new Set([
-    'FK-P1A', 'FK-P1B', 'FK-P2', 'FK-P3', 'FK-OVR', 'FK-D1', 'FK-D2',
-    'FR-A-1A', 'FR-A-1B', 'FR-A-2', 'FR-A-3',
-    'FR-B-1A', 'FR-B-1B', 'FR-B-2', 'FR-S1', 'FR-S2', 'UNFRAMED'
-  ])
-  const arrays = [['active_tags', T.active_tags], ['reserved_tags', T.reserved_tags]]
-  if (!T || T.mode !== 'phase_registry') {
-    (postTags ? err : warn)(`tagging.mode must be "phase_registry" — every report carries a canonical tag registry (report-machine/1, ${TAG_EPOCH})`)
+  const requiredMode = `tagging.mode must be "phase_registry" — every report carries an immutable report-phase registry (report-machine/1, ${TAG_EPOCH})`
+  if (T.mode !== 'phase_registry') (postTags ? err : warn)(requiredMode)
+  if (!REPORT_PHASE_INSTRUMENT_CLASSES.includes(T.instrument_class))
+    (postTags ? err : warn)('tagging.instrument_class must be "crypto", "non_crypto_derivative" or "non_crypto_cash"')
+
+  const ch = FW === 'fallen_knives' ? null : (['A', 'B', 'none'].includes(b.channel) ? b.channel : undefined)
+  if (meta.ok && T.registry) {
+    for (const issue of reportPhaseRegistryIssues(T.registry, meta, { framework: FW, channel: ch })) err(issue)
+  } else if (postTags) {
+    err('tagging.registry is required and must contain exact report-specific canonical tags and decisions')
+  } else {
+    warn('tagging.registry is absent on a pre-epoch report — legacy report; no registry arithmetic is applied')
   }
-  if (!['crypto', 'non_crypto_derivative', 'non_crypto_cash'].includes(T.instrument_class)) {
-    (postTags ? err : warn)(`tagging.instrument_class must be "crypto", "non_crypto_derivative" or "non_crypto_cash"`)
+
+  // Compatibility aliases remain visible for old consumers, but are never
+  // used to determine validity and never compared with deployment fills.
+  for (const key of ['active_tags', 'reserved_tags']) {
+    if (T[key] !== undefined && !Array.isArray(T[key])) err(`tagging.${key} must be an array when present`)
   }
-  for (const [name, value] of arrays) {
-    if (!Array.isArray(value)) {
-      (postTags ? err : warn)(`tagging.${name} must be an array of canonical ledger tags`)
-      continue
-    }
-    for (const tag of value) if (!allowed.has(tag))
-      err(`tagging.${name} contains unknown tag ${JSON.stringify(tag)}`)
+  if (Array.isArray(T.reserved_tags) && T.registry &&
+      JSON.stringify(T.reserved_tags) !== JSON.stringify(T.registry.entries.map(e => e.canonical_tag)))
+    err('tagging.reserved_tags must mirror registry entry order (compatibility alias only)')
+  for (const tag of (Array.isArray(T.active_tags) ? T.active_tags : [])) {
+    if (typeof tag !== 'string' || tag.length > 64) err(`tagging.active_tags contains an invalid tag ${JSON.stringify(tag)}`)
   }
-  if (Array.isArray(T.reserved_tags) && T.reserved_tags.length === 0)
-    (postTags ? err : warn)('tagging.reserved_tags is empty — every report must publish at least one applicable tag, even when all phases are dry')
-  const active = Array.isArray(T.active_tags) ? T.active_tags : []
-  const filled = tranches.filter(trancheFilled)
-  if (filled.length === 0 && active.length > 0)
-    err(`tagging.active_tags=${JSON.stringify(active)} but deployment has no filled tranche — reserved tags are not live positions`)
-  if (filled.length > 0 && active.length === 0)
-    err('deployment contains a filled tranche but tagging.active_tags is empty — every fill needs its canonical ledger tag')
 }
 
 // ── fill encoding (report-machine/1 extension, 2026-07-29) ──────────────────

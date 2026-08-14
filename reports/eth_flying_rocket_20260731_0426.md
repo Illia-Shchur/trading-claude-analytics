@@ -459,6 +459,15 @@ Two things on this board are one step from mattering. Fallen Knives is at 11 pub
 
 *Sources: [CoinGecko](https://www.coingecko.com/en/coins/ethereum), [Binance Futures API](https://fapi.binance.com), [Kraken](https://api.kraken.com), [Coinbase](https://api.coinbase.com), [Yahoo Finance ETH-USD](https://finance.yahoo.com/quote/ETH-USD/), [Alternative.me F&G](https://api.alternative.me/fng/), [FRED DFII10](https://fred.stlouisfed.org/series/DFII10), [CoinDesk — Jul-30 liquidations](https://www.coindesk.com/markets/2026/07/30/bitcoin-ether-whipsaw-wipes-out-usd280-million-even-as-prices-remain-flat-over-24-hours), [CryptoTimes — FOMC hold](https://www.cryptotimes.io/2026/07/30/bitcoin-ethereum-fall-after-fomc-meeting-keeps-rates-unchanged/), [Bitcoin World — ETH ETF Jul-28](https://bitcoinworld.co.in/spot-ethereum-etfs-inflow-streak-july-28/), [COINOTAG — ETH ETF Jul-29](https://en.coinotag.com/ethereum-etf-inflows-14-53m), [CryptoBriefing — Jul-27 flows](https://cryptobriefing.com/bitcoin-etfs-see-12m-outflow-ethereum-funds-gain-9m-on-july-27/), [BeInCrypto — BTC dominance](https://beincrypto.com/bitcoin-dominance-explodes-to-60-66-and-buries-altseason-hopes-for-2026/). Figures captured 2026-07-31, 08:17–08:26 UTC.*
 
+### Immutable report-phase registry
+
+| Phase | Canonical tag | Decision | Instrument class |
+|---|---|---|---|
+| 1A | FR-B-1A-ETH-20260731-0426 | STAND_DOWN | crypto |
+| 1B | FR-B-1B-ETH-20260731-0426 | STAND_DOWN | crypto |
+| 2 | FR-B-2-ETH-20260731-0426 | STAND_DOWN | crypto |
+
+Registry schema: report-phase-registry/1; version: 1; origin: eth_flying_rocket_20260731_0426.md (report-machine/1).
 ```json machine
 {
   "schema": "report-machine/1",
@@ -609,6 +618,72 @@ Two things on this board are one step from mattering. Fallen Knives is at 11 pub
       ],
       "correction": "prior report's prose printed GATES 6/9 while its machine block listed passed [1,2,3,4,6,7,8] = 7/9; the list was correct, the count was a transcription error. Gate board is FLAT at 7/9, not improved. Labeled measurement correction, no score effect."
     }
+  },
+  "tagging": {
+    "mode": "phase_registry",
+    "registry": {
+      "schema": "report-phase-registry/1",
+      "version": 1,
+      "report_file": "eth_flying_rocket_20260731_0426.md",
+      "report_version": "report-machine/1",
+      "framework": "flying_rocket",
+      "channel": "B",
+      "asset": "ETH",
+      "report_date": "2026-07-31",
+      "report_local_time": "04:26",
+      "report_zone": "America/New_York",
+      "instrument_class": "crypto",
+      "entries": [
+        {
+          "phase": "1A",
+          "canonical_tag": "FR-B-1A-ETH-20260731-0426",
+          "decision": "STAND_DOWN",
+          "instrument_class": "crypto",
+          "report_file": "eth_flying_rocket_20260731_0426.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-07-31",
+          "report_local_time": "04:26"
+        },
+        {
+          "phase": "1B",
+          "canonical_tag": "FR-B-1B-ETH-20260731-0426",
+          "decision": "STAND_DOWN",
+          "instrument_class": "crypto",
+          "report_file": "eth_flying_rocket_20260731_0426.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-07-31",
+          "report_local_time": "04:26"
+        },
+        {
+          "phase": "2",
+          "canonical_tag": "FR-B-2-ETH-20260731-0426",
+          "decision": "STAND_DOWN",
+          "instrument_class": "crypto",
+          "report_file": "eth_flying_rocket_20260731_0426.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-07-31",
+          "report_local_time": "04:26"
+        }
+      ]
+    },
+    "instrument_class": "crypto",
+    "report_file": "eth_flying_rocket_20260731_0426.md",
+    "report_version": "report-machine/1",
+    "framework": "flying_rocket",
+    "channel": "B",
+    "report_asset": "ETH",
+    "report_date": "2026-07-31",
+    "report_local_time": "04:26",
+    "active_tags": [],
+    "reserved_tags": [
+      "FR-B-1A-ETH-20260731-0426",
+      "FR-B-1B-ETH-20260731-0426",
+      "FR-B-2-ETH-20260731-0426"
+    ],
+    "status": "REGISTERED"
   }
 }
 ```

@@ -373,6 +373,16 @@ So the discipline is unchanged, and it is not a hedge to say so. The score is 11
 
 ---
 
+### Immutable report-phase registry
+
+| Phase | Canonical tag | Decision | Instrument class |
+|---|---|---|---|
+| 1A | FK-P1A-BTC-20260725-1020 | UNVERIFIED | crypto |
+| 1B | FK-P1B-BTC-20260725-1020 | LOCKED | crypto |
+| 2 | FK-P2-BTC-20260725-1020 | LOCKED | crypto |
+| 3 | FK-P3-BTC-20260725-1020 | LOCKED | crypto |
+
+Registry schema: report-phase-registry/1; version: 1; origin: btc_fallen_knives_20260725_1020.md (report-machine/1).
 ```json machine
 {
   "schema": "report-machine/1",
@@ -434,6 +444,84 @@ So the discipline is unchanged, and it is not a hedge to say so. The score is 11
     "tier1_next_5td": "FOMC Wed Jul-29 2:00 PM ET (federalreserve.gov); Q2 GDP advance + June PCE Thu Jul-30 8:30 AM ET, double release (BEA schedule); ECI Q2 + UMich final Fri Jul-31 (tier 2). Beyond: NFP Fri Aug-7 8:30 AM (BLS), CPI Wed Aug-12 8:30 AM (BLS). ALL prior-report dates CONFIRMED, no corrections. Latest prints: CPI June (rel Jul-14) 3.5% headline / 2.6% core -- downside surprise but energy-driven and stale vs $96-100 Brent; PCE May (rel Jun-25) 4.1% / 3.4% core",
     "news": "~$58.4M across 8 hacks Jul 19-25, 4 of them bridges (AFX Trade $24.15M Arbitrum via 5 compromised hot-validator bridge keys -> 12,467 ETH; Verus-Ethereum bridge $7.54M, a REPEAT of May's bug; B2 Network $3.86M; Triple-A ~$9.5M; Lien Finance $542K). Poolin Technology Chapter 11 Jul-22 D.N.J. -- $173.1M liabilities incl $163.7M owed to ~11,700 users frozen since 2022; once ~18-20% of global hashrate. BitMEX announced full shutdown Jul-23 after 11 years -- explicitly VOLUNTARY wind-down, NOT insolvency; final Sep-23. New tariff wall 10-12.5% on dozens of countries >99% of US trade + 50% on most Canadian goods (CNBC Jul-24). BofA Bull & Bear Indicator highest since 2021. CLARITY Act stalled pre-recess (9 legislative days left, no cloture) BUT Polymarket odds 32% Jul-17 -> 43% Jul-21 -> 38% Jul-23 = NET UP on the week, not a collapse -- deferred catalyst, not broken. EU 21st Russia sanctions package Jul-23 extends bans to 14 non-EU crypto platforms. Deribit Jul-24 expiry: BTC $1.21B notional, put/call 0.90, max pain $64,500 -- essentially ON spot",
     "companion_fr": { "composite": 1, "gates": 0, "cap_bound": true, "cap_attainable": 8, "standalone_report_triggered": false, "trigger_eval": "score 11 holds, no unlock cross; FR 1<9; no $100M short-side day (peak $90M market-wide Jul-24); cap binds (-49.31% below 1y high)", "legs": { "euphoria": 0, "momentum": 0, "valuation": 0, "distribution": 1, "vulnerability": 0 } }
+  },
+  "tagging": {
+    "mode": "phase_registry",
+    "registry": {
+      "schema": "report-phase-registry/1",
+      "version": 1,
+      "report_file": "btc_fallen_knives_20260725_1020.md",
+      "report_version": "report-machine/1",
+      "framework": "fallen_knives",
+      "channel": null,
+      "asset": "BTC",
+      "report_date": "2026-07-25",
+      "report_local_time": "10:20",
+      "report_zone": "America/New_York",
+      "instrument_class": "crypto",
+      "entries": [
+        {
+          "phase": "1A",
+          "canonical_tag": "FK-P1A-BTC-20260725-1020",
+          "decision": "UNVERIFIED",
+          "instrument_class": "crypto",
+          "report_file": "btc_fallen_knives_20260725_1020.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-07-25",
+          "report_local_time": "10:20"
+        },
+        {
+          "phase": "1B",
+          "canonical_tag": "FK-P1B-BTC-20260725-1020",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "btc_fallen_knives_20260725_1020.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-07-25",
+          "report_local_time": "10:20"
+        },
+        {
+          "phase": "2",
+          "canonical_tag": "FK-P2-BTC-20260725-1020",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "btc_fallen_knives_20260725_1020.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-07-25",
+          "report_local_time": "10:20"
+        },
+        {
+          "phase": "3",
+          "canonical_tag": "FK-P3-BTC-20260725-1020",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "btc_fallen_knives_20260725_1020.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-07-25",
+          "report_local_time": "10:20"
+        }
+      ]
+    },
+    "instrument_class": "crypto",
+    "report_file": "btc_fallen_knives_20260725_1020.md",
+    "report_version": "report-machine/1",
+    "framework": "fallen_knives",
+    "channel": null,
+    "report_asset": "BTC",
+    "report_date": "2026-07-25",
+    "report_local_time": "10:20",
+    "active_tags": [],
+    "reserved_tags": [
+      "FK-P1A-BTC-20260725-1020",
+      "FK-P1B-BTC-20260725-1020",
+      "FK-P2-BTC-20260725-1020",
+      "FK-P3-BTC-20260725-1020"
+    ],
+    "status": "REGISTERED"
   }
 }
 ```

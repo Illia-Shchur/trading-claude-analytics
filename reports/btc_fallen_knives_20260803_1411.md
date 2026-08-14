@@ -609,6 +609,16 @@ What actually stops capital moving today is neither of those. It is the ledger. 
 
 *Cash is a position. Patience is alpha — but idle cash has a measurable yield cost, and at $14,408.87 against a 3.78% bill that cost is about $45 a month. Pay it deliberately, and only until the ledger can tell you what you already own.*
 
+### Immutable report-phase registry
+
+| Phase | Canonical tag | Decision | Instrument class |
+|---|---|---|---|
+| 1A | FK-P1A-BTC-20260803-1411 | UNVERIFIED | crypto |
+| 1B | FK-P1B-BTC-20260803-1411 | LOCKED | crypto |
+| 2 | FK-P2-BTC-20260803-1411 | LOCKED | crypto |
+| 3 | FK-P3-BTC-20260803-1411 | LOCKED | crypto |
+
+Registry schema: report-phase-registry/1; version: 1; origin: btc_fallen_knives_20260803_1411.md (report-machine/1).
 ```json machine
 {
   "schema": "report-machine/1",
@@ -824,6 +834,84 @@ What actually stops capital moving today is neither of those. It is the ledger. 
     "scorecard": "8 bull / 10 bear — net bearish by 2, outside the within-1 limb",
     "effect": "no directional regime resolution claimed anywhere in the report; every forward statement carries a probability or an IF->THEN plus a named falsifier"
   },
-  "verdict": "HOLD; authorize nothing new until the ledger is refreshed. Mechanical 11/20 — NO LEG MOVED from Aug-01. D1 = -1.0, the FIRST NON-ZERO DISCRETIONARY TERM IN FRAMEWORK HISTORY, and it is NEGATIVE; adjusted 10/20. THE READ: the bottom's plumbing is in place and its psychology is absent. Price sits ON the 200-week mean (+0.43%, $63,549), MVRV-Z 0.3469 against a realized price of $52,367, LTH supply at a record with the strongest 30d accumulation in six years, reserves -78K BTC/6mo. Against that: funding POSITIVE at the 82nd percentile (zero negative intervals in 45), realized 30d vol at the 13th percentile of two years, 24h liquidations $58M, lowest F&G print in ten sessions 25. Value gates lit (3, 8), every fear gate dark (1, 2, 4, 7) — a cheap market, not a frightened one, and the pyramid's big tranches are reserved for frightened ones. D1 -1.0 RATIONALE: (i) the Coldcard exploit (~1,816 BTC/$114M, 5,200+ addresses, fourth wave live) contaminates the PREMISE of the holder leg's 3/3 — its bullish reading assumes coins leaving exchanges go somewhere safer, and a 2021 firmware RNG defect made five years of keys reproducible offline; (ii) gate 9 is binary and cannot express a 60.1%-priced SEPTEMBER HIKE with three hawkish dissents plus CLARITY at record-low 27% odds. NARRATIVE-BREAK CALL MADE EXPLICITLY: Coldcard is NOT a section 7 break — a vendor firmware defect with a shipped fix does not void the asset thesis — which is exactly why it is priced as a D1 term rather than an exit. GATE 5 DEBT DISCHARGED BY COMPUTATION, and it mattered: the top search result announcing a Hash Ribbon recovery was dated AUGUST 2024; the computed series (blockchain.info, 30d 899.7 EH/s vs 60d 917.2 EH/s) says miner capitulation has run since 2026-06-08. WHAT ACTUALLY BLOCKS CAPITAL is neither market nor macro: Phase 1A is genuinely unlocked (10>=8, gates 3/9, [V] 2) with spot inside the $63,000-66,500 zone, but position.mjs returns 0.00000184 BTC, basis.reliable=false on 5 unbacked disposals, custody RECONCILED with ZERO withdrawals, ZERO deal tags on two open deals, against a narrated '10% at ~$65,000 blended' retyped for weeks. At 50.2h the snapshot is STALE — barred from resolving a phase-dependent question — and 22h from EXPIRED. Fill written as an executable conditional instead of guessed. Dry powder $14,408.87 at a 3.78% T-bill = ~$45/month, the correct price for not double-counting your own position. FR COMPANION 6/20 Channel B against a line of 13 — cross-validation consistent and UNQUALIFIED (cap not binding). Collar ACTIVE (|EV-vs-spot| 1.53% < 2%): no directional regime resolution claimed."
+  "verdict": "HOLD; authorize nothing new until the ledger is refreshed. Mechanical 11/20 — NO LEG MOVED from Aug-01. D1 = -1.0, the FIRST NON-ZERO DISCRETIONARY TERM IN FRAMEWORK HISTORY, and it is NEGATIVE; adjusted 10/20. THE READ: the bottom's plumbing is in place and its psychology is absent. Price sits ON the 200-week mean (+0.43%, $63,549), MVRV-Z 0.3469 against a realized price of $52,367, LTH supply at a record with the strongest 30d accumulation in six years, reserves -78K BTC/6mo. Against that: funding POSITIVE at the 82nd percentile (zero negative intervals in 45), realized 30d vol at the 13th percentile of two years, 24h liquidations $58M, lowest F&G print in ten sessions 25. Value gates lit (3, 8), every fear gate dark (1, 2, 4, 7) — a cheap market, not a frightened one, and the pyramid's big tranches are reserved for frightened ones. D1 -1.0 RATIONALE: (i) the Coldcard exploit (~1,816 BTC/$114M, 5,200+ addresses, fourth wave live) contaminates the PREMISE of the holder leg's 3/3 — its bullish reading assumes coins leaving exchanges go somewhere safer, and a 2021 firmware RNG defect made five years of keys reproducible offline; (ii) gate 9 is binary and cannot express a 60.1%-priced SEPTEMBER HIKE with three hawkish dissents plus CLARITY at record-low 27% odds. NARRATIVE-BREAK CALL MADE EXPLICITLY: Coldcard is NOT a section 7 break — a vendor firmware defect with a shipped fix does not void the asset thesis — which is exactly why it is priced as a D1 term rather than an exit. GATE 5 DEBT DISCHARGED BY COMPUTATION, and it mattered: the top search result announcing a Hash Ribbon recovery was dated AUGUST 2024; the computed series (blockchain.info, 30d 899.7 EH/s vs 60d 917.2 EH/s) says miner capitulation has run since 2026-06-08. WHAT ACTUALLY BLOCKS CAPITAL is neither market nor macro: Phase 1A is genuinely unlocked (10>=8, gates 3/9, [V] 2) with spot inside the $63,000-66,500 zone, but position.mjs returns 0.00000184 BTC, basis.reliable=false on 5 unbacked disposals, custody RECONCILED with ZERO withdrawals, ZERO deal tags on two open deals, against a narrated '10% at ~$65,000 blended' retyped for weeks. At 50.2h the snapshot is STALE — barred from resolving a phase-dependent question — and 22h from EXPIRED. Fill written as an executable conditional instead of guessed. Dry powder $14,408.87 at a 3.78% T-bill = ~$45/month, the correct price for not double-counting your own position. FR COMPANION 6/20 Channel B against a line of 13 — cross-validation consistent and UNQUALIFIED (cap not binding). Collar ACTIVE (|EV-vs-spot| 1.53% < 2%): no directional regime resolution claimed.",
+  "tagging": {
+    "mode": "phase_registry",
+    "registry": {
+      "schema": "report-phase-registry/1",
+      "version": 1,
+      "report_file": "btc_fallen_knives_20260803_1411.md",
+      "report_version": "report-machine/1",
+      "framework": "fallen_knives",
+      "channel": null,
+      "asset": "BTC",
+      "report_date": "2026-08-03",
+      "report_local_time": "14:11",
+      "report_zone": "America/New_York",
+      "instrument_class": "crypto",
+      "entries": [
+        {
+          "phase": "1A",
+          "canonical_tag": "FK-P1A-BTC-20260803-1411",
+          "decision": "UNVERIFIED",
+          "instrument_class": "crypto",
+          "report_file": "btc_fallen_knives_20260803_1411.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-08-03",
+          "report_local_time": "14:11"
+        },
+        {
+          "phase": "1B",
+          "canonical_tag": "FK-P1B-BTC-20260803-1411",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "btc_fallen_knives_20260803_1411.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-08-03",
+          "report_local_time": "14:11"
+        },
+        {
+          "phase": "2",
+          "canonical_tag": "FK-P2-BTC-20260803-1411",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "btc_fallen_knives_20260803_1411.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-08-03",
+          "report_local_time": "14:11"
+        },
+        {
+          "phase": "3",
+          "canonical_tag": "FK-P3-BTC-20260803-1411",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "btc_fallen_knives_20260803_1411.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-08-03",
+          "report_local_time": "14:11"
+        }
+      ]
+    },
+    "instrument_class": "crypto",
+    "report_file": "btc_fallen_knives_20260803_1411.md",
+    "report_version": "report-machine/1",
+    "framework": "fallen_knives",
+    "channel": null,
+    "report_asset": "BTC",
+    "report_date": "2026-08-03",
+    "report_local_time": "14:11",
+    "active_tags": [],
+    "reserved_tags": [
+      "FK-P1A-BTC-20260803-1411",
+      "FK-P1B-BTC-20260803-1411",
+      "FK-P2-BTC-20260803-1411",
+      "FK-P3-BTC-20260803-1411"
+    ],
+    "status": "REGISTERED"
+  }
 }
 ```

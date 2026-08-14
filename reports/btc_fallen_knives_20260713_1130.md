@@ -273,6 +273,16 @@ Underneath the number, the tape gave two reasons to keep the powder dry. Bitcoin
 
 *Cash is a position, and today it read a one-point drop for what it is: not bad news, but the fear it was built to exploit beginning to drain. The two-hundred-week softened, oil gapped into a CPI print, and the deployment bar rose rather than fell — so the ninety percent stays dry and earning four-and-a-half, the one tranche rides its thesis, and the ladder waits below for either a cheaper price or a more frightened tape. The framework does not buy a flush into an inflation print at a negative edge; it waits to be paid.*
 
+### Immutable report-phase registry
+
+| Phase | Canonical tag | Decision | Instrument class |
+|---|---|---|---|
+| 1A | FK-P1A-BTC-20260713-1130 | UNVERIFIED | crypto |
+| 1B | FK-P1B-BTC-20260713-1130 | LOCKED | crypto |
+| 2 | FK-P2-BTC-20260713-1130 | LOCKED | crypto |
+| 3 | FK-P3-BTC-20260713-1130 | LOCKED | crypto |
+
+Registry schema: report-phase-registry/1; version: 1; origin: btc_fallen_knives_20260713_1130.md (report-machine/1).
 ```json machine
 {
   "schema": "report-machine/1",
@@ -319,6 +329,84 @@ Underneath the number, the tape gave two reasons to keep the powder dry. Bitcoin
     "brent": 79.0, "sept_hike_odds_ge1": "~69%", "real_yield_10y_tips": 2.33, "vix": 16.46, "dxy": 101.13,
     "mstr_btc": 843775, "mstr_note": "no BTC change Jul 6-12; raised ~$467M via equity", "clarity_polymarket": "~46%",
     "companion_fr": { "composite": 1, "gates": 0, "cap_bound": true }
+  },
+  "tagging": {
+    "mode": "phase_registry",
+    "registry": {
+      "schema": "report-phase-registry/1",
+      "version": 1,
+      "report_file": "btc_fallen_knives_20260713_1130.md",
+      "report_version": "report-machine/1",
+      "framework": "fallen_knives",
+      "channel": null,
+      "asset": "BTC",
+      "report_date": "2026-07-13",
+      "report_local_time": "11:30",
+      "report_zone": "America/New_York",
+      "instrument_class": "crypto",
+      "entries": [
+        {
+          "phase": "1A",
+          "canonical_tag": "FK-P1A-BTC-20260713-1130",
+          "decision": "UNVERIFIED",
+          "instrument_class": "crypto",
+          "report_file": "btc_fallen_knives_20260713_1130.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-07-13",
+          "report_local_time": "11:30"
+        },
+        {
+          "phase": "1B",
+          "canonical_tag": "FK-P1B-BTC-20260713-1130",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "btc_fallen_knives_20260713_1130.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-07-13",
+          "report_local_time": "11:30"
+        },
+        {
+          "phase": "2",
+          "canonical_tag": "FK-P2-BTC-20260713-1130",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "btc_fallen_knives_20260713_1130.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-07-13",
+          "report_local_time": "11:30"
+        },
+        {
+          "phase": "3",
+          "canonical_tag": "FK-P3-BTC-20260713-1130",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "btc_fallen_knives_20260713_1130.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-07-13",
+          "report_local_time": "11:30"
+        }
+      ]
+    },
+    "instrument_class": "crypto",
+    "report_file": "btc_fallen_knives_20260713_1130.md",
+    "report_version": "report-machine/1",
+    "framework": "fallen_knives",
+    "channel": null,
+    "report_asset": "BTC",
+    "report_date": "2026-07-13",
+    "report_local_time": "11:30",
+    "active_tags": [],
+    "reserved_tags": [
+      "FK-P1A-BTC-20260713-1130",
+      "FK-P1B-BTC-20260713-1130",
+      "FK-P2-BTC-20260713-1130",
+      "FK-P3-BTC-20260713-1130"
+    ],
+    "status": "REGISTERED"
   }
 }
 ```

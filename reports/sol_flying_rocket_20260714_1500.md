@@ -224,6 +224,16 @@ I have shorted enough beaten-down alts on "it's already down seventy percent, it
 > **IF** the bounce fails and SOL slides back toward the $60 swing low **→ THEN** that is a deeper Fallen Knives accumulation zone, not a short entry.
 > **IF** — a full cycle out — SOL round-trips toward its ATH with F&G >80, funding pinned deeply positive, and ETF *outflows* after a sustained inflow regime **→ THEN** re-open this framework. That is a different market.
 
+### Immutable report-phase registry
+
+| Phase | Canonical tag | Decision | Instrument class |
+|---|---|---|---|
+| 1A | FR-A-1A-SOL-20260714-1500 | STAND_DOWN | crypto |
+| 1B | FR-A-1B-SOL-20260714-1500 | STAND_DOWN | crypto |
+| 2 | FR-A-2-SOL-20260714-1500 | STAND_DOWN | crypto |
+| 3 | FR-A-3-SOL-20260714-1500 | STAND_DOWN | crypto |
+
+Registry schema: report-phase-registry/1; version: 1; origin: sol_flying_rocket_20260714_1500.md (report-machine/1).
 ```json machine
 {
   "schema": "report-machine/1",
@@ -270,6 +280,84 @@ I have shorted enough beaten-down alts on "it's already down seventy percent, it
     "corr_spx_30d": "not computed this cycle -> risk-on surcharge default ON",
     "companion_fk": { "rederived_score": 9, "status": "RE-DERIVED / UNPUBLISHED — no SOL FK today; legs sentiment 2 + momentum 1 + valuation ~4-5 + capitulation 0 + holder ~1 (low-confidence, no sourced 30d SOL LTH/reserve); approximate" },
     "prior_fr_grade": "cold start — no prior SOL Flying Rocket; nothing to grade"
+  },
+  "tagging": {
+    "mode": "phase_registry",
+    "registry": {
+      "schema": "report-phase-registry/1",
+      "version": 1,
+      "report_file": "sol_flying_rocket_20260714_1500.md",
+      "report_version": "report-machine/1",
+      "framework": "flying_rocket",
+      "channel": "A",
+      "asset": "SOL",
+      "report_date": "2026-07-14",
+      "report_local_time": "15:00",
+      "report_zone": "America/New_York",
+      "instrument_class": "crypto",
+      "entries": [
+        {
+          "phase": "1A",
+          "canonical_tag": "FR-A-1A-SOL-20260714-1500",
+          "decision": "STAND_DOWN",
+          "instrument_class": "crypto",
+          "report_file": "sol_flying_rocket_20260714_1500.md",
+          "report_version": "report-machine/1",
+          "asset": "SOL",
+          "report_date": "2026-07-14",
+          "report_local_time": "15:00"
+        },
+        {
+          "phase": "1B",
+          "canonical_tag": "FR-A-1B-SOL-20260714-1500",
+          "decision": "STAND_DOWN",
+          "instrument_class": "crypto",
+          "report_file": "sol_flying_rocket_20260714_1500.md",
+          "report_version": "report-machine/1",
+          "asset": "SOL",
+          "report_date": "2026-07-14",
+          "report_local_time": "15:00"
+        },
+        {
+          "phase": "2",
+          "canonical_tag": "FR-A-2-SOL-20260714-1500",
+          "decision": "STAND_DOWN",
+          "instrument_class": "crypto",
+          "report_file": "sol_flying_rocket_20260714_1500.md",
+          "report_version": "report-machine/1",
+          "asset": "SOL",
+          "report_date": "2026-07-14",
+          "report_local_time": "15:00"
+        },
+        {
+          "phase": "3",
+          "canonical_tag": "FR-A-3-SOL-20260714-1500",
+          "decision": "STAND_DOWN",
+          "instrument_class": "crypto",
+          "report_file": "sol_flying_rocket_20260714_1500.md",
+          "report_version": "report-machine/1",
+          "asset": "SOL",
+          "report_date": "2026-07-14",
+          "report_local_time": "15:00"
+        }
+      ]
+    },
+    "instrument_class": "crypto",
+    "report_file": "sol_flying_rocket_20260714_1500.md",
+    "report_version": "report-machine/1",
+    "framework": "flying_rocket",
+    "channel": "A",
+    "report_asset": "SOL",
+    "report_date": "2026-07-14",
+    "report_local_time": "15:00",
+    "active_tags": [],
+    "reserved_tags": [
+      "FR-A-1A-SOL-20260714-1500",
+      "FR-A-1B-SOL-20260714-1500",
+      "FR-A-2-SOL-20260714-1500",
+      "FR-A-3-SOL-20260714-1500"
+    ],
+    "status": "REGISTERED"
   }
 }
 ```

@@ -242,6 +242,16 @@ The honest cross-framework read: the companion **Fallen Knives report is at 12 a
 > **IF** PPI comes in hot and BTC loses the 200-week again **→ THEN** that is a deeper Fallen Knives buy zone ($58–62k), not a short entry.
 > **IF** — months out — F&G pushes >80, MVRV-Z >3, and funding pins deeply positive into a fresh ATH **→ THEN** re-open this framework. That is tens of percent and a regime change away.
 
+### Immutable report-phase registry
+
+| Phase | Canonical tag | Decision | Instrument class |
+|---|---|---|---|
+| 1A | FR-A-1A-BTC-20260714-1500 | STAND_DOWN | crypto |
+| 1B | FR-A-1B-BTC-20260714-1500 | STAND_DOWN | crypto |
+| 2 | FR-A-2-BTC-20260714-1500 | STAND_DOWN | crypto |
+| 3 | FR-A-3-BTC-20260714-1500 | STAND_DOWN | crypto |
+
+Registry schema: report-phase-registry/1; version: 1; origin: btc_flying_rocket_20260714_1500.md (report-machine/1).
 ```json machine
 {
   "schema": "report-machine/1",
@@ -288,6 +298,84 @@ The honest cross-framework read: the companion **Fallen Knives report is at 12 a
     "corr_spx_30d": "not computed this cycle -> risk-on surcharge default ON",
     "companion_fk": { "published_score": 12, "published_gates": "4/9", "source": "btc_fallen_knives_20260714_1430.md (published 2:30 PM ET same trading day)" },
     "prior_fr_grade": { "report": "btc_flying_rocket_20260618_0020.md", "ev_price_prior": 65000, "ev_price_grade": "HELD (realized $64,535)", "modal_band_prior": "$66k-72k rally 48%", "modal_grade": "MISS on target, HELD on direction", "falsifier": "a rally on positive catalyst", "falsifier_grade": "FIRED (CPI +4.18% squeeze) -> stand-down vindicated" }
+  },
+  "tagging": {
+    "mode": "phase_registry",
+    "registry": {
+      "schema": "report-phase-registry/1",
+      "version": 1,
+      "report_file": "btc_flying_rocket_20260714_1500.md",
+      "report_version": "report-machine/1",
+      "framework": "flying_rocket",
+      "channel": "A",
+      "asset": "BTC",
+      "report_date": "2026-07-14",
+      "report_local_time": "15:00",
+      "report_zone": "America/New_York",
+      "instrument_class": "crypto",
+      "entries": [
+        {
+          "phase": "1A",
+          "canonical_tag": "FR-A-1A-BTC-20260714-1500",
+          "decision": "STAND_DOWN",
+          "instrument_class": "crypto",
+          "report_file": "btc_flying_rocket_20260714_1500.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-07-14",
+          "report_local_time": "15:00"
+        },
+        {
+          "phase": "1B",
+          "canonical_tag": "FR-A-1B-BTC-20260714-1500",
+          "decision": "STAND_DOWN",
+          "instrument_class": "crypto",
+          "report_file": "btc_flying_rocket_20260714_1500.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-07-14",
+          "report_local_time": "15:00"
+        },
+        {
+          "phase": "2",
+          "canonical_tag": "FR-A-2-BTC-20260714-1500",
+          "decision": "STAND_DOWN",
+          "instrument_class": "crypto",
+          "report_file": "btc_flying_rocket_20260714_1500.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-07-14",
+          "report_local_time": "15:00"
+        },
+        {
+          "phase": "3",
+          "canonical_tag": "FR-A-3-BTC-20260714-1500",
+          "decision": "STAND_DOWN",
+          "instrument_class": "crypto",
+          "report_file": "btc_flying_rocket_20260714_1500.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-07-14",
+          "report_local_time": "15:00"
+        }
+      ]
+    },
+    "instrument_class": "crypto",
+    "report_file": "btc_flying_rocket_20260714_1500.md",
+    "report_version": "report-machine/1",
+    "framework": "flying_rocket",
+    "channel": "A",
+    "report_asset": "BTC",
+    "report_date": "2026-07-14",
+    "report_local_time": "15:00",
+    "active_tags": [],
+    "reserved_tags": [
+      "FR-A-1A-BTC-20260714-1500",
+      "FR-A-1B-BTC-20260714-1500",
+      "FR-A-2-BTC-20260714-1500",
+      "FR-A-3-BTC-20260714-1500"
+    ],
+    "status": "REGISTERED"
   }
 }
 ```

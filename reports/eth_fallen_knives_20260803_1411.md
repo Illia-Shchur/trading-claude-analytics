@@ -634,6 +634,16 @@ The Analyst Conviction Path was available on Phase 1A for the second consecutive
 
 *Cheap is a condition, not a catalyst. ETH's aggregate holder is 18% underwater and its float is shrinking through every regime — and the framework still will not buy the big tranches, because two of eight gates is two of eight gates. Patience is alpha; at $14,408.87 against a 3.78% bill, it costs about $45 a month, shared with Bitcoin.*
 
+### Immutable report-phase registry
+
+| Phase | Canonical tag | Decision | Instrument class |
+|---|---|---|---|
+| 1A | FK-P1A-ETH-20260803-1411 | UNVERIFIED | crypto |
+| 1B | FK-P1B-ETH-20260803-1411 | LOCKED | crypto |
+| 2 | FK-P2-ETH-20260803-1411 | LOCKED | crypto |
+| 3 | FK-P3-ETH-20260803-1411 | LOCKED | crypto |
+
+Registry schema: report-phase-registry/1; version: 1; origin: eth_fallen_knives_20260803_1411.md (report-machine/1).
 ```json machine
 {
   "schema": "report-machine/1",
@@ -840,6 +850,84 @@ The Analyst Conviction Path was available on Phase 1A for the second consecutive
     "scorecard": "8 bull / 8 bear — exactly balanced",
     "effect": "no directional regime resolution claimed anywhere in the report; every forward statement carries a probability or an IF->THEN plus a named falsifier"
   },
-  "verdict": "HOLD; work the pre-assigned Phase 1A remainder in the $1,800-1,825 ladder; authorize nothing new. SCORE UP 10 -> 11 on the VALUATION leg, the only leg that moved, and it moved because a SOURCED DECIMAL replaced a three-report-old proxy — not on a price move and not on discretion. THE FINDING: Santiment mvrv_usd_z_score for ETH printed -1.121 on 2026-07-04 (free-tier query cap), with an accompanying MVRV ratio of 0.781 pinning an implied realized price of $2,277 against a spot of $1,868 — the median holder is ~18% underwater, the cheapest since December 2018. The SIGN is arithmetic, not estimate: market value below realized value forces MVRV-Z negative, and spot would need +21.9% just to reach zero. Provider scale verified against bitcoin-data.com on BTC to within 0.04. The widely-circulated '-0.7 / seven-year low' figure REMAINS DECLINED — it still traces to one 2026-06-08 article at ETH $1,684. Leg 4 -> 5, debt clock DISCHARGED at report 4. CONSEQUENCE: Phase 1B's score line (>=11 under the 2026-07-27 cut) is cleared FOR THE FIRST TIME IN THIS SERIES — and it buys nothing, because 1B needs 5 of 8 gates with 3 [V] and ETH holds 2 gates, both of them VALUE gates. Every gate that measures FEAR is dark, and gate 4 is moving away at speed on a FOURTH consecutive weekly ETF inflow week (+$27.42M; July +$365.2M) while BTC's turned red (-$61.53M). The binding constraint moved from the score axis to the gate axis. D2 AVAILABLE ON 1A FOR THE SECOND CONSECUTIVE REPORT AND DECLINED AGAIN: the partial-tranche rule already authorizes the same capital without a D5 stop or a 10-day phase bar, and the gate D2 would substitute for is a FEAR gate — writing a conviction case to supply the exact missing fear evidence BECAUSE it is missing is what D5 exists to punish. D1 = 0.0 with BOTH directions argued: a -0.5 on shared macro was declined because under half-down rounding it would erase a mechanically-earned threshold cross; a +0.5 was declined as double-counting the holder leg. The Aug-01 +1.0 decline RESOLVED VINDICATED — the score reached 11 mechanically two days later. STOP QUALITY IMPROVED: ETH is now ONE point from restoring the compound stop's second key (a weekly RSI below 40 — currently 41.96, one band edge away — does it alone). Labeled correction: coherence now tests against the deepest NAMED floor $1,450, not the prior series' $1,470; stricter, no stop moved. FR COMPANION 8/20 Channel B — no new tripwire, but the 2026-08-01 standalone FR report (companion printed 9) is STILL OWED AND UNDISCHARGED. POSITION (Hard Rule 8, STALE at 50.2h, 22h from EXPIRED): dust, custody RECONCILED, basis.reliable=false on 8.5064 ETH across 24 unbacked disposals — the account's largest gap — UNTAGGED; no PnL or cost basis quoted, nothing sized against it. Dry powder $14,408.87 is a SHARED pool with the BTC report. Collar ACTIVE (|EV-vs-spot| 1.12% < 2%; scorecard 8-8): no directional regime resolution claimed."
+  "verdict": "HOLD; work the pre-assigned Phase 1A remainder in the $1,800-1,825 ladder; authorize nothing new. SCORE UP 10 -> 11 on the VALUATION leg, the only leg that moved, and it moved because a SOURCED DECIMAL replaced a three-report-old proxy — not on a price move and not on discretion. THE FINDING: Santiment mvrv_usd_z_score for ETH printed -1.121 on 2026-07-04 (free-tier query cap), with an accompanying MVRV ratio of 0.781 pinning an implied realized price of $2,277 against a spot of $1,868 — the median holder is ~18% underwater, the cheapest since December 2018. The SIGN is arithmetic, not estimate: market value below realized value forces MVRV-Z negative, and spot would need +21.9% just to reach zero. Provider scale verified against bitcoin-data.com on BTC to within 0.04. The widely-circulated '-0.7 / seven-year low' figure REMAINS DECLINED — it still traces to one 2026-06-08 article at ETH $1,684. Leg 4 -> 5, debt clock DISCHARGED at report 4. CONSEQUENCE: Phase 1B's score line (>=11 under the 2026-07-27 cut) is cleared FOR THE FIRST TIME IN THIS SERIES — and it buys nothing, because 1B needs 5 of 8 gates with 3 [V] and ETH holds 2 gates, both of them VALUE gates. Every gate that measures FEAR is dark, and gate 4 is moving away at speed on a FOURTH consecutive weekly ETF inflow week (+$27.42M; July +$365.2M) while BTC's turned red (-$61.53M). The binding constraint moved from the score axis to the gate axis. D2 AVAILABLE ON 1A FOR THE SECOND CONSECUTIVE REPORT AND DECLINED AGAIN: the partial-tranche rule already authorizes the same capital without a D5 stop or a 10-day phase bar, and the gate D2 would substitute for is a FEAR gate — writing a conviction case to supply the exact missing fear evidence BECAUSE it is missing is what D5 exists to punish. D1 = 0.0 with BOTH directions argued: a -0.5 on shared macro was declined because under half-down rounding it would erase a mechanically-earned threshold cross; a +0.5 was declined as double-counting the holder leg. The Aug-01 +1.0 decline RESOLVED VINDICATED — the score reached 11 mechanically two days later. STOP QUALITY IMPROVED: ETH is now ONE point from restoring the compound stop's second key (a weekly RSI below 40 — currently 41.96, one band edge away — does it alone). Labeled correction: coherence now tests against the deepest NAMED floor $1,450, not the prior series' $1,470; stricter, no stop moved. FR COMPANION 8/20 Channel B — no new tripwire, but the 2026-08-01 standalone FR report (companion printed 9) is STILL OWED AND UNDISCHARGED. POSITION (Hard Rule 8, STALE at 50.2h, 22h from EXPIRED): dust, custody RECONCILED, basis.reliable=false on 8.5064 ETH across 24 unbacked disposals — the account's largest gap — UNTAGGED; no PnL or cost basis quoted, nothing sized against it. Dry powder $14,408.87 is a SHARED pool with the BTC report. Collar ACTIVE (|EV-vs-spot| 1.12% < 2%; scorecard 8-8): no directional regime resolution claimed.",
+  "tagging": {
+    "mode": "phase_registry",
+    "registry": {
+      "schema": "report-phase-registry/1",
+      "version": 1,
+      "report_file": "eth_fallen_knives_20260803_1411.md",
+      "report_version": "report-machine/1",
+      "framework": "fallen_knives",
+      "channel": null,
+      "asset": "ETH",
+      "report_date": "2026-08-03",
+      "report_local_time": "14:11",
+      "report_zone": "America/New_York",
+      "instrument_class": "crypto",
+      "entries": [
+        {
+          "phase": "1A",
+          "canonical_tag": "FK-P1A-ETH-20260803-1411",
+          "decision": "UNVERIFIED",
+          "instrument_class": "crypto",
+          "report_file": "eth_fallen_knives_20260803_1411.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-08-03",
+          "report_local_time": "14:11"
+        },
+        {
+          "phase": "1B",
+          "canonical_tag": "FK-P1B-ETH-20260803-1411",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "eth_fallen_knives_20260803_1411.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-08-03",
+          "report_local_time": "14:11"
+        },
+        {
+          "phase": "2",
+          "canonical_tag": "FK-P2-ETH-20260803-1411",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "eth_fallen_knives_20260803_1411.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-08-03",
+          "report_local_time": "14:11"
+        },
+        {
+          "phase": "3",
+          "canonical_tag": "FK-P3-ETH-20260803-1411",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "eth_fallen_knives_20260803_1411.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-08-03",
+          "report_local_time": "14:11"
+        }
+      ]
+    },
+    "instrument_class": "crypto",
+    "report_file": "eth_fallen_knives_20260803_1411.md",
+    "report_version": "report-machine/1",
+    "framework": "fallen_knives",
+    "channel": null,
+    "report_asset": "ETH",
+    "report_date": "2026-08-03",
+    "report_local_time": "14:11",
+    "active_tags": [],
+    "reserved_tags": [
+      "FK-P1A-ETH-20260803-1411",
+      "FK-P1B-ETH-20260803-1411",
+      "FK-P2-ETH-20260803-1411",
+      "FK-P3-ETH-20260803-1411"
+    ],
+    "status": "REGISTERED"
+  }
 }
 ```

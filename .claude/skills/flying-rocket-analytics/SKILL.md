@@ -406,20 +406,20 @@ State assumed carry-cost-to-target as a % of expected gain. **If carry > 40% of 
 
 **Grain gap, stated not hidden.** This ledger is per **tranche**; the account's funding is recorded per **symbol** and never will have a tranche dimension (futures never enters the cost-basis engine). When more than one tranche is live in the same symbol, the per-symbol total must be **allocated by hand** across the rows — say that you allocated it and on what basis. It is 1:1 only while a single tranche is live. Do not present an allocated figure as if the ledger measured it per tranche.
 
-#### Ledger tag (print on every tranche that fills)
+#### Report-specific deal attribution (immutable origin)
 
-When a report authorizes a short tranche, print the **ledger tag** alongside the status line. The tag is what the personal-accounting ledger records against the round-trip deal, and it is the *only* thing that connects a real position back to the tranche that authorized it — the ledger stores quantity and cost basis, but `crypto_trade` has no tranche dimension and never will. An untagged position is real but of unknown attribution, and cannot resolve a phase-dependent unlock precondition such as Phase 1B's *"1A in profit or scratch."*
+Every machine report dated on/after 2026-08-12 publishes a versioned `tagging.registry`. Each applicable phase entry contains the exact report-derived tag (for example `FR-A-1A-SP500-20260812-1542`), an `AUTHORIZED`, `LOCKED`, `STAND_DOWN`, or `UNVERIFIED` decision, instrument class, and immutable report filename/date/time. A SPY execution against an SP500 report uses SP500 in the tag. Channel `none` uses the recorded FR-A rubric vocabulary conservatively. There is no `FR-B-3`.
 
-| Tranche | Tag |
+Attribution is recorded in the accounting app with `reportFile`, `phase`, `entryRoute` (`MECHANICAL`, `FR_S1`, `FR_S2`, or `MANUAL`), and alignment (`AUTHORIZED`, `AGAINST_REPORT`, or `UNVERIFIED`). A LOCKED/STAND_DOWN origin requires explicit acknowledgement and persists as `AGAINST_REPORT`; an UNVERIFIED origin stays distinct. The server generates and checks the canonical tag, makes the origin immutable, and requires an explicit clear/reassign correction to change it. Add management-report references separately. Legacy/custom tags and `UNFRAMED` remain accepted; they do not become framework origins.
+
+| Channel / phase | Prefix |
 |---|---|
-| Channel A Phase 1A / 1B / 2 / 3 | `FR-A-1A` · `FR-A-1B` · `FR-A-2` · `FR-A-3` |
-| Channel B Phase 1A / 1B / 2 | `FR-B-1A` · `FR-B-1B` · `FR-B-2` |
-| S1 / S2 analyst-discretion entries | `FR-S1` · `FR-S2` — these carry the S5 tax (≤6% stop, ≤14d clock, ≤20% of book) |
+| Channel A Phase 1A / 1B / 2 / 3 | `FR-A-1A-` · `FR-A-1B-` · `FR-A-2-` · `FR-A-3-` |
+| Channel B Phase 1A / 1B / 2 | `FR-B-1A-` · `FR-B-1B-` · `FR-B-2-` |
+| S1 / S2 analyst-discretion entries | `FR-S1-` · `FR-S2-` |
 | Traded outside the framework | `UNFRAMED` |
 
-**There is no `FR-B-3`.** Channel B has no Phase 3 at any score (§ Channel B caps), so the tag does not exist — a tag that cannot be typed cannot be mis-analyzed.
-
-Apply it in the app via `PUT /api/investments/deal-note` with the `dealKey`, the tag, and a note whose **first line is `report=reports/<this report's filename>`** and whose remaining lines state the price stop, the time stop, and the sizing rationale. Channel performance then reads back as `GET /api/investments/deals/stats?tagPrefix=FR-A-` vs `?tagPrefix=FR-B-` — which is precisely the evidence Hard Rule 6 asks for before any short-side threshold is ever revisited. Tagging is manual and deliberately so: inferring a phase from quantity or timing is a guess, and a guessed phase can unlock the next tranche.
+Use `PUT /api/investments/deal-note` with the structured attribution rather than a client-supplied canonical tag. Exact tags identify report results; prefixes identify channel/framework rollups. Headline framework performance includes authorized origins only, with against-report and unverified segments exposed separately.
 
 ### 6.5. Asset Rotation / Cross-Asset Screening (when own-asset scores <11)
 

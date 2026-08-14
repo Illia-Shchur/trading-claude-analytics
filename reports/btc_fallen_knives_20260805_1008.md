@@ -560,6 +560,16 @@ What actually blocks capital, though, is neither market nor macro, and this is t
 
 ---
 
+### Immutable report-phase registry
+
+| Phase | Canonical tag | Decision | Instrument class |
+|---|---|---|---|
+| 1A | FK-P1A-BTC-20260805-1008 | UNVERIFIED | crypto |
+| 1B | FK-P1B-BTC-20260805-1008 | LOCKED | crypto |
+| 2 | FK-P2-BTC-20260805-1008 | LOCKED | crypto |
+| 3 | FK-P3-BTC-20260805-1008 | LOCKED | crypto |
+
+Registry schema: report-phase-registry/1; version: 1; origin: btc_fallen_knives_20260805_1008.md (report-machine/1).
 ```json machine
 {
   "schema": "report-machine/1",
@@ -830,6 +840,84 @@ What actually blocks capital, though, is neither market nor macro, and this is t
     "scorecard": "8 bull / 11 bear — net bearish by 3",
     "effect": "The collar is NOT triggered this report — the first time in this series it has released. That does not license loose language and none is used: every forward and regime-resolution claim in this report still carries a probability or an IF->THEN plus a named falsifier, per Analytical Principle 4, which applies unconditionally. No directional regime is declared resolved."
   },
-  "verdict": "HOLD; Phase 1A genuinely UNLOCKED and genuinely UNFILLED, for the THIRD consecutive report, on a data blocker rather than a market judgment. Mechanical 11/20 — FIFTH consecutive report at 11, and NO LEG MOVED from 2026-08-03. D1 = -1.0 held but RE-ARGUED with factor (ii) REPLACED OUTRIGHT; adjusted 10/20. THE READ: the most informative event since Friday is not on BTC's chart. SPX +6.41% and NDX +9.17% over five sessions to a record, VIX -17.96%, Brent -12.41%, HY OAS 2.78% — and BTC went +0.8%, at a computed correlation of 0.313. A genuinely cheap, genuinely coiled market did not catch a bid when the risk premium collapsed around it. The plumbing of a bottom is in place and its psychology is absent: MVRV-Z 0.3714 against a realized price of ~$52,558, LTH supply at a record with the strongest 30d accumulation in six years, reserves at multi-year lows, spot welded to a RISING 200-week mean at +0.99% for 36 sessions, campaign low 35 sessions old with ASCENDING recent lows — against F&G stuck at 25-30 for ten sessions, funding positive at the 78th percentile with zero negative intervals in 45, $7.54M of BTC liquidations, and realized 30d vol at the 13th PERCENTILE of two years while drawdown sits at the 93rd. Value gates lit (3, 6, 8), every FEAR gate dark (1, 2, 4, 7), and gate 4 is receding: it needs $1.53B of outflows against a July that printed +$172.4M and two consecutive green sessions (+$211.5M on Aug-4). D1 RATIONALE, re-argued as the decay rule demands: (i) Coldcard escalated from ~$114M/4 waves to ~$130M/5 waves with a dozen attacker groups and Coinkite destroying inventory — contaminating the PREMISE of the holder leg's 3/3 while its MEASUREMENT still scores 3; (ii) the original gate-9 macro factor is RETIRED AS WEAKENED (oil -12.41%, VIX -17.96%, hike odds flat at ~59-63%) and REPLACED by BTC's non-participation in the melt-up plus CLARITY's hard 2026-08-10 Senate cliff at 28-37%. Declined +0.5 on the Hash Ribbon narrowing to a ~2% gap (double-counts gate 5) and -1.5 (the 200-week pin and ascending lows cut back hard). NARRATIVE-BREAK RE-TESTED on escalated evidence and UNCHANGED: a vendor firmware defect with a shipped fix does not void the asset thesis, and scaling that call with the loss total would be a category error. TOOLCHAIN CATCH: Yahoo is emitting an extra live weekly bar, so fetch.mjs's 'completed' set silently includes the IN-PROGRESS week; the corrected 261-close RSI is 38.84 (tool: 39.73). Harmless on BTC — both land in band 2 — but on GOLD the same artifact would have moved a leg and degraded a live stop. WHAT ACTUALLY BLOCKS CAPITAL: position.mjs returns EXIT 1 / EXPIRED at 94.2h, degraded from STALE 50.2h on Aug-03. Cold start per Hard Rule 4, stated explicitly. The narrated '10% at ~$65,000' is UNVERIFIED IN BOTH DIRECTIONS — not confirmed, not refuted, explicitly not read as flat — and no quantity, basis, PnL or dry-powder figure is asserted. Fill written as an executable conditional (ladder 10% across 63000-66500 at 66000/64500/63200, tag FK-P1A) rather than guessed. FR COMPANION 7/20 Channel B against a line of 13 — cross-validation consistent and UNQUALIFIED (cap not binding). The ETH standalone FR report remains OWED and UNDISCHARGED. Collar NOT triggered for the first time in this series (|EV| 2.08% >= 2, mechanical 11 outside 6-10, scorecard bear by 3) — and no directional regime is declared resolved anyway."
+  "verdict": "HOLD; Phase 1A genuinely UNLOCKED and genuinely UNFILLED, for the THIRD consecutive report, on a data blocker rather than a market judgment. Mechanical 11/20 — FIFTH consecutive report at 11, and NO LEG MOVED from 2026-08-03. D1 = -1.0 held but RE-ARGUED with factor (ii) REPLACED OUTRIGHT; adjusted 10/20. THE READ: the most informative event since Friday is not on BTC's chart. SPX +6.41% and NDX +9.17% over five sessions to a record, VIX -17.96%, Brent -12.41%, HY OAS 2.78% — and BTC went +0.8%, at a computed correlation of 0.313. A genuinely cheap, genuinely coiled market did not catch a bid when the risk premium collapsed around it. The plumbing of a bottom is in place and its psychology is absent: MVRV-Z 0.3714 against a realized price of ~$52,558, LTH supply at a record with the strongest 30d accumulation in six years, reserves at multi-year lows, spot welded to a RISING 200-week mean at +0.99% for 36 sessions, campaign low 35 sessions old with ASCENDING recent lows — against F&G stuck at 25-30 for ten sessions, funding positive at the 78th percentile with zero negative intervals in 45, $7.54M of BTC liquidations, and realized 30d vol at the 13th PERCENTILE of two years while drawdown sits at the 93rd. Value gates lit (3, 6, 8), every FEAR gate dark (1, 2, 4, 7), and gate 4 is receding: it needs $1.53B of outflows against a July that printed +$172.4M and two consecutive green sessions (+$211.5M on Aug-4). D1 RATIONALE, re-argued as the decay rule demands: (i) Coldcard escalated from ~$114M/4 waves to ~$130M/5 waves with a dozen attacker groups and Coinkite destroying inventory — contaminating the PREMISE of the holder leg's 3/3 while its MEASUREMENT still scores 3; (ii) the original gate-9 macro factor is RETIRED AS WEAKENED (oil -12.41%, VIX -17.96%, hike odds flat at ~59-63%) and REPLACED by BTC's non-participation in the melt-up plus CLARITY's hard 2026-08-10 Senate cliff at 28-37%. Declined +0.5 on the Hash Ribbon narrowing to a ~2% gap (double-counts gate 5) and -1.5 (the 200-week pin and ascending lows cut back hard). NARRATIVE-BREAK RE-TESTED on escalated evidence and UNCHANGED: a vendor firmware defect with a shipped fix does not void the asset thesis, and scaling that call with the loss total would be a category error. TOOLCHAIN CATCH: Yahoo is emitting an extra live weekly bar, so fetch.mjs's 'completed' set silently includes the IN-PROGRESS week; the corrected 261-close RSI is 38.84 (tool: 39.73). Harmless on BTC — both land in band 2 — but on GOLD the same artifact would have moved a leg and degraded a live stop. WHAT ACTUALLY BLOCKS CAPITAL: position.mjs returns EXIT 1 / EXPIRED at 94.2h, degraded from STALE 50.2h on Aug-03. Cold start per Hard Rule 4, stated explicitly. The narrated '10% at ~$65,000' is UNVERIFIED IN BOTH DIRECTIONS — not confirmed, not refuted, explicitly not read as flat — and no quantity, basis, PnL or dry-powder figure is asserted. Fill written as an executable conditional (ladder 10% across 63000-66500 at 66000/64500/63200, tag FK-P1A) rather than guessed. FR COMPANION 7/20 Channel B against a line of 13 — cross-validation consistent and UNQUALIFIED (cap not binding). The ETH standalone FR report remains OWED and UNDISCHARGED. Collar NOT triggered for the first time in this series (|EV| 2.08% >= 2, mechanical 11 outside 6-10, scorecard bear by 3) — and no directional regime is declared resolved anyway.",
+  "tagging": {
+    "mode": "phase_registry",
+    "registry": {
+      "schema": "report-phase-registry/1",
+      "version": 1,
+      "report_file": "btc_fallen_knives_20260805_1008.md",
+      "report_version": "report-machine/1",
+      "framework": "fallen_knives",
+      "channel": null,
+      "asset": "BTC",
+      "report_date": "2026-08-05",
+      "report_local_time": "10:08",
+      "report_zone": "America/New_York",
+      "instrument_class": "crypto",
+      "entries": [
+        {
+          "phase": "1A",
+          "canonical_tag": "FK-P1A-BTC-20260805-1008",
+          "decision": "UNVERIFIED",
+          "instrument_class": "crypto",
+          "report_file": "btc_fallen_knives_20260805_1008.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-08-05",
+          "report_local_time": "10:08"
+        },
+        {
+          "phase": "1B",
+          "canonical_tag": "FK-P1B-BTC-20260805-1008",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "btc_fallen_knives_20260805_1008.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-08-05",
+          "report_local_time": "10:08"
+        },
+        {
+          "phase": "2",
+          "canonical_tag": "FK-P2-BTC-20260805-1008",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "btc_fallen_knives_20260805_1008.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-08-05",
+          "report_local_time": "10:08"
+        },
+        {
+          "phase": "3",
+          "canonical_tag": "FK-P3-BTC-20260805-1008",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "btc_fallen_knives_20260805_1008.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-08-05",
+          "report_local_time": "10:08"
+        }
+      ]
+    },
+    "instrument_class": "crypto",
+    "report_file": "btc_fallen_knives_20260805_1008.md",
+    "report_version": "report-machine/1",
+    "framework": "fallen_knives",
+    "channel": null,
+    "report_asset": "BTC",
+    "report_date": "2026-08-05",
+    "report_local_time": "10:08",
+    "active_tags": [],
+    "reserved_tags": [
+      "FK-P1A-BTC-20260805-1008",
+      "FK-P1B-BTC-20260805-1008",
+      "FK-P2-BTC-20260805-1008",
+      "FK-P3-BTC-20260805-1008"
+    ],
+    "status": "REGISTERED"
+  }
 }
 ```

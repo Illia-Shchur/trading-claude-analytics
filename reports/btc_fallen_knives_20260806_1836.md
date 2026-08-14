@@ -583,6 +583,16 @@ The uncomfortable part is that none of this is what is stopping the fill. For th
 
 *Report generated 2026-08-06 18:36 EDT. All figures carry source and timestamp. Position of record: EXPIRED — cold start under Hard Rule 4, stated explicitly. Toolchain: `position.mjs` → `fetch.mjs` → `compute.mjs` → `lint-report.mjs` → `export-signals.mjs`.*
 
+### Immutable report-phase registry
+
+| Phase | Canonical tag | Decision | Instrument class |
+|---|---|---|---|
+| 1A | FK-P1A-BTC-20260806-1836 | LOCKED | crypto |
+| 1B | FK-P1B-BTC-20260806-1836 | LOCKED | crypto |
+| 2 | FK-P2-BTC-20260806-1836 | LOCKED | crypto |
+| 3 | FK-P3-BTC-20260806-1836 | LOCKED | crypto |
+
+Registry schema: report-phase-registry/1; version: 1; origin: btc_fallen_knives_20260806_1836.md (report-machine/1).
 ```json machine
 {
   "schema": "report-machine/1",
@@ -884,6 +894,84 @@ The uncomfortable part is that none of this is what is stopping the fill. For th
     "cross_validation_citable": true,
     "trailing_2w_realized_pct": -1.13,
     "trailing_2w_note": "$65,044.81 close on 2026-07-23 -> $64,310.31. The negative EV is printed during a NEGATIVE two-week move - the two agree in sign, so there is no momentum contradiction to flag in either direction. Disclosed symmetrically per the 2026-08-06 rule."
+  },
+  "tagging": {
+    "mode": "phase_registry",
+    "registry": {
+      "schema": "report-phase-registry/1",
+      "version": 1,
+      "report_file": "btc_fallen_knives_20260806_1836.md",
+      "report_version": "report-machine/1",
+      "framework": "fallen_knives",
+      "channel": null,
+      "asset": "BTC",
+      "report_date": "2026-08-06",
+      "report_local_time": "18:36",
+      "report_zone": "America/New_York",
+      "instrument_class": "crypto",
+      "entries": [
+        {
+          "phase": "1A",
+          "canonical_tag": "FK-P1A-BTC-20260806-1836",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "btc_fallen_knives_20260806_1836.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-08-06",
+          "report_local_time": "18:36"
+        },
+        {
+          "phase": "1B",
+          "canonical_tag": "FK-P1B-BTC-20260806-1836",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "btc_fallen_knives_20260806_1836.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-08-06",
+          "report_local_time": "18:36"
+        },
+        {
+          "phase": "2",
+          "canonical_tag": "FK-P2-BTC-20260806-1836",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "btc_fallen_knives_20260806_1836.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-08-06",
+          "report_local_time": "18:36"
+        },
+        {
+          "phase": "3",
+          "canonical_tag": "FK-P3-BTC-20260806-1836",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "btc_fallen_knives_20260806_1836.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-08-06",
+          "report_local_time": "18:36"
+        }
+      ]
+    },
+    "instrument_class": "crypto",
+    "report_file": "btc_fallen_knives_20260806_1836.md",
+    "report_version": "report-machine/1",
+    "framework": "fallen_knives",
+    "channel": null,
+    "report_asset": "BTC",
+    "report_date": "2026-08-06",
+    "report_local_time": "18:36",
+    "active_tags": [],
+    "reserved_tags": [
+      "FK-P1A-BTC-20260806-1836",
+      "FK-P1B-BTC-20260806-1836",
+      "FK-P2-BTC-20260806-1836",
+      "FK-P3-BTC-20260806-1836"
+    ],
+    "status": "REGISTERED"
   }
 }
 ```

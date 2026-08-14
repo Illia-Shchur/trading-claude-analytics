@@ -260,6 +260,16 @@ So the tenth consecutive ten is not paralysis, it is a rubric holding its line a
 
 *Cash is a position, and this week it collected two clean receipts: the shelf it drew a stop beneath held its weekly close, and the crowded book it refused to join finally stopped growing — richest of the correction, but no longer adding. A plateau is not a flush, and the framework does not deploy on a book that merely paused. Tuesday the CPI rules on the rest, and Friday the market files two more documents. Ten straight tens is a rubric that asked one question — "did anyone actually give up?" — and is still, patiently, being told no.*
 
+### Immutable report-phase registry
+
+| Phase | Canonical tag | Decision | Instrument class |
+|---|---|---|---|
+| 1A | FK-P1A-GOLD-20260711-1030 | UNVERIFIED | non_crypto_derivative |
+| 1B | FK-P1B-GOLD-20260711-1030 | UNVERIFIED | non_crypto_derivative |
+| 2 | FK-P2-GOLD-20260711-1030 | LOCKED | non_crypto_derivative |
+| 3 | FK-P3-GOLD-20260711-1030 | LOCKED | non_crypto_derivative |
+
+Registry schema: report-phase-registry/1; version: 1; origin: gold_fallen_knives_20260711_1030.md (report-machine/1).
 ```json machine
 {
   "schema": "report-machine/1",
@@ -308,6 +318,84 @@ So the tenth consecutive ten is not paralysis, it is a rubric holding its line a
     "real_yield_10y_tips": 2.31, "sept_hike_odds_ge1": "~70%", "dxy": 100.97,
     "pboc_june_tonnes": 14.93, "etf_june_tonnes": -74, "goldman_ye": 4900,
     "adr5": 58.88, "companion_fr": { "composite": 2, "gates": 0, "cap_bound": true }
+  },
+  "tagging": {
+    "mode": "phase_registry",
+    "registry": {
+      "schema": "report-phase-registry/1",
+      "version": 1,
+      "report_file": "gold_fallen_knives_20260711_1030.md",
+      "report_version": "report-machine/1",
+      "framework": "fallen_knives",
+      "channel": null,
+      "asset": "GOLD",
+      "report_date": "2026-07-11",
+      "report_local_time": "10:30",
+      "report_zone": "America/New_York",
+      "instrument_class": "non_crypto_derivative",
+      "entries": [
+        {
+          "phase": "1A",
+          "canonical_tag": "FK-P1A-GOLD-20260711-1030",
+          "decision": "UNVERIFIED",
+          "instrument_class": "non_crypto_derivative",
+          "report_file": "gold_fallen_knives_20260711_1030.md",
+          "report_version": "report-machine/1",
+          "asset": "GOLD",
+          "report_date": "2026-07-11",
+          "report_local_time": "10:30"
+        },
+        {
+          "phase": "1B",
+          "canonical_tag": "FK-P1B-GOLD-20260711-1030",
+          "decision": "UNVERIFIED",
+          "instrument_class": "non_crypto_derivative",
+          "report_file": "gold_fallen_knives_20260711_1030.md",
+          "report_version": "report-machine/1",
+          "asset": "GOLD",
+          "report_date": "2026-07-11",
+          "report_local_time": "10:30"
+        },
+        {
+          "phase": "2",
+          "canonical_tag": "FK-P2-GOLD-20260711-1030",
+          "decision": "LOCKED",
+          "instrument_class": "non_crypto_derivative",
+          "report_file": "gold_fallen_knives_20260711_1030.md",
+          "report_version": "report-machine/1",
+          "asset": "GOLD",
+          "report_date": "2026-07-11",
+          "report_local_time": "10:30"
+        },
+        {
+          "phase": "3",
+          "canonical_tag": "FK-P3-GOLD-20260711-1030",
+          "decision": "LOCKED",
+          "instrument_class": "non_crypto_derivative",
+          "report_file": "gold_fallen_knives_20260711_1030.md",
+          "report_version": "report-machine/1",
+          "asset": "GOLD",
+          "report_date": "2026-07-11",
+          "report_local_time": "10:30"
+        }
+      ]
+    },
+    "instrument_class": "non_crypto_derivative",
+    "report_file": "gold_fallen_knives_20260711_1030.md",
+    "report_version": "report-machine/1",
+    "framework": "fallen_knives",
+    "channel": null,
+    "report_asset": "GOLD",
+    "report_date": "2026-07-11",
+    "report_local_time": "10:30",
+    "active_tags": [],
+    "reserved_tags": [
+      "FK-P1A-GOLD-20260711-1030",
+      "FK-P1B-GOLD-20260711-1030",
+      "FK-P2-GOLD-20260711-1030",
+      "FK-P3-GOLD-20260711-1030"
+    ],
+    "status": "REGISTERED"
   }
 }
 ```

@@ -273,6 +273,16 @@ Underneath the geopolitics, the flow question that dominated the last three repo
 
 *Cash is a position, and this weekend it watched the exodus officially end without the bid actually returning, and a war re-open onto the one market that never closes. The framework's discipline is symmetric: it would not sell the panic, and it will not buy a squeeze-tagged level at a negative edge with an oil gap and an inflation print both unprinted. Monday's crude and Tuesday's CPI set the table; the ladder is staged either way.*
 
+### Immutable report-phase registry
+
+| Phase | Canonical tag | Decision | Instrument class |
+|---|---|---|---|
+| 1A | FK-P1A-BTC-20260712-1030 | UNVERIFIED | crypto |
+| 1B | FK-P1B-BTC-20260712-1030 | LOCKED | crypto |
+| 2 | FK-P2-BTC-20260712-1030 | LOCKED | crypto |
+| 3 | FK-P3-BTC-20260712-1030 | LOCKED | crypto |
+
+Registry schema: report-phase-registry/1; version: 1; origin: btc_fallen_knives_20260712_1030.md (report-machine/1).
 ```json machine
 {
   "schema": "report-machine/1",
@@ -317,6 +327,84 @@ Underneath the geopolitics, the flow question that dominated the last three repo
     "iran": "3rd US strike this week; Tehran declared Hormuz closed until further notice; oil gap-up risk Mon",
     "brent_fri_close": 76.01, "sept_hike_odds_ge1": "~70%", "real_yield_10y_tips": 2.31, "vix": 15.03,
     "mstr_btc": 843775, "companion_fr": { "composite": 1, "gates": 0, "cap_bound": true }
+  },
+  "tagging": {
+    "mode": "phase_registry",
+    "registry": {
+      "schema": "report-phase-registry/1",
+      "version": 1,
+      "report_file": "btc_fallen_knives_20260712_1030.md",
+      "report_version": "report-machine/1",
+      "framework": "fallen_knives",
+      "channel": null,
+      "asset": "BTC",
+      "report_date": "2026-07-12",
+      "report_local_time": "10:30",
+      "report_zone": "America/New_York",
+      "instrument_class": "crypto",
+      "entries": [
+        {
+          "phase": "1A",
+          "canonical_tag": "FK-P1A-BTC-20260712-1030",
+          "decision": "UNVERIFIED",
+          "instrument_class": "crypto",
+          "report_file": "btc_fallen_knives_20260712_1030.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-07-12",
+          "report_local_time": "10:30"
+        },
+        {
+          "phase": "1B",
+          "canonical_tag": "FK-P1B-BTC-20260712-1030",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "btc_fallen_knives_20260712_1030.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-07-12",
+          "report_local_time": "10:30"
+        },
+        {
+          "phase": "2",
+          "canonical_tag": "FK-P2-BTC-20260712-1030",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "btc_fallen_knives_20260712_1030.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-07-12",
+          "report_local_time": "10:30"
+        },
+        {
+          "phase": "3",
+          "canonical_tag": "FK-P3-BTC-20260712-1030",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "btc_fallen_knives_20260712_1030.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-07-12",
+          "report_local_time": "10:30"
+        }
+      ]
+    },
+    "instrument_class": "crypto",
+    "report_file": "btc_fallen_knives_20260712_1030.md",
+    "report_version": "report-machine/1",
+    "framework": "fallen_knives",
+    "channel": null,
+    "report_asset": "BTC",
+    "report_date": "2026-07-12",
+    "report_local_time": "10:30",
+    "active_tags": [],
+    "reserved_tags": [
+      "FK-P1A-BTC-20260712-1030",
+      "FK-P1B-BTC-20260712-1030",
+      "FK-P2-BTC-20260712-1030",
+      "FK-P3-BTC-20260712-1030"
+    ],
+    "status": "REGISTERED"
   }
 }
 ```

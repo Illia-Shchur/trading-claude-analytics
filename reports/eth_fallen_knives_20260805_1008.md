@@ -576,6 +576,16 @@ Two process items outrank every market judgment in this report. The ledger is EX
 
 ---
 
+### Immutable report-phase registry
+
+| Phase | Canonical tag | Decision | Instrument class |
+|---|---|---|---|
+| 1A | FK-P1A-ETH-20260805-1008 | UNVERIFIED | crypto |
+| 1B | FK-P1B-ETH-20260805-1008 | LOCKED | crypto |
+| 2 | FK-P2-ETH-20260805-1008 | LOCKED | crypto |
+| 3 | FK-P3-ETH-20260805-1008 | LOCKED | crypto |
+
+Registry schema: report-phase-registry/1; version: 1; origin: eth_fallen_knives_20260805_1008.md (report-machine/1).
 ```json machine
 {
   "schema": "report-machine/1",
@@ -850,6 +860,84 @@ Two process items outrank every market judgment in this report. The ledger is EX
     "scorecard": "9 bull / 11 bear — net bearish by 2, outside the within-1 limb",
     "effect": "no directional regime resolution claimed anywhere in the report; every forward statement carries a probability or an IF->THEN plus a named falsifier"
   },
-  "verdict": "HOLD; authorize nothing; work nothing until the ledger is readable. Mechanical 11/20 — NO LEG MOVED from 2026-08-03. D1 = -0.5, the FIRST NON-ZERO DISCRETIONARY TERM IN THE ETH SERIES, and it REVERSES a decline made two days ago — flagged loudly, logged for calibration. Adjusted 10/20. THE READ: ETH is the cheapest asset in this book and the least frightened market in it. MVRV-Z ~-0.93 against an implied realized price of $2,276.85 puts the median holder ~18% underwater, the cheapest since December 2018, and the SIGN is arithmetically forced — spot needs +21.27% merely to reach zero. Underneath it the float is being removed on a schedule: exchange reserves at the lowest level EVER recorded, staking at a record 32.4%, an entry backlog that grew 3M -> 3.5M ETH in two days against an exit queue of exactly ZERO. Against that, nobody is frightened and almost nobody is trading: F&G stuck at 25-30 for ten sessions, funding positive with zero negative intervals in 45, $7.27M of liquidations, SESSION VOLUME AT THE 5TH PERCENTILE OF TWO YEARS and realized 30d vol at the 4TH. THE CENTRAL OBSERVATION: FK's legs read a 38-session base with higher lows as supportive structure while the computed FR Channel-B companion reads the IDENTICAL tape as rally-extension 3/5 on its way to 9/20. Both are right — a base and an aging counter-trend rally on thin volume are the same object from two angles, and only one angle is in the rubric. D1 RATIONALE: (i) CLARITY moved from a diffuse 27% annual probability to a HARD 2026-08-10 Senate cliff at 28-37% with cloture unstarted — a five-day binary is a different object from a six-month one, and it is ETH-weighted; (ii) bounce maturity, +21.23% / 38 sessions / 5th-percentile volume, corroborated by the companion. EXPLICITLY NOT the shared macro BTC prices at -1.0 — no hike-path, oil or melt-up argument appears here, because ground (b) of the 2026-08-03 decline was right and is respected. Ground (a) is overridden: the erased 1B crossing is INERT (short three gates and one [V] gate) and the objects differ (valuation vs regulatory/structural). Declined -1.0 (buys no extra consequence under half-down) and +0.5 (double-counts the holder leg's 3/3). D2 AVAILABLE ON 1A AND DECLINED FOR THE THIRD CONSECUTIVE REPORT — the partial-tranche rule already authorizes the same capital without a D5 stop or a 10-day phase bar; the gate D2 would substitute for is a FEAR gate and ETH's whole diagnosis is 'cheap but not feared'; and no D5 line could be anchored to a fill an EXPIRED ledger cannot corroborate. That three-report pattern is logged as a finding for calibration. STOP: mechanical 11 < 12 so the score axis IS satisfied and the compound stop is price-gated at $1,350 — but ETH remains ONE BAND EDGE from restoring the second key (weekly RSI below 40.0, currently 41.96), the cheapest protection upgrade available and one that arrives on WEAKNESS. Coherence PASS ($1,300 < $1,450). Nothing moved; D6 compliant. TOOLCHAIN CATCH: Yahoo is emitting an extra live weekly bar so fetch.mjs's 'completed' set silently includes the IN-PROGRESS week; corrected 261-close RSI 41.96 vs the tool's 41.58 — harmless here (same band), decisive on GOLD. POSITION (Hard Rule 8): EXIT 1 / EXPIRED at 94.2h, degraded from STALE 50.2h. Cold start per Hard Rule 4, stated explicitly; narrated fills UNVERIFIED IN BOTH DIRECTIONS; no basis or PnL quotable against 24 unbacked disposals (8.5064 ETH, the account's largest gap); dry powder a SHARED pool with BTC and gold. FR COMPANION 9/20 — trigger (ii) RE-FIRES and the standalone report owed since 2026-08-01 has STILL never been run. Collar ACTIVE (|EV| 1.71% < 2%): no directional regime resolution claimed."
+  "verdict": "HOLD; authorize nothing; work nothing until the ledger is readable. Mechanical 11/20 — NO LEG MOVED from 2026-08-03. D1 = -0.5, the FIRST NON-ZERO DISCRETIONARY TERM IN THE ETH SERIES, and it REVERSES a decline made two days ago — flagged loudly, logged for calibration. Adjusted 10/20. THE READ: ETH is the cheapest asset in this book and the least frightened market in it. MVRV-Z ~-0.93 against an implied realized price of $2,276.85 puts the median holder ~18% underwater, the cheapest since December 2018, and the SIGN is arithmetically forced — spot needs +21.27% merely to reach zero. Underneath it the float is being removed on a schedule: exchange reserves at the lowest level EVER recorded, staking at a record 32.4%, an entry backlog that grew 3M -> 3.5M ETH in two days against an exit queue of exactly ZERO. Against that, nobody is frightened and almost nobody is trading: F&G stuck at 25-30 for ten sessions, funding positive with zero negative intervals in 45, $7.27M of liquidations, SESSION VOLUME AT THE 5TH PERCENTILE OF TWO YEARS and realized 30d vol at the 4TH. THE CENTRAL OBSERVATION: FK's legs read a 38-session base with higher lows as supportive structure while the computed FR Channel-B companion reads the IDENTICAL tape as rally-extension 3/5 on its way to 9/20. Both are right — a base and an aging counter-trend rally on thin volume are the same object from two angles, and only one angle is in the rubric. D1 RATIONALE: (i) CLARITY moved from a diffuse 27% annual probability to a HARD 2026-08-10 Senate cliff at 28-37% with cloture unstarted — a five-day binary is a different object from a six-month one, and it is ETH-weighted; (ii) bounce maturity, +21.23% / 38 sessions / 5th-percentile volume, corroborated by the companion. EXPLICITLY NOT the shared macro BTC prices at -1.0 — no hike-path, oil or melt-up argument appears here, because ground (b) of the 2026-08-03 decline was right and is respected. Ground (a) is overridden: the erased 1B crossing is INERT (short three gates and one [V] gate) and the objects differ (valuation vs regulatory/structural). Declined -1.0 (buys no extra consequence under half-down) and +0.5 (double-counts the holder leg's 3/3). D2 AVAILABLE ON 1A AND DECLINED FOR THE THIRD CONSECUTIVE REPORT — the partial-tranche rule already authorizes the same capital without a D5 stop or a 10-day phase bar; the gate D2 would substitute for is a FEAR gate and ETH's whole diagnosis is 'cheap but not feared'; and no D5 line could be anchored to a fill an EXPIRED ledger cannot corroborate. That three-report pattern is logged as a finding for calibration. STOP: mechanical 11 < 12 so the score axis IS satisfied and the compound stop is price-gated at $1,350 — but ETH remains ONE BAND EDGE from restoring the second key (weekly RSI below 40.0, currently 41.96), the cheapest protection upgrade available and one that arrives on WEAKNESS. Coherence PASS ($1,300 < $1,450). Nothing moved; D6 compliant. TOOLCHAIN CATCH: Yahoo is emitting an extra live weekly bar so fetch.mjs's 'completed' set silently includes the IN-PROGRESS week; corrected 261-close RSI 41.96 vs the tool's 41.58 — harmless here (same band), decisive on GOLD. POSITION (Hard Rule 8): EXIT 1 / EXPIRED at 94.2h, degraded from STALE 50.2h. Cold start per Hard Rule 4, stated explicitly; narrated fills UNVERIFIED IN BOTH DIRECTIONS; no basis or PnL quotable against 24 unbacked disposals (8.5064 ETH, the account's largest gap); dry powder a SHARED pool with BTC and gold. FR COMPANION 9/20 — trigger (ii) RE-FIRES and the standalone report owed since 2026-08-01 has STILL never been run. Collar ACTIVE (|EV| 1.71% < 2%): no directional regime resolution claimed.",
+  "tagging": {
+    "mode": "phase_registry",
+    "registry": {
+      "schema": "report-phase-registry/1",
+      "version": 1,
+      "report_file": "eth_fallen_knives_20260805_1008.md",
+      "report_version": "report-machine/1",
+      "framework": "fallen_knives",
+      "channel": null,
+      "asset": "ETH",
+      "report_date": "2026-08-05",
+      "report_local_time": "10:08",
+      "report_zone": "America/New_York",
+      "instrument_class": "crypto",
+      "entries": [
+        {
+          "phase": "1A",
+          "canonical_tag": "FK-P1A-ETH-20260805-1008",
+          "decision": "UNVERIFIED",
+          "instrument_class": "crypto",
+          "report_file": "eth_fallen_knives_20260805_1008.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-08-05",
+          "report_local_time": "10:08"
+        },
+        {
+          "phase": "1B",
+          "canonical_tag": "FK-P1B-ETH-20260805-1008",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "eth_fallen_knives_20260805_1008.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-08-05",
+          "report_local_time": "10:08"
+        },
+        {
+          "phase": "2",
+          "canonical_tag": "FK-P2-ETH-20260805-1008",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "eth_fallen_knives_20260805_1008.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-08-05",
+          "report_local_time": "10:08"
+        },
+        {
+          "phase": "3",
+          "canonical_tag": "FK-P3-ETH-20260805-1008",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "eth_fallen_knives_20260805_1008.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-08-05",
+          "report_local_time": "10:08"
+        }
+      ]
+    },
+    "instrument_class": "crypto",
+    "report_file": "eth_fallen_knives_20260805_1008.md",
+    "report_version": "report-machine/1",
+    "framework": "fallen_knives",
+    "channel": null,
+    "report_asset": "ETH",
+    "report_date": "2026-08-05",
+    "report_local_time": "10:08",
+    "active_tags": [],
+    "reserved_tags": [
+      "FK-P1A-ETH-20260805-1008",
+      "FK-P1B-ETH-20260805-1008",
+      "FK-P2-ETH-20260805-1008",
+      "FK-P3-ETH-20260805-1008"
+    ],
+    "status": "REGISTERED"
+  }
 }
 ```

@@ -457,6 +457,15 @@ The carry is the other seduction and it is worth naming precisely, because it is
 
 *Sources: [CoinGecko](https://www.coingecko.com/en/coins/bitcoin), [Binance Futures API](https://fapi.binance.com), [Kraken](https://api.kraken.com), [Coinbase](https://api.coinbase.com), [Yahoo Finance BTC-USD](https://finance.yahoo.com/quote/BTC-USD/), [Alternative.me F&G](https://api.alternative.me/fng/), [bitcoin-data.com MVRV-Z (BGeometrics)](https://bitcoin-data.com/v1/mvrv-zscore/last), [FRED DFII10](https://fred.stlouisfed.org/series/DFII10), [CoinDesk — BTC ETF record-low month](https://www.coindesk.com/daybook-us/2026/07/30/bitcoin-etfs-on-track-for-the-smallest-monthly-inflows-ever), [CoinDesk — Jul-30 liquidations](https://www.coindesk.com/markets/2026/07/30/bitcoin-ether-whipsaw-wipes-out-usd280-million-even-as-prices-remain-flat-over-24-hours), [CryptoTimes — FOMC hold](https://www.cryptotimes.io/2026/07/30/bitcoin-ethereum-fall-after-fomc-meeting-keeps-rates-unchanged/), [The Currency Analytics — 4-session outflows](https://thecurrencyanalytics.com/bitcoin/bitcoin-holds-near-64200-as-etf-outflows-hit-526-5-million-across-four-sessions-279831), [news.bitcoin.com — LTH supply ATH](https://news.bitcoin.com/bitcoin-long-term-holder-supply-all-time-high-2026/), [OurCryptoTalk — exchange reserves 7-year low](https://ourcryptotalk.com/news/bitcoin-exchange-reserves-7-year-low-whale-accumulation). Figures captured 2026-07-31, 08:17–08:26 UTC.*
 
+### Immutable report-phase registry
+
+| Phase | Canonical tag | Decision | Instrument class |
+|---|---|---|---|
+| 1A | FR-B-1A-BTC-20260731-0426 | STAND_DOWN | crypto |
+| 1B | FR-B-1B-BTC-20260731-0426 | STAND_DOWN | crypto |
+| 2 | FR-B-2-BTC-20260731-0426 | STAND_DOWN | crypto |
+
+Registry schema: report-phase-registry/1; version: 1; origin: btc_flying_rocket_20260731_0426.md (report-machine/1).
 ```json machine
 {
   "schema": "report-machine/1",
@@ -618,6 +627,72 @@ The carry is the other seduction and it is worth naming precisely, because it is
       "fired": ["6.6(e) - asset newly satisfies the Channel B regime test"],
       "not_fired": ["6.6(b) - Jul-29/30 liquidations were LONG-dominated, inverting the July squeeze hazard"]
     }
+  },
+  "tagging": {
+    "mode": "phase_registry",
+    "registry": {
+      "schema": "report-phase-registry/1",
+      "version": 1,
+      "report_file": "btc_flying_rocket_20260731_0426.md",
+      "report_version": "report-machine/1",
+      "framework": "flying_rocket",
+      "channel": "B",
+      "asset": "BTC",
+      "report_date": "2026-07-31",
+      "report_local_time": "04:26",
+      "report_zone": "America/New_York",
+      "instrument_class": "crypto",
+      "entries": [
+        {
+          "phase": "1A",
+          "canonical_tag": "FR-B-1A-BTC-20260731-0426",
+          "decision": "STAND_DOWN",
+          "instrument_class": "crypto",
+          "report_file": "btc_flying_rocket_20260731_0426.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-07-31",
+          "report_local_time": "04:26"
+        },
+        {
+          "phase": "1B",
+          "canonical_tag": "FR-B-1B-BTC-20260731-0426",
+          "decision": "STAND_DOWN",
+          "instrument_class": "crypto",
+          "report_file": "btc_flying_rocket_20260731_0426.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-07-31",
+          "report_local_time": "04:26"
+        },
+        {
+          "phase": "2",
+          "canonical_tag": "FR-B-2-BTC-20260731-0426",
+          "decision": "STAND_DOWN",
+          "instrument_class": "crypto",
+          "report_file": "btc_flying_rocket_20260731_0426.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-07-31",
+          "report_local_time": "04:26"
+        }
+      ]
+    },
+    "instrument_class": "crypto",
+    "report_file": "btc_flying_rocket_20260731_0426.md",
+    "report_version": "report-machine/1",
+    "framework": "flying_rocket",
+    "channel": "B",
+    "report_asset": "BTC",
+    "report_date": "2026-07-31",
+    "report_local_time": "04:26",
+    "active_tags": [],
+    "reserved_tags": [
+      "FR-B-1A-BTC-20260731-0426",
+      "FR-B-1B-BTC-20260731-0426",
+      "FR-B-2-BTC-20260731-0426"
+    ],
+    "status": "REGISTERED"
   }
 }
 ```

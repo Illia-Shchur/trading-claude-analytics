@@ -545,6 +545,16 @@ The thing that genuinely worries me is not in the market data at all. The ledger
 
 ---
 
+### Immutable report-phase registry
+
+| Phase | Canonical tag | Decision | Instrument class |
+|---|---|---|---|
+| 1A | FK-P1A-BTC-20260801-1117 | STAND_DOWN | crypto |
+| 1B | FK-P1B-BTC-20260801-1117 | STAND_DOWN | crypto |
+| 2 | FK-P2-BTC-20260801-1117 | STAND_DOWN | crypto |
+| 3 | FK-P3-BTC-20260801-1117 | STAND_DOWN | crypto |
+
+Registry schema: report-phase-registry/1; version: 1; origin: btc_fallen_knives_20260801_1117.md (report-machine/1).
 ```json machine
 {
   "schema": "report-machine/1",
@@ -661,6 +671,84 @@ The thing that genuinely worries me is not in the market data at all. The ledger
     "stale_input_debt": ["gate 5 Hash Ribbon — no sourced print, report 2 of the debt clock, carried dark and NOT credited"]
   },
   "collar": { "band_triggered": true, "reasons": ["|EV-vs-spot| 0.80% < 2%", "bull/bear scorecard 7-7, balanced"], "mechanical_score_in_6_10_band": false, "effect": "no directional regime resolution claimed" },
-  "verdict": "HOLD; deploy nothing new. 90% dry at a 3.68% T-bill carry. Mechanical 11/20, D1 0.0, adjusted 11/20 — no leg moved from Jul-25. HEADLINE MECHANICAL EVENT: the 2026-07-27 cut of the Phase 1B score line from >=13 to >=11 lands for the first time on BTC — 1B goes from double-blocked (score AND gates) to SINGLE-blocked on gates alone (3/9 vs 5 required, [V] 2 vs 3). D2 conviction path evaluated and UNAVAILABLE: it opens at a shortfall of exactly one gate and 1B is short two. STRUCTURE: spot sits -0.77% from the 200-week MA ($63,546), MVRV-Z 0.41 against a realized price of $52,418, LTH MVRV 1.27 with supply rising and reserves falling, funding +4.73% ann with zero negative intervals in 15 — the structural work of a bottom is done, the emotional work is not (F&G 27, no sub-16 print in 10 sessions, gate 1 streak 0, Jul-31 liquidations ordinary at ~$360M). FLOW DETERIORATION: ETF flows resumed net-negative Jul-31 at -$265.4M (IBIT -$122.7M, its largest single-day withdrawal in weeks) — 4 outflow vs 2 inflow sessions since Jul-23, trailing month still net positive at ~0.3% of AUM vs the 2% bar; gate 4 stays dark but is the nearest [V] gate. DECOUPLING: July closed +7.5% through an AI-led equity unwind at a COMPUTED 30d SPX correlation of 0.241 — no risk-on surcharge, Phase-2 corr condition passes on a real number. FR COMPANION computed at 7/20 Channel B (routing re-verified: -50.03% off the 1y high, 200dma falling -3.48%/20 sessions, price -11.63% beneath) against a Channel B 1A line of 13 — stand down; cross-validation consistent and UNQUALIFIED since the cap is not binding. POSITION OF RECORD (Hard Rule 8, STALE at 26h): the ledger shows 0.00000184 BTC — dust — with basis.reliable=false, custody RECONCILED, zero withdrawals, UNTAGGED, against a narrated '10% Phase 1A at ~$65,000 blended' carried forward across multiple reports. No average cost, cost basis, unrealized PnL or ROI reported; realized $1,639.83 is an upper bound. The discrepancy is flagged, not resolved — a STALE snapshot cannot settle a phase-dependent question in either direction — and resolving it is action item 1, ahead of every market call here. Collar ACTIVE (|EV-vs-spot| 0.80% < 2%; scorecard 7-7): no directional regime resolution claimed."
+  "verdict": "HOLD; deploy nothing new. 90% dry at a 3.68% T-bill carry. Mechanical 11/20, D1 0.0, adjusted 11/20 — no leg moved from Jul-25. HEADLINE MECHANICAL EVENT: the 2026-07-27 cut of the Phase 1B score line from >=13 to >=11 lands for the first time on BTC — 1B goes from double-blocked (score AND gates) to SINGLE-blocked on gates alone (3/9 vs 5 required, [V] 2 vs 3). D2 conviction path evaluated and UNAVAILABLE: it opens at a shortfall of exactly one gate and 1B is short two. STRUCTURE: spot sits -0.77% from the 200-week MA ($63,546), MVRV-Z 0.41 against a realized price of $52,418, LTH MVRV 1.27 with supply rising and reserves falling, funding +4.73% ann with zero negative intervals in 15 — the structural work of a bottom is done, the emotional work is not (F&G 27, no sub-16 print in 10 sessions, gate 1 streak 0, Jul-31 liquidations ordinary at ~$360M). FLOW DETERIORATION: ETF flows resumed net-negative Jul-31 at -$265.4M (IBIT -$122.7M, its largest single-day withdrawal in weeks) — 4 outflow vs 2 inflow sessions since Jul-23, trailing month still net positive at ~0.3% of AUM vs the 2% bar; gate 4 stays dark but is the nearest [V] gate. DECOUPLING: July closed +7.5% through an AI-led equity unwind at a COMPUTED 30d SPX correlation of 0.241 — no risk-on surcharge, Phase-2 corr condition passes on a real number. FR COMPANION computed at 7/20 Channel B (routing re-verified: -50.03% off the 1y high, 200dma falling -3.48%/20 sessions, price -11.63% beneath) against a Channel B 1A line of 13 — stand down; cross-validation consistent and UNQUALIFIED since the cap is not binding. POSITION OF RECORD (Hard Rule 8, STALE at 26h): the ledger shows 0.00000184 BTC — dust — with basis.reliable=false, custody RECONCILED, zero withdrawals, UNTAGGED, against a narrated '10% Phase 1A at ~$65,000 blended' carried forward across multiple reports. No average cost, cost basis, unrealized PnL or ROI reported; realized $1,639.83 is an upper bound. The discrepancy is flagged, not resolved — a STALE snapshot cannot settle a phase-dependent question in either direction — and resolving it is action item 1, ahead of every market call here. Collar ACTIVE (|EV-vs-spot| 0.80% < 2%; scorecard 7-7): no directional regime resolution claimed.",
+  "tagging": {
+    "mode": "phase_registry",
+    "registry": {
+      "schema": "report-phase-registry/1",
+      "version": 1,
+      "report_file": "btc_fallen_knives_20260801_1117.md",
+      "report_version": "report-machine/1",
+      "framework": "fallen_knives",
+      "channel": null,
+      "asset": "BTC",
+      "report_date": "2026-08-01",
+      "report_local_time": "11:17",
+      "report_zone": "America/New_York",
+      "instrument_class": "crypto",
+      "entries": [
+        {
+          "phase": "1A",
+          "canonical_tag": "FK-P1A-BTC-20260801-1117",
+          "decision": "STAND_DOWN",
+          "instrument_class": "crypto",
+          "report_file": "btc_fallen_knives_20260801_1117.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-08-01",
+          "report_local_time": "11:17"
+        },
+        {
+          "phase": "1B",
+          "canonical_tag": "FK-P1B-BTC-20260801-1117",
+          "decision": "STAND_DOWN",
+          "instrument_class": "crypto",
+          "report_file": "btc_fallen_knives_20260801_1117.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-08-01",
+          "report_local_time": "11:17"
+        },
+        {
+          "phase": "2",
+          "canonical_tag": "FK-P2-BTC-20260801-1117",
+          "decision": "STAND_DOWN",
+          "instrument_class": "crypto",
+          "report_file": "btc_fallen_knives_20260801_1117.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-08-01",
+          "report_local_time": "11:17"
+        },
+        {
+          "phase": "3",
+          "canonical_tag": "FK-P3-BTC-20260801-1117",
+          "decision": "STAND_DOWN",
+          "instrument_class": "crypto",
+          "report_file": "btc_fallen_knives_20260801_1117.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-08-01",
+          "report_local_time": "11:17"
+        }
+      ]
+    },
+    "instrument_class": "crypto",
+    "report_file": "btc_fallen_knives_20260801_1117.md",
+    "report_version": "report-machine/1",
+    "framework": "fallen_knives",
+    "channel": null,
+    "report_asset": "BTC",
+    "report_date": "2026-08-01",
+    "report_local_time": "11:17",
+    "active_tags": [],
+    "reserved_tags": [
+      "FK-P1A-BTC-20260801-1117",
+      "FK-P1B-BTC-20260801-1117",
+      "FK-P2-BTC-20260801-1117",
+      "FK-P3-BTC-20260801-1117"
+    ],
+    "status": "REGISTERED"
+  }
 }
 ```

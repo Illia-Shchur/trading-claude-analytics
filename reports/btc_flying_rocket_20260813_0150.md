@@ -281,6 +281,15 @@ The realistic path to a live BTC short still runs *higher and then rejected*: a 
 >
 > **IF** the L/S account ratio holds above its median AND funding pushes past the 90th percentile AND the ETF inflow streak exceeds 10 sessions → **THEN** the S1 −0.5 absorption term retires and the flow-tell leg is credited at face value — the first sign positioning has turned from absorption to froth.
 
+### Immutable report-phase registry
+
+| Phase | Canonical tag | Decision | Instrument class |
+|---|---|---|---|
+| 1A | FR-B-1A-BTC-20260813-0150 | STAND_DOWN | crypto |
+| 1B | FR-B-1B-BTC-20260813-0150 | STAND_DOWN | crypto |
+| 2 | FR-B-2-BTC-20260813-0150 | STAND_DOWN | crypto |
+
+Registry schema: report-phase-registry/1; version: 1; origin: btc_flying_rocket_20260813_0150.md (report-machine/1).
 ```json machine
 {
   "schema": "report-machine/1",
@@ -455,6 +464,72 @@ The realistic path to a live BTC short still runs *higher and then rejected*: a 
       "not_fired": ["6.6(a) FK companion 7 <9", "6.6(b) no >=$100M shorts-dominated liquidation day, no BTC-led squeeze", "6.6(c) 200-week-SMA falsifier at the edge but is a breakdown-confirmation not a short-entry level", "6.6(d) no falsifier fired", "6.6(e) already Channel B, no new crossing"],
       "note": "user-requested run; the full 2.5/4B stack was re-run from scratch"
     }
+  },
+  "tagging": {
+    "mode": "phase_registry",
+    "registry": {
+      "schema": "report-phase-registry/1",
+      "version": 1,
+      "report_file": "btc_flying_rocket_20260813_0150.md",
+      "report_version": "report-machine/1",
+      "framework": "flying_rocket",
+      "channel": "B",
+      "asset": "BTC",
+      "report_date": "2026-08-13",
+      "report_local_time": "01:50",
+      "report_zone": "America/New_York",
+      "instrument_class": "crypto",
+      "entries": [
+        {
+          "phase": "1A",
+          "canonical_tag": "FR-B-1A-BTC-20260813-0150",
+          "decision": "STAND_DOWN",
+          "instrument_class": "crypto",
+          "report_file": "btc_flying_rocket_20260813_0150.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-08-13",
+          "report_local_time": "01:50"
+        },
+        {
+          "phase": "1B",
+          "canonical_tag": "FR-B-1B-BTC-20260813-0150",
+          "decision": "STAND_DOWN",
+          "instrument_class": "crypto",
+          "report_file": "btc_flying_rocket_20260813_0150.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-08-13",
+          "report_local_time": "01:50"
+        },
+        {
+          "phase": "2",
+          "canonical_tag": "FR-B-2-BTC-20260813-0150",
+          "decision": "STAND_DOWN",
+          "instrument_class": "crypto",
+          "report_file": "btc_flying_rocket_20260813_0150.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-08-13",
+          "report_local_time": "01:50"
+        }
+      ]
+    },
+    "instrument_class": "crypto",
+    "report_file": "btc_flying_rocket_20260813_0150.md",
+    "report_version": "report-machine/1",
+    "framework": "flying_rocket",
+    "channel": "B",
+    "report_asset": "BTC",
+    "report_date": "2026-08-13",
+    "report_local_time": "01:50",
+    "active_tags": [],
+    "reserved_tags": [
+      "FR-B-1A-BTC-20260813-0150",
+      "FR-B-1B-BTC-20260813-0150",
+      "FR-B-2-BTC-20260813-0150"
+    ],
+    "status": "REGISTERED"
   }
 }
 ```

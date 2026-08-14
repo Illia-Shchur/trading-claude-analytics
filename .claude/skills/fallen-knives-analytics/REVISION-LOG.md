@@ -6,6 +6,10 @@ This file is **append-only in spirit**: a calibration adds a dated entry, and a 
 
 Read by: `tools/calib-run.mjs` (prior-tune re-validation + pre-apply audit) and the `framework-calibration` skill. The enumerated mechanism lists here are what make prior-tune re-validation gradeable — an entry that loses its mechanism names stops being testable.
 
+### 2026-08-14 — exact report-phase attribution contract
+
+The report machine block now carries an immutable `report-phase-registry/1` registry. Canonical tags are phase-first and exact-report-specific (`FK-P1A-<ASSET>-<YYYYMMDD>-<HHMM>`), with authorization decision, instrument class, report identity/version, and alignment stored as separate structured fields. The accounting origin is immutable; later reports are management references, and LOCKED/STAND_DOWN origins require acknowledgement and are excluded from authorized headline performance. Legacy/custom tags and `UNFRAMED` remain accepted.
+
 ---
 
 ### 2026-08-07 — SKILL compaction Stage 1: conflicts fixed (C1–C4, C6–C9); C5 flagged, not resolved

@@ -611,6 +611,16 @@ So the stop survived two separate threats today for two different reasons, and i
 
 ---
 
+### Immutable report-phase registry
+
+| Phase | Canonical tag | Decision | Instrument class |
+|---|---|---|---|
+| 1A | FK-P1A-GOLD-20260805-1008 | STAND_DOWN | non_crypto_derivative |
+| 1B | FK-P1B-GOLD-20260805-1008 | STAND_DOWN | non_crypto_derivative |
+| 2 | FK-P2-GOLD-20260805-1008 | STAND_DOWN | non_crypto_derivative |
+| 3 | FK-P3-GOLD-20260805-1008 | STAND_DOWN | non_crypto_derivative |
+
+Registry schema: report-phase-registry/1; version: 1; origin: gold_fallen_knives_20260805_1008.md (report-machine/1).
 ```json machine
 {
   "schema": "report-machine/1",
@@ -854,6 +864,84 @@ So the stop survived two separate threats today for two different reasons, and i
     "scorecard": "8 bull / 10 bear — bear by 2, NOT within 1 of balanced, so that limb is not met; the other two are",
     "effect": "no directional regime resolution claimed anywhere in the report; every forward statement carries a probability or an IF->THEN plus a named falsifier"
   },
-  "verdict": "HOLD 1.3294 PAXG (last-confirmed); deployment FROZEN; 75% dry at a 3.73% T-bill carry. Mechanical 8/20 — FOURTH consecutive report at 8, no leg moved. D1 = -1.0, the FIRST NON-ZERO DISCRETIONARY TERM IN THE GOLD SERIES; adjusted 7/20, which LOSES the Phase 1A score line first cleared on 2026-08-01 and CLOSES the D2 conviction path with it. THE MARKET EVENT: gold resolved a five-week $3,965-$4,165 range UPWARD — +4.03% to $4,260.60, a 152-point bar at 2.62x the 5-day ADR, volume at the 99.4th PERCENTILE OF TWO YEARS, close near the high, corroborated independently on tokenized gold (Kraken PAXG $4,065 -> $4,217, +3.74%). The driver is legible: Brent -12.41% on Hormuz progress trimmed inflation expectations and with them expected Fed tightening, DXY -1.06%. Bullion rallying on the same headline that put the S&P at a record is a RATE-EXPECTATIONS bid, not a fear bid. For a fear-accumulation framework that is not good news: three of the four dark reachable gates moved FURTHER away because all three require weakness, Phase 2's $3,700-3,950 zone is now 7.3-13.2% below spot, and gate 4 — the one lit fear gate — is exactly the input a breakout reverses. THE HEADLINE, THOUGH, IS PLUMBING. Yahoo began emitting an extra live weekly bar, so fetch.mjs folded an IN-PROGRESS week into its completed-closes set and returned weekly RSI 41.03 instead of the correct 38.98 — momentum leg 2->1, mechanical 8->7, and the compound stop's condition is score <8. Seven IS below eight. A live stop on the ONLY REAL POSITION IN THIS ACCOUNT would have degraded from two-key protection to a bare $3,850 price line, and nothing in the market would have caused it. Caught by cross-checking against this series' own prior prints (261 closes reproduces 38.98 on gold, 38.84 on BTC, 41.96 on ETH — exactly). The 2026-08-01 report predicted this failure mode and named the wrong culprit. THE STOP SURVIVED TWO THREATS TODAY FOR TWO DIFFERENT REASONS: the artifact was caught by verification, and the D1 was neutralized by the governing rule — a -1.0 takes the ADJUSTED score to 7, which WOULD satisfy the axis if the stop read that number, and it reads the MECHANICAL 8 instead. The 2026-08-01 report verified that interaction hypothetically; today it was live and it held. Gold consequently holds the only compound stop in this batch with FULL two-key protection while both crypto assets sit price-gated. Remaining risk unchanged: one point of MECHANICAL decay satisfies the axis, and the point most at risk is capitulation-(c), meaning the stop erodes on a BULLISH flow datum. SPOT HANDLING: fewer than 3 synchronized COMEX quotes obtainable (n_synchronized:0, both futures sources frozen bar closes); GC=F held as canonical for series continuity since the 10y high, drawdown, 200-week SMA and 200dma are all computed on it; the +1.03% futures-vs-cash gap (vs +0.17% on Jul-31) is COMEX CARRY on a deferred contract, not venue disagreement; EV computed at both ends (-0.67% GC=F / +0.38% cash) and THE SIGN FLIPS, so a low-confidence CORROBORATIVE-ONLY demotion was applied as a CONSERVATIVE DEVIATION though not strictly mandated. POSITION (Hard Rule 8): EXIT 1 / EXPIRED at 94.2h, degraded from STALE 26h. Cold start stated explicitly, but prior reports confirm a real holding so it is carried forward rather than read as flat. 1.3294 PAXG last-confirmed, custody RECONCILED, zero withdrawals; basis.reliable FALSE on ONE unbacked disposal so no cost, PnL, ROI or MTM is quoted — and note today's rally would have made the WITHDRAWN -10.50% MTM look considerably better, which is exactly the temptation the rule refuses. THE SMALLEST BASIS DEFECT IN THE ACCOUNT (1 vs BTC's 5 and ETH's 24), on the only real position — fix it first. FR COMPANION: STAND DOWN, no channel, 1/20 with a ceiling of 6, cross-validation 'structurally consistent (cap-bound; both->=12 unfalsifiable by construction)' — never a bare check. ROUTING TRIPWIRE NOW ONLY +4.89% AWAY ($4,468.96, was +10.4%): above it the cap stops binding and a standalone FR report becomes MANDATORY. Collar ACTIVE (|EV| 0.67% < 2%; mechanical 8 in the 6-10 band): no directional regime resolution claimed."
+  "verdict": "HOLD 1.3294 PAXG (last-confirmed); deployment FROZEN; 75% dry at a 3.73% T-bill carry. Mechanical 8/20 — FOURTH consecutive report at 8, no leg moved. D1 = -1.0, the FIRST NON-ZERO DISCRETIONARY TERM IN THE GOLD SERIES; adjusted 7/20, which LOSES the Phase 1A score line first cleared on 2026-08-01 and CLOSES the D2 conviction path with it. THE MARKET EVENT: gold resolved a five-week $3,965-$4,165 range UPWARD — +4.03% to $4,260.60, a 152-point bar at 2.62x the 5-day ADR, volume at the 99.4th PERCENTILE OF TWO YEARS, close near the high, corroborated independently on tokenized gold (Kraken PAXG $4,065 -> $4,217, +3.74%). The driver is legible: Brent -12.41% on Hormuz progress trimmed inflation expectations and with them expected Fed tightening, DXY -1.06%. Bullion rallying on the same headline that put the S&P at a record is a RATE-EXPECTATIONS bid, not a fear bid. For a fear-accumulation framework that is not good news: three of the four dark reachable gates moved FURTHER away because all three require weakness, Phase 2's $3,700-3,950 zone is now 7.3-13.2% below spot, and gate 4 — the one lit fear gate — is exactly the input a breakout reverses. THE HEADLINE, THOUGH, IS PLUMBING. Yahoo began emitting an extra live weekly bar, so fetch.mjs folded an IN-PROGRESS week into its completed-closes set and returned weekly RSI 41.03 instead of the correct 38.98 — momentum leg 2->1, mechanical 8->7, and the compound stop's condition is score <8. Seven IS below eight. A live stop on the ONLY REAL POSITION IN THIS ACCOUNT would have degraded from two-key protection to a bare $3,850 price line, and nothing in the market would have caused it. Caught by cross-checking against this series' own prior prints (261 closes reproduces 38.98 on gold, 38.84 on BTC, 41.96 on ETH — exactly). The 2026-08-01 report predicted this failure mode and named the wrong culprit. THE STOP SURVIVED TWO THREATS TODAY FOR TWO DIFFERENT REASONS: the artifact was caught by verification, and the D1 was neutralized by the governing rule — a -1.0 takes the ADJUSTED score to 7, which WOULD satisfy the axis if the stop read that number, and it reads the MECHANICAL 8 instead. The 2026-08-01 report verified that interaction hypothetically; today it was live and it held. Gold consequently holds the only compound stop in this batch with FULL two-key protection while both crypto assets sit price-gated. Remaining risk unchanged: one point of MECHANICAL decay satisfies the axis, and the point most at risk is capitulation-(c), meaning the stop erodes on a BULLISH flow datum. SPOT HANDLING: fewer than 3 synchronized COMEX quotes obtainable (n_synchronized:0, both futures sources frozen bar closes); GC=F held as canonical for series continuity since the 10y high, drawdown, 200-week SMA and 200dma are all computed on it; the +1.03% futures-vs-cash gap (vs +0.17% on Jul-31) is COMEX CARRY on a deferred contract, not venue disagreement; EV computed at both ends (-0.67% GC=F / +0.38% cash) and THE SIGN FLIPS, so a low-confidence CORROBORATIVE-ONLY demotion was applied as a CONSERVATIVE DEVIATION though not strictly mandated. POSITION (Hard Rule 8): EXIT 1 / EXPIRED at 94.2h, degraded from STALE 26h. Cold start stated explicitly, but prior reports confirm a real holding so it is carried forward rather than read as flat. 1.3294 PAXG last-confirmed, custody RECONCILED, zero withdrawals; basis.reliable FALSE on ONE unbacked disposal so no cost, PnL, ROI or MTM is quoted — and note today's rally would have made the WITHDRAWN -10.50% MTM look considerably better, which is exactly the temptation the rule refuses. THE SMALLEST BASIS DEFECT IN THE ACCOUNT (1 vs BTC's 5 and ETH's 24), on the only real position — fix it first. FR COMPANION: STAND DOWN, no channel, 1/20 with a ceiling of 6, cross-validation 'structurally consistent (cap-bound; both->=12 unfalsifiable by construction)' — never a bare check. ROUTING TRIPWIRE NOW ONLY +4.89% AWAY ($4,468.96, was +10.4%): above it the cap stops binding and a standalone FR report becomes MANDATORY. Collar ACTIVE (|EV| 0.67% < 2%; mechanical 8 in the 6-10 band): no directional regime resolution claimed.",
+  "tagging": {
+    "mode": "phase_registry",
+    "registry": {
+      "schema": "report-phase-registry/1",
+      "version": 1,
+      "report_file": "gold_fallen_knives_20260805_1008.md",
+      "report_version": "report-machine/1",
+      "framework": "fallen_knives",
+      "channel": null,
+      "asset": "GOLD",
+      "report_date": "2026-08-05",
+      "report_local_time": "10:08",
+      "report_zone": "America/New_York",
+      "instrument_class": "non_crypto_derivative",
+      "entries": [
+        {
+          "phase": "1A",
+          "canonical_tag": "FK-P1A-GOLD-20260805-1008",
+          "decision": "STAND_DOWN",
+          "instrument_class": "non_crypto_derivative",
+          "report_file": "gold_fallen_knives_20260805_1008.md",
+          "report_version": "report-machine/1",
+          "asset": "GOLD",
+          "report_date": "2026-08-05",
+          "report_local_time": "10:08"
+        },
+        {
+          "phase": "1B",
+          "canonical_tag": "FK-P1B-GOLD-20260805-1008",
+          "decision": "STAND_DOWN",
+          "instrument_class": "non_crypto_derivative",
+          "report_file": "gold_fallen_knives_20260805_1008.md",
+          "report_version": "report-machine/1",
+          "asset": "GOLD",
+          "report_date": "2026-08-05",
+          "report_local_time": "10:08"
+        },
+        {
+          "phase": "2",
+          "canonical_tag": "FK-P2-GOLD-20260805-1008",
+          "decision": "STAND_DOWN",
+          "instrument_class": "non_crypto_derivative",
+          "report_file": "gold_fallen_knives_20260805_1008.md",
+          "report_version": "report-machine/1",
+          "asset": "GOLD",
+          "report_date": "2026-08-05",
+          "report_local_time": "10:08"
+        },
+        {
+          "phase": "3",
+          "canonical_tag": "FK-P3-GOLD-20260805-1008",
+          "decision": "STAND_DOWN",
+          "instrument_class": "non_crypto_derivative",
+          "report_file": "gold_fallen_knives_20260805_1008.md",
+          "report_version": "report-machine/1",
+          "asset": "GOLD",
+          "report_date": "2026-08-05",
+          "report_local_time": "10:08"
+        }
+      ]
+    },
+    "instrument_class": "non_crypto_derivative",
+    "report_file": "gold_fallen_knives_20260805_1008.md",
+    "report_version": "report-machine/1",
+    "framework": "fallen_knives",
+    "channel": null,
+    "report_asset": "GOLD",
+    "report_date": "2026-08-05",
+    "report_local_time": "10:08",
+    "active_tags": [],
+    "reserved_tags": [
+      "FK-P1A-GOLD-20260805-1008",
+      "FK-P1B-GOLD-20260805-1008",
+      "FK-P2-GOLD-20260805-1008",
+      "FK-P3-GOLD-20260805-1008"
+    ],
+    "status": "REGISTERED"
+  }
 }
 ```

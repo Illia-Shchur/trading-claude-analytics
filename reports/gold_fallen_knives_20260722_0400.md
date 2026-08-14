@@ -221,6 +221,16 @@ The discipline here is patience. Twenty-five percent is committed at a blend wel
 
 ---
 
+### Immutable report-phase registry
+
+| Phase | Canonical tag | Decision | Instrument class |
+|---|---|---|---|
+| 1A | FK-P1A-GOLD-20260722-0400 | UNVERIFIED | non_crypto_derivative |
+| 1B | FK-P1B-GOLD-20260722-0400 | UNVERIFIED | non_crypto_derivative |
+| 2 | FK-P2-GOLD-20260722-0400 | LOCKED | non_crypto_derivative |
+| 3 | FK-P3-GOLD-20260722-0400 | LOCKED | non_crypto_derivative |
+
+Registry schema: report-phase-registry/1; version: 1; origin: gold_fallen_knives_20260722_0400.md (report-machine/1).
 ```json machine
 {
   "schema": "report-machine/1",
@@ -275,6 +285,84 @@ The discipline here is patience. Twenty-five percent is committed at a blend wel
     "tier1_next_5td": "none (Jul 22-28); FOMC Jul-29, GDP+PCE+claims Jul-30; NFP Aug-7 (BLS)",
     "corr_spx_30d": "not computed for gold series -> surcharge OFF per rule",
     "companion_fr": { "composite": 2, "gates": 0, "cap_bound": true, "standalone_report_triggered": false }
+  },
+  "tagging": {
+    "mode": "phase_registry",
+    "registry": {
+      "schema": "report-phase-registry/1",
+      "version": 1,
+      "report_file": "gold_fallen_knives_20260722_0400.md",
+      "report_version": "report-machine/1",
+      "framework": "fallen_knives",
+      "channel": null,
+      "asset": "GOLD",
+      "report_date": "2026-07-22",
+      "report_local_time": "04:00",
+      "report_zone": "America/New_York",
+      "instrument_class": "non_crypto_derivative",
+      "entries": [
+        {
+          "phase": "1A",
+          "canonical_tag": "FK-P1A-GOLD-20260722-0400",
+          "decision": "UNVERIFIED",
+          "instrument_class": "non_crypto_derivative",
+          "report_file": "gold_fallen_knives_20260722_0400.md",
+          "report_version": "report-machine/1",
+          "asset": "GOLD",
+          "report_date": "2026-07-22",
+          "report_local_time": "04:00"
+        },
+        {
+          "phase": "1B",
+          "canonical_tag": "FK-P1B-GOLD-20260722-0400",
+          "decision": "UNVERIFIED",
+          "instrument_class": "non_crypto_derivative",
+          "report_file": "gold_fallen_knives_20260722_0400.md",
+          "report_version": "report-machine/1",
+          "asset": "GOLD",
+          "report_date": "2026-07-22",
+          "report_local_time": "04:00"
+        },
+        {
+          "phase": "2",
+          "canonical_tag": "FK-P2-GOLD-20260722-0400",
+          "decision": "LOCKED",
+          "instrument_class": "non_crypto_derivative",
+          "report_file": "gold_fallen_knives_20260722_0400.md",
+          "report_version": "report-machine/1",
+          "asset": "GOLD",
+          "report_date": "2026-07-22",
+          "report_local_time": "04:00"
+        },
+        {
+          "phase": "3",
+          "canonical_tag": "FK-P3-GOLD-20260722-0400",
+          "decision": "LOCKED",
+          "instrument_class": "non_crypto_derivative",
+          "report_file": "gold_fallen_knives_20260722_0400.md",
+          "report_version": "report-machine/1",
+          "asset": "GOLD",
+          "report_date": "2026-07-22",
+          "report_local_time": "04:00"
+        }
+      ]
+    },
+    "instrument_class": "non_crypto_derivative",
+    "report_file": "gold_fallen_knives_20260722_0400.md",
+    "report_version": "report-machine/1",
+    "framework": "fallen_knives",
+    "channel": null,
+    "report_asset": "GOLD",
+    "report_date": "2026-07-22",
+    "report_local_time": "04:00",
+    "active_tags": [],
+    "reserved_tags": [
+      "FK-P1A-GOLD-20260722-0400",
+      "FK-P1B-GOLD-20260722-0400",
+      "FK-P2-GOLD-20260722-0400",
+      "FK-P3-GOLD-20260722-0400"
+    ],
+    "status": "REGISTERED"
   }
 }
 ```

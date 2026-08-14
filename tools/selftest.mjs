@@ -23,6 +23,8 @@ import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds, frTh
   fillPrice, trancheFilled, entryLooksLikeFill, EPOCHS, ENTRY_PRICE_EPOCH,
   reportFileMeta, localToUtcISO, schemaEpochOf, signalRubric, legSpec, inferChannel,
   inferDiscretion, gateMask, unlockFor, canonicalJSON, feedChanged, REPORT_FILE_RE, snapshotDigestPayload,
+  canonicalReportPhaseTag, reportPhaseTagPrefix, applicableReportPhases,
+  buildReportPhaseRegistry, reportPhaseRegistryIssues, REPORT_PHASE_REGISTRY_SCHEMA,
   weekdayOf, isTradingDay, nextNTradingDays, tradingDaysBetween, sentimentProxyBlock, proximityPanel } from './lib.mjs'
 import { completedCandles, weeklyBlock } from './fetch.mjs'
 import { dropMachineBlock, dropVerifiedDataSection, dropCompositeScoreSection, projectDigest, isEventReport, selectWithCap } from './calib-corpus.mjs'
@@ -1506,6 +1508,45 @@ eq('a malformed time yields null, never a wrong instant', localToUtcISO('2026-07
   eq('collision: same date', a.date, c.date)
   ok('...but distinct instants', a.at_utc !== c.at_utc)
   ok('...and distinct files', a.file !== c.file)
+}
+
+// ── exact report-phase tags / immutable registry ────────────────────────────
+{
+  const fk = reportFileMeta('btc_fallen_knives_20260813_1744.md')
+  const fr = reportFileMeta('sp500_flying_rocket_20260812_1542.md')
+  eq('FK exact tag derives phase + asset + date + HHMM',
+    canonicalReportPhaseTag(fk, { framework: 'fallen_knives', phase: '1A' }),
+    'FK-P1A-BTC-20260813-1744')
+  eq('SP500 golden exact tag uses report asset, not execution symbol',
+    canonicalReportPhaseTag(fr, { framework: 'flying_rocket', channel: 'A', phase: '1A' }),
+    'FR-A-1A-SP500-20260812-1542')
+  eq('same-day reports remain unique by HHMM',
+    canonicalReportPhaseTag(reportFileMeta('btc_fallen_knives_20260714_0845.md'), { framework: 'fallen_knives', phase: '1A' }) !==
+      canonicalReportPhaseTag(reportFileMeta('btc_fallen_knives_20260714_1430.md'), { framework: 'fallen_knives', phase: '1A' }), true)
+  eq('prefix is the phase/channel rollup key', reportPhaseTagPrefix('flying_rocket', 'B', '1A'), 'FR-B-1A-')
+  eq('FR-none uses the recorded FR-A vocabulary', reportPhaseTagPrefix('flying_rocket', 'none', '1A'), 'FR-A-1A-')
+  eq('FR-B has no Phase 3', applicableReportPhases('flying_rocket', 'B'), ['1A', '1B', '2'])
+  const longMeta = { ...fk, asset: 'A'.repeat(50) }
+  eq('canonical tags reject >64 characters', canonicalReportPhaseTag(longMeta, { framework: 'fallen_knives', phase: '1A' }), null)
+
+  const registry = buildReportPhaseRegistry(fk, {
+    framework: 'fallen_knives',
+    instrument_class: 'crypto',
+    decisions: { '1A': 'AUTHORIZED', '1B': 'LOCKED', '2': 'STAND_DOWN', '3': 'UNVERIFIED' },
+  })
+  eq('registry schema is versioned', registry.schema, REPORT_PHASE_REGISTRY_SCHEMA)
+  eq('registry has all FK phases', registry.entries.map(e => e.phase), ['1A', '1B', '2', '3'])
+  eq('valid registry has no issues', reportPhaseRegistryIssues(registry, fk), [])
+  const wrong = structuredClone(registry)
+  wrong.entries[0].canonical_tag = 'FR-A-1A-BTC-20260813-1744'
+  wrong.entries.push(structuredClone(wrong.entries[0]))
+  wrong.entries[4].phase = '3'
+  const issues = reportPhaseRegistryIssues(wrong, fk)
+  ok('registry rejects wrong tag and duplicate phase', issues.some(s => s.includes('canonical tag')) && issues.some(s => s.includes('duplicate phase')))
+  const b = buildReportPhaseRegistry(fr, { framework: 'flying_rocket', channel: 'A', instrument_class: 'non_crypto_derivative', decisions: { '1A': 'STAND_DOWN' } })
+  eq('SP500 registry keeps stand-down decision', b.entries[0].decision, 'STAND_DOWN')
+  const frb = buildReportPhaseRegistry(reportFileMeta('btc_flying_rocket_20260813_0150.md'), { framework: 'flying_rocket', channel: 'B' })
+  ok('FR-B registry rejects a Phase 3 entry', reportPhaseRegistryIssues({ ...frb, entries: [...frb.entries, { ...frb.entries[0], phase: '3', canonical_tag: 'FR-B-3-BTC-20260813-0150' }] }, reportFileMeta('btc_flying_rocket_20260813_0150.md'), { framework: 'flying_rocket', channel: 'B' }).some(s => s.includes('FR-B has no Phase 3') || s.includes('invalid phase')))
 }
 
 eq('epoch: before the machine block', schemaEpochOf('2026-07-10'), 'pre_machine_block')

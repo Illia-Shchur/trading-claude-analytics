@@ -616,6 +616,16 @@ Cross-validation, by contrast, is in good standing and can be cited. The standal
 
 *Report generated 2026-08-06 18:36 EDT. All figures carry source and timestamp. Position of record: EXPIRED — cold start under Hard Rule 4, stated explicitly. Cross-validation: consistent, unqualified — the standalone FR obligation is DISCHARGED by `reports/eth_flying_rocket_20260806_1844.md`. EV layer: DEMOTED to corroborative-only per the §5 EV Calibration Line.*
 
+### Immutable report-phase registry
+
+| Phase | Canonical tag | Decision | Instrument class |
+|---|---|---|---|
+| 1A | FK-P1A-ETH-20260806-1836 | UNVERIFIED | crypto |
+| 1B | FK-P1B-ETH-20260806-1836 | LOCKED | crypto |
+| 2 | FK-P2-ETH-20260806-1836 | LOCKED | crypto |
+| 3 | FK-P3-ETH-20260806-1836 | LOCKED | crypto |
+
+Registry schema: report-phase-registry/1; version: 1; origin: eth_fallen_knives_20260806_1836.md (report-machine/1).
 ```json machine
 {
   "schema": "report-machine/1",
@@ -931,6 +941,84 @@ Cross-validation, by contrast, is in good standing and can be cited. The standal
     "ev_citable_basis": "DEMOTED to corroborative-only under the section 5.4 EV Calibration Line tripwire. The EV is printed and decomposed but carries no stance and is not cited as the reason for any deploy or decline.",
     "trailing_2w_realized_pct": 1.36,
     "trailing_2w_note": "$1,877.10 close on 2026-07-23 -> $1,902.54. A NEGATIVE EV is printed during a POSITIVE two-week move - the contradiction is disclosed EXPLICITLY, per the branch of the rule that was silent until the 2026-08-06 symmetrization and that is precisely the failure mode running on this asset."
+  },
+  "tagging": {
+    "mode": "phase_registry",
+    "registry": {
+      "schema": "report-phase-registry/1",
+      "version": 1,
+      "report_file": "eth_fallen_knives_20260806_1836.md",
+      "report_version": "report-machine/1",
+      "framework": "fallen_knives",
+      "channel": null,
+      "asset": "ETH",
+      "report_date": "2026-08-06",
+      "report_local_time": "18:36",
+      "report_zone": "America/New_York",
+      "instrument_class": "crypto",
+      "entries": [
+        {
+          "phase": "1A",
+          "canonical_tag": "FK-P1A-ETH-20260806-1836",
+          "decision": "UNVERIFIED",
+          "instrument_class": "crypto",
+          "report_file": "eth_fallen_knives_20260806_1836.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-08-06",
+          "report_local_time": "18:36"
+        },
+        {
+          "phase": "1B",
+          "canonical_tag": "FK-P1B-ETH-20260806-1836",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "eth_fallen_knives_20260806_1836.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-08-06",
+          "report_local_time": "18:36"
+        },
+        {
+          "phase": "2",
+          "canonical_tag": "FK-P2-ETH-20260806-1836",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "eth_fallen_knives_20260806_1836.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-08-06",
+          "report_local_time": "18:36"
+        },
+        {
+          "phase": "3",
+          "canonical_tag": "FK-P3-ETH-20260806-1836",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "eth_fallen_knives_20260806_1836.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-08-06",
+          "report_local_time": "18:36"
+        }
+      ]
+    },
+    "instrument_class": "crypto",
+    "report_file": "eth_fallen_knives_20260806_1836.md",
+    "report_version": "report-machine/1",
+    "framework": "fallen_knives",
+    "channel": null,
+    "report_asset": "ETH",
+    "report_date": "2026-08-06",
+    "report_local_time": "18:36",
+    "active_tags": [],
+    "reserved_tags": [
+      "FK-P1A-ETH-20260806-1836",
+      "FK-P1B-ETH-20260806-1836",
+      "FK-P2-ETH-20260806-1836",
+      "FK-P3-ETH-20260806-1836"
+    ],
+    "status": "REGISTERED"
   }
 }
 ```

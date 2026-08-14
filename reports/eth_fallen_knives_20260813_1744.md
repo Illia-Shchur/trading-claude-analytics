@@ -85,6 +85,16 @@ Symmetric exit framework remains active for any future holding: 15% trim on adju
 
 Inline Channel-B FR score **5/20**, gates **5/9**. Legs: euphoria 1 / momentum 2 / valuation 1 / distribution 1 / vulnerability 0; no squeeze penalty. Routing applies because ETH is 61.91% below its one-year high and below a falling MA200. Cross-validation is **structurally consistent (cap-bound; both >=12 unfalsifiable by construction)**: FK 10/11 mechanical versus FR 5, not jointly elevated. FR <9, no FK threshold crossing occurred, the Aug 13 standalone ETH FR already discharged prior obligations, and no reliable >$100M short-liquidation tripwire was found. **Standalone FR report owed: false.**
 
+### Immutable report-phase registry
+
+| Phase | Canonical tag | Decision | Instrument class |
+|---|---|---|---|
+| 1A | FK-P1A-ETH-20260813-1744 | LOCKED | crypto |
+| 1B | FK-P1B-ETH-20260813-1744 | LOCKED | crypto |
+| 2 | FK-P2-ETH-20260813-1744 | LOCKED | crypto |
+| 3 | FK-P3-ETH-20260813-1744 | LOCKED | crypto |
+
+Registry schema: report-phase-registry/1; version: 1; origin: eth_fallen_knives_20260813_1744.md (report-machine/1).
 ```json machine
 {
   "schema": "report-machine/1",
@@ -193,6 +203,84 @@ Inline Channel-B FR score **5/20**, gates **5/9**. Legs: euphoria 1 / momentum 2
     "dry_powder_benchmark_pct": 3.70,
     "attainable_ceiling": 20,
     "line_states": "P1A score LIVE-TRUE, gate-blocked; D2 available/declined; P1B/P2/P3/Override score-false; compound VACUOUS-PERMISSIVE but price-gated"
+  },
+  "tagging": {
+    "mode": "phase_registry",
+    "registry": {
+      "schema": "report-phase-registry/1",
+      "version": 1,
+      "report_file": "eth_fallen_knives_20260813_1744.md",
+      "report_version": "report-machine/1",
+      "framework": "fallen_knives",
+      "channel": null,
+      "asset": "ETH",
+      "report_date": "2026-08-13",
+      "report_local_time": "17:44",
+      "report_zone": "America/New_York",
+      "instrument_class": "crypto",
+      "entries": [
+        {
+          "phase": "1A",
+          "canonical_tag": "FK-P1A-ETH-20260813-1744",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "eth_fallen_knives_20260813_1744.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-08-13",
+          "report_local_time": "17:44"
+        },
+        {
+          "phase": "1B",
+          "canonical_tag": "FK-P1B-ETH-20260813-1744",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "eth_fallen_knives_20260813_1744.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-08-13",
+          "report_local_time": "17:44"
+        },
+        {
+          "phase": "2",
+          "canonical_tag": "FK-P2-ETH-20260813-1744",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "eth_fallen_knives_20260813_1744.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-08-13",
+          "report_local_time": "17:44"
+        },
+        {
+          "phase": "3",
+          "canonical_tag": "FK-P3-ETH-20260813-1744",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "eth_fallen_knives_20260813_1744.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-08-13",
+          "report_local_time": "17:44"
+        }
+      ]
+    },
+    "instrument_class": "crypto",
+    "report_file": "eth_fallen_knives_20260813_1744.md",
+    "report_version": "report-machine/1",
+    "framework": "fallen_knives",
+    "channel": null,
+    "report_asset": "ETH",
+    "report_date": "2026-08-13",
+    "report_local_time": "17:44",
+    "active_tags": [],
+    "reserved_tags": [
+      "FK-P1A-ETH-20260813-1744",
+      "FK-P1B-ETH-20260813-1744",
+      "FK-P2-ETH-20260813-1744",
+      "FK-P3-ETH-20260813-1744"
+    ],
+    "status": "REGISTERED"
   }
 }
 ```

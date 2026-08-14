@@ -211,6 +211,16 @@ The book does nothing until then. The 25% held position is underwater ten percen
 
 ---
 
+### Immutable report-phase registry
+
+| Phase | Canonical tag | Decision | Instrument class |
+|---|---|---|---|
+| 1A | FK-P1A-GOLD-20260723-0805 | UNVERIFIED | non_crypto_derivative |
+| 1B | FK-P1B-GOLD-20260723-0805 | UNVERIFIED | non_crypto_derivative |
+| 2 | FK-P2-GOLD-20260723-0805 | LOCKED | non_crypto_derivative |
+| 3 | FK-P3-GOLD-20260723-0805 | LOCKED | non_crypto_derivative |
+
+Registry schema: report-phase-registry/1; version: 1; origin: gold_fallen_knives_20260723_0805.md (report-machine/1).
 ```json machine
 {
   "schema": "report-machine/1",
@@ -265,6 +275,84 @@ The book does nothing until then. The 25% held position is underwater ten percen
     "tier1_next_5td": "FOMC Jul-29 2:00 PM ET + GDP/PCE/claims Jul-30 8:30 AM ET (financecalendar/Federal Reserve); both AFTER Fri Jul-24 checkpoint; NFP Aug-7 (BLS)",
     "corr_spx_30d": 0.328, "corr_source": "computed fresh, Yahoo daily log returns, 30 obs through 2026-07-22 -- FIRST sourced computation in gold series; surcharge OFF (<0.7)",
     "companion_fr": { "composite": 2, "gates": 0, "cap_bound": true, "standalone_report_triggered": false, "trigger_eval": "score 8 holds, no unlock cross; FR<9; cap binds (-26.91% below 1y high)" }
+  },
+  "tagging": {
+    "mode": "phase_registry",
+    "registry": {
+      "schema": "report-phase-registry/1",
+      "version": 1,
+      "report_file": "gold_fallen_knives_20260723_0805.md",
+      "report_version": "report-machine/1",
+      "framework": "fallen_knives",
+      "channel": null,
+      "asset": "GOLD",
+      "report_date": "2026-07-23",
+      "report_local_time": "08:05",
+      "report_zone": "America/New_York",
+      "instrument_class": "non_crypto_derivative",
+      "entries": [
+        {
+          "phase": "1A",
+          "canonical_tag": "FK-P1A-GOLD-20260723-0805",
+          "decision": "UNVERIFIED",
+          "instrument_class": "non_crypto_derivative",
+          "report_file": "gold_fallen_knives_20260723_0805.md",
+          "report_version": "report-machine/1",
+          "asset": "GOLD",
+          "report_date": "2026-07-23",
+          "report_local_time": "08:05"
+        },
+        {
+          "phase": "1B",
+          "canonical_tag": "FK-P1B-GOLD-20260723-0805",
+          "decision": "UNVERIFIED",
+          "instrument_class": "non_crypto_derivative",
+          "report_file": "gold_fallen_knives_20260723_0805.md",
+          "report_version": "report-machine/1",
+          "asset": "GOLD",
+          "report_date": "2026-07-23",
+          "report_local_time": "08:05"
+        },
+        {
+          "phase": "2",
+          "canonical_tag": "FK-P2-GOLD-20260723-0805",
+          "decision": "LOCKED",
+          "instrument_class": "non_crypto_derivative",
+          "report_file": "gold_fallen_knives_20260723_0805.md",
+          "report_version": "report-machine/1",
+          "asset": "GOLD",
+          "report_date": "2026-07-23",
+          "report_local_time": "08:05"
+        },
+        {
+          "phase": "3",
+          "canonical_tag": "FK-P3-GOLD-20260723-0805",
+          "decision": "LOCKED",
+          "instrument_class": "non_crypto_derivative",
+          "report_file": "gold_fallen_knives_20260723_0805.md",
+          "report_version": "report-machine/1",
+          "asset": "GOLD",
+          "report_date": "2026-07-23",
+          "report_local_time": "08:05"
+        }
+      ]
+    },
+    "instrument_class": "non_crypto_derivative",
+    "report_file": "gold_fallen_knives_20260723_0805.md",
+    "report_version": "report-machine/1",
+    "framework": "fallen_knives",
+    "channel": null,
+    "report_asset": "GOLD",
+    "report_date": "2026-07-23",
+    "report_local_time": "08:05",
+    "active_tags": [],
+    "reserved_tags": [
+      "FK-P1A-GOLD-20260723-0805",
+      "FK-P1B-GOLD-20260723-0805",
+      "FK-P2-GOLD-20260723-0805",
+      "FK-P3-GOLD-20260723-0805"
+    ],
+    "status": "REGISTERED"
   }
 }
 ```

@@ -469,6 +469,16 @@ The thing that keeps me honest here is the last report. On Jun-16 this framework
 
 *Sources: [CoinGecko — Uniswap](https://www.coingecko.com/en/coins/uniswap), [Binance Futures API](https://fapi.binance.com), [Binance Spot API](https://api.binance.com), [Kraken](https://api.kraken.com), [Coinbase](https://api.coinbase.com), [Yahoo Finance UNI-USD](https://finance.yahoo.com/quote/UNI7083-USD/), [Alternative.me F&G](https://api.alternative.me/fng/), [crypto.news — fee switch cash-flow thesis](https://crypto.news/uniswap-fee-switch-how-500m-of-robinhood-chain-volume-turned-uni-into-a-cash-flow-token/), [crypto.news — fee switch proposal rally](https://crypto.news/uniswap-price-fee-switch-proposal-rally-2026/), [Coinpedia — governance vote nears](https://coinpedia.org/price-analysis/uniswap-jumps-as-uni-governance-vote-nears-can-the-fee-switch-trigger-the-price-rally/), [MEXC Learn — UNI July 2026 / StanChart $100 target](https://www.mexc.com/learn/article/uniswap-uni-price-prediction-july-2026-can-uni-really-31x-to-hit-wall-streets-100-call-/1), [Bitget — Altcoin Season Index](https://www.bitget.com/price/altcoin-season-index), [BeInCrypto — BTC dominance](https://beincrypto.com/bitcoin-dominance-explodes-to-60-66-and-buries-altseason-hopes-for-2026/), [CryptoTimes — FOMC hold](https://www.cryptotimes.io/2026/07/30/bitcoin-ethereum-fall-after-fomc-meeting-keeps-rates-unchanged/). Figures captured 2026-07-31, 08:17–08:26 UTC.*
 
+### Immutable report-phase registry
+
+| Phase | Canonical tag | Decision | Instrument class |
+|---|---|---|---|
+| 1A | FR-A-1A-UNI-20260731-0426 | STAND_DOWN | crypto |
+| 1B | FR-A-1B-UNI-20260731-0426 | STAND_DOWN | crypto |
+| 2 | FR-A-2-UNI-20260731-0426 | STAND_DOWN | crypto |
+| 3 | FR-A-3-UNI-20260731-0426 | STAND_DOWN | crypto |
+
+Registry schema: report-phase-registry/1; version: 1; origin: uni_flying_rocket_20260731_0426.md (report-machine/1).
 ```json machine
 {
   "schema": "report-machine/1",
@@ -627,6 +637,84 @@ The thing that keeps me honest here is the last report. On Jun-16 this framework
       "falsifier_grade": "STANDING - all four absent ($4.39 vs $7-8; RSI 56.79 vs >70; F&G 27.33 vs >=80; funding 7.90% vs >25%)"
     },
     "coverage_gap_logged": "asset deep in a cycle drawdown that has rallied 25%+ ABOVE its own falling 200dma with a live catalyst and a crowded long book is invisible to BOTH channels - a local top inside a cycle bottom. Logged for the next calibration; NOT converted into a score."
+  },
+  "tagging": {
+    "mode": "phase_registry",
+    "registry": {
+      "schema": "report-phase-registry/1",
+      "version": 1,
+      "report_file": "uni_flying_rocket_20260731_0426.md",
+      "report_version": "report-machine/1",
+      "framework": "flying_rocket",
+      "channel": "none",
+      "asset": "UNI",
+      "report_date": "2026-07-31",
+      "report_local_time": "04:26",
+      "report_zone": "America/New_York",
+      "instrument_class": "crypto",
+      "entries": [
+        {
+          "phase": "1A",
+          "canonical_tag": "FR-A-1A-UNI-20260731-0426",
+          "decision": "STAND_DOWN",
+          "instrument_class": "crypto",
+          "report_file": "uni_flying_rocket_20260731_0426.md",
+          "report_version": "report-machine/1",
+          "asset": "UNI",
+          "report_date": "2026-07-31",
+          "report_local_time": "04:26"
+        },
+        {
+          "phase": "1B",
+          "canonical_tag": "FR-A-1B-UNI-20260731-0426",
+          "decision": "STAND_DOWN",
+          "instrument_class": "crypto",
+          "report_file": "uni_flying_rocket_20260731_0426.md",
+          "report_version": "report-machine/1",
+          "asset": "UNI",
+          "report_date": "2026-07-31",
+          "report_local_time": "04:26"
+        },
+        {
+          "phase": "2",
+          "canonical_tag": "FR-A-2-UNI-20260731-0426",
+          "decision": "STAND_DOWN",
+          "instrument_class": "crypto",
+          "report_file": "uni_flying_rocket_20260731_0426.md",
+          "report_version": "report-machine/1",
+          "asset": "UNI",
+          "report_date": "2026-07-31",
+          "report_local_time": "04:26"
+        },
+        {
+          "phase": "3",
+          "canonical_tag": "FR-A-3-UNI-20260731-0426",
+          "decision": "STAND_DOWN",
+          "instrument_class": "crypto",
+          "report_file": "uni_flying_rocket_20260731_0426.md",
+          "report_version": "report-machine/1",
+          "asset": "UNI",
+          "report_date": "2026-07-31",
+          "report_local_time": "04:26"
+        }
+      ]
+    },
+    "instrument_class": "crypto",
+    "report_file": "uni_flying_rocket_20260731_0426.md",
+    "report_version": "report-machine/1",
+    "framework": "flying_rocket",
+    "channel": "none",
+    "report_asset": "UNI",
+    "report_date": "2026-07-31",
+    "report_local_time": "04:26",
+    "active_tags": [],
+    "reserved_tags": [
+      "FR-A-1A-UNI-20260731-0426",
+      "FR-A-1B-UNI-20260731-0426",
+      "FR-A-2-UNI-20260731-0426",
+      "FR-A-3-UNI-20260731-0426"
+    ],
+    "status": "REGISTERED"
   }
 }
 ```

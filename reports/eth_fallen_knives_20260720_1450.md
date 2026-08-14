@@ -222,6 +222,16 @@ Two disclosures matter more than the headline. First, the compound stop's score 
 
 ---
 
+### Immutable report-phase registry
+
+| Phase | Canonical tag | Decision | Instrument class |
+|---|---|---|---|
+| 1A | FK-P1A-ETH-20260720-1450 | UNVERIFIED | crypto |
+| 1B | FK-P1B-ETH-20260720-1450 | LOCKED | crypto |
+| 2 | FK-P2-ETH-20260720-1450 | LOCKED | crypto |
+| 3 | FK-P3-ETH-20260720-1450 | LOCKED | crypto |
+
+Registry schema: report-phase-registry/1; version: 1; origin: eth_fallen_knives_20260720_1450.md (report-machine/1).
 ```json machine
 {
   "schema": "report-machine/1",
@@ -273,6 +283,84 @@ Two disclosures matter more than the headline. First, the compound stop's score 
     "realized_2wk_pct": 5.96,
     "tier1_next_5td": "none (Jul 21-27); FOMC Jul-29 2:00 PM ET, PCE+GDP+claims Jul-30 8:30 AM ET (Federal Reserve + NY Fed calendars)",
     "companion_fr": { "composite": 0, "gates": 0, "cap_bound": true, "standalone_report_triggered": false, "trigger_eval": "12->11 crosses no unlock threshold; FR<9; no $100M short day; cap binds" }
+  },
+  "tagging": {
+    "mode": "phase_registry",
+    "registry": {
+      "schema": "report-phase-registry/1",
+      "version": 1,
+      "report_file": "eth_fallen_knives_20260720_1450.md",
+      "report_version": "report-machine/1",
+      "framework": "fallen_knives",
+      "channel": null,
+      "asset": "ETH",
+      "report_date": "2026-07-20",
+      "report_local_time": "14:50",
+      "report_zone": "America/New_York",
+      "instrument_class": "crypto",
+      "entries": [
+        {
+          "phase": "1A",
+          "canonical_tag": "FK-P1A-ETH-20260720-1450",
+          "decision": "UNVERIFIED",
+          "instrument_class": "crypto",
+          "report_file": "eth_fallen_knives_20260720_1450.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-07-20",
+          "report_local_time": "14:50"
+        },
+        {
+          "phase": "1B",
+          "canonical_tag": "FK-P1B-ETH-20260720-1450",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "eth_fallen_knives_20260720_1450.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-07-20",
+          "report_local_time": "14:50"
+        },
+        {
+          "phase": "2",
+          "canonical_tag": "FK-P2-ETH-20260720-1450",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "eth_fallen_knives_20260720_1450.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-07-20",
+          "report_local_time": "14:50"
+        },
+        {
+          "phase": "3",
+          "canonical_tag": "FK-P3-ETH-20260720-1450",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "eth_fallen_knives_20260720_1450.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-07-20",
+          "report_local_time": "14:50"
+        }
+      ]
+    },
+    "instrument_class": "crypto",
+    "report_file": "eth_fallen_knives_20260720_1450.md",
+    "report_version": "report-machine/1",
+    "framework": "fallen_knives",
+    "channel": null,
+    "report_asset": "ETH",
+    "report_date": "2026-07-20",
+    "report_local_time": "14:50",
+    "active_tags": [],
+    "reserved_tags": [
+      "FK-P1A-ETH-20260720-1450",
+      "FK-P1B-ETH-20260720-1450",
+      "FK-P2-ETH-20260720-1450",
+      "FK-P3-ETH-20260720-1450"
+    ],
+    "status": "REGISTERED"
   }
 }
 ```

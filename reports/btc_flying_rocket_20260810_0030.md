@@ -277,6 +277,15 @@ The one asymmetry I keep flagging is the ETF-flow leg: the rubric reads record i
 >
 > **IF** BTC prints a fresh cycle low without first stalling at resistance → **THEN** this is not a Flying Rocket signal (Principle 14): it is a falling knife, a Fallen Knives setup, not a bounce to short.
 
+### Immutable report-phase registry
+
+| Phase | Canonical tag | Decision | Instrument class |
+|---|---|---|---|
+| 1A | FR-B-1A-BTC-20260810-0030 | STAND_DOWN | crypto |
+| 1B | FR-B-1B-BTC-20260810-0030 | STAND_DOWN | crypto |
+| 2 | FR-B-2-BTC-20260810-0030 | STAND_DOWN | crypto |
+
+Registry schema: report-phase-registry/1; version: 1; origin: btc_flying_rocket_20260810_0030.md (report-machine/1).
 ```json machine
 {
   "schema": "report-machine/1",
@@ -453,6 +462,72 @@ The one asymmetry I keep flagging is the ETF-flow leg: the rubric reads record i
       "not_fired": ["6.6(a) FK companion 7 <9", "6.6(b) no >=$100M shorts-dominated liquidation day, no BTC-led squeeze", "6.6(c-e) no named falsifier moved materially closer, no regime crossing"],
       "note": "user-requested run; the full 2.5/4B stack was re-run from scratch"
     }
+  },
+  "tagging": {
+    "mode": "phase_registry",
+    "registry": {
+      "schema": "report-phase-registry/1",
+      "version": 1,
+      "report_file": "btc_flying_rocket_20260810_0030.md",
+      "report_version": "report-machine/1",
+      "framework": "flying_rocket",
+      "channel": "B",
+      "asset": "BTC",
+      "report_date": "2026-08-10",
+      "report_local_time": "00:30",
+      "report_zone": "America/New_York",
+      "instrument_class": "crypto",
+      "entries": [
+        {
+          "phase": "1A",
+          "canonical_tag": "FR-B-1A-BTC-20260810-0030",
+          "decision": "STAND_DOWN",
+          "instrument_class": "crypto",
+          "report_file": "btc_flying_rocket_20260810_0030.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-08-10",
+          "report_local_time": "00:30"
+        },
+        {
+          "phase": "1B",
+          "canonical_tag": "FR-B-1B-BTC-20260810-0030",
+          "decision": "STAND_DOWN",
+          "instrument_class": "crypto",
+          "report_file": "btc_flying_rocket_20260810_0030.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-08-10",
+          "report_local_time": "00:30"
+        },
+        {
+          "phase": "2",
+          "canonical_tag": "FR-B-2-BTC-20260810-0030",
+          "decision": "STAND_DOWN",
+          "instrument_class": "crypto",
+          "report_file": "btc_flying_rocket_20260810_0030.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-08-10",
+          "report_local_time": "00:30"
+        }
+      ]
+    },
+    "instrument_class": "crypto",
+    "report_file": "btc_flying_rocket_20260810_0030.md",
+    "report_version": "report-machine/1",
+    "framework": "flying_rocket",
+    "channel": "B",
+    "report_asset": "BTC",
+    "report_date": "2026-08-10",
+    "report_local_time": "00:30",
+    "active_tags": [],
+    "reserved_tags": [
+      "FR-B-1A-BTC-20260810-0030",
+      "FR-B-1B-BTC-20260810-0030",
+      "FR-B-2-BTC-20260810-0030"
+    ],
+    "status": "REGISTERED"
   }
 }
 ```

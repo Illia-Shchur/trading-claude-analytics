@@ -86,6 +86,16 @@ Symmetric exit framework remains active for any future position: trim 15% on adj
 
 Inline Channel-B FR score **3/20**, gates **5/9**. Bear-continuation routing applies (69.94% below one-year high; price below falling MA200). Legs are euphoria 0 / momentum 2 / valuation 1 / distribution 2 / vulnerability 0, with a **-2 squeeze-trap penalty** because a recent interval printed below -7% annualized and 90-day OI-high confirmation is unavailable; gate 8 is therefore a veto. Cross-validation is **structurally consistent (cap-bound; both >=12 is unfalsifiable by construction)**: FK 9 and FR 3 are inverse and not jointly high. FR <9, no FK threshold crossing creates an euphoria obligation, and no reliable >$100M short-liquidation tripwire was found. **Standalone FR report owed: false.** Smaller-alt short recommendations would require explicit user confirmation regardless.
 
+### Immutable report-phase registry
+
+| Phase | Canonical tag | Decision | Instrument class |
+|---|---|---|---|
+| 1A | FK-P1A-SOL-20260813-1744 | LOCKED | crypto |
+| 1B | FK-P1B-SOL-20260813-1744 | LOCKED | crypto |
+| 2 | FK-P2-SOL-20260813-1744 | LOCKED | crypto |
+| 3 | FK-P3-SOL-20260813-1744 | LOCKED | crypto |
+
+Registry schema: report-phase-registry/1; version: 1; origin: sol_fallen_knives_20260813_1744.md (report-machine/1).
 ```json machine
 {
   "schema": "report-machine/1",
@@ -187,6 +197,84 @@ Inline Channel-B FR score **3/20**, gates **5/9**. Bear-continuation routing app
     "dry_powder_benchmark_pct": 3.70,
     "attainable_ceiling": 20,
     "line_states": "P1A score LIVE-TRUE, gate-blocked; D2 available/declined; P1B/P2/P3/Override score-false; compound prospective"
+  },
+  "tagging": {
+    "mode": "phase_registry",
+    "registry": {
+      "schema": "report-phase-registry/1",
+      "version": 1,
+      "report_file": "sol_fallen_knives_20260813_1744.md",
+      "report_version": "report-machine/1",
+      "framework": "fallen_knives",
+      "channel": null,
+      "asset": "SOL",
+      "report_date": "2026-08-13",
+      "report_local_time": "17:44",
+      "report_zone": "America/New_York",
+      "instrument_class": "crypto",
+      "entries": [
+        {
+          "phase": "1A",
+          "canonical_tag": "FK-P1A-SOL-20260813-1744",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "sol_fallen_knives_20260813_1744.md",
+          "report_version": "report-machine/1",
+          "asset": "SOL",
+          "report_date": "2026-08-13",
+          "report_local_time": "17:44"
+        },
+        {
+          "phase": "1B",
+          "canonical_tag": "FK-P1B-SOL-20260813-1744",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "sol_fallen_knives_20260813_1744.md",
+          "report_version": "report-machine/1",
+          "asset": "SOL",
+          "report_date": "2026-08-13",
+          "report_local_time": "17:44"
+        },
+        {
+          "phase": "2",
+          "canonical_tag": "FK-P2-SOL-20260813-1744",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "sol_fallen_knives_20260813_1744.md",
+          "report_version": "report-machine/1",
+          "asset": "SOL",
+          "report_date": "2026-08-13",
+          "report_local_time": "17:44"
+        },
+        {
+          "phase": "3",
+          "canonical_tag": "FK-P3-SOL-20260813-1744",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "sol_fallen_knives_20260813_1744.md",
+          "report_version": "report-machine/1",
+          "asset": "SOL",
+          "report_date": "2026-08-13",
+          "report_local_time": "17:44"
+        }
+      ]
+    },
+    "instrument_class": "crypto",
+    "report_file": "sol_fallen_knives_20260813_1744.md",
+    "report_version": "report-machine/1",
+    "framework": "fallen_knives",
+    "channel": null,
+    "report_asset": "SOL",
+    "report_date": "2026-08-13",
+    "report_local_time": "17:44",
+    "active_tags": [],
+    "reserved_tags": [
+      "FK-P1A-SOL-20260813-1744",
+      "FK-P1B-SOL-20260813-1744",
+      "FK-P2-SOL-20260813-1744",
+      "FK-P3-SOL-20260813-1744"
+    ],
+    "status": "REGISTERED"
   }
 }
 ```

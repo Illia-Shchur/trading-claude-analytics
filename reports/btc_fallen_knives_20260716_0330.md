@@ -263,6 +263,16 @@ Twice now — Tuesday's CPI and Wednesday's PPI — the liquidation data has sho
 > **IF** the Iran/Hormuz conflict escalates further and Brent pushes materially higher **→ THEN** gate 9 stays dark regardless of the score, and a hawkish real-yield response could pull BTC back into the $58–62K retest ladder — where the EV edge actually sits.
 > **IF** the fear print (3-day avg) continues to hold or deepen through further price strength **→ THEN** that is the more durable signal this report is watching for — a fear score that survives a rally is worth more than one that whipsaws with it.
 
+### Immutable report-phase registry
+
+| Phase | Canonical tag | Decision | Instrument class |
+|---|---|---|---|
+| 1A | FK-P1A-BTC-20260716-0330 | UNVERIFIED | crypto |
+| 1B | FK-P1B-BTC-20260716-0330 | LOCKED | crypto |
+| 2 | FK-P2-BTC-20260716-0330 | LOCKED | crypto |
+| 3 | FK-P3-BTC-20260716-0330 | LOCKED | crypto |
+
+Registry schema: report-phase-registry/1; version: 1; origin: btc_fallen_knives_20260716_0330.md (report-machine/1).
 ```json machine
 {
   "schema": "report-machine/1",
@@ -315,6 +325,84 @@ Twice now — Tuesday's CPI and Wednesday's PPI — the liquidation data has sho
     "real_yield_10y_tips": 2.33, "vix": 15.67, "dxy": 100.47, "brent": 84.64, "spx": 7572.40, "ndx": 26269.23, "gold": 4033.70,
     "corr_spx_30d": "not computed this cycle -> risk-on surcharge OFF",
     "companion_fr": { "composite": 0, "gates": 0, "cap_bound": true, "standalone_report_triggered": true, "trigger_reason": ">=$100M short-side liquidation volume Jul-15 (condition iii)" }
+  },
+  "tagging": {
+    "mode": "phase_registry",
+    "registry": {
+      "schema": "report-phase-registry/1",
+      "version": 1,
+      "report_file": "btc_fallen_knives_20260716_0330.md",
+      "report_version": "report-machine/1",
+      "framework": "fallen_knives",
+      "channel": null,
+      "asset": "BTC",
+      "report_date": "2026-07-16",
+      "report_local_time": "03:30",
+      "report_zone": "America/New_York",
+      "instrument_class": "crypto",
+      "entries": [
+        {
+          "phase": "1A",
+          "canonical_tag": "FK-P1A-BTC-20260716-0330",
+          "decision": "UNVERIFIED",
+          "instrument_class": "crypto",
+          "report_file": "btc_fallen_knives_20260716_0330.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-07-16",
+          "report_local_time": "03:30"
+        },
+        {
+          "phase": "1B",
+          "canonical_tag": "FK-P1B-BTC-20260716-0330",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "btc_fallen_knives_20260716_0330.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-07-16",
+          "report_local_time": "03:30"
+        },
+        {
+          "phase": "2",
+          "canonical_tag": "FK-P2-BTC-20260716-0330",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "btc_fallen_knives_20260716_0330.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-07-16",
+          "report_local_time": "03:30"
+        },
+        {
+          "phase": "3",
+          "canonical_tag": "FK-P3-BTC-20260716-0330",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "btc_fallen_knives_20260716_0330.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-07-16",
+          "report_local_time": "03:30"
+        }
+      ]
+    },
+    "instrument_class": "crypto",
+    "report_file": "btc_fallen_knives_20260716_0330.md",
+    "report_version": "report-machine/1",
+    "framework": "fallen_knives",
+    "channel": null,
+    "report_asset": "BTC",
+    "report_date": "2026-07-16",
+    "report_local_time": "03:30",
+    "active_tags": [],
+    "reserved_tags": [
+      "FK-P1A-BTC-20260716-0330",
+      "FK-P1B-BTC-20260716-0330",
+      "FK-P2-BTC-20260716-0330",
+      "FK-P3-BTC-20260716-0330"
+    ],
+    "status": "REGISTERED"
   }
 }
 ```

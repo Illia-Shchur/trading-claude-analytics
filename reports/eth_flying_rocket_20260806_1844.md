@@ -494,6 +494,15 @@ I have been standing down on ETH for eight consecutive reports and I want to be 
 
 ---
 
+### Immutable report-phase registry
+
+| Phase | Canonical tag | Decision | Instrument class |
+|---|---|---|---|
+| 1A | FR-B-1A-ETH-20260806-1844 | STAND_DOWN | crypto |
+| 1B | FR-B-1B-ETH-20260806-1844 | STAND_DOWN | crypto |
+| 2 | FR-B-2-ETH-20260806-1844 | STAND_DOWN | crypto |
+
+Registry schema: report-phase-registry/1; version: 1; origin: eth_flying_rocket_20260806_1844.md (report-machine/1).
 ```json machine
 {
   "schema": "report-machine/1",
@@ -698,6 +707,72 @@ I have been standing down on ETH for eight consecutive reports and I want to be 
       "gate 2 bounce age now measured low-to-today (39, tools/fetch.mjs bounce_age_sessions) rather than low-to-bounce-high (29) as in the prior two reports; chosen as both the toolchain-consistent and the harder-to-short reading; board reads 7/9 under the prior convention, 6/9 under this one; verdict identical",
       "section 5 baseline grid replaced with four Channel-B-appropriate modes under the 2026-07-27 analyst-override provision; upside mode cut 32% -> 26% on a documented three-report non-print record"
     ]
+  },
+  "tagging": {
+    "mode": "phase_registry",
+    "registry": {
+      "schema": "report-phase-registry/1",
+      "version": 1,
+      "report_file": "eth_flying_rocket_20260806_1844.md",
+      "report_version": "report-machine/1",
+      "framework": "flying_rocket",
+      "channel": "B",
+      "asset": "ETH",
+      "report_date": "2026-08-06",
+      "report_local_time": "18:44",
+      "report_zone": "America/New_York",
+      "instrument_class": "crypto",
+      "entries": [
+        {
+          "phase": "1A",
+          "canonical_tag": "FR-B-1A-ETH-20260806-1844",
+          "decision": "STAND_DOWN",
+          "instrument_class": "crypto",
+          "report_file": "eth_flying_rocket_20260806_1844.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-08-06",
+          "report_local_time": "18:44"
+        },
+        {
+          "phase": "1B",
+          "canonical_tag": "FR-B-1B-ETH-20260806-1844",
+          "decision": "STAND_DOWN",
+          "instrument_class": "crypto",
+          "report_file": "eth_flying_rocket_20260806_1844.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-08-06",
+          "report_local_time": "18:44"
+        },
+        {
+          "phase": "2",
+          "canonical_tag": "FR-B-2-ETH-20260806-1844",
+          "decision": "STAND_DOWN",
+          "instrument_class": "crypto",
+          "report_file": "eth_flying_rocket_20260806_1844.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-08-06",
+          "report_local_time": "18:44"
+        }
+      ]
+    },
+    "instrument_class": "crypto",
+    "report_file": "eth_flying_rocket_20260806_1844.md",
+    "report_version": "report-machine/1",
+    "framework": "flying_rocket",
+    "channel": "B",
+    "report_asset": "ETH",
+    "report_date": "2026-08-06",
+    "report_local_time": "18:44",
+    "active_tags": [],
+    "reserved_tags": [
+      "FR-B-1A-ETH-20260806-1844",
+      "FR-B-1B-ETH-20260806-1844",
+      "FR-B-2-ETH-20260806-1844"
+    ],
+    "status": "REGISTERED"
   }
 }
 ```

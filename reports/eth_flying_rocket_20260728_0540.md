@@ -400,6 +400,15 @@ Two constraints deserve equal billing in any forward plan. First, **the carry is
 
 ---
 
+### Immutable report-phase registry
+
+| Phase | Canonical tag | Decision | Instrument class |
+|---|---|---|---|
+| 1A | FR-B-1A-ETH-20260728-0540 | STAND_DOWN | crypto |
+| 1B | FR-B-1B-ETH-20260728-0540 | STAND_DOWN | crypto |
+| 2 | FR-B-2-ETH-20260728-0540 | STAND_DOWN | crypto |
+
+Registry schema: report-phase-registry/1; version: 1; origin: eth_flying_rocket_20260728_0540.md (report-machine/1).
 ```json machine
 {
   "schema": "report-machine/1",
@@ -482,6 +491,72 @@ Two constraints deserve equal billing in any forward plan. First, **the carry is
     "fk_companion_computed": 11,
     "fk_companion_published": 11,
     "fk_companion_published_date": "2026-07-25"
+  },
+  "tagging": {
+    "mode": "phase_registry",
+    "registry": {
+      "schema": "report-phase-registry/1",
+      "version": 1,
+      "report_file": "eth_flying_rocket_20260728_0540.md",
+      "report_version": "report-machine/1",
+      "framework": "flying_rocket",
+      "channel": "B",
+      "asset": "ETH",
+      "report_date": "2026-07-28",
+      "report_local_time": "05:40",
+      "report_zone": "America/New_York",
+      "instrument_class": "crypto",
+      "entries": [
+        {
+          "phase": "1A",
+          "canonical_tag": "FR-B-1A-ETH-20260728-0540",
+          "decision": "STAND_DOWN",
+          "instrument_class": "crypto",
+          "report_file": "eth_flying_rocket_20260728_0540.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-07-28",
+          "report_local_time": "05:40"
+        },
+        {
+          "phase": "1B",
+          "canonical_tag": "FR-B-1B-ETH-20260728-0540",
+          "decision": "STAND_DOWN",
+          "instrument_class": "crypto",
+          "report_file": "eth_flying_rocket_20260728_0540.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-07-28",
+          "report_local_time": "05:40"
+        },
+        {
+          "phase": "2",
+          "canonical_tag": "FR-B-2-ETH-20260728-0540",
+          "decision": "STAND_DOWN",
+          "instrument_class": "crypto",
+          "report_file": "eth_flying_rocket_20260728_0540.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-07-28",
+          "report_local_time": "05:40"
+        }
+      ]
+    },
+    "instrument_class": "crypto",
+    "report_file": "eth_flying_rocket_20260728_0540.md",
+    "report_version": "report-machine/1",
+    "framework": "flying_rocket",
+    "channel": "B",
+    "report_asset": "ETH",
+    "report_date": "2026-07-28",
+    "report_local_time": "05:40",
+    "active_tags": [],
+    "reserved_tags": [
+      "FR-B-1A-ETH-20260728-0540",
+      "FR-B-1B-ETH-20260728-0540",
+      "FR-B-2-ETH-20260728-0540"
+    ],
+    "status": "REGISTERED"
   }
 }
 ```

@@ -219,6 +219,16 @@ What matters for gold now sits in the other framework. The companion FR composit
 
 ---
 
+### Immutable report-phase registry
+
+| Phase | Canonical tag | Decision | Instrument class |
+|---|---|---|---|
+| 1A | FK-P1A-GOLD-20260810-0020 | LOCKED | non_crypto_derivative |
+| 1B | FK-P1B-GOLD-20260810-0020 | UNVERIFIED | non_crypto_derivative |
+| 2 | FK-P2-GOLD-20260810-0020 | LOCKED | non_crypto_derivative |
+| 3 | FK-P3-GOLD-20260810-0020 | LOCKED | non_crypto_derivative |
+
+Registry schema: report-phase-registry/1; version: 1; origin: gold_fallen_knives_20260810_0020.md (report-machine/1).
 ```json machine
 {
   "schema": "report-machine/1",
@@ -320,6 +330,84 @@ What matters for gold now sits in the other framework. The companion FR composit
     "attainable_ceiling": 14,
     "ceiling_note": "re-derived from today's pins: sentiment 2, valuation 0 (3 only with a confirmed COT flush at >=45% dd), momentum 4/capit 3/holder 3 unpinned; diverges from 2026-08-05 log's ~13 approximation — this report's arithmetic governs",
     "line_states": "P1A>=8 LIVE-FALSE(short 2); P1B>=11/P2>=15 near-VACUOUS-FALSE at ceiling ~14 (dropped from forward narrative); compound<8 flipped VACUOUS-PERMISSIVE (mechanical 7<8)"
+  },
+  "tagging": {
+    "mode": "phase_registry",
+    "registry": {
+      "schema": "report-phase-registry/1",
+      "version": 1,
+      "report_file": "gold_fallen_knives_20260810_0020.md",
+      "report_version": "report-machine/1",
+      "framework": "fallen_knives",
+      "channel": null,
+      "asset": "GOLD",
+      "report_date": "2026-08-10",
+      "report_local_time": "00:20",
+      "report_zone": "America/New_York",
+      "instrument_class": "non_crypto_derivative",
+      "entries": [
+        {
+          "phase": "1A",
+          "canonical_tag": "FK-P1A-GOLD-20260810-0020",
+          "decision": "LOCKED",
+          "instrument_class": "non_crypto_derivative",
+          "report_file": "gold_fallen_knives_20260810_0020.md",
+          "report_version": "report-machine/1",
+          "asset": "GOLD",
+          "report_date": "2026-08-10",
+          "report_local_time": "00:20"
+        },
+        {
+          "phase": "1B",
+          "canonical_tag": "FK-P1B-GOLD-20260810-0020",
+          "decision": "UNVERIFIED",
+          "instrument_class": "non_crypto_derivative",
+          "report_file": "gold_fallen_knives_20260810_0020.md",
+          "report_version": "report-machine/1",
+          "asset": "GOLD",
+          "report_date": "2026-08-10",
+          "report_local_time": "00:20"
+        },
+        {
+          "phase": "2",
+          "canonical_tag": "FK-P2-GOLD-20260810-0020",
+          "decision": "LOCKED",
+          "instrument_class": "non_crypto_derivative",
+          "report_file": "gold_fallen_knives_20260810_0020.md",
+          "report_version": "report-machine/1",
+          "asset": "GOLD",
+          "report_date": "2026-08-10",
+          "report_local_time": "00:20"
+        },
+        {
+          "phase": "3",
+          "canonical_tag": "FK-P3-GOLD-20260810-0020",
+          "decision": "LOCKED",
+          "instrument_class": "non_crypto_derivative",
+          "report_file": "gold_fallen_knives_20260810_0020.md",
+          "report_version": "report-machine/1",
+          "asset": "GOLD",
+          "report_date": "2026-08-10",
+          "report_local_time": "00:20"
+        }
+      ]
+    },
+    "instrument_class": "non_crypto_derivative",
+    "report_file": "gold_fallen_knives_20260810_0020.md",
+    "report_version": "report-machine/1",
+    "framework": "fallen_knives",
+    "channel": null,
+    "report_asset": "GOLD",
+    "report_date": "2026-08-10",
+    "report_local_time": "00:20",
+    "active_tags": [],
+    "reserved_tags": [
+      "FK-P1A-GOLD-20260810-0020",
+      "FK-P1B-GOLD-20260810-0020",
+      "FK-P2-GOLD-20260810-0020",
+      "FK-P3-GOLD-20260810-0020"
+    ],
+    "status": "REGISTERED"
   }
 }
 ```

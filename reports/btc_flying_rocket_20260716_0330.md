@@ -239,6 +239,16 @@ The cross-framework read has, if anything, strengthened: the companion Fallen Kn
 > **IF** a third consecutive macro print produces another short-dominated squeeze **→ THEN** that is a pattern worth naming explicitly as evidence of a structurally crowded-short market, still not a short opportunity.
 > **IF** — months out — F&G pushes >80, MVRV-Z >3, and funding pins deeply positive into a fresh ATH **→ THEN** re-open this framework. That remains tens of percent and a regime change away.
 
+### Immutable report-phase registry
+
+| Phase | Canonical tag | Decision | Instrument class |
+|---|---|---|---|
+| 1A | FR-A-1A-BTC-20260716-0330 | STAND_DOWN | crypto |
+| 1B | FR-A-1B-BTC-20260716-0330 | STAND_DOWN | crypto |
+| 2 | FR-A-2-BTC-20260716-0330 | STAND_DOWN | crypto |
+| 3 | FR-A-3-BTC-20260716-0330 | STAND_DOWN | crypto |
+
+Registry schema: report-phase-registry/1; version: 1; origin: btc_flying_rocket_20260716_0330.md (report-machine/1).
 ```json machine
 {
   "schema": "report-machine/1",
@@ -285,6 +295,84 @@ The cross-framework read has, if anything, strengthened: the companion Fallen Kn
     "corr_spx_30d": "not computed this cycle -> risk-on surcharge default ON",
     "companion_fk": { "published_score": 13, "published_gates": "4/9", "source": "btc_fallen_knives_20260716_0330.md (published same session)" },
     "prior_fr_grade": { "report": "btc_flying_rocket_20260714_1500.md", "ev_price_prior": 64505, "ev_price_grade": "HELD (realized $64,648, within 0.2%)", "modal_band_prior": "$65k-71k rally 45%", "modal_grade": "PARTIAL HIT (Jul-15 high $65,507 touched band edge intraday, reverted to Range)", "falsifier": "a held trend-repair rally", "falsifier_grade": "STANDING (trending toward firing; Sunday weekly close not yet resolved)" }
+  },
+  "tagging": {
+    "mode": "phase_registry",
+    "registry": {
+      "schema": "report-phase-registry/1",
+      "version": 1,
+      "report_file": "btc_flying_rocket_20260716_0330.md",
+      "report_version": "report-machine/1",
+      "framework": "flying_rocket",
+      "channel": "A",
+      "asset": "BTC",
+      "report_date": "2026-07-16",
+      "report_local_time": "03:30",
+      "report_zone": "America/New_York",
+      "instrument_class": "crypto",
+      "entries": [
+        {
+          "phase": "1A",
+          "canonical_tag": "FR-A-1A-BTC-20260716-0330",
+          "decision": "STAND_DOWN",
+          "instrument_class": "crypto",
+          "report_file": "btc_flying_rocket_20260716_0330.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-07-16",
+          "report_local_time": "03:30"
+        },
+        {
+          "phase": "1B",
+          "canonical_tag": "FR-A-1B-BTC-20260716-0330",
+          "decision": "STAND_DOWN",
+          "instrument_class": "crypto",
+          "report_file": "btc_flying_rocket_20260716_0330.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-07-16",
+          "report_local_time": "03:30"
+        },
+        {
+          "phase": "2",
+          "canonical_tag": "FR-A-2-BTC-20260716-0330",
+          "decision": "STAND_DOWN",
+          "instrument_class": "crypto",
+          "report_file": "btc_flying_rocket_20260716_0330.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-07-16",
+          "report_local_time": "03:30"
+        },
+        {
+          "phase": "3",
+          "canonical_tag": "FR-A-3-BTC-20260716-0330",
+          "decision": "STAND_DOWN",
+          "instrument_class": "crypto",
+          "report_file": "btc_flying_rocket_20260716_0330.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-07-16",
+          "report_local_time": "03:30"
+        }
+      ]
+    },
+    "instrument_class": "crypto",
+    "report_file": "btc_flying_rocket_20260716_0330.md",
+    "report_version": "report-machine/1",
+    "framework": "flying_rocket",
+    "channel": "A",
+    "report_asset": "BTC",
+    "report_date": "2026-07-16",
+    "report_local_time": "03:30",
+    "active_tags": [],
+    "reserved_tags": [
+      "FR-A-1A-BTC-20260716-0330",
+      "FR-A-1B-BTC-20260716-0330",
+      "FR-A-2-BTC-20260716-0330",
+      "FR-A-3-BTC-20260716-0330"
+    ],
+    "status": "REGISTERED"
   }
 }
 ```

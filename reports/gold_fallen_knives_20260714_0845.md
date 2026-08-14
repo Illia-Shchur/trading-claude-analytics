@@ -257,6 +257,16 @@ The discipline holds: I do not add on a rates-driven price move that is not a po
 > **IF** June CPI core comes in hot **AND** real yields extend above ~2.35% **→ THEN** gold stays below $4,050, the Friday checkpoint fires, and the held-position stop re-drops to $3,800.
 > **IF** CPI is soft **AND** oil de-escalates **AND** real yields roll off ~2.32% **→ THEN** the haven channel finally outbids the rates channel, gold reclaims $4,050+, and the Rally band opens — but that requires a realized trend-structure repair, not a bounce.
 
+### Immutable report-phase registry
+
+| Phase | Canonical tag | Decision | Instrument class |
+|---|---|---|---|
+| 1A | FK-P1A-GOLD-20260714-0845 | UNVERIFIED | non_crypto_derivative |
+| 1B | FK-P1B-GOLD-20260714-0845 | UNVERIFIED | non_crypto_derivative |
+| 2 | FK-P2-GOLD-20260714-0845 | LOCKED | non_crypto_derivative |
+| 3 | FK-P3-GOLD-20260714-0845 | LOCKED | non_crypto_derivative |
+
+Registry schema: report-phase-registry/1; version: 1; origin: gold_fallen_knives_20260714_0845.md (report-machine/1).
 ```json machine
 {
   "schema": "report-machine/1",
@@ -308,6 +318,84 @@ The discipline holds: I do not add on a rates-driven price move that is not a po
     "iran": "Trump 20% Hormuz toll + reinstated Iranian-port blockade, 3rd strike-round; Hormuz open-but-dark, 2-month traffic low; disputed 60-day toll-free interim deal",
     "cpi_status": "June CPI releasing Jul-14 8:30 ET; actual NOT in fetch; consensus headline ~3.9% (from 4.2%), core ~2.9% MoM +0.2%",
     "adr5": 63.30, "companion_fr": { "composite": 2, "gates": 0, "cap_bound": true }
+  },
+  "tagging": {
+    "mode": "phase_registry",
+    "registry": {
+      "schema": "report-phase-registry/1",
+      "version": 1,
+      "report_file": "gold_fallen_knives_20260714_0845.md",
+      "report_version": "report-machine/1",
+      "framework": "fallen_knives",
+      "channel": null,
+      "asset": "GOLD",
+      "report_date": "2026-07-14",
+      "report_local_time": "08:45",
+      "report_zone": "America/New_York",
+      "instrument_class": "non_crypto_derivative",
+      "entries": [
+        {
+          "phase": "1A",
+          "canonical_tag": "FK-P1A-GOLD-20260714-0845",
+          "decision": "UNVERIFIED",
+          "instrument_class": "non_crypto_derivative",
+          "report_file": "gold_fallen_knives_20260714_0845.md",
+          "report_version": "report-machine/1",
+          "asset": "GOLD",
+          "report_date": "2026-07-14",
+          "report_local_time": "08:45"
+        },
+        {
+          "phase": "1B",
+          "canonical_tag": "FK-P1B-GOLD-20260714-0845",
+          "decision": "UNVERIFIED",
+          "instrument_class": "non_crypto_derivative",
+          "report_file": "gold_fallen_knives_20260714_0845.md",
+          "report_version": "report-machine/1",
+          "asset": "GOLD",
+          "report_date": "2026-07-14",
+          "report_local_time": "08:45"
+        },
+        {
+          "phase": "2",
+          "canonical_tag": "FK-P2-GOLD-20260714-0845",
+          "decision": "LOCKED",
+          "instrument_class": "non_crypto_derivative",
+          "report_file": "gold_fallen_knives_20260714_0845.md",
+          "report_version": "report-machine/1",
+          "asset": "GOLD",
+          "report_date": "2026-07-14",
+          "report_local_time": "08:45"
+        },
+        {
+          "phase": "3",
+          "canonical_tag": "FK-P3-GOLD-20260714-0845",
+          "decision": "LOCKED",
+          "instrument_class": "non_crypto_derivative",
+          "report_file": "gold_fallen_knives_20260714_0845.md",
+          "report_version": "report-machine/1",
+          "asset": "GOLD",
+          "report_date": "2026-07-14",
+          "report_local_time": "08:45"
+        }
+      ]
+    },
+    "instrument_class": "non_crypto_derivative",
+    "report_file": "gold_fallen_knives_20260714_0845.md",
+    "report_version": "report-machine/1",
+    "framework": "fallen_knives",
+    "channel": null,
+    "report_asset": "GOLD",
+    "report_date": "2026-07-14",
+    "report_local_time": "08:45",
+    "active_tags": [],
+    "reserved_tags": [
+      "FK-P1A-GOLD-20260714-0845",
+      "FK-P1B-GOLD-20260714-0845",
+      "FK-P2-GOLD-20260714-0845",
+      "FK-P3-GOLD-20260714-0845"
+    ],
+    "status": "REGISTERED"
   }
 }
 ```

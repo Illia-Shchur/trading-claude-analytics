@@ -222,6 +222,16 @@ The stance is unchanged: hold the single 10% tranche near breakeven, keep 90% dr
 
 ---
 
+### Immutable report-phase registry
+
+| Phase | Canonical tag | Decision | Instrument class |
+|---|---|---|---|
+| 1A | FK-P1A-BTC-20260722-0400 | UNVERIFIED | crypto |
+| 1B | FK-P1B-BTC-20260722-0400 | LOCKED | crypto |
+| 2 | FK-P2-BTC-20260722-0400 | LOCKED | crypto |
+| 3 | FK-P3-BTC-20260722-0400 | LOCKED | crypto |
+
+Registry schema: report-phase-registry/1; version: 1; origin: btc_fallen_knives_20260722_0400.md (report-machine/1).
 ```json machine
 {
   "schema": "report-machine/1",
@@ -278,6 +288,84 @@ The stance is unchanged: hold the single 10% tranche near breakeven, keep 90% dr
     "realized_2wk_pct": 2.7,
     "tier1_next_5td": "none (Jul 22-28); FOMC Jul-29 2:00 PM ET, GDP+PCE+claims Jul-30 8:30 AM ET; NFP Aug-7 (BLS)",
     "companion_fr": { "composite": 0, "gates": 0, "cap_bound": true, "standalone_report_triggered": false, "trigger_eval": "12->11 crosses no unlock threshold; FR<9; no $100M short day; cap binds" }
+  },
+  "tagging": {
+    "mode": "phase_registry",
+    "registry": {
+      "schema": "report-phase-registry/1",
+      "version": 1,
+      "report_file": "btc_fallen_knives_20260722_0400.md",
+      "report_version": "report-machine/1",
+      "framework": "fallen_knives",
+      "channel": null,
+      "asset": "BTC",
+      "report_date": "2026-07-22",
+      "report_local_time": "04:00",
+      "report_zone": "America/New_York",
+      "instrument_class": "crypto",
+      "entries": [
+        {
+          "phase": "1A",
+          "canonical_tag": "FK-P1A-BTC-20260722-0400",
+          "decision": "UNVERIFIED",
+          "instrument_class": "crypto",
+          "report_file": "btc_fallen_knives_20260722_0400.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-07-22",
+          "report_local_time": "04:00"
+        },
+        {
+          "phase": "1B",
+          "canonical_tag": "FK-P1B-BTC-20260722-0400",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "btc_fallen_knives_20260722_0400.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-07-22",
+          "report_local_time": "04:00"
+        },
+        {
+          "phase": "2",
+          "canonical_tag": "FK-P2-BTC-20260722-0400",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "btc_fallen_knives_20260722_0400.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-07-22",
+          "report_local_time": "04:00"
+        },
+        {
+          "phase": "3",
+          "canonical_tag": "FK-P3-BTC-20260722-0400",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "btc_fallen_knives_20260722_0400.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-07-22",
+          "report_local_time": "04:00"
+        }
+      ]
+    },
+    "instrument_class": "crypto",
+    "report_file": "btc_fallen_knives_20260722_0400.md",
+    "report_version": "report-machine/1",
+    "framework": "fallen_knives",
+    "channel": null,
+    "report_asset": "BTC",
+    "report_date": "2026-07-22",
+    "report_local_time": "04:00",
+    "active_tags": [],
+    "reserved_tags": [
+      "FK-P1A-BTC-20260722-0400",
+      "FK-P1B-BTC-20260722-0400",
+      "FK-P2-BTC-20260722-0400",
+      "FK-P3-BTC-20260722-0400"
+    ],
+    "status": "REGISTERED"
   }
 }
 ```

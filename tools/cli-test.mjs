@@ -22,6 +22,7 @@ import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
+import { reportFileMeta, buildReportPhaseRegistry } from './lib.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const REPO = resolve(HERE, '..')
@@ -360,6 +361,19 @@ process.on('exit', cleanup)
     verdict: 'OBSERVE — fixture report for CLI test coverage only.',
   }
 
+  const taggedMeta = reportFileMeta('btc_fallen_knives_20260801_0930.md')
+  validMachine.date = taggedMeta.date
+  validMachine.tagging = {
+    mode: 'phase_registry',
+    instrument_class: 'crypto',
+    registry: buildReportPhaseRegistry(taggedMeta, {
+      framework: 'fallen_knives',
+      decisions: { '1A': 'LOCKED', '1B': 'LOCKED', '2': 'LOCKED', '3': 'UNVERIFIED' },
+    }),
+  }
+  validMachine.tagging.reserved_tags = validMachine.tagging.registry.entries.map(e => e.canonical_tag)
+  validMachine.tagging.active_tags = []
+
   const md = (name, machineText) =>
     `# ${name}\n\nFixture report body.\n\n---\n\n\`\`\`json machine\n${machineText}\n\`\`\`\n`
 
@@ -369,6 +383,16 @@ process.on('exit', cleanup)
   let r = run('lint-report.mjs', [validPath])
   ok('lint valid report exit 0', r.status === 0, r.stdout + r.stderr)
   ok('lint valid report PASS output', /PASS/.test(r.stdout), r.stdout)
+
+  // 1b. The client-visible aliases are not the source of truth: a wrong
+  // report-specific canonical tag and a missing decision both fail closed.
+  const badRegistry = JSON.parse(JSON.stringify(validMachine))
+  badRegistry.tagging.registry.entries[0].canonical_tag = 'FK-P1A-ETH-20260813-0930'
+  delete badRegistry.tagging.registry.entries[1].decision
+  const badRegistryPath = join(lintDir, 'btc_fallen_knives_20260801_0930.md')
+  writeFileSync(badRegistryPath, md('bad-registry', JSON.stringify(badRegistry, null, 2)))
+  r = run('lint-report.mjs', [badRegistryPath])
+  ok('lint rejects wrong asset tag / missing decision', r.status !== 0, r.stdout + r.stderr)
 
   // 2. missing machine block → FAIL
   const noBlockPath = join(lintDir, 'btc_fallen_knives_20260801_0931.md')

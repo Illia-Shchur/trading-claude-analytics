@@ -263,6 +263,16 @@ What genuinely improved this week was not the tape but the bookkeeping. For week
 
 *Cash is a position, and this week it kept its discipline while the toolchain cleaned its books: it held the ladder where structure earned it instead of chasing the poke four percent higher, and it retired two flagged estimates for exact, computed numbers without the score so much as flinching. The framework pays for demonstrated structure and never for a squeeze; the squeeze came back to the wall and the flows walked away, so the hundred percent stays dry and earning four-and-a-half, the ladder waits beneath the market, and Tuesday's print decides whether the next offer is above or below.*
 
+### Immutable report-phase registry
+
+| Phase | Canonical tag | Decision | Instrument class |
+|---|---|---|---|
+| 1A | FK-P1A-ETH-20260711-1030 | UNVERIFIED | crypto |
+| 1B | FK-P1B-ETH-20260711-1030 | LOCKED | crypto |
+| 2 | FK-P2-ETH-20260711-1030 | LOCKED | crypto |
+| 3 | FK-P3-ETH-20260711-1030 | LOCKED | crypto |
+
+Registry schema: report-phase-registry/1; version: 1; origin: eth_fallen_knives_20260711_1030.md (report-machine/1).
 ```json machine
 {
   "schema": "report-machine/1",
@@ -307,6 +317,84 @@ What genuinely improved this week was not the tape but the bookkeeping. For week
     "bitmine_eth": 5742237, "sharplink_eth": 886725,
     "sept_hike_odds_ge1": "~70%", "real_yield_10y_tips": 2.31, "vix": 15.03,
     "companion_fr": { "composite": 1, "gates": 0, "cap_bound": true }
+  },
+  "tagging": {
+    "mode": "phase_registry",
+    "registry": {
+      "schema": "report-phase-registry/1",
+      "version": 1,
+      "report_file": "eth_fallen_knives_20260711_1030.md",
+      "report_version": "report-machine/1",
+      "framework": "fallen_knives",
+      "channel": null,
+      "asset": "ETH",
+      "report_date": "2026-07-11",
+      "report_local_time": "10:30",
+      "report_zone": "America/New_York",
+      "instrument_class": "crypto",
+      "entries": [
+        {
+          "phase": "1A",
+          "canonical_tag": "FK-P1A-ETH-20260711-1030",
+          "decision": "UNVERIFIED",
+          "instrument_class": "crypto",
+          "report_file": "eth_fallen_knives_20260711_1030.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-07-11",
+          "report_local_time": "10:30"
+        },
+        {
+          "phase": "1B",
+          "canonical_tag": "FK-P1B-ETH-20260711-1030",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "eth_fallen_knives_20260711_1030.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-07-11",
+          "report_local_time": "10:30"
+        },
+        {
+          "phase": "2",
+          "canonical_tag": "FK-P2-ETH-20260711-1030",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "eth_fallen_knives_20260711_1030.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-07-11",
+          "report_local_time": "10:30"
+        },
+        {
+          "phase": "3",
+          "canonical_tag": "FK-P3-ETH-20260711-1030",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "eth_fallen_knives_20260711_1030.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-07-11",
+          "report_local_time": "10:30"
+        }
+      ]
+    },
+    "instrument_class": "crypto",
+    "report_file": "eth_fallen_knives_20260711_1030.md",
+    "report_version": "report-machine/1",
+    "framework": "fallen_knives",
+    "channel": null,
+    "report_asset": "ETH",
+    "report_date": "2026-07-11",
+    "report_local_time": "10:30",
+    "active_tags": [],
+    "reserved_tags": [
+      "FK-P1A-ETH-20260711-1030",
+      "FK-P1B-ETH-20260711-1030",
+      "FK-P2-ETH-20260711-1030",
+      "FK-P3-ETH-20260711-1030"
+    ],
+    "status": "REGISTERED"
   }
 }
 ```

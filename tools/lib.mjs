@@ -2382,6 +2382,140 @@ export function entryLooksLikeFill(entry) {
 // free so selftest.mjs covers it; the script does the I/O.
 
 export const SIGNAL_FEED_SCHEMA = 'signal-feed/1'
+export const REPORT_PHASE_REGISTRY_SCHEMA = 'report-phase-registry/1'
+export const REPORT_PHASE_REGISTRY_VERSION = 1
+export const REPORT_PHASE_DECISIONS = ['AUTHORIZED', 'LOCKED', 'STAND_DOWN', 'UNVERIFIED']
+export const REPORT_PHASE_INSTRUMENT_CLASSES = ['crypto', 'non_crypto_derivative', 'non_crypto_cash']
+
+const REPORT_PHASES = {
+  fallen_knives: ['1A', '1B', '2', '3'],
+  'flying_rocket:A': ['1A', '1B', '2', '3'],
+  'flying_rocket:B': ['1A', '1B', '2'],
+  'flying_rocket:none': ['1A', '1B', '2', '3'],
+}
+
+/** The phases that exist for a framework/channel, with FR-none using §4A. */
+export function applicableReportPhases(framework, channel = null) {
+  const key = framework === 'fallen_knives' ? 'fallen_knives' : `flying_rocket:${channel || 'A'}`
+  return [...(REPORT_PHASES[key] || [])]
+}
+
+/** FR-none is a conservative stand-down scored with the recorded FR-A rubric. */
+export function reportTagChannel(framework, channel = null) {
+  if (framework === 'fallen_knives') return null
+  return channel === 'B' ? 'B' : 'A'
+}
+
+/** Prefixes are stable phase/channel rollup keys; exact tags append report identity. */
+export function reportPhaseTagPrefix(framework, channel, phase) {
+  const p = String(phase || '').toUpperCase()
+  if (!applicableReportPhases(framework, channel).includes(p)) return null
+  if (framework === 'fallen_knives') return `FK-P${p}-`
+  return `FR-${reportTagChannel(framework, channel)}-${p}-`
+}
+
+/** Build the exact report-specific canonical tag from the filename identity. */
+export function canonicalReportPhaseTag(report, { framework, channel = null, phase } = {}) {
+  const meta = typeof report === 'string' ? reportFileMeta(report) : report
+  if (!meta || !meta.ok) return null
+  const fw = framework || meta.framework
+  const prefix = reportPhaseTagPrefix(fw, channel, phase)
+  if (!prefix) return null
+  const identity = `${meta.asset}-${meta.date.replaceAll('-', '')}-${meta.local_time.replace(':', '')}`
+  const tag = `${prefix}${identity}`
+  return tag.length <= 64 ? tag : null
+}
+
+function phaseRegistryDecision(value) {
+  return REPORT_PHASE_DECISIONS.includes(value) ? value : null
+}
+
+/**
+ * Pure constructor for the immutable report-phase registry. `decisions` is
+ * intentionally explicit: callers that cannot prove a state must pass
+ * UNVERIFIED rather than allowing a fill or a later report to infer it.
+ */
+export function buildReportPhaseRegistry(report, {
+  framework,
+  channel = null,
+  instrument_class = 'crypto',
+  decisions = {},
+  report_version = 'report-machine/1',
+} = {}) {
+  const meta = typeof report === 'string' ? reportFileMeta(report) : report
+  if (!meta || !meta.ok) throw new Error('report identity is invalid')
+  const fw = framework || meta.framework
+  const ch = fw === 'fallen_knives' ? null : (['A', 'B', 'none'].includes(channel) ? channel : 'A')
+  if (!REPORT_PHASE_INSTRUMENT_CLASSES.includes(instrument_class)) throw new Error(`invalid instrument class: ${instrument_class}`)
+  const phases = applicableReportPhases(fw, ch)
+  const entries = phases.map(phase => {
+    const decision = phaseRegistryDecision(decisions[phase]) || 'UNVERIFIED'
+    const canonical_tag = canonicalReportPhaseTag(meta, { framework: fw, channel: ch, phase })
+    return {
+      phase,
+      canonical_tag,
+      decision,
+      instrument_class,
+      report_file: meta.file,
+      report_version,
+      asset: meta.asset,
+      report_date: meta.date,
+      report_local_time: meta.local_time,
+    }
+  })
+  return {
+    schema: REPORT_PHASE_REGISTRY_SCHEMA,
+    version: REPORT_PHASE_REGISTRY_VERSION,
+    report_file: meta.file,
+    report_version,
+    framework: fw,
+    channel: ch,
+    asset: meta.asset,
+    report_date: meta.date,
+    report_local_time: meta.local_time,
+    report_zone: meta.zone,
+    instrument_class,
+    entries,
+  }
+}
+
+/** Return deterministic validation failures for a report-phase registry. */
+export function reportPhaseRegistryIssues(registry, report, { framework, channel } = {}) {
+  const issues = []
+  const meta = typeof report === 'string' ? reportFileMeta(report) : report
+  if (!registry || typeof registry !== 'object') return ['tagging.registry is missing']
+  if (registry.schema !== REPORT_PHASE_REGISTRY_SCHEMA) issues.push(`tagging.registry.schema must be ${REPORT_PHASE_REGISTRY_SCHEMA}`)
+  if (registry.version !== REPORT_PHASE_REGISTRY_VERSION) issues.push(`tagging.registry.version must be ${REPORT_PHASE_REGISTRY_VERSION}`)
+  if (!meta || !meta.ok) issues.push('report filename identity is invalid')
+  const fw = framework || (meta && meta.framework)
+  const ch = fw === 'fallen_knives' ? null : (channel || registry.channel || 'A')
+  if (registry.framework !== fw) issues.push(`tagging.registry.framework=${JSON.stringify(registry.framework)} does not match ${JSON.stringify(fw)}`)
+  if (registry.channel !== ch) issues.push(`tagging.registry.channel=${JSON.stringify(registry.channel)} does not match ${JSON.stringify(ch)}`)
+  if (meta && meta.ok) {
+    for (const [key, want] of [['report_file', meta.file], ['asset', meta.asset], ['report_date', meta.date], ['report_local_time', meta.local_time]])
+      if (registry[key] !== want) issues.push(`tagging.registry.${key}=${JSON.stringify(registry[key])} does not match filename-derived ${JSON.stringify(want)}`)
+  }
+  if (!REPORT_PHASE_INSTRUMENT_CLASSES.includes(registry.instrument_class)) issues.push(`tagging.registry.instrument_class=${JSON.stringify(registry.instrument_class)} is invalid`)
+  const entries = Array.isArray(registry.entries) ? registry.entries : []
+  if (!Array.isArray(registry.entries)) issues.push('tagging.registry.entries must be an array')
+  const expected = applicableReportPhases(fw, ch)
+  if (entries.length !== expected.length) issues.push(`tagging.registry.entries must contain exactly ${expected.length} applicable phases`)
+  const seen = new Set()
+  for (const entry of entries) {
+    if (!entry || typeof entry !== 'object') { issues.push('tagging.registry.entries contains a non-object'); continue }
+    if (seen.has(entry.phase)) issues.push(`tagging.registry contains duplicate phase ${JSON.stringify(entry.phase)}`)
+    seen.add(entry.phase)
+    if (!expected.includes(entry.phase)) issues.push(`tagging.registry contains invalid phase ${JSON.stringify(entry.phase)} (FR-B has no Phase 3)`)
+    const wantTag = meta && meta.ok ? canonicalReportPhaseTag(meta, { framework: fw, channel: ch, phase: entry.phase }) : null
+    if (!wantTag || entry.canonical_tag !== wantTag) issues.push(`phase ${entry.phase}: canonical tag ${JSON.stringify(entry.canonical_tag)} does not match ${JSON.stringify(wantTag)}`)
+    if (typeof entry.canonical_tag === 'string' && entry.canonical_tag.length > 64) issues.push(`phase ${entry.phase}: canonical tag exceeds 64 characters`)
+    if (!REPORT_PHASE_DECISIONS.includes(entry.decision)) issues.push(`phase ${entry.phase}: missing or invalid decision ${JSON.stringify(entry.decision)}`)
+    for (const [key, want] of [['instrument_class', registry.instrument_class], ['report_file', registry.report_file], ['report_version', registry.report_version], ['asset', registry.asset], ['report_date', registry.report_date], ['report_local_time', registry.report_local_time]])
+      if (entry[key] !== want) issues.push(`phase ${entry.phase}: ${key} does not match the immutable registry identity`)
+  }
+  for (const phase of expected) if (!seen.has(phase)) issues.push(`tagging.registry is missing applicable phase ${phase}`)
+  return issues
+}
 
 /**
  * The two schema epochs the report corpus straddles.

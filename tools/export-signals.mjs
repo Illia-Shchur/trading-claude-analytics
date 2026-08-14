@@ -32,6 +32,7 @@ import { fileURLToPath } from 'node:url'
 import {
   SIGNAL_FEED_SCHEMA, EPOCHS, REPORT_ZONE, reportFileMeta, signalRubric, legSpec,
   inferChannel, inferDiscretion, gateMask, unlockFor, canonicalJSON, feedChanged,
+  REPORT_PHASE_REGISTRY_SCHEMA,
 } from './lib.mjs'
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -151,6 +152,9 @@ function toSignal(meta, b, contentSha) {
     framework: meta.framework,
     asset: meta.asset,
     schema_epoch: meta.schema_epoch,
+    // Additive projection of the immutable registry. Decimal conversion keeps
+    // any numeric extension stable while preserving the phase decisions/tags.
+    tagging: b.tagging ? decDeep(b.tagging) : null,
 
     channel: ch.channel,
     channel_inferred: ch.inferred,
@@ -251,6 +255,7 @@ const feed = {
     machine_block: EPOCHS.machineBlock,
     discretion_and_two_channel: EPOCHS.discretionAndTwoChannel,
     entry_price: EPOCHS.entryPrice,
+    report_phase_registry: REPORT_PHASE_REGISTRY_SCHEMA,
   },
   encoding: 'decimal quantities (prices, scores, percentages, EV) are JSON strings in plain decimal notation; counts, gate numbers, booleans and enums are native',
   counts: {

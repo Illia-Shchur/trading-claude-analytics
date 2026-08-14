@@ -384,6 +384,16 @@ Set against that is the one genuinely impressive fact of the week, and it should
 
 ---
 
+### Immutable report-phase registry
+
+| Phase | Canonical tag | Decision | Instrument class |
+|---|---|---|---|
+| 1A | FK-P1A-GOLD-20260725-1020 | UNVERIFIED | non_crypto_derivative |
+| 1B | FK-P1B-GOLD-20260725-1020 | UNVERIFIED | non_crypto_derivative |
+| 2 | FK-P2-GOLD-20260725-1020 | LOCKED | non_crypto_derivative |
+| 3 | FK-P3-GOLD-20260725-1020 | LOCKED | non_crypto_derivative |
+
+Registry schema: report-phase-registry/1; version: 1; origin: gold_fallen_knives_20260725_1020.md (report-machine/1).
 ```json machine
 {
   "schema": "report-machine/1",
@@ -449,6 +459,84 @@ Set against that is the one genuinely impressive fact of the week, and it should
     "tier1_next_5td": "FOMC Wed Jul-29 2:00 PM ET (federalreserve.gov); Q2 GDP advance + June PCE Thu Jul-30 8:30 AM ET, double release (BEA schedule); ECI Q2 + UMich final Fri Jul-31 (tier 2). Gold-specific: COMEX weekly settle + CFTC COT (as-of Jul-28) BOTH Fri Jul-31; WGC July flow print ~Aug 4-7; PBoC July reserves ~Aug 7. Beyond: NFP Fri Aug-7 8:30 AM (BLS), CPI Wed Aug-12 8:30 AM (BLS). ALL prior-report dates CONFIRMED, no corrections. Latest prints: CPI June (rel Jul-14) 3.5% headline / 2.6% core -- downside surprise but ENERGY-DRIVEN (energy -5.7% m/m, still +15.7% y/y) and therefore stale against a week that touched $100 Brent; PCE May (rel Jun-25) 4.1% / 3.4% core",
     "other_news": "ECB held rates steady this week; markets looked past it toward the Fed. No Jul 23-25 news found on mine supply, large physical/bar-and-coin demand shifts, or new individual central-bank transactions -- commentary-only coverage (China and Poland named as persistent accumulators) treated as color, not data",
     "companion_fr": { "composite": 2, "gates": 0, "cap_bound": true, "cap_attainable": 8, "standalone_report_triggered": false, "trigger_eval": "score 8 holds, no unlock cross; FR 2<9; short-side liquidation trigger N/A (no perp liquidation market for COMEX gold); cap binds (-27.18% below 1y high)", "legs": { "euphoria": 0, "momentum": 0, "valuation": 1, "distribution": 1, "vulnerability": 0 }, "methodology_correction": "LABELED: the prior gold report reported FR 2 with 'sole non-zero leg: 200-week extension +44.17%'. There is NO 200-week-extension leg in the documented FR rubric. Recomputing against the published rubric gives the SAME total of 2, composed of valuation 1 (27.18% from ATH -> the 15-30% band) + distribution 1 (ETF net outflows after an H1 inflow regime). Total unchanged, composition corrected letter-for-letter" }
+  },
+  "tagging": {
+    "mode": "phase_registry",
+    "registry": {
+      "schema": "report-phase-registry/1",
+      "version": 1,
+      "report_file": "gold_fallen_knives_20260725_1020.md",
+      "report_version": "report-machine/1",
+      "framework": "fallen_knives",
+      "channel": null,
+      "asset": "GOLD",
+      "report_date": "2026-07-25",
+      "report_local_time": "10:20",
+      "report_zone": "America/New_York",
+      "instrument_class": "non_crypto_derivative",
+      "entries": [
+        {
+          "phase": "1A",
+          "canonical_tag": "FK-P1A-GOLD-20260725-1020",
+          "decision": "UNVERIFIED",
+          "instrument_class": "non_crypto_derivative",
+          "report_file": "gold_fallen_knives_20260725_1020.md",
+          "report_version": "report-machine/1",
+          "asset": "GOLD",
+          "report_date": "2026-07-25",
+          "report_local_time": "10:20"
+        },
+        {
+          "phase": "1B",
+          "canonical_tag": "FK-P1B-GOLD-20260725-1020",
+          "decision": "UNVERIFIED",
+          "instrument_class": "non_crypto_derivative",
+          "report_file": "gold_fallen_knives_20260725_1020.md",
+          "report_version": "report-machine/1",
+          "asset": "GOLD",
+          "report_date": "2026-07-25",
+          "report_local_time": "10:20"
+        },
+        {
+          "phase": "2",
+          "canonical_tag": "FK-P2-GOLD-20260725-1020",
+          "decision": "LOCKED",
+          "instrument_class": "non_crypto_derivative",
+          "report_file": "gold_fallen_knives_20260725_1020.md",
+          "report_version": "report-machine/1",
+          "asset": "GOLD",
+          "report_date": "2026-07-25",
+          "report_local_time": "10:20"
+        },
+        {
+          "phase": "3",
+          "canonical_tag": "FK-P3-GOLD-20260725-1020",
+          "decision": "LOCKED",
+          "instrument_class": "non_crypto_derivative",
+          "report_file": "gold_fallen_knives_20260725_1020.md",
+          "report_version": "report-machine/1",
+          "asset": "GOLD",
+          "report_date": "2026-07-25",
+          "report_local_time": "10:20"
+        }
+      ]
+    },
+    "instrument_class": "non_crypto_derivative",
+    "report_file": "gold_fallen_knives_20260725_1020.md",
+    "report_version": "report-machine/1",
+    "framework": "fallen_knives",
+    "channel": null,
+    "report_asset": "GOLD",
+    "report_date": "2026-07-25",
+    "report_local_time": "10:20",
+    "active_tags": [],
+    "reserved_tags": [
+      "FK-P1A-GOLD-20260725-1020",
+      "FK-P1B-GOLD-20260725-1020",
+      "FK-P2-GOLD-20260725-1020",
+      "FK-P3-GOLD-20260725-1020"
+    ],
+    "status": "REGISTERED"
   }
 }
 ```

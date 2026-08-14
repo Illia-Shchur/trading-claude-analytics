@@ -257,6 +257,16 @@ The expected value at spot is mildly negative, the scorecard is a hair better th
 > **IF** PPI comes in hot Wednesday **AND** the ETF exodus resumes **→ THEN** BTC loses the 200-week again on the weekly close and the $58–62K retest ladder is live — where the EV edge actually sits.
 > **IF** the score fades two more points to ≤10 as fear keeps lifting **→ THEN** the ≥6-from-peak trim arms on the 10% Phase-1A tranche.
 
+### Immutable report-phase registry
+
+| Phase | Canonical tag | Decision | Instrument class |
+|---|---|---|---|
+| 1A | FK-P1A-BTC-20260714-1430 | UNVERIFIED | crypto |
+| 1B | FK-P1B-BTC-20260714-1430 | LOCKED | crypto |
+| 2 | FK-P2-BTC-20260714-1430 | LOCKED | crypto |
+| 3 | FK-P3-BTC-20260714-1430 | LOCKED | crypto |
+
+Registry schema: report-phase-registry/1; version: 1; origin: btc_fallen_knives_20260714_1430.md (report-machine/1).
 ```json machine
 {
   "schema": "report-machine/1",
@@ -307,6 +317,84 @@ The expected value at spot is mildly negative, the scorecard is a hair better th
     "mstr_btc": 843775, "mstr_note": "no BTC change Jul 12-14", "clarity": "Senate back Jul-13, ~3 weeks, still stalled",
     "corr_spx_30d": "not computed this cycle -> risk-on surcharge OFF",
     "companion_fr": { "composite": 1, "gates": 0, "cap_bound": true }
+  },
+  "tagging": {
+    "mode": "phase_registry",
+    "registry": {
+      "schema": "report-phase-registry/1",
+      "version": 1,
+      "report_file": "btc_fallen_knives_20260714_1430.md",
+      "report_version": "report-machine/1",
+      "framework": "fallen_knives",
+      "channel": null,
+      "asset": "BTC",
+      "report_date": "2026-07-14",
+      "report_local_time": "14:30",
+      "report_zone": "America/New_York",
+      "instrument_class": "crypto",
+      "entries": [
+        {
+          "phase": "1A",
+          "canonical_tag": "FK-P1A-BTC-20260714-1430",
+          "decision": "UNVERIFIED",
+          "instrument_class": "crypto",
+          "report_file": "btc_fallen_knives_20260714_1430.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-07-14",
+          "report_local_time": "14:30"
+        },
+        {
+          "phase": "1B",
+          "canonical_tag": "FK-P1B-BTC-20260714-1430",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "btc_fallen_knives_20260714_1430.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-07-14",
+          "report_local_time": "14:30"
+        },
+        {
+          "phase": "2",
+          "canonical_tag": "FK-P2-BTC-20260714-1430",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "btc_fallen_knives_20260714_1430.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-07-14",
+          "report_local_time": "14:30"
+        },
+        {
+          "phase": "3",
+          "canonical_tag": "FK-P3-BTC-20260714-1430",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "btc_fallen_knives_20260714_1430.md",
+          "report_version": "report-machine/1",
+          "asset": "BTC",
+          "report_date": "2026-07-14",
+          "report_local_time": "14:30"
+        }
+      ]
+    },
+    "instrument_class": "crypto",
+    "report_file": "btc_fallen_knives_20260714_1430.md",
+    "report_version": "report-machine/1",
+    "framework": "fallen_knives",
+    "channel": null,
+    "report_asset": "BTC",
+    "report_date": "2026-07-14",
+    "report_local_time": "14:30",
+    "active_tags": [],
+    "reserved_tags": [
+      "FK-P1A-BTC-20260714-1430",
+      "FK-P1B-BTC-20260714-1430",
+      "FK-P2-BTC-20260714-1430",
+      "FK-P3-BTC-20260714-1430"
+    ],
+    "status": "REGISTERED"
   }
 }
 ```

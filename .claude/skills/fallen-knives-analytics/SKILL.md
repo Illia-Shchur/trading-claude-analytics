@@ -404,18 +404,19 @@ Run `node tools/position.mjs <asset>` **before** writing this section. It reads 
 
 **Two carve-outs survive even at FRESH, and only two.** (a) Snapshot `mark_price_usd` is **informational** and never becomes this report's canonical spot — Hard Rule 1's independent multi-venue cross-check stands. (b) Phase attribution comes from **deal tags only**; an untagged holding is reported as real-but-`UNTAGGED`, never inferred from quantity or timing, because a guessed phase can unlock the next tranche.
 
-#### Ledger tag (print on every tranche that fills)
+#### Report-specific deal attribution (immutable origin)
 
-When a report authorizes a fill, print the **ledger tag** for that tranche alongside the status line. The tag is what the personal-accounting ledger records against the round-trip deal, and it is the *only* thing that connects a real Binance position back to the tranche that authorized it — the ledger stores quantity and cost basis, but `crypto_trade` has no tranche dimension and never will. An untagged holding is a real position with unknown attribution; it cannot resolve a phase-dependent unlock precondition.
+Every machine report dated on/after 2026-08-12 publishes a versioned `tagging.registry`. Each applicable phase entry contains the exact report-derived tag (for example `FK-P1A-BTC-20260813-1744`), an `AUTHORIZED`, `LOCKED`, `STAND_DOWN`, or `UNVERIFIED` decision, instrument class, and immutable report filename/date/time. The filename is the identity; do not invent a tag from an execution symbol or append authorization to the tag. A later report is a management reference, never an origin replacement.
 
-| Tranche | Tag |
+Attribution is recorded in the accounting app with `reportFile`, `phase`, `entryRoute` (`MECHANICAL`, `FK_DEEP_VALUE`, `FK_D1`, `FK_D2`, or `MANUAL`), and alignment (`AUTHORIZED`, `AGAINST_REPORT`, or `UNVERIFIED`). A LOCKED/STAND_DOWN origin requires explicit acknowledgement and persists as `AGAINST_REPORT`; an UNVERIFIED origin stays distinct. The server generates and checks the canonical tag, makes the origin immutable, and requires an explicit clear/reassign correction to change it. Add management-report references separately. Legacy/custom tags and `UNFRAMED` remain accepted; they do not become framework origins.
+
+| Tranche / route | Prefix or legacy tag |
 |---|---|
-| Phase 1A / 1B / 2 / 3 | `FK-P1A` · `FK-P1B` · `FK-P2` · `FK-P3` |
-| Deep-Value Override firing | `FK-OVR` |
-| D1 threshold cross / D2 conviction path | `FK-D1` · `FK-D2` — these carry the D5 stop |
+| Phase 1A / 1B / 2 / 3 | `FK-P1A-` · `FK-P1B-` · `FK-P2-` · `FK-P3-` |
+| Deep-Value Override / D1 / D2 | `FK-OVR-` · `FK-D1-` · `FK-D2-` (legacy prefixes remain queryable) |
 | Traded outside the framework | `UNFRAMED` |
 
-Apply it in the app via `PUT /api/investments/deal-note` with the `dealKey`, the tag, and a note whose **first line is `report=reports/<this report's filename>`** and whose remaining lines state the stop, the clock, and the sizing rationale. Per-phase performance then reads back as `GET /api/investments/deals/stats?tag=FK-P1A`, and the whole framework as `?tagPrefix=FK-`. Tagging is manual and deliberately so: inferring a phase from quantity or timing is a guess, and a guessed phase can unlock the next tranche.
+Use `PUT /api/investments/deal-note` with the structured attribution rather than a client-supplied canonical tag. Exact tags identify report results; prefixes identify phase/framework rollups. Headline framework performance includes authorized origins only, with against-report and unverified segments exposed separately.
 
 ### 7. Exit / Trim Framework (Symmetric)
 

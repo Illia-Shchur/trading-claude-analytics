@@ -266,6 +266,16 @@ What did not change is the part that matters most: a hundred percent dry, a name
 
 *Cash is a position, and this weekend it held its discipline while a war re-opened onto the one market that never closes: it kept the ladder where structure earned it instead of chasing a poke to the arc high, and it read ETH's two-percent firmness as a note, not a thesis. The framework pays for demonstrated structure and never for a poke; the poke came back to the wall and the treasuries stood still, so the hundred percent stays dry and earning four-and-a-half, the ladder waits beneath the market, and Monday's crude then Tuesday's print decide whether the next offer is above or below.*
 
+### Immutable report-phase registry
+
+| Phase | Canonical tag | Decision | Instrument class |
+|---|---|---|---|
+| 1A | FK-P1A-ETH-20260712-1030 | UNVERIFIED | crypto |
+| 1B | FK-P1B-ETH-20260712-1030 | LOCKED | crypto |
+| 2 | FK-P2-ETH-20260712-1030 | LOCKED | crypto |
+| 3 | FK-P3-ETH-20260712-1030 | LOCKED | crypto |
+
+Registry schema: report-phase-registry/1; version: 1; origin: eth_fallen_knives_20260712_1030.md (report-machine/1).
 ```json machine
 {
   "schema": "report-machine/1",
@@ -311,6 +321,84 @@ What did not change is the part that matters most: a hundred percent dry, a name
     "iran": "3rd US strike this week; Tehran declared Hormuz closed until further notice; oil gap-up risk Mon",
     "sept_hike_odds_ge1": "~70%", "real_yield_10y_tips": 2.31, "vix": 15.03,
     "companion_fr": { "composite": 1, "gates": 0, "cap_bound": true }
+  },
+  "tagging": {
+    "mode": "phase_registry",
+    "registry": {
+      "schema": "report-phase-registry/1",
+      "version": 1,
+      "report_file": "eth_fallen_knives_20260712_1030.md",
+      "report_version": "report-machine/1",
+      "framework": "fallen_knives",
+      "channel": null,
+      "asset": "ETH",
+      "report_date": "2026-07-12",
+      "report_local_time": "10:30",
+      "report_zone": "America/New_York",
+      "instrument_class": "crypto",
+      "entries": [
+        {
+          "phase": "1A",
+          "canonical_tag": "FK-P1A-ETH-20260712-1030",
+          "decision": "UNVERIFIED",
+          "instrument_class": "crypto",
+          "report_file": "eth_fallen_knives_20260712_1030.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-07-12",
+          "report_local_time": "10:30"
+        },
+        {
+          "phase": "1B",
+          "canonical_tag": "FK-P1B-ETH-20260712-1030",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "eth_fallen_knives_20260712_1030.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-07-12",
+          "report_local_time": "10:30"
+        },
+        {
+          "phase": "2",
+          "canonical_tag": "FK-P2-ETH-20260712-1030",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "eth_fallen_knives_20260712_1030.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-07-12",
+          "report_local_time": "10:30"
+        },
+        {
+          "phase": "3",
+          "canonical_tag": "FK-P3-ETH-20260712-1030",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "eth_fallen_knives_20260712_1030.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-07-12",
+          "report_local_time": "10:30"
+        }
+      ]
+    },
+    "instrument_class": "crypto",
+    "report_file": "eth_fallen_knives_20260712_1030.md",
+    "report_version": "report-machine/1",
+    "framework": "fallen_knives",
+    "channel": null,
+    "report_asset": "ETH",
+    "report_date": "2026-07-12",
+    "report_local_time": "10:30",
+    "active_tags": [],
+    "reserved_tags": [
+      "FK-P1A-ETH-20260712-1030",
+      "FK-P1B-ETH-20260712-1030",
+      "FK-P2-ETH-20260712-1030",
+      "FK-P3-ETH-20260712-1030"
+    ],
+    "status": "REGISTERED"
   }
 }
 ```

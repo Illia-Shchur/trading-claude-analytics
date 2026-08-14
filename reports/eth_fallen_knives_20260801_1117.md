@@ -546,6 +546,16 @@ The uncomfortable truth underneath all of this is that ETH's fear evidence is th
 
 ---
 
+### Immutable report-phase registry
+
+| Phase | Canonical tag | Decision | Instrument class |
+|---|---|---|---|
+| 1A | FK-P1A-ETH-20260801-1117 | UNVERIFIED | crypto |
+| 1B | FK-P1B-ETH-20260801-1117 | LOCKED | crypto |
+| 2 | FK-P2-ETH-20260801-1117 | LOCKED | crypto |
+| 3 | FK-P3-ETH-20260801-1117 | LOCKED | crypto |
+
+Registry schema: report-phase-registry/1; version: 1; origin: eth_fallen_knives_20260801_1117.md (report-machine/1).
 ```json machine
 {
   "schema": "report-machine/1",
@@ -682,6 +692,84 @@ The uncomfortable truth underneath all of this is that ETH's fear evidence is th
     "stale_input_debt": ["valuation leg — MVRV-Z decimal UNOBTAINABLE, report 3 of the debt clock, held at prior value 4 on the ratio proxy and flagged inline"]
   },
   "collar": { "band_triggered": true, "reasons": ["mechanical score 10 is inside the 6-10 band", "bull/bear scorecard 7-7, balanced"], "ev_limb_met": false, "ev_limb_note": "|EV-vs-spot| 2.37% exceeds the 2% threshold, so that limb is NOT met; the other two are", "effect": "no directional regime resolution claimed" },
-  "verdict": "HOLD; let the pre-assigned Phase 1A remainder work the $1,800-1,825 ladder; authorize nothing new. ~95% dry at a 3.68% T-bill carry. SCORE DOWN 11 -> 10 on the CAPITULATION leg, the only leg that moved. THE LEG THAT MOVED AND WHY IT IS CLEAN: the Jul-25 report scored a point on four consecutive negative funding intervals while explicitly flagging the condition as FIRED BUT NOT STANDING (funding was fully positive again before that report was written). Live Binance USDT-M ETHUSDT now shows a longest consecutive negative run of ONE across fifteen intervals (two isolated negatives, Jul-28 08:00 and Jul-31 16:00), so the >=3-consecutive condition fails and the leg reverts to 0. The framework unwound a transient on schedule rather than being whipsawed by it. CONSEQUENCE, AND THE CONTRAST WITH BTC: both assets ran the same 2026-07-27 cut of the Phase 1B line from >=13 to >=11. BTC prints 11 and is now blocked on GATES alone; ETH prints 10 and is blocked on SCORE first — the harder lock, because D2 substitutes for a gate and never for a score. D2 EVALUATED AND DECLINED (first conviction-path evaluation in framework history): Phase 1A meets every D2 condition — score 10>=8, gate count short by exactly one (2 of 3), [V] floor met on lit gates, surcharge off at corr 0.317 — and is declined because the partial-tranche rule already authorizes the 1A remainder, so a D2 unlock would buy already-authorized capital at the price of a hard D5 stop and a 10-day phase bar. D1 = 0.0: a +1.0 was constructible on three sourced legs-invisible factors (conservative MVRV proxy, funding at half BTC's leverage, reserve decline persisting through regime changes) and DECLINED because it would be the sole enabler of a threshold cross restoring the exact point the tape just took away — and 1B stays gate-blocked at 11 regardless. VALUATION SOURCING: the circulating ETH MVRV-Z '-0.7 / 7-year low' traces to a single 2026-06-08 article at ETH $1,684 and was declined under the provenance rule; the decimal stays UNOBTAINABLE at report 3 of the debt clock, and if that reading is directionally right this leg is scored one point too low. THE UNCOMFORTABLE TRUTH: ETH's fear evidence is thin because ETH is not being feared — July ETF inflows +$365.17M (strongest complex, after eight negative weeks), exchange reserves at a decade low falling through both rallies and corrections, funding at half BTC's, liquidations ordinary. Cheap and orderly, not cheap and panicked. FR COMPANION 9/20 Channel B — the >=9 tripwire FIRED and a standalone FR report is OWED and NOT DISCHARGED here. POSITION (Hard Rule 8, STALE at 26h): dust, custody RECONCILED, basis.reliable=false on 8.5064 ETH of unbacked disposals, UNTAGGED — narrated fills reported UNVERIFIED, no PnL or cost basis quoted, nothing sized against it. Collar ACTIVE (mechanical 10 in the 6-10 band; scorecard 7-7): no directional regime resolution claimed."
+  "verdict": "HOLD; let the pre-assigned Phase 1A remainder work the $1,800-1,825 ladder; authorize nothing new. ~95% dry at a 3.68% T-bill carry. SCORE DOWN 11 -> 10 on the CAPITULATION leg, the only leg that moved. THE LEG THAT MOVED AND WHY IT IS CLEAN: the Jul-25 report scored a point on four consecutive negative funding intervals while explicitly flagging the condition as FIRED BUT NOT STANDING (funding was fully positive again before that report was written). Live Binance USDT-M ETHUSDT now shows a longest consecutive negative run of ONE across fifteen intervals (two isolated negatives, Jul-28 08:00 and Jul-31 16:00), so the >=3-consecutive condition fails and the leg reverts to 0. The framework unwound a transient on schedule rather than being whipsawed by it. CONSEQUENCE, AND THE CONTRAST WITH BTC: both assets ran the same 2026-07-27 cut of the Phase 1B line from >=13 to >=11. BTC prints 11 and is now blocked on GATES alone; ETH prints 10 and is blocked on SCORE first — the harder lock, because D2 substitutes for a gate and never for a score. D2 EVALUATED AND DECLINED (first conviction-path evaluation in framework history): Phase 1A meets every D2 condition — score 10>=8, gate count short by exactly one (2 of 3), [V] floor met on lit gates, surcharge off at corr 0.317 — and is declined because the partial-tranche rule already authorizes the 1A remainder, so a D2 unlock would buy already-authorized capital at the price of a hard D5 stop and a 10-day phase bar. D1 = 0.0: a +1.0 was constructible on three sourced legs-invisible factors (conservative MVRV proxy, funding at half BTC's leverage, reserve decline persisting through regime changes) and DECLINED because it would be the sole enabler of a threshold cross restoring the exact point the tape just took away — and 1B stays gate-blocked at 11 regardless. VALUATION SOURCING: the circulating ETH MVRV-Z '-0.7 / 7-year low' traces to a single 2026-06-08 article at ETH $1,684 and was declined under the provenance rule; the decimal stays UNOBTAINABLE at report 3 of the debt clock, and if that reading is directionally right this leg is scored one point too low. THE UNCOMFORTABLE TRUTH: ETH's fear evidence is thin because ETH is not being feared — July ETF inflows +$365.17M (strongest complex, after eight negative weeks), exchange reserves at a decade low falling through both rallies and corrections, funding at half BTC's, liquidations ordinary. Cheap and orderly, not cheap and panicked. FR COMPANION 9/20 Channel B — the >=9 tripwire FIRED and a standalone FR report is OWED and NOT DISCHARGED here. POSITION (Hard Rule 8, STALE at 26h): dust, custody RECONCILED, basis.reliable=false on 8.5064 ETH of unbacked disposals, UNTAGGED — narrated fills reported UNVERIFIED, no PnL or cost basis quoted, nothing sized against it. Collar ACTIVE (mechanical 10 in the 6-10 band; scorecard 7-7): no directional regime resolution claimed.",
+  "tagging": {
+    "mode": "phase_registry",
+    "registry": {
+      "schema": "report-phase-registry/1",
+      "version": 1,
+      "report_file": "eth_fallen_knives_20260801_1117.md",
+      "report_version": "report-machine/1",
+      "framework": "fallen_knives",
+      "channel": null,
+      "asset": "ETH",
+      "report_date": "2026-08-01",
+      "report_local_time": "11:17",
+      "report_zone": "America/New_York",
+      "instrument_class": "crypto",
+      "entries": [
+        {
+          "phase": "1A",
+          "canonical_tag": "FK-P1A-ETH-20260801-1117",
+          "decision": "UNVERIFIED",
+          "instrument_class": "crypto",
+          "report_file": "eth_fallen_knives_20260801_1117.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-08-01",
+          "report_local_time": "11:17"
+        },
+        {
+          "phase": "1B",
+          "canonical_tag": "FK-P1B-ETH-20260801-1117",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "eth_fallen_knives_20260801_1117.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-08-01",
+          "report_local_time": "11:17"
+        },
+        {
+          "phase": "2",
+          "canonical_tag": "FK-P2-ETH-20260801-1117",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "eth_fallen_knives_20260801_1117.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-08-01",
+          "report_local_time": "11:17"
+        },
+        {
+          "phase": "3",
+          "canonical_tag": "FK-P3-ETH-20260801-1117",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "eth_fallen_knives_20260801_1117.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-08-01",
+          "report_local_time": "11:17"
+        }
+      ]
+    },
+    "instrument_class": "crypto",
+    "report_file": "eth_fallen_knives_20260801_1117.md",
+    "report_version": "report-machine/1",
+    "framework": "fallen_knives",
+    "channel": null,
+    "report_asset": "ETH",
+    "report_date": "2026-08-01",
+    "report_local_time": "11:17",
+    "active_tags": [],
+    "reserved_tags": [
+      "FK-P1A-ETH-20260801-1117",
+      "FK-P1B-ETH-20260801-1117",
+      "FK-P2-ETH-20260801-1117",
+      "FK-P3-ETH-20260801-1117"
+    ],
+    "status": "REGISTERED"
+  }
 }
 ```

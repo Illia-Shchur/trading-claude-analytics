@@ -585,6 +585,16 @@ What actually needs attention is not on the chart. This is the one asset in this
 
 ---
 
+### Immutable report-phase registry
+
+| Phase | Canonical tag | Decision | Instrument class |
+|---|---|---|---|
+| 1A | FK-P1A-GOLD-20260801-1117 | STAND_DOWN | non_crypto_derivative |
+| 1B | FK-P1B-GOLD-20260801-1117 | STAND_DOWN | non_crypto_derivative |
+| 2 | FK-P2-GOLD-20260801-1117 | STAND_DOWN | non_crypto_derivative |
+| 3 | FK-P3-GOLD-20260801-1117 | STAND_DOWN | non_crypto_derivative |
+
+Registry schema: report-phase-registry/1; version: 1; origin: gold_fallen_knives_20260801_1117.md (report-machine/1).
 ```json machine
 {
   "schema": "report-machine/1",
@@ -734,6 +744,84 @@ What actually needs attention is not on the chart. This is the one asset in this
     "stale_input_debt": ["sentiment leg — NOT FOUND, carried at the fallback 2; 'why it cannot be obtained' branch discharged", "holder leg — carried from the prior report, not freshly verified this cycle", "drawdown denominator — 10y window high, not a verified ATH"]
   },
   "collar": { "band_triggered": true, "reasons": ["|EV-vs-spot| 0.91% < 2%", "mechanical score 8 is inside the 6-10 band"], "scorecard_limb_met": false, "scorecard": "5 bull / 7 bear — bear by 2, NOT within 1 of balanced, so that limb is not met; the other two are", "effect": "no directional regime resolution claimed" },
-  "verdict": "HOLD 1.3294 PAXG; deployment FROZEN; 75% dry at a 3.68% T-bill carry. Mechanical 8/20, D1 0.0, adjusted 8/20 — THIRD consecutive report at 8, no leg moved. NAMING: the request was PAXG; the analytical asset is GOLD (XAU) with canonical spot from Hard Rule 1 sources, and the POSITION is held as PAXG via the ledger alias — disclosed, never silently collapsed. PAXG trades at a -0.17% discount to the gold settle today ($4,042.41 vs $4,049.10); the counterparty risk does not disappear because the tracking is tight. SPOT HANDLING: COMEX is closed Saturday, fewer than 3 synchronized live gold quotes are obtainable, and this is stated rather than papered over — the Friday settle is carried as a labeled FROZEN print, cross-checked against a genuinely synchronized 4-venue PAXG panel (spread 0.088%); the 0.17% gap is staleness-driven and time-ordered across a weekend, not venue disagreement, so no low-confidence demotion and the EV sign does not flip across it. FRAMEWORK LINE THAT MOVED: the 2026-07-27 cut of Phase 1A from >=10 to >=8 means gold clears a 1A score line for the first time in the series — and it is OPERATIONALLY MOOT for two independent reasons: 1A is already deployed, and a fresh 1A would fail the gate count anyway (2/8 < 3). Said plainly rather than letting a milestone imply an opportunity. POSITIONING: COT shows 5,163 longs OUT and 3,323 shorts COVERED, netting -1,840 contracts (-1.00%) — two-sided deleveraging an order of magnitude short of the >=20-30K / >=15% washout bar. Read the short leg, not the net. FR COMPANION routes differently from BTC and ETH: gold's 200dma is RISING (+0.52%/20 sessions), so Channel B's regime test FAILS while >20%-off-1y-high forecloses Channel A — result STAND DOWN, no channel, Channel A scored 2/20 (2/8 attainable) with the full cap-regime vacuity disclosure; cross-validation reads 'structurally consistent (cap-bound; both->=12 unfalsifiable by construction)', never a bare check. STOP: uniquely in this batch the score axis is UNSATISFIED (8 is not <8), so the compound stop retains FULL two-key protection — but it sits ONE point of score decay from degrading to price-only, and the point most at risk is the ETF-outflow condition, meaning the stop would erode on a BULLISH flow datum. Coherence run in both states: held FAIL (expected-for-frozen, $3,800 vs a prospective $3,700), post-activation PASS ($3,650); no realignment owed since no deployment is authorized. POSITION OF RECORD (Hard Rule 8, STALE at 26h): 1.3294 PAXG, custody RECONCILED, zero withdrawals, ~27% of total portfolio value — the only real position in this batch. basis.reliable=FALSE on 1 unbacked disposal, so the -10.50% MTM this series has quoted for three reports off a ~$4,545 blended cost is WITHDRAWN rather than restated: the framework knows exactly what is held and cannot say what it cost. This is the smallest basis defect in the account (1 unbacked disposal vs ETH's 24) and should be fixed first. Collar ACTIVE (|EV-vs-spot| 0.91% < 2%; mechanical 8 in the 6-10 band): no directional regime resolution claimed."
+  "verdict": "HOLD 1.3294 PAXG; deployment FROZEN; 75% dry at a 3.68% T-bill carry. Mechanical 8/20, D1 0.0, adjusted 8/20 — THIRD consecutive report at 8, no leg moved. NAMING: the request was PAXG; the analytical asset is GOLD (XAU) with canonical spot from Hard Rule 1 sources, and the POSITION is held as PAXG via the ledger alias — disclosed, never silently collapsed. PAXG trades at a -0.17% discount to the gold settle today ($4,042.41 vs $4,049.10); the counterparty risk does not disappear because the tracking is tight. SPOT HANDLING: COMEX is closed Saturday, fewer than 3 synchronized live gold quotes are obtainable, and this is stated rather than papered over — the Friday settle is carried as a labeled FROZEN print, cross-checked against a genuinely synchronized 4-venue PAXG panel (spread 0.088%); the 0.17% gap is staleness-driven and time-ordered across a weekend, not venue disagreement, so no low-confidence demotion and the EV sign does not flip across it. FRAMEWORK LINE THAT MOVED: the 2026-07-27 cut of Phase 1A from >=10 to >=8 means gold clears a 1A score line for the first time in the series — and it is OPERATIONALLY MOOT for two independent reasons: 1A is already deployed, and a fresh 1A would fail the gate count anyway (2/8 < 3). Said plainly rather than letting a milestone imply an opportunity. POSITIONING: COT shows 5,163 longs OUT and 3,323 shorts COVERED, netting -1,840 contracts (-1.00%) — two-sided deleveraging an order of magnitude short of the >=20-30K / >=15% washout bar. Read the short leg, not the net. FR COMPANION routes differently from BTC and ETH: gold's 200dma is RISING (+0.52%/20 sessions), so Channel B's regime test FAILS while >20%-off-1y-high forecloses Channel A — result STAND DOWN, no channel, Channel A scored 2/20 (2/8 attainable) with the full cap-regime vacuity disclosure; cross-validation reads 'structurally consistent (cap-bound; both->=12 unfalsifiable by construction)', never a bare check. STOP: uniquely in this batch the score axis is UNSATISFIED (8 is not <8), so the compound stop retains FULL two-key protection — but it sits ONE point of score decay from degrading to price-only, and the point most at risk is the ETF-outflow condition, meaning the stop would erode on a BULLISH flow datum. Coherence run in both states: held FAIL (expected-for-frozen, $3,800 vs a prospective $3,700), post-activation PASS ($3,650); no realignment owed since no deployment is authorized. POSITION OF RECORD (Hard Rule 8, STALE at 26h): 1.3294 PAXG, custody RECONCILED, zero withdrawals, ~27% of total portfolio value — the only real position in this batch. basis.reliable=FALSE on 1 unbacked disposal, so the -10.50% MTM this series has quoted for three reports off a ~$4,545 blended cost is WITHDRAWN rather than restated: the framework knows exactly what is held and cannot say what it cost. This is the smallest basis defect in the account (1 unbacked disposal vs ETH's 24) and should be fixed first. Collar ACTIVE (|EV-vs-spot| 0.91% < 2%; mechanical 8 in the 6-10 band): no directional regime resolution claimed.",
+  "tagging": {
+    "mode": "phase_registry",
+    "registry": {
+      "schema": "report-phase-registry/1",
+      "version": 1,
+      "report_file": "gold_fallen_knives_20260801_1117.md",
+      "report_version": "report-machine/1",
+      "framework": "fallen_knives",
+      "channel": null,
+      "asset": "GOLD",
+      "report_date": "2026-08-01",
+      "report_local_time": "11:17",
+      "report_zone": "America/New_York",
+      "instrument_class": "non_crypto_derivative",
+      "entries": [
+        {
+          "phase": "1A",
+          "canonical_tag": "FK-P1A-GOLD-20260801-1117",
+          "decision": "STAND_DOWN",
+          "instrument_class": "non_crypto_derivative",
+          "report_file": "gold_fallen_knives_20260801_1117.md",
+          "report_version": "report-machine/1",
+          "asset": "GOLD",
+          "report_date": "2026-08-01",
+          "report_local_time": "11:17"
+        },
+        {
+          "phase": "1B",
+          "canonical_tag": "FK-P1B-GOLD-20260801-1117",
+          "decision": "STAND_DOWN",
+          "instrument_class": "non_crypto_derivative",
+          "report_file": "gold_fallen_knives_20260801_1117.md",
+          "report_version": "report-machine/1",
+          "asset": "GOLD",
+          "report_date": "2026-08-01",
+          "report_local_time": "11:17"
+        },
+        {
+          "phase": "2",
+          "canonical_tag": "FK-P2-GOLD-20260801-1117",
+          "decision": "STAND_DOWN",
+          "instrument_class": "non_crypto_derivative",
+          "report_file": "gold_fallen_knives_20260801_1117.md",
+          "report_version": "report-machine/1",
+          "asset": "GOLD",
+          "report_date": "2026-08-01",
+          "report_local_time": "11:17"
+        },
+        {
+          "phase": "3",
+          "canonical_tag": "FK-P3-GOLD-20260801-1117",
+          "decision": "STAND_DOWN",
+          "instrument_class": "non_crypto_derivative",
+          "report_file": "gold_fallen_knives_20260801_1117.md",
+          "report_version": "report-machine/1",
+          "asset": "GOLD",
+          "report_date": "2026-08-01",
+          "report_local_time": "11:17"
+        }
+      ]
+    },
+    "instrument_class": "non_crypto_derivative",
+    "report_file": "gold_fallen_knives_20260801_1117.md",
+    "report_version": "report-machine/1",
+    "framework": "fallen_knives",
+    "channel": null,
+    "report_asset": "GOLD",
+    "report_date": "2026-08-01",
+    "report_local_time": "11:17",
+    "active_tags": [],
+    "reserved_tags": [
+      "FK-P1A-GOLD-20260801-1117",
+      "FK-P1B-GOLD-20260801-1117",
+      "FK-P2-GOLD-20260801-1117",
+      "FK-P3-GOLD-20260801-1117"
+    ],
+    "status": "REGISTERED"
+  }
 }
 ```

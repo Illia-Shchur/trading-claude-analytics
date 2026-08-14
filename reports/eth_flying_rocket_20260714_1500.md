@@ -240,6 +240,16 @@ The break is still intraday, and I will not call the range resolved on one candl
 > **IF** the break fails and ETH closes back below $1,800 **→ THEN** it falls into the $1,650–1,800 retest band — a deeper Fallen Knives accumulation zone, not a short entry.
 > **IF** — months out — F&G >80, MVRV >2, reserves rebuild, and funding pins deeply positive into a fresh high **→ THEN** re-open this framework. That is a regime change away.
 
+### Immutable report-phase registry
+
+| Phase | Canonical tag | Decision | Instrument class |
+|---|---|---|---|
+| 1A | FR-A-1A-ETH-20260714-1500 | STAND_DOWN | crypto |
+| 1B | FR-A-1B-ETH-20260714-1500 | STAND_DOWN | crypto |
+| 2 | FR-A-2-ETH-20260714-1500 | STAND_DOWN | crypto |
+| 3 | FR-A-3-ETH-20260714-1500 | STAND_DOWN | crypto |
+
+Registry schema: report-phase-registry/1; version: 1; origin: eth_flying_rocket_20260714_1500.md (report-machine/1).
 ```json machine
 {
   "schema": "report-machine/1",
@@ -288,6 +298,84 @@ The break is still intraday, and I will not call the range resolved on one candl
     "corr_spx_30d": "not computed this cycle -> risk-on surcharge default ON",
     "companion_fk": { "published_score": 12, "published_gates": "3/8", "source": "eth_fallen_knives_20260714_1430.md (published 2:30 PM ET same trading day)" },
     "prior_fr_grade": { "report": "eth_flying_rocket_20260618_0020.md", "ev_price_prior": 1775, "ev_price_grade": "HELD in stand-down direction (realized $1,873, short -7.4%)", "modal_band_prior": "$1,820-2,050 rally 47%", "modal_grade": "HIT ($1,873 inside band)", "falsifier": "a rally off record-low reserves", "falsifier_grade": "FIRED -> stand-down strongly vindicated" }
+  },
+  "tagging": {
+    "mode": "phase_registry",
+    "registry": {
+      "schema": "report-phase-registry/1",
+      "version": 1,
+      "report_file": "eth_flying_rocket_20260714_1500.md",
+      "report_version": "report-machine/1",
+      "framework": "flying_rocket",
+      "channel": "A",
+      "asset": "ETH",
+      "report_date": "2026-07-14",
+      "report_local_time": "15:00",
+      "report_zone": "America/New_York",
+      "instrument_class": "crypto",
+      "entries": [
+        {
+          "phase": "1A",
+          "canonical_tag": "FR-A-1A-ETH-20260714-1500",
+          "decision": "STAND_DOWN",
+          "instrument_class": "crypto",
+          "report_file": "eth_flying_rocket_20260714_1500.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-07-14",
+          "report_local_time": "15:00"
+        },
+        {
+          "phase": "1B",
+          "canonical_tag": "FR-A-1B-ETH-20260714-1500",
+          "decision": "STAND_DOWN",
+          "instrument_class": "crypto",
+          "report_file": "eth_flying_rocket_20260714_1500.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-07-14",
+          "report_local_time": "15:00"
+        },
+        {
+          "phase": "2",
+          "canonical_tag": "FR-A-2-ETH-20260714-1500",
+          "decision": "STAND_DOWN",
+          "instrument_class": "crypto",
+          "report_file": "eth_flying_rocket_20260714_1500.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-07-14",
+          "report_local_time": "15:00"
+        },
+        {
+          "phase": "3",
+          "canonical_tag": "FR-A-3-ETH-20260714-1500",
+          "decision": "STAND_DOWN",
+          "instrument_class": "crypto",
+          "report_file": "eth_flying_rocket_20260714_1500.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-07-14",
+          "report_local_time": "15:00"
+        }
+      ]
+    },
+    "instrument_class": "crypto",
+    "report_file": "eth_flying_rocket_20260714_1500.md",
+    "report_version": "report-machine/1",
+    "framework": "flying_rocket",
+    "channel": "A",
+    "report_asset": "ETH",
+    "report_date": "2026-07-14",
+    "report_local_time": "15:00",
+    "active_tags": [],
+    "reserved_tags": [
+      "FR-A-1A-ETH-20260714-1500",
+      "FR-A-1B-ETH-20260714-1500",
+      "FR-A-2-ETH-20260714-1500",
+      "FR-A-3-ETH-20260714-1500"
+    ],
+    "status": "REGISTERED"
   }
 }
 ```

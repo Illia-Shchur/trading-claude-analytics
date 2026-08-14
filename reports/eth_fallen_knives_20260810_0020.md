@@ -250,6 +250,16 @@ So I hold — 100% dry, cold start — with the D2 Phase-1A path explicitly arme
 
 ---
 
+### Immutable report-phase registry
+
+| Phase | Canonical tag | Decision | Instrument class |
+|---|---|---|---|
+| 1A | FK-P1A-ETH-20260810-0020 | LOCKED | crypto |
+| 1B | FK-P1B-ETH-20260810-0020 | LOCKED | crypto |
+| 2 | FK-P2-ETH-20260810-0020 | LOCKED | crypto |
+| 3 | FK-P3-ETH-20260810-0020 | LOCKED | crypto |
+
+Registry schema: report-phase-registry/1; version: 1; origin: eth_fallen_knives_20260810_0020.md (report-machine/1).
 ```json machine
 {
   "schema": "report-machine/1",
@@ -353,6 +363,84 @@ So I hold — 100% dry, cold start — with the D2 Phase-1A path explicitly arme
     "position_snapshot": "EXPIRED (~8.5d) -> cold start Hard Rule 4, 100% dry",
     "attainable_ceiling": 20,
     "line_states": "P1A>=8 LIVE-TRUE-on-score (binding = gates 2/8 short 1, D2 near-miss); P1B>=11 LIVE-FALSE; P2>=15/P3>=17/OVR>=15 LIVE-FALSE; compound<12 VACUOUS-PERMISSIVE"
+  },
+  "tagging": {
+    "mode": "phase_registry",
+    "registry": {
+      "schema": "report-phase-registry/1",
+      "version": 1,
+      "report_file": "eth_fallen_knives_20260810_0020.md",
+      "report_version": "report-machine/1",
+      "framework": "fallen_knives",
+      "channel": null,
+      "asset": "ETH",
+      "report_date": "2026-08-10",
+      "report_local_time": "00:20",
+      "report_zone": "America/New_York",
+      "instrument_class": "crypto",
+      "entries": [
+        {
+          "phase": "1A",
+          "canonical_tag": "FK-P1A-ETH-20260810-0020",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "eth_fallen_knives_20260810_0020.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-08-10",
+          "report_local_time": "00:20"
+        },
+        {
+          "phase": "1B",
+          "canonical_tag": "FK-P1B-ETH-20260810-0020",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "eth_fallen_knives_20260810_0020.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-08-10",
+          "report_local_time": "00:20"
+        },
+        {
+          "phase": "2",
+          "canonical_tag": "FK-P2-ETH-20260810-0020",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "eth_fallen_knives_20260810_0020.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-08-10",
+          "report_local_time": "00:20"
+        },
+        {
+          "phase": "3",
+          "canonical_tag": "FK-P3-ETH-20260810-0020",
+          "decision": "LOCKED",
+          "instrument_class": "crypto",
+          "report_file": "eth_fallen_knives_20260810_0020.md",
+          "report_version": "report-machine/1",
+          "asset": "ETH",
+          "report_date": "2026-08-10",
+          "report_local_time": "00:20"
+        }
+      ]
+    },
+    "instrument_class": "crypto",
+    "report_file": "eth_fallen_knives_20260810_0020.md",
+    "report_version": "report-machine/1",
+    "framework": "fallen_knives",
+    "channel": null,
+    "report_asset": "ETH",
+    "report_date": "2026-08-10",
+    "report_local_time": "00:20",
+    "active_tags": [],
+    "reserved_tags": [
+      "FK-P1A-ETH-20260810-0020",
+      "FK-P1B-ETH-20260810-0020",
+      "FK-P2-ETH-20260810-0020",
+      "FK-P3-ETH-20260810-0020"
+    ],
+    "status": "REGISTERED"
   }
 }
 ```
