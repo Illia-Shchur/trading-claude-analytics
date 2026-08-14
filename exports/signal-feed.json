@@ -15,7 +15,7 @@
     "machine_block": "2026-07-11",
     "report_phase_registry": "report-phase-registry/1"
   },
-  "generated_at": "2026-08-14T14:01:32Z",
+  "generated_at": "2026-08-14T15:13:56Z",
   "generated_by": "tools/export-signals.mjs",
   "ignored_files": [
     {
@@ -18698,7 +18698,7 @@
       "channel": "A",
       "channel_inference_basis": "declared in the machine block",
       "channel_inferred": false,
-      "content_sha256": "22e40e387178a9412b379c55fc47859e52d6c335a268ef2b5ea5a9bd5ddb5528",
+      "content_sha256": "6b02fe3e1b20f7de037c044ac1676d5c3d4d2b9d8acbb0685cee91b21f6c8a88",
       "deployment": {
         "deployed_pct": "0",
         "dry_pct": "100",
@@ -18918,7 +18918,7 @@
         "p3": 19,
         "p3_note": "Phase 3 reads the MECHANICAL score — no analyst channel reaches it"
       },
-      "verdict": "COVER MANUAL POSITION; NO ADD. ADAPTED / OUT-OF-SCOPE SPX read under NON-CRYPTO-ANNEX.md, read in full before any number. Channel A uncapped; Channel B unavailable; Phase 3 unreachable. Mechanical 10, discretionary 0.0, adjusted 10, gates 1/6 against effective Phase-1A floor 3, Total Short EV -0.19% true and -0.34% for gates. Score below 11, gates two short, and +3% edge filter fails. No tranche was authorized by this or the prior report. A later-supplied STALE snapshot establishes a manual SPYUSDT short of 14.21 at 772.88, 3x, tagged FR-A-1A-SP500-20260812-1542 with alignment AGAINST_REPORT. It is a real carried exposure, not an authorization. Framework action is cover and no add; if retained pending cover, first-set hard stop 787.16, non-extendable deadline 2026-09-02, and liquidation price must be verified above the stop. Annex item-10 retirement condition not tripped. Squeeze-trap penalty is a missing protection, not a measured zero; machine penalty 0 exists only for schema arithmetic. Hard Rule 6 impairments: dedicated short-book basis and liquidation price unavailable, two cover triggers unevaluable, actual-contract carry veto unevaluable, and funding veto has no instrument. FK companion computed 0/20 from same fetch; inverse relationship holds and force-cover is not live."
+      "verdict": "COVER MANUAL POSITION; NO ADD. ADAPTED / OUT-OF-SCOPE SPX read under NON-CRYPTO-ANNEX.md, read in full before any number. Channel A uncapped; Channel B unavailable; Phase 3 unreachable. Mechanical 10, discretionary 0.0, adjusted 10, gates 1/6 against effective Phase-1A floor 3, Total Short EV -0.19% true and -0.34% for gates. Score below 11, gates two short, and +3% edge filter fails. No tranche was authorized by this or the prior report. The replacement STALE snapshot establishes a manual SPYUSDT short of 14.21 at 772.88, 3x cross margin, tagged FR-A-1A-SP500-20260812-1542 with alignment AGAINST_REPORT. At mark 777.69 the notional is $11,050.97 and unrealized PnL is -$68.35. Liquidation is available at 1,005.76 and both protective orders are visible, but the live 810.20 stop is wider than the report's 787.16 ratcheted control. Framework action is cover and no add; if retained pending cover, tighten the venue stop to no higher than 787.16 and keep the non-extendable deadline 2026-09-02T14:57:48Z. Annex item-10 retirement condition not tripped. Squeeze-trap penalty is a missing protection, not a measured zero; machine penalty 0 exists only for schema arithmetic. Remaining Hard Rule 6/data impairments: dedicated short-book basis unavailable; two cover triggers unevaluable; historical contract carry incomplete; attribution/performance/asset-mapper joins incomplete; funding veto has no instrument. FK companion computed 0/20 from same fetch; inverse relationship holds and force-cover is not live."
     }
   ],
   "skipped": [
