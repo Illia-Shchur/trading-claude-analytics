@@ -164,9 +164,15 @@ check(unexplained)
 
 // The renderer is pure and deterministic; the full machine block round-trips
 // exactly to the standalone payload.
-assert.equal(renderFull(base), renderFull(base))
+const rendered = renderFull(base)
+assert.equal(rendered, renderFull(base))
 assert.equal(renderSummary(base), renderSummary(base))
-const block = renderFull(base).match(/```json machine\n([\s\S]*?)\n```/)[1]
+assert.match(rendered, /## 1\. Decision snapshot/)
+assert.match(rendered, /\| Mechanical score \|/)
+assert.match(rendered, /### Framework risk controls/)
+assert.doesNotMatch(rendered, /- Legs: \{/)
+assert.doesNotMatch(rendered, /- Risk controls: \{/)
+const block = rendered.match(/```json machine\n([\s\S]*?)\n```/)[1]
 assert.equal(block, canonicalReportPayload(base))
 
 console.log('PASS — report-machine/2 contract, negative cases, fixtures, and deterministic renderer')
