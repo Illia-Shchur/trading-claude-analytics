@@ -238,6 +238,17 @@ process.on('exit', cleanup)
   ok('position fresh band FRESH', j && j.freshness && j.freshness.band === 'FRESH', JSON.stringify(j && j.freshness))
   ok('position fresh covered true', j && j.covered === true)
 
+  // 1b. default directory selection picks the lexicographically newest dated export
+  const historyDir = join(posDir, 'history')
+  mkdirSync(historyDir, { recursive: true })
+  writeFileSync(join(historyDir, 'position-snapshot-2026-08-13_13-30-00-000Z.json'), JSON.stringify(baseSnap()))
+  const newestHistoryPath = join(historyDir, 'position-snapshot-2026-08-14_13-30-00-000Z.json')
+  writeFileSync(newestHistoryPath, JSON.stringify(baseSnap()))
+  r = run('position.mjs', ['btc'], { env: { TRADING_EXCHANGE_DIR: historyDir } })
+  ok('position default directory picks dated snapshot exit 0', r.status === 0, r.stderr)
+  j = parseJSON(r.stdout, 'position dated default json')
+  ok('position default directory reports newest dated file', j && j.file === newestHistoryPath, JSON.stringify(j && j.file))
+
   // 2. stale snapshot (~2 days old, within 72h)
   const stalePath = join(posDir, 'stale.json')
   writeFileSync(stalePath, JSON.stringify(baseSnap({ generated_at: isoAgo(60 * 30), source: { holdings_as_of: isoAgo(60 * 30) } })))
@@ -336,6 +347,47 @@ process.on('exit', cleanup)
   ok('position fills limit exit 0', r.status === 0, r.stderr)
   j = parseJSON(r.stdout, 'position fills limit json')
   ok('position fills limit applied', j && j.fills && j.fills.fills.length === 2, JSON.stringify(j && j.fills))
+
+  // 12. Futures-only analytics asset resolves through analytics_asset, retains human attribution and safety.
+  const spFuture = {
+    symbol: 'SPYUSDT', base_asset: 'SPY', analytics_asset: 'SP500', position_key: 'SPYUSDT|BOTH',
+    side: 'SHORT', position_amt: '-2', entry_price: '650', position_as_of: isoAgo(4),
+    income_coverage_status: 'COMPLETE_FOR_SEQUENCE',
+    attribution_status: 'HUMAN_ATTRIBUTED',
+    attribution: { canonical_tag: 'FR-A-1A-SP500-20260814-1530', report_file: 'sp500_flying_rocket_20260814_1530.md' },
+    protective_orders: [{ order_id: 77, reduce_only: true, working_type: 'MARK_PRICE',
+      price_protect: true, original_type: 'STOP_MARKET', close_semantics: 'REDUCE_ONLY', metadata_status: 'COMPLETE' }],
+  }
+  const futuresMeta = {
+    open_positions: [spFuture], funding_by_asset: [],
+    funding_by_symbol: [{ symbol: 'SPYUSDT', analytics_asset: 'SP500', funding_usd: '-1.5' }],
+    account_as_of: isoAgo(5), positions_as_of: isoAgo(4), marks_as_of: isoAgo(2),
+    orders_as_of: isoAgo(3), income_as_of: isoAgo(6), account_status: 'LIVE', positions_status: 'LIVE',
+    marks_status: 'LIVE', orders_status: 'AVAILABLE', income_status: 'COMPLETE',
+  }
+  const futuresOnlyPath = join(posDir, 'futures-only.json')
+  writeFileSync(futuresOnlyPath, JSON.stringify(baseSnap({
+    positions: [], deals: { open_count: 0, closed_count: 0, open: [], closed: [] }, futures: futuresMeta,
+  })))
+  r = run('position.mjs', ['sp500', '--file', futuresOnlyPath])
+  ok('position futures-only exit 0', r.status === 0, r.stderr)
+  j = parseJSON(r.stdout, 'position futures-only json')
+  ok('position futures-only covered', j && j.covered === true && j.futures_positions?.length === 1, JSON.stringify(j))
+  ok('position futures-only freshness scope', j && j.freshness?.relevant_scope === 'FUTURES_ONLY', JSON.stringify(j?.freshness))
+  ok('position futures-only human tag preserved', j && j.attribution?.tags?.includes('FR-A-1A-SP500-20260814-1530'))
+  ok('position protective safety metadata preserved', j && j.futures_positions?.[0]?.protective_orders?.[0]?.reduce_only === true)
+
+  // 13. A fresh mark/order cannot upgrade stale income for the same futures position.
+  const mixedClockPath = join(posDir, 'mixed-futures-clocks.json')
+  writeFileSync(mixedClockPath, JSON.stringify(baseSnap({
+    positions: [], deals: { open_count: 0, closed_count: 0, open: [], closed: [] },
+    futures: { ...futuresMeta, marks_as_of: isoAgo(1), orders_as_of: isoAgo(1), income_as_of: isoAgo(60 * 30) },
+  })))
+  r = run('position.mjs', ['sp500', '--file', mixedClockPath])
+  ok('position stale futures component exit 0', r.status === 0, r.stderr)
+  j = parseJSON(r.stdout, 'position stale futures component json')
+  ok('position stale futures income drives band', j && j.freshness?.band === 'STALE'
+    && j.freshness?.driver === 'futures.income_as_of', JSON.stringify(j?.freshness))
 }
 
 // ============================================================================

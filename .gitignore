@@ -18,11 +18,9 @@ Thumbs.db
 credentials.json
 
 # Cross-repo exchange (accounting → analytics).
-# SECURITY: carries real balances, ACB cost basis, open positions, realized PnL.
-# This repo auto-pushes EVERY commit to a public remote. Its real home is
-# $TRADING_EXCHANGE_DIR, outside this tree — these entries are belt-and-braces.
-position-snapshot.json
-position-snapshot.*.json
+# Historical position snapshots are intentionally retained in exports/ and committed by
+# explicit user action. They carry real balances, ACB cost basis, open positions and
+# realized PnL; verify the remote visibility before pushing a snapshot commit.
 /exchange/
 /data/
 *.snapshot.json

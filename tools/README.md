@@ -1,5 +1,22 @@
 # Deterministic Toolchain
 
+`position.mjs` consumes the newest historical `exports/position-snapshot-*.json` by default. Pass `--file` with a specific file or directory to override selection; the legacy `position-snapshot.json` remains a migration fallback.
+
+### Futures-only snapshot projection and freshness
+
+`position.mjs sp500` now resolves an open derivative through
+`futures.open_positions[].analytics_asset` (`SPYUSDT → SP500`), so the absence of a spot `positions[]` row
+does not become `NOT_COVERED`. It preserves exact human attribution, current-sequence fills, and protective
+order safety metadata; it never infers a phase from symbol, size, or timing.
+
+Freshness is asset-aware. Spot uses `generated_at` plus `source.holdings_as_of`; futures-only uses the oldest
+of account, position, mark, order, and income clocks; a mixed spot/futures asset uses all of them. Missing or
+partial component status/current-sequence income coverage caps the response at descriptive `STALE` (or
+`EXPIRED` when a required clock is missing/too old). A fresh mark or order therefore cannot launder stale
+position or income data into a globally fresh position of record.
+The compact `position.mjs` table row below describes the spot/legacy holdings rule; this section is the
+authoritative extension for futures-only and mixed projections.
+
 Node scripts (no dependencies, Node ≥18) that make the frameworks' numbers computed, not narrated. Introduced 2026-07-10 after the doc audit found the recurring failure modes were exactly the hand-done steps: RSI never computed (4-report NOT-FOUND debt), `ceil(7/9×8)` misprinted as 6 in three reports, EV sum-checks done by eye, ADR silently absorbing a half-session.
 
 ## Report-phase attribution contract (2026-08-14)

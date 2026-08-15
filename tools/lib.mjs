@@ -2055,6 +2055,78 @@ export function positionFreshness(generatedAt, holdingsAsOf, now = Date.now(), o
     stale_after_min: stale, expired_after_min: expired, note }
 }
 
+/**
+ * Asset-aware snapshot freshness. A futures-only asset is governed by the independent futures account,
+ * position, mark, order and income clocks; a mixed spot/futures asset is governed by those clocks AND
+ * holdings_as_of. A fresh mark or order can therefore never launder stale positions/income into FRESH.
+ */
+export function positionSnapshotFreshness(snap, assetRaw, now = Date.now(), opts = {}) {
+  const target = String(assetRaw || '').toUpperCase()
+  const positions = Array.isArray(snap?.positions) ? snap.positions : []
+  const openDeals = Array.isArray(snap?.deals?.open) ? snap.deals.open : []
+  const futures = Array.isArray(snap?.futures?.open_positions) ? snap.futures.open_positions : []
+  const matches = (value) => target === 'ALL' || String(value || '').toUpperCase() === target
+  const hasSpot = target === 'ALL'
+    ? positions.length > 0 || openDeals.length > 0
+    : positions.some(p => matches(p.asset)) || openDeals.some(d => matches(d.asset))
+  const relevantFutures = target === 'ALL' ? futures
+    : futures.filter(p => matches(p.analytics_asset) || matches(p.base_asset))
+  const hasFutures = relevantFutures.length > 0
+
+  const clocks = []
+  if (hasSpot || !hasFutures) clocks.push(['holdings_as_of', snap?.source?.holdings_as_of])
+  if (hasFutures) {
+    for (const [name, value] of [
+      ['futures.account_as_of', snap?.futures?.account_as_of],
+      ['futures.positions_as_of', snap?.futures?.positions_as_of],
+      ['futures.marks_as_of', snap?.futures?.marks_as_of],
+      ['futures.orders_as_of', snap?.futures?.orders_as_of],
+      ['futures.income_as_of', snap?.futures?.income_as_of],
+    ]) clocks.push([name, value])
+    for (const position of relevantFutures) {
+      clocks.push([`futures.position_as_of:${position.position_key || position.symbol || 'unknown'}`,
+        position.position_as_of ?? snap?.futures?.positions_as_of])
+    }
+  }
+
+  const parsed = clocks.map(([name, value]) => ({ name, value, ms: toMs(value) }))
+  const missing = parsed.filter(clock => clock.ms === null).map(clock => clock.name)
+  const oldest = parsed.filter(clock => clock.ms !== null).sort((a, b) => a.ms - b.ms)[0] || null
+  const fresh = positionFreshness(snap?.generated_at, missing.length ? null : oldest?.value, now, opts)
+  const statusPairs = hasFutures ? [
+    ['account_status', snap?.futures?.account_status],
+    ['positions_status', snap?.futures?.positions_status],
+    ['marks_status', snap?.futures?.marks_status],
+    ['orders_status', snap?.futures?.orders_status],
+    ['income_status', snap?.futures?.income_status],
+  ] : []
+  const accepted = /^(LIVE|AVAILABLE|AVAILABLE_EMPTY|COMPLETE|SUCCESS|NO_OPEN_POSITIONS)$/
+  const statusLimitations = statusPairs
+    .filter(([, status]) => status == null || !accepted.test(String(status)))
+    .map(([name, status]) => `${name}=${status ?? 'MISSING'}`)
+  for (const position of relevantFutures) {
+    if (position.income_coverage_status !== 'COMPLETE_FOR_SEQUENCE') {
+      statusLimitations.push(`income_coverage:${position.position_key || position.symbol || 'unknown'}=${position.income_coverage_status ?? 'MISSING'}`)
+    }
+  }
+  const limitations = [...missing.map(name => `${name}=MISSING`), ...statusLimitations]
+  let band = fresh.band
+  let note = fresh.note
+  if (band === 'FRESH' && limitations.length > 0) {
+    band = 'STALE'
+    note = 'descriptive use only: at least one relevant futures component has incomplete status/coverage.'
+  }
+  return {
+    ...fresh,
+    band,
+    driver: missing.length ? missing[0] : oldest?.name || fresh.driver,
+    relevant_scope: hasFutures ? (hasSpot ? 'MIXED_SPOT_FUTURES' : 'FUTURES_ONLY') : 'SPOT',
+    component_clocks: Object.fromEntries(parsed.map(clock => [clock.name, clock.value ?? null])),
+    limitations,
+    note,
+  }
+}
+
 function toMs(v) {
   if (v === null || v === undefined) return null
   if (typeof v === 'number') return Number.isFinite(v) ? v : null
@@ -2291,8 +2363,15 @@ export function positionForAsset(snap, assetRaw) {
   const openDeals = (snap.deals?.open || []).filter(d => String(d.asset).toUpperCase() === asset)
   const closedDeals = (snap.deals?.closed || []).filter(d => String(d.asset).toUpperCase() === asset)
   const fills = (snap.trades?.by_asset || []).find(t => String(t.asset).toUpperCase() === asset) || null
-  const futures = (snap.futures?.open_positions || []).filter(p => String(p.base_asset).toUpperCase() === asset)
-  const funding = (snap.futures?.funding_by_asset || []).find(f => String(f.asset).toUpperCase() === asset) || null
+  const futures = (snap.futures?.open_positions || []).filter(p =>
+    String(p.analytics_asset || p.base_asset).toUpperCase() === asset)
+  const futureSymbols = new Set(futures.map(p => String(p.symbol || '').toUpperCase()).filter(Boolean))
+  const fundingRows = (snap.futures?.funding_by_symbol || []).filter(f =>
+    String(f.analytics_asset || '').toUpperCase() === asset || futureSymbols.has(String(f.symbol || '').toUpperCase()))
+  const legacyFunding = (snap.futures?.funding_by_asset || [])
+    .find(f => String(f.asset).toUpperCase() === asset) || null
+  const funding = fundingRows.length === 1 ? fundingRows[0]
+    : fundingRows.length > 1 ? fundingRows : legacyFunding
 
   if (!position && openDeals.length === 0 && closedDeals.length === 0 && futures.length === 0) {
     // "Genuine flat" is a real claim and it rests on one property of the producer: the exporter emits a
@@ -2304,8 +2383,10 @@ export function positionForAsset(snap, assetRaw) {
       note: 'The ledger tracks this asset but holds no position row, no round trip and no open future in it. That is a genuine flat, not a gap — but it is stated, not inferred from an absent row. It holds only for a snapshot generated on or after 2026-07-30, when the exporter began emitting a row for every replayed asset including those with a zero live balance; on an older file an absent row may simply be an asset that was sold to exactly zero.' }
   }
 
-  const tags = [...new Set(openDeals.map(d => d.tag).filter(Boolean))]
+  const futuresTags = futures.map(p => p.attribution?.canonical_tag).filter(Boolean)
+  const tags = [...new Set([...openDeals.map(d => d.tag).filter(Boolean), ...futuresTags])]
   const untagged = openDeals.filter(d => !d.tag).length
+    + futures.filter(p => !p.attribution?.canonical_tag).length
   const perfByTag = (snap.performance?.by_tag || []).filter(t => tags.includes(t.tag))
 
   return {

@@ -1,10 +1,11 @@
 // ============================================================================
-// tools/position.mjs — reads position-snapshot/1, exported from the
-// personal-accounting ledger and derived from actual Binance fills. This is the
+// tools/position.mjs — reads the newest dated position-snapshot/1 export from
+// the personal-accounting ledger (legacy filename supported as fallback),
+// derived from actual Binance fills. This is the
 // Hard Rule 8 entry point: a FRESH snapshot is the POSITION OF RECORD and
 // supersedes any figure narrated forward from a prior report.
 //
-//   node tools/position.mjs <asset|all> [--file <path>] [--max-age-min N]
+//   node tools/position.mjs <asset|all> [--file <path-or-dir>] [--max-age-min N]
 //                           [--fills N] [--json]
 //
 // Exit codes are the contract, not decoration:
@@ -20,15 +21,58 @@
 // distinction, and the two have opposite failure semantics besides (Promise.all
 // over HTTP vs a synchronous read with a non-zero exit path).
 // ============================================================================
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { homedir } from 'node:os'
-import { join } from 'node:path'
-import { positionFreshness, positionForAsset, positionSnapshotCheck,
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { positionSnapshotFreshness, positionForAsset, positionSnapshotCheck,
   POSITION_SNAPSHOT_SCHEMA } from './lib.mjs'
 
-const DEFAULT_PATH = process.env.TRADING_EXCHANGE_DIR
-  ? join(process.env.TRADING_EXCHANGE_DIR, 'position-snapshot.json')
-  : join(homedir(), '.trading-claude', 'exchange', 'position-snapshot.json')
+const REPO_EXPORTS_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'exports')
+const LEGACY_EXCHANGE_DIR = join(homedir(), '.trading-claude', 'exchange')
+const CONFIGURED_DIR = process.env.TRADING_EXCHANGE_DIR || null
+const DATED_SNAPSHOT = /^position-snapshot-\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}(?:-\d{3})?Z\.json$/
+
+/** Select the newest dated ledger export; retain the legacy filename as a migration fallback. */
+function newestSnapshotIn(dir) {
+  const names = readdirSync(dir)
+    .filter(name => DATED_SNAPSHOT.test(name))
+    .sort()
+  if (names.length > 0) return join(dir, names[names.length - 1])
+
+  // A pre-history export remains readable until the first dated export is written.
+  return join(dir, 'position-snapshot.json')
+}
+
+function resolveSnapshot(input) {
+  if (!input) {
+    const candidates = CONFIGURED_DIR
+      ? [CONFIGURED_DIR]
+      : [REPO_EXPORTS_DIR, LEGACY_EXCHANGE_DIR]
+    for (const candidate of candidates) {
+      try {
+        if (statSync(candidate).isDirectory()) {
+          const selected = newestSnapshotIn(candidate)
+          try {
+            statSync(selected)
+            return selected
+          } catch {
+            // Try the next default directory if this one has no snapshot yet.
+          }
+        }
+      } catch {
+        // Try the next default directory.
+      }
+    }
+    return join(candidates[0], 'position-snapshot.json')
+  }
+
+  const candidate = input
+  try {
+    if (statSync(candidate).isDirectory()) return newestSnapshotIn(candidate)
+  } catch { /* explicit --file path: preserve the old missing-file error contract */ }
+  return candidate
+}
 
 // ── argv ────────────────────────────────────────────────────────────────────
 const argv = process.argv.slice(2)
@@ -37,12 +81,12 @@ const flag = (name, fallback = null) => {
   return i >= 0 && argv[i + 1] !== undefined ? argv[i + 1] : fallback
 }
 const target = (argv[0] || '').toLowerCase()
-const file = flag('--file', DEFAULT_PATH)
+const file = resolveSnapshot(flag('--file', null))
 const maxAge = flag('--max-age-min', null)
 const fillLimit = Number(flag('--fills', 10))
 
 if (!target || target.startsWith('--')) {
-  console.error('usage: node tools/position.mjs <asset|all> [--file <path>] [--max-age-min N] [--fills N] [--json]')
+  console.error('usage: node tools/position.mjs <asset|all> [--file <path-or-dir>] [--max-age-min N] [--fills N] [--json]')
   process.exit(1)
 }
 
@@ -57,7 +101,7 @@ try {
   emit({
     ok: false, band: 'EXPIRED', file, schema_expected: POSITION_SNAPSHOT_SCHEMA,
     error: e.code === 'ENOENT' ? 'snapshot file not found' : `unreadable: ${e.message}`,
-    instruction: 'Proceed as a COLD START per Hard Rule 4 (all dry powder, no assumed deployment) and say so explicitly in the report. Regenerate with: mvn spring-boot:run -Pskip-frontend -Dspring-boot.run.profiles=local,export',
+    instruction: 'Proceed as a COLD START per Hard Rule 4 (all dry powder, no assumed deployment) and say so explicitly in the report. Regenerate via Investments → Settings → Экспортировать snapshot, or POST /api/investments/analytics-export on the ledger.',
   })
   process.exit(1)
 }
@@ -72,7 +116,7 @@ if (!structure.ok) {
 
 // ── freshness ───────────────────────────────────────────────────────────────
 const opts = maxAge === null ? {} : { stale: Number(maxAge) }
-const fresh = positionFreshness(snap.generated_at, snap.source?.holdings_as_of, Date.now(), opts)
+const fresh = positionSnapshotFreshness(snap, target, Date.now(), opts)
 
 if (fresh.band === 'EXPIRED') {
   emit({ ok: false, band: 'EXPIRED', file, freshness: fresh,

@@ -17,7 +17,7 @@ node tools/export-signals.mjs --dry-run   # counts only, writes nothing
 node tools/export-signals.mjs --strict    # exit 1 if a post-epoch report lacks a machine block
 ```
 
-## Why this file is committed — and `position-snapshot.json` is not
+## Why this file is committed — and dated position snapshots are now retained too
 
 They point in opposite directions and carry opposite risk.
 
@@ -26,12 +26,13 @@ nothing that is not already in the tree, so committing it is free, and it buys t
 a git-diffable history of how each signal evolved, and a consumer that reads from a path
 git keeps current instead of one that must run a tool first.
 
-`position-snapshot.json` is the **B → A** direction and is the exact opposite: real account
-balances, ACB cost basis, open futures positions and realized PnL. **This repo auto-pushes
-every commit to a public remote.** That file lives outside both repos (`$TRADING_EXCHANGE_DIR`,
-default `~/.trading-claude/exchange/`) at mode `0600`, and is gitignored here as
-belt-and-braces. **Never move it into this directory**, and never commit anything derived
-from it that carries a balance.
+`position-snapshot-*.json` is the **B → A** direction and carries real account balances,
+ACB cost basis, open futures positions and realized PnL. The personal-accounting export
+writes a new UTC-dated file for every explicit export, and `tools/position.mjs` selects the
+newest one from this directory. These files are intentionally retained in Git at the
+user's request; **this repo auto-pushes every commit to a public remote**, so review the
+remote visibility before committing or pushing a snapshot. Files are written mode `0600`
+by the producer; preserve restrictive local permissions where possible.
 
 ## Two consequences of committing it
 
@@ -41,6 +42,9 @@ from it that carries a balance.
 2. **Skip-write-if-unchanged.** `generated_at` moves on every run by construction, so it is
    excluded from the comparison. A rerun that changes nothing else prints `unchanged` and
    leaves the file — and `git status` — untouched.
+
+That skip-write rule belongs to `signal-feed.json`; dated position exports deliberately create a new
+historical file for each explicit ledger export, even when the payload is otherwise unchanged.
 
 ## Encoding
 
