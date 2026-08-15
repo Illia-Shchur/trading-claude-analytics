@@ -15,7 +15,7 @@
     "machine_block": "2026-07-11",
     "report_phase_registry": "report-phase-registry/1"
   },
-  "generated_at": "2026-08-14T15:13:56Z",
+  "generated_at": "2026-08-15T09:33:40Z",
   "generated_by": "tools/export-signals.mjs",
   "ignored_files": [
     {
@@ -18698,7 +18698,7 @@
       "channel": "A",
       "channel_inference_basis": "declared in the machine block",
       "channel_inferred": false,
-      "content_sha256": "6b02fe3e1b20f7de037c044ac1676d5c3d4d2b9d8acbb0685cee91b21f6c8a88",
+      "content_sha256": "bb93d3d8d2533fd225d502f1b8ca9458495f66f35f3a5496765017422b08ada9",
       "deployment": {
         "deployed_pct": "0",
         "dry_pct": "100",
