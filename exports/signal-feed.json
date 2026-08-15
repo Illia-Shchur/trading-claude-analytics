@@ -1,15 +1,15 @@
 {
   "counts": {
-    "files_in_reports_dir": 142,
-    "framework_reports": 134,
+    "files_in_reports_dir": 143,
+    "framework_reports": 135,
     "mismatched_v2_pairs": 0,
     "non_framework_files_ignored": 8,
     "orphaned_v2": 0,
-    "signals": 68,
+    "signals": 69,
     "skipped_no_machine_block": 66,
     "skipped_post_epoch_missing_block": 0,
     "skipped_unparseable": 0,
-    "v2_signals": 0
+    "v2_signals": 1
   },
   "encoding": "decimal quantities (prices, scores, percentages, EV) are JSON strings in plain decimal notation; counts, gate numbers, booleans and enums are native",
   "epochs": {
@@ -18,7 +18,7 @@
     "machine_block": "2026-07-11",
     "report_phase_registry": "report-phase-registry/1"
   },
-  "generated_at": "2026-08-15T15:41:32Z",
+  "generated_at": "2026-08-15T16:19:27Z",
   "generated_by": "tools/export-signals.mjs",
   "ignored_files": [
     {
@@ -18928,6 +18928,691 @@
         "p3_note": "Phase 3 reads the MECHANICAL score — no analyst channel reaches it"
       },
       "verdict": "COVER MANUAL POSITION; NO ADD. ADAPTED / OUT-OF-SCOPE SPX read under NON-CRYPTO-ANNEX.md, read in full before any number. Channel A uncapped; Channel B unavailable; Phase 3 unreachable. Mechanical 10, discretionary 0.0, adjusted 10, gates 1/6 against effective Phase-1A floor 3, Total Short EV -0.19% true and -0.34% for gates. Score below 11, gates two short, and +3% edge filter fails. No tranche was authorized by this or the prior report. The replacement snapshot establishes a manual SPYUSDT short of 14.21 at 772.88, 3x cross margin, tagged FR-A-1A-SP500-20260812-1542 with alignment AGAINST_REPORT. The 2026-08-15 live mark was 777.3053; liquidation remains available at 1,005.76. The actual 810.20 venue stop is wider than the researched 785.50 ratcheted control, and the sole 600.00 take-profit is too remote for the 21-day clock. Framework action is cover and no add; if consciously retained outside the framework, use the 785.50 stop and staged 772.90 / 769.00 / 760.00 / 751.50 covers while keeping the non-extendable deadline 2026-09-02T14:57:48Z. Annex item-10 retirement condition not tripped. Squeeze-trap penalty is a missing protection, not a measured zero; machine penalty 0 exists only for schema arithmetic. Remaining Hard Rule 6/data impairments: dedicated short-book basis unavailable; two cover triggers unevaluable; funding cashflow is symbol-grained rather than tranche-grained; funding veto has no instrument. FK companion computed 0/20 from the same report fetch; inverse relationship holds and force-cover is not live."
+    },
+    {
+      "asset": "GOLD",
+      "canonical_file": "gold_fallen_knives_20260815_1210.json",
+      "canonical_sha256": "f3bbb45bb9783877a7c7af0ad772768e10e62e5cec1cd6eec9d41a56e94e71b5",
+      "channel": null,
+      "channel_inference_basis": "Fallen Knives has no channel dimension",
+      "channel_inferred": false,
+      "content_sha256": "f3bbb45bb9783877a7c7af0ad772768e10e62e5cec1cd6eec9d41a56e94e71b5",
+      "deployment": {
+        "deployed_pct": "0",
+        "dry_pct": "100",
+        "filled_detection": "deployed === true || typeof entry_price === \"number\" || typeof entry === \"number\"",
+        "filled_detection_caveat": "before the entry_price epoch (2026-07-29) no tranche in this corpus carried deployed:true or a numeric entry — 152/152 tranches across 39 reports encode `entry` as prose — so filled_tranche_count is structurally 0 on every pre-epoch signal. It is an artifact of the old schema, not an observation that nothing was filled.",
+        "filled_tranche_count": 0,
+        "throttle_released": false,
+        "tranche_count": 4,
+        "tranches": [
+          {
+            "channel": null,
+            "channel_regime": null,
+            "deployed": false,
+            "discretionary": false,
+            "entry": null,
+            "entry_price": null,
+            "filled": false,
+            "pct": "10",
+            "phase": "1A",
+            "prior_stop": null,
+            "prior_time_stop": null,
+            "stop": null,
+            "time_stop": null
+          },
+          {
+            "channel": null,
+            "channel_regime": null,
+            "deployed": false,
+            "discretionary": false,
+            "entry": null,
+            "entry_price": null,
+            "filled": false,
+            "pct": "15",
+            "phase": "1B",
+            "prior_stop": null,
+            "prior_time_stop": null,
+            "stop": null,
+            "time_stop": null
+          },
+          {
+            "channel": null,
+            "channel_regime": null,
+            "deployed": false,
+            "discretionary": false,
+            "entry": null,
+            "entry_price": null,
+            "filled": false,
+            "pct": "30",
+            "phase": "2",
+            "prior_stop": null,
+            "prior_time_stop": null,
+            "stop": null,
+            "time_stop": null
+          },
+          {
+            "channel": null,
+            "channel_regime": null,
+            "deployed": false,
+            "discretionary": false,
+            "entry": null,
+            "entry_price": null,
+            "filled": false,
+            "pct": "45",
+            "phase": "3",
+            "prior_stop": null,
+            "prior_time_stop": null,
+            "stop": null,
+            "time_stop": null
+          }
+        ]
+      },
+      "ev": {
+        "scenarios": [
+          {
+            "high": "4700",
+            "low": "4485",
+            "mid": "4592.5",
+            "name": "Rally",
+            "p": "28.000000000000004"
+          },
+          {
+            "high": "4485",
+            "low": "4250",
+            "mid": "4367.5",
+            "name": "Range",
+            "p": "40"
+          },
+          {
+            "high": "4250",
+            "low": "4020",
+            "mid": "4135",
+            "name": "Retest",
+            "p": "22"
+          },
+          {
+            "high": "4020",
+            "low": "3700",
+            "mid": "3860",
+            "name": "Bear",
+            "p": "10"
+          }
+        ],
+        "stated_ev_usd": "4328.6",
+        "vs_spot_pct": "-1.18"
+      },
+      "evidence": {
+        "correlation": {
+          "as_of": "2026-08-13",
+          "confidence": "MEDIUM",
+          "rationale": "Computed over 29 paired daily log returns using GLD as the gold proxy and FRED SP500 closes; no >0.7 gate surcharge.",
+          "source_ids": [
+            "gld",
+            "snapshot"
+          ],
+          "status": "AVAILABLE",
+          "unit": "Pearson correlation",
+          "value": "0.3128"
+        },
+        "cot": {
+          "as_of": "2026-08-11",
+          "confidence": "HIGH",
+          "rationale": "Net longs rose by 6,896 week over week (148,634 long minus 10,972 short); positioning is building, not washing out.",
+          "source_ids": [
+            "cftc"
+          ],
+          "status": "AVAILABLE",
+          "unit": "managed-money net-long contracts",
+          "value": "137662"
+        },
+        "gld_holdings": {
+          "as_of": "2026-08-13",
+          "confidence": "HIGH",
+          "rationale": "Official GLD holdings rose 8.52t from August 6 and 20.79t from July 13.",
+          "source_ids": [
+            "gld"
+          ],
+          "status": "AVAILABLE",
+          "unit": "tonnes",
+          "value": "1023.24"
+        },
+        "macro": {
+          "as_of": "2026-08-14",
+          "confidence": "HIGH",
+          "rationale": "10y real yield 2.39% eased 4bp over five prints, but Brent rose 5.95% in five sessions to 88.52 and Hormuz risk is live.",
+          "source_ids": [
+            "snapshot",
+            "ap_hormuz"
+          ],
+          "status": "AVAILABLE",
+          "unit": null,
+          "value": "mixed"
+        },
+        "paxg_spot": {
+          "as_of": "2026-08-15T16:02:00Z",
+          "confidence": "HIGH",
+          "rationale": "Median of synchronized Binance 4375.35, Kraken 4371.89, and CoinGecko 4372.26; 0.0791% panel spread.",
+          "source_ids": [
+            "binance",
+            "kraken",
+            "coingecko"
+          ],
+          "status": "AVAILABLE",
+          "unit": "USD/PAXG",
+          "value": "4372.26"
+        },
+        "sentiment": {
+          "as_of": "2026-08-15",
+          "confidence": "NONE",
+          "rationale": "No validated daily gold fear instrument exists; the measured framework fallback scores 2. GVZ and PHYS are disclosed context only.",
+          "source_ids": [
+            "snapshot"
+          ],
+          "status": "NOT_COVERED",
+          "unit": "index",
+          "value": null
+        },
+        "underlying_spot": {
+          "as_of": "2026-08-14 close",
+          "confidence": "LOW",
+          "rationale": "GC=F and MGC=F agree at 4380.40, but both are frozen Friday closes and there are zero synchronized live bullion quotes on Saturday.",
+          "source_ids": [
+            "snapshot"
+          ],
+          "status": "AVAILABLE",
+          "unit": "USD/oz",
+          "value": "4380.4"
+        },
+        "valuation": {
+          "as_of": "2026-08-14 close",
+          "confidence": "HIGH",
+          "rationale": "Gold RV30 22.38% versus BTC RV30 21.89% gives a 1.02x ratio, so the <=0.5x low-volatility adaptation is unavailable; standard <30% drawdown scores 0.",
+          "source_ids": [
+            "snapshot"
+          ],
+          "status": "AVAILABLE",
+          "unit": "percent drawdown from ATH",
+          "value": "21.59"
+        },
+        "volume_flush": {
+          "as_of": "2026-08-14 close",
+          "confidence": "MEDIUM",
+          "rationale": "1491 contracts is below the top-decile flush threshold; no capitulation credit.",
+          "source_ids": [
+            "snapshot"
+          ],
+          "status": "AVAILABLE",
+          "unit": "two-year volume percentile",
+          "value": "74.4"
+        },
+        "weekly_rsi": {
+          "as_of": "week ending 2026-08-09",
+          "confidence": "HIGH",
+          "rationale": "Wilder RSI-14 from 260 completed Monday-boundary weekly closes; >45 scores 0.",
+          "source_ids": [
+            "snapshot"
+          ],
+          "status": "AVAILABLE",
+          "unit": "RSI-14",
+          "value": "49.95"
+        }
+      },
+      "framework": "fallen_knives",
+      "gates": {
+        "active": 8,
+        "na": [
+          5
+        ],
+        "passed": [
+          8
+        ],
+        "passed_count": 1,
+        "passed_mask": 128
+      },
+      "position": {
+        "asset": "GOLD",
+        "attribution": {
+          "active_tags": [],
+          "open_deals": "2",
+          "phase_eligibility_effect": "Cannot infer a phase or unlock the next tranche from quantity/timing.",
+          "status": "UNTAGGED"
+        },
+        "basis": {
+          "avg_cost_usd": "4210.5024215893",
+          "note": "Basis is separately reported reliable by the ledger.",
+          "reliable": true,
+          "total_cost_usd": "5597.397287935146"
+        },
+        "custody": {
+          "interpretation": "The user confirms the live balance is current and correct; the replay difference remains a ledger defect, not inferred off-venue custody.",
+          "ledger_asset": "PAXG",
+          "live_qty": "1.3293894",
+          "mismatch_qty": "0.1736",
+          "native_ledger_status": "UNEXPLAINED",
+          "reconciliation_method": "USER_ATTESTATION",
+          "requested_asset": "GOLD",
+          "status": "RECONCILED",
+          "trade_derived_qty": "1.5029894",
+          "user_attested_current": true
+        },
+        "dry_powder": "10741.5780",
+        "futures": [],
+        "pnl": {
+          "fee_assumption_pct": "0.10",
+          "mark_source": "independent PAXG median, not the snapshot mark",
+          "market_value_usd_at_paxg_median": "5812.436098044",
+          "realized_usd": "1418.064989674",
+          "unrealized_usd_at_paxg_median": "215.038810109"
+        },
+        "quantity": "1.3293894",
+        "reconciliation": "Prior report treated the book as flat under expiry. User attestation now confirms 1.3293894 PAXG, avg cost 4210.50, and 10741.58 stablecoin dry powder. The live quantity wins for this report, while the unexplained 0.1736 PAXG replay gap and UNTAGGED attribution remain explicit. GOLD is held as PAXG, not bullion.",
+        "status": "FRESH"
+      },
+      "position_controls": {
+        "action": {
+          "rationale": "No exit/trim trigger is live, but all four FK phases are locked and five resting buy limits would add outside authorization.",
+          "status": "AVAILABLE",
+          "value": "CANCEL_RESTING_BUYS_AND_HOLD"
+        },
+        "candidate": {
+          "board": [
+            {
+              "candidate": "Actual venue state: no protective sell, five BUY limits",
+              "reason": "Not a protective control and conflicts with locked phases.",
+              "score": null,
+              "veto": true
+            },
+            {
+              "candidate": "Prior compound: two weekly closes below PAXG 3850 AND mechanical score <8",
+              "dimensions": {
+                "coherence": "2",
+                "event": "1",
+                "execution": "1",
+                "noise": "2",
+                "thesis": "3"
+              },
+              "reason": "Correct compound semantics; manual monitoring is required.",
+              "score": "9",
+              "veto": false
+            },
+            {
+              "candidate": "Prior catastrophic PAXG 3800 after cancelling the buy ladder",
+              "dimensions": {
+                "coherence": "2",
+                "event": "1",
+                "execution": "2",
+                "noise": "2",
+                "thesis": "2"
+              },
+              "reason": "Best available catastrophic tier, unchanged under D6, execution-native and below no active buy floor after cancellation.",
+              "score": "9",
+              "veto": false
+            },
+            {
+              "candidate": "PAXG 4020 daily-close structural shelf",
+              "reason": "Useful alert, but vetoed as a whole-book price-only replacement for the compound stop.",
+              "score": null,
+              "veto": true
+            },
+            {
+              "candidate": "PAXG about 4099 from shelf/2xADR volatility control",
+              "reason": "Ordinary noise control is too tight for whole-book catastrophic protection and would replace compound semantics.",
+              "score": null,
+              "veto": true
+            },
+            {
+              "candidate": "EXIT NOW",
+              "dimensions": {
+                "coherence": "0",
+                "event": "0",
+                "execution": "2",
+                "noise": "2",
+                "thesis": "0"
+              },
+              "reason": "Rejected: no Section 7 trigger or narrative break is active.",
+              "score": "4",
+              "veto": false
+            }
+          ],
+          "data_as_of": "2026-08-15T16:02:00Z",
+          "phrase": "no level is absolutely best; this is the best available control under current evidence.",
+          "primary_action": "HOLD"
+        },
+        "execution_audit": {
+          "instrument": "PAXGUSDT/PAXGUSD",
+          "orders_changed": false,
+          "ratio_verified": "PAXG median 0.1858% below frozen GC close",
+          "stop_zone_coherence_after_cancel": true,
+          "stop_zone_coherence_current": false,
+          "stop_zone_test_after_cancel": "No active buy-zone floor = N/A/pass for protection placement",
+          "stop_zone_test_current": "3800 strictly below 3624 = FAIL",
+          "trigger_semantics": "Compound uses weekly close twice plus mechanical score; catastrophic is price-only; structural and volatility levels are alerts only.",
+          "underlying_reference": "GC=F/MGC=F"
+        },
+        "ladder": {
+          "alerts_only": [
+            {
+              "price": "4485-4500",
+              "reason": "200-day/round-number resistance, but no Section 7 trigger currently authorizes a trim"
+            }
+          ],
+          "quantity_check": "0.33234735 + 0.6646947 = 0.99704205 <= 1.3293894",
+          "remaining_after_both_paxg": "0.33234735",
+          "status": "DORMANT_CONDITIONAL_TRIMS",
+          "targets": [
+            {
+              "condition": "Mechanical score falls to 4 or lower, completing a >=6-point drop from the campaign peak of 10",
+              "execution": "market/LIFO after trigger",
+              "expected_realized_pnl_after_0_1pct_fee_usd": "52.31",
+              "position_share_pct": "25",
+              "price_note": "Indicative current executable median; use live price when the trigger fires",
+              "quantity_paxg": "0.33234735",
+              "target_price_usd": "4372.26"
+            },
+            {
+              "condition": "Price reaches the within-10%-of-ATH threshold near 5027.58 with a vertical 30-day return",
+              "execution": "limit/LIFO after trigger",
+              "expected_realized_pnl_after_0_1pct_fee_usd": "541.37",
+              "position_share_pct": "50",
+              "quantity_paxg": "0.6646947",
+              "target_price_usd": "5030"
+            }
+          ]
+        },
+        "liquidation_zone": {
+          "reason": "No futures or leveraged PAXG position is present.",
+          "status": "NOT_APPLICABLE"
+        },
+        "pnl": {
+          "catastrophic_realized_pnl_after_0_1pct_fee_usd": "-550.77",
+          "compound_realized_pnl_after_0_1pct_fee_usd": "-484.37",
+          "market_to_catastrophic_loss_pct_portfolio": "3.77",
+          "market_to_catastrophic_loss_usd": "760.76",
+          "market_to_compound_loss_pct_portfolio": "3.44",
+          "market_to_compound_loss_usd": "694.29"
+        },
+        "ratchet": {
+          "catastrophic_current": "3800",
+          "catastrophic_prior": "3800",
+          "checkpoint_current": "2026-08-07 expired; not rolled later",
+          "checkpoint_prior": "2026-08-07",
+          "compound_floor_current": "3850",
+          "compound_floor_prior": "3850",
+          "migration": "None",
+          "score_line_current": "8",
+          "score_line_prior": "8",
+          "status": "PASS"
+        },
+        "required": true,
+        "risk": {
+          "current_paxg_weight_pct": "28.83",
+          "event_risk": "FOMC minutes August 19 at 14:00 ET; geopolitical weekend gaps remain possible.",
+          "gap_risk": "A stop-limit can miss in a gap; market-stop support and venue liquidity must be checked at placement.",
+          "issuer_custody_risk": "PAXG is a tokenized allocated-gold claim, not physical bullion in the user's possession.",
+          "weight_if_all_buys_fill_pct_before_market_move": "43.45"
+        },
+        "selection": {
+          "catastrophic": "After buy cancellation, use PAXG 3800 as the unchanged catastrophic trigger; a stop-limit implementation may use trigger 3800/limit 3780, with gap/slippage risk acknowledged.",
+          "certainty": "best-available-not-absolute",
+          "compound": "Monitor two consecutive weekly closes below PAXG 3850 while mechanical score remains <8; only then exit under the compound thesis rule.",
+          "immediate": "Cancel BUY limits at 3909/3806/3755/3703/3624 totaling 2948.934 USD.",
+          "orders_changed": false,
+          "primary": "HOLD current PAXG; NO ADD"
+        },
+        "status": "OPEN",
+        "venue_order": {
+          "current_buy_orders": [
+            {
+              "notional_usd": "249.7851",
+              "price": "3909",
+              "quantity": "0.0639",
+              "side": "BUY",
+              "type": "LIMIT"
+            },
+            {
+              "notional_usd": "499.9278",
+              "price": "3806",
+              "quantity": "0.1313",
+              "side": "BUY",
+              "type": "LIMIT"
+            },
+            {
+              "notional_usd": "599.6735",
+              "price": "3755",
+              "quantity": "0.1597",
+              "side": "BUY",
+              "type": "LIMIT"
+            },
+            {
+              "notional_usd": "599.886",
+              "price": "3703",
+              "quantity": "0.162",
+              "side": "BUY",
+              "type": "LIMIT"
+            },
+            {
+              "notional_usd": "999.6616",
+              "price": "3624",
+              "quantity": "0.2759",
+              "side": "BUY",
+              "type": "LIMIT"
+            }
+          ],
+          "current_protective_sell": null,
+          "locked_notional_usd": "2948.934",
+          "orders_changed": false,
+          "recommended_sequence": [
+            "Cancel all five BUY limits",
+            "Confirm no buy order remains",
+            "Install or retain catastrophic PAXG protection only after coherence passes"
+          ]
+        },
+        "veto": {
+          "active": true,
+          "reasons": [
+            "Catastrophic 3800 is not strictly below the deepest live buy floor 3624 while those orders remain active.",
+            "No ordinary price-only shelf/ATR stop may replace the mechanical compound thesis stop.",
+            "D6 prohibits lowering the 3800 catastrophic anchor or rolling the expired checkpoint later without a named exception."
+          ],
+          "resolution": "Cancel all five resting buys first; do not lower the catastrophic stop to accommodate unauthorized orders."
+        }
+      },
+      "regime": null,
+      "report_at_derivation": "derived by interpreting the filename's HHMM in America/New_York (the repo's Output Convention) — the machine block carries a date but no time field, and (asset, framework, date) collides (btc/eth × fallen_knives on 2026-07-14 and 2026-07-18), so report_file is the primary key",
+      "report_at_utc": "2026-08-15T16:10:00Z",
+      "report_date": "2026-08-15",
+      "report_file": "gold_fallen_knives_20260815_1210.md",
+      "report_local_time": "12:10",
+      "report_zone": "America/New_York",
+      "rubric": "FK/1",
+      "schema_epoch": "report_machine_2",
+      "score": {
+        "adjusted": "4",
+        "cap_applied": false,
+        "cap_value": null,
+        "discretionary": "-1",
+        "discretionary_inferred": false,
+        "inference_basis": "declared in the machine block",
+        "legs": [
+          {
+            "block_key": "sentiment",
+            "max": 5,
+            "min": 0,
+            "ordinal": 1,
+            "rubric_name": "sentiment",
+            "value": "2"
+          },
+          {
+            "block_key": "momentum",
+            "max": 4,
+            "min": 0,
+            "ordinal": 2,
+            "rubric_name": "momentum",
+            "value": "0"
+          },
+          {
+            "block_key": "valuation",
+            "max": 5,
+            "min": -2,
+            "ordinal": 3,
+            "rubric_name": "valuation",
+            "value": "0"
+          },
+          {
+            "block_key": "capitulation",
+            "max": 3,
+            "min": 0,
+            "ordinal": 4,
+            "rubric_name": "capitulation",
+            "value": "0"
+          },
+          {
+            "block_key": "holder",
+            "max": 3,
+            "min": 0,
+            "ordinal": 5,
+            "rubric_name": "holder_behavior",
+            "value": "3"
+          }
+        ],
+        "mechanical": "5",
+        "mechanical_inferred": false,
+        "penalty": "0",
+        "raw": "4",
+        "rounding": "half-up"
+      },
+      "source_schema": "report-machine/2",
+      "spot_source": "snapshot",
+      "spot_usd": "4380.4",
+      "stops": null,
+      "tagging": {
+        "active_tags": [],
+        "channel": null,
+        "framework": "fallen_knives",
+        "instrument_class": "non_crypto_derivative",
+        "mode": "phase_registry",
+        "registry": {
+          "asset": "GOLD",
+          "channel": null,
+          "entries": [
+            {
+              "asset": "GOLD",
+              "canonical_tag": "FK-P1A-GOLD-20260815-1210",
+              "decision": "LOCKED",
+              "instrument_class": "non_crypto_derivative",
+              "phase": "1A",
+              "report_date": "2026-08-15",
+              "report_file": "gold_fallen_knives_20260815_1210.md",
+              "report_local_time": "12:10",
+              "report_version": "report-machine/2"
+            },
+            {
+              "asset": "GOLD",
+              "canonical_tag": "FK-P1B-GOLD-20260815-1210",
+              "decision": "LOCKED",
+              "instrument_class": "non_crypto_derivative",
+              "phase": "1B",
+              "report_date": "2026-08-15",
+              "report_file": "gold_fallen_knives_20260815_1210.md",
+              "report_local_time": "12:10",
+              "report_version": "report-machine/2"
+            },
+            {
+              "asset": "GOLD",
+              "canonical_tag": "FK-P2-GOLD-20260815-1210",
+              "decision": "LOCKED",
+              "instrument_class": "non_crypto_derivative",
+              "phase": "2",
+              "report_date": "2026-08-15",
+              "report_file": "gold_fallen_knives_20260815_1210.md",
+              "report_local_time": "12:10",
+              "report_version": "report-machine/2"
+            },
+            {
+              "asset": "GOLD",
+              "canonical_tag": "FK-P3-GOLD-20260815-1210",
+              "decision": "LOCKED",
+              "instrument_class": "non_crypto_derivative",
+              "phase": "3",
+              "report_date": "2026-08-15",
+              "report_file": "gold_fallen_knives_20260815_1210.md",
+              "report_local_time": "12:10",
+              "report_version": "report-machine/2"
+            }
+          ],
+          "framework": "fallen_knives",
+          "instrument_class": "non_crypto_derivative",
+          "report_date": "2026-08-15",
+          "report_file": "gold_fallen_knives_20260815_1210.md",
+          "report_local_time": "12:10",
+          "report_version": "report-machine/2",
+          "report_zone": "America/New_York",
+          "schema": "report-phase-registry/1",
+          "version": "1"
+        },
+        "report_asset": "GOLD",
+        "report_date": "2026-08-15",
+        "report_file": "gold_fallen_knives_20260815_1210.md",
+        "report_local_time": "12:10",
+        "report_version": "report-machine/2",
+        "reserved_tags": [
+          "FK-P1A-GOLD-20260815-1210",
+          "FK-P1B-GOLD-20260815-1210",
+          "FK-P2-GOLD-20260815-1210",
+          "FK-P3-GOLD-20260815-1210"
+        ],
+        "status": "REGISTERED"
+      },
+      "tagging_v2": {
+        "active_tags": [],
+        "entries": [
+          {
+            "canonical_tag": "FK-P1A-GOLD-20260815-1210",
+            "decision": "LOCKED",
+            "instrument_class": "non_crypto_derivative",
+            "phase": "1A"
+          },
+          {
+            "canonical_tag": "FK-P1B-GOLD-20260815-1210",
+            "decision": "LOCKED",
+            "instrument_class": "non_crypto_derivative",
+            "phase": "1B"
+          },
+          {
+            "canonical_tag": "FK-P2-GOLD-20260815-1210",
+            "decision": "LOCKED",
+            "instrument_class": "non_crypto_derivative",
+            "phase": "2"
+          },
+          {
+            "canonical_tag": "FK-P3-GOLD-20260815-1210",
+            "decision": "LOCKED",
+            "instrument_class": "non_crypto_derivative",
+            "phase": "3"
+          }
+        ],
+        "instrument_class": "non_crypto_derivative",
+        "reserved_tags": [
+          "FK-P1A-GOLD-20260815-1210",
+          "FK-P1B-GOLD-20260815-1210",
+          "FK-P2-GOLD-20260815-1210",
+          "FK-P3-GOLD-20260815-1210"
+        ],
+        "schema": "report-phase-registry/2",
+        "status": "REGISTERED"
+      },
+      "unlock": {
+        "highest_phase_unlocked_by_score": null,
+        "ladder": "FK",
+        "p1a": 8,
+        "p1b": 11,
+        "p2": 15,
+        "p3": 17,
+        "p3_note": "Phase 3 reads the MECHANICAL score — no analyst channel reaches it"
+      },
+      "verdict": "Hold the confirmed PAXG position, cancel every resting buy, and make no FK addition; adjusted score 4/20 and 1/8 gates authorize no tranche.",
+      "view_file": "gold_fallen_knives_20260815_1210.md"
     }
   ],
   "skipped": [
