@@ -395,6 +395,57 @@ Run `node tools/position.mjs <asset>` **before** writing this section. It reads 
 
 **Two carve-outs survive even at FRESH, and only two.** (a) Snapshot marks are **informational** and never become canonical spot — and note the snapshot's `liquidation_price_usd` is **always null**: liquidation price is not synced, and a null there is *not* permission to omit a stated liquidation price from a levered tranche. (b) Phase attribution comes from **deal tags only**; an untagged short is real-but-`UNTAGGED`, never inferred from size or timing.
 
+#### Open-position “Absolutely Best Level” rubric (mandatory when any short is open)
+
+Run this audit on **every report with a non-zero open short**, whether framework-authorized, `UNTAGGED`, or `UNFRAMED`. The phrase “absolutely best” is the user's requested label, not a certainty claim: the report must say **“no level is absolutely best; this is the best available control under current evidence.”** Research with fresh instrument and underlying data before carrying forward any prior stop or take-profit.
+
+**Evaluate the primary action first:** `COVER NOW` / `PARTIAL COVER` / `RETAIN`. A price stop and take-profit ladder are fallback controls, not permission to retain a position that the mechanical cover framework already closes. If a §7 cover trigger fires, it outranks the level comparison.
+
+Build at least these candidates:
+
+1. Actual live venue stop/order state from the ledger.
+2. The prior report's ratcheted stop (the S6 baseline).
+3. Contract-native structural invalidation: swing high, rejection high, major MA, gap/breakout level, or channel-specific structure.
+4. Volatility control: current ADR(5), the 1.5×ADR initial-stop floor, and the phase ceiling. For an existing position the floor is context only; S6 still permits tightening through it.
+5. Underlying/reference-market equivalent, cross-checked against the traded contract. **Execution is anchored to the traded instrument**; never transfer an index/spot level through an assumed ratio without verifying the contract itself.
+6. Event/gap/liquidity control through the time stop, including closed-underlying/24×7-perpetual behavior.
+7. `COVER NOW` at the live executable price.
+
+Score every non-vetoed level on a 10-point board:
+
+| Dimension | Points | Test |
+|---|---:|---|
+| Thesis invalidation | 0–3 | Does crossing the level actually disprove the short thesis/channel? |
+| Noise survival | 0–2 | Is it outside ordinary ADR/ATR and local wick noise without exceeding the phase ceiling? |
+| Execution quality | 0–2 | Correct instrument, trigger type, reduce-only semantics, full quantity coverage, realistic slippage? |
+| Capital/liquidation control | 0–2 | Loss in USD and % of book stated; liquidation remains beyond the stop? |
+| Event/liquidity robustness | 0–1 | Does it account for the next tier-1 catalyst, market closure, and gap risk? |
+
+**Hard veto before scoring:** any stop that widens versus S6; breaches the phase ceiling; leaves liquidation at/inside the stop; uses stale/unmapped pricing as fact; lacks executable order semantics; or conflicts with a live §7 cover trigger. A higher point total never rescues a vetoed candidate. Ties resolve toward the **tighter valid stop** on the short side.
+
+Then research a **take-profit / cover ladder** from contract-native support, moving averages, gaps, volume structure, scenario bands and the time stop. Print each target's price, reduce-only quantity, position share, expected PnL after known fees/funding, and reward/risk from both entry and current mark. Quantities must sum to the remaining position. Reject a sole remote take-profit whose required move is implausible inside the time stop or absent from the probability matrix. State the ratchet after each fill; later stops may move down only.
+
+Every live-position report prints an **Open-Position Best-Level Audit** containing: data timestamp; primary action; candidate table with scores/vetoes; selected best-available stop; current venue order versus recommended order; target ladder; trigger type (`MARK_PRICE` / `CONTRACT_PRICE`) and price protection; loss at stop; liquidation distance; event calendar; ratchet check; and alternatives rejected. Recommendations are not executions—say explicitly whether any live order was actually changed.
+
+Optional machine encoding (recommended until lint enforcement exists):
+
+```json
+"position_controls": {
+  "required": true,
+  "status": "BEST_AVAILABLE|NO_VALID_LEVEL|DATA_LIMITED",
+  "certainty": "best-available-not-absolute",
+  "primary_action": "COVER_NOW|PARTIAL_COVER|RETAIN",
+  "selected_stop": null,
+  "current_venue_stop": null,
+  "targets": [],
+  "ratchet_pass": true,
+  "orders_changed": false,
+  "data_as_of": null
+}
+```
+
+This audit changes no score, gate, size cap, stop ceiling, time stop, cover trigger, funding/carry veto, or S6 ratchet. Those rules remain authoritative.
+
 #### Carry Cost Ledger (mandatory section when any short is live)
 
 | Phase | Entry Date | Notional | Funding Annualized at Entry | Cumulative Funding Paid | Days Held |

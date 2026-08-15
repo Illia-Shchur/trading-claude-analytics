@@ -404,6 +404,59 @@ Run `node tools/position.mjs <asset>` **before** writing this section. It reads 
 
 **Two carve-outs survive even at FRESH, and only two.** (a) Snapshot `mark_price_usd` is **informational** and never becomes this report's canonical spot — Hard Rule 1's independent multi-venue cross-check stands. (b) Phase attribution comes from **deal tags only**; an untagged holding is reported as real-but-`UNTAGGED`, never inferred from quantity or timing, because a guessed phase can unlock the next tranche.
 
+#### Open-position “Absolutely Best Level” rubric (mandatory when any long is open)
+
+Run this audit on **every report with a non-zero open long**, whether framework-authorized, `UNTAGGED`, or `UNFRAMED`. The phrase “absolutely best” is the user's requested label, not a certainty claim: the report must say **“no level is absolutely best; this is the best available control under current evidence.”** Research with fresh instrument and underlying data before carrying forward any prior stop, trim, or take-profit.
+
+**Evaluate the primary action first:** `EXIT NOW` / `TRIM` / `HOLD` / `ADD ONLY IF UNLOCKED`. A protective level or take-profit ladder cannot suppress a live §7 exit/trim trigger, manufacture an add, or replace the score/gate/Override machinery.
+
+Build at least these candidates:
+
+1. Actual live venue stop/order state from the ledger.
+2. The prior report's ratcheted catastrophic/compound/D5 controls (the D6 baseline; keep the tiers separate).
+3. Contract-native structural invalidation: swing low, failed support, major MA, gap/breakdown level, or the thesis's named floor.
+4. Volatility control using current ADR/ATR and distance from ordinary wick noise.
+5. Deepest named buy-zone floor and the mandatory stop-vs-buy-zone coherence state.
+6. Underlying/reference-market equivalent, cross-checked against the traded instrument. **Execution is anchored to the traded instrument**; never transfer a spot/index level through an assumed ratio without verifying the contract itself.
+7. Event/gap/liquidity control through the time stop.
+8. `EXIT NOW` / the mechanically required §7 trim at the live executable price.
+
+Score every non-vetoed level on a 10-point board:
+
+| Dimension | Points | Test |
+|---|---:|---|
+| Thesis invalidation | 0–3 | Does crossing the level actually disprove the long thesis or activate the correct compound/D5/narrative rule? |
+| Noise survival | 0–2 | Is the level robust to ordinary ADR/ATR noise and consistent with the stop tier? |
+| Execution quality | 0–2 | Correct instrument, trigger/close semantics, quantity coverage, realistic slippage? |
+| Capital/ladder coherence | 0–2 | Loss in USD/% book stated; catastrophic floor remains below the deepest named buy zone; D5 remains tranche-specific? |
+| Event/liquidity robustness | 0–1 | Does it account for the next tier-1 catalyst, venue calendar and gap risk? |
+
+**Hard veto before scoring:** any control that loosens D6 without one of its three named exceptions; places the catastrophic floor at/above the deepest named buy zone; replaces a mechanical/Override compound stop with an ordinary price-only stop; weakens a D5 stop; uses stale/unmapped pricing as fact; or conflicts with a live §7 exit/trim trigger. A higher point total never rescues a vetoed candidate. Ties resolve toward the **tighter valid protection** on the long side (the higher valid stop / earlier valid checkpoint), subject to stop-tier coherence.
+
+Then research a **trim / take-profit ladder** from contract-native resistance, moving averages, gaps, volume structure, valuation/euphoria thresholds, scenario bands and the time stop. Print each target's price, quantity, position share, expected realized PnL after known fees, and its governing §7/valuation/structure condition. Quantities may not exceed the remaining position. A round-number target alone is not evidence; reject a sole remote target absent from the probability matrix or unlikely inside the stated horizon. Trims remain LIFO and may not be used to claim an exit trigger fired when it did not.
+
+Every live-position report prints an **Open-Position Best-Level Audit** containing: data timestamp; primary action; candidate table with scores/vetoes; selected best-available protective control by tier; current venue order versus recommended order; trim/target ladder; trigger/close semantics; loss at stop; event calendar; D6 ratchet and stop-vs-buy-zone checks; and alternatives rejected. Recommendations are not executions—say explicitly whether any live order was actually changed.
+
+Optional machine encoding (recommended until lint enforcement exists):
+
+```json
+"position_controls": {
+  "required": true,
+  "status": "BEST_AVAILABLE|NO_VALID_LEVEL|DATA_LIMITED",
+  "certainty": "best-available-not-absolute",
+  "primary_action": "EXIT_NOW|TRIM|HOLD|ADD_ONLY_IF_UNLOCKED",
+  "selected_controls": {},
+  "current_venue_stop": null,
+  "targets": [],
+  "ratchet_pass": true,
+  "stop_zone_coherence_pass": true,
+  "orders_changed": false,
+  "data_as_of": null
+}
+```
+
+This audit changes no score, gate, tranche size, Override rule, stop tier, time stop, trim/exit trigger, D5 tax or D6 ratchet. Those rules remain authoritative.
+
 #### Report-specific deal attribution (immutable origin)
 
 Every machine report dated on/after 2026-08-12 publishes a versioned `tagging.registry`. Each applicable phase entry contains the exact report-derived tag (for example `FK-P1A-BTC-20260813-1744`), an `AUTHORIZED`, `LOCKED`, `STAND_DOWN`, or `UNVERIFIED` decision, instrument class, and immutable report filename/date/time. The filename is the identity; do not invent a tag from an execution symbol or append authorization to the tag. A later report is a management reference, never an origin replacement.
