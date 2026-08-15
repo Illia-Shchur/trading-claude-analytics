@@ -1,0 +1,139 @@
+{
+  "schema": "report-machine/2",
+  "report_id": "btc_fallen_knives_20260815_1200",
+  "identity": {
+    "asset": "BTC",
+    "framework": "fallen_knives",
+    "date": "2026-08-15",
+    "local_time": "12:00",
+    "timezone": "America/New_York",
+    "filename": "btc_fallen_knives_20260815_1200.json"
+  },
+  "timestamps": {
+    "generated_at": "2026-08-15T16:01:00Z",
+    "report_at": "2026-08-15T16:00:00Z",
+    "data_as_of": "2026-08-15T16:00:00Z",
+    "timezone": "America/New_York"
+  },
+  "run": {
+    "run_id": "run-20260815-1200",
+    "snapshot_id": "snapshot-20260815",
+    "tool_hashes": { "fetch": "sha256:example", "compute": "sha256:example" },
+    "prior_report_id": null,
+    "prior_report_sha256": null
+  },
+  "sources": {
+    "spot": { "name": "Example spot venue", "retrieved_at": "2026-08-15T16:00:00Z", "url": "https://example.test/spot", "as_of": "2026-08-15T16:00:00Z", "kind": "venue" }
+  },
+  "evidence": {
+    "spot": { "status": "AVAILABLE", "value": "100", "unit": "USD", "as_of": "2026-08-15T16:00:00Z", "source_ids": ["spot"], "confidence": "HIGH", "rationale": "Cross-checked venue observation." },
+    "liquidations": { "status": "UNKNOWN", "value": null, "unit": "USD", "as_of": null, "source_ids": [], "confidence": "NONE", "rationale": "No reliable percentile was available." }
+  },
+  "market": {
+    "spot": { "status": "AVAILABLE", "value": "100", "unit": "USD", "as_of": "2026-08-15T16:00:00Z", "source_ids": ["spot"], "note": null },
+    "reconciliation": { "status": "AVAILABLE", "method": "median of independent venue quotes", "quotes": [{ "source_ids": ["spot"], "value": "100" }, { "source_ids": ["spot"], "value": "100" }], "spread_pct": "0", "note": null },
+    "ath": { "status": "AVAILABLE", "value": "150", "unit": "USD", "as_of": "2026-08-15T16:00:00Z", "source_ids": ["spot"] },
+    "drawdown_pct": { "status": "AVAILABLE", "value": "33.3333", "unit": "percent", "as_of": "2026-08-15T16:00:00Z", "source_ids": ["spot"] },
+    "regime": { "label": "neutral" },
+    "metrics": {}
+  },
+  "data_gaps": [{ "field": "liquidations", "status": "UNKNOWN", "impact": "No score or gate credit." }],
+  "substitutions": [],
+  "stale_inputs": [],
+  "out_of_scope": [],
+  "score": {
+    "legs": { "sentiment": 2, "momentum": 1, "valuation": 4, "capitulation": 0, "holder": 0 },
+    "discretion": 0,
+    "mechanical": 7,
+    "raw": 7,
+    "adjusted": 7,
+    "rounding": "half-up",
+    "penalties": [],
+    "caps": []
+  },
+  "gates": {
+    "active": 9,
+    "na": [],
+    "passed": [3, 6],
+    "thresholds": { "p1a": 3, "p1b": 5, "p2": 6, "p3": 7 },
+    "measurement_basis": {}
+  },
+  "ev": {
+    "scenarios": [
+      { "name": "Rally", "probability": 0.4, "low": "110", "high": "130", "mid": "120", "rationale": "Recovery case." },
+      { "name": "Range", "probability": 0.6, "low": "70", "high": "90", "mid": "80", "rationale": "Base case." }
+    ],
+    "probability_sum": 1,
+    "stated_ev": "96",
+    "vs_spot_pct": "-4",
+    "arithmetic_status": "CHECKED",
+    "note": null
+  },
+  "deployment": {
+    "deployed_pct": "0",
+    "dry_pct": "100",
+    "throttle_released": false,
+    "tranches": [
+      { "phase": "1A", "pct": "10", "state": "LOCKED", "deployed": false, "entry_price": null, "stop": null, "time_stop": null, "prior_stop": null, "prior_time_stop": null, "tag": "FK-P1A-BTC-20260815-1200", "rationale": "Score and gate floor are not met.", "channel": null },
+      { "phase": "1B", "pct": "15", "state": "LOCKED", "deployed": false, "entry_price": null, "stop": null, "time_stop": null, "prior_stop": null, "prior_time_stop": null, "tag": "FK-P1B-BTC-20260815-1200", "rationale": "Score line is not met.", "channel": null },
+      { "phase": "2", "pct": "30", "state": "LOCKED", "deployed": false, "entry_price": null, "stop": null, "time_stop": null, "prior_stop": null, "prior_time_stop": null, "tag": "FK-P2-BTC-20260815-1200", "rationale": "Score line is not met.", "channel": null },
+      { "phase": "3", "pct": "45", "state": "LOCKED", "deployed": false, "entry_price": null, "stop": null, "time_stop": null, "prior_stop": null, "prior_time_stop": null, "tag": "FK-P3-BTC-20260815-1200", "rationale": "Score line is not met.", "channel": null }
+    ]
+  },
+  "position": {
+    "status": "FRESH",
+    "asset": "BTC",
+    "quantity": "0",
+    "custody": { "status": "RECONCILED" },
+    "basis": { "reliable": true },
+    "pnl": { "status": "NOT_APPLICABLE", "realized": null, "unrealized": null },
+    "dry_powder": "1000",
+    "futures": [],
+    "attribution": { "status": "UNTAGGED", "tags": [] },
+    "reconciliation": "Fresh ledger says the asset is flat."
+  },
+  "position_controls": {
+    "required": false,
+    "status": "NOT_APPLICABLE",
+    "action": { "status": "NOT_APPLICABLE", "value": null, "rationale": "No open position requires execution controls." }
+  },
+  "risk_controls": {
+    "stops": { "status": "NOT_APPLICABLE", "catastrophic": null, "deepest_zone_floor": null },
+    "time_stops": { "status": "NOT_APPLICABLE" },
+    "carry": { "status": "AVAILABLE", "veto": false },
+    "concentration": { "status": "AVAILABLE", "cap_pct": "30" },
+    "ratchet": { "status": "NOT_APPLICABLE" }
+  },
+  "companion_framework": { "framework": "flying_rocket", "status": "DATA_LIMITED", "score": null, "gates": null, "rationale": "Standalone companion evidence is not available in this run." },
+  "cross_validation": { "status": "DATA_LIMITED", "relationship": "not evaluated", "rationale": "The companion score is unavailable." },
+  "watchlist": [{ "item": "holder reversal", "status": "UNKNOWN", "trigger": "Fresh comparable 30-day series." }],
+  "events": [],
+  "falsifiers": [{ "claim": "Fear supports accumulation", "condition": "Structure repairs without capitulation", "status": "UNKNOWN" }],
+  "change_log": [{ "field": "score.adjusted", "previous": null, "current": 7, "reason": "Initial v2 report." }],
+  "narrative": {
+    "summary": "WAIT: the flat cold-start book has no authorized tranche.",
+    "bull_case": "Valuation is supportive.",
+    "bear_case": "Confirmation gates remain sparse.",
+    "rationale": "The score and gate floors govern deployment.",
+    "primary_action": { "status": "AVAILABLE", "value": "WAIT", "rationale": "Wait for score and gate confirmation." },
+    "arguments": { "position_reconciliation": "The ledger is the position of record." }
+  },
+  "verdict": {
+    "status": "WAIT",
+    "statement": "Remain dry until a phase unlocks.",
+    "primary_action": { "status": "AVAILABLE", "value": "WAIT", "rationale": "No phase satisfies both score and gate floors." }
+  },
+  "tagging": {
+    "schema": "report-phase-registry/2",
+    "instrument_class": "crypto",
+    "active_tags": [],
+    "reserved_tags": ["FK-P1A-BTC-20260815-1200", "FK-P1B-BTC-20260815-1200", "FK-P2-BTC-20260815-1200", "FK-P3-BTC-20260815-1200"],
+    "entries": [
+      { "phase": "1A", "canonical_tag": "FK-P1A-BTC-20260815-1200", "decision": "LOCKED", "instrument_class": "crypto" },
+      { "phase": "1B", "canonical_tag": "FK-P1B-BTC-20260815-1200", "decision": "LOCKED", "instrument_class": "crypto" },
+      { "phase": "2", "canonical_tag": "FK-P2-BTC-20260815-1200", "decision": "LOCKED", "instrument_class": "crypto" },
+      { "phase": "3", "canonical_tag": "FK-P3-BTC-20260815-1200", "decision": "LOCKED", "instrument_class": "crypto" }
+    ],
+    "status": "REGISTERED"
+  }
+}

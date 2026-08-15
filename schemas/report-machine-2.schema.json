@@ -1,0 +1,386 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trading-codex-analytics.local/schema/report-machine/2",
+  "title": "Trading Codex Analytics report-machine/2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "report_id", "identity", "timestamps", "run", "sources", "evidence",
+    "market", "data_gaps", "substitutions", "stale_inputs", "out_of_scope", "score",
+    "gates", "ev", "deployment", "position", "position_controls", "risk_controls",
+    "companion_framework", "cross_validation", "watchlist", "events", "falsifiers",
+    "change_log", "narrative", "verdict", "tagging"
+  ],
+  "properties": {
+    "schema": { "const": "report-machine/2" },
+    "channel": { "type": ["string", "null"], "enum": ["A", "B", "none", null] },
+    "regime": { "$ref": "#/$defs/regime" },
+    "report_id": { "type": "string", "pattern": "^[a-z0-9]+_(fallen_knives|flying_rocket)_\\d{8}_\\d{4}$" },
+    "identity": { "$ref": "#/$defs/identity" },
+    "timestamps": { "$ref": "#/$defs/timestamps" },
+    "run": { "$ref": "#/$defs/run" },
+    "sources": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "$ref": "#/$defs/source" }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/evidence" }
+    },
+    "market": { "$ref": "#/$defs/market" },
+    "data_gaps": { "type": "array", "items": { "$ref": "#/$defs/gap" } },
+    "substitutions": { "type": "array", "items": { "$ref": "#/$defs/substitution" } },
+    "stale_inputs": { "type": "array", "items": { "type": "string" } },
+    "out_of_scope": { "type": "array", "items": { "type": "string" } },
+    "score": { "$ref": "#/$defs/score" },
+    "gates": { "$ref": "#/$defs/gates" },
+    "ev": { "$ref": "#/$defs/ev" },
+    "deployment": { "$ref": "#/$defs/deployment" },
+    "position": { "$ref": "#/$defs/position" },
+    "position_controls": { "$ref": "#/$defs/positionControls" },
+    "risk_controls": { "$ref": "#/$defs/riskControls" },
+    "companion_framework": { "$ref": "#/$defs/companion" },
+    "cross_validation": { "$ref": "#/$defs/crossValidation" },
+    "watchlist": { "type": "array", "items": { "$ref": "#/$defs/watchItem" } },
+    "events": { "type": "array", "items": { "$ref": "#/$defs/event" } },
+    "falsifiers": { "type": "array", "items": { "$ref": "#/$defs/falsifier" } },
+    "change_log": { "type": "array", "items": { "$ref": "#/$defs/change" } },
+    "narrative": { "$ref": "#/$defs/narrative" },
+    "verdict": { "$ref": "#/$defs/verdict" },
+    "tagging": { "$ref": "#/$defs/tagging" }
+  },
+  "$defs": {
+    "decimal": { "type": "string", "pattern": "^-?(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?$" },
+    "nullableDecimal": { "type": ["string", "null"], "pattern": "^-?(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?$" },
+    "iso": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?Z$" },
+    "date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+    "status": { "type": "string", "enum": ["AVAILABLE", "UNKNOWN", "STALE", "EXPIRED", "NOT_COVERED", "DATA_LIMITED", "NOT_APPLICABLE"] },
+    "identity": {
+      "type": "object", "additionalProperties": false,
+      "required": ["asset", "framework", "date", "local_time", "timezone", "filename"],
+      "properties": {
+        "asset": { "type": "string", "pattern": "^[A-Z0-9]+$" },
+        "framework": { "type": "string", "enum": ["fallen_knives", "flying_rocket"] },
+        "date": { "$ref": "#/$defs/date" },
+        "local_time": { "type": "string", "pattern": "^\\d{2}:\\d{2}$" },
+        "timezone": { "type": "string", "minLength": 1 },
+        "filename": { "type": "string", "pattern": "^[a-z0-9]+_(fallen_knives|flying_rocket)_\\d{8}_\\d{4}\\.json$" }
+      }
+    },
+    "timestamps": {
+      "type": "object", "additionalProperties": false,
+      "required": ["generated_at", "report_at", "data_as_of", "timezone"],
+      "properties": {
+        "generated_at": { "$ref": "#/$defs/iso" },
+        "report_at": { "$ref": "#/$defs/iso" },
+        "data_as_of": { "$ref": "#/$defs/iso" },
+        "timezone": { "type": "string", "minLength": 1 }
+      }
+    },
+    "run": {
+      "type": "object", "additionalProperties": false,
+      "required": ["run_id", "snapshot_id", "tool_hashes"],
+      "properties": {
+        "run_id": { "type": "string", "minLength": 1 },
+        "snapshot_id": { "type": ["string", "null"] },
+        "tool_hashes": { "type": "object", "additionalProperties": { "type": "string" } },
+        "prior_report_id": { "type": ["string", "null"] },
+        "prior_report_sha256": { "type": ["string", "null"] }
+      }
+    },
+    "source": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "retrieved_at", "url"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "retrieved_at": { "$ref": "#/$defs/iso" },
+        "url": { "type": "string", "minLength": 1 },
+        "as_of": { "type": ["string", "null"] },
+        "kind": { "type": ["string", "null"] },
+        "note": { "type": ["string", "null"] }
+      }
+    },
+    "evidence": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "value", "unit", "as_of", "source_ids", "confidence", "rationale"],
+      "properties": {
+        "status": { "$ref": "#/$defs/status" },
+        "value": { "type": ["string", "number", "boolean", "null"] },
+        "unit": { "type": ["string", "null"] },
+        "as_of": { "type": ["string", "null"] },
+        "source_ids": { "type": "array", "items": { "type": "string" } },
+        "confidence": { "type": "string", "enum": ["HIGH", "MEDIUM", "LOW", "NONE"] },
+        "rationale": { "type": "string", "minLength": 1 }
+      }
+    },
+    "market": {
+      "type": "object", "additionalProperties": false,
+      "required": ["spot", "reconciliation"],
+      "properties": {
+        "spot": { "$ref": "#/$defs/measurement" },
+        "reconciliation": { "$ref": "#/$defs/reconciliation" },
+        "ath": { "$ref": "#/$defs/measurement" },
+        "drawdown_pct": { "$ref": "#/$defs/measurement" },
+        "regime": { "type": "object", "additionalProperties": true },
+        "metrics": { "type": "object", "additionalProperties": { "$ref": "#/$defs/measurement" } }
+      }
+    },
+    "measurement": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "value", "unit", "as_of", "source_ids"],
+      "properties": {
+        "status": { "$ref": "#/$defs/status" },
+        "value": { "type": ["string", "null"] },
+        "unit": { "type": ["string", "null"] },
+        "as_of": { "type": ["string", "null"] },
+        "source_ids": { "type": "array", "items": { "type": "string" } },
+        "note": { "type": ["string", "null"] }
+      }
+    },
+    "reconciliation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "method", "quotes"],
+      "properties": {
+        "status": { "$ref": "#/$defs/status" },
+        "method": { "type": "string", "minLength": 1 },
+        "quotes": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+        "spread_pct": { "$ref": "#/$defs/nullableDecimal" },
+        "note": { "type": ["string", "null"] }
+      }
+    },
+    "gap": {
+      "type": "object", "additionalProperties": false,
+      "required": ["field", "status", "impact"],
+      "properties": {
+        "field": { "type": "string", "minLength": 1 },
+        "status": { "$ref": "#/$defs/status" },
+        "impact": { "type": "string", "minLength": 1 },
+        "source_ids": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "substitution": {
+      "type": "object", "additionalProperties": false,
+      "required": ["field", "original", "substitute", "rationale"],
+      "properties": {
+        "field": { "type": "string" }, "original": { "type": "string" },
+        "substitute": { "type": "string" }, "rationale": { "type": "string" }
+      }
+    },
+    "score": {
+      "type": "object", "additionalProperties": false,
+      "required": ["legs", "discretion", "mechanical", "raw", "adjusted", "rounding", "penalties", "caps"],
+      "properties": {
+        "legs": { "type": "object", "additionalProperties": { "type": "number" } },
+        "discretion": { "type": "number", "multipleOf": 0.5, "minimum": -2, "maximum": 2 },
+        "mechanical": { "type": "number", "minimum": 0, "maximum": 20 },
+        "raw": { "type": "number" }, "adjusted": { "type": "number", "minimum": 0, "maximum": 20 },
+        "rounding": { "type": "string", "enum": ["half-up", "half-down"] },
+        "penalties": { "type": "array", "items": { "type": "number" } },
+        "caps": { "type": "array", "items": { "type": "object", "additionalProperties": true } }
+      }
+    },
+    "regime": {
+      "type": "object", "additionalProperties": false,
+      "required": ["pct_below_1y_ath", "ma200_falling", "price_below_ma200"],
+      "properties": {
+        "pct_below_1y_ath": { "$ref": "#/$defs/decimal" },
+        "ma200_falling": { "type": "boolean" },
+        "price_below_ma200": { "type": "boolean" }
+      }
+    },
+    "gates": {
+      "type": "object", "additionalProperties": false,
+      "required": ["active", "na", "passed", "thresholds", "measurement_basis"],
+      "properties": {
+        "active": { "type": "integer", "minimum": 1, "maximum": 9 },
+        "na": { "type": "array", "items": { "type": "integer", "minimum": 1, "maximum": 9 } },
+        "passed": { "type": "array", "items": { "type": "integer", "minimum": 1, "maximum": 9 } },
+        "thresholds": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0, "maximum": 9 } },
+        "measurement_basis": { "type": "object", "additionalProperties": { "type": "string" } },
+        "alt_reading": { "type": ["object", "null"], "additionalProperties": true }
+      }
+    },
+    "ev": {
+      "type": "object", "additionalProperties": false,
+      "required": ["scenarios", "probability_sum", "stated_ev", "vs_spot_pct", "arithmetic_status"],
+      "properties": {
+        "scenarios": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/scenario" } },
+        "probability_sum": { "type": "number", "minimum": 0, "maximum": 1 },
+        "stated_ev": { "$ref": "#/$defs/nullableDecimal" },
+        "vs_spot_pct": { "$ref": "#/$defs/nullableDecimal" },
+        "arithmetic_status": { "type": "string", "enum": ["CHECKED", "DATA_LIMITED", "NOT_APPLICABLE"] },
+        "note": { "type": ["string", "null"] }
+      }
+    },
+    "scenario": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "probability", "low", "high", "mid"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "probability": { "type": "number", "minimum": 0, "maximum": 1 },
+        "low": { "$ref": "#/$defs/decimal" }, "high": { "$ref": "#/$defs/decimal" },
+        "mid": { "$ref": "#/$defs/decimal" },
+        "rationale": { "type": ["string", "null"] }
+      }
+    },
+    "deployment": {
+      "type": "object", "additionalProperties": false,
+      "required": ["deployed_pct", "dry_pct", "tranches"],
+      "properties": {
+        "deployed_pct": { "$ref": "#/$defs/decimal" }, "dry_pct": { "$ref": "#/$defs/decimal" },
+        "throttle_released": { "type": "boolean" },
+        "tranches": { "type": "array", "items": { "$ref": "#/$defs/tranche" } }
+      }
+    },
+    "tranche": {
+      "type": "object", "additionalProperties": false,
+      "required": ["phase", "pct", "state", "deployed", "entry_price", "stop", "time_stop", "tag"],
+      "properties": {
+        "phase": { "type": "string", "enum": ["1A", "1B", "2", "3"] },
+        "pct": { "$ref": "#/$defs/decimal" },
+        "state": { "type": "string", "enum": ["FILLED", "DRY", "LOCKED", "UNAVAILABLE"] },
+        "deployed": { "type": "boolean" },
+        "entry_price": { "$ref": "#/$defs/nullableDecimal" },
+        "stop": { "$ref": "#/$defs/nullableDecimal" },
+        "time_stop": { "type": ["string", "null"] },
+        "prior_stop": { "$ref": "#/$defs/nullableDecimal" },
+        "prior_time_stop": { "type": ["string", "null"] },
+        "tag": { "type": "string", "minLength": 1 },
+        "rationale": { "type": "string" },
+        "channel": { "type": ["string", "null"] }
+      }
+    },
+    "position": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "asset", "quantity", "custody", "basis", "pnl", "dry_powder", "futures", "attribution"],
+      "properties": {
+        "status": { "type": "string", "enum": ["FRESH", "STALE", "EXPIRED", "NOT_COVERED", "DATA_LIMITED"] },
+        "asset": { "type": "string" }, "quantity": { "$ref": "#/$defs/nullableDecimal" },
+        "custody": { "type": "object", "additionalProperties": true },
+        "basis": { "type": "object", "additionalProperties": true },
+        "pnl": { "type": "object", "additionalProperties": true },
+        "dry_powder": { "$ref": "#/$defs/nullableDecimal" },
+        "futures": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+        "attribution": { "type": "object", "additionalProperties": true },
+        "reconciliation": { "type": "string" }
+      }
+    },
+    "positionControls": {
+      "type": "object", "additionalProperties": false,
+      "required": ["required", "status", "action"],
+      "properties": {
+        "required": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["NOT_APPLICABLE", "OPEN", "DATA_LIMITED"] },
+        "action": { "$ref": "#/$defs/action" },
+        "candidate": { "type": "object", "additionalProperties": true },
+        "veto": { "type": "object", "additionalProperties": true },
+        "selection": { "type": "object", "additionalProperties": true },
+        "venue_order": { "type": "object", "additionalProperties": true },
+        "ladder": { "type": "object", "additionalProperties": true },
+        "pnl": { "type": "object", "additionalProperties": true },
+        "ratchet": { "type": "object", "additionalProperties": true },
+        "liquidation_zone": { "type": "object", "additionalProperties": true },
+        "risk": { "type": "object", "additionalProperties": true },
+        "execution_audit": { "type": "object", "additionalProperties": true }
+      }
+    },
+    "action": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "value", "rationale"],
+      "properties": {
+        "status": { "type": "string", "enum": ["AVAILABLE", "UNAVAILABLE", "NOT_APPLICABLE", "DATA_LIMITED"] },
+        "value": { "type": ["string", "null"] }, "rationale": { "type": "string" }
+      }
+    },
+    "riskControls": {
+      "type": "object", "additionalProperties": false,
+      "required": ["stops", "time_stops", "carry", "concentration", "ratchet"],
+      "properties": {
+        "stops": { "type": "object", "additionalProperties": true },
+        "time_stops": { "type": "object", "additionalProperties": true },
+        "carry": { "type": "object", "additionalProperties": true },
+        "concentration": { "type": "object", "additionalProperties": true },
+        "ratchet": { "type": "object", "additionalProperties": true }
+      }
+    },
+    "companion": {
+      "type": "object", "additionalProperties": false,
+      "required": ["framework", "status", "score", "gates", "rationale"],
+      "properties": {
+        "framework": { "type": "string", "enum": ["fallen_knives", "flying_rocket", "none"] },
+        "status": { "type": "string", "enum": ["AVAILABLE", "UNKNOWN", "DATA_LIMITED", "NOT_APPLICABLE"] },
+        "score": { "type": ["number", "null"] }, "gates": { "type": ["integer", "null"] },
+        "rationale": { "type": "string" }
+      }
+    },
+    "crossValidation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "relationship", "rationale"],
+      "properties": {
+        "status": { "type": "string", "enum": ["CONSISTENT", "INCONSISTENT", "NOT_EVALUABLE", "DATA_LIMITED"] },
+        "relationship": { "type": "string" }, "rationale": { "type": "string" }
+      }
+    },
+    "watchItem": {
+      "type": "object", "additionalProperties": false,
+      "required": ["item", "status", "trigger"],
+      "properties": { "item": { "type": "string" }, "status": { "$ref": "#/$defs/status" }, "trigger": { "type": "string" } }
+    },
+    "event": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "status", "as_of", "impact"],
+      "properties": { "name": { "type": "string" }, "status": { "$ref": "#/$defs/status" }, "as_of": { "type": ["string", "null"] }, "impact": { "type": "string" } }
+    },
+    "falsifier": {
+      "type": "object", "additionalProperties": false,
+      "required": ["claim", "condition", "status"],
+      "properties": { "claim": { "type": "string" }, "condition": { "type": "string" }, "status": { "$ref": "#/$defs/status" } }
+    },
+    "change": {
+      "type": "object", "additionalProperties": false,
+      "required": ["field", "previous", "current", "reason"],
+      "properties": { "field": { "type": "string" }, "previous": {}, "current": {}, "reason": { "type": "string" } }
+    },
+    "narrative": {
+      "type": "object", "additionalProperties": false,
+      "required": ["summary", "bull_case", "bear_case", "rationale", "primary_action"],
+      "properties": {
+        "summary": { "type": "string" }, "bull_case": { "type": "string" },
+        "bear_case": { "type": "string" }, "rationale": { "type": "string" },
+        "primary_action": { "$ref": "#/$defs/action" },
+        "arguments": { "type": "object", "additionalProperties": true }
+      }
+    },
+    "verdict": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "statement", "primary_action"],
+      "properties": {
+        "status": { "type": "string", "enum": ["DEPLOY", "HOLD", "WAIT", "TRIM", "EXIT", "STAND_DOWN", "DATA_LIMITED"] },
+        "statement": { "type": "string" }, "primary_action": { "$ref": "#/$defs/action" }
+      }
+    },
+    "tagging": {
+      "type": "object", "additionalProperties": false,
+      "required": ["schema", "instrument_class", "active_tags", "reserved_tags", "entries", "status"],
+      "properties": {
+        "schema": { "const": "report-phase-registry/2" },
+        "instrument_class": { "type": "string", "enum": ["crypto", "non_crypto_derivative", "non_crypto_cash"] },
+        "active_tags": { "type": "array", "items": { "type": "string" } },
+        "reserved_tags": { "type": "array", "items": { "type": "string" } },
+        "status": { "type": "string", "enum": ["REGISTERED", "DATA_LIMITED"] },
+        "entries": { "type": "array", "items": { "$ref": "#/$defs/tagEntry" } }
+      }
+    },
+    "tagEntry": {
+      "type": "object", "additionalProperties": false,
+      "required": ["phase", "canonical_tag", "decision", "instrument_class"],
+      "properties": {
+        "phase": { "type": "string", "enum": ["1A", "1B", "2", "3"] },
+        "canonical_tag": { "type": "string", "minLength": 1 },
+        "decision": { "type": "string", "enum": ["AUTHORIZED", "LOCKED", "STAND_DOWN", "UNVERIFIED"] },
+        "instrument_class": { "type": "string", "enum": ["crypto", "non_crypto_derivative", "non_crypto_cash"] }
+      }
+    }
+  }
+}

@@ -34,6 +34,7 @@ import {
   inferChannel, inferDiscretion, gateMask, unlockFor, canonicalJSON, feedChanged,
   REPORT_PHASE_REGISTRY_SCHEMA,
 } from './lib.mjs'
+import { canonicalReportPayload, loadAndValidateReport, parseStrictJSON, reportJsonIdentity } from './report-contract.mjs'
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -56,7 +57,11 @@ if (!(outPath === EXPORTS_DIR || outPath.startsWith(EXPORTS_DIR + '/'))) {
 
 // ── helpers ─────────────────────────────────────────────────────────────────
 /** A decimal quantity → its plain-decimal string, or null. */
-const dec = v => (typeof v === 'number' && Number.isFinite(v) ? String(v) : null)
+const dec = v => {
+  if (typeof v === 'number' && Number.isFinite(v)) return String(v)
+  if (typeof v === 'string' && /^-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?$/.test(v)) return v
+  return null
+}
 /** Recursively stringify decimals inside a pass-through block, keeping the shape. */
 const decDeep = v => {
   if (Array.isArray(v)) return v.map(decDeep)
@@ -77,17 +82,62 @@ const FILL_CAVEAT =
   'structurally 0 on every pre-epoch signal. It is an artifact of the old schema, not an observation that nothing was filled.'
 
 // ── scan ────────────────────────────────────────────────────────────────────
-const files = readdirSync(reportsDir).filter(f => f.endsWith('.md')).sort()
-const signals = [], skipped = [], ignored = []
+// Scan report stems, not extensions. A v2 JSON is the canonical source when
+// paired with Markdown; a legacy Markdown report remains readable on its own.
+const allReportFiles = readdirSync(reportsDir).filter(f => /\.(?:md|json)$/.test(f)).sort()
+const stems = [...new Set(allReportFiles.map(f => f.replace(/\.(?:md|json)$/, '')))].sort()
+const files = stems.map(stem => ({ stem, md: `${stem}.md`, json: `${stem}.json` }))
+const signals = [], skipped = [], ignored = [], orphanedV2 = [], mismatchedPairs = []
 let unparseable = 0, postEpochMissing = 0
 
-for (const file of files) {
+for (const entry of files) {
+  const { stem, md: mdFile, json: jsonFile } = entry
+  const jsonExists = existsSync(join(reportsDir, jsonFile)) && Boolean(reportJsonIdentity(jsonFile))
+  const mdExists = existsSync(join(reportsDir, mdFile))
+
+  if (jsonExists) {
+    let loaded
+    try { loaded = loadAndValidateReport(join(reportsDir, jsonFile)) } catch (error) {
+      unparseable++
+      skipped.push({ file: jsonFile, reason: 'invalid_report_machine_2', detail: error.message })
+      continue
+    }
+    if (!loaded.ok) {
+      unparseable++
+      skipped.push({ file: jsonFile, reason: 'invalid_report_machine_2', detail: loaded.errors.join('; ') })
+      continue
+    }
+    const report = loaded.report
+    if (!mdExists) orphanedV2.push({ file: jsonFile, reason: 'canonical JSON has no Markdown view' })
+    else {
+      const viewText = readFileSync(join(reportsDir, mdFile), 'utf8')
+      const blocks = [...viewText.matchAll(/```json machine\s*\n([\s\S]*?)\n```/g)]
+      if (blocks.length !== 1) mismatchedPairs.push({ json: jsonFile, markdown: mdFile, reason: `expected one machine block, found ${blocks.length}` })
+      else {
+        try {
+          const embedded = parseStrictJSON(blocks[0][1], mdFile)
+          if (canonicalReportPayload(embedded) !== canonicalReportPayload(report)) mismatchedPairs.push({ json: jsonFile, markdown: mdFile, reason: 'machine block differs from canonical JSON' })
+        } catch (error) { mismatchedPairs.push({ json: jsonFile, markdown: mdFile, reason: error.message }) }
+      }
+    }
+    const meta = {
+      ok: true, file: mdFile, canonical_file: jsonFile, view_file: mdExists ? mdFile : null,
+      asset: report.identity.asset, framework: report.identity.framework, date: report.identity.date,
+      local_time: report.identity.local_time, zone: report.identity.timezone,
+      at_utc: report.timestamps.report_at, schema_epoch: 'report_machine_2', stem,
+    }
+    try { signals.push(toV2Signal(meta, report, sha256(canonicalReportPayload(report)))) } catch (error) {
+      unparseable++
+      skipped.push({ file: jsonFile, date: meta.date, reason: 'projection_failed', detail: error.message })
+    }
+    continue
+  }
+
+  const file = mdFile
   const meta = reportFileMeta(file)
   // Filename FIRST, never "contains a machine block": calibration_ledger.md
-  // quotes the ```json machine fence in prose, and a grep-first scanner would
-  // ingest the calibration ledger as if it were a signal (verified: `grep -l`
-  // returns 40 files, only 39 of which are reports).
-  if (!meta.ok) { ignored.push({ file, reason: meta.reason }); continue }
+  // quotes the fence in prose and must remain outside the signal corpus.
+  if (!meta.ok) { ignored.push({ file: mdExists ? mdFile : jsonFile, reason: meta.reason }); continue }
 
   const text = readFileSync(join(reportsDir, file), 'utf8')
   const bm = text.match(/```json machine\s*\n([\s\S]*?)```/)
@@ -110,13 +160,96 @@ for (const file of files) {
     continue
   }
 
-  try { signals.push(toSignal(meta, b, sha256(bm[1]))) } catch (e) {
+  try { signals.push(toSignal({ ...meta, canonical_file: null, view_file: file }, b, sha256(bm[1]))) } catch (e) {
     unparseable++
     skipped.push({ file, date: meta.date, reason: 'projection_failed', detail: e.message })
   }
 }
 
 // ── projection ──────────────────────────────────────────────────────────────
+function legacyTaggingFromV2(tagging, meta, report) {
+  const entries = (tagging.entries || []).map(entry => ({
+    phase: entry.phase,
+    canonical_tag: entry.canonical_tag,
+    decision: entry.decision,
+    instrument_class: entry.instrument_class,
+    report_file: meta.file,
+    report_version: 'report-machine/2',
+    asset: report.identity.asset,
+    report_date: report.identity.date,
+    report_local_time: report.identity.local_time,
+  }))
+  return {
+    mode: 'phase_registry',
+    registry: {
+      schema: REPORT_PHASE_REGISTRY_SCHEMA,
+      version: 1,
+      report_file: meta.file,
+      report_version: 'report-machine/2',
+      framework: report.identity.framework,
+      channel: report.channel ?? null,
+      asset: report.identity.asset,
+      report_date: report.identity.date,
+      report_local_time: report.identity.local_time,
+      report_zone: meta.zone,
+      instrument_class: tagging.instrument_class,
+      entries,
+    },
+    instrument_class: tagging.instrument_class,
+    report_file: meta.file,
+    report_version: 'report-machine/2',
+    framework: report.identity.framework,
+    channel: report.channel ?? null,
+    report_asset: report.identity.asset,
+    report_date: report.identity.date,
+    report_local_time: report.identity.local_time,
+    active_tags: tagging.active_tags,
+    reserved_tags: tagging.reserved_tags,
+    status: tagging.status,
+  }
+}
+
+function toV2Signal(meta, report, contentSha) {
+  const score = report.score
+  const legacy = {
+    schema: 'report-machine/1', framework: report.identity.framework, asset: report.identity.asset,
+    date: report.identity.date, channel: report.channel ?? null,
+    spot: { value: report.market.spot.value, source: report.market.spot.source_ids.join(',') },
+    score: {
+      legs: score.legs, discretionary: score.discretion, mechanical: score.mechanical,
+      raw: score.raw, adjusted: score.adjusted, rounding: score.rounding,
+      penalty: score.penalties.reduce((a, v) => a + v, 0),
+    },
+    gates: { active: report.gates.active, na: report.gates.na, passed: report.gates.passed },
+    ev: {
+      stated_ev: report.ev.stated_ev === null ? null : Number(report.ev.stated_ev),
+      vs_spot_pct: report.ev.vs_spot_pct === null ? null : Number(report.ev.vs_spot_pct),
+      scenarios: report.ev.scenarios.map(s => ({ name: s.name, p: s.probability * 100, low: Number(s.low), high: Number(s.high), mid: Number(s.mid) })),
+    },
+    deployment: {
+      deployed_pct: Number(report.deployment.deployed_pct), dry_pct: Number(report.deployment.dry_pct),
+      throttle_released: report.deployment.throttle_released,
+      tranches: report.deployment.tranches.map(t => ({
+        ...t, pct: Number(t.pct),
+        entry_price: t.entry_price === null ? null : Number(t.entry_price),
+        stop: t.stop === null ? null : Number(t.stop),
+      })),
+    },
+    tagging: legacyTaggingFromV2(report.tagging, meta, report),
+    verdict: report.verdict.statement,
+  }
+  const signal = toSignal(meta, legacy, contentSha)
+  signal.source_schema = 'report-machine/2'
+  signal.canonical_file = meta.canonical_file
+  signal.view_file = meta.view_file
+  signal.canonical_sha256 = contentSha
+  signal.tagging_v2 = decDeep(report.tagging)
+  signal.position = decDeep(report.position)
+  signal.position_controls = decDeep(report.position_controls)
+  signal.evidence = decDeep(report.evidence)
+  return signal
+}
+
 function toSignal(meta, b, contentSha) {
   const S = b.score || {}
   const ch = inferChannel(meta.framework, b.channel, meta.date)
@@ -138,7 +271,7 @@ function toSignal(meta, b, contentSha) {
     max: l.max,
   }))
 
-  const filled = tranches.filter(t => t.deployed === true || typeof t.entry_price === 'number' || typeof t.entry === 'number')
+  const filled = tranches.filter(t => t.deployed === true || (t.entry_price !== null && t.entry_price !== undefined) || typeof t.entry === 'number')
 
   return {
     report_file: meta.file,
@@ -148,6 +281,12 @@ function toSignal(meta, b, contentSha) {
     report_at_utc: meta.at_utc,
     report_at_derivation: AT_UTC_NOTE,
     content_sha256: contentSha,
+    ...(meta.canonical_file ? {
+      canonical_file: meta.canonical_file,
+      view_file: meta.view_file || meta.file,
+      canonical_sha256: contentSha,
+      source_schema: b.schema || 'report-machine/2',
+    } : {}),
 
     framework: meta.framework,
     asset: meta.asset,
@@ -266,9 +405,14 @@ const feed = {
     skipped_no_machine_block: skipped.filter(s => s.reason === 'no_machine_block').length,
     skipped_unparseable: unparseable,
     skipped_post_epoch_missing_block: postEpochMissing,
+    v2_signals: signals.filter(s => s.source_schema === 'report-machine/2').length,
+    orphaned_v2: orphanedV2.length,
+    mismatched_v2_pairs: mismatchedPairs.length,
   },
   skipped,
   ignored_files: ignored,
+  orphaned_v2: orphanedV2,
+  mismatched_v2_pairs: mismatchedPairs,
   signals,
 }
 
@@ -313,6 +457,10 @@ if (strict && c.skipped_post_epoch_missing_block) {
 }
 if (strict && c.skipped_unparseable) {
   console.error(`\nFAIL (--strict) — ${c.skipped_unparseable} machine block(s) failed to parse or project`)
+  process.exit(1)
+}
+if (strict && mismatchedPairs.length) {
+  console.error(`\nFAIL (--strict) — ${mismatchedPairs.length} v2 JSON/Markdown pair(s) are not canonically equal`)
   process.exit(1)
 }
 process.exit(0)

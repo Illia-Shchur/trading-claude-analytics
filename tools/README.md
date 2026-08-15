@@ -1,5 +1,48 @@
 # Deterministic Toolchain
 
+## Machine-first report pipeline (report-machine/2)
+
+New reports are authored as strict JSON drafts and published as an immutable
+`report-machine/2` payload plus a deterministic `report-markdown/1` view. JSON
+is the source of truth; the Markdown machine block is a compatibility view and
+must round-trip canonically.
+
+```text
+fresh position + live evidence + prior-report projection
+  -> draft JSON -> finalize -> lint JSON
+  -> render full Markdown -> pair lint -> export -> commit JSON + Markdown
+```
+
+Pinned dependencies are `ajv@8.20.0`, `canonicalize@4.0.0`, and
+`jsonc-parser@3.3.1`. Canonical JSON is JCS-style: recursively sorted object
+keys, array order preserved, minified UTF-8, and one terminal newline. Prices,
+money, quantities, ratios, and source decimals are plain-decimal strings;
+bounded counts, gate IDs, probabilities, and half-point scores remain native
+numbers. Unavailable measurements are status-wrapped with `value:null`.
+
+```sh
+node tools/finalize-report.mjs .report-run/draft.json --out reports/<stem>.json
+node tools/lint-report.mjs reports/<stem>.json
+node tools/render-report.mjs reports/<stem>.json --mode full --out reports/<stem>.md
+node tools/render-report.mjs reports/<stem>.json --mode summary
+node tools/lint-report.mjs reports/<stem>.json --markdown reports/<stem>.md
+node tools/export-signals.mjs --strict
+```
+
+`position_controls` is mandatory in every v2 document. Flat positions use
+`required:false/status:NOT_APPLICABLE`; open positions require the complete
+candidate, veto, selection, venue-order, ladder, PnL, ratchet, liquidation/
+zone, risk, and execution-audit set; data-limited positions cannot fabricate
+`HOLD`/`RETAIN`. The v2 validator and renderer make no network calls and read
+no current clock. Legacy `report-machine/1` Markdown remains supported.
+
+`schemas/report-machine-2.schema.json` is the Draft 2020-12 shape;
+`tools/report-contract.mjs` is the shared schema + semantic validator;
+`finalize-report.mjs` is the only v2 publisher; and `render-report.mjs` is the
+pure deterministic view generator. `test/report-v2-test.mjs` covers flat/cold
+start, live long, Channel-B dry, live short, stale/unknown position, unreliable
+basis, custody exceptions, strict JSON negatives, and machine-block round trips.
+
 `position.mjs` consumes the newest historical `exports/position-snapshot-*.json` by default. Pass `--file` with a specific file or directory to override selection; the legacy `position-snapshot.json` remains a migration fallback.
 
 ### Futures-only snapshot projection and freshness

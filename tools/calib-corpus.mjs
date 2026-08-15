@@ -40,6 +40,8 @@ import { join, resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createHash } from 'node:crypto'
 import { reportFileMeta, canonicalJSON, FK_SCORE_UNLOCK, frUnlockLadder } from './lib.mjs'
+import { canonicalReportPayload, loadAndValidateReport, reportJsonIdentity } from './report-contract.mjs'
+import { renderSummary } from './render-report.mjs'
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const REPORTS_DIR = join(REPO, 'reports')
@@ -137,6 +139,21 @@ export function projectDigest(raw) {
   }
 }
 
+/** v2 projection: JSON is authoritative and Markdown is optional. */
+export function projectV2Digest(report) {
+  const truncate = (s, n = 220) => (typeof s === 'string' && s.length > n ? s.slice(0, n) + `…[${s.length}ch, see canonical JSON]` : s)
+  return {
+    ok: true, schema: report.schema, framework: report.identity.framework, asset: report.identity.asset,
+    date: report.identity.date, report_id: report.report_id, spot: report.market.spot.value,
+    score: { legs: report.score.legs, discretionary: report.score.discretion, mechanical: report.score.mechanical, raw: report.score.raw, adjusted: report.score.adjusted },
+    gates: { active: report.gates.active, na: report.gates.na, passed: report.gates.passed },
+    ev: { scenarios: report.ev.scenarios.map(s => ({ name: s.name, p: s.probability, low: s.low, high: s.high, mid: s.mid })), stated_ev: report.ev.stated_ev, vs_spot_pct: report.ev.vs_spot_pct },
+    deployment: { deployed_pct: report.deployment.deployed_pct, dry_pct: report.deployment.dry_pct, tranches: report.deployment.tranches.map(t => ({ phase: t.phase, pct: t.pct, deployed: t.deployed, entry_price: t.entry_price, stop: t.stop })) },
+    position: { status: report.position.status, quantity: report.position.quantity, custody: report.position.custody, basis: report.position.basis },
+    verdict_note: truncate(report.verdict.statement),
+  }
+}
+
 /**
  * Event-preserving series sampler for --max-per-series. `reports` is one
  * series (same framework+asset), in chronological order, each carrying a
@@ -214,11 +231,37 @@ if (frameworkFilter && !['fallen_knives', 'flying_rocket'].includes(frameworkFil
 
 // ── scan (pass 1: identify candidates + parse digests, no writes yet) ───────
 if (!existsSync(REPORTS_DIR)) { console.error(`reports dir not found: ${REPORTS_DIR}`); process.exit(1) }
-const files = readdirSync(REPORTS_DIR).filter(f => f.endsWith('.md')).sort()
+const reportFiles = readdirSync(REPORTS_DIR).filter(f => /\.(?:md|json)$/.test(f)).sort()
+const stems = [...new Set(reportFiles.map(f => f.replace(/\.(?:md|json)$/, '')))].sort()
 
 const candidates = []
 const ignored = []
-for (const file of files) {
+for (const stem of stems) {
+  const jsonFile = `${stem}.json`, mdFile = `${stem}.md`
+  if (existsSync(join(REPORTS_DIR, jsonFile)) && reportJsonIdentity(jsonFile)) {
+    let loaded
+    try { loaded = loadAndValidateReport(join(REPORTS_DIR, jsonFile)) } catch (error) {
+      ignored.push({ file: jsonFile, reason: `invalid report-machine/2: ${error.message}` })
+      continue
+    }
+    if (!loaded.ok) { ignored.push({ file: jsonFile, reason: loaded.errors.join('; ') }); continue }
+    const report = loaded.report
+    const asset = report.identity.asset === 'COMBINED' ? 'MULTI' : report.identity.asset
+    if (report.identity.date < since) continue
+    if (until && report.identity.date > until) continue
+    if (frameworkFilter && report.identity.framework !== frameworkFilter) continue
+    if (assetFilter.length && !assetFilter.includes(asset) && asset !== 'MULTI') continue
+    const canonical = canonicalReportPayload(report)
+    candidates.push({
+      f: jsonFile, a: asset, t: report.identity.framework, d: report.identity.date,
+      at_utc: report.timestamps.report_at, schema_epoch: 'report_machine_2', raw: null,
+      digest: projectV2Digest(report), v2: true, canonical, summary: renderSummary(report),
+      view_file: existsSync(join(REPORTS_DIR, mdFile)) ? mdFile : null,
+    })
+    continue
+  }
+  const file = mdFile
+  if (!existsSync(join(REPORTS_DIR, file))) continue
   const meta = reportFileMeta(file)
   if (!meta.ok) { ignored.push({ file, reason: meta.reason }); continue }
   if (meta.date < since) continue
@@ -260,6 +303,29 @@ const corpus = []
 let bytesTotal = 0, bytesSliced = 0, withMachineBlock = 0, withoutMachineBlock = 0, sectionDropFailures = 0
 
 for (const c of selected) {
+  if (c.v2) {
+    const file = c.f
+    const totalBytes = Buffer.byteLength(c.canonical, 'utf8')
+    const sliceText = `<!-- calib-corpus v2 summary for ${file}; canonical JSON remains authoritative and the Markdown view is optional. -->\n\n${c.summary}`
+    const sliceBytes = Buffer.byteLength(sliceText, 'utf8')
+    bytesTotal += totalBytes
+    bytesSliced += sliceBytes
+    withMachineBlock++
+    const entry = {
+      f: file, a: c.a, t: c.t, d: c.d, at_utc: c.at_utc, schema_epoch: c.schema_epoch,
+      source_schema: 'report-machine/2', canonical_file: file, view_file: c.view_file,
+      bytes_total: totalBytes, bytes_slice: sliceBytes,
+      machine_block: { present: true, standalone_json: true, bytes: totalBytes, sha256: sha256(c.canonical) },
+      verified_data_section: { present: false, note: 'v2 summary generated from structured JSON' },
+      composite_score_section: { present: false, note: 'v2 summary generated from structured JSON' },
+      bytes_dropped: 0, reduction_pct: 0, byte_reconciliation_ok: true,
+    }
+    corpus.push(entry)
+    if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true })
+    writeFileSync(join(outDir, `${file}.slice.md`), sliceText, 'utf8')
+    writeFileSync(join(outDir, `${file}.digest.json`), canonicalJSON(c.digest) + '\n', 'utf8')
+    continue
+  }
   const { f: file, raw } = c
   const totalBytes = Buffer.byteLength(raw, 'utf8')
   bytesTotal += totalBytes

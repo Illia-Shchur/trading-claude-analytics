@@ -25,6 +25,10 @@ credentials.json
 /data/
 *.snapshot.json
 exports/*.tmp
+node_modules/
+
+# report-machine/2 draft and renderer scratch (never committed)
+/.report-run/
 
 # framework-calibration run scratch (corpus slices, digests, manifests) —
 # reproducible from reports/ on demand, not repo state.

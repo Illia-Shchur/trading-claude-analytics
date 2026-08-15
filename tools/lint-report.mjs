@@ -70,7 +70,7 @@
 //   inputs (opt): {weekly_rsi, rsi_closes, mvrv_z, fng_3d, drawdown_pct, ...}
 // ============================================================================
 import { readFileSync, existsSync } from 'node:fs'
-import { basename } from 'node:path'
+import { basename, extname, resolve } from 'node:path'
 import { roundScore, ROUNDING, ceilThresholds, FK_V_GATES, evCheck, stopCoherence,
   discretionValid, d5StopCheck, FK_SCORE_UNLOCK, FK_DISCRETION,
   s5StopCheck, frRatchetCheck, FR_S5, FR_CHANNEL_B,
@@ -80,12 +80,44 @@ import { roundScore, ROUNDING, ceilThresholds, FK_V_GATES, evCheck, stopCoherenc
   FR_B_GATE_BASIS, GATE_MEASUREMENT_EPOCH,
   reportFileMeta, reportPhaseRegistryIssues, buildReportPhaseRegistry,
   REPORT_PHASE_DECISIONS, REPORT_PHASE_INSTRUMENT_CLASSES } from './lib.mjs'
+import { loadAndValidateReport, canonicalReportPayload, parseStrictJSON, reportStem } from './report-contract.mjs'
 
 const round2 = n => Math.round(n * 100) / 100
 
 const file = process.argv[2]
 const legacy = process.argv.includes('--legacy')
 if (!file) { console.error('usage: node tools/lint-report.mjs <report.md> [--legacy]'); process.exit(1) }
+
+// v2 adapter. Everything below this branch is the report-machine/1 linter and
+// is intentionally left as-is for historical corpus compatibility. When the
+// user names the Markdown view, the paired JSON still wins.
+const companionJson = extname(file).toLowerCase() === '.md' ? file.replace(/\.md$/, '.json') : null
+const v2File = extname(file).toLowerCase() === '.json' ? file : (companionJson && existsSync(companionJson) ? companionJson : null)
+if (v2File) {
+  const loaded = (() => { try { return loadAndValidateReport(resolve(v2File)) } catch (error) { return { ok: false, errors: [error.message], warnings: [] } } })()
+  const errors = [...(loaded.errors || [])], warnings = [...(loaded.warnings || [])]
+  const markdownFlag = process.argv.indexOf('--markdown')
+  const markdown = markdownFlag >= 0 && process.argv[markdownFlag + 1]
+    ? resolve(process.argv[markdownFlag + 1])
+    : (extname(file).toLowerCase() === '.md' ? resolve(file) : resolve(v2File).replace(/\.json$/, '.md'))
+  if (loaded.ok && existsSync(markdown)) {
+    const view = readFileSync(markdown, 'utf8')
+    const matches = [...view.matchAll(/```json machine\s*\n([\s\S]*?)\n```/g)]
+    if (matches.length !== 1) errors.push(`Markdown pair must contain exactly one json machine block (found ${matches.length})`)
+    else {
+      try {
+        const embedded = parseStrictJSON(matches[0][1], basename(markdown))
+        if (canonicalReportPayload(embedded) !== canonicalReportPayload(loaded.report)) errors.push('Markdown machine block is not canonically equal to the standalone JSON')
+        if (reportStem(markdown) !== reportStem(file)) errors.push('Markdown/JSON pair stems differ')
+      } catch (error) { errors.push(`Markdown machine block: ${error.message}`) }
+    }
+  } else if (loaded.ok && markdownFlag >= 0) errors.push(`Markdown pair not found: ${markdown}`)
+  for (const warning of warnings) console.log(`WARN  ${warning}`)
+  for (const error of errors) console.log(`ERROR ${error}`)
+  if (errors.length) { console.log(`\nFAIL — ${errors.length} error(s), ${warnings.length} warning(s): ${basename(file)}`); process.exit(1) }
+  console.log(`PASS — 0 errors, ${warnings.length} warning(s): ${basename(v2File)}`)
+  process.exit(0)
+}
 
 // Ship date of the Analyst Discretion Layer (FK SKILL D1–D6). Reports dated
 // before it are linted under the prior schema; on/after, its fields are hard.

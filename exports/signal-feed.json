@@ -1,12 +1,15 @@
 {
   "counts": {
-    "files_in_reports_dir": 141,
+    "files_in_reports_dir": 142,
     "framework_reports": 134,
-    "non_framework_files_ignored": 7,
+    "mismatched_v2_pairs": 0,
+    "non_framework_files_ignored": 8,
+    "orphaned_v2": 0,
     "signals": 68,
     "skipped_no_machine_block": 66,
     "skipped_post_epoch_missing_block": 0,
-    "skipped_unparseable": 0
+    "skipped_unparseable": 0,
+    "v2_signals": 0
   },
   "encoding": "decimal quantities (prices, scores, percentages, EV) are JSON strings in plain decimal notation; counts, gate numbers, booleans and enums are native",
   "epochs": {
@@ -15,9 +18,13 @@
     "machine_block": "2026-07-11",
     "report_phase_registry": "report-phase-registry/1"
   },
-  "generated_at": "2026-08-15T11:41:11Z",
+  "generated_at": "2026-08-15T15:41:32Z",
   "generated_by": "tools/export-signals.mjs",
   "ignored_files": [
+    {
+      "file": "calibration-registry.json",
+      "reason": "filename does not match <asset>_<framework>_YYYYMMDD_HHMM.md"
+    },
     {
       "file": "calibration_ledger.md",
       "reason": "filename does not match <asset>_<framework>_YYYYMMDD_HHMM.md"
@@ -47,6 +54,8 @@
       "reason": "filename does not match <asset>_<framework>_YYYYMMDD_HHMM.md"
     }
   ],
+  "mismatched_v2_pairs": [],
+  "orphaned_v2": [],
   "schema": "signal-feed/1",
   "signals": [
     {
