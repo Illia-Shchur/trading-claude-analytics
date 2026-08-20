@@ -1,15 +1,15 @@
 {
   "counts": {
-    "files_in_reports_dir": 146,
-    "framework_reports": 138,
+    "files_in_reports_dir": 147,
+    "framework_reports": 139,
     "mismatched_v2_pairs": 0,
     "non_framework_files_ignored": 8,
     "orphaned_v2": 0,
-    "signals": 72,
+    "signals": 73,
     "skipped_no_machine_block": 66,
     "skipped_post_epoch_missing_block": 0,
     "skipped_unparseable": 0,
-    "v2_signals": 4
+    "v2_signals": 5
   },
   "encoding": "decimal quantities (prices, scores, percentages, EV) are JSON strings in plain decimal notation; counts, gate numbers, booleans and enums are native",
   "epochs": {
@@ -18,7 +18,7 @@
     "machine_block": "2026-07-11",
     "report_phase_registry": "report-phase-registry/1"
   },
-  "generated_at": "2026-08-20T20:52:40Z",
+  "generated_at": "2026-08-20T20:53:04Z",
   "generated_by": "tools/export-signals.mjs",
   "ignored_files": [
     {
@@ -20491,6 +20491,462 @@
       },
       "verdict": "No ETH short: no channel is live, Channel-A record score is 0/20 with 0/8 gates, and gate EV is -0.08%.",
       "view_file": "eth_flying_rocket_20260819_1223.md"
+    },
+    {
+      "asset": "ETH",
+      "canonical_file": "eth_flying_rocket_20260820_1640.json",
+      "canonical_sha256": "c96260f86192d8c29854409e10470e8a61765c660eff582ba989136e6372bd56",
+      "channel": "none",
+      "channel_inference_basis": "declared in the machine block",
+      "channel_inferred": false,
+      "content_sha256": "c96260f86192d8c29854409e10470e8a61765c660eff582ba989136e6372bd56",
+      "deployment": {
+        "deployed_pct": "0",
+        "dry_pct": "50",
+        "filled_detection": "deployed === true || typeof entry_price === \"number\" || typeof entry === \"number\"",
+        "filled_detection_caveat": "before the entry_price epoch (2026-07-29) no tranche in this corpus carried deployed:true or a numeric entry — 152/152 tranches across 39 reports encode `entry` as prose — so filled_tranche_count is structurally 0 on every pre-epoch signal. It is an artifact of the old schema, not an observation that nothing was filled.",
+        "filled_tranche_count": 0,
+        "throttle_released": false,
+        "tranche_count": 4,
+        "tranches": [
+          {
+            "channel": "A",
+            "channel_regime": null,
+            "deployed": false,
+            "discretionary": false,
+            "entry": null,
+            "entry_price": null,
+            "filled": false,
+            "pct": "5",
+            "phase": "1A",
+            "prior_stop": null,
+            "prior_time_stop": null,
+            "stop": null,
+            "time_stop": null
+          },
+          {
+            "channel": "A",
+            "channel_regime": null,
+            "deployed": false,
+            "discretionary": false,
+            "entry": null,
+            "entry_price": null,
+            "filled": false,
+            "pct": "10",
+            "phase": "1B",
+            "prior_stop": null,
+            "prior_time_stop": null,
+            "stop": null,
+            "time_stop": null
+          },
+          {
+            "channel": "A",
+            "channel_regime": null,
+            "deployed": false,
+            "discretionary": false,
+            "entry": null,
+            "entry_price": null,
+            "filled": false,
+            "pct": "15",
+            "phase": "2",
+            "prior_stop": null,
+            "prior_time_stop": null,
+            "stop": null,
+            "time_stop": null
+          },
+          {
+            "channel": "A",
+            "channel_regime": null,
+            "deployed": false,
+            "discretionary": false,
+            "entry": null,
+            "entry_price": null,
+            "filled": false,
+            "pct": "20",
+            "phase": "3",
+            "prior_stop": null,
+            "prior_time_stop": null,
+            "stop": null,
+            "time_stop": null
+          }
+        ]
+      },
+      "ev": {
+        "scenarios": [
+          {
+            "high": "2700",
+            "low": "2300",
+            "mid": "2500",
+            "name": "Recovery extends",
+            "p": "50"
+          },
+          {
+            "high": "2350",
+            "low": "2050",
+            "mid": "2200",
+            "name": "Range / base",
+            "p": "30"
+          },
+          {
+            "high": "2050",
+            "low": "1850",
+            "mid": "1950",
+            "name": "Mean reversion",
+            "p": "15"
+          },
+          {
+            "high": "1850",
+            "low": "1600",
+            "mid": "1725",
+            "name": "Bear continuation",
+            "p": "5"
+          }
+        ],
+        "stated_ev_usd": "2288.75",
+        "vs_spot_pct": "-1.67"
+      },
+      "evidence": {
+        "derivatives": {
+          "as_of": "2026-08-20T20:35:21Z",
+          "confidence": "HIGH",
+          "rationale": "Funding +4.82% annualized; OI at its 90-day high; skew -3.34 is call-rich. No squeeze-trap penalty.",
+          "source_ids": [
+            "snapshot"
+          ],
+          "status": "AVAILABLE",
+          "unit": "Binance/Deribit context",
+          "value": "call-rich / OI high"
+        },
+        "etf_flows": {
+          "as_of": "2026-08-19",
+          "confidence": "HIGH",
+          "rationale": "Aug 17-19 inflows total $289.1M, but three sessions do not overturn the prior five-session regime under the durability lock.",
+          "source_ids": [
+            "farside_eth"
+          ],
+          "status": "AVAILABLE",
+          "unit": "USD millions",
+          "value": "289.1"
+        },
+        "funding": {
+          "as_of": "2026-08-20T20:35:21Z",
+          "confidence": "HIGH",
+          "rationale": "Positive funding means longs pay shorts; no sustained negative prints.",
+          "source_ids": [
+            "snapshot"
+          ],
+          "status": "AVAILABLE",
+          "unit": "percent annualized",
+          "value": "4.82"
+        },
+        "macro": {
+          "as_of": "2026-08-20",
+          "confidence": "HIGH",
+          "rationale": "VIX and yields rose, but DXY fell and crypto regulatory optimism triggered a large squeeze.",
+          "source_ids": [
+            "snapshot",
+            "market_news",
+            "cftc"
+          ],
+          "status": "AVAILABLE",
+          "unit": null,
+          "value": "mixed"
+        },
+        "momentum": {
+          "as_of": "2026-08-20",
+          "confidence": "HIGH",
+          "rationale": "Daily RSI 84.42 is extreme locally, but completed-week RSI 41.92 keeps the Channel-A momentum leg at zero.",
+          "source_ids": [
+            "snapshot"
+          ],
+          "status": "AVAILABLE",
+          "unit": "daily RSI-14",
+          "value": "84.42"
+        },
+        "onchain": {
+          "as_of": "2026-08-19",
+          "confidence": "MEDIUM",
+          "rationale": "MVRV-Z 0.129; exchange reserves down 0.91% over 30d; true LTH is provider-gated.",
+          "source_ids": [
+            "snapshot"
+          ],
+          "status": "AVAILABLE",
+          "unit": null,
+          "value": "low valuation / reserve decline"
+        },
+        "regime": {
+          "as_of": "2026-08-20",
+          "confidence": "HIGH",
+          "rationale": "51.47% below high but price 16.17% above falling 200dma; no channel.",
+          "source_ids": [
+            "snapshot"
+          ],
+          "status": "AVAILABLE",
+          "unit": null,
+          "value": "none"
+        },
+        "sentiment": {
+          "as_of": "2026-08-20",
+          "confidence": "HIGH",
+          "rationale": "F&G spot 62, three-day average 49.67.",
+          "source_ids": [
+            "snapshot"
+          ],
+          "status": "AVAILABLE",
+          "unit": "F&G 3-day average",
+          "value": "49.67"
+        },
+        "spot": {
+          "as_of": "2026-08-20T20:35:21Z",
+          "confidence": "HIGH",
+          "rationale": "Four-source synchronized median; 0.061% spread.",
+          "source_ids": [
+            "snapshot"
+          ],
+          "status": "AVAILABLE",
+          "unit": "USD/ETH",
+          "value": "2327.625"
+        }
+      },
+      "framework": "flying_rocket",
+      "gates": {
+        "active": 8,
+        "na": [
+          8
+        ],
+        "passed": [],
+        "passed_count": 0,
+        "passed_mask": 0
+      },
+      "position": {
+        "asset": "ETH",
+        "attribution": {
+          "active_tags": [],
+          "note": "Open ETH deals are untagged; phase attribution cannot be inferred.",
+          "status": "UNKNOWN"
+        },
+        "basis": {
+          "reason": "The replayed basis may be internally derivable, but custody defect prevents quoting position basis or PnL.",
+          "reliable": true
+        },
+        "custody": {
+          "reason": "Live balance and fill replay disagree; withdrawals and migration seeds do not explain the gap. Hard Rule 8 forbids a position figure.",
+          "status": "UNEXPLAINED"
+        },
+        "dry_powder": "10741.5780",
+        "futures": [],
+        "pnl": {
+          "reason": "No unrealized PnL or ROI is stated through UNEXPLAINED custody.",
+          "status": "DATA_LIMITED"
+        },
+        "quantity": null,
+        "reconciliation": "Event-driven snapshot is fresh, but ETH custody is UNEXPLAINED. The tool separately reports borrow-corroborated short evidence; exact quantity is deliberately refused until venue reconciliation.",
+        "status": "DATA_LIMITED"
+      },
+      "position_controls": {
+        "action": {
+          "rationale": "Verify the live venue liability. If any ETH short remains, cover 100% because every framework time stop is expired; exact quantity is unavailable.",
+          "status": "DATA_LIMITED",
+          "value": "VERIFY_AND_COVER"
+        },
+        "required": true,
+        "status": "DATA_LIMITED"
+      },
+      "regime": null,
+      "report_at_derivation": "derived by interpreting the filename's HHMM in America/New_York (the repo's Output Convention) — the machine block carries a date but no time field, and (asset, framework, date) collides (btc/eth × fallen_knives on 2026-07-14 and 2026-07-18), so report_file is the primary key",
+      "report_at_utc": "2026-08-20T20:40:00Z",
+      "report_date": "2026-08-20",
+      "report_file": "eth_flying_rocket_20260820_1640.md",
+      "report_local_time": "16:40",
+      "report_zone": "America/New_York",
+      "rubric": "FR-A/1",
+      "schema_epoch": "report_machine_2",
+      "score": {
+        "adjusted": "2",
+        "cap_applied": false,
+        "cap_value": null,
+        "discretionary": "0",
+        "discretionary_inferred": false,
+        "inference_basis": "declared in the machine block",
+        "legs": [
+          {
+            "block_key": "euphoria",
+            "max": 5,
+            "min": 0,
+            "ordinal": 1,
+            "rubric_name": "euphoria",
+            "value": "0"
+          },
+          {
+            "block_key": "momentum",
+            "max": 4,
+            "min": 0,
+            "ordinal": 2,
+            "rubric_name": "momentum",
+            "value": "0"
+          },
+          {
+            "block_key": "valuation",
+            "max": 5,
+            "min": 0,
+            "ordinal": 3,
+            "rubric_name": "valuation",
+            "value": "0"
+          },
+          {
+            "block_key": "distribution",
+            "max": 3,
+            "min": 0,
+            "ordinal": 4,
+            "rubric_name": "distribution",
+            "value": "1"
+          },
+          {
+            "block_key": "vulnerability",
+            "max": 3,
+            "min": 0,
+            "ordinal": 5,
+            "rubric_name": "vulnerability",
+            "value": "1"
+          }
+        ],
+        "mechanical": "2",
+        "mechanical_inferred": false,
+        "penalty": "0",
+        "raw": "2",
+        "rounding": "half-down"
+      },
+      "source_schema": "report-machine/2",
+      "spot_source": "snapshot",
+      "spot_usd": "2327.625",
+      "stops": null,
+      "tagging": {
+        "active_tags": [],
+        "channel": "none",
+        "framework": "flying_rocket",
+        "instrument_class": "crypto",
+        "mode": "phase_registry",
+        "registry": {
+          "asset": "ETH",
+          "channel": "none",
+          "entries": [
+            {
+              "asset": "ETH",
+              "canonical_tag": "FR-A-1A-ETH-20260820-1640",
+              "decision": "STAND_DOWN",
+              "instrument_class": "crypto",
+              "phase": "1A",
+              "report_date": "2026-08-20",
+              "report_file": "eth_flying_rocket_20260820_1640.md",
+              "report_local_time": "16:40",
+              "report_version": "report-machine/2"
+            },
+            {
+              "asset": "ETH",
+              "canonical_tag": "FR-A-1B-ETH-20260820-1640",
+              "decision": "STAND_DOWN",
+              "instrument_class": "crypto",
+              "phase": "1B",
+              "report_date": "2026-08-20",
+              "report_file": "eth_flying_rocket_20260820_1640.md",
+              "report_local_time": "16:40",
+              "report_version": "report-machine/2"
+            },
+            {
+              "asset": "ETH",
+              "canonical_tag": "FR-A-2-ETH-20260820-1640",
+              "decision": "STAND_DOWN",
+              "instrument_class": "crypto",
+              "phase": "2",
+              "report_date": "2026-08-20",
+              "report_file": "eth_flying_rocket_20260820_1640.md",
+              "report_local_time": "16:40",
+              "report_version": "report-machine/2"
+            },
+            {
+              "asset": "ETH",
+              "canonical_tag": "FR-A-3-ETH-20260820-1640",
+              "decision": "STAND_DOWN",
+              "instrument_class": "crypto",
+              "phase": "3",
+              "report_date": "2026-08-20",
+              "report_file": "eth_flying_rocket_20260820_1640.md",
+              "report_local_time": "16:40",
+              "report_version": "report-machine/2"
+            }
+          ],
+          "framework": "flying_rocket",
+          "instrument_class": "crypto",
+          "report_date": "2026-08-20",
+          "report_file": "eth_flying_rocket_20260820_1640.md",
+          "report_local_time": "16:40",
+          "report_version": "report-machine/2",
+          "report_zone": "America/New_York",
+          "schema": "report-phase-registry/1",
+          "version": "1"
+        },
+        "report_asset": "ETH",
+        "report_date": "2026-08-20",
+        "report_file": "eth_flying_rocket_20260820_1640.md",
+        "report_local_time": "16:40",
+        "report_version": "report-machine/2",
+        "reserved_tags": [
+          "FR-A-1A-ETH-20260820-1640",
+          "FR-A-1B-ETH-20260820-1640",
+          "FR-A-2-ETH-20260820-1640",
+          "FR-A-3-ETH-20260820-1640"
+        ],
+        "status": "REGISTERED"
+      },
+      "tagging_v2": {
+        "active_tags": [],
+        "entries": [
+          {
+            "canonical_tag": "FR-A-1A-ETH-20260820-1640",
+            "decision": "STAND_DOWN",
+            "instrument_class": "crypto",
+            "phase": "1A"
+          },
+          {
+            "canonical_tag": "FR-A-1B-ETH-20260820-1640",
+            "decision": "STAND_DOWN",
+            "instrument_class": "crypto",
+            "phase": "1B"
+          },
+          {
+            "canonical_tag": "FR-A-2-ETH-20260820-1640",
+            "decision": "STAND_DOWN",
+            "instrument_class": "crypto",
+            "phase": "2"
+          },
+          {
+            "canonical_tag": "FR-A-3-ETH-20260820-1640",
+            "decision": "STAND_DOWN",
+            "instrument_class": "crypto",
+            "phase": "3"
+          }
+        ],
+        "instrument_class": "crypto",
+        "reserved_tags": [
+          "FR-A-1A-ETH-20260820-1640",
+          "FR-A-1B-ETH-20260820-1640",
+          "FR-A-2-ETH-20260820-1640",
+          "FR-A-3-ETH-20260820-1640"
+        ],
+        "schema": "report-phase-registry/2",
+        "status": "REGISTERED"
+      },
+      "unlock": {
+        "highest_phase_unlocked_by_score": null,
+        "ladder": "FR-A",
+        "p1a": 11,
+        "p1b": 13,
+        "p2": 15,
+        "p3": 19,
+        "p3_note": "Phase 3 reads the MECHANICAL score — no analyst channel reaches it"
+      },
+      "verdict": "No ETH short channel: adjusted 2/20, 0/8 gates, and +1.67% gate EV. Ledger custody is defective; verify the venue and cover any remaining ETH short immediately.",
+      "view_file": "eth_flying_rocket_20260820_1640.md"
     },
     {
       "asset": "SP500",
