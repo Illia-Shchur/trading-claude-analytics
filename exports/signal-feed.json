@@ -1,15 +1,15 @@
 {
   "counts": {
-    "files_in_reports_dir": 145,
-    "framework_reports": 137,
+    "files_in_reports_dir": 146,
+    "framework_reports": 138,
     "mismatched_v2_pairs": 0,
     "non_framework_files_ignored": 8,
     "orphaned_v2": 0,
-    "signals": 71,
+    "signals": 72,
     "skipped_no_machine_block": 66,
     "skipped_post_epoch_missing_block": 0,
     "skipped_unparseable": 0,
-    "v2_signals": 3
+    "v2_signals": 4
   },
   "encoding": "decimal quantities (prices, scores, percentages, EV) are JSON strings in plain decimal notation; counts, gate numbers, booleans and enums are native",
   "epochs": {
@@ -18,7 +18,7 @@
     "machine_block": "2026-07-11",
     "report_phase_registry": "report-phase-registry/1"
   },
-  "generated_at": "2026-08-19T16:28:00Z",
+  "generated_at": "2026-08-20T20:52:40Z",
   "generated_by": "tools/export-signals.mjs",
   "ignored_files": [
     {
@@ -20491,6 +20491,598 @@
       },
       "verdict": "No ETH short: no channel is live, Channel-A record score is 0/20 with 0/8 gates, and gate EV is -0.08%.",
       "view_file": "eth_flying_rocket_20260819_1223.md"
+    },
+    {
+      "asset": "SP500",
+      "canonical_file": "sp500_flying_rocket_20260820_1640.json",
+      "canonical_sha256": "60a1c7795dcc1fd2b8e74422765bd03b7884cad70fe7dcbc13f12a7e98c6534a",
+      "channel": "A",
+      "channel_inference_basis": "declared in the machine block",
+      "channel_inferred": false,
+      "content_sha256": "60a1c7795dcc1fd2b8e74422765bd03b7884cad70fe7dcbc13f12a7e98c6534a",
+      "deployment": {
+        "deployed_pct": "0",
+        "dry_pct": "50",
+        "filled_detection": "deployed === true || typeof entry_price === \"number\" || typeof entry === \"number\"",
+        "filled_detection_caveat": "before the entry_price epoch (2026-07-29) no tranche in this corpus carried deployed:true or a numeric entry — 152/152 tranches across 39 reports encode `entry` as prose — so filled_tranche_count is structurally 0 on every pre-epoch signal. It is an artifact of the old schema, not an observation that nothing was filled.",
+        "filled_tranche_count": 0,
+        "throttle_released": false,
+        "tranche_count": 4,
+        "tranches": [
+          {
+            "channel": "A",
+            "channel_regime": null,
+            "deployed": false,
+            "discretionary": false,
+            "entry": null,
+            "entry_price": null,
+            "filled": false,
+            "pct": "5",
+            "phase": "1A",
+            "prior_stop": null,
+            "prior_time_stop": null,
+            "stop": null,
+            "time_stop": null
+          },
+          {
+            "channel": "A",
+            "channel_regime": null,
+            "deployed": false,
+            "discretionary": false,
+            "entry": null,
+            "entry_price": null,
+            "filled": false,
+            "pct": "10",
+            "phase": "1B",
+            "prior_stop": null,
+            "prior_time_stop": null,
+            "stop": null,
+            "time_stop": null
+          },
+          {
+            "channel": "A",
+            "channel_regime": null,
+            "deployed": false,
+            "discretionary": false,
+            "entry": null,
+            "entry_price": null,
+            "filled": false,
+            "pct": "15",
+            "phase": "2",
+            "prior_stop": null,
+            "prior_time_stop": null,
+            "stop": null,
+            "time_stop": null
+          },
+          {
+            "channel": "A",
+            "channel_regime": null,
+            "deployed": false,
+            "discretionary": false,
+            "entry": null,
+            "entry_price": null,
+            "filled": false,
+            "pct": "20",
+            "phase": "3",
+            "prior_stop": null,
+            "prior_time_stop": null,
+            "stop": null,
+            "time_stop": null
+          }
+        ]
+      },
+      "ev": {
+        "scenarios": [
+          {
+            "high": "8000",
+            "low": "7641",
+            "mid": "7820.5",
+            "name": "Rally resumes",
+            "p": "35"
+          },
+          {
+            "high": "7817",
+            "low": "7475",
+            "mid": "7646",
+            "name": "Range / digest",
+            "p": "35"
+          },
+          {
+            "high": "7533",
+            "low": "7200",
+            "mid": "7366.5",
+            "name": "Mean reversion",
+            "p": "22"
+          },
+          {
+            "high": "7092",
+            "low": "6800",
+            "mid": "6946",
+            "name": "Bear reversal",
+            "p": "8"
+          }
+        ],
+        "stated_ev_usd": "7589.59",
+        "vs_spot_pct": "-0.67"
+      },
+      "evidence": {
+        "derivatives": {
+          "as_of": "2026-08-20T20:39:09Z",
+          "confidence": "HIGH",
+          "rationale": "SPYUSDT mark 763.56; funding 0. Venue order state is only known from the Aug-15 ledger.",
+          "source_ids": [
+            "binance",
+            "ledger"
+          ],
+          "status": "AVAILABLE",
+          "unit": "SPYUSDT",
+          "value": "763.56"
+        },
+        "etf_flows": {
+          "as_of": "2026-08-12",
+          "confidence": "HIGH",
+          "rationale": "A full five-session equity-fund week turned to $4.41B outflows from $9.19B inflows.",
+          "source_ids": [
+            "ici"
+          ],
+          "status": "AVAILABLE",
+          "unit": "USD billions",
+          "value": "-4.406"
+        },
+        "funding": {
+          "as_of": "2026-08-20T20:39:09Z",
+          "confidence": "HIGH",
+          "rationale": "SPYUSDT current funding is 0; the cash-index funding protection remains structurally uncalibrated.",
+          "source_ids": [
+            "binance"
+          ],
+          "status": "AVAILABLE",
+          "unit": "per interval",
+          "value": "0"
+        },
+        "macro": {
+          "as_of": "2026-08-20",
+          "confidence": "HIGH",
+          "rationale": "VIX 16.01 (+9.43%/5d), US10y 4.70%, DXY 98.89, Brent 93.51; oil/yields are short-supportive but breadth remains broad.",
+          "source_ids": [
+            "snapshot",
+            "ap"
+          ],
+          "status": "AVAILABLE",
+          "unit": null,
+          "value": "risk-off impulse"
+        },
+        "momentum": {
+          "as_of": "2026-08-20",
+          "confidence": "HIGH",
+          "rationale": "Weekly RSI 68.14 remains below the >70 gate; daily RSI cooled to 51.17.",
+          "source_ids": [
+            "snapshot"
+          ],
+          "status": "AVAILABLE",
+          "unit": "weekly RSI-14",
+          "value": "68.14"
+        },
+        "onchain": {
+          "as_of": null,
+          "confidence": "LOW",
+          "rationale": "Not applicable to the equity index; annex substitutions govern.",
+          "source_ids": [],
+          "status": "NOT_APPLICABLE",
+          "unit": null,
+          "value": null
+        },
+        "regime": {
+          "as_of": "2026-08-20",
+          "confidence": "HIGH",
+          "rationale": "2.25% below high, above rising 50/200dma; Channel A uncapped.",
+          "source_ids": [
+            "snapshot"
+          ],
+          "status": "AVAILABLE",
+          "unit": null,
+          "value": "Channel A"
+        },
+        "sentiment": {
+          "as_of": "2026-08-20",
+          "confidence": "HIGH",
+          "rationale": "Equity F&G three-day average cooled to 54.0.",
+          "source_ids": [
+            "feargreed"
+          ],
+          "status": "AVAILABLE",
+          "unit": "three-day average",
+          "value": "54.00"
+        },
+        "spot": {
+          "as_of": "2026-08-20 close",
+          "confidence": "MEDIUM",
+          "rationale": "Cash close is frozen; ES and live SPYUSDT corroborate within instrument-basis limits.",
+          "source_ids": [
+            "snapshot",
+            "binance"
+          ],
+          "status": "AVAILABLE",
+          "unit": "SPX points",
+          "value": "7641.16"
+        }
+      },
+      "framework": "flying_rocket",
+      "gates": {
+        "active": 6,
+        "na": [
+          4,
+          6,
+          9
+        ],
+        "passed": [
+          3,
+          5
+        ],
+        "passed_count": 2,
+        "passed_mask": 20
+      },
+      "position": {
+        "asset": "SP500",
+        "attribution": {
+          "active_tags": [
+            "FR-A-1A-SP500-20260812-1542"
+          ],
+          "note": "Manual entry attached against the 2026-08-12 stand-down report; attribution is real but not authorization.",
+          "status": "HUMAN_ATTRIBUTED"
+        },
+        "basis": {
+          "avg_cost": "772.88",
+          "reason": "Human-attributed futures sequence; entry VWAP and fills reconcile.",
+          "reliable": true,
+          "total_cost": "10982.62"
+        },
+        "custody": {
+          "reason": "Futures current-sequence fills reconstruct exactly -14.21 SPYUSDT.",
+          "status": "RECONCILED"
+        },
+        "dry_powder": "10741.5780",
+        "futures": [
+          {
+            "alignment": "AGAINST_REPORT",
+            "attribution": "FR-A-1A-SP500-20260812-1542",
+            "entry_price": "772.88",
+            "leverage": "3",
+            "liquidation_price": "1005.75955825",
+            "live_mark": "763.56",
+            "margin_type": "CROSS",
+            "quantity": "14.21",
+            "side": "SHORT",
+            "symbol": "SPYUSDT",
+            "venue_stop_as_of_snapshot": "810.20",
+            "venue_take_profit_as_of_snapshot": "600.00"
+          }
+        ],
+        "pnl": {
+          "note": "At live Binance mark 763.56, before closing fees; opening commission was $4.3930.",
+          "status": "AVAILABLE",
+          "unrealized": "132.44"
+        },
+        "quantity": "-14.21",
+        "reconciliation": "Event-driven snapshot is FRESH. The open derivative is fully sequence-reconciled and human-attributed; the dedicated short-book denominator is still not exported, so cap enforcement is impaired and no add is permitted.",
+        "status": "FRESH"
+      },
+      "position_controls": {
+        "action": {
+          "rationale": "The manual short was opened AGAINST_REPORT; current score 9, effective gates 2/6 and +0.67% gate EV all fail entry requirements.",
+          "status": "AVAILABLE",
+          "value": "COVER_NOW"
+        },
+        "candidate": {
+          "candidates": [
+            {
+              "level": "810.20",
+              "reason": "Live venue stop is wider than every researched ratcheted control.",
+              "verdict": "VETO"
+            },
+            {
+              "level": "785.50",
+              "reason": "Prior best control; S6 now permits and the tape supports a tighter stop.",
+              "verdict": "VALID_BUT_STALE"
+            },
+            {
+              "level": "773.50",
+              "reason": "Above the Aug-19 contract high 772.97 and about 1.85 current ADRs above mark.",
+              "verdict": "BEST_AVAILABLE_FALLBACK"
+            },
+            {
+              "level": "763.56",
+              "reason": "Cover now at the live executable mark.",
+              "verdict": "PRIMARY"
+            }
+          ],
+          "current_mark": "763.56",
+          "entry_price": "772.88",
+          "side": "SHORT"
+        },
+        "execution_audit": {
+          "action_required": "Verify venue orders, then cover the full 14.21. If retained outside framework, replace 810.20 with reduce-only 773.50.",
+          "current_order_state_as_of": "2026-08-15T09:29:58Z",
+          "live_mark_as_of": "2026-08-20T20:39:09Z",
+          "orders_changed": false
+        },
+        "ladder": {
+          "entry_price": "772.88",
+          "fallback_if_retained": [
+            {
+              "price": "760.00",
+              "quantity": "7.11",
+              "share_pct": "50"
+            },
+            {
+              "price": "753.30",
+              "quantity": "3.55",
+              "share_pct": "25"
+            },
+            {
+              "price": "744.00",
+              "quantity": "3.55",
+              "share_pct": "25"
+            }
+          ],
+          "target_quantity": "14.21",
+          "targets": [
+            {
+              "expected_pnl_before_close_fees": "132.44",
+              "price": "763.56",
+              "quantity": "14.21",
+              "reward_risk": "immediate exit",
+              "share_pct": "100"
+            }
+          ]
+        },
+        "liquidation_zone": {
+          "note": "Liquidation remains well beyond both venue and selected stops, but cross-margin collateral can move it.",
+          "price": "1005.75955825",
+          "status": "AVAILABLE_AS_OF_SNAPSHOT"
+        },
+        "pnl": {
+          "current_notional": "10850.19",
+          "entry_notional": "10982.62",
+          "funding_since_open_as_of_snapshot": "0",
+          "opening_commission": "4.3930",
+          "unrealized_before_close_fees": "132.44"
+        },
+        "ratchet": {
+          "direction": "DOWN_TOWARD_PRICE",
+          "pass": true,
+          "prior_report_stop": "785.50",
+          "selected_stop": "773.50",
+          "trigger": "Contract closed below 769 and remained below the Aug-19 swing high."
+        },
+        "required": true,
+        "risk": {
+          "asset_pct": null,
+          "book_pct": null,
+          "note": "Dedicated short-book denominator is unavailable; observable notional is about 53.8% of stale total portfolio value, so no add is allowed."
+        },
+        "selection": {
+          "certainty": "best-available-not-absolute",
+          "fallback_stop": "773.50",
+          "note": "No level is absolutely best; 773.50 is the best available retained-position control under current evidence.",
+          "primary": "COVER_NOW"
+        },
+        "status": "OPEN",
+        "venue_order": {
+          "as_of": "2026-08-15T09:29:58Z",
+          "current_stop": "810.20",
+          "current_take_profit": "600.00",
+          "price_protect": true,
+          "quantity": "14.21",
+          "reduce_only": true,
+          "status": "STALE_ORDER_STATE_NEEDS_VERIFICATION",
+          "trigger_type": "CONTRACT_PRICE"
+        },
+        "veto": {
+          "active": true,
+          "reasons": [
+            "Entry was against report",
+            "Adjusted score below 11",
+            "Effective gates below 3",
+            "Gate EV below +3%"
+          ]
+        }
+      },
+      "regime": null,
+      "report_at_derivation": "derived by interpreting the filename's HHMM in America/New_York (the repo's Output Convention) — the machine block carries a date but no time field, and (asset, framework, date) collides (btc/eth × fallen_knives on 2026-07-14 and 2026-07-18), so report_file is the primary key",
+      "report_at_utc": "2026-08-20T20:40:00Z",
+      "report_date": "2026-08-20",
+      "report_file": "sp500_flying_rocket_20260820_1640.md",
+      "report_local_time": "16:40",
+      "report_zone": "America/New_York",
+      "rubric": "FR-A/1",
+      "schema_epoch": "report_machine_2",
+      "score": {
+        "adjusted": "9",
+        "cap_applied": false,
+        "cap_value": null,
+        "discretionary": "0",
+        "discretionary_inferred": false,
+        "inference_basis": "declared in the machine block",
+        "legs": [
+          {
+            "block_key": "euphoria",
+            "max": 5,
+            "min": 0,
+            "ordinal": 1,
+            "rubric_name": "euphoria",
+            "value": "1"
+          },
+          {
+            "block_key": "momentum",
+            "max": 4,
+            "min": 0,
+            "ordinal": 2,
+            "rubric_name": "momentum",
+            "value": "2"
+          },
+          {
+            "block_key": "valuation",
+            "max": 5,
+            "min": 0,
+            "ordinal": 3,
+            "rubric_name": "valuation",
+            "value": "5"
+          },
+          {
+            "block_key": "distribution",
+            "max": 3,
+            "min": 0,
+            "ordinal": 4,
+            "rubric_name": "distribution",
+            "value": "1"
+          },
+          {
+            "block_key": "vulnerability",
+            "max": 3,
+            "min": 0,
+            "ordinal": 5,
+            "rubric_name": "vulnerability",
+            "value": "0"
+          }
+        ],
+        "mechanical": "9",
+        "mechanical_inferred": false,
+        "penalty": "0",
+        "raw": "9",
+        "rounding": "half-down"
+      },
+      "source_schema": "report-machine/2",
+      "spot_source": "snapshot",
+      "spot_usd": "7641.16",
+      "stops": null,
+      "tagging": {
+        "active_tags": [],
+        "channel": "A",
+        "framework": "flying_rocket",
+        "instrument_class": "non_crypto_derivative",
+        "mode": "phase_registry",
+        "registry": {
+          "asset": "SP500",
+          "channel": "A",
+          "entries": [
+            {
+              "asset": "SP500",
+              "canonical_tag": "FR-A-1A-SP500-20260820-1640",
+              "decision": "STAND_DOWN",
+              "instrument_class": "non_crypto_derivative",
+              "phase": "1A",
+              "report_date": "2026-08-20",
+              "report_file": "sp500_flying_rocket_20260820_1640.md",
+              "report_local_time": "16:40",
+              "report_version": "report-machine/2"
+            },
+            {
+              "asset": "SP500",
+              "canonical_tag": "FR-A-1B-SP500-20260820-1640",
+              "decision": "STAND_DOWN",
+              "instrument_class": "non_crypto_derivative",
+              "phase": "1B",
+              "report_date": "2026-08-20",
+              "report_file": "sp500_flying_rocket_20260820_1640.md",
+              "report_local_time": "16:40",
+              "report_version": "report-machine/2"
+            },
+            {
+              "asset": "SP500",
+              "canonical_tag": "FR-A-2-SP500-20260820-1640",
+              "decision": "STAND_DOWN",
+              "instrument_class": "non_crypto_derivative",
+              "phase": "2",
+              "report_date": "2026-08-20",
+              "report_file": "sp500_flying_rocket_20260820_1640.md",
+              "report_local_time": "16:40",
+              "report_version": "report-machine/2"
+            },
+            {
+              "asset": "SP500",
+              "canonical_tag": "FR-A-3-SP500-20260820-1640",
+              "decision": "STAND_DOWN",
+              "instrument_class": "non_crypto_derivative",
+              "phase": "3",
+              "report_date": "2026-08-20",
+              "report_file": "sp500_flying_rocket_20260820_1640.md",
+              "report_local_time": "16:40",
+              "report_version": "report-machine/2"
+            }
+          ],
+          "framework": "flying_rocket",
+          "instrument_class": "non_crypto_derivative",
+          "report_date": "2026-08-20",
+          "report_file": "sp500_flying_rocket_20260820_1640.md",
+          "report_local_time": "16:40",
+          "report_version": "report-machine/2",
+          "report_zone": "America/New_York",
+          "schema": "report-phase-registry/1",
+          "version": "1"
+        },
+        "report_asset": "SP500",
+        "report_date": "2026-08-20",
+        "report_file": "sp500_flying_rocket_20260820_1640.md",
+        "report_local_time": "16:40",
+        "report_version": "report-machine/2",
+        "reserved_tags": [
+          "FR-A-1A-SP500-20260820-1640",
+          "FR-A-1B-SP500-20260820-1640",
+          "FR-A-2-SP500-20260820-1640",
+          "FR-A-3-SP500-20260820-1640"
+        ],
+        "status": "REGISTERED"
+      },
+      "tagging_v2": {
+        "active_tags": [],
+        "entries": [
+          {
+            "canonical_tag": "FR-A-1A-SP500-20260820-1640",
+            "decision": "STAND_DOWN",
+            "instrument_class": "non_crypto_derivative",
+            "phase": "1A"
+          },
+          {
+            "canonical_tag": "FR-A-1B-SP500-20260820-1640",
+            "decision": "STAND_DOWN",
+            "instrument_class": "non_crypto_derivative",
+            "phase": "1B"
+          },
+          {
+            "canonical_tag": "FR-A-2-SP500-20260820-1640",
+            "decision": "STAND_DOWN",
+            "instrument_class": "non_crypto_derivative",
+            "phase": "2"
+          },
+          {
+            "canonical_tag": "FR-A-3-SP500-20260820-1640",
+            "decision": "STAND_DOWN",
+            "instrument_class": "non_crypto_derivative",
+            "phase": "3"
+          }
+        ],
+        "instrument_class": "non_crypto_derivative",
+        "reserved_tags": [
+          "FR-A-1A-SP500-20260820-1640",
+          "FR-A-1B-SP500-20260820-1640",
+          "FR-A-2-SP500-20260820-1640",
+          "FR-A-3-SP500-20260820-1640"
+        ],
+        "schema": "report-phase-registry/2",
+        "status": "REGISTERED"
+      },
+      "unlock": {
+        "highest_phase_unlocked_by_score": null,
+        "ladder": "FR-A",
+        "p1a": 11,
+        "p1b": 13,
+        "p2": 15,
+        "p3": 19,
+        "p3_note": "Phase 3 reads the MECHANICAL score — no analyst channel reaches it"
+      },
+      "verdict": "SP500 adapted Channel A: score 9/20, effective gates 2/6, gate EV +0.67%. Cover the existing 14.21 SPYUSDT short; do not add.",
+      "view_file": "sp500_flying_rocket_20260820_1640.md"
     }
   ],
   "skipped": [
