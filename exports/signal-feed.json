@@ -1,15 +1,15 @@
 {
   "counts": {
-    "files_in_reports_dir": 151,
-    "framework_reports": 143,
+    "files_in_reports_dir": 152,
+    "framework_reports": 144,
     "mismatched_v2_pairs": 0,
     "non_framework_files_ignored": 8,
     "orphaned_v2": 0,
-    "signals": 77,
+    "signals": 78,
     "skipped_no_machine_block": 66,
     "skipped_post_epoch_missing_block": 0,
     "skipped_unparseable": 0,
-    "v2_signals": 9
+    "v2_signals": 10
   },
   "encoding": "decimal quantities (prices, scores, percentages, EV) are JSON strings in plain decimal notation; counts, gate numbers, booleans and enums are native",
   "epochs": {
@@ -18,7 +18,7 @@
     "machine_block": "2026-07-11",
     "report_phase_registry": "report-phase-registry/1"
   },
-  "generated_at": "2026-08-22T07:53:02Z",
+  "generated_at": "2026-08-22T07:53:34Z",
   "generated_by": "tools/export-signals.mjs",
   "ignored_files": [
     {
@@ -23375,6 +23375,471 @@
       },
       "verdict": "BTC is not an accumulation entry: adjusted 6/20, gates 3/9, and every phase remains locked. Do not add; reconcile the ledger and let leverage cool.",
       "view_file": "btc_fallen_knives_20260822_0346.md"
+    },
+    {
+      "asset": "ETH",
+      "canonical_file": "eth_fallen_knives_20260822_0346.json",
+      "canonical_sha256": "1355c1919759877d897b25213dcbf607a36db331eb7f9644ae86c6040b55b8cc",
+      "channel": null,
+      "channel_inference_basis": "Fallen Knives has no channel dimension",
+      "channel_inferred": false,
+      "content_sha256": "1355c1919759877d897b25213dcbf607a36db331eb7f9644ae86c6040b55b8cc",
+      "deployment": {
+        "deployed_pct": "0",
+        "dry_pct": "100",
+        "filled_detection": "deployed === true || typeof entry_price === \"number\" || typeof entry === \"number\"",
+        "filled_detection_caveat": "before the entry_price epoch (2026-07-29) no tranche in this corpus carried deployed:true or a numeric entry — 152/152 tranches across 39 reports encode `entry` as prose — so filled_tranche_count is structurally 0 on every pre-epoch signal. It is an artifact of the old schema, not an observation that nothing was filled.",
+        "filled_tranche_count": 0,
+        "throttle_released": false,
+        "tranche_count": 4,
+        "tranches": [
+          {
+            "channel": null,
+            "channel_regime": null,
+            "deployed": false,
+            "discretionary": false,
+            "entry": null,
+            "entry_price": null,
+            "filled": false,
+            "pct": "10",
+            "phase": "1A",
+            "prior_stop": null,
+            "prior_time_stop": null,
+            "stop": null,
+            "time_stop": null
+          },
+          {
+            "channel": null,
+            "channel_regime": null,
+            "deployed": false,
+            "discretionary": false,
+            "entry": null,
+            "entry_price": null,
+            "filled": false,
+            "pct": "15",
+            "phase": "1B",
+            "prior_stop": null,
+            "prior_time_stop": null,
+            "stop": null,
+            "time_stop": null
+          },
+          {
+            "channel": null,
+            "channel_regime": null,
+            "deployed": false,
+            "discretionary": false,
+            "entry": null,
+            "entry_price": null,
+            "filled": false,
+            "pct": "30",
+            "phase": "2",
+            "prior_stop": null,
+            "prior_time_stop": null,
+            "stop": null,
+            "time_stop": null
+          },
+          {
+            "channel": null,
+            "channel_regime": null,
+            "deployed": false,
+            "discretionary": false,
+            "entry": null,
+            "entry_price": null,
+            "filled": false,
+            "pct": "45",
+            "phase": "3",
+            "prior_stop": null,
+            "prior_time_stop": null,
+            "stop": null,
+            "time_stop": null
+          }
+        ]
+      },
+      "ev": {
+        "scenarios": [
+          {
+            "high": "3000",
+            "low": "2700",
+            "mid": "2850",
+            "name": "Rally",
+            "p": "28.999999999999996"
+          },
+          {
+            "high": "2700",
+            "low": "2250",
+            "mid": "2475",
+            "name": "Range",
+            "p": "36"
+          },
+          {
+            "high": "2250",
+            "low": "2000",
+            "mid": "2125",
+            "name": "Retest",
+            "p": "25"
+          },
+          {
+            "high": "2000",
+            "low": "1700",
+            "mid": "1850",
+            "name": "Bear",
+            "p": "10"
+          }
+        ],
+        "stated_ev_usd": "2433.75",
+        "vs_spot_pct": "-0.19"
+      },
+      "evidence": {
+        "correlation": {
+          "as_of": "2026-08-21",
+          "confidence": "MEDIUM",
+          "rationale": "29 paired daily log returns; surcharge off and the Phase-2 correlation condition passes.",
+          "source_ids": [
+            "correlation"
+          ],
+          "status": "AVAILABLE",
+          "unit": "Pearson correlation",
+          "value": "0.132117"
+        },
+        "etf_flows": {
+          "as_of": "2026-08-21",
+          "confidence": "HIGH",
+          "rationale": "Latest day +184.0M, five consecutive positive sessions and +692.6M for Aug 17-21; monthly flow is positive, so gate 4 is off.",
+          "source_ids": [
+            "farside",
+            "sosovalue"
+          ],
+          "status": "AVAILABLE",
+          "unit": "USD millions trailing month",
+          "value": "971.6"
+        },
+        "holder": {
+          "as_of": "2026-08-21",
+          "confidence": "MEDIUM",
+          "rationale": "Reserves declined, earning one of two holder tests and a 1.5 leg; true LTH data is provider-gated, so gate 8 receives no credit.",
+          "source_ids": [
+            "snapshot"
+          ],
+          "status": "AVAILABLE",
+          "unit": "percent exchange-reserve change 30d",
+          "value": "-1.263"
+        },
+        "liquidations": {
+          "as_of": "2026-08-21",
+          "confidence": "MEDIUM",
+          "rationale": "CoinGlass-cited ETH losses during a historic market-wide short squeeze; counted as top-decile intensity, not as long-side capitulation direction.",
+          "source_ids": [
+            "liquidations"
+          ],
+          "status": "AVAILABLE",
+          "unit": "USD ETH liquidations / 24h",
+          "value": "206880000"
+        },
+        "macro": {
+          "as_of": "2026-08-21",
+          "confidence": "MEDIUM",
+          "rationale": "Real yield eased 4bp and DXY fell 0.87%; regulatory catalysts support gate 9, while Brent +6.63% and equities lower keep confidence moderate.",
+          "source_ids": [
+            "snapshot",
+            "cftc"
+          ],
+          "status": "AVAILABLE",
+          "unit": null,
+          "value": "neutral-positive with oil risk"
+        },
+        "sentiment": {
+          "as_of": "2026-08-22",
+          "confidence": "HIGH",
+          "rationale": "Alternative.me prints 62, 72 and 71; >50 scores zero and the <=15 streak is zero.",
+          "source_ids": [
+            "snapshot"
+          ],
+          "status": "AVAILABLE",
+          "unit": "Fear & Greed 3-day average",
+          "value": "68.33"
+        },
+        "spot": {
+          "as_of": "2026-08-22T07:38:48Z",
+          "confidence": "HIGH",
+          "rationale": "Median of synchronized CoinGecko, Binance, Coinbase and Kraken quotes; panel spread 0.034%.",
+          "source_ids": [
+            "snapshot"
+          ],
+          "status": "AVAILABLE",
+          "unit": "USD",
+          "value": "2438.39"
+        },
+        "valuation": {
+          "as_of": "2026-08-21",
+          "confidence": "MEDIUM",
+          "rationale": "Coin Metrics reconstruction; <=0.5 scores valuation 4 and <1 lights gate 3.",
+          "source_ids": [
+            "snapshot"
+          ],
+          "status": "AVAILABLE",
+          "unit": "MVRV-Z",
+          "value": "0.288"
+        },
+        "weekly_rsi": {
+          "as_of": "week starting 2026-08-10",
+          "confidence": "HIGH",
+          "rationale": "Completed weekly closes only; 41.92 scores momentum 1.",
+          "source_ids": [
+            "snapshot"
+          ],
+          "status": "AVAILABLE",
+          "unit": "Wilder RSI-14",
+          "value": "41.92"
+        }
+      },
+      "framework": "fallen_knives",
+      "gates": {
+        "active": 8,
+        "na": [
+          5
+        ],
+        "passed": [
+          3,
+          6,
+          7,
+          9
+        ],
+        "passed_count": 4,
+        "passed_mask": 356
+      },
+      "position": {
+        "asset": "ETH",
+        "attribution": {
+          "active_tags": [],
+          "note": "No confirmed ETH quantity can be mapped to an FK phase.",
+          "status": "UNKNOWN"
+        },
+        "basis": {
+          "avg_cost": null,
+          "reason": "Replay basis flag is reliable, but the custody defect prohibits quoting it as the basis of an exact held quantity.",
+          "reliable": true,
+          "total_cost": null
+        },
+        "custody": {
+          "reason": "Live balance and fill replay disagree; neither withdrawals nor a migration seed explains the gap.",
+          "status": "UNEXPLAINED"
+        },
+        "dry_powder": "10741.5780",
+        "futures": [],
+        "pnl": {
+          "realized": null,
+          "reason": "Unexplained custody mismatch prohibits a position-level PnL claim.",
+          "status": "DATA_LIMITED",
+          "unrealized": null
+        },
+        "quantity": null,
+        "reconciliation": "Prior report used an EXPIRED cold-start planning state. The newest ledger is now FRESH under event-driven validity, but ETH custody is UNEXPLAINED; no position figure in either direction is reported. The ledger wins over prior narration, while Rule 4 supplies only the 0%-deployed deployment plan.",
+        "status": "DATA_LIMITED"
+      },
+      "position_controls": {
+        "action": {
+          "rationale": "Custody mismatch blocks quantity, trim/exit, stop attachment and position-sized action. The report proceeds with a no-add market decision.",
+          "status": "DATA_LIMITED",
+          "value": "NO_POSITION_CLAIM"
+        },
+        "required": true,
+        "status": "DATA_LIMITED"
+      },
+      "regime": null,
+      "report_at_derivation": "derived by interpreting the filename's HHMM in America/New_York (the repo's Output Convention) — the machine block carries a date but no time field, and (asset, framework, date) collides (btc/eth × fallen_knives on 2026-07-14 and 2026-07-18), so report_file is the primary key",
+      "report_at_utc": "2026-08-22T07:46:00Z",
+      "report_date": "2026-08-22",
+      "report_file": "eth_fallen_knives_20260822_0346.md",
+      "report_local_time": "03:46",
+      "report_zone": "America/New_York",
+      "rubric": "FK/1",
+      "schema_epoch": "report_machine_2",
+      "score": {
+        "adjusted": "7",
+        "cap_applied": false,
+        "cap_value": null,
+        "discretionary": "-0.5",
+        "discretionary_inferred": false,
+        "inference_basis": "declared in the machine block",
+        "legs": [
+          {
+            "block_key": "sentiment",
+            "max": 5,
+            "min": 0,
+            "ordinal": 1,
+            "rubric_name": "sentiment",
+            "value": "0"
+          },
+          {
+            "block_key": "momentum",
+            "max": 4,
+            "min": 0,
+            "ordinal": 2,
+            "rubric_name": "momentum",
+            "value": "1"
+          },
+          {
+            "block_key": "valuation",
+            "max": 5,
+            "min": -2,
+            "ordinal": 3,
+            "rubric_name": "valuation",
+            "value": "4"
+          },
+          {
+            "block_key": "capitulation",
+            "max": 3,
+            "min": 0,
+            "ordinal": 4,
+            "rubric_name": "capitulation",
+            "value": "1"
+          },
+          {
+            "block_key": "holder",
+            "max": 3,
+            "min": 0,
+            "ordinal": 5,
+            "rubric_name": "holder_behavior",
+            "value": "1.5"
+          }
+        ],
+        "mechanical": "7",
+        "mechanical_inferred": false,
+        "penalty": "0",
+        "raw": "7",
+        "rounding": "half-down"
+      },
+      "source_schema": "report-machine/2",
+      "spot_source": "snapshot",
+      "spot_usd": "2438.39",
+      "stops": null,
+      "tagging": {
+        "active_tags": [],
+        "channel": null,
+        "framework": "fallen_knives",
+        "instrument_class": "crypto",
+        "mode": "phase_registry",
+        "registry": {
+          "asset": "ETH",
+          "channel": null,
+          "entries": [
+            {
+              "asset": "ETH",
+              "canonical_tag": "FK-P1A-ETH-20260822-0346",
+              "decision": "LOCKED",
+              "instrument_class": "crypto",
+              "phase": "1A",
+              "report_date": "2026-08-22",
+              "report_file": "eth_fallen_knives_20260822_0346.md",
+              "report_local_time": "03:46",
+              "report_version": "report-machine/2"
+            },
+            {
+              "asset": "ETH",
+              "canonical_tag": "FK-P1B-ETH-20260822-0346",
+              "decision": "LOCKED",
+              "instrument_class": "crypto",
+              "phase": "1B",
+              "report_date": "2026-08-22",
+              "report_file": "eth_fallen_knives_20260822_0346.md",
+              "report_local_time": "03:46",
+              "report_version": "report-machine/2"
+            },
+            {
+              "asset": "ETH",
+              "canonical_tag": "FK-P2-ETH-20260822-0346",
+              "decision": "LOCKED",
+              "instrument_class": "crypto",
+              "phase": "2",
+              "report_date": "2026-08-22",
+              "report_file": "eth_fallen_knives_20260822_0346.md",
+              "report_local_time": "03:46",
+              "report_version": "report-machine/2"
+            },
+            {
+              "asset": "ETH",
+              "canonical_tag": "FK-P3-ETH-20260822-0346",
+              "decision": "LOCKED",
+              "instrument_class": "crypto",
+              "phase": "3",
+              "report_date": "2026-08-22",
+              "report_file": "eth_fallen_knives_20260822_0346.md",
+              "report_local_time": "03:46",
+              "report_version": "report-machine/2"
+            }
+          ],
+          "framework": "fallen_knives",
+          "instrument_class": "crypto",
+          "report_date": "2026-08-22",
+          "report_file": "eth_fallen_knives_20260822_0346.md",
+          "report_local_time": "03:46",
+          "report_version": "report-machine/2",
+          "report_zone": "America/New_York",
+          "schema": "report-phase-registry/1",
+          "version": "1"
+        },
+        "report_asset": "ETH",
+        "report_date": "2026-08-22",
+        "report_file": "eth_fallen_knives_20260822_0346.md",
+        "report_local_time": "03:46",
+        "report_version": "report-machine/2",
+        "reserved_tags": [
+          "FK-P1A-ETH-20260822-0346",
+          "FK-P1B-ETH-20260822-0346",
+          "FK-P2-ETH-20260822-0346",
+          "FK-P3-ETH-20260822-0346"
+        ],
+        "status": "REGISTERED"
+      },
+      "tagging_v2": {
+        "active_tags": [],
+        "entries": [
+          {
+            "canonical_tag": "FK-P1A-ETH-20260822-0346",
+            "decision": "LOCKED",
+            "instrument_class": "crypto",
+            "phase": "1A"
+          },
+          {
+            "canonical_tag": "FK-P1B-ETH-20260822-0346",
+            "decision": "LOCKED",
+            "instrument_class": "crypto",
+            "phase": "1B"
+          },
+          {
+            "canonical_tag": "FK-P2-ETH-20260822-0346",
+            "decision": "LOCKED",
+            "instrument_class": "crypto",
+            "phase": "2"
+          },
+          {
+            "canonical_tag": "FK-P3-ETH-20260822-0346",
+            "decision": "LOCKED",
+            "instrument_class": "crypto",
+            "phase": "3"
+          }
+        ],
+        "instrument_class": "crypto",
+        "reserved_tags": [
+          "FK-P1A-ETH-20260822-0346",
+          "FK-P1B-ETH-20260822-0346",
+          "FK-P2-ETH-20260822-0346",
+          "FK-P3-ETH-20260822-0346"
+        ],
+        "schema": "report-phase-registry/2",
+        "status": "REGISTERED"
+      },
+      "unlock": {
+        "highest_phase_unlocked_by_score": null,
+        "ladder": "FK",
+        "p1a": 8,
+        "p1b": 11,
+        "p2": 15,
+        "p3": 17,
+        "p3_note": "Phase 3 reads the MECHANICAL score — no analyst channel reaches it"
+      },
+      "verdict": "ETH is not an accumulation entry: adjusted 7/20, gates 4/8, and every phase remains locked. Do not add; reconcile the ledger and let leverage cool.",
+      "view_file": "eth_fallen_knives_20260822_0346.md"
     }
   ],
   "skipped": [
