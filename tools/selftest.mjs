@@ -10,7 +10,9 @@ import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds, frTh
   median, stdev, pearson, pctChange, consecutiveRun, smaSlope, logReturns, alignSeries,
   percentileRank, distributionStats, realizedVol, realizedVolBlock, rollingRealizedVol,
   rollingWilderRSI, rollingDrawdownFromATH, rollingSMADistance, rollingBouncePct, rollingTrailingHighDistance,
-  deribitVolBlock, basisBlock, positioningBlock, netLiquidity, stablecoinBlock, borrowBlock, shortEV, tripwireDiff,
+  deribitVolBlock, basisBlock, positioningBlock, marketFlowBlock, aggregateFlowRows, aggregateValueSnapshots,
+  oiWeightedFundingSnapshots, resampleSnapshotsToCandles, netLiquidity, stablecoinBlock, borrowBlock,
+  onchainDistributionBlock, coinbasePremiumBlock, oi90dBlock, breadth200Block, shortEV, tripwireDiff,
   dailyTrend, frStallConfirmation, frComposite, frCompanion, spotPanel, fundingBlock,
   corrSurcharge, correlationRegime, correlationFromCloses,
   fk, fr, weightedEV, evCheck, stopCoherence, adr, fngStreak,
@@ -31,6 +33,7 @@ import { dropMachineBlock, dropVerifiedDataSection, dropCompositeScoreSection, p
 import { validateRegistry, matchRejections, VERDICTS, SCHEMA as REGISTRY_SCHEMA } from './calib-registry.mjs'
 import { existsSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
+import { scoreSwing, assessFlowPanel, flowLegFromPanel, phaseThresholds, phaseCaps, activePhase, hardVetoes, riskBudget, triggerWindow } from './swing-score.mjs'
 import { validateSchema, SCHEMAS, PHASES, zeroTuneDiagnoses, mergeStrictestWins, applyTriageClusters, postCalibrationBoundary, revisionLogPaths } from './calib-run.mjs'
 
 let failures = 0
@@ -40,6 +43,62 @@ function eq(name, got, want) {
 }
 function ok(name, cond) { if (!cond) { failures++; console.error(`FAIL ${name}`) } }
 
+// ── swing-score/1 vectors ───────────────────────────────────────────────────
+{
+  const score = scoreSwing({ legs: { flow: 5, technical: 4, macro: 3, sentiment: 3, valuation: 3, structure: 2 }, discretion: 0.5, impulse: 1 })
+  eq('swing score has six legs and 20-point ceiling', score.mechanical, 20)
+  eq('swing score adjusted term is half-point bounded', score.adjusted, 20)
+  eq('partial market flow caps flow leg at 2.5', flowLegFromPanel({ interval_hours: 4, completed_through: '2026-08-22T00:00:00Z',
+    spot_cvd: { direction_24h: 'positive', direction_3d: 'positive' }, futures_bid_ask_delta: { direction_24h: 'positive', direction_3d: 'positive' },
+    futures_cvd: { direction_24h: 'positive', direction_3d: 'positive' }, open_interest: { direction_24h: 'positive', direction_3d: 'positive' },
+    oi_weighted_funding: { direction_24h: 'positive', direction_3d: 'positive' } }, { coverage: 'PARTIAL' }), 2.5)
+  const dedupedFlow = assessFlowPanel({ interval_hours: 4, completed_through: '2026-08-22T00:00:00Z',
+    spot_cvd: { direction_24h: 'negative', direction_3d: 'negative' },
+    futures_bid_ask_delta: { direction_24h: 'positive', direction_3d: 'positive' },
+    futures_cvd: { direction_24h: 'positive', direction_3d: 'positive' },
+    open_interest: { setup_signal_24h: 'neutral', setup_signal_3d: 'neutral' },
+    oi_weighted_funding: { direction_24h: 'positive', direction_3d: 'positive' },
+  }, { direction: 1, coverage: 'COMPLETE' })
+  eq('duplicate futures delta/CVD count as one evidence family', dedupedFlow.aligned_evidence_families, 1)
+  eq('duplicate futures delta/CVD do not earn two flow points', dedupedFlow.score, 1.5)
+  eq('market flow panel consumes fetched direction strings', flowLegFromPanel({
+    spot_cvd: { direction_24h: 'positive' }, futures_bid_ask_delta: { direction_24h: 'negative' },
+    futures_cvd: { direction_24h: 'negative' }, open_interest: { direction_24h: 'negative' },
+    oi_weighted_funding: { direction_24h: 'negative' },
+  }, { coverage: 'COMPLETE' }), 0)
+  eq('FK swing phase thresholds', phaseThresholds('fallen_knives'), { '1A': 8, '1B': 11, '2': 15, '3': 17 })
+  const ready = activePhase({ framework: 'fallen_knives', phase: '1A', score: scoreSwing({ legs: { flow: 2, technical: 2, macro: 1, sentiment: 1, valuation: 1, structure: 1 } }), trigger: triggerWindow({ valid: true }), vetoes: [] })
+  ok('swing phase requires score and trigger', ready.unlocked)
+  const blocked = activePhase({ framework: 'fallen_knives', phase: '1A', score: scoreSwing({ legs: { flow: 2, technical: 2, macro: 1, sentiment: 1, valuation: 1, structure: 1 } }), trigger: triggerWindow({ valid: true }), vetoes: [hardVetoes({ coverage: 'PARTIAL' })[0]] })
+  ok('partial-flow veto blocks swing phase', !blocked.unlocked)
+  const fkThresholds = phaseThresholds('fallen_knives')
+  const scoreAt = total => {
+    let remaining = total
+    const legs = {}
+    for (const [name, max] of Object.entries({ flow: 5, technical: 4, macro: 3, sentiment: 3, valuation: 3, structure: 2 })) {
+      legs[name] = Math.min(max, remaining)
+      remaining -= legs[name]
+    }
+    return legs
+  }
+  for (const [phase, threshold] of Object.entries(fkThresholds)) {
+    const scoreBelow = scoreSwing({ legs: scoreAt(threshold - 0.5), discretion: 1 })
+    ok(`+1 discretion cannot unlock FK ${phase}`, !activePhase({ framework: 'fallen_knives', phase, score: scoreBelow, trigger: triggerWindow({ valid: true }) }).unlocked)
+  }
+  for (const channel of ['A', 'B']) {
+    for (const [phase, threshold] of Object.entries(phaseThresholds('flying_rocket', channel))) {
+      const scoreBelow = scoreSwing({ legs: scoreAt(threshold - 0.5), discretion: 1 })
+      ok(`+1 discretion cannot unlock FR-${channel} ${phase}`, !activePhase({ framework: 'flying_rocket', channel, phase, score: scoreBelow, trigger: triggerWindow({ valid: true }) }).unlocked)
+    }
+  }
+  eq('FR-B has no Phase 3', Object.hasOwn(phaseThresholds('flying_rocket', 'B'), '3'), false)
+  eq('FR-B has no Phase 3 risk cap', Object.hasOwn(phaseCaps('flying_rocket', 'B'), '3'), false)
+  eq('expired trigger after third completed bar', triggerWindow({ valid: true, ageBars: 3 }).status, 'EXPIRED')
+  eq('two-bar trigger window', triggerWindow({ valid: true, createdAt: '2026-08-22T00:00:00Z' }).expires_at, '2026-08-22T08:00:00Z')
+  ok('flow assessment requires both horizons', !assessFlowPanel({ interval_hours: 4, completed_through: '2026-08-22T00:00:00Z', spot_cvd: { direction_24h: 'positive' } }).eligible_for_entry)
+  eq('risk budget takes minimum of three constraints', Math.round(riskBudget({ phaseCapPct: 10, equityUsd: 10000, stopDistancePct: 5 }).notional_usd), 1000)
+}
+
 // ── pure math (commit 1: pearson/median/pctChange/consecutiveRun/smaSlope/
 //    stdev/logReturns/alignSeries) ─────────────────────────────────────────
 eq('median odd-length', median([3, 1, 2]), 2)
@@ -47,6 +106,81 @@ eq('median even-length averages the two middles', median([1, 2, 3, 4]), 2.5)
 eq('median empty → null', median([]), null)
 ok('stdev n=1 → null (need ≥2 for sample stdev)', stdev([5]) === null)
 eq('stdev of [2,4,4,4,5,5,7,9] → 2.138 (textbook sample-stdev vector)', Math.round(stdev([2, 4, 4, 4, 5, 5, 7, 9]) * 1000) / 1000, 2.138)
+
+// ── formerly-missing live context blocks ─────────────────────────────────
+{
+  const rows = Array.from({ length: 40 }, (_, i) => ({ time: `2026-01-${String(i + 1).padStart(2, '0')}`,
+    CapMVRVCur: '2', CapMrktCurUSD: String(1000 + i * 10), FlowInExUSD: '20', FlowOutExUSD: '10',
+    SplyExNtv: String(100 - i), SplyCur: '1000' }))
+  const o = onchainDistributionBlock(rows)
+  ok('on-chain block reconstructs MVRV-Z from market/realized cap', o.available && Number.isFinite(o.mvrv_z))
+  eq('on-chain reserve 30d change is deterministic', o.exchange_reserve.change_30d_native, -30)
+  eq('true LTH remains provider-gated rather than proxy-filled', o.lth.status, 'PROVIDER_GATED')
+
+  const prem = coinbasePremiumBlock({
+    coinbaseRows: [{ date: '2026-01-01', close: 99 }, { date: '2026-01-02', close: 98 }, { date: '2026-01-03', close: 97 }],
+    binanceRows: [{ date: '2026-01-01', close: 100 }, { date: '2026-01-02', close: 100 }, { date: '2026-01-03', close: 100 }],
+    usdtUsdRows: [{ date: '2026-01-01', close: 1 }, { date: '2026-01-02', close: 1 }, { date: '2026-01-03', close: 1 }],
+  })
+  ok('Coinbase premium confirms three completed negative days', prem.available && prem.negative_3_completed_days)
+  eq('Coinbase premium negative run', prem.consecutive_negative_completed_days, 3)
+
+  const oi = oi90dBlock(Array.from({ length: 90 }, (_, i) => ({ date: `d${String(i).padStart(2, '0')}`, sum_open_interest_value: 100 + i })))
+  ok('90 distinct OI archive days unlock the 90d high', oi.available && oi.within_5pct_of_90d_high)
+  eq('90d OI high is maximum archived daily close', oi.high_90d_usd, 189)
+  ok('79 OI days fail closed', oi90dBlock(Array.from({ length: 79 }, (_, i) => ({ date: `x${i}`, sum_open_interest_value: i }))).available === false)
+
+  const breadth = breadth200Block([{ close: 11, sma200: 10 }, { close: 9, sma200: 10 }], { universeSize: 2, universeAsOf: '2026-01-01' })
+  eq('breadth percent above 200dma', breadth.pct_above_200dma, 50)
+  ok('breadth coverage below 95% fails closed', breadth200Block([{ close: 11, sma200: 10 }], { universeSize: 2 }).available === false)
+
+  const t0 = Date.parse('2026-01-01T00:00:00Z')
+  const pairA = [{ time: t0, buy_usd: 60, sell_usd: 40, close: 100 }]
+  const pairB = [{ time: t0, buy_usd: 20, sell_usd: 80, close: 101 }]
+  const aggregateFlow = aggregateFlowRows([{ symbol: 'AAAUSDT', rows: pairA }, { symbol: 'AAAUSDC', rows: pairB }])
+  eq('Binance aggregate flow sums all pair quote volumes',
+    { buy: aggregateFlow[0].buy_usd, sell: aggregateFlow[0].sell_usd, coverage: aggregateFlow[0].coverage_count },
+    { buy: 80, sell: 120, coverage: 2 })
+  ok('Binance aggregate flow carries complete pair coverage', aggregateFlow[0].coverage_complete)
+
+  const oiGroups = [
+    { symbol: 'AAAUSDT', rows: Array.from({ length: 8 }, (_, i) => ({ time: t0 + i * 30 * 60e3, value: 100 })) },
+    { symbol: 'AAAUSDC', rows: Array.from({ length: 8 }, (_, i) => ({ time: t0 + i * 30 * 60e3, value: 300 })) },
+  ]
+  const aggregatedOi = aggregateValueSnapshots(oiGroups)
+  eq('USD OI snapshots aggregate contracts', aggregatedOi[0].value, 400)
+  const oiCandles = resampleSnapshotsToCandles(aggregatedOi, { now: t0 + 4 * 3600e3 })
+  ok('eight 30m OI samples form one completed sampled 4h OHLC candle',
+    oiCandles.length === 1 && oiCandles[0].sampling_complete && oiCandles[0].close === 400)
+  const weighted = oiWeightedFundingSnapshots({ oiGroups, fundingGroups: [
+    { symbol: 'AAAUSDT', rows: [{ time: t0, rate: 0.0001 }] },
+    { symbol: 'AAAUSDC', rows: [{ time: t0, rate: 0.0003 }] },
+  ] })
+  ok('funding is weighted by contemporaneous USD OI across contracts', Math.abs(weighted[0].value - 0.00025) < 1e-12)
+  ok('OI-weighted funding carries full contract coverage', weighted[0].coverage_complete)
+
+  const flowRows = (buy, sell) => Array.from({ length: 7 }, (_, i) => ({
+    time: t0 + i * 4 * 3600e3, buy_usd: buy, sell_usd: sell, close: 100 + i,
+  }))
+  const candles = Array.from({ length: 7 }, (_, i) => ({
+    time: t0 + i * 4 * 3600e3, open: 100 + i, high: 101 + i, low: 99 + i, close: 100 + i,
+  }))
+  const flow = marketFlowBlock({
+    spotRows: flowRows(90, 100), futuresRows: flowRows(110, 100), openInterestRows: candles,
+    oiWeightedFundingRows: candles.map((r, i) => ({ ...r, open: 0.008 + i / 10000, high: 0.01,
+      low: 0.007, close: 0.008 + i / 10000 })), intervalHours: 4, scope: 'test cross-exchange',
+  })
+  ok('market-flow block computes spot and futures CVD independently', flow.spot_cvd.delta_24h_usd < 0 && flow.futures_cvd.delta_24h_usd > 0)
+  ok('market-flow CVD is explicitly window-anchored', /rebased to zero/.test(flow.spot_cvd.anchor_note))
+  ok('market-flow preserves true OI OHLC when supplied', flow.open_interest.ohlc_available)
+  eq('market-flow funding sign follows the reported close', flow.relationship_signs_24h.oi_weighted_funding, 'positive')
+  ok('available weighted funding identifies itself as OI-weighted', flow.oi_weighted_funding.oi_weighted === true)
+  ok('price-up/spot-CVD-down divergence is surfaced as a candidate, not a score',
+    flow.interpretation_candidates.some(s => s.startsWith('PRICE_UP_SPOT_CVD_DOWN')))
+  ok('leverage-led rally requires futures buying, absent spot confirmation, and rising OI',
+    flow.interpretation_candidates.some(s => s.startsWith('LEVERAGE_LED_RALLY')))
+  ok('market-flow block scopes legacy context versus shadow scoring', /Legacy report-machine\/1–2/.test(flow.note) && /model_activation is ACTIVE/.test(flow.note))
+}
 
 // ── percentileRank / distributionStats (market-data-extension plan, B1) ────
 eq('percentileRank empty values → null', percentileRank([], 5), null)

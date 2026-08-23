@@ -1,4 +1,4 @@
-// Validate a report-machine/2 draft and atomically publish its canonical JSON.
+// Validate a report-machine/2 or /3 draft and atomically publish its canonical JSON.
 // Drafts may live anywhere; published artifacts may only live under reports/.
 //
 //   node tools/finalize-report.mjs draft.json --out reports/btc_fallen_knives_20260815_1200.json
@@ -6,7 +6,7 @@ import { readFileSync, writeFileSync, renameSync, unlinkSync, existsSync, mkdirS
 import { basename, dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
-  canonicalReportJSON, parseStrictJSON, validateReportMachine2, isInsideReports, reportJsonIdentity,
+  canonicalReportJSON, parseStrictJSON, validateReportMachine2, validateReportMachine3, verifySwingActivationArtifact, isInsideReports, reportJsonIdentity,
 } from './report-contract.mjs'
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -25,7 +25,8 @@ if (!draftPath) {
 let loaded
 try {
   const report = parseStrictJSON(readFileSync(resolve(draftPath), 'utf8'), basename(draftPath))
-  loaded = { ...validateReportMachine2(report), report }
+  const result = report?.schema === 'report-machine/3' ? validateReportMachine3(report) : validateReportMachine2(report)
+  loaded = { ...result, report }
 } catch (error) {
   console.error(`FAIL — ${error.message}`)
   process.exit(1)
@@ -35,6 +36,14 @@ if (!loaded.ok) {
   for (const error of loaded.errors) console.error(`ERROR ${error}`)
   console.error(`FAIL — ${loaded.errors.length} validation error(s)`)
   process.exit(1)
+}
+if (loaded.report.schema === 'report-machine/3') {
+  const activationErrors = verifySwingActivationArtifact(loaded.report, { repoRoot: REPO })
+  if (activationErrors.length) {
+    for (const error of activationErrors) console.error(`ERROR ${error}`)
+    console.error(`FAIL — ${activationErrors.length} activation artifact error(s)`)
+    process.exit(1)
+  }
 }
 
 const identity = reportJsonIdentity(loaded.report.identity.filename)

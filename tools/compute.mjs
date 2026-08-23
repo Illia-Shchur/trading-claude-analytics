@@ -72,6 +72,7 @@ import { wilderRSI, sma, drawdownPct, roundScore, ROUNDING, ceilThresholds, frTh
   nextNTradingDays, percentileRank, distributionStats,
   realizedVolBlock, rollingRealizedVol, deribitVolBlock, basisBlock, positioningBlock,
   netLiquidity, stablecoinBlock, borrowBlock, shortEV } from './lib.mjs'
+import { scoreSwing, assessFlowPanel, phaseThresholds, activePhase, hardVetoes, riskBudget, triggerWindow } from './swing-score.mjs'
 
 const [, , cmd, ...rest] = process.argv
 const args = [], flags = {}
@@ -84,6 +85,7 @@ for (let i = 0; i < rest.length; i++) {
 const num = s => { const v = Number(s); if (!Number.isFinite(v)) fail(`not a number: ${s}`); return v }
 const nums = s => String(s).split(',').map(num)
 const json = s => JSON.parse(String(s).startsWith('@') ? readFileSync(String(s).slice(1), 'utf8') : s)
+const boolFlag = value => value === true || value === 'true'
 function out(x) { console.log(JSON.stringify(x, null, 2)) }
 function fail(msg) { console.error(`error: ${msg}`); process.exit(1) }
 
@@ -162,6 +164,33 @@ switch (cmd) {
     const annualized = fr.annualizedFunding(per8h)
     out({ per8h_pct: per8h, annualized_pct: annualized, monthly_pct: Math.round(annualized / 12 * 100) / 100,
       sign_convention: 'POSITIVE funding = longs pay shorts = carry INCOME to a short (FR SKILL, Jul 2026)' })
+    break
+  }
+  case 'swing-score': {
+    if (!flags.legs) fail('pass --legs <json> with flow, technical, macro, sentiment, valuation, structure')
+    const framework = flags.framework || 'fallen_knives'
+    const channel = flags.channel || 'A'
+    const score = scoreSwing({ legs: json(flags.legs), discretion: flags.discretion != null ? num(flags.discretion) : 0,
+      impulse: flags.impulse != null ? num(flags.impulse) : 0 })
+    const hasFlowPanel = Boolean(flags.flow)
+    const requestedCoverage = String(flags.coverage || (hasFlowPanel ? 'COMPLETE' : 'PARTIAL')).toUpperCase()
+    const flowAssessment = hasFlowPanel
+      ? assessFlowPanel(json(flags.flow), { direction: framework === 'fallen_knives' ? 1 : -1, coverage: requestedCoverage })
+      : assessFlowPanel({}, { direction: framework === 'fallen_knives' ? 1 : -1, coverage: 'PARTIAL' })
+    const coverage = flowAssessment.eligible_for_entry ? 'COMPLETE' : 'PARTIAL'
+    score.legs.flow = flowAssessment.score
+    score.mechanical = Math.round(Object.values(score.legs).reduce((a, v) => a + v, 0) * 2) / 2
+    score.raw = Math.round((score.mechanical + score.discretion) * 2) / 2
+    score.adjusted = Math.max(0, Math.min(20, score.raw))
+    const trigger = triggerWindow({ valid: boolFlag(flags['trigger-valid']), createdAt: flags['created-at'] || null, level: flags.level || null })
+    const vetoes = hardVetoes({ coverage, flowOpposes: flowAssessment.opposing_rows > 0 || flags['flow-opposes'] === true || flags['flow-opposes'] === 'true',
+      regimeMismatch: flags['regime-mismatch'] === true || flags['regime-mismatch'] === 'true',
+      riskBudgetExhausted: flags['risk-exhausted'] === true || flags['risk-exhausted'] === 'true' })
+    const phase = flags.phase ? activePhase({ framework, channel, phase: flags.phase, score, trigger, vetoes }) : null
+    out({ version: 'swing-score/1', framework, channel, coverage, flow_assessment: flowAssessment, score, trigger, vetoes, phase,
+      thresholds: phaseThresholds(framework, channel), risk_budget: flags['equity-usd'] && flags['stop-distance-pct']
+        ? riskBudget({ phaseCapPct: Number(flags['phase-cap-pct'] || 10), equityUsd: num(flags['equity-usd']), stopDistancePct: num(flags['stop-distance-pct']) })
+        : { status: 'DATA_LIMITED', notional_usd: null } })
     break
   }
   // The FR squeeze-trap penalty (SKILL §4) — the only gate in either framework

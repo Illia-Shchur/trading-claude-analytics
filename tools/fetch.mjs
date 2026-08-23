@@ -3,8 +3,10 @@
 // Verified endpoints only (2026-07-10): CoinGecko free API (spot, ATH),
 // Yahoo Finance chart API (weekly/daily candles — crypto, gold, macro),
 // alternative.me (Fear & Greed), FRED fredgraph CSV (10y TIPS real yield).
-// Farside (ETF flows) is Cloudflare-blocked — ETF flows, on-chain, and news
-// remain WebSearch/WebFetch jobs per Hard Rule 1; this tool does NOT replace them.
+// Farside (ETF flows) is Cloudflare-blocked — ETF flows, true LTH, and news
+// remain separate live-web/provider jobs per Hard Rule 1. BTC/ETH MVRV-Z,
+// exchange reserves/flows, Coinbase premium, 90d Binance OI, and SPY breadth
+// are automated below with source/coverage boundaries carried in the output.
 // spx/ndx (FR-parity plan, FR7): shaped identically to `gold` — Yahoo-only,
 // no perp/venues/fng/deribit/bitfinexFunding, every derivatives and crypto-
 // sentiment block ABSENT by construction. Adding them makes a Flying Rocket
@@ -18,7 +20,11 @@
 //       daily sessions (2y) + 5-day ADR + `trend` block (RSI-14, 50/200dma,
 //       200dma slope, 40-session low/bounce/age — every frChannel()/frB.*
 //       daily input), F&G spot/3-day avg/gate-1 streaks, `funding` (Binance
-//       fapi, 45×8h intervals — absent, not zero, for assets with no perp).
+//       fapi, 45×8h scored window — absent, not zero, for assets with no perp),
+//       and `context.market_flow` (spot/futures CVD, taker delta, OI candles,
+//       OI-weighted funding; Coinglass cross-exchange when COINGLASS_API_KEY
+//       is configured, Binance-wide stable-USD spot/USD-M aggregation
+//       otherwise, explicitly labeled single-venue and sampled where needed).
 //       `--series` also emits the full 2y daily OHLC array under `daily.series`.
 //   node tools/fetch.mjs macro                 → DFII10 real yield, VIX, DXY,
 //       Brent, SPX, NDX, US10Y (last close + 5-session Δ)
@@ -26,11 +32,14 @@
 // instead of killing the run (the report then follows the SKILL's NOT-FOUND rules).
 // ============================================================================
 import { pathToFileURL } from 'node:url'
+import { inflateRawSync } from 'node:zlib'
 import { wilderRSI, sma, drawdownPct, adr, fngStreak, dailyTrend, spotPanel, fundingBlock, fr,
   percentileRank, realizedVolBlock, rollingRealizedVol,
   rollingWilderRSI, rollingDrawdownFromATH, rollingSMADistance, rollingBouncePct, rollingTrailingHighDistance,
   deribitVolBlock, basisBlock, sentimentProxyBlock, proximityPanel,
-  positioningBlock, netLiquidity, stablecoinBlock, borrowBlock, _internal } from './lib.mjs'
+  positioningBlock, marketFlowBlock, aggregateFlowRows, aggregateValueSnapshots, oiWeightedFundingSnapshots,
+  resampleSnapshotsToCandles, netLiquidity, stablecoinBlock, borrowBlock, onchainDistributionBlock,
+  coinbasePremiumBlock, oi90dBlock, breadth200Block, _internal } from './lib.mjs'
 const { round2 } = _internal
 
 // annualize: realized-vol annualization convention (market-data-extension
@@ -49,9 +58,9 @@ const { round2 } = _internal
 // bullion funding market — so the block is ABSENT, not zero, same
 // discipline as gold's missing `funding` block.
 const ASSETS = {
-  btc: { cg: 'bitcoin', yahoo: 'BTC-USD', fng: true, perp: 'BTCUSDT', annualize: 365, deribit: 'BTC', bitfinexFunding: 'fBTC',
+  btc: { cg: 'bitcoin', cm: 'btc', yahoo: 'BTC-USD', fng: true, perp: 'BTCUSDT', annualize: 365, deribit: 'BTC', bitfinexFunding: 'fBTC',
     venues: { binance: 'BTCUSDT', coinbase: 'BTC-USD', kraken: 'XBTUSD' } },
-  eth: { cg: 'ethereum', yahoo: 'ETH-USD', fng: true, perp: 'ETHUSDT', annualize: 365, deribit: 'ETH', bitfinexFunding: 'fETH',
+  eth: { cg: 'ethereum', cm: 'eth', yahoo: 'ETH-USD', fng: true, perp: 'ETHUSDT', annualize: 365, deribit: 'ETH', bitfinexFunding: 'fETH',
     venues: { binance: 'ETHUSDT', coinbase: 'ETH-USD', kraken: 'ETHUSD' } },
   sol: { cg: 'solana', yahoo: 'SOL-USD', fng: true, perp: 'SOLUSDT', annualize: 365, bitfinexFunding: 'fSOL',
     venues: { binance: 'SOLUSDT', coinbase: 'SOL-USD', kraken: 'SOLUSD' } },
@@ -88,11 +97,11 @@ const UA = { headers: { 'User-Agent': 'Mozilla/5.0 (trading-claude-analytics too
 // single hung venue blocks the whole Promise.all forever; attempt() still
 // catches the eventual failure and routes it to errors[], so the
 // never-throws / always-exit-0 contract at the top level is unchanged.
-async function getJSON(url, { retries = 2 } = {}) {
+async function getJSON(url, { retries = 2, headers = {} } = {}) {
   let lastErr
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      const r = await fetch(url, { ...UA, signal: AbortSignal.timeout(8000) })
+      const r = await fetch(url, { ...UA, headers: { ...UA.headers, ...headers }, signal: AbortSignal.timeout(8000) })
       if (r.ok) return r.json()
       if (r.status < 500) throw new Error(`${r.status} ${url}`)
       lastErr = new Error(`${r.status} ${url}`)
@@ -103,6 +112,97 @@ async function getJSON(url, { retries = 2 } = {}) {
     if (attempt < retries) await new Promise(res => setTimeout(res, 300 * (attempt + 1)))
   }
   throw lastErr
+}
+
+async function getBuffer(url, { retries = 2 } = {}) {
+  let lastErr
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const r = await fetch(url, { ...UA, signal: AbortSignal.timeout(12000) })
+      if (r.ok) return Buffer.from(await r.arrayBuffer())
+      if (r.status < 500) throw new Error(`${r.status} ${url}`)
+      lastErr = new Error(`${r.status} ${url}`)
+    } catch (e) {
+      lastErr = e
+      if (e.message && /^4\d\d /.test(e.message)) throw e
+    }
+    if (attempt < retries) await new Promise(res => setTimeout(res, 300 * (attempt + 1)))
+  }
+  throw lastErr
+}
+
+async function postJSON(url, body) {
+  const r = await fetch(url, { ...UA, method: 'POST', headers: { ...UA.headers, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body), signal: AbortSignal.timeout(15000) })
+  if (!r.ok) throw new Error(`${r.status} ${url}`)
+  return r.json()
+}
+
+// Minimal ZIP reader for the two deterministic public-data containers used
+// below (Binance CSV archives and State Street XLSX). Supports stored and
+// deflated entries; rejects encrypted/data-descriptor variants explicitly.
+function zipEntries(buf) {
+  const out = new Map()
+  let eocd = -1
+  for (let i = buf.length - 22; i >= Math.max(0, buf.length - 65557); i--) {
+    if (buf.readUInt32LE(i) === 0x06054b50) { eocd = i; break }
+  }
+  if (eocd < 0) throw new Error('zip: central directory missing')
+  let p = buf.readUInt32LE(eocd + 16)
+  const count = buf.readUInt16LE(eocd + 10)
+  for (let i = 0; i < count; i++) {
+    if (buf.readUInt32LE(p) !== 0x02014b50) throw new Error('zip: invalid central directory entry')
+    const flags = buf.readUInt16LE(p + 8), method = buf.readUInt16LE(p + 10), size = buf.readUInt32LE(p + 20)
+    const nameLen = buf.readUInt16LE(p + 28), extraLen = buf.readUInt16LE(p + 30), commentLen = buf.readUInt16LE(p + 32)
+    const local = buf.readUInt32LE(p + 42)
+    if (flags & 0x01) throw new Error('zip: encrypted entry unsupported')
+    const name = buf.subarray(p + 46, p + 46 + nameLen).toString('utf8')
+    if (buf.readUInt32LE(local) !== 0x04034b50) throw new Error('zip: invalid local header')
+    const localNameLen = buf.readUInt16LE(local + 26), localExtraLen = buf.readUInt16LE(local + 28)
+    const start = local + 30 + localNameLen + localExtraLen, raw = buf.subarray(start, start + size)
+    if (method !== 0 && method !== 8) throw new Error(`zip: unsupported compression method ${method}`)
+    out.set(name, method === 8 ? inflateRawSync(raw) : raw)
+    p += 46 + nameLen + extraLen + commentLen
+  }
+  return out
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split(/\r?\n/)
+  if (lines.length < 2) return []
+  const headers = lines[0].split(',')
+  return lines.slice(1).map(line => Object.fromEntries(line.split(',').map((v, i) => [headers[i], v])))
+}
+
+function xmlText(s) {
+  return s.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+}
+
+function stateStreetHoldings(xlsx) {
+  const zip = zipEntries(xlsx)
+  const sharedXml = (zip.get('xl/sharedStrings.xml') || Buffer.from('')).toString('utf8')
+  const shared = [...sharedXml.matchAll(/<si(?:\s[^>]*)?>([\s\S]*?)<\/si>/g)].map(m => xmlText(m[1]))
+  const sheet = (zip.get('xl/worksheets/sheet1.xml') || Buffer.from('')).toString('utf8')
+  if (!sheet) throw new Error('State Street XLSX: sheet1.xml missing')
+  const rows = [...sheet.matchAll(/<row(?:\s[^>]*)?>([\s\S]*?)<\/row>/g)].map(m => {
+    const cells = {}
+    for (const c of m[1].matchAll(/<c\s+([^>]*)>([\s\S]*?)<\/c>/g)) {
+      const ref = /r="([A-Z]+)\d+"/.exec(c[1])
+      const val = /<v>([\s\S]*?)<\/v>/.exec(c[2])
+      if (!ref || !val) continue
+      cells[ref[1]] = /t="s"/.test(c[1]) ? shared[Number(val[1])] : xmlText(val[1])
+    }
+    return cells
+  })
+  const headerIndex = rows.findIndex(r => Object.values(r).some(v => String(v).trim() === 'Ticker'))
+  if (headerIndex < 0) throw new Error('State Street XLSX: Ticker header missing')
+  const tickerCol = Object.entries(rows[headerIndex]).find(([, v]) => String(v).trim() === 'Ticker')[0]
+  const tickers = rows.slice(headerIndex + 1).map(r => String(r[tickerCol] || '').trim()).filter(v => /^[A-Z0-9.\-]+$/.test(v))
+  const asOfRow = rows.find(r => Object.values(r).some(v => String(v).startsWith('As of')))
+  const asOfRaw = asOfRow ? Object.values(asOfRow).map(String).find(v => v.startsWith('As of')) : null
+  const asOf = asOfRaw ? asOfRaw.replace(/^As of\s+/, '') : null
+  return { tickers: [...new Set(tickers)], asOf }
 }
 async function binanceQuote(symbol) {
   const j = await getJSON(`https://api.binance.com/api/v3/ticker/24hr?symbol=${encodeURIComponent(symbol)}`)
@@ -150,9 +250,194 @@ async function binanceTakerRatio(symbol, limit) {
   const rows = await getJSON(`https://fapi.binance.com/futures/data/takerlongshortRatio?symbol=${encodeURIComponent(symbol)}&period=1d&limit=${limit}`)
   return Array.isArray(rows) ? rows : []
 }
-async function binanceOpenInterestHist(symbol, limit) {
-  const rows = await getJSON(`https://fapi.binance.com/futures/data/openInterestHist?symbol=${encodeURIComponent(symbol)}&period=1d&limit=${limit}`)
+async function binanceOpenInterestHist(symbol, limit, period = '1d') {
+  const rows = await getJSON(`https://fapi.binance.com/futures/data/openInterestHist?symbol=${encodeURIComponent(symbol)}&period=${encodeURIComponent(period)}&limit=${limit}`)
   return Array.isArray(rows) ? rows : []
+}
+
+async function binanceFundingHistory(symbol, limit = 1000) {
+  const rows = await getJSON(`https://fapi.binance.com/fapi/v1/fundingRate?symbol=${encodeURIComponent(symbol)}&limit=${limit}`)
+  return Array.isArray(rows) ? rows : []
+}
+
+async function binanceFlowKlines(symbol, { futures = false, interval = '4h', limit = 43 } = {}) {
+  const root = futures ? 'https://fapi.binance.com/fapi/v1/klines' : 'https://api.binance.com/api/v3/klines'
+  const rows = await getJSON(`${root}?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(interval)}&limit=${limit}`)
+  const now = Date.now()
+  return (Array.isArray(rows) ? rows : []).filter(r => Number(r[6]) < now).map(r => {
+    const quote = Number(r[7]), buy = Number(r[10])
+    return { time: Number(r[0]), buy_usd: buy, sell_usd: quote - buy, close: Number(r[4]) }
+  }).filter(r => Number.isFinite(r.buy_usd) && Number.isFinite(r.sell_usd) && r.sell_usd >= 0)
+}
+
+const BINANCE_USD_QUOTES = new Set(['USDT', 'USDC', 'FDUSD', 'TUSD', 'BUSD', 'USDP'])
+
+async function binanceAggregateMarketFlow(baseAsset, { preferredSpot, preferredPerp, maxBars = 43 } = {}) {
+  const errors = []
+  const safe = async (label, fn, fallback) => {
+    try { return await fn() } catch (e) { errors.push(`${label}: ${e.message}`); return fallback }
+  }
+  const [spotInfo, futuresInfo] = await Promise.all([
+    safe('spot exchangeInfo', () => getJSON('https://api.binance.com/api/v3/exchangeInfo'), null),
+    safe('USD-M exchangeInfo', () => getJSON('https://fapi.binance.com/fapi/v1/exchangeInfo'), null),
+  ])
+  const base = String(baseAsset || '').toUpperCase()
+  let spotSymbols = (spotInfo?.symbols || []).filter(s => s.status === 'TRADING' && s.isSpotTradingAllowed !== false
+      && s.baseAsset === base && BINANCE_USD_QUOTES.has(s.quoteAsset)).map(s => s.symbol).sort()
+  let perpSymbols = (futuresInfo?.symbols || []).filter(s => s.status === 'TRADING' && s.contractType === 'PERPETUAL'
+      && s.baseAsset === base && BINANCE_USD_QUOTES.has(s.quoteAsset)).map(s => s.symbol).sort()
+  if (!spotSymbols.length && preferredSpot) { spotSymbols = [preferredSpot]; errors.push('spot symbol discovery empty; used configured primary pair') }
+  if (!perpSymbols.length && preferredPerp) { perpSymbols = [preferredPerp]; errors.push('perpetual symbol discovery empty; used configured primary contract') }
+
+  const spotGroups = (await Promise.all(spotSymbols.map(async symbol => ({ symbol,
+    rows: await safe(`spot klines ${symbol}`, () => binanceFlowKlines(symbol, { limit: maxBars }), []),
+  })))).filter(group => group.rows.length)
+  const futuresGroups = (await Promise.all(perpSymbols.map(async symbol => ({ symbol,
+    rows: await safe(`futures klines ${symbol}`, () => binanceFlowKlines(symbol, { futures: true, limit: maxBars }), []),
+  })))).filter(group => group.rows.length)
+  const oiGroups = (await Promise.all(perpSymbols.map(async symbol => ({ symbol,
+    rows: (await safe(`30m OI ${symbol}`, () => binanceOpenInterestHist(symbol, 500, '30m'), [])).map(r => ({
+      time: Number(r.timestamp), value: Number(r.sumOpenInterestValue),
+    })),
+  })))).filter(group => group.rows.length)
+  const fundingGroups = (await Promise.all(perpSymbols.map(async symbol => ({ symbol,
+    rows: (await safe(`funding history ${symbol}`, () => binanceFundingHistory(symbol), [])).map(r => ({
+      time: Number(r.fundingTime), rate: Number(r.fundingRate),
+    })),
+  })))).filter(group => group.rows.length)
+
+  const oiSnapshots = aggregateValueSnapshots(oiGroups)
+  const fundingSnapshots = oiWeightedFundingSnapshots({ oiGroups, fundingGroups })
+  const futuresFlowSymbols = futuresGroups.map(g => g.symbol)
+  const oiSymbols = oiGroups.map(g => g.symbol)
+  const fundingSymbols = fundingGroups.map(g => g.symbol).filter(symbol => oiSymbols.includes(symbol))
+  return {
+    spotRows: aggregateFlowRows(spotGroups),
+    futuresRows: aggregateFlowRows(futuresGroups),
+    openInterestRows: resampleSnapshotsToCandles(oiSnapshots, { maxBars }),
+    oiWeightedFundingRows: resampleSnapshotsToCandles(fundingSnapshots, { maxBars }),
+    metadata: {
+      venue: 'Binance',
+      scope: 'single venue, aggregated across active stable-USD spot pairs and USD-M perpetuals',
+      spot_symbols_discovered: spotSymbols,
+      spot_symbols_included: spotGroups.map(g => g.symbol),
+      perpetual_symbols_discovered: perpSymbols,
+      perpetual_symbols_included: perpSymbols.filter(symbol => futuresFlowSymbols.includes(symbol)
+        && oiSymbols.includes(symbol) && fundingSymbols.includes(symbol)),
+      futures_flow_symbols_included: futuresFlowSymbols,
+      oi_symbols_included: oiSymbols,
+      funding_symbols_included: fundingSymbols,
+      quote_assets_treated_as_nominal_usd: [...BINANCE_USD_QUOTES],
+      oi_sampling: '30-minute sumOpenInterestValue snapshots resampled to completed 4h OHLC; highs/lows are sampled, not continuous',
+      funding_method: 'latest settled fundingRate per contract, weighted by contemporaneous 30-minute USD OI, then resampled to completed 4h OHLC',
+      funding_unit: 'raw Binance funding-rate fraction per contract funding interval (0.0001 = 0.01%)',
+      funding_interval_caveat: 'Compare sign and relative history. Do not annualize the aggregate unless each included contract funding interval is separately verified.',
+      errors,
+    },
+  }
+}
+
+async function coinglassJSON(path, params) {
+  const apiKey = process.env.COINGLASS_API_KEY
+  if (!apiKey) throw new Error('COINGLASS_API_KEY not configured')
+  const q = new URLSearchParams(params)
+  const j = await getJSON(`https://open-api-v4.coinglass.com${path}?${q}`, { headers: { 'CG-API-KEY': apiKey } })
+  if (String(j && j.code) !== '0' || !Array.isArray(j.data)) throw new Error(`Coinglass ${path}: ${j && (j.msg || j.code) || 'malformed response'}`)
+  return j.data
+}
+
+function completedCoinglassRows(rows, intervalHours = 4) {
+  const now = Date.now(), width = intervalHours * 3600e3
+  return (rows || []).map(r => {
+    const raw = Number(r.time), time = raw < 1e12 ? raw * 1000 : raw
+    return { ...r, time }
+  }).filter(r => Number.isFinite(r.time) && r.time + width <= now).sort((a, b) => a.time - b.time)
+}
+
+function coinglassFlowRows(rows, intervalHours = 4) {
+  return completedCoinglassRows(rows, intervalHours).map(r => ({
+    time: r.time,
+    buy_usd: Number(r.aggregated_buy_volume_usd ?? r.agg_taker_buy_vol),
+    sell_usd: Number(r.aggregated_sell_volume_usd ?? r.agg_taker_sell_vol),
+  }))
+}
+
+function coinglassCandleRows(rows, intervalHours = 4) {
+  return completedCoinglassRows(rows, intervalHours).map(r => ({
+    time: r.time, open: Number(r.open), high: Number(r.high), low: Number(r.low), close: Number(r.close),
+  }))
+}
+
+function isoDayOffset(days) {
+  const d = new Date()
+  d.setUTCHours(0, 0, 0, 0)
+  d.setUTCDate(d.getUTCDate() + days)
+  return d.toISOString().slice(0, 10)
+}
+
+async function binanceMetricsDay(symbol, date) {
+  const url = `https://data.binance.vision/data/futures/um/daily/metrics/${symbol}/${symbol}-metrics-${date}.zip`
+  const entries = zipEntries(await getBuffer(url, { retries: 1 }))
+  const csv = [...entries.entries()].find(([name]) => name.endsWith('.csv'))
+  if (!csv) throw new Error(`Binance metrics archive: CSV missing for ${symbol} ${date}`)
+  const rows = parseCSV(csv[1].toString('utf8'))
+  if (!rows.length) throw new Error(`Binance metrics archive: empty ${symbol} ${date}`)
+  const last = rows[rows.length - 1]
+  return { date, sum_open_interest: last.sum_open_interest, sum_open_interest_value: last.sum_open_interest_value }
+}
+
+async function binanceOI90d(symbol) {
+  const dates = Array.from({ length: 92 }, (_, i) => isoDayOffset(-92 + i)) // through yesterday; two-day outage tolerance
+  const rows = []
+  let next = 0
+  const workers = Array.from({ length: 10 }, async () => {
+    while (next < dates.length) {
+      const date = dates[next++]
+      try { rows.push(await binanceMetricsDay(symbol, date)) } catch { /* missing archive is measured by oi90dBlock */ }
+    }
+  })
+  await Promise.all(workers)
+  return rows.sort((a, b) => a.date.localeCompare(b.date))
+}
+
+async function coinMetricsOnchain(asset) {
+  const metrics = 'CapMVRVCur,CapMrktCurUSD,FlowInExUSD,FlowOutExUSD,SplyExNtv,SplyCur'
+  const j = await getJSON(`https://community-api.coinmetrics.io/v4/timeseries/asset-metrics?assets=${asset}&metrics=${metrics}&frequency=1d&start_time=2009-01-01&page_size=10000`)
+  if (!j.data || !j.data.length) throw new Error(`Coin Metrics: empty on-chain series for ${asset}`)
+  return j.data
+}
+
+async function coinbaseDaily(product, days = 40) {
+  const end = `${isoDayOffset(0)}T00:00:00Z`, start = `${isoDayOffset(-days)}T00:00:00Z`
+  const rows = await getJSON(`https://api.exchange.coinbase.com/products/${encodeURIComponent(product)}/candles?granularity=86400&start=${start}&end=${end}`)
+  return (rows || []).map(r => ({ date: new Date(Number(r[0]) * 1000).toISOString().slice(0, 10), close: Number(r[4]) }))
+    .filter(r => r.date < isoDayOffset(0)).sort((a, b) => a.date.localeCompare(b.date))
+}
+
+async function binanceDaily(symbol, days = 40) {
+  const rows = await getJSON(`https://api.binance.com/api/v3/klines?symbol=${encodeURIComponent(symbol)}&interval=1d&limit=${days}`)
+  return (rows || []).map(r => ({ date: new Date(Number(r[0])).toISOString().slice(0, 10), close: Number(r[4]) }))
+    .filter(r => r.date < isoDayOffset(0)).sort((a, b) => a.date.localeCompare(b.date))
+}
+
+async function coinbasePremiumSeries(assetProduct, binanceSymbol) {
+  const [coinbaseRows, binanceRows, usdtUsdRows] = await Promise.all([
+    coinbaseDaily(assetProduct), binanceDaily(binanceSymbol), coinbaseDaily('USDT-USD'),
+  ])
+  return { coinbaseRows, binanceRows, usdtUsdRows }
+}
+
+async function equityBreadth200() {
+  const xlsx = await getBuffer('https://www.ssga.com/library-content/products/fund-data/etfs/us/holdings-daily-us-en-spy.xlsx')
+  const universe = stateStreetHoldings(xlsx)
+  if (!universe.tickers.length) throw new Error('State Street SPY holdings: no tickers parsed')
+  const j = await postJSON('https://scanner.tradingview.com/america/scan', {
+    filter: [{ left: 'name', operation: 'in_range', right: universe.tickers }],
+    options: { lang: 'en' }, markets: ['america'], symbols: { query: { types: ['stock'] }, tickers: [] },
+    columns: ['name', 'close', 'SMA200'], range: [0, universe.tickers.length + 20],
+  })
+  const rows = (j.data || []).map(r => ({ ticker: r.d[0], close: Number(r.d[1]), sma200: Number(r.d[2]) }))
+  return { rows, universeSize: universe.tickers.length, universeAsOf: universe.asOf }
 }
 
 async function binancePremiumIndex(symbol) {
@@ -240,8 +525,10 @@ async function fetchAsset(key, { series = false } = {}) {
   const attempt = async (label, fn) => { try { return await fn() } catch (e) { outp.errors.push(`${label}: ${e.message}`); return null } }
 
   const venues = a.venues || {}
+  const cgApiConfigured = Boolean(process.env.COINGLASS_API_KEY)
   const [cgSpot, cgCoin, weekly, daily, cross, fng, binanceQ, coinbaseQ, krakenQ, funding, dvolCandles, optionBook, premiumIndex,
-    longShortRows, takerRows, oiRows, borrowTicker] = await Promise.all([
+    longShortRows, takerRows, oiRows, borrowTicker, onchainRows, premiumRows, oi90Rows,
+    binanceSpotFlow, binanceMarketFlowFallback, cgSpotFlow, cgFuturesFlow, cgOi4h, cgFunding4h] = await Promise.all([
     // include_last_updated_at reuses this SAME call for the spot panel (commit
     // 7) — no new CoinGecko request.
     a.cg ? attempt('coingecko spot', () => getJSON(`https://api.coingecko.com/api/v3/simple/price?ids=${a.cg}&vs_currencies=usd&include_last_updated_at=true`)) : null,
@@ -279,6 +566,20 @@ async function fetchAsset(key, { series = false } = {}) {
     // spot borrow (FR5) — gold has no bitfinexFunding key, so the block is
     // ABSENT, not zero, same discipline as gold's missing `funding`.
     a.bitfinexFunding ? attempt('bitfinex funding ticker', () => bitfinexFundingTicker(a.bitfinexFunding)) : null,
+    a.cm ? attempt('Coin Metrics on-chain', () => coinMetricsOnchain(a.cm)) : null,
+    venues.coinbase && venues.binance ? attempt('Coinbase premium daily series', () => coinbasePremiumSeries(venues.coinbase, venues.binance)) : null,
+    a.perp ? attempt('Binance 90d OI archives', () => binanceOI90d(a.perp)) : null,
+    venues.binance ? attempt('Binance spot 4h taker flow', () => binanceFlowKlines(venues.binance, { futures: false })) : null,
+    a.perp ? attempt('Binance aggregate market-flow fallback', () => binanceAggregateMarketFlow(key,
+      { preferredSpot: venues.binance, preferredPerp: a.perp })) : null,
+    a.perp && cgApiConfigured ? attempt('Coinglass aggregated spot taker flow', () => coinglassJSON('/api/spot/aggregated-taker-buy-sell-volume/history',
+      { exchange_list: 'Binance,OKX,Bybit', symbol: key.toUpperCase(), interval: '4h', limit: '43', unit: 'usd' })) : null,
+    a.perp && cgApiConfigured ? attempt('Coinglass aggregated futures taker flow', () => coinglassJSON('/api/futures/aggregated-taker-buy-sell-volume/history',
+      { exchange_list: 'Binance,OKX,Bybit', symbol: key.toUpperCase(), interval: '4h', limit: '43', unit: 'usd' })) : null,
+    a.perp && cgApiConfigured ? attempt('Coinglass aggregated OI candles', () => coinglassJSON('/api/futures/open-interest/aggregated-history',
+      { symbol: key.toUpperCase(), interval: '4h', limit: '43', unit: 'usd' })) : null,
+    a.perp && cgApiConfigured ? attempt('Coinglass OI-weighted funding candles', () => coinglassJSON('/api/futures/funding-rate/oi-weight-history',
+      { symbol: key.toUpperCase(), interval: '4h', limit: '43' })) : null,
   ])
 
   // spot — cross-checked across sources; >1.5% divergence flagged
@@ -421,6 +722,15 @@ async function fetchAsset(key, { series = false } = {}) {
   // funding: absent (not zero) when the asset has no perp, e.g. gold
   if (funding) outp.funding = { source: `Binance fapi fundingRate (${a.perp}, ${funding.length} intervals)`, ...fundingBlock(funding) }
 
+  if (onchainRows) outp.onchain = {
+    source: 'Coin Metrics Community API (daily; current rows may be flash/back-revised)',
+    ...onchainDistributionBlock(onchainRows),
+  }
+  if (premiumRows) outp.coinbase_premium = {
+    source: `Coinbase Exchange ${venues.coinbase} + Coinbase USDT-USD + Binance ${venues.binance} completed daily candles`,
+    ...coinbasePremiumBlock(premiumRows),
+  }
+
   // context — DISCLOSED CONTEXT ONLY (market-data-extension plan, Tier 0,
   // B1-B3). Deliberately NOT nested under score/weekly/trend so nothing
   // downstream mistakes it for a scored input; every field here re-expresses
@@ -518,6 +828,88 @@ async function fetchAsset(key, { series = false } = {}) {
     if (a.perp && ((longShortRows && longShortRows.length) || (takerRows && takerRows.length) || (oiRows && oiRows.length))) {
       ctx.positioning = { source: `Binance fapi globalLongShortAccountRatio + takerlongshortRatio + openInterestHist (${a.perp})`,
         ...positioningBlock({ longShortRows: longShortRows || [], takerRows: takerRows || [], oiRows: oiRows || [] }) }
+      const archived = oi90dBlock(oi90Rows || [])
+      ctx.positioning.open_interest_90d = {
+        source: `Binance Data Vision USD-M daily metrics archives (${a.perp})`, ...archived,
+      }
+      if (ctx.positioning.open_interest && archived.available) {
+        ctx.positioning.open_interest.oi_90d_high_available = true
+        ctx.positioning.open_interest.oi_within_5pct_of_90d_high = archived.within_5pct_of_90d_high
+      }
+    }
+
+    // Coinglass-style market-flow panel: spot/futures CVD, futures taker
+    // bid/ask delta, OI candles, and OI-weighted funding. The exact
+    // cross-exchange series is used when COINGLASS_API_KEY is configured.
+    // The keyless fallback aggregates Binance's active stable-USD spot pairs
+    // and USD-M perpetuals. OI/funding are sampled at 30m and resampled to
+    // completed 4h candles. It remains a single-venue proxy, never a claim of
+    // cross-exchange equivalence. Legacy v1–2 does not score it; shadow
+    // swing-score/1 may consume it under its completed 24h/3d + activation
+    // contract, but the fetcher itself never interprets or authorizes a trade.
+    if (a.perp) {
+      const cgSpotRows = coinglassFlowRows(cgSpotFlow || [])
+      const cgFuturesRows = coinglassFlowRows(cgFuturesFlow || [])
+      const priceByTime = new Map((binanceSpotFlow || []).map(r => [Number(r.time), r.close]))
+      const attachSpotClose = rows => rows.map(r => ({ ...r, close: priceByTime.get(Number(r.time)) ?? null }))
+      const spotFlowRows = cgSpotRows.length ? attachSpotClose(cgSpotRows)
+        : (binanceMarketFlowFallback?.spotRows?.length ? binanceMarketFlowFallback.spotRows : (binanceSpotFlow || []))
+      const futuresFlowRows = cgFuturesRows.length ? attachSpotClose(cgFuturesRows)
+        : (binanceMarketFlowFallback?.futuresRows || [])
+      const cgOiRows = coinglassCandleRows(cgOi4h || [])
+      const oiFallbackRows = binanceMarketFlowFallback?.openInterestRows || []
+      const cgFundingRows = coinglassCandleRows(cgFunding4h || [])
+      const fundingRows = cgFundingRows.length ? cgFundingRows : (binanceMarketFlowFallback?.oiWeightedFundingRows || [])
+      const fallbackMeta = binanceMarketFlowFallback?.metadata
+      const fallbackSpot = fallbackMeta?.spot_symbols_included || []
+      const fallbackPerpFlow = fallbackMeta?.futures_flow_symbols_included || fallbackMeta?.perpetual_symbols_included || []
+      const fallbackOi = fallbackMeta?.oi_symbols_included || fallbackMeta?.perpetual_symbols_included || []
+      const fallbackFunding = fallbackMeta?.funding_symbols_included || fallbackMeta?.perpetual_symbols_included || []
+      const fields = {
+        spot_cvd: cgSpotRows.length ? 'Coinglass aggregated Binance+OKX+Bybit'
+          : `Binance aggregate spot CVD (${fallbackSpot.join(', ') || venues.binance}; stable-USD quotes treated as nominal USD)`,
+        futures_cvd_and_delta: cgFuturesRows.length ? 'Coinglass aggregated Binance+OKX+Bybit'
+          : `Binance aggregate USD-M perpetual CVD (${fallbackPerpFlow.join(', ') || a.perp})`,
+        open_interest: cgOiRows.length ? 'Coinglass cross-exchange OHLC'
+          : `Binance aggregate USD-M OI; 30m snapshots resampled to sampled 4h OHLC (${fallbackOi.join(', ') || a.perp})`,
+        oi_weighted_funding: cgFundingRows.length ? 'Coinglass cross-exchange OI-weighted OHLC'
+          : fundingRows.length ? `Binance USD-M OI-weighted funding across ${fallbackFunding.join(', ') || a.perp}; single venue`
+            : 'NOT AVAILABLE — Binance aggregate funding calculation failed',
+      }
+      const nCg = [cgSpotRows.length, cgFuturesRows.length, cgOiRows.length, cgFundingRows.length].filter(Boolean).length
+      const scope = nCg === 4 ? 'Coinglass cross-exchange (Binance, OKX, Bybit)'
+        : nCg > 0 ? 'mixed Coinglass cross-exchange + Binance fallback'
+          : 'Binance aggregate fallback (single venue; not cross-exchange/market-wide)'
+      const block = marketFlowBlock({
+        spotRows: spotFlowRows,
+        futuresRows: futuresFlowRows,
+        openInterestRows: cgOiRows.length ? cgOiRows : oiFallbackRows,
+        oiWeightedFundingRows: fundingRows,
+        intervalHours: 4,
+        scope,
+      })
+      if (!fundingRows.length && outp.funding) {
+        block.oi_weighted_funding.fallback_reference = {
+          source: `Binance ${a.perp} single-venue funding — NOT OI-weighted`,
+          mean_annualized_pct: outp.funding.mean_annualized_pct,
+          sign_convention: outp.funding.sign_convention,
+        }
+      } else if (cgFundingRows.length) {
+        block.oi_weighted_funding.unit_note = 'Coinglass funding-rate values are preserved exactly as reported; use sign/relative history here and do not annualize this candle series without a separately verified interval/unit contract'
+      } else if (fundingRows.length) {
+        block.oi_weighted_funding.unit_note = fallbackMeta?.funding_unit || 'raw Binance funding-rate fraction'
+        block.oi_weighted_funding.method_note = fallbackMeta?.funding_method || 'OI-weighted across the available Binance USD-M perpetual set'
+        block.oi_weighted_funding.interval_caveat = fallbackMeta?.funding_interval_caveat || 'Use sign and relative history; verify contract funding intervals before annualizing.'
+      }
+      ctx.market_flow = {
+        source: fields,
+        coinglass_api_configured: cgApiConfigured,
+        binance_aggregate: fallbackMeta || null,
+        coinglass_setup_note: cgApiConfigured
+          ? 'COINGLASS_API_KEY configured; any unavailable field fell back independently and is named above'
+          : 'Set COINGLASS_API_KEY to enable cross-exchange data. The keyless fallback aggregates active Binance stable-USD spot pairs and USD-M perpetuals, but remains single-venue; stablecoin quotes are nominal USD and 4h OI highs/lows are sampled from 30m observations.',
+        ...block,
+      }
     }
 
     // spot borrow (FR-parity plan, FR5) — ABSENT for gold, which has no
@@ -584,7 +976,19 @@ async function fetchAsset(key, { series = false } = {}) {
     }
 
     if (Object.keys(ctx).length) {
-      outp.context = { note: 'disclosed context only — NOT a scored leg or gate; promoting any of this into the rubric is a framework-calibration job', ...ctx }
+      outp.context = { note: 'disclosed context only except open_interest_90d, which may populate the pre-existing FR squeeze condition; promoting any other field into the rubric is a framework-calibration job', ...ctx }
+    }
+  }
+
+  if (a.cm) {
+    const oi90 = outp.context && outp.context.positioning && outp.context.positioning.open_interest_90d
+    outp.gap_coverage = {
+      mvrv_z: outp.onchain && outp.onchain.available ? 'AVAILABLE' : 'UNKNOWN',
+      exchange_reserve_and_flows: outp.onchain && outp.onchain.available ? 'AVAILABLE' : 'UNKNOWN',
+      lth: outp.onchain && outp.onchain.lth ? outp.onchain.lth.status : 'UNKNOWN',
+      coinbase_premium_3d: outp.coinbase_premium && outp.coinbase_premium.available ? 'AVAILABLE' : 'UNKNOWN',
+      open_interest_90d_high: oi90 && oi90.available ? 'AVAILABLE' : 'UNKNOWN',
+      report_rule: 'inspect this block before labeling any listed item UNKNOWN or NOT_COVERED',
     }
   }
 
@@ -624,7 +1028,7 @@ async function fetchMacro() {
     // CONTEXT ONLY: bond vol often turns before equity vol (VIX).
     { key: 'move', symbol: '^MOVE', label: 'ICE BofA MOVE Index (bond vol)' },
   ]
-  const [fred, fred3mo, hyOas, nfci, walcl, rrpontsyd, wtregen, stablecoinRows, ...charts] = await Promise.all([
+  const [fred, fred3mo, hyOas, nfci, walcl, rrpontsyd, wtregen, stablecoinRows, breadthData, ...charts] = await Promise.all([
     attempt('FRED DFII10', () => fredCSV('DFII10')),
     // DGS3MO = 3-month T-bill secondary-market rate — cross-check for ^IRX.
     attempt('FRED DGS3MO', () => fredCSV('DGS3MO')),
@@ -645,6 +1049,7 @@ async function fetchMacro() {
     // as a settled figure. Macro-scope (asset-agnostic), so it lives here,
     // not in fetchAsset().
     attempt('DefiLlama stablecoincharts', () => defillamaStablecoinCharts()),
+    attempt('S&P 500 breadth above 200dma', () => equityBreadth200()),
     ...series.map(s => attempt(`yahoo ${s.symbol}`, () => yahooChart(s.symbol, s.range || '1mo', '1d'))),
   ])
   if (fred) outp.real_yield_10y_tips = { source: 'FRED DFII10 (daily, %)', last: fred[fred.length - 1],
@@ -669,6 +1074,13 @@ async function fetchMacro() {
     outp.stablecoin_supply = { source: 'DefiLlama stablecoincharts/all (aggregate across all tracked stablecoins/chains)',
       ...stablecoinBlock(stablecoinRows) }
   }
+  if (breadthData) {
+    outp.equities_breadth_200dma = {
+      source: 'State Street SPY daily holdings universe + TradingView America scanner close/SMA200',
+      ...breadth200Block(breadthData.rows, breadthData),
+      scope_note: 'SPY constituent universe; descriptive macro breadth, not a scored Channel B leg or gate',
+    }
+  }
   charts.forEach((c, i) => {
     if (!c) return
     const s = series[i]
@@ -688,6 +1100,10 @@ async function fetchMacro() {
       cross_check: irx != null && dgs3mo != null ? { irx, dgs3mo, delta_pct_pts: round2(irx - dgs3mo) } : null,
       note: 'idle-cash opportunity cost — what dry powder earns risk-free while unallocated',
     }
+  }
+  outp.gap_coverage = {
+    equities_breadth_pct_above_200dma: outp.equities_breadth_200dma && outp.equities_breadth_200dma.available ? 'AVAILABLE' : 'UNKNOWN',
+    report_rule: 'inspect this block before labeling equities breadth UNKNOWN',
   }
   return outp
 }

@@ -9,7 +9,7 @@ import { readFileSync, writeFileSync, renameSync, unlinkSync, existsSync, mkdirS
 import { basename, dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
-  canonicalReportPayload, loadAndValidateReport, isInsideReports, reportStem,
+  canonicalReportPayload, loadAndValidateReport, isInsideReports, reportStem, reportHash,
 } from './report-contract.mjs'
 
 const MARKS = {
@@ -512,6 +512,109 @@ function renderTagging(report) {
   ]
 }
 
+// Swing v3 is intentionally a reading view, not an audit dump. Sources,
+// provenance, substitutions, phase registries/tags, and the canonical JSON
+// remain in the sidecar and are represented only by the compact audit footer.
+export function renderSwingFull(report) {
+  const identity = report.identity || {}
+  const setup = report.setup || {}
+  const score = setup.score
+  const mechanical = setup.mechanical_score
+  const activeVetoes = (report.vetoes || []).filter(v => v.active)
+  const features = report.features || {}
+  const flow = features.flow || features.market_flow || {}
+  const technical = features.technical || {}
+  const macro = features.macro || {}
+  const sentiment = features.sentiment || features.institutional || {}
+  const valuation = features.valuation || {}
+  const structure = features.structure || {}
+  const flowSource = value => value?.source || value?.source_id || flow.source || Object.keys(report.sources || {})[0] || 'source unavailable'
+  const flowAsOf = value => value?.as_of || value?.completed_through || flow.completed_through || report.audit?.completed_through || report.timestamps?.data_as_of || 'as-of unavailable'
+  const flowRows = ['spot_cvd', 'futures_bid_ask_delta', 'futures_cvd', 'open_interest', 'oi_weighted_funding']
+    .map(key => [fieldName(key), `${friendlyValue(flow[key], key)} · source ${flowSource(flow[key])} · as-of ${flowAsOf(flow[key])}`, flow[key]?.read || flow[key]?.interpretation || '—'])
+  const featureRows = [
+    ['Technical', friendlyValue(technical), ''],
+    ['Macro', friendlyValue(macro), ''],
+    ['Sentiment / institutional', friendlyValue(sentiment), ''],
+    ['Valuation / cycle', friendlyValue(valuation), ''],
+    ['Structure / demand', friendlyValue(structure), ''],
+  ]
+  const vetoRows = (report.vetoes || []).map(v => [v.code, status(v.active ? 'VETO' : 'CLEAR'), v.reason || '—'])
+  const rb = report.risk_budget || {}
+  const trigger = report.trigger || {}
+  const plan = report.trade_plan || {}
+  const entry = report.entry || plan.entry || {}
+  const stop = report.stop || plan.stop || {}
+  const exit = report.exit || plan.exit || report.position_controls?.exit || {}
+  const auditHash = reportHash(report).slice(0, 16)
+  const lintStatus = report.audit?.lint === 'PASS' ? 'PASS' : 'FAIL'
+  const footer = `Audit: LIVE · as-of ${report.timestamps?.data_as_of || '—'} · coverage ${report.audit?.coverage || 'PARTIAL'} · canonical ${report.identity?.filename || `${report.report_id}.json`} sha256:${auditHash} · lint ${lintStatus}`
+  const position = report.position || {}
+  return [
+    `# ${identity.asset || 'Unknown asset'} — ${frameworkLabel(identity.framework)} — ${identity.date || 'date unavailable'} ${identity.local_time || ''}`.trim(),
+    '',
+    '## 1. Decision snapshot', '',
+    ...table(['Decision field', 'Reading'], [
+      ['Setup', `${setup.variant || (identity.framework === 'fallen_knives' ? 'accumulation' : 'distribution')} · ${setup.status || 'WATCH'}`],
+      ['Model state', report.model_activation?.status || 'SHADOW'],
+      ['Score', `**${score ?? '—'}/20** (mechanical ${mechanical ?? '—'}, impulse ${setup.impulse ?? '—'})`],
+      ['Phase', setup.phase || 'WATCH'],
+      ['Trigger', status(trigger.status)],
+      ['Vetoes', activeVetoes.length ? `${activeVetoes.length} active` : 'none'],
+      ['Action', report.verdict?.statement || report.narrative?.summary || '—'],
+    ]), '',
+    '## 2. Market-flow and regime dashboard', '',
+    `Completed-bar flow panel · ${flow.interval_hours || 4}h · through ${flow.completed_through || report.audit?.completed_through || report.timestamps?.data_as_of || '—'} · ${flow.scope || 'provider scope not stated'}`,
+    '',
+    ...table(['Flow row', '24h / 3d / window', 'Read'], flowRows), '',
+    ...table(['Dimension', 'Reading', 'Implication'], featureRows), '',
+    '## 3. Swing score, trigger, and veto state', '',
+    ...table(['Component', 'Value'], [
+      ...Object.entries(setup.legs || {}).map(([key, value]) => [fieldName(key), `${value}`]),
+      ['Mechanical score', mechanical ?? '—'], ['Adjusted score', score ?? '—'], ['Impulse', setup.impulse ?? '—'],
+      ['Phase threshold', setup.phase_threshold ?? '—'], ['Trigger window', `${trigger.window_bars || 2} completed 4h bars`],
+    ]), '',
+    ...table(['Veto', 'State', 'Reason'], vetoRows.length ? vetoRows : [['—', status('CLEAR'), 'No active vetoes']]), '',
+    '## 4. Entry, stop, targets, and expected R', '',
+    ...table(['Control', 'Value'], [
+      ['Entry trigger', friendlyValue(entry.trigger || entry.price || entry.zone || trigger.level || '—')],
+      ['Retest window', friendlyValue(entry.retest_window || trigger.expires_at || '—')],
+      ['Stop', friendlyValue(stop)],
+      ['Targets', friendlyValue(plan.targets || entry.targets || report.targets || '—')],
+      ['Expected R', friendlyValue(report.expectancy_r)],
+      ['Risk budget', `${rb.status || '—'} · ${rb.notional_usd ?? '—'} USD`],
+      ['Sizing formula', 'min(phase cap, 1.5% portfolio risk ÷ stop distance, 3% asset risk ÷ stop distance)'],
+    ]), '',
+    '## 5. Position and exit status', '',
+    ...table(['Position field', 'Value'], [
+      ['Status', status(position.status)], ['Quantity', position.quantity ?? '—'], ['Average cost', position.basis?.avg_cost ?? position.basis?.avg_cost_usd ?? '—'],
+      ['Exit state', friendlyValue(exit)], ['Ratchet', friendlyValue(plan.ratchet || '—')], ['Carry', friendlyValue(plan.carry || '—')],
+      ['Time stop / clock', friendlyValue(plan.time_stop || plan.clock_days || report.time_stop || report.clock || '—')],
+    ]), '',
+    '## 6. Watchlist and changes', '',
+    ...table(['Item', 'Status', 'Trigger'], (report.watchlist || []).map(item => [item.item || item.name, status(item.status || 'AVAILABLE'), item.trigger || item.condition || '—'])), '',
+    ...(report.change_log?.length ? [...table(['Change', 'Previous', 'Current'], report.change_log.map(c => [c.field || c.name, c.previous, c.current])), ''] : []),
+    `> ${text(report.narrative?.summary || report.verdict?.statement || 'Swing setup under review.')}`,
+    '',
+    footer,
+    '',
+  ].join('\n')
+}
+
+export function renderSwingSummary(report) {
+  const setup = report.setup || {}
+  return [
+    `# ${report.identity?.asset || 'Unknown asset'} ${frameworkLabel(report.identity?.framework)} — ${report.identity?.date || 'date unavailable'}`,
+    '',
+    `**${setup.status || 'WATCH'}:** ${report.verdict?.statement || report.narrative?.summary || 'Swing setup under review.'}`,
+    '',
+    `- Score: **${setup.score ?? '—'}/20** (mechanical ${setup.mechanical_score ?? '—'})`,
+    `- Trigger: **${report.trigger?.status || 'WAIT'}** · vetoes ${(report.vetoes || []).filter(v => v.active).length}`,
+    `- Coverage: **${report.audit?.coverage || 'PARTIAL'}**`,
+    '',
+  ].join('\n')
+}
+
 export function renderSummary(report) {
   const identity = report.identity || {}
   const actionLine = actionFor(report.verdict?.primary_action)
@@ -597,7 +700,10 @@ function main() {
     console.error(`FAIL — ${loaded.errors.length} validation error(s)`)
     process.exit(1)
   }
-  const rendered = mode === 'summary' ? renderSummary(loaded.report) : renderFull(loaded.report)
+  const isSwingV3 = loaded.report?.schema === 'report-machine/3'
+  const rendered = isSwingV3
+    ? (mode === 'summary' ? renderSwingSummary(loaded.report) : renderSwingFull(loaded.report))
+    : (mode === 'summary' ? renderSummary(loaded.report) : renderFull(loaded.report))
   if (mode === 'summary' && out) {
     console.error('FAIL — summary mode writes to stdout; omit --out')
     process.exit(1)

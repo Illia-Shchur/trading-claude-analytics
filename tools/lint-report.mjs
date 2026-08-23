@@ -71,6 +71,7 @@
 // ============================================================================
 import { readFileSync, existsSync } from 'node:fs'
 import { basename, extname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { roundScore, ROUNDING, ceilThresholds, FK_V_GATES, evCheck, stopCoherence,
   discretionValid, d5StopCheck, FK_SCORE_UNLOCK, FK_DISCRETION,
   s5StopCheck, frRatchetCheck, FR_S5, FR_CHANNEL_B,
@@ -80,7 +81,7 @@ import { roundScore, ROUNDING, ceilThresholds, FK_V_GATES, evCheck, stopCoherenc
   FR_B_GATE_BASIS, GATE_MEASUREMENT_EPOCH,
   reportFileMeta, reportPhaseRegistryIssues, buildReportPhaseRegistry,
   REPORT_PHASE_DECISIONS, REPORT_PHASE_INSTRUMENT_CLASSES } from './lib.mjs'
-import { loadAndValidateReport, canonicalReportPayload, parseStrictJSON, reportStem } from './report-contract.mjs'
+import { loadAndValidateReport, canonicalReportPayload, parseStrictJSON, reportStem, reportHash, verifySwingActivationArtifact } from './report-contract.mjs'
 
 const round2 = n => Math.round(n * 100) / 100
 
@@ -96,20 +97,31 @@ const v2File = extname(file).toLowerCase() === '.json' ? file : (companionJson &
 if (v2File) {
   const loaded = (() => { try { return loadAndValidateReport(resolve(v2File)) } catch (error) { return { ok: false, errors: [error.message], warnings: [] } } })()
   const errors = [...(loaded.errors || [])], warnings = [...(loaded.warnings || [])]
+  if (loaded.ok && loaded.report.schema === 'report-machine/3') errors.push(...verifySwingActivationArtifact(loaded.report, { repoRoot: fileURLToPath(new URL('..', import.meta.url)) }))
   const markdownFlag = process.argv.indexOf('--markdown')
   const markdown = markdownFlag >= 0 && process.argv[markdownFlag + 1]
     ? resolve(process.argv[markdownFlag + 1])
     : (extname(file).toLowerCase() === '.md' ? resolve(file) : resolve(v2File).replace(/\.json$/, '.md'))
   if (loaded.ok && existsSync(markdown)) {
     const view = readFileSync(markdown, 'utf8')
-    const matches = [...view.matchAll(/```json machine\s*\n([\s\S]*?)\n```/g)]
-    if (matches.length !== 1) errors.push(`Markdown pair must contain exactly one json machine block (found ${matches.length})`)
-    else {
-      try {
-        const embedded = parseStrictJSON(matches[0][1], basename(markdown))
-        if (canonicalReportPayload(embedded) !== canonicalReportPayload(loaded.report)) errors.push('Markdown machine block is not canonically equal to the standalone JSON')
-        if (reportStem(markdown) !== reportStem(file)) errors.push('Markdown/JSON pair stems differ')
-      } catch (error) { errors.push(`Markdown machine block: ${error.message}`) }
+    if (loaded.report.schema === 'report-machine/3') {
+      if (/```json machine\s*\n/i.test(view)) errors.push('report-machine/3 Markdown must not embed a canonical machine payload')
+      for (const heading of ['Market, evidence, and data quality', 'Substitutions, source register, and provenance', 'Phase registry and canonical tags', 'Canonical machine payload'])
+        if (new RegExp(`^#+\\s+${heading.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}`, 'im').test(view)) errors.push(`report-machine/3 Markdown contains removed section: ${heading}`)
+      const hash = reportHash(loaded.report).slice(0, 16)
+      const footer = new RegExp(`Audit: LIVE · as-of .* · coverage (?:COMPLETE|PARTIAL) · canonical ${loaded.report.identity.filename.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')} sha256:${hash} · lint PASS`)
+      if (!footer.test(view)) errors.push('report-machine/3 Markdown audit footer does not match canonical sidecar hash')
+      if (reportStem(markdown) !== reportStem(file)) errors.push('Markdown/JSON pair stems differ')
+    } else {
+      const matches = [...view.matchAll(/```json machine\s*\n([\s\S]*?)\n```/g)]
+      if (matches.length !== 1) errors.push(`Markdown pair must contain exactly one json machine block (found ${matches.length})`)
+      else {
+        try {
+          const embedded = parseStrictJSON(matches[0][1], basename(markdown))
+          if (canonicalReportPayload(embedded) !== canonicalReportPayload(loaded.report)) errors.push('Markdown machine block is not canonically equal to the standalone JSON')
+          if (reportStem(markdown) !== reportStem(file)) errors.push('Markdown/JSON pair stems differ')
+        } catch (error) { errors.push(`Markdown machine block: ${error.message}`) }
+      }
     }
   } else if (loaded.ok && markdownFlag >= 0) errors.push(`Markdown pair not found: ${markdown}`)
   for (const warning of warnings) console.log(`WARN  ${warning}`)

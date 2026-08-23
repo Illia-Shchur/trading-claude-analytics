@@ -132,6 +132,135 @@ export function stdev(values) {
 }
 
 /**
+ * Coin Metrics community on-chain panel. CapMVRVZ is a paid metric, but its
+ * canonical definition is reproducible from community metrics:
+ *   realized cap = market cap / MVRV
+ *   MVRV-Z = (market cap - realized cap) / sample stdev(all market caps)
+ * Rows must be chronological and should contain the full available history.
+ * LTH is deliberately NOT inferred from an unrelated age band.
+ */
+export function onchainDistributionBlock(rows = []) {
+  const num = v => v == null || v === '' ? NaN : Number(v)
+  const clean = (rows || []).map(r => ({
+    date: String(r.time || r.date || '').slice(0, 10),
+    mvrv: num(r.CapMVRVCur), market_cap_usd: num(r.CapMrktCurUSD),
+    inflow_usd: num(r.FlowInExUSD), outflow_usd: num(r.FlowOutExUSD),
+    exchange_reserve_native: num(r.SplyExNtv), supply_native: num(r.SplyCur),
+  })).filter(r => r.date && Number.isFinite(r.mvrv) && r.mvrv > 0 && Number.isFinite(r.market_cap_usd))
+  if (clean.length < 30) return { available: false, reason: `need >=30 usable daily Coin Metrics rows; got ${clean.length}` }
+  const last = clean[clean.length - 1]
+  const caps = clean.map(r => r.market_cap_usd)
+  const capSd = stdev(caps)
+  const realizedCap = last.market_cap_usd / last.mvrv
+  const lookback = clean[Math.max(0, clean.length - 31)]
+  const reserveChange = Number.isFinite(last.exchange_reserve_native) && Number.isFinite(lookback.exchange_reserve_native)
+    ? last.exchange_reserve_native - lookback.exchange_reserve_native : null
+  const reserveChangePct = reserveChange != null && lookback.exchange_reserve_native
+    ? reserveChange / lookback.exchange_reserve_native * 100 : null
+  const flows30 = clean.slice(-30).filter(r => Number.isFinite(r.inflow_usd) && Number.isFinite(r.outflow_usd))
+  const net30 = flows30.length ? flows30.reduce((s, r) => s + r.inflow_usd - r.outflow_usd, 0) : null
+  return {
+    available: capSd != null,
+    as_of: last.date,
+    history_days: clean.length,
+    mvrv_ratio: round3(last.mvrv),
+    mvrv_z: capSd == null ? null : round3((last.market_cap_usd - realizedCap) / capSd),
+    mvrv_z_method: 'reconstructed: (market cap - realized cap) / sample stdev(full-history market cap); realized cap = market cap / MVRV',
+    exchange_reserve: {
+      native: Number.isFinite(last.exchange_reserve_native) ? round3(last.exchange_reserve_native) : null,
+      pct_of_supply: Number.isFinite(last.exchange_reserve_native) && Number.isFinite(last.supply_native) && last.supply_native
+        ? round3(last.exchange_reserve_native / last.supply_native * 100) : null,
+      change_30d_native: reserveChange == null ? null : round3(reserveChange),
+      change_30d_pct: reserveChangePct == null ? null : round3(reserveChangePct),
+    },
+    exchange_flows: {
+      inflow_usd_1d: Number.isFinite(last.inflow_usd) ? round2(last.inflow_usd) : null,
+      outflow_usd_1d: Number.isFinite(last.outflow_usd) ? round2(last.outflow_usd) : null,
+      net_inflow_usd_30d: net30 == null ? null : round2(net30),
+      days_used: flows30.length,
+      sign_convention: 'positive net inflow = exchange inflows exceeded outflows',
+    },
+    lth: {
+      available: false,
+      status: 'PROVIDER_GATED',
+      reason: 'true LTH supply/flow is not available in Coin Metrics Community; no proxy age band is substituted',
+    },
+    status_note: 'Coin Metrics flash values can back-revise; current values are descriptive unless the framework explicitly scores them',
+  }
+}
+
+/** Coinbase USD premium versus Binance USDT, with USDT translated to USD. */
+export function coinbasePremiumBlock({ coinbaseRows = [], binanceRows = [], usdtUsdRows = [] } = {}) {
+  const byDate = rows => new Map((rows || []).map(r => [String(r.date || '').slice(0, 10), Number(r.close)]).filter(([, v]) => Number.isFinite(v)))
+  const cb = byDate(coinbaseRows), bn = byDate(binanceRows), usdt = byDate(usdtUsdRows)
+  const points = [...cb.keys()].filter(d => bn.has(d) && usdt.has(d)).sort().map(date => ({
+    date,
+    premium_pct: round3((cb.get(date) / (bn.get(date) * usdt.get(date)) - 1) * 100),
+  }))
+  if (points.length < 3) return { available: false, reason: `need >=3 aligned completed daily closes; got ${points.length}` }
+  let negativeRun = 0
+  for (let i = points.length - 1; i >= 0 && points[i].premium_pct < 0; i--) negativeRun++
+  const last3 = points.slice(-3)
+  return {
+    available: true,
+    as_of: points[points.length - 1].date,
+    latest_pct: points[points.length - 1].premium_pct,
+    last_3_completed_days: last3,
+    negative_3_completed_days: last3.every(p => p.premium_pct < 0),
+    consecutive_negative_completed_days: negativeRun,
+    days_aligned: points.length,
+    method: 'Coinbase USD close / (Binance USDT close x Coinbase USDT-USD close) - 1',
+    note: 'completed UTC daily closes only; current partial day excluded',
+  }
+}
+
+/** 90-day Binance USD-M open-interest high from official daily archives. */
+export function oi90dBlock(rows = []) {
+  const num = v => v == null || v === '' ? NaN : Number(v)
+  const clean = (rows || []).map(r => ({
+    date: String(r.date || r.create_time || '').slice(0, 10),
+    value_usd: num(r.sum_open_interest_value ?? r.sumOpenInterestValue),
+  })).filter(r => r.date && Number.isFinite(r.value_usd)).sort((a, b) => a.date.localeCompare(b.date))
+  const byDay = new Map()
+  for (const r of clean) byDay.set(r.date, Math.max(r.value_usd, byDay.get(r.date) || -Infinity))
+  const daily = [...byDay].map(([date, value_usd]) => ({ date, value_usd })).sort((a, b) => a.date.localeCompare(b.date)).slice(-90)
+  if (daily.length < 80) return { available: false, history_days: daily.length, reason: `need >=80 distinct archived days for a 90d claim; got ${daily.length}` }
+  const latest = daily[daily.length - 1]
+  const high = Math.max(...daily.map(r => r.value_usd))
+  const highRow = daily.find(r => r.value_usd === high)
+  const pctBelow = round3((1 - latest.value_usd / high) * 100)
+  return {
+    available: true,
+    as_of: latest.date,
+    history_days: daily.length,
+    latest_open_interest_usd: round2(latest.value_usd),
+    high_90d_usd: round2(high),
+    high_90d_date: highRow.date,
+    pct_below_90d_high: pctBelow,
+    within_5pct_of_90d_high: pctBelow <= 5,
+    scope_note: 'Binance USD-M single-venue open interest; not market-wide OI',
+  }
+}
+
+/** Percent of an equity universe trading above its 200-day moving average. */
+export function breadth200Block(rows = [], { universeSize = null, universeAsOf = null, minCoveragePct = 95 } = {}) {
+  const usable = (rows || []).filter(r => r.close != null && r.sma200 != null && Number.isFinite(Number(r.close)) && Number.isFinite(Number(r.sma200)))
+  const denominator = Number.isFinite(universeSize) && universeSize > 0 ? universeSize : usable.length
+  const coveragePct = denominator ? usable.length / denominator * 100 : 0
+  const above = usable.filter(r => Number(r.close) > Number(r.sma200)).length
+  if (!denominator || coveragePct < minCoveragePct) return {
+    available: false, universe_as_of: universeAsOf, universe_size: denominator, matched: usable.length,
+    coverage_pct: round2(coveragePct), reason: `coverage ${round2(coveragePct)}% below ${minCoveragePct}% minimum`,
+  }
+  return {
+    available: true, universe_as_of: universeAsOf, universe_size: denominator, matched: usable.length,
+    coverage_pct: round2(coveragePct), above_200dma_count: above,
+    pct_above_200dma: round2(above / usable.length * 100),
+    method: 'close > SMA200; equal does not count as above',
+  }
+}
+
+/**
  * Percentile rank of `x` within `values` — where a reading sits in its OWN
  * recent distribution, 0-100 (market-data-extension plan, Tier 0/B1). This
  * is DISCLOSED CONTEXT ONLY: it re-expresses an existing scored input
@@ -607,9 +736,10 @@ export function basisBlock({ mark = null, index = null, fundingAnnualizedPct = n
  *    reports the ACTUAL count obtained, never a 90-day claim.
  *  - these are Binance-ACCOUNT-weighted, SINGLE-VENUE series — not
  *    market-wide open interest and not a cross-exchange volume measure.
- * `oi_90d_high_available`/`oi_within_5pct_of_90d_high` are carried through
- * UNCHANGED from fundingBlock()'s existing null/false discipline — this
- * function does not attempt to satisfy that 90d requirement from 30d data.
+ * `oi_90d_high_available`/`oi_within_5pct_of_90d_high` start with the same
+ * null/false discipline as fundingBlock() — this function never promotes
+ * the 30d endpoint. fetch.mjs may then overwrite those two fields only after
+ * `oi90dBlock()` validates >=80 distinct official archive days.
  */
 export function positioningBlock({ longShortRows = [], takerRows = [], oiRows = [] } = {}) {
   const nums = (rows, field) => (rows || []).map(r => Number(r && r[field])).filter(v => Number.isFinite(v))
@@ -640,6 +770,337 @@ export function positioningBlock({ longShortRows = [], takerRows = [], oiRows = 
     history_days: Math.max(lsHist.length, takerHist.length, oiHist.length),
     scope_note: 'Binance-ACCOUNT-weighted, SINGLE-VENUE series (not market-wide OI, not a cross-exchange measure); history capped at ~30 days by the endpoint itself, never treated as 90d',
     note: 'DISCLOSED CONTEXT ONLY — not a scored leg or gate',
+  }
+}
+
+/**
+ * Market-flow panel matching the Coinglass chart family the owner uses:
+ * spot CVD, futures taker bid/ask delta + CVD, OI candles, and OI-weighted
+ * funding. DISCLOSED CONTEXT ONLY — no score, gate, threshold, phase size,
+ * stop, cap, or veto reads this block.
+ *
+ * Inputs are deliberately provider-neutral normalized rows:
+ *   flow:    {time, buy_usd, sell_usd, close?}
+ *   OI:      {time, open?, high?, low?, close}
+ *   funding: {time, open?, high?, low?, close}
+ *
+ * CVD is anchored at zero at the first returned completed bar. Its absolute
+ * level therefore has no cross-run meaning; only the stated window change,
+ * imbalance, and divergences are portable. The caller must remove partial
+ * bars before passing rows.
+ */
+export function aggregateFlowRows(groups = []) {
+  const byTime = new Map()
+  const expectedSymbols = [...new Set(groups.map(g => String(g?.symbol || '')).filter(Boolean))].sort()
+  for (const group of groups) {
+    const symbol = String(group?.symbol || '')
+    for (const row of group?.rows || []) {
+      const rawTime = Number(row?.time), time = rawTime < 1e12 ? rawTime * 1000 : rawTime
+      const buy = Number(row?.buy_usd), sell = Number(row?.sell_usd), close = Number(row?.close)
+      if (!Number.isFinite(time) || !Number.isFinite(buy) || !Number.isFinite(sell) || buy < 0 || sell < 0) continue
+      const cur = byTime.get(time) || { time, buy_usd: 0, sell_usd: 0, close_num: 0, close_den: 0, symbols: new Set() }
+      cur.buy_usd += buy
+      cur.sell_usd += sell
+      const gross = buy + sell
+      if (Number.isFinite(close) && gross > 0) { cur.close_num += close * gross; cur.close_den += gross }
+      if (symbol) cur.symbols.add(symbol)
+      byTime.set(time, cur)
+    }
+  }
+  return [...byTime.values()].sort((a, b) => a.time - b.time).map(r => ({
+    time: r.time,
+    buy_usd: round2(r.buy_usd),
+    sell_usd: round2(r.sell_usd),
+    close: r.close_den ? round2(r.close_num / r.close_den) : null,
+    symbols_covered: [...r.symbols].sort(),
+    coverage_count: r.symbols.size,
+    expected_count: expectedSymbols.length,
+    coverage_complete: expectedSymbols.length > 0 && r.symbols.size === expectedSymbols.length,
+  }))
+}
+
+export function aggregateValueSnapshots(groups = [], { timeBucketMs = 30 * 60 * 1000 } = {}) {
+  const byTime = new Map()
+  const expectedSymbols = [...new Set(groups.map(g => String(g?.symbol || '')).filter(Boolean))].sort()
+  for (const group of groups) {
+    const symbol = String(group?.symbol || '')
+    for (const row of group?.rows || []) {
+      const rawTime = Number(row?.time), rawValue = Number(row?.value)
+      if (!Number.isFinite(rawTime) || !Number.isFinite(rawValue) || rawValue < 0) continue
+      const ms = rawTime < 1e12 ? rawTime * 1000 : rawTime
+      const time = Math.floor(ms / timeBucketMs) * timeBucketMs
+      const cur = byTime.get(time) || { time, value: 0, symbols: new Set() }
+      cur.value += rawValue
+      if (symbol) cur.symbols.add(symbol)
+      byTime.set(time, cur)
+    }
+  }
+  return [...byTime.values()].sort((a, b) => a.time - b.time).map(r => ({
+    time: r.time,
+    value: round2(r.value),
+    symbols_covered: [...r.symbols].sort(),
+    coverage_count: r.symbols.size,
+    expected_count: expectedSymbols.length,
+    coverage_complete: expectedSymbols.length > 0 && r.symbols.size === expectedSymbols.length,
+  }))
+}
+
+export function oiWeightedFundingSnapshots({ oiGroups = [], fundingGroups = [], timeBucketMs = 30 * 60 * 1000 } = {}) {
+  const fundingBySymbol = new Map()
+  for (const group of fundingGroups) {
+    const symbol = String(group?.symbol || '')
+    const rows = (group?.rows || []).map(row => {
+      const rawTime = Number(row?.time), rate = Number(row?.rate)
+      const time = rawTime < 1e12 ? rawTime * 1000 : rawTime
+      return { time, rate }
+    }).filter(row => Number.isFinite(row.time) && Number.isFinite(row.rate)).sort((a, b) => a.time - b.time)
+    if (symbol && rows.length) fundingBySymbol.set(symbol, rows)
+  }
+
+  const expectedSymbols = [...new Set(oiGroups.map(g => String(g?.symbol || '')).filter(symbol => fundingBySymbol.has(symbol)))].sort()
+  const byTime = new Map()
+  for (const group of oiGroups) {
+    const symbol = String(group?.symbol || '')
+    const funding = fundingBySymbol.get(symbol)
+    if (!funding) continue
+    let fundingIndex = -1
+    const oiRows = (group?.rows || []).map(row => {
+      const rawTime = Number(row?.time), value = Number(row?.value)
+      const ms = rawTime < 1e12 ? rawTime * 1000 : rawTime
+      return { time: Math.floor(ms / timeBucketMs) * timeBucketMs, value }
+    }).filter(row => Number.isFinite(row.time) && Number.isFinite(row.value) && row.value >= 0).sort((a, b) => a.time - b.time)
+    for (const oi of oiRows) {
+      while (fundingIndex + 1 < funding.length && funding[fundingIndex + 1].time <= oi.time) fundingIndex++
+      if (fundingIndex < 0) continue
+      const cur = byTime.get(oi.time) || { time: oi.time, weighted: 0, totalOi: 0, symbols: new Set() }
+      cur.weighted += funding[fundingIndex].rate * oi.value
+      cur.totalOi += oi.value
+      cur.symbols.add(symbol)
+      byTime.set(oi.time, cur)
+    }
+  }
+  return [...byTime.values()].filter(r => r.totalOi > 0).sort((a, b) => a.time - b.time).map(r => ({
+    time: r.time,
+    value: r.weighted / r.totalOi,
+    total_oi_usd: round2(r.totalOi),
+    symbols_covered: [...r.symbols].sort(),
+    coverage_count: r.symbols.size,
+    expected_count: expectedSymbols.length,
+    coverage_complete: expectedSymbols.length > 0 && r.symbols.size === expectedSymbols.length,
+  }))
+}
+
+export function resampleSnapshotsToCandles(rows = [], { intervalHours = 4, sampleMinutes = 30,
+  maxBars = 43, now = Date.now() } = {}) {
+  const width = intervalHours * 3600 * 1000
+  const expectedSamples = Math.round(intervalHours * 60 / sampleMinutes)
+  const buckets = new Map()
+  for (const row of rows || []) {
+    const rawTime = Number(row?.time), value = Number(row?.value)
+    const time = rawTime < 1e12 ? rawTime * 1000 : rawTime
+    if (!Number.isFinite(time) || !Number.isFinite(value)) continue
+    const bucket = Math.floor(time / width) * width
+    if (bucket + width > now) continue
+    const cur = buckets.get(bucket) || { time: bucket, values: [], coverage: [], expected: [] }
+    cur.values.push({ time, value })
+    if (Number.isFinite(Number(row?.coverage_count))) cur.coverage.push(Number(row.coverage_count))
+    if (Number.isFinite(Number(row?.expected_count))) cur.expected.push(Number(row.expected_count))
+    buckets.set(bucket, cur)
+  }
+  return [...buckets.values()].sort((a, b) => a.time - b.time).slice(-maxBars).map(bucket => {
+    const values = bucket.values.sort((a, b) => a.time - b.time).map(r => r.value)
+    const minCoverage = bucket.coverage.length ? Math.min(...bucket.coverage) : null
+    const maxExpected = bucket.expected.length ? Math.max(...bucket.expected) : null
+    return {
+      time: bucket.time,
+      open: values[0], high: Math.max(...values), low: Math.min(...values), close: values.at(-1),
+      samples: values.length,
+      expected_samples: expectedSamples,
+      sampling_complete: values.length >= expectedSamples,
+      min_contract_coverage: minCoverage,
+      expected_contracts: maxExpected,
+      contract_coverage_complete: minCoverage == null || maxExpected == null ? null : minCoverage === maxExpected,
+    }
+  })
+}
+
+export function marketFlowBlock({ spotRows = [], futuresRows = [], openInterestRows = [],
+  oiWeightedFundingRows = [], intervalHours = 4, scope = 'unknown' } = {}) {
+  const r3 = v => Number.isFinite(v) ? Math.round(v * 1000) / 1000 : null
+  const timeMs = v => {
+    const n = Number(v)
+    if (!Number.isFinite(n)) return null
+    return n < 1e12 ? n * 1000 : n
+  }
+  const sign = v => !Number.isFinite(v) || v === 0 ? 'flat_or_unavailable' : v > 0 ? 'positive' : 'negative'
+
+  const cleanFlow = rows => (rows || []).map(r => ({
+    time: timeMs(r && r.time),
+    buy_usd: Number(r && r.buy_usd),
+    sell_usd: Number(r && r.sell_usd),
+    close: r && r.close != null ? Number(r.close) : null,
+  })).filter(r => r.time != null && Number.isFinite(r.buy_usd) && Number.isFinite(r.sell_usd))
+    .sort((a, b) => a.time - b.time)
+
+  const flowSummary = rows => {
+    const clean = cleanFlow(rows)
+    if (!clean.length) return { available: false, reason: 'no completed taker buy/sell bars' }
+    let cumulative = 0
+    const bars = clean.map(r => {
+      const delta = r.buy_usd - r.sell_usd
+      cumulative += delta
+      return { ...r, delta_usd: round2(delta), cumulative_delta_window_usd: round2(cumulative) }
+    })
+    const sumTail = n => {
+      const used = bars.slice(-Math.min(n, bars.length))
+      const buy = used.reduce((a, r) => a + r.buy_usd, 0)
+      const sell = used.reduce((a, r) => a + r.sell_usd, 0)
+      const delta = buy - sell, gross = buy + sell
+      return { bars: used.length, buy_usd: round2(buy), sell_usd: round2(sell), delta_usd: round2(delta),
+        imbalance_pct: gross ? r3(delta / gross * 100) : null }
+    }
+    const bars24 = Math.max(1, Math.round(24 / intervalHours))
+    const bars72 = Math.max(1, Math.round(72 / intervalHours))
+    const firstClose = bars.find(r => Number.isFinite(r.close))?.close
+    const lastClose = [...bars].reverse().find(r => Number.isFinite(r.close))?.close
+    const close24Rows = bars.slice(-Math.min(bars24 + 1, bars.length)).filter(r => Number.isFinite(r.close))
+    const close24 = close24Rows.length >= 2 ? r3((close24Rows.at(-1).close / close24Rows[0].close - 1) * 100) : null
+    const closeWindow = Number.isFinite(firstClose) && Number.isFinite(lastClose) && firstClose !== 0
+      ? r3((lastClose / firstClose - 1) * 100) : null
+    const h24 = sumTail(bars24), h72 = sumTail(bars72), full = sumTail(bars.length)
+    return {
+      available: true,
+      completed_bars: bars.length,
+      from: new Date(bars[0].time).toISOString(),
+      as_of: new Date(bars.at(-1).time).toISOString(),
+      completed_through: new Date(bars.at(-1).time + intervalHours * 3600e3).toISOString(),
+      latest_delta_usd: bars.at(-1).delta_usd,
+      delta_24h_usd: h24.delta_usd,
+      delta_3d_usd: h72.delta_usd,
+      delta_window_usd: full.delta_usd,
+      imbalance_24h_pct: h24.imbalance_pct,
+      imbalance_3d_pct: h72.imbalance_pct,
+      imbalance_window_pct: full.imbalance_pct,
+      price_change_24h_pct: close24,
+      price_change_window_pct: closeWindow,
+      direction_24h: sign(h24.delta_usd),
+      direction_3d: sign(h72.delta_usd),
+      direction_window: sign(full.delta_usd),
+      recent_bars: bars.slice(-12).map(r => ({ time: new Date(r.time).toISOString(), delta_usd: r.delta_usd,
+        cumulative_delta_window_usd: r.cumulative_delta_window_usd, close: Number.isFinite(r.close) ? r.close : null })),
+      anchor_note: 'CVD is rebased to zero at the first returned completed bar; compare slope/direction/divergence, never absolute level across runs',
+    }
+  }
+
+  const cleanCandles = rows => (rows || []).map(r => ({
+    time: timeMs(r && r.time), open: Number(r && r.open), high: Number(r && r.high),
+    low: Number(r && r.low), close: Number(r && r.close),
+    samples: Number.isFinite(Number(r && r.samples)) ? Number(r.samples) : null,
+    expected_samples: Number.isFinite(Number(r && r.expected_samples)) ? Number(r.expected_samples) : null,
+    sampling_complete: typeof (r && r.sampling_complete) === 'boolean' ? r.sampling_complete : null,
+    min_contract_coverage: Number.isFinite(Number(r && r.min_contract_coverage)) ? Number(r.min_contract_coverage) : null,
+    expected_contracts: Number.isFinite(Number(r && r.expected_contracts)) ? Number(r.expected_contracts) : null,
+    contract_coverage_complete: typeof (r && r.contract_coverage_complete) === 'boolean' ? r.contract_coverage_complete : null,
+  })).filter(r => r.time != null && Number.isFinite(r.close)).sort((a, b) => a.time - b.time)
+
+  const candleSummary = (rows, { funding = false } = {}) => {
+    const clean = cleanCandles(rows)
+    if (!clean.length) return { available: false, reason: 'no completed candles' }
+    const display = value => !Number.isFinite(value) ? null : funding ? Math.round(value * 1e10) / 1e10 : value
+    const bars24 = Math.max(1, Math.round(24 / intervalHours))
+    const bars3d = Math.max(1, Math.round(72 / intervalHours))
+    const latest = clean.at(-1), prior24 = clean[Math.max(0, clean.length - 1 - bars24)], prior3d = clean[Math.max(0, clean.length - 1 - bars3d)]
+    const closes = clean.map(r => r.close)
+    const sampled = clean.some(r => r.expected_samples != null)
+    const pct24 = !funding && prior24 && prior24.close !== 0 ? r3((latest.close / prior24.close - 1) * 100) : null
+    const pct3d = !funding && prior3d && prior3d.close !== 0 ? r3((latest.close / prior3d.close - 1) * 100) : null
+    const pctWindow = !funding && clean[0].close !== 0 ? r3((latest.close / clean[0].close - 1) * 100) : null
+    const mean24 = closes.slice(-bars24).reduce((a, b) => a + b, 0) / Math.min(bars24, closes.length)
+    const mean3d = closes.slice(-bars3d).reduce((a, b) => a + b, 0) / Math.min(bars3d, closes.length)
+    return {
+      available: true,
+      completed_bars: clean.length,
+      from: new Date(clean[0].time).toISOString(),
+      as_of: new Date(latest.time).toISOString(),
+      completed_through: new Date(latest.time + intervalHours * 3600e3).toISOString(),
+      latest: { time: new Date(latest.time).toISOString(), open: display(latest.open),
+        high: display(latest.high), low: display(latest.low),
+        close: display(latest.close), samples: latest.samples, expected_samples: latest.expected_samples,
+        sampling_complete: latest.sampling_complete, min_contract_coverage: latest.min_contract_coverage,
+        expected_contracts: latest.expected_contracts, contract_coverage_complete: latest.contract_coverage_complete },
+      change_24h_pct: pct24,
+      change_3d_pct: pct3d,
+      change_window_pct: pctWindow,
+      mean_close_24h: funding ? display(mean24) : null,
+      mean_close_3d: funding ? display(mean3d) : null,
+      mean_close_window: funding ? display(closes.reduce((a, b) => a + b, 0) / closes.length) : null,
+      latest_percentile_vs_prior_window: clean.length > 1 ? percentileRank(closes.slice(0, -1), latest.close) : null,
+      direction_24h: funding ? sign(mean24) : sign(pct24),
+      direction_3d: funding ? sign(mean3d) : sign(pct3d),
+      direction_window: funding ? sign(latest.close) : sign(pctWindow),
+      ohlc_available: clean.some(r => Number.isFinite(r.open) && Number.isFinite(r.high) && Number.isFinite(r.low)),
+      ohlc_method: sampled ? 'resampled discrete snapshots; high/low are sampled observations, not continuous extrema' : 'provider OHLC',
+      sampling_quality: sampled ? {
+        complete_bars: clean.filter(r => r.sampling_complete === true).length,
+        incomplete_bars: clean.filter(r => r.sampling_complete === false).length,
+        bars_with_full_contract_coverage: clean.filter(r => r.contract_coverage_complete === true).length,
+      } : null,
+      recent_candles: clean.slice(-12).map(r => ({ time: new Date(r.time).toISOString(),
+        open: display(r.open), high: display(r.high),
+        low: display(r.low), close: display(r.close), samples: r.samples,
+        expected_samples: r.expected_samples, sampling_complete: r.sampling_complete,
+        min_contract_coverage: r.min_contract_coverage, expected_contracts: r.expected_contracts,
+        contract_coverage_complete: r.contract_coverage_complete })),
+    }
+  }
+
+  const spot = flowSummary(spotRows)
+  const futures = flowSummary(futuresRows)
+  const oi = candleSummary(openInterestRows)
+  const weightedFunding = candleSummary(oiWeightedFundingRows, { funding: true })
+  const price24 = spot.available ? spot.price_change_24h_pct : null
+  const spot24 = spot.available ? spot.delta_24h_usd : null
+  const futures24 = futures.available ? futures.delta_24h_usd : null
+  const oi24 = oi.available ? oi.change_24h_pct : null
+  const candidates = []
+  if (Number.isFinite(price24) && Number.isFinite(spot24) && price24 > 0 && spot24 < 0) candidates.push('PRICE_UP_SPOT_CVD_DOWN: potential distribution/spot demand non-confirmation')
+  if (Number.isFinite(price24) && Number.isFinite(spot24) && price24 < 0 && spot24 > 0) candidates.push('PRICE_DOWN_SPOT_CVD_UP: potential spot absorption')
+  if (Number.isFinite(price24) && Number.isFinite(futures24) && Number.isFinite(spot24) && Number.isFinite(oi24)
+      && price24 > 0 && futures24 > 0 && spot24 <= 0 && oi24 > 0) candidates.push('LEVERAGE_LED_RALLY: futures buying + rising OI without spot confirmation')
+  if (Number.isFinite(price24) && Number.isFinite(futures24) && Number.isFinite(oi24)
+      && price24 < 0 && futures24 < 0 && oi24 < 0) candidates.push('LONG_DELEVERAGING: price/futures CVD/OI falling together')
+  if (Number.isFinite(price24) && Number.isFinite(futures24) && Number.isFinite(oi24)
+      && price24 < 0 && futures24 < 0 && oi24 > 0) candidates.push('FRESH_SHORT_BUILD: price and futures CVD down while OI rises')
+  if (Number.isFinite(price24) && Number.isFinite(futures24) && Number.isFinite(oi24)
+      && price24 > 0 && futures24 > 0 && oi24 < 0) candidates.push('SHORT_COVERING: price/futures CVD up while OI falls')
+
+  const asOf = [spot.as_of, futures.as_of, oi.as_of, weightedFunding.as_of].filter(Boolean).sort().at(-1) || null
+  const completedThrough = [spot.completed_through, futures.completed_through, oi.completed_through,
+    weightedFunding.completed_through].filter(Boolean).sort().at(-1) || null
+  return {
+    schema: 'market-flow/1',
+    available: spot.available || futures.available || oi.available || weightedFunding.available,
+    scope,
+    interval_hours: intervalHours,
+    as_of: asOf,
+    completed_through: completedThrough,
+    spot_cvd: spot,
+    futures_cvd: futures,
+    futures_bid_ask_delta: futures.available ? {
+      latest_usd: futures.latest_delta_usd, delta_24h_usd: futures.delta_24h_usd,
+      delta_3d_usd: futures.delta_3d_usd, imbalance_24h_pct: futures.imbalance_24h_pct,
+      direction_24h: sign(futures.delta_24h_usd), direction_3d: sign(futures.delta_3d_usd),
+      sign_convention: 'positive = aggressive/taker buys exceed sells; negative = aggressive/taker sells exceed buys',
+    } : { available: false, reason: futures.reason },
+    open_interest: oi,
+    oi_weighted_funding: weightedFunding.available ? { ...weightedFunding, oi_weighted: true } : weightedFunding,
+    relationship_signs_24h: {
+      price: sign(price24), spot_cvd: sign(spot24), futures_cvd: sign(futures24),
+      open_interest: sign(oi24), oi_weighted_funding: weightedFunding.available ? sign(weightedFunding.latest.close) : 'flat_or_unavailable',
+    },
+    interpretation_candidates: candidates,
+    interpretation_note: 'Candidates are relationship labels, not signals. Require magnitude, at least two horizons, and an independent source family before using one in D1/S1; all fields from this block count as ONE provider/derived family.',
+    note: 'Legacy report-machine/1–2: disclosed context only. Shadow swing-score/1 may score this panel only after completed 24h/3d coverage and setup-relative OI interpretation; it still cannot authorize until model_activation is ACTIVE.',
   }
 }
 

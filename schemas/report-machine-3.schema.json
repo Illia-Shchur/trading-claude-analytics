@@ -1,0 +1,238 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trading-codex-analytics.local/schema/report-machine/3",
+  "title": "Trading Codex Analytics report-machine/3 swing contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "report_id", "identity", "timestamps", "model_activation", "setup", "features", "trigger", "vetoes", "risk_budget", "expectancy_r", "trade_plan", "audit", "sources", "provenance", "tags"],
+  "properties": {
+    "schema": { "const": "report-machine/3" },
+    "report_id": { "type": "string", "pattern": "^[a-z0-9]+_(fallen_knives|flying_rocket)_\\d{8}_\\d{4}$" },
+    "identity": { "$ref": "#/$defs/identity" },
+    "timestamps": { "$ref": "#/$defs/timestamps" },
+    "model_activation": { "$ref": "#/$defs/modelActivation" },
+    "setup": { "$ref": "#/$defs/setup" },
+    "features": { "type": "object", "additionalProperties": true },
+    "trigger": { "$ref": "#/$defs/trigger" },
+    "vetoes": { "type": "array", "items": { "$ref": "#/$defs/veto" } },
+    "risk_budget": { "$ref": "#/$defs/riskBudget" },
+    "expectancy_r": { "type": ["object", "null"], "additionalProperties": true },
+    "trade_plan": { "$ref": "#/$defs/tradePlan" },
+    "audit": { "$ref": "#/$defs/audit" },
+    "sources": { "type": "object", "minProperties": 1, "additionalProperties": { "$ref": "#/$defs/source" } },
+    "provenance": { "type": "object", "minProperties": 1, "additionalProperties": true },
+    "tags": { "$ref": "#/$defs/tags" },
+    "position": { "type": ["object", "null"], "additionalProperties": true },
+    "position_controls": { "type": ["object", "null"], "additionalProperties": true },
+    "phase_attribution": { "type": ["object", "null"], "additionalProperties": true },
+    "watchlist": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+    "narrative": { "type": "object", "additionalProperties": true },
+    "change_log": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+    "verdict": { "type": "object", "additionalProperties": true }
+  },
+  "$defs": {
+    "decimal": { "type": ["number", "string", "null"] },
+    "identity": {
+      "type": "object", "additionalProperties": false,
+      "required": ["asset", "framework", "date", "local_time", "timezone", "filename"],
+      "properties": {
+        "asset": { "type": "string", "pattern": "^[A-Z0-9]+$" },
+        "framework": { "type": "string", "enum": ["fallen_knives", "flying_rocket"] },
+        "date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "local_time": { "type": "string", "pattern": "^\\d{2}:\\d{2}$" },
+        "timezone": { "type": "string", "minLength": 1 },
+        "filename": { "type": "string", "pattern": "^[a-z0-9]+_(fallen_knives|flying_rocket)_\\d{8}_\\d{4}\\.json$" }
+      }
+    },
+    "timestamps": {
+      "type": "object", "additionalProperties": false,
+      "required": ["generated_at", "report_at", "data_as_of", "timezone"],
+      "properties": {
+        "generated_at": { "type": "string", "format": "date-time" },
+        "report_at": { "type": "string", "format": "date-time" },
+        "data_as_of": { "type": "string", "format": "date-time" },
+        "timezone": { "type": "string", "minLength": 1 }
+      }
+    },
+    "modelActivation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "artifact", "sha256", "activated_at"],
+      "properties": {
+        "status": { "type": "string", "enum": ["SHADOW", "CANDIDATE_REVIEW", "ACTIVE"] },
+        "artifact": { "type": ["string", "null"] },
+        "sha256": { "type": ["string", "null"], "pattern": "^[0-9a-f]{64}$" },
+        "activated_at": { "type": ["string", "null"], "format": "date-time" }
+      }
+    },
+    "setup": {
+      "type": "object", "additionalProperties": false,
+      "required": ["framework", "horizon_days", "score", "mechanical_score", "discretion", "legs", "leg_components", "phase", "status", "entry_authorized"],
+      "properties": {
+        "framework": { "type": "string", "enum": ["fallen_knives", "flying_rocket"] },
+        "channel": { "type": ["string", "null"], "enum": ["A", "B", null] },
+        "variant": { "type": ["string", "null"] },
+        "horizon_days": { "type": "object", "additionalProperties": false, "required": ["min", "max"], "properties": { "min": { "type": "integer", "minimum": 1 }, "max": { "type": "integer", "minimum": 1 } } },
+        "score": { "type": ["number", "null"] },
+        "mechanical_score": { "type": ["number", "null"] },
+        "discretion": { "type": "number" },
+        "impulse": { "type": ["number", "null"] },
+        "legs": {
+          "type": "object", "additionalProperties": false,
+          "required": ["flow", "technical", "macro", "sentiment", "valuation", "structure"],
+          "properties": {
+            "flow": { "type": "number", "minimum": 0, "maximum": 5 },
+            "technical": { "type": "number", "minimum": 0, "maximum": 4 },
+            "macro": { "type": "number", "minimum": 0, "maximum": 3 },
+            "sentiment": { "type": "number", "minimum": 0, "maximum": 3 },
+            "valuation": { "type": "number", "minimum": 0, "maximum": 3 },
+            "structure": { "type": "number", "minimum": 0, "maximum": 2 }
+          }
+        },
+        "leg_components": {
+          "type": "object", "additionalProperties": false,
+          "required": ["technical", "macro", "sentiment", "valuation", "structure"],
+          "properties": {
+            "technical": { "$ref": "#/$defs/technicalComponents" },
+            "macro": { "$ref": "#/$defs/macroComponents" },
+            "sentiment": { "$ref": "#/$defs/macroComponents" },
+            "valuation": { "$ref": "#/$defs/valuationComponents" },
+            "structure": { "$ref": "#/$defs/structureComponents" }
+          }
+        },
+        "phase": { "type": ["string", "null"] },
+        "phase_threshold": { "type": ["number", "null"] },
+        "status": { "type": "string", "enum": ["WATCH", "READY", "AUTHORIZED", "VETO", "EXPIRED", "DATA_LIMITED"] },
+        "entry_authorized": { "type": "boolean" }
+      }
+    },
+    "technicalComponents": { "$ref": "#/$defs/component4" },
+    "macroComponents": { "$ref": "#/$defs/component3" },
+    "valuationComponents": { "$ref": "#/$defs/componentValuation" },
+    "structureComponents": { "$ref": "#/$defs/component2" },
+    "component4": {
+      "type": "object", "additionalProperties": false, "required": ["state", "impulse", "total"],
+      "properties": { "state": { "type": "number", "minimum": 0, "maximum": 2 }, "impulse": { "type": "number", "minimum": 0, "maximum": 2 }, "total": { "type": "number", "minimum": 0, "maximum": 4 } }
+    },
+    "component3": {
+      "type": "object", "additionalProperties": false, "required": ["state", "impulse", "total"],
+      "properties": { "state": { "type": "number", "minimum": 0, "maximum": 1.5 }, "impulse": { "type": "number", "minimum": 0, "maximum": 1.5 }, "total": { "type": "number", "minimum": 0, "maximum": 3 } }
+    },
+    "componentValuation": {
+      "type": "object", "additionalProperties": false, "required": ["state", "impulse", "total"],
+      "properties": { "state": { "type": "number", "minimum": 0, "maximum": 2 }, "impulse": { "type": "number", "minimum": 0, "maximum": 1 }, "total": { "type": "number", "minimum": 0, "maximum": 3 } }
+    },
+    "component2": {
+      "type": "object", "additionalProperties": false, "required": ["state", "impulse", "total"],
+      "properties": { "state": { "type": "number", "minimum": 0, "maximum": 1 }, "impulse": { "type": "number", "minimum": 0, "maximum": 1 }, "total": { "type": "number", "minimum": 0, "maximum": 2 } }
+    },
+    "trigger": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "timeframe", "completed_bar_required", "window_bars"],
+      "properties": {
+        "status": { "type": "string", "enum": ["VALID", "WAIT", "EXPIRED", "DATA_LIMITED"] },
+        "direction": { "type": ["string", "null"], "enum": ["LONG", "SHORT", null] },
+        "timeframe": { "type": "string", "enum": ["4h", "1d"] },
+        "completed_bar_required": { "const": true },
+        "level": { "$ref": "#/$defs/decimal" },
+        "created_at": { "type": ["string", "null"], "format": "date-time" },
+        "expires_at": { "type": ["string", "null"], "format": "date-time" },
+        "window_bars": { "type": "integer", "minimum": 1, "maximum": 2 },
+        "age_bars": { "type": ["integer", "null"], "minimum": 0, "maximum": 2 },
+        "completed_bar": { "type": "boolean" },
+        "better_price_required": { "type": "boolean" },
+        "rationale": { "type": "string" }
+      }
+    },
+    "veto": {
+      "type": "object", "additionalProperties": false,
+      "required": ["code", "active", "reason"],
+      "properties": { "code": { "type": "string", "minLength": 1 }, "active": { "type": "boolean" }, "reason": { "type": "string" } }
+    },
+    "source": {
+      "type": "object", "additionalProperties": true,
+      "required": ["name", "as_of"],
+      "properties": { "name": { "type": "string", "minLength": 1 }, "as_of": { "type": "string", "minLength": 1 }, "url": { "type": ["string", "null"] } }
+    },
+    "tags": {
+      "type": "object", "additionalProperties": true,
+      "required": ["reserved", "active"],
+      "properties": {
+        "reserved": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "active": { "type": "array", "items": { "type": "string" } },
+        "entries": { "type": "array", "items": { "type": "object", "additionalProperties": true } }
+      }
+    },
+    "tradePlan": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "direction", "entry", "stop", "targets", "clock_days", "time_stop", "ratchet", "carry"],
+      "properties": {
+        "status": { "type": "string", "enum": ["NONE", "PLANNING", "AUTHORIZED", "DATA_LIMITED"] },
+        "direction": { "type": ["string", "null"], "enum": ["LONG", "SHORT", null] },
+        "entry": { "$ref": "#/$defs/tradeEntry" },
+        "stop": { "$ref": "#/$defs/tradeStop" },
+        "exit": { "$ref": "#/$defs/tradeExit" },
+        "targets": {
+          "type": "array", "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["r", "share_pct"],
+            "properties": { "r": { "type": "number" }, "share_pct": { "type": "number" }, "price": { "type": ["number", "null"] }, "trailing": { "type": "boolean" }, "label": { "type": "string" } }
+          }
+        },
+        "clock_days": { "type": ["integer", "null"] },
+        "time_stop": { "type": ["string", "null"], "format": "date-time" },
+        "ratchet": { "type": ["object", "null"], "additionalProperties": true },
+        "carry": { "type": ["object", "null"], "additionalProperties": true }
+      }
+    },
+    "tradeEntry": {
+      "type": ["object", "null"], "additionalProperties": false,
+      "properties": {
+        "price": { "type": ["number", "null"] }, "trigger": { "type": ["string", "number", "object", "null"] },
+        "zone": { "type": ["object", "null"] }, "retest_window": { "type": ["string", "number", "null"] },
+        "status": { "type": "string" }, "source": { "type": "string" }, "as_of": { "type": "string" }
+      }
+    },
+    "tradeStop": {
+      "type": ["object", "null"], "additionalProperties": false,
+      "properties": {
+        "mode": { "type": "string", "enum": ["TACTICAL", "DEEP_COMPOUND", "tactical", "deep_compound"] },
+        "price": { "type": ["number", "null"] }, "distance_pct": { "type": ["number", "null"] },
+        "anchor": { "type": ["string", "object", "null"] }, "tactical": { "type": ["object", "null"] },
+        "compound": { "type": ["object", "null"] }, "ratchet": { "type": ["object", "null"] },
+        "source": { "type": "string" }, "as_of": { "type": "string" }
+      }
+    },
+    "tradeExit": {
+      "type": ["object", "null"], "additionalProperties": false,
+      "properties": {
+        "status": { "type": "string" }, "price": { "type": ["number", "null"] },
+        "reason": { "type": "string" }, "source": { "type": "string" }, "as_of": { "type": "string" }
+      }
+    },
+    "riskBudget": {
+      "type": "object", "additionalProperties": true,
+      "required": ["status", "portfolio_risk_pct", "asset_risk_pct"],
+      "properties": {
+        "status": { "type": "string", "enum": ["AVAILABLE", "DATA_LIMITED", "VETO"] },
+        "portfolio_risk_pct": { "type": "number", "const": 1.5 },
+        "asset_risk_pct": { "type": "number", "const": 3 },
+        "phase_cap_pct": { "type": ["number", "null"] },
+        "stop_distance_pct": { "type": ["number", "null"] },
+        "notional_usd": { "type": ["number", "null"] },
+        "equity_usd": { "type": ["number", "null"] },
+        "constraints": { "type": "object", "additionalProperties": true }
+      }
+    },
+    "audit": {
+      "type": "object", "additionalProperties": true,
+      "required": ["coverage", "sources", "lint"],
+      "properties": {
+        "coverage": { "type": "string", "enum": ["COMPLETE", "PARTIAL"] },
+        "completed_through": { "type": ["string", "null"], "format": "date-time" },
+        "sources": { "type": "object", "additionalProperties": true },
+        "lint": { "type": "string", "enum": ["PASS", "FAIL"] },
+        "notes": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

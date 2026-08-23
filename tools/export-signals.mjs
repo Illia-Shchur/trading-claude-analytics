@@ -112,7 +112,11 @@ for (const entry of files) {
     else {
       const viewText = readFileSync(join(reportsDir, mdFile), 'utf8')
       const blocks = [...viewText.matchAll(/```json machine\s*\n([\s\S]*?)\n```/g)]
-      if (blocks.length !== 1) mismatchedPairs.push({ json: jsonFile, markdown: mdFile, reason: `expected one machine block, found ${blocks.length}` })
+      if (report.schema === 'report-machine/3') {
+        if (blocks.length) mismatchedPairs.push({ json: jsonFile, markdown: mdFile, reason: 'report-machine/3 must not embed a machine block' })
+        const hash = sha256(canonicalReportPayload(report)).slice(0, 16)
+        if (!new RegExp(`sha256:${hash} \\u00b7 lint PASS`).test(viewText)) mismatchedPairs.push({ json: jsonFile, markdown: mdFile, reason: 'report-machine/3 audit footer hash mismatch' })
+      } else if (blocks.length !== 1) mismatchedPairs.push({ json: jsonFile, markdown: mdFile, reason: `expected one machine block, found ${blocks.length}` })
       else {
         try {
           const embedded = parseStrictJSON(blocks[0][1], mdFile)
@@ -124,9 +128,12 @@ for (const entry of files) {
       ok: true, file: mdFile, canonical_file: jsonFile, view_file: mdExists ? mdFile : null,
       asset: report.identity.asset, framework: report.identity.framework, date: report.identity.date,
       local_time: report.identity.local_time, zone: report.identity.timezone,
-      at_utc: report.timestamps.report_at, schema_epoch: 'report_machine_2', stem,
+      at_utc: report.timestamps.report_at, schema_epoch: report.schema === 'report-machine/3' ? 'report_machine_3' : 'report_machine_2', stem,
     }
-    try { signals.push(toV2Signal(meta, report, sha256(canonicalReportPayload(report)))) } catch (error) {
+    try {
+      const contentSha = sha256(canonicalReportPayload(report))
+      signals.push(report.schema === 'report-machine/3' ? toV3Signal(meta, report, contentSha) : toV2Signal(meta, report, contentSha))
+    } catch (error) {
       unparseable++
       skipped.push({ file: jsonFile, date: meta.date, reason: 'projection_failed', detail: error.message })
     }
@@ -248,6 +255,46 @@ function toV2Signal(meta, report, contentSha) {
   signal.position_controls = decDeep(report.position_controls)
   signal.evidence = decDeep(report.evidence)
   return signal
+}
+
+function toV3Signal(meta, report, contentSha) {
+  const setup = report.setup || {}
+  const trigger = report.trigger || {}
+  const vetoes = Array.isArray(report.vetoes) ? report.vetoes : []
+  const vetoActive = vetoes.some(v => v.active === true)
+  const threshold = setup.phase_threshold ?? null
+  const mechanical = setup.mechanical_score ?? null
+  const scorePass = Number.isFinite(Number(mechanical)) && Number.isFinite(Number(threshold)) && Number(mechanical) >= Number(threshold)
+  const riskStatus = report.risk_budget?.status || null
+  const authorized = setup.entry_authorized === true
+  return {
+    report_file: meta.file, canonical_file: meta.canonical_file, view_file: meta.view_file,
+    report_date: meta.date, report_local_time: meta.local_time, report_zone: meta.zone,
+    report_at_utc: meta.at_utc, content_sha256: contentSha, canonical_sha256: contentSha,
+    source_schema: 'report-machine/3', schema_epoch: 'report_machine_3',
+    framework: meta.framework, asset: meta.asset, channel: setup.channel || null,
+    model_activation: decDeep(report.model_activation),
+    setup: decDeep(setup), features: decDeep(report.features), trigger: decDeep(trigger),
+    vetoes: decDeep(vetoes), risk_budget: decDeep(report.risk_budget), expectancy_r: decDeep(report.expectancy_r),
+    score: { mechanical: dec(setup.mechanical_score), adjusted: dec(setup.score), impulse: dec(setup.impulse), legs: decDeep(setup.legs || {}) },
+    // v3 has no nine-gate legacy rubric. Keep this projection direct and
+    // additive: consumers must read score/trigger/veto/risk/authorization.
+    gates: null,
+    entry_state: {
+      phase: setup.phase || null,
+      mechanical_score: dec(mechanical),
+      phase_threshold: dec(threshold),
+      score_pass: scorePass,
+      trigger_status: trigger.status || null,
+      trigger_fresh: trigger.status === 'VALID' && trigger.timeframe === '4h' && trigger.completed_bar_required === true && trigger.completed_bar !== false && (trigger.age_bars == null || trigger.age_bars <= trigger.window_bars),
+      veto_active: vetoActive,
+      risk_status: riskStatus,
+      authorized,
+    },
+    deployment: { phase: setup.phase || null, authorized },
+    verdict: report.verdict?.statement || report.narrative?.summary || null,
+    audit: decDeep(report.audit), position: decDeep(report.position), tags: decDeep(report.tags),
+  }
 }
 
 function toSignal(meta, b, contentSha) {
@@ -406,6 +453,7 @@ const feed = {
     skipped_unparseable: unparseable,
     skipped_post_epoch_missing_block: postEpochMissing,
     v2_signals: signals.filter(s => s.source_schema === 'report-machine/2').length,
+    v3_signals: signals.filter(s => s.source_schema === 'report-machine/3').length,
     orphaned_v2: orphanedV2.length,
     mismatched_v2_pairs: mismatchedPairs.length,
   },

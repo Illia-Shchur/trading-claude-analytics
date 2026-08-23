@@ -1,0 +1,123 @@
+{
+  "schema": "report-machine/3",
+  "report_id": "btc_fallen_knives_20260822_1200",
+  "identity": {
+    "asset": "BTC",
+    "framework": "fallen_knives",
+    "date": "2026-08-22",
+    "local_time": "12:00",
+    "timezone": "America/New_York",
+    "filename": "btc_fallen_knives_20260822_1200.json"
+  },
+  "timestamps": {
+    "generated_at": "2026-08-22T16:00:00Z",
+    "report_at": "2026-08-22T16:00:00Z",
+    "data_as_of": "2026-08-22T15:55:00Z",
+    "timezone": "America/New_York"
+  },
+  "model_activation": {
+    "status": "SHADOW",
+    "artifact": null,
+    "sha256": null,
+    "activated_at": null
+  },
+  "setup": {
+    "framework": "fallen_knives",
+    "channel": null,
+    "variant": "capitulation-reversal",
+    "horizon_days": { "min": 3, "max": 30 },
+    "score": 12,
+    "mechanical_score": 12,
+    "discretion": 0,
+    "impulse": 1,
+    "legs": { "flow": 4, "technical": 3, "macro": 2, "sentiment": 1, "valuation": 1, "structure": 1 },
+    "leg_components": {
+      "technical": { "state": 1.5, "impulse": 1.5, "total": 3 },
+      "macro": { "state": 1, "impulse": 1, "total": 2 },
+      "sentiment": { "state": 0.5, "impulse": 0.5, "total": 1 },
+      "valuation": { "state": 0.5, "impulse": 0.5, "total": 1 },
+      "structure": { "state": 0.5, "impulse": 0.5, "total": 1 }
+    },
+    "phase": "1A",
+    "phase_threshold": 8,
+    "status": "READY",
+    "entry_authorized": false
+  },
+  "features": {
+    "flow": {
+      "interval_hours": 4,
+      "completed_through": "2026-08-22T15:00:00Z",
+      "scope": "Binance aggregate, single venue",
+      "spot_cvd": { "24h": "up", "3d": "up", "read": "spot absorption" },
+      "futures_bid_ask_delta": { "24h": "up", "3d": "up" },
+      "futures_cvd": { "24h": "up", "3d": "up" },
+      "open_interest": { "24h": "up", "3d": "up", "setup_signal_24h": "aligned", "setup_signal_3d": "aligned" },
+      "oi_weighted_funding": { "24h": "flat", "3d": "flat", "latest": -0.0001 }
+    },
+    "technical": { "rsi_4h": 38 },
+    "macro": { "impulse": "neutral" },
+    "sentiment": { "fear_greed": 22 },
+    "valuation": { "cycle": "discount" },
+    "structure": { "demand": "absorption" }
+  },
+  "trigger": {
+    "status": "WAIT",
+    "direction": "LONG",
+    "timeframe": "4h",
+    "completed_bar_required": true,
+    "level": null,
+    "created_at": null,
+    "expires_at": null,
+    "window_bars": 2,
+    "better_price_required": true,
+    "rationale": "Await a completed-bar retest."
+  },
+  "vetoes": [
+    { "code": "FLOW_COVERAGE", "active": false, "reason": "Complete common-bar coverage." },
+    { "code": "OPPOSING_FLOW", "active": false, "reason": "No opposing two-horizon flow." },
+    { "code": "REGIME_MISMATCH", "active": false, "reason": "Setup matches the routed regime." },
+    { "code": "RISK_BUDGET", "active": false, "reason": "Measured equity and stop available." },
+    { "code": "NARRATIVE_EXIT", "active": false, "reason": "No narrative exit is active." },
+    { "code": "CARRY", "active": false, "reason": "Carry is not a veto." },
+    { "code": "FUNDING", "active": false, "reason": "Funding is not a veto." },
+    { "code": "MACRO_SHOCK", "active": false, "reason": "No extreme opposing macro shock." }
+  ],
+  "risk_budget": {
+    "status": "DATA_LIMITED",
+    "portfolio_risk_pct": 1.5,
+    "asset_risk_pct": 3,
+    "phase_cap_pct": 10,
+    "stop_distance_pct": null,
+    "notional_usd": null,
+    "equity_usd": null
+  },
+  "expectancy_r": { "status": "DATA_LIMITED", "value_r": null },
+  "trade_plan": {
+    "status": "PLANNING",
+    "direction": "LONG",
+    "entry": null,
+    "stop": null,
+    "exit": null,
+    "targets": [],
+    "clock_days": null,
+    "time_stop": null,
+    "ratchet": null,
+    "carry": null
+  },
+  "audit": {
+    "coverage": "COMPLETE",
+    "completed_through": "2026-08-22T15:00:00Z",
+    "sources": { "binance": { "name": "Binance aggregate flow", "as_of": "2026-08-22T15:00:00Z" } },
+    "lint": "PASS",
+    "notes": []
+  },
+  "sources": { "binance": { "name": "Binance aggregate flow", "as_of": "2026-08-22T15:00:00Z", "url": "https://www.binance.com/" } },
+  "position": { "status": "FRESH", "quantity": null },
+  "position_controls": { "status": "NOT_APPLICABLE", "required": false },
+  "phase_attribution": { "phase": "1A", "status": "PLANNING" },
+  "tags": { "active": [], "reserved": ["FK-P1A-BTC-20260822-1200"], "entries": [] },
+  "provenance": { "tool": "swing-score/1" },
+  "watchlist": [{ "item": "4h retest", "status": "AVAILABLE", "trigger": "fresh completed-bar trigger" }],
+  "narrative": { "summary": "The setup is ready but no trigger is active." },
+  "verdict": { "status": "WATCH", "statement": "WAIT for a completed-bar trigger." }
+}

@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trading-codex.local/schemas/swing-calibration-1.schema.json",
+  "title": "Swing-score/1 chronological calibration artifact",
+  "type": "object",
+  "required": ["schema", "model", "generated_at", "years", "split", "criteria", "costs", "activation", "model_activation", "activation_policy", "point_in_time_safe", "proxy_contract", "datasets"],
+  "properties": {
+    "schema": { "const": "swing-calibration/1" },
+    "model": { "const": "swing-score/1" },
+    "generated_at": { "type": "string" },
+    "years": { "type": "integer", "minimum": 1, "maximum": 3 },
+    "split": { "type": "object", "required": ["development_months", "fold_months", "untouched_holdout_months"], "additionalProperties": true },
+    "criteria": { "type": "object", "required": ["min_holdout_signals", "min_coverage_ratio", "min_regimes"], "additionalProperties": true },
+    "costs": { "type": "object", "required": ["fee_pct_one_way", "slippage_pct_one_way"], "additionalProperties": true },
+    "activation_policy": { "type": "object", "required": ["point_in_time_safe_required", "proxy_inputs_accepted", "required_series"], "additionalProperties": true },
+    "point_in_time_safe": { "type": "boolean" },
+    "proxy_contract": { "type": "object", "required": ["accepted"], "properties": { "accepted": { "type": "boolean" } }, "additionalProperties": true },
+    "activation": { "enum": ["SHADOW", "ACTIVE"] },
+    "model_activation": {
+      "type": "object",
+      "required": ["status", "artifact", "sha256", "activated_at"],
+      "properties": {
+        "status": { "enum": ["SHADOW", "ACTIVE"] },
+        "artifact": { "type": ["string", "null"] },
+        "sha256": { "type": ["string", "null"], "pattern": "^([0-9a-f]{64})?$" },
+        "activated_at": { "type": ["string", "null"] }
+      },
+      "additionalProperties": true
+    },
+    "datasets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["asset", "framework", "feature_coverage", "holdout_pass", "holdout_criteria"],
+        "properties": {
+          "asset": { "type": "string" },
+          "framework": { "enum": ["fallen_knives", "flying_rocket"] },
+          "channel": { "type": ["string", "null"] },
+          "feature_coverage": { "enum": ["COMPLETE", "PARTIAL", "HISTORICAL_PROXY"] },
+          "holdout_pass": { "type": "boolean" },
+          "holdout_criteria": { "type": "object" }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}
