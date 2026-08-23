@@ -75,6 +75,25 @@ does not loosen Hard Rule 6. Unknown/data-limited positions may not become a
 fabricated `HOLD` or `RETAIN`. Legacy `report-machine/1` Markdown remains a
 read-compatible adapter.
 
+## Mandatory premise-first research contract (new candidate families)
+
+Every new candidate family begins with an immutable `strategy-precommit/1`
+premise and its falsifier; do not start from composite-score thresholds. The
+one-page precommit names the phenomenon and forced actor, edge-transfer and
+persistence mechanism, direction/expression/horizon, expected frequency,
+win-rate and payoff ranges, work/failure regimes, invalidation mechanism,
+PIT/availability inputs, replication groups, and simplest falsifying test.
+staged order is `CORE_PREMISE -> ENTRY_TIMING -> RISK_LIFECYCLE ->
+INDEPENDENT_CONTEXT -> COMPOSITE_SCORE`, with each later stage linked to the
+frozen predecessor hash. The score is a later incremental test after a
+score-free baseline, and setup evidence may not be double-voted as independent
+context. Tradable instruments are crypto spot and crypto derivatives only;
+non-crypto markets are PIT-safe context/correlation inputs, never candidates,
+holdings, validation markets, or PnL. Follow the reusable
+[`strategy-research/RESEARCH-PROTOCOL.md`](../../../strategy-research/RESEARCH-PROTOCOL.md)
+through the `strategy-research` skill and use `strategy-research.mjs precommit`
+before `generate`.
+
 ## Swing-score/1 operating contract (SHADOW until activation)
 
 The swing objective is a 3–30 day short using completed 4h bars. This section
@@ -142,6 +161,16 @@ short. `CANDIDATE_REVIEW` is still non-active: registry recording cannot bypass
 governed activation. Every FR stop, clock, ratchet, cap, carry control, and funding veto
 remains binding. Legacy imports are provenance, not activation evidence. See
 `strategy-research/README.md`.
+
+For v2 backtests the authoritative path is `strategy-research.mjs evaluate`:
+freeze the experiment/candidate set, hashed feature store and
+`strategy-data-manifest/1`, then retain the resulting evidence bundle. The
+local swing adapter recomputes trades/metrics, stress and mark-to-market
+portfolio risk; narrated or caller-supplied result JSON is external exposed
+evidence only. Local `SEALED_CONFIRMATION` and `ACTIVE` are impossible, and
+options, multi-leg carry/basis, HFT/queue claims or missing leveraged marks
+fail closed. FR's stops, clocks, ratchet, caps, carry and funding vetoes are
+never relaxed by this research path.
 
 - Compute `swing-score/1` with six legs: market flow 5, technical structure 4,
   macro impulse 3, sentiment/institutional impulse 3, valuation/cycle 3, and
@@ -542,7 +571,7 @@ The suspension is recorded in the S7 Discretion Ledger and may not be lifted by 
 
 Run `node tools/position.mjs <asset>` **before** writing this section. It reads the position snapshot exported from the personal-accounting ledger — derived from actual Binance fills, not from what a prior report said. This replaces the narrated carry-forward line that used to open §6.
 
-**Exit 0 / band FRESH (≤12 h): these figures are the position of record and supersede any number carried forward from a prior report.** Print, from the snapshot:
+**Exit 0 / band FRESH (event-driven validity; no default age expiry): these figures are the position of record and supersede any number carried forward from a prior report.** The owner exports after every new trade, so elapsed time alone does not make an unchanged position stale. Print, from the snapshot:
 
 - **Position of record** — real quantity, ACB cost basis, unrealized PnL, and each holding's **attribution** (its deal tag, e.g. `FR-B-1A`, or `UNTAGGED`).
 - **Open shorts reconciled against the tranche ledger** — `futures.open_positions` where `side: "SHORT"`, matched to the tranches §6 believes are live. A short in the account that no tranche authorizes, or a tranche with no position behind it, is a discrepancy to state, not to average out.
@@ -550,9 +579,9 @@ Run `node tools/position.mjs <asset>` **before** writing this section. It reads 
 - **Realized performance** — closed round trips with realized PnL and hold time, plus win rate / profit factor / expectancy per tag. `performance_by_tag_prefix` carries `FR-A-` and `FR-B-` separately: **per-channel win rate is exactly the evidence Hard Rule 6 asks for**, and it is now readable rather than asserted.
 - **Position Reconciliation** — where the prior report's narrated figures diverge from the ledger, naming the delta. **The ledger wins.**
 
-**Band STALE (12–72 h):** descriptive use only, under an explicit age banner. It may **not** satisfy a phase-dependent unlock precondition — including Phase 1B's *"1A in profit or scratch"* — and may not fill a realized ledger column below.
+**Band STALE:** occurs only under an explicit `--max-age-min` strict-time audit or because futures coverage/status is incomplete. Descriptive use only; it may **not** satisfy a phase-dependent unlock precondition — including Phase 1B's *"1A in profit or scratch"* — and may not fill a realized ledger column below.
 
-**Exit 1 (EXPIRED / missing) or exit 2 (NOT_COVERED — an asset with no ledger counterpart and no alias):** say so in one line and proceed as a **cold start under Hard Rule 4**. Never read a zero position out of a NOT_COVERED response. Refuse the position claim, never the report.
+**Exit 1 (missing/invalid snapshot, missing `generated_at`, explicit strict-time expiry, or incomplete required coverage) or exit 2 (NOT_COVERED — an asset with no ledger counterpart and no alias):** say so in one line and proceed as a **cold start under Hard Rule 4**. Never expire a valid default snapshot merely because its timestamps are old. Never read a zero position out of a NOT_COVERED response. Refuse the position claim, never the report.
 
 **Governed verbatim by AGENTS.md Hard Rule 8** (already in context every report) — the gold→PAXG alias, the `custody.status` literals (`RECONCILED` / `EXPLAINED_BY_EXTERNAL_TRANSFER` / `EXPLAINED_BY_SYNTHETIC_OPENING_BALANCE` / `UNEXPLAINED`) and their handling, and `basis.reliable` as a question separate from custody — read `custody.status` before any quantity, and `basis.reliable` separately from it. *(Stage 2 pointer, 2026-08-07 — this paragraph and the enumerated custody-status/basis rules below it were byte-identical to Fallen Knives' copy and both restated Hard Rule 8; kept here only if it ever needs to diverge from AGENTS.md.)*
 

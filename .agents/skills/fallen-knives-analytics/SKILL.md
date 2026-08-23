@@ -49,6 +49,25 @@ candidate/veto/selection/venue-order/ladder/PnL/ratchet/liquidation-zone/risk/
 execution-audit, and data-limited positions may not invent `HOLD` or `RETAIN`.
 Legacy `report-machine/1` Markdown remains a read-compatible adapter.
 
+## Mandatory premise-first research contract (new candidate families)
+
+Every new candidate family begins with an immutable `strategy-precommit/1`
+premise and its falsifier; do not start from composite-score thresholds. The
+one-page precommit names the phenomenon and forced actor, edge-transfer and
+persistence mechanism, direction/expression/horizon, expected frequency,
+win-rate and payoff ranges, work/failure regimes, invalidation mechanism,
+PIT/availability inputs, replication groups, and simplest falsifying test.
+staged order is `CORE_PREMISE -> ENTRY_TIMING -> RISK_LIFECYCLE ->
+INDEPENDENT_CONTEXT -> COMPOSITE_SCORE`, with each later stage linked to the
+frozen predecessor hash. The score is a later incremental test after a
+score-free baseline, and setup evidence may not be double-voted as independent
+context. Tradable instruments are crypto spot and crypto derivatives only;
+non-crypto markets are PIT-safe context/correlation inputs, never candidates,
+holdings, validation markets, or PnL. Follow the reusable
+[`strategy-research/RESEARCH-PROTOCOL.md`](../../../strategy-research/RESEARCH-PROTOCOL.md)
+through the `strategy-research` skill and use `strategy-research.mjs precommit`
+before `generate`.
+
 ## Swing-score/1 operating contract (SHADOW until activation)
 
 The swing objective is a 3–30 day trade using completed 4h bars. This section
@@ -114,6 +133,15 @@ asset and portfolio. Missing PIT safety or failed gates never authorize a
 tranche. `CANDIDATE_REVIEW` is still non-active: registry recording cannot
 bypass governed activation. Legacy imports are provenance, not activation evidence. See
 `strategy-research/README.md`.
+
+For v2 backtests the authoritative path is `strategy-research.mjs evaluate`:
+freeze the experiment/candidate set, hashed feature store and
+`strategy-data-manifest/1`, then retain the resulting evidence bundle. The
+local swing adapter recomputes trades/metrics, stress and mark-to-market
+portfolio risk; narrated or caller-supplied result JSON is external exposed
+evidence only. Local `SEALED_CONFIRMATION` and `ACTIVE` are impossible, and
+options, multi-leg carry/basis, HFT/queue claims or missing leveraged marks
+fail closed.
 
 - Compute `swing-score/1` with six legs: market flow 5, technical structure 4,
   macro impulse 3, sentiment/institutional impulse 3, valuation/cycle 3, and
@@ -550,16 +578,16 @@ For each phase show: capital share, trigger zone, gates required, current status
 
 Run `node tools/position.mjs <asset>` **before** writing this section. It reads the position snapshot exported from the personal-accounting ledger — derived from actual Binance fills, not from what a prior report said. This replaces the narrated carry-forward line that used to open §6.
 
-**Exit 0 / band FRESH (≤12 h): these figures are the position of record and supersede any number carried forward from a prior report.** Print, from the snapshot:
+**Exit 0 / band FRESH (event-driven validity; no default age expiry): these figures are the position of record and supersede any number carried forward from a prior report.** The owner exports after every new trade, so elapsed time alone does not make an unchanged position stale. Print, from the snapshot:
 
 - **Position of record** — real quantity, ACB cost basis (`avg_cost_usd`), total cost, unrealized PnL, and each holding's **attribution** (its deal tag, e.g. `FK-P1A`, or `UNTAGGED`).
 - **Real dry powder** — `dry_powder.stable_balance_usd`. This is the sharp one. A phase plan sized as "45% of the book" against a book that was never measured is arithmetic, not a plan; check the tranche against an actual balance. Note that `dry_powder` **excludes futures-wallet collateral** (already counted as equity) and **includes** stablecoins locked in resting orders.
 - **Realized performance** — closed round trips for this asset with realized PnL and hold time, plus win rate / profit factor / expectancy overall and **per tag** (`performance_by_tag`, and `performance_by_tag_prefix` for the whole framework). State how Phase 1A entries have actually performed; do not assert it.
 - **Position Reconciliation** — where the prior report's narrated figures diverge from the ledger, naming the delta. **The ledger wins.** The line survives from the old convention with its meaning inverted: it used to reconcile the ledger against the report, and now it flags where the report drifted.
 
-**Band STALE (12–72 h):** usable **descriptively** — what is held, what it cost, how past trades performed — under an explicit age banner. It may **not** satisfy a phase-dependent unlock precondition and may not fill a realized ledger column.
+**Band STALE:** occurs only under an explicit `--max-age-min` strict-time audit or because futures coverage/status is incomplete. It is usable **descriptively** — what is held, what it cost, how past trades performed — but may **not** satisfy a phase-dependent unlock precondition or fill a realized ledger column.
 
-**Exit 1 (EXPIRED / missing) or exit 2 (NOT_COVERED — an asset with no ledger counterpart and no alias):** say so in one line and proceed as a **cold start under Hard Rule 4**, or carry state forward from the prior report for a not-covered asset. **Never read a zero position out of a NOT_COVERED response** — a flat position and an unknown position lead to opposite decisions. Refuse the position claim, never the report.
+**Exit 1 (missing/invalid snapshot, missing `generated_at`, explicit strict-time expiry, or incomplete required coverage) or exit 2 (NOT_COVERED — an asset with no ledger counterpart and no alias):** say so in one line and proceed as a **cold start under Hard Rule 4**, or carry state forward from the prior report for a not-covered asset. Never expire a valid default snapshot merely because its timestamps are old. **Never read a zero position out of a NOT_COVERED response** — a flat position and an unknown position lead to opposite decisions. Refuse the position claim, never the report.
 
 **Governed verbatim by AGENTS.md Hard Rule 8** (already in context every report) — the gold→PAXG alias, the `custody.status` literals (`RECONCILED` / `EXPLAINED_BY_EXTERNAL_TRANSFER` / `EXPLAINED_BY_SYNTHETIC_OPENING_BALANCE` / `UNEXPLAINED`) and their handling, and `basis.reliable` as a question separate from custody — read `custody.status` before any quantity, and `basis.reliable` separately from it. *(Stage 2 pointer, 2026-08-07 — this paragraph and the enumerated custody-status/basis rules below it were byte-identical to Flying Rocket's copy and both restated Hard Rule 8; kept here only if it ever needs to diverge from AGENTS.md.)*
 

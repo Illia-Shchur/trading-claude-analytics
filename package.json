@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node test/report-v2-test.mjs && node test/report-v3-test.mjs && node test/swing-calibration-test.mjs && node test/swing-backfill-contract-test.mjs && node test/swing-calibration-lint-test.mjs && node test/swing-candidates-test.mjs && node test/swing-cross-validate-test.mjs && node test/swing-strategy-cross-validate-test.mjs && node test/swing-engine-test.mjs && node test/swing-engine-cli-test.mjs && node test/strategy-research-test.mjs"
+    "test": "node test/report-v2-test.mjs && node test/report-v3-test.mjs && node test/swing-calibration-test.mjs && node test/swing-backfill-contract-test.mjs && node test/swing-calibration-lint-test.mjs && node test/swing-candidates-test.mjs && node test/swing-cross-validate-test.mjs && node test/swing-strategy-cross-validate-test.mjs && node test/swing-engine-test.mjs && node test/swing-engine-cli-test.mjs && node test/strategy-research-test.mjs && node test/strategy-research-v2-test.mjs && node test/strategy-research-authoritative-test.mjs"
   },
   "engines": {
     "node": ">=18"

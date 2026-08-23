@@ -3,11 +3,13 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSy
 import { basename, dirname, join, relative, resolve } from 'node:path'
 import canonicalize from 'canonicalize'
 import { decodeFeatureStore, normalizeCandidate, runResearch } from './swing-engine.mjs'
+import { CANDIDATE_SET_V2_SCHEMA, DATA_MANIFEST_SCHEMA, DEFINITION_V2_SCHEMA, EVIDENCE_BUNDLE_SCHEMA, EXPERIMENT_V2_SCHEMA, PORTFOLIO_MARK_PATH_SCHEMA, PRECOMMIT_SCHEMA, RUN_V2_SCHEMA, validateCandidateSetV2, validateDataManifest, validateDefinitionV2, validateEvidenceBundle, validateExperimentV2, validateV2Document } from './strategy-research-v2.mjs'
 
 export const REGISTRY_SCHEMA = 'strategy-research-index/1'
 export const DEFINITION_SCHEMA = 'strategy-definition/1'
 export const EXPERIMENT_SCHEMA = 'strategy-experiment/1'
 export const CANDIDATE_SET_SCHEMA = 'strategy-candidate-set/1'
+export { CANDIDATE_SET_V2_SCHEMA, DEFINITION_V2_SCHEMA, EXPERIMENT_V2_SCHEMA, PRECOMMIT_SCHEMA, RUN_V2_SCHEMA }
 export const RUN_SCHEMA = 'strategy-run/1'
 export const EVIDENCE_PHASES = ['DEVELOPMENT', 'WALK_FORWARD_OOS', 'EXPOSED_CONFIRMATION', 'SEALED_CONFIRMATION', 'PROSPECTIVE_LIVE']
 export const DECISION_STATUSES = ['REJECTED', 'SHADOW', 'CANDIDATE_REVIEW', 'ACTIVE']
@@ -56,7 +58,7 @@ export function validateFeatureContract(contract) {
   return true
 }
 
-export function validateDefinition(value) {
+function validateDefinitionV1(value) {
   assertObject(value, 'definition')
   requireKeys(value, ['schema', 'strategy_id', 'version', 'created_at', 'lineage', 'candidate_template', 'feature_contract', 'evidence_policy'], 'definition')
   if (value.schema !== DEFINITION_SCHEMA) throw new Error(`unsupported definition schema ${value.schema}`)
@@ -72,7 +74,7 @@ export function validateDefinition(value) {
   return true
 }
 
-export function validateExperiment(value) {
+function validateExperimentV1(value) {
   assertObject(value, 'experiment')
   requireKeys(value, ['schema', 'experiment_id', 'created_at', 'definition', 'evidence_phase', 'required_assets', 'grid', 'candidate_set', 'acceptance'], 'experiment')
   if (value.schema !== EXPERIMENT_SCHEMA) throw new Error(`unsupported experiment schema ${value.schema}`)
@@ -84,7 +86,7 @@ export function validateExperiment(value) {
   return true
 }
 
-export function validateCandidateSet(value) {
+function validateCandidateSetV1(value) {
   assertObject(value, 'candidate_set')
   requireKeys(value, ['schema', 'experiment_id', 'declared_k', 'effective_k', 'declared_sha256', 'effective_sha256', 'per_series', 'candidates'], 'candidate_set')
   if (value.schema !== CANDIDATE_SET_SCHEMA) throw new Error(`unsupported candidate set schema ${value.schema}`)
@@ -92,6 +94,13 @@ export function validateCandidateSet(value) {
   if (hash(value.candidates) !== value.effective_sha256) throw new Error('candidate set effective hash mismatch')
   return true
 }
+
+// Version dispatch is additive: all v1 callers retain their exact validators
+// and semantics, while new artifacts can opt into the premise-first v2
+// contract without being silently interpreted as v1.
+export function validateDefinition(value) { return value?.schema === DEFINITION_V2_SCHEMA ? validateDefinitionV2(value) : validateDefinitionV1(value) }
+export function validateExperiment(value) { return value?.schema === EXPERIMENT_SCHEMA ? validateExperimentV1(value) : value?.schema === EXPERIMENT_V2_SCHEMA ? validateExperimentV2(value) : validateExperimentV1(value) }
+export function validateCandidateSet(value) { return value?.schema === CANDIDATE_SET_V2_SCHEMA ? validateCandidateSetV2(value) : validateCandidateSetV1(value) }
 
 function runHashPayload(run) {
   const payload = structuredClone(run)
@@ -245,16 +254,18 @@ export function validateRunDirectory(runRoot) {
 
 function definitionRows(root) { return walk(join(root, 'definitions')).filter(path => path.endsWith('.json')).map(path => ({ path: relative(root, path), value: readJSON(path) })) }
 function experimentRows(root) { return walk(join(root, 'experiments')).filter(path => basename(path) === 'experiment.json').map(path => ({ path: relative(root, path), value: readJSON(path) })) }
-function runRows(root) { return walk(join(root, 'runs')).filter(path => basename(path) === 'run.json').map(path => ({ path: relative(root, path), value: validateRunDirectory(dirname(path)) })) }
+function runRows(root) { return walk(join(root, 'runs')).filter(path => basename(path) === 'run.json').map(path => ({ path, raw: readJSON(path) })).filter(({ raw }) => raw.schema !== RUN_V2_SCHEMA).map(({ path }) => ({ path: relative(root, path), value: validateRunDirectory(dirname(path)) })) }
+function runV2Rows(root) { return walk(join(root, 'runs')).filter(path => basename(path) === 'run.json').map(path => ({ path: relative(root, path), raw: readJSON(path) })).filter(({ raw }) => raw.schema === RUN_V2_SCHEMA).map(({ path, raw }) => { validateV2Document(raw); return { path, value: raw } }) }
 
 export function rebuildIndex(root) {
-  const definitions = definitionRows(root).map(({ path, value }) => ({ path, ...pick(value, ['strategy_id', 'version', 'created_at', 'status']) })).sort(byPath)
-  const experiments = experimentRows(root).map(({ path, value }) => ({ path, ...pick(value, ['experiment_id', 'created_at', 'evidence_phase', 'required_assets']) })).sort(byPath)
-  const runRecords = runRows(root)
-  const decisionsByRun = new Map(runRecords.map(({ value }) => [value.run_id, value.decisions]))
-  const runs = runRecords.map(({ path, value }) => ({ path, run_id: value.run_id, generated_at: value.generated_at, evidence_phase: value.evidence_phase, experiment_id: value.experiment.experiment_id, portfolio_status: value.decisions.portfolio.status, assets: value.decisions.per_asset.map(x => x.asset), legacy_source: value.legacy ? pick(value.legacy, ['source_path', 'source_sha256', 'source_schema', 'source_generated_at']) : null, counts: Object.fromEntries(Object.entries(value.artifacts).map(([key, artifact]) => [key, artifact.rows])) })).sort(byPath)
+  const definitions = definitionRows(root).map(({ path, value }) => ({ path, ...pick(value, ['strategy_id', 'version', 'created_at', 'status', 'stage', 'hypothesis_family', 'precommit', 'parent_evidence']) })).sort(byPath)
+  const experiments = experimentRows(root).map(({ path, value }) => ({ path, ...pick(value, ['experiment_id', 'created_at', 'evidence_phase', 'required_assets', 'stage', 'hypothesis_family', 'evidence_family_ids', 'ablation_role', 'parent_evidence']) })).sort(byPath)
+  const runRecords = runRows(root); const runV2Records = runV2Rows(root)
+  const decisionsByRun = new Map([...runRecords, ...runV2Records].map(({ value }) => [value.run_id, value.decisions]))
+  const runs = [...runRecords.map(({ path, value }) => ({ path, run_id: value.run_id, generated_at: value.generated_at, evidence_phase: value.evidence_phase, experiment_id: value.experiment.experiment_id, portfolio_status: value.decisions.portfolio.status, assets: value.decisions.per_asset.map(x => x.asset), legacy_source: value.legacy ? pick(value.legacy, ['source_path', 'source_sha256', 'source_schema', 'source_generated_at']) : null, counts: Object.fromEntries(Object.entries(value.artifacts).map(([key, artifact]) => [key, artifact.rows])) })), ...runV2Records.map(({ path, value }) => ({ path, schema: value.schema, run_id: value.run_id, generated_at: value.generated_at || null, evidence_phase: value.evidence_phase, experiment_id: value.experiment_id, portfolio_status: value.decisions.portfolio.status, assets: value.decisions.per_asset.map(x => x.asset), legacy_source: null, counts: { metrics: Array.isArray(value.metrics) ? value.metrics.length : 0, trades: Array.isArray(value.trades) ? value.trades.length : 0 } }))].sort(byPath)
   const performance = []
-  for (const row of runs) for (const metric of readJSONL(join(root, dirname(row.path), 'metrics.jsonl'))) performance.push({ run_id: row.run_id, experiment_id: row.experiment_id, evidence_phase: row.evidence_phase, asset: metric.asset, scope: metric.scope, candidate_id: metric.candidate_id, status: metric.asset ? decisionsByRun.get(row.run_id)?.per_asset.find(x => x.asset === metric.asset)?.status : row.portfolio_status, ...metric.metrics })
+  const v2ByRun = new Map(runV2Records.map(({ value }) => [value.run_id, value]))
+  for (const row of runs) { const metricRows = v2ByRun.has(row.run_id) ? (v2ByRun.get(row.run_id)?.metrics || []) : readJSONL(join(root, dirname(row.path), 'metrics.jsonl')); for (const metric of metricRows) { const values = structuredClone(metric.metrics || metric); for (const key of ['run_id', 'experiment_id', 'evidence_phase', 'asset', 'scope', 'candidate_id', 'status']) delete values[key]; performance.push({ run_id: row.run_id, experiment_id: row.experiment_id, evidence_phase: row.evidence_phase, asset: metric.asset, scope: metric.scope || (metric.asset ? 'ASSET' : 'PORTFOLIO'), candidate_id: metric.candidate_id, status: metric.asset ? decisionsByRun.get(row.run_id)?.per_asset.find(x => x.asset === metric.asset)?.status : row.portfolio_status, ...values }) } }
   const generatedAt = [...definitions.map(x => x.created_at), ...experiments.map(x => x.created_at), ...runs.map(x => x.generated_at)].filter(Boolean).sort().at(-1) || null
   const index = { schema: REGISTRY_SCHEMA, generated_at: generatedAt, definitions, experiments, runs, performance: canonicalRows(performance) }
   const md = ['# Strategy research index', '', `Generated: ${generatedAt || 'deterministic/no timestamp'}`, '', `Definitions: ${definitions.length} · Experiments: ${experiments.length} · Runs: ${runs.length} · Metric rows: ${performance.length}`, '', '| Run | Phase | Experiment | Portfolio | Assets | Metrics | Trades |', '|---|---|---|---|---|---:|---:|', ...runs.map(x => `| ${x.run_id.slice(0, 12)} | ${x.evidence_phase} | ${x.experiment_id} | ${x.portfolio_status} | ${x.assets.join(', ')} | ${x.counts.metrics} | ${x.counts.trades} |`)].join('\n')
@@ -266,14 +277,14 @@ export function rebuildIndex(root) {
 export function validateRegistry(root) {
   const errors = []
   for (const path of walk(root)) if (statSync(path).size > MAX_TRACKED_ARTIFACT_BYTES) errors.push(`${relative(root, path)} exceeds 10MiB`)
-  for (const { path, value } of definitionRows(root)) try { validateDefinition(value); if (join('definitions', value.strategy_id, `${value.version}.json`) !== path) throw new Error('definition path/version mismatch') } catch (error) { errors.push(`${path}: ${error.message}`) }
+  for (const { path, value } of definitionRows(root)) try { validateDefinition(value); if (join('definitions', value.strategy_id, `${value.version}.json`) !== path) throw new Error('definition path/version mismatch'); if (value.schema === DEFINITION_V2_SCHEMA) { const precommit = readJSON(resolve(root, value.precommit.path || `precommits/${value.precommit.precommit_id}.json`)); if (precommit.schema !== PRECOMMIT_SCHEMA || hash(precommit) !== value.precommit.sha256) throw new Error('definition precommit cross-file hash mismatch') } } catch (error) { errors.push(`${path}: ${error.message}`) }
   for (const { path, value } of experimentRows(root)) try {
-    validateExperiment(value); const dir = dirname(join(root, path)); const candidateSet = readJSON(join(dir, 'candidates.json')); validateCandidateSet(candidateSet)
-    const definition = readJSON(resolve(root, value.definition.path)); if (hash(definition) !== value.definition.sha256) throw new Error('definition cross-file hash mismatch')
+    const dir = dirname(join(root, path)); const candidateSet = readJSON(join(dir, 'candidates.json')); const definition = readJSON(resolve(root, value.definition.path)); if (value.schema === EXPERIMENT_V2_SCHEMA) { validateExperimentV2(value, definition); validateCandidateSetV2(candidateSet, value) } else { validateExperiment(value); validateCandidateSet(candidateSet) }
+    if (hash(definition) !== value.definition.sha256) throw new Error('definition cross-file hash mismatch')
     if (hash(candidateSet) !== value.candidate_set.sha256 || value.candidate_set.path !== 'candidates.json') throw new Error('candidate-set cross-file hash mismatch')
   } catch (error) { errors.push(`${path}: ${error.message}`) }
-  for (const path of walk(join(root, 'runs')).filter(path => basename(path) === 'run.json')) try { validateRunDirectory(dirname(path)) } catch (error) { errors.push(`${relative(root, path)}: ${error.message}`) }
-  for (const path of walk(root).filter(path => path.endsWith('.json'))) try { const value = readJSON(path); if (value.schema && ![REGISTRY_SCHEMA, DEFINITION_SCHEMA, EXPERIMENT_SCHEMA, CANDIDATE_SET_SCHEMA, RUN_SCHEMA].includes(value.schema)) errors.push(`${relative(root, path)}: unknown schema ${value.schema}`) } catch (error) { errors.push(`${relative(root, path)}: ${error.message}`) }
+  for (const path of walk(join(root, 'runs')).filter(path => basename(path) === 'run.json')) try { const value = readJSON(path); if (value.schema === RUN_V2_SCHEMA) { validateV2Document(value); if (basename(dirname(path)) !== value.run_id) throw new Error('v2 run directory name does not match run_id'); const experiment = readJSON(join(root, 'experiments', value.experiment_id, 'experiment.json')); const definition = readJSON(resolve(root, experiment.definition.path)); const candidateSet = readJSON(join(root, 'experiments', value.experiment_id, experiment.candidate_set.path)); const precommit = readJSON(resolve(root, definition.precommit.path)); if (hash(precommit) !== value.precommit_sha256 || hash(definition) !== value.definition_sha256 || hash(experiment) !== value.experiment_sha256 || hash(candidateSet) !== value.candidate_set_sha256) throw new Error('v2 run cross-file hash mismatch'); if (value.provenance === 'AUTHORITATIVE_RECOMPUTED') { const evidencePath = join(root, 'evidence-bundles', `${value.evidence_bundle_sha256}.json`); if (!existsSync(evidencePath)) throw new Error('authoritative run evidence bundle is missing'); const evidence = readJSON(evidencePath); validateEvidenceBundle(evidence, { experiment, candidateSet }); if (basename(evidencePath, '.json') !== evidence.content_sha256 || evidence.content_sha256 !== value.evidence_bundle_sha256) throw new Error('authoritative run evidence bundle hash/path mismatch') } if (value.stage !== experiment.stage || value.evidence_phase !== experiment.evidence_phase || value.strategy_id !== definition.strategy_id || stable(value.required_assets) !== stable(experiment.required_assets)) throw new Error('v2 run duplicated metadata does not match bound definition/experiment') } else validateRunDirectory(dirname(path)) } catch (error) { errors.push(`${relative(root, path)}: ${error.message}`) }
+  for (const path of walk(root).filter(path => path.endsWith('.json'))) try { const value = readJSON(path); if (value.schema === DATA_MANIFEST_SCHEMA) validateDataManifest(value); if (value.schema === EVIDENCE_BUNDLE_SCHEMA) validateEvidenceBundle(value); if (value.schema && ![REGISTRY_SCHEMA, DEFINITION_SCHEMA, EXPERIMENT_SCHEMA, CANDIDATE_SET_SCHEMA, RUN_SCHEMA, PRECOMMIT_SCHEMA, DEFINITION_V2_SCHEMA, EXPERIMENT_V2_SCHEMA, CANDIDATE_SET_V2_SCHEMA, RUN_V2_SCHEMA, DATA_MANIFEST_SCHEMA, EVIDENCE_BUNDLE_SCHEMA, PORTFOLIO_MARK_PATH_SCHEMA].includes(value.schema)) errors.push(`${relative(root, path)}: unknown schema ${value.schema}`) } catch (error) { errors.push(`${relative(root, path)}: ${error.message}`) }
   if (!errors.length && existsSync(join(root, 'index.json'))) { const before = readFileSync(join(root, 'index.json'), 'utf8'); rebuildIndex(root); if (readFileSync(join(root, 'index.json'), 'utf8') !== before) errors.push('index.json was stale') }
   if (errors.length) throw new Error(errors.join('\n'))
   return { valid: true }

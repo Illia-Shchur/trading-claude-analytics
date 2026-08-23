@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-experiment/2",
+  "type": "object",
+  "required": ["schema", "experiment_id", "created_at", "stage", "evidence_phase", "definition", "hypothesis_family", "evidence_family_ids", "ablation_role", "grid", "acceptance", "candidate_set", "required_assets"],
+  "properties": {
+    "schema": { "const": "strategy-experiment/2" },
+    "experiment_id": { "type": "string" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "stage": { "enum": ["CORE_PREMISE", "ENTRY_TIMING", "RISK_LIFECYCLE", "INDEPENDENT_CONTEXT", "COMPOSITE_SCORE"] },
+    "evidence_phase": { "enum": ["DEVELOPMENT", "WALK_FORWARD_OOS", "EXPOSED_CONFIRMATION", "SEALED_CONFIRMATION", "PROSPECTIVE_LIVE"] },
+    "definition": { "type": "object", "required": ["path", "sha256"] },
+    "parent_evidence": { "type": ["object", "null"] },
+    "hypothesis_family": { "type": "string" },
+    "evidence_family_ids": { "type": "array" },
+    "ablation_role": { "enum": ["CORE_BASELINE", "ADD_ONE_CONTEXT", "LEAVE_ONE_CONTEXT_OUT", "PARAMETER_SEARCH", "NO_SELECTION_SEARCH"] },
+    "grid": { "type": "object" },
+    "parameter_topology": { "type": "object" },
+    "evaluation_chronology": {
+      "type": "object",
+      "required": ["timezone", "bar_convention", "selection_objective", "tie_breaker", "seeds"],
+      "properties": {
+        "timezone": { "type": "string", "minLength": 1 }, "bar_convention": { "type": "string", "minLength": 1 },
+        "selection_objective": {}, "tie_breaker": { "type": "array", "minItems": 1 }, "seeds": { "type": "array", "minItems": 1 },
+        "purge_bars": { "type": "integer", "minimum": 0 }, "embargo_bars": { "type": "integer", "minimum": 0 }, "bar_duration_ms": { "type": "number", "exclusiveMinimum": 0 },
+        "folds": { "type": "array" }, "frozen_hashes": { "type": "object", "required": ["candidate_set_sha256", "definition_sha256", "experiment_sha256", "data_manifest_sha256", "feature_store_sha256", "executor_sha256", "frozen_selection_sha256"], "properties": { "candidate_set_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "definition_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "experiment_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "data_manifest_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "feature_store_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "executor_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "frozen_selection_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" } } }, "monitoring_window": { "type": "object" },
+        "frozen_selection": { "type": "object", "required": ["selections", "selection_sha256", "candidate_set_sha256", "definition_sha256", "experiment_sha256", "behavioral_k", "aliases", "behavioral_contract_sha256"], "properties": { "selections": { "type": "array", "minItems": 1, "items": { "type": "object", "required": ["asset", "candidate_id"], "properties": { "asset": { "type": "string", "minLength": 1 }, "candidate_id": { "type": "string", "minLength": 1 } } } }, "selection_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "candidate_set_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "definition_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "experiment_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "behavioral_k": { "type": "integer", "minimum": 1 }, "aliases": { "type": "array", "minItems": 1, "items": { "type": "object", "required": ["behavior_sha256", "candidate_ids"], "properties": { "behavior_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "candidate_ids": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } } } } }, "behavioral_contract_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" } } }
+      },
+      "additionalProperties": true
+    },
+    "portfolio_policy": { "type": "object" },
+    "required_assets": { "type": "array", "minItems": 1 },
+    "acceptance": {
+      "type": "object",
+      "required": ["robust_stats", "plateau", "stress", "portfolio"],
+      "properties": {
+        "robust_stats": { "type": "object", "required": ["max_statistic_p_value", "minimum_bootstrap_p20_expectancy_r", "minimum_effective_independent_episode_count"] },
+        "plateau": { "type": "object" },
+        "stress": { "type": "object", "required": ["required_scenarios"] },
+        "portfolio": { "type": "object", "required": ["minimum_accepted_trades", "maximum_drawdown_pct", "minimum_net_pnl"] }
+      }
+    },
+    "candidate_set": { "type": "object", "required": ["path"] },
+    "score_free_baseline_sha256": { "type": "string" },
+    "content_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  },
+  "allOf": [
+    { "if": { "properties": { "evidence_phase": { "const": "WALK_FORWARD_OOS" } } }, "then": { "required": ["evaluation_chronology"], "properties": { "evaluation_chronology": { "required": ["bar_duration_ms", "folds"] } } } },
+    { "if": { "properties": { "evidence_phase": { "const": "EXPOSED_CONFIRMATION" } } }, "then": { "required": ["evaluation_chronology"], "properties": { "evaluation_chronology": { "required": ["frozen_selection"] } } } },
+    { "if": { "properties": { "evidence_phase": { "const": "PROSPECTIVE_LIVE" } } }, "then": { "required": ["evaluation_chronology"], "properties": { "evaluation_chronology": { "required": ["monitoring_window", "frozen_hashes", "frozen_selection"] } } } }
+  ],
+  "additionalProperties": true
+}

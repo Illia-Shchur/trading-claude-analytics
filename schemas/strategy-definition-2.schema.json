@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-definition/2",
+  "type": "object",
+  "required": ["schema", "strategy_id", "version", "created_at", "stage", "precommit", "hypothesis_family", "candidate_template", "feature_contract", "tradable_instrument_contract", "evidence_policy"],
+  "properties": {
+    "schema": { "const": "strategy-definition/2" },
+    "strategy_id": { "type": "string" },
+    "version": { "type": "string", "pattern": "^v[0-9]{3}$" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "stage": { "$ref": "#/$defs/stage" },
+    "precommit": { "type": "object", "required": ["path", "sha256"] },
+    "parent_evidence": { "type": ["object", "null"] },
+    "hypothesis_family": { "type": "string" },
+    "candidate_template": { "type": "object" },
+    "feature_contract": {
+      "type": "object",
+      "required": ["series", "inputs"],
+      "properties": {
+        "series": { "type": "array", "minItems": 1, "items": { "type": "object", "required": ["series_id", "asset", "asset_class", "timeframe", "context_only", "point_in_time"] } },
+        "inputs": { "type": "array", "minItems": 1, "items": { "type": "object", "required": ["input_id", "availability", "point_in_time", "evidence_family", "role"] } }
+      }
+    },
+    "tradable_instrument_contract": { "type": "object", "required": ["universe", "instruments"] },
+    "evidence_policy": { "type": "object", "required": ["activation_allowed"], "properties": { "activation_allowed": { "const": false } } },
+    "score_free_baseline_sha256": { "type": "string" },
+    "content_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  },
+  "$defs": { "stage": { "enum": ["CORE_PREMISE", "ENTRY_TIMING", "RISK_LIFECYCLE", "INDEPENDENT_CONTEXT", "COMPOSITE_SCORE"] } },
+  "additionalProperties": true
+}

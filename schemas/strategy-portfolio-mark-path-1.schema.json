@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-portfolio-mark-path/1",
+  "type": "object",
+  "required": ["schema", "policy", "accepted_signals", "rejected_signals", "equity_curve", "closed_trades", "net_pnl", "max_drawdown_pct", "liquidation_events", "drawdown_basis", "exposure", "activation"],
+  "properties": {
+    "schema": { "const": "strategy-portfolio-mark-path/1" }, "policy": { "type": "object", "required": ["initial_equity", "event_order"], "properties": { "initial_equity": { "type": "number", "exclusiveMinimum": 0 }, "max_mark_gap_ms": { "type": ["number", "null"], "exclusiveMinimum": 0 }, "event_order": { "const": "mark -> funding -> exits -> entries -> mark" } } }, "accepted_signals": { "type": "array" }, "rejected_signals": { "type": "array" }, "equity_curve": { "type": "array" }, "closed_trades": { "type": "array" }, "net_pnl": { "type": "number" },
+    "max_drawdown_pct": { "type": "number" }, "liquidation_events": { "type": "array" }, "drawdown_basis": { "const": "chronological mark-to-market union timeline" }, "exposure": { "type": "object" }, "activation": { "const": "RESEARCH_ONLY" }
+  },
+  "additionalProperties": true
+}

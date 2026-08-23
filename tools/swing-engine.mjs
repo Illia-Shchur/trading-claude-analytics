@@ -784,6 +784,39 @@ export function evaluateCandidate(rows, candidateInput, options = {}) {
     trades, metrics, regime_breakdown: breakdown(trades, 'regime'), setup_breakdown: breakdown(trades, 'setup_family') }
 }
 
+/**
+ * Return the deterministic signal/intent path used by the swing adapter.
+ * This deliberately contains no realised outcomes, prices, or PnL.  It is
+ * used by strategy-research/2 to count behavioural hypotheses after the
+ * executor has seen the frozen feature store.
+ */
+export function candidateSignalIntent(rows, candidateInput) {
+  const candidate = normalizeCandidate(candidateInput)
+  const signals = candidateSignalRows(rows, candidate)
+  return signals.map(signal => {
+    const row = rows[signal.signal_index]
+    return {
+      asset: row.asset,
+      decision_time: row.time,
+      direction: candidate.direction,
+      setup_identity: signal.setup_family_id,
+      setup_family: signal.matched_family,
+      lifecycle_intent: {
+        phase: candidate.phase,
+        stop_pct: candidate.stop_pct,
+        stop_atr_multiple: candidate.stop_atr_multiple,
+        target_r: candidate.target_r,
+        partial_exit_pct: candidate.partial_exit_pct,
+        partial_target_r: candidate.partial_target_r,
+        ratchet_to_entry: candidate.ratchet_to_entry,
+        max_hold_bars: candidate.max_hold_bars,
+        same_bar_collision: candidate.raw.same_bar_collision || 'stop-first',
+      },
+      instrument: candidate.raw.instrument || candidate.raw.instrument_contract || candidate.raw.tradable_instrument || null,
+    }
+  })
+}
+
 /** Evaluate a frozen multi-component strategy with one active episode per asset.
  * Components may use opposite frameworks/directions; signals are merged by
  * completed-bar time and deterministic component priority before simulation.

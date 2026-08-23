@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-run/2",
+  "type": "object",
+  "required": ["schema", "run_id", "content_sha256", "provenance", "stage", "evidence_phase", "experiment_id", "strategy_id", "required_assets", "precommit_sha256", "definition_sha256", "experiment_sha256", "candidate_set_sha256", "metrics", "trades", "decisions", "activation"],
+  "properties": {
+    "schema": { "const": "strategy-run/2" },
+    "run_id": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "content_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "provenance": { "enum": ["AUTHORITATIVE_RECOMPUTED", "EXTERNAL_EXPOSED"] },
+    "stage": { "enum": ["CORE_PREMISE", "ENTRY_TIMING", "RISK_LIFECYCLE", "INDEPENDENT_CONTEXT", "COMPOSITE_SCORE"] },
+    "evidence_phase": { "enum": ["DEVELOPMENT", "WALK_FORWARD_OOS", "EXPOSED_CONFIRMATION", "SEALED_CONFIRMATION", "PROSPECTIVE_LIVE"] },
+    "experiment_id": { "type": "string" },
+    "strategy_id": { "type": "string" },
+    "required_assets": { "type": "array", "minItems": 1 },
+    "precommit_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "definition_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "experiment_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "candidate_set_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "evidence_bundle_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "metrics": { "type": "array" },
+    "trades": { "type": "array" },
+    "decisions": {
+      "type": "object",
+      "required": ["per_asset", "portfolio"],
+      "properties": {
+        "per_asset": { "type": "array", "items": { "$ref": "#/$defs/decision" } },
+        "portfolio": { "$ref": "#/$defs/decision" }
+      }
+    },
+    "activation": { "type": "object", "required": ["authorized", "status"], "properties": { "authorized": { "const": false }, "status": { "const": "SHADOW" } } }
+  },
+  "$defs": { "decision": { "type": "object", "required": ["status"], "properties": { "status": { "enum": ["REJECTED", "SHADOW", "CANDIDATE_REVIEW"] } } } },
+  "allOf": [
+    { "if": { "properties": { "provenance": { "const": "AUTHORITATIVE_RECOMPUTED" } } }, "then": { "required": ["evidence_bundle_sha256"] } },
+    { "if": { "properties": { "provenance": { "const": "EXTERNAL_EXPOSED" } } }, "then": { "not": { "required": ["evidence_bundle_sha256"] } } }
+  ],
+  "additionalProperties": true
+}

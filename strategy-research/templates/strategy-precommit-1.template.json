@@ -1,0 +1,58 @@
+{
+  "schema": "strategy-precommit/1",
+  "precommit_id": "replace-me",
+  "created_at": "2026-01-01T00:00:00.000Z",
+  "stage": "CORE_PREMISE",
+  "phenomenon": "<observable crypto phenomenon>",
+  "economic_behavioral_mechanism": "<why the forced actor creates the edge>",
+  "participants": { "forced_actor": "<actor>", "edge_provider": "<provider>", "edge_consumer": "<consumer>" },
+  "persistence": "<why it persists>",
+  "crowding_decay": "<how crowding removes it>",
+  "direction": "<long|short|relative>",
+  "expression": "<crypto spot or derivative expression>",
+  "holding_horizon": { "min": 1, "max": 30, "unit": "days" },
+  "expected_signal_frequency": { "min": 1, "max": 10, "unit": "per month" },
+  "expected_win_rate": { "min": 0.35, "max": 0.65 },
+  "payoff": { "average_win_r": { "min": 1, "max": 3 }, "average_loss_r": { "min": -2, "max": -0.5 }, "qualitative_shape": "<payoff shape>" },
+  "regimes": { "expected_to_work": ["<regime>"], "expected_to_fail": ["<regime>"] },
+  "failure_invalidation_mechanism": "<what would disprove or invalidate the mechanism>",
+  "required_inputs": [{ "input_id": "<input>", "availability": { "rule": "<availability timestamp rule>" }, "point_in_time": { "status": "VERIFIED", "completed_bar_only": true }, "evidence_family": "<family>", "role": "SETUP" }],
+  "falsifier": { "test": "<simplest test>", "null": "<null hypothesis>", "rejection_thresholds": { "expectancy_r": 0 } },
+  "tradable_instrument_contract": { "universe": "CRYPTO_ONLY", "instruments": [{ "asset": "<crypto asset>", "asset_class": "crypto", "instrument_type": "spot" }] },
+  "non_crypto_context_only": [],
+  "independence_replication_groups": ["<group>"],
+  "role_of_composite_score": "<deferred incremental role; no score or threshold belongs in CORE_PREMISE>",
+  "candidate_template": { "id": "baseline", "instrument": { "asset": "<crypto asset>", "asset_class": "crypto", "instrument_type": "spot" } },
+  "feature_contract": {
+    "series": [{ "series_id": "<crypto-series>", "asset": "<crypto asset>", "asset_class": "crypto", "timeframe": "4h", "context_only": false, "tradable": true, "point_in_time": { "status": "VERIFIED", "completed_bar_only": true } }],
+    "inputs": [{ "input_id": "<input>", "availability": { "rule": "<availability timestamp rule>" }, "point_in_time": { "status": "VERIFIED" }, "evidence_family": "<family>", "role": "SETUP" }]
+  },
+  "experiment": {
+    "evidence_phase": "DEVELOPMENT",
+    "ablation_role": "NO_SELECTION_SEARCH",
+    "required_assets": ["<crypto asset>"],
+    "grid": {},
+    "acceptance": {
+      "robust_stats": {
+        "max_statistic_p_value": "<predeclare numeric maximum>",
+        "minimum_bootstrap_p20_expectancy_r": "<predeclare numeric minimum>",
+        "minimum_effective_independent_episode_count": "<predeclare integer minimum>"
+      },
+      "plateau": {},
+      "stress": {
+        "required_scenarios": [
+          { "id": "fee_slippage", "multiplier": "<>=1>", "minimum_expectancy_r": "<numeric>", "minimum_observations": "<integer>" },
+          { "id": "funding_carry", "multiplier": "<>=1>", "minimum_expectancy_r": "<numeric>", "minimum_observations": "<integer>" },
+          { "id": "adverse_execution_gap", "debit_r": "<>=0>", "minimum_expectancy_r": "<numeric>", "minimum_observations": "<integer>" },
+          { "id": "liquidity_capacity", "maximum_participation_rate": "<0..1>", "minimum_expectancy_r": "<numeric>", "minimum_observations": "<integer>" },
+          { "id": "venue_outage_blackout", "windows": [{ "venue": "<venue>", "start": "<ISO instant>", "end": "<ISO instant>" }], "minimum_expectancy_r": "<numeric>", "minimum_observations": "<integer>" }
+        ]
+      },
+      "portfolio": {
+        "minimum_accepted_trades": "<predeclare integer minimum>",
+        "maximum_drawdown_pct": "<predeclare numeric maximum>",
+        "minimum_net_pnl": "<predeclare numeric minimum in account currency>"
+      }
+    }
+  }
+}
