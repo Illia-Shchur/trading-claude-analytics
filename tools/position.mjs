@@ -9,8 +9,8 @@
 //                           [--fills N] [--json]
 //
 // Exit codes are the contract, not decoration:
-//   0  FRESH or STALE — a position claim may be made (STALE with a banner)
-//   1  EXPIRED, missing, unparseable, or wrong schema — cold start per Rule 4
+//   0  FRESH by default (event-driven), or STALE under explicit strict mode
+//   1  missing/unparseable/wrong schema, or explicit strict-time expiry
 //   2  NOT_COVERED — the asset has no ledger counterpart (gold). NEVER qty 0.
 //
 // Deliberately NOT a fetch.mjs subcommand. fetch.mjs is the LIVE numeric

@@ -1300,28 +1300,29 @@ ok('the per-asset cap binds tighter than the 50% book cap', FR_MAX_PER_ASSET_PCT
 const T0 = Date.parse('2026-07-28T12:00:00Z')
 const ago = min => new Date(T0 - min * 60000).toISOString()
 
-eq('freshness bounds are 12h / 72h in minutes', POSITION_FRESHNESS, { stale: 720, expired: 4320 })
-eq('1h old, holdings just as fresh → FRESH', positionFreshness(ago(60), ago(60), T0).band, 'FRESH')
-eq('exactly 12h → still FRESH (inclusive edge)', positionFreshness(ago(720), ago(720), T0).band, 'FRESH')
-eq('12h + 1min → STALE', positionFreshness(ago(721), ago(721), T0).band, 'STALE')
-eq('exactly 72h → still STALE (inclusive edge)', positionFreshness(ago(4320), ago(4320), T0).band, 'STALE')
-eq('72h + 1min → EXPIRED', positionFreshness(ago(4321), ago(4321), T0).band, 'EXPIRED')
+eq('legacy strict bounds remain 12h / 72h in minutes', POSITION_FRESHNESS, { stale: 720, expired: 4320 })
+eq('default freshness policy is event-driven', positionFreshness(ago(60), ago(60), T0).policy, 'EVENT_DRIVEN')
+eq('1h old snapshot → FRESH', positionFreshness(ago(60), ago(60), T0).band, 'FRESH')
+eq('12h + 1min remains FRESH by default', positionFreshness(ago(721), ago(721), T0).band, 'FRESH')
+eq('72h + 1min remains FRESH by default', positionFreshness(ago(4321), ago(4321), T0).band, 'FRESH')
 
-// The second staleness axis. crypto_holding refreshes only on POST /link, so a
-// file written a minute ago can be valuing week-old balances. Without this, a
-// report reads FRESH off a position nobody has re-checked in a week.
+// Event-driven policy: the user exports after every trade. An unchanged old
+// holdings clock is evidence of no refreshed balance row, not evidence of an
+// unrecorded trade, and therefore cannot invalidate the newest export.
 {
   const f = positionFreshness(ago(1), ago(10080), T0) // written now, balances 7 days old
-  eq('holdings_as_of dominates a just-written file', f.band, 'EXPIRED')
-  eq('...and the driver names which timestamp did it', f.driver, 'holdings_as_of')
-  eq('...while generated_at alone would have said 1 minute', f.generated_age_min, 1)
+  eq('old holdings_as_of does not invalidate the snapshot', f.band, 'FRESH')
+  eq('event-driven policy is the validity driver', f.driver, 'event_driven_snapshot')
+  eq('holdings age remains disclosed for audit', f.holdings_age_min, 10080)
 }
-eq('an unknown holdings_as_of fails CLOSED, not open',
-  positionFreshness(ago(1), null, T0).band, 'EXPIRED')
+eq('unknown holdings_as_of remains valid under event-driven policy',
+  positionFreshness(ago(1), null, T0).band, 'FRESH')
 eq('a missing generated_at is EXPIRED, never a pass',
   positionFreshness(null, ago(1), T0).band, 'EXPIRED')
-ok('--max-age-min narrows the FRESH window',
-  positionFreshness(ago(60), ago(60), T0, { stale: 30 }).band === 'STALE')
+eq('--max-age-min enables strict time policy',
+  positionFreshness(ago(60), ago(10080), T0, { stale: 30 }).policy, 'STRICT_TIME')
+eq('--max-age-min bands generated_at, not holdings_as_of',
+  positionFreshness(ago(60), ago(10080), T0, { stale: 30 }).band, 'STALE')
 
 // Schema gate: an unrecognised file must be refused, not partially read.
 ok('a v2 file is rejected', !positionSnapshotCheck({ schema: 'position-snapshot/2' }).ok)

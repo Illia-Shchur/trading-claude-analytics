@@ -249,21 +249,73 @@ process.on('exit', cleanup)
   j = parseJSON(r.stdout, 'position dated default json')
   ok('position default directory reports newest dated file', j && j.file === newestHistoryPath, JSON.stringify(j && j.file))
 
-  // 2. stale snapshot (~2 days old, within 72h)
+  // 2. An old-but-structurally-valid snapshot remains FRESH by default:
+  //    elapsed time is not a validity signal under the event-driven policy.
   const stalePath = join(posDir, 'stale.json')
   writeFileSync(stalePath, JSON.stringify(baseSnap({ generated_at: isoAgo(60 * 30), source: { holdings_as_of: isoAgo(60 * 30) } })))
   r = run('position.mjs', ['btc', '--file', stalePath])
-  ok('position stale exit 0', r.status === 0, r.stderr)
-  j = parseJSON(r.stdout, 'position stale json')
-  ok('position stale band STALE', j && j.freshness && j.freshness.band === 'STALE', JSON.stringify(j && j.freshness))
+  ok('position old event-driven exit 0', r.status === 0, r.stderr)
+  j = parseJSON(r.stdout, 'position old event-driven json')
+  ok('position old event-driven band FRESH', j && j.freshness && j.freshness.band === 'FRESH', JSON.stringify(j && j.freshness))
+  ok('position old event-driven policy disclosed', j && j.freshness?.policy === 'EVENT_DRIVEN'
+    && j.freshness?.driver === 'event_driven_snapshot', JSON.stringify(j && j.freshness))
 
-  // 3. expired/old snapshot (>72h)
+  // Explicit strict-time mode preserves the legacy age bands. Use an age well
+  // beyond the 12h boundary so subprocess startup cannot make this edge flaky.
+  r = run('position.mjs', ['btc', '--file', stalePath, '--max-age-min', '720'])
+  ok('position strict stale exit 0', r.status === 0, r.stderr)
+  j = parseJSON(r.stdout, 'position strict stale json')
+  ok('position strict stale band STALE', j && j.freshness?.band === 'STALE', JSON.stringify(j && j.freshness))
+  ok('position strict stale driver generated_at', j && j.freshness?.policy === 'STRICT_TIME'
+    && j.freshness?.driver === 'generated_at', JSON.stringify(j && j.freshness))
+
+  // Strict stale cutoff is inclusive: exactly 12h is still FRESH, while the
+  // next rounded minute is STALE.
+  const strictFreshBoundaryPath = join(posDir, 'strict-fresh-boundary.json')
+  writeFileSync(strictFreshBoundaryPath, JSON.stringify(baseSnap({
+    generated_at: isoAgo(720), source: { holdings_as_of: isoAgo(720) },
+  })))
+  r = run('position.mjs', ['btc', '--file', strictFreshBoundaryPath, '--max-age-min', '720'])
+  ok('position strict stale boundary inclusive', r.status === 0, `status=${r.status}`)
+  j = parseJSON(r.stdout, 'position strict stale boundary json')
+  ok('position strict exactly 12h remains FRESH', j && j.freshness?.band === 'FRESH'
+    && j.freshness?.age_min === 720, JSON.stringify(j && j.freshness))
+  const strictStaleBoundaryPath = join(posDir, 'strict-stale-boundary.json')
+  writeFileSync(strictStaleBoundaryPath, JSON.stringify(baseSnap({
+    generated_at: isoAgo(721), source: { holdings_as_of: isoAgo(721) },
+  })))
+  r = run('position.mjs', ['btc', '--file', strictStaleBoundaryPath, '--max-age-min', '720'])
+  ok('position strict stale just beyond boundary exit 0', r.status === 0, `status=${r.status}`)
+  j = parseJSON(r.stdout, 'position strict stale just beyond boundary json')
+  ok('position strict 12h+1m is STALE', j && j.freshness?.band === 'STALE'
+    && j.freshness?.age_min === 721, JSON.stringify(j && j.freshness))
+
+  // 3. An expired-by-age snapshot is still FRESH by default, but EXPIRED under
+  //    an explicit strict-time audit.
   const expiredPath = join(posDir, 'expired.json')
   writeFileSync(expiredPath, JSON.stringify(baseSnap({ generated_at: isoAgo(60 * 100), source: { holdings_as_of: isoAgo(60 * 100) } })))
   r = run('position.mjs', ['btc', '--file', expiredPath])
-  ok('position expired exit 1', r.status === 1, `status=${r.status}`)
+  ok('position old event-driven exit 0', r.status === 0, `status=${r.status}`)
   j = parseJSON(r.stdout, 'position expired json')
-  ok('position expired band EXPIRED', j && j.band === 'EXPIRED', JSON.stringify(j))
+  ok('position old event-driven expired-age band FRESH', j && j.freshness?.band === 'FRESH', JSON.stringify(j))
+  r = run('position.mjs', ['btc', '--file', expiredPath, '--max-age-min', '4320'])
+  ok('position strict expired exit 1', r.status === 1, `status=${r.status}`)
+  j = parseJSON(r.stdout, 'position strict expired json')
+  ok('position strict expired band EXPIRED', j && j.band === 'EXPIRED'
+    && j.freshness?.policy === 'STRICT_TIME', JSON.stringify(j))
+
+  // Strict expiry cutoff is inclusive too: exactly 72h is descriptive STALE,
+  // while the next rounded minute is EXPIRED (the latter is covered above by
+  // the much older expiredPath).
+  const strictStaleExpiryBoundaryPath = join(posDir, 'strict-stale-expiry-boundary.json')
+  writeFileSync(strictStaleExpiryBoundaryPath, JSON.stringify(baseSnap({
+    generated_at: isoAgo(4320), source: { holdings_as_of: isoAgo(4320) },
+  })))
+  r = run('position.mjs', ['btc', '--file', strictStaleExpiryBoundaryPath, '--max-age-min', '720'])
+  ok('position strict expiry boundary exit 0', r.status === 0, `status=${r.status}`)
+  j = parseJSON(r.stdout, 'position strict expiry boundary json')
+  ok('position strict exactly 72h remains STALE', j && j.freshness?.band === 'STALE'
+    && j.freshness?.age_min === 4320, JSON.stringify(j && j.freshness))
 
   // 4. missing file
   r = run('position.mjs', ['btc', '--file', join(posDir, 'does-not-exist.json')])
@@ -279,6 +331,26 @@ process.on('exit', cleanup)
   ok('position malformed json exit 1', r.status === 1, `status=${r.status}`)
   j = parseJSON(r.stdout, 'position malformed json output')
   ok('position malformed json band EXPIRED', j && j.band === 'EXPIRED')
+
+  // 5b. Strict mode fails closed when generated_at is absent or invalid; an
+  // old holdings clock must never substitute for the missing snapshot clock.
+  const missingGeneratedPath = join(posDir, 'missing-generated-at.json')
+  const missingGenerated = baseSnap({ source: { holdings_as_of: isoAgo(60 * 24 * 7) } })
+  delete missingGenerated.generated_at
+  writeFileSync(missingGeneratedPath, JSON.stringify(missingGenerated))
+  r = run('position.mjs', ['btc', '--file', missingGeneratedPath, '--max-age-min', '720'])
+  ok('position strict missing generated_at exit 1', r.status === 1, `status=${r.status}`)
+  j = parseJSON(r.stdout, 'position strict missing generated_at json')
+  ok('position strict missing generated_at EXPIRED fail-closed', j && j.band === 'EXPIRED'
+    && j.errors?.some(x => /generated_at/.test(x)), JSON.stringify(j))
+
+  const invalidGeneratedPath = join(posDir, 'invalid-generated-at.json')
+  writeFileSync(invalidGeneratedPath, JSON.stringify(baseSnap({ generated_at: 'not-a-timestamp' })))
+  r = run('position.mjs', ['btc', '--file', invalidGeneratedPath, '--max-age-min', '720'])
+  ok('position strict invalid generated_at exit 1', r.status === 1, `status=${r.status}`)
+  j = parseJSON(r.stdout, 'position strict invalid generated_at json')
+  ok('position strict invalid generated_at EXPIRED fail-closed', j && j.band === 'EXPIRED'
+    && j.freshness?.band === 'EXPIRED', JSON.stringify(j))
 
   // 6. wrong schema
   const wrongSchemaPath = join(posDir, 'wrong-schema.json')
@@ -377,17 +449,42 @@ process.on('exit', cleanup)
   ok('position futures-only human tag preserved', j && j.attribution?.tags?.includes('FR-A-1A-SP500-20260814-1530'))
   ok('position protective safety metadata preserved', j && j.futures_positions?.[0]?.protective_orders?.[0]?.reduce_only === true)
 
-  // 13. A fresh mark/order cannot upgrade stale income for the same futures position.
+  // 13. A stale futures component clock is audit metadata under both default
+  //    event-driven mode and strict mode (strict mode bands generated_at).
   const mixedClockPath = join(posDir, 'mixed-futures-clocks.json')
   writeFileSync(mixedClockPath, JSON.stringify(baseSnap({
     positions: [], deals: { open_count: 0, closed_count: 0, open: [], closed: [] },
     futures: { ...futuresMeta, marks_as_of: isoAgo(1), orders_as_of: isoAgo(1), income_as_of: isoAgo(60 * 30) },
   })))
   r = run('position.mjs', ['sp500', '--file', mixedClockPath])
-  ok('position stale futures component exit 0', r.status === 0, r.stderr)
-  j = parseJSON(r.stdout, 'position stale futures component json')
-  ok('position stale futures income drives band', j && j.freshness?.band === 'STALE'
-    && j.freshness?.driver === 'futures.income_as_of', JSON.stringify(j?.freshness))
+  ok('position old futures income clock exit 0', r.status === 0, r.stderr)
+  j = parseJSON(r.stdout, 'position old futures income clock json')
+  ok('position old futures income clock does not drive default band', j && j.freshness?.band === 'FRESH'
+    && j.freshness?.driver === 'event_driven_snapshot' && j.freshness?.limitations?.length === 0, JSON.stringify(j?.freshness))
+  r = run('position.mjs', ['sp500', '--file', mixedClockPath, '--max-age-min', '720'])
+  ok('position old futures income clock strict exit 0', r.status === 0, r.stderr)
+  j = parseJSON(r.stdout, 'position old futures income clock strict json')
+  ok('position old futures income clock does not drive strict band', j && j.freshness?.band === 'FRESH'
+    && j.freshness?.driver === 'generated_at' && j.freshness?.limitations?.length === 0, JSON.stringify(j?.freshness))
+
+  // Structural/component incompleteness is different from age and still limits
+  // the claim. Mark income as incomplete for the current open-position sequence
+  // even though the snapshot itself was generated moments ago.
+  const incompleteIncomePath = join(posDir, 'incomplete-futures-income.json')
+  writeFileSync(incompleteIncomePath, JSON.stringify(baseSnap({
+    positions: [], deals: { open_count: 0, closed_count: 0, open: [], closed: [] },
+    futures: {
+      ...futuresMeta,
+      income_status: 'INCOMPLETE',
+      open_positions: [{ ...spFuture, income_coverage_status: 'INCOMPLETE_FOR_SEQUENCE' }],
+    },
+  })))
+  r = run('position.mjs', ['sp500', '--file', incompleteIncomePath])
+  ok('position incomplete futures income exit 0', r.status === 0, r.stderr)
+  j = parseJSON(r.stdout, 'position incomplete futures income json')
+  ok('position incomplete futures income limits claim', j && j.freshness?.band === 'STALE'
+    && j.freshness?.limitations?.some(x => /income_status=INCOMPLETE/.test(x))
+    && j.freshness?.limitations?.some(x => /income_coverage:.*INCOMPLETE_FOR_SEQUENCE/.test(x)), JSON.stringify(j?.freshness))
 }
 
 // ============================================================================

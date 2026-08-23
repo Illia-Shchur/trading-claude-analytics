@@ -2474,22 +2474,24 @@ export function fngStreak(values, threshold) {
 
 export const POSITION_SNAPSHOT_SCHEMA = 'position-snapshot/1'
 
-/** Freshness bounds in MINUTES: ≤12h FRESH, ≤72h STALE, beyond that EXPIRED. */
+/** Legacy/strict freshness bounds in minutes; default policy is event-driven. */
 export const POSITION_FRESHNESS = { stale: 720, expired: 4320 }
 
 /**
- * Band a snapshot's age. Takes BOTH timestamps and uses the OLDER of the two:
- * `crypto_holding` refreshes only on `POST /link`, so a file written a minute ago
- * can be valuing week-old balances. Banding on `generated_at` alone would report
- * FRESH for a position nobody has re-read in a week — the failure mode this
- * function exists to prevent, not an edge case.
+ * Default policy is EVENT-DRIVEN: the user exports after every new trade, so
+ * elapsed wall time does not make an unchanged position false. The newest
+ * structurally-valid snapshot remains FRESH regardless of generated_at or
+ * holdings_as_of age. Both ages remain visible for audit.
  *
- * All arguments are epoch-ms numbers or ISO strings; a missing/unparseable
- * `generatedAt` is EXPIRED, never a pass. A missing `holdingsAsOf` is treated as
- * unknown-and-therefore-old for the same fail-closed reason.
+ * Passing `opts.stale` explicitly enables strict time mode (used by
+ * position.mjs --max-age-min). Strict mode bands on generated_at only;
+ * holdings_as_of is informational because an unchanged ledger balance need not
+ * receive a new holdings timestamp. Missing/unparseable generated_at still
+ * fails closed in both modes.
  */
 export function positionFreshness(generatedAt, holdingsAsOf, now = Date.now(), opts = {}) {
   const { stale = POSITION_FRESHNESS.stale, expired = POSITION_FRESHNESS.expired } = opts
+  const strictTime = Object.prototype.hasOwnProperty.call(opts, 'stale')
   const nowMs = toMs(now)
   const genMs = toMs(generatedAt)
   const holdMs = toMs(holdingsAsOf)
@@ -2500,26 +2502,27 @@ export function positionFreshness(generatedAt, holdingsAsOf, now = Date.now(), o
       note: 'generated_at is missing or unparseable — treat as no snapshot at all (cold start, Hard Rule 4)' }
   }
   const genAge = Math.round((nowMs - genMs) / 60000)
-  // Unknown holdings_as_of fails closed: unknown age is old age, never fresh age.
-  const holdAge = holdMs === null ? Infinity : Math.round((nowMs - holdMs) / 60000)
-  const age = Math.max(genAge, holdAge)
-  const driver = holdAge > genAge ? 'holdings_as_of' : 'generated_at'
+  const holdAge = holdMs === null ? null : Math.round((nowMs - holdMs) / 60000)
+  const age = genAge
+  const driver = strictTime ? 'generated_at' : 'event_driven_snapshot'
 
-  const band = age <= stale ? 'FRESH' : (age <= expired ? 'STALE' : 'EXPIRED')
+  const band = strictTime ? (age <= stale ? 'FRESH' : (age <= expired ? 'STALE' : 'EXPIRED')) : 'FRESH'
   const note = band === 'FRESH'
-    ? 'position of record — supersedes any figure carried forward from a prior report'
+    ? (strictTime
+      ? 'position of record under explicit time limit — supersedes any figure carried forward from a prior report'
+      : 'position of record under event-driven policy — user exports after every new trade; elapsed time alone does not invalidate an unchanged position')
     : band === 'STALE'
       ? 'descriptive use only, with an age banner. May NOT satisfy a phase-dependent unlock precondition or fill a realized ledger column.'
       : 'cold start per Hard Rule 4 — state explicitly that no fresh ledger was available'
-  return { band, age_min: age === Infinity ? null : age, driver,
-    generated_age_min: genAge, holdings_age_min: holdAge === Infinity ? null : holdAge,
-    stale_after_min: stale, expired_after_min: expired, note }
+  return { band, age_min: age, driver, policy: strictTime ? 'STRICT_TIME' : 'EVENT_DRIVEN',
+    generated_age_min: genAge, holdings_age_min: holdAge,
+    stale_after_min: strictTime ? stale : null, expired_after_min: strictTime ? expired : null, note }
 }
 
 /**
- * Asset-aware snapshot freshness. A futures-only asset is governed by the independent futures account,
- * position, mark, order and income clocks; a mixed spot/futures asset is governed by those clocks AND
- * holdings_as_of. A fresh mark or order can therefore never launder stale positions/income into FRESH.
+ * Asset-aware snapshot validity. Component timestamps remain auditable but do
+ * not age out an event-driven snapshot. Missing/incomplete futures component
+ * status still downgrades the result because that is a coverage defect, not age.
  */
 export function positionSnapshotFreshness(snap, assetRaw, now = Date.now(), opts = {}) {
   const target = String(assetRaw || '').toUpperCase()
@@ -2552,8 +2555,7 @@ export function positionSnapshotFreshness(snap, assetRaw, now = Date.now(), opts
 
   const parsed = clocks.map(([name, value]) => ({ name, value, ms: toMs(value) }))
   const missing = parsed.filter(clock => clock.ms === null).map(clock => clock.name)
-  const oldest = parsed.filter(clock => clock.ms !== null).sort((a, b) => a.ms - b.ms)[0] || null
-  const fresh = positionFreshness(snap?.generated_at, missing.length ? null : oldest?.value, now, opts)
+  const fresh = positionFreshness(snap?.generated_at, snap?.source?.holdings_as_of, now, opts)
   const statusPairs = hasFutures ? [
     ['account_status', snap?.futures?.account_status],
     ['positions_status', snap?.futures?.positions_status],
@@ -2580,7 +2582,7 @@ export function positionSnapshotFreshness(snap, assetRaw, now = Date.now(), opts
   return {
     ...fresh,
     band,
-    driver: missing.length ? missing[0] : oldest?.name || fresh.driver,
+    driver: missing.length ? missing[0] : fresh.driver,
     relevant_scope: hasFutures ? (hasSpot ? 'MIXED_SPOT_FUTURES' : 'FUTURES_ONLY') : 'SPOT',
     component_clocks: Object.fromEntries(parsed.map(clock => [clock.name, clock.value ?? null])),
     limitations,
