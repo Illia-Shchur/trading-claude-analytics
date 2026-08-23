@@ -1,0 +1,79 @@
+{
+  "schema": "strategy-run/1",
+  "evidence_phase": "WALK_FORWARD_OOS",
+  "experiment": {
+    "experiment_id": "legacy-6ca57c13b26bc3ae",
+    "sha256": "1d021c61c03eb00a32ea3905e49925b3adf876fcc596c9009d0c8783ae208792",
+    "definition_sha256": "a8a4a23c10639312647a5007f30178e8a0f12750060fb8b4ad7781d6285f8d07",
+    "candidate_set_sha256": "e991fc4037534cf6355f91b0d58c927b5dfc56883fbe41505697df6542bc9f21"
+  },
+  "engine": null,
+  "candidate_accounting": {
+    "declared_k": 35,
+    "effective_k": 35,
+    "declared_sha256": "2d4cbd7badeafd5def5a6c80f9ac30b9bba6e76404b26468fa70e4f5b092f364",
+    "effective_sha256": "60857d3b185f60ee3d0e23b014dce7446d6b5325055d83d172e553a6a672fa20",
+    "per_series": []
+  },
+  "artifacts": {
+    "candidates": {
+      "path": "candidates.jsonl",
+      "sha256": "84f75877ce7f224d302054dcc1300fa10d7efe72a468572ac16df0ed7eb8f6bb",
+      "rows": 35
+    },
+    "metrics": {
+      "path": "metrics.jsonl",
+      "sha256": "90a8bc979bbc9c9c6153ff6ac9b074c280dd6c6074b0360e14843e0d401f75d4",
+      "rows": 39
+    },
+    "trades": {
+      "path": "trades.jsonl",
+      "sha256": "6d1cf76cf9c74e5f17566e4c8edfcf2ab20c71b21cf7bfd71c8b99ae29c78f3d",
+      "rows": 46
+    }
+  },
+  "decisions": {
+    "per_asset": [
+      {
+        "asset": "btc",
+        "status": "REJECTED",
+        "reasons": [
+          "POINT_IN_TIME_NOT_VERIFIED",
+          "MISSING_OR_NONPOSITIVE_SEARCH_ADJUSTED_EXPECTANCY",
+          "BELOW_COMPLETED_TRADES"
+        ],
+        "selected_candidate_id": "fk-deleveraging-absorption-swing"
+      }
+    ],
+    "portfolio": {
+      "status": "REJECTED",
+      "reasons": [
+        "POINT_IN_TIME_NOT_VERIFIED",
+        "NO_COMPLETED_TRADES",
+        "MISSING_OR_NONPOSITIVE_SEARCH_ADJUSTED_EXPECTANCY",
+        "BELOW_COMPLETED_TRADES",
+        "BELOW_PROFIT_FACTOR"
+      ]
+    }
+  },
+  "activation": {
+    "authorized": false,
+    "status": "SHADOW",
+    "reason": "A research record cannot authorize trades; activation requires a separate governed review."
+  },
+  "legacy": {
+    "source_path": ".report-run/strategy-v2/market-context-run.json",
+    "source_sha256": "db23b0e55d7f0051082ff6f2af247baf1edc5248310075a548904f8bd49f3ea6",
+    "source_schema": "swing-backtest/1",
+    "source_generated_at": "2026-08-22T14:02:22.469Z",
+    "asset": "btc",
+    "evidence_phase": "WALK_FORWARD_OOS",
+    "explicit_omissions": [
+      "NO_EXPLICIT_FEATURE_CONTRACT",
+      "EVIDENCE_PHASE_INFERRED"
+    ]
+  },
+  "generated_at": "2026-08-22T14:02:22.469Z",
+  "run_id": "276c4cb4f3add61241dbad3db20f4a5acad3062a638b12416b306be01b423803",
+  "content_sha256": "276c4cb4f3add61241dbad3db20f4a5acad3062a638b12416b306be01b423803"
+}

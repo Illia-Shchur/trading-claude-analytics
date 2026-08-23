@@ -1,0 +1,79 @@
+{
+  "schema": "strategy-run/1",
+  "evidence_phase": "SEALED_CONFIRMATION",
+  "experiment": {
+    "experiment_id": "legacy-8c3a1c0a44f4c778",
+    "sha256": "d6be0961666e4207e2ab69aa20ba063df215b1d3a35659b09643e4ea0105f518",
+    "definition_sha256": "a8a4a23c10639312647a5007f30178e8a0f12750060fb8b4ad7781d6285f8d07",
+    "candidate_set_sha256": "0722b9e432a72be3415de8146c3774b47d1a9465cf6ce8c28242f35860e5ec72"
+  },
+  "engine": null,
+  "candidate_accounting": {
+    "declared_k": 1,
+    "effective_k": 1,
+    "declared_sha256": "fd340698ad22ae89fd3be9e39f85d35eed833c0d1454403e036d6c58937a00bb",
+    "effective_sha256": "60b2551537ec060222a865416172b763a57b7dd224f23dda578206fe7c409f93",
+    "per_series": []
+  },
+  "artifacts": {
+    "candidates": {
+      "path": "candidates.jsonl",
+      "sha256": "b19f8cd994a6db797133bd5fa9e9138f140f290986cc2fda71a255d6c32ddb17",
+      "rows": 1
+    },
+    "metrics": {
+      "path": "metrics.jsonl",
+      "sha256": "96d6b4e9b2f1881361ea39ddd74c2a08838fd2d45aa556d70721c6c77ed1dc33",
+      "rows": 1
+    },
+    "trades": {
+      "path": "trades.jsonl",
+      "sha256": "a1abd46aa6ad92ef013513ec03f2aeff31ea2ab0bf2c9e273cd214bfda0a28fd",
+      "rows": 29
+    }
+  },
+  "decisions": {
+    "per_asset": [
+      {
+        "asset": "aave",
+        "status": "REJECTED",
+        "reasons": [
+          "POINT_IN_TIME_NOT_VERIFIED",
+          "MISSING_OR_NONPOSITIVE_SEARCH_ADJUSTED_EXPECTANCY",
+          "BELOW_PROFIT_FACTOR"
+        ],
+        "selected_candidate_id": "fk-frb-percentile-atr-router-v1"
+      }
+    ],
+    "portfolio": {
+      "status": "REJECTED",
+      "reasons": [
+        "POINT_IN_TIME_NOT_VERIFIED",
+        "NO_COMPLETED_TRADES",
+        "MISSING_OR_NONPOSITIVE_SEARCH_ADJUSTED_EXPECTANCY",
+        "BELOW_COMPLETED_TRADES",
+        "BELOW_PROFIT_FACTOR"
+      ]
+    }
+  },
+  "activation": {
+    "authorized": false,
+    "status": "SHADOW",
+    "reason": "A research record cannot authorize trades; activation requires a separate governed review."
+  },
+  "legacy": {
+    "source_path": ".report-run/strategy-v2/aave-percentile-atr-router-validation-v1.json",
+    "source_sha256": "db8233497b932d58cfe41fa50b67ac3e93a3c0dc2997aa15d5c9610e3b95e00d",
+    "source_schema": "swing-strategy-cross-asset-validation/1",
+    "source_generated_at": "2026-08-22T16:02:28.483Z",
+    "asset": "aave",
+    "evidence_phase": "SEALED_CONFIRMATION",
+    "explicit_omissions": [
+      "NO_EXPLICIT_FEATURE_CONTRACT",
+      "EVIDENCE_PHASE_INFERRED"
+    ]
+  },
+  "generated_at": "2026-08-22T16:02:28.483Z",
+  "run_id": "5dc6154abf0309a3a9107d1112293df395cc3ba4765b255550f968100c69cf7d",
+  "content_sha256": "5dc6154abf0309a3a9107d1112293df395cc3ba4765b255550f968100c69cf7d"
+}

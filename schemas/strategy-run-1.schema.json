@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema", "$id": "strategy-run/1", "type": "object",
+  "required": ["schema", "run_id", "content_sha256", "evidence_phase", "experiment", "candidate_accounting", "artifacts", "decisions", "activation"],
+  "properties": {
+    "schema": { "const": "strategy-run/1" }, "run_id": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "content_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "evidence_phase": { "enum": ["DEVELOPMENT", "WALK_FORWARD_OOS", "EXPOSED_CONFIRMATION", "SEALED_CONFIRMATION", "PROSPECTIVE_LIVE"] },
+    "candidate_accounting": { "type": "object", "required": ["declared_k", "effective_k", "per_series"] },
+    "artifacts": { "type": "object", "required": ["candidates", "metrics", "trades"] },
+    "decisions": { "type": "object", "required": ["per_asset", "portfolio"] },
+    "activation": { "type": "object", "required": ["authorized"], "properties": { "authorized": { "const": false } } }
+  }
+}

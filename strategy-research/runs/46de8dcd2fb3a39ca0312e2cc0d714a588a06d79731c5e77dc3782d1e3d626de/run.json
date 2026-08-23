@@ -1,0 +1,80 @@
+{
+  "schema": "strategy-run/1",
+  "evidence_phase": "EXPOSED_CONFIRMATION",
+  "experiment": {
+    "experiment_id": "legacy-da7facf2def76fe8",
+    "sha256": "a11f0ee4caaa67b5fb003d16768d10df645dda8b790340eef85511ca390a9542",
+    "definition_sha256": "a8a4a23c10639312647a5007f30178e8a0f12750060fb8b4ad7781d6285f8d07",
+    "candidate_set_sha256": "a758a5d1345156945895f1b72b2e214013075e353e6ae3bb1963940696a5cf2a"
+  },
+  "engine": null,
+  "candidate_accounting": {
+    "declared_k": 3,
+    "effective_k": 3,
+    "declared_sha256": "291c2d056194c5b0661ae80e587c102e4a7703ddf25c0ed2fe053460fdf42d09",
+    "effective_sha256": "03818e413b7a843df31c72daa3920425be488d358f1ce3312f65fd06be287a7e",
+    "per_series": []
+  },
+  "artifacts": {
+    "candidates": {
+      "path": "candidates.jsonl",
+      "sha256": "d8e7f5007b1e11f8c7c64ad3ab666e08d4c7d6e27f96940796c5fe5d0deb8322",
+      "rows": 3
+    },
+    "metrics": {
+      "path": "metrics.jsonl",
+      "sha256": "b97b9f7788beeda36dd48e70b5ae76751c297c818916372aa4adb4b2ec0496d7",
+      "rows": 3
+    },
+    "trades": {
+      "path": "trades.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "rows": 0
+    }
+  },
+  "decisions": {
+    "per_asset": [
+      {
+        "asset": "xrp",
+        "status": "REJECTED",
+        "reasons": [
+          "POINT_IN_TIME_NOT_VERIFIED",
+          "NO_COMPLETED_TRADES",
+          "MISSING_OR_NONPOSITIVE_SEARCH_ADJUSTED_EXPECTANCY",
+          "BELOW_COMPLETED_TRADES",
+          "BELOW_PROFIT_FACTOR"
+        ],
+        "selected_candidate_id": null
+      }
+    ],
+    "portfolio": {
+      "status": "REJECTED",
+      "reasons": [
+        "POINT_IN_TIME_NOT_VERIFIED",
+        "MISSING_OR_NONPOSITIVE_SEARCH_ADJUSTED_EXPECTANCY",
+        "BELOW_PROFIT_FACTOR"
+      ]
+    }
+  },
+  "activation": {
+    "authorized": false,
+    "status": "SHADOW",
+    "reason": "A research record cannot authorize trades; activation requires a separate governed review."
+  },
+  "legacy": {
+    "source_path": ".report-run/strategy-v2/xrp-cross-asset-validation-v1.json",
+    "source_sha256": "97a690a5a1636ebc85d37b54a1d1f7baace695f056db41ea4e37e2f9683bde4e",
+    "source_schema": "swing-cross-asset-validation/1",
+    "source_generated_at": "2026-08-22T14:48:44.000Z",
+    "asset": "xrp",
+    "evidence_phase": "EXPOSED_CONFIRMATION",
+    "explicit_omissions": [
+      "NO_RECOVERABLE_COMPACT_TRADES",
+      "NO_EXPLICIT_FEATURE_CONTRACT",
+      "EVIDENCE_PHASE_INFERRED"
+    ]
+  },
+  "generated_at": "2026-08-22T14:48:44.000Z",
+  "run_id": "46de8dcd2fb3a39ca0312e2cc0d714a588a06d79731c5e77dc3782d1e3d626de",
+  "content_sha256": "46de8dcd2fb3a39ca0312e2cc0d714a588a06d79731c5e77dc3782d1e3d626de"
+}

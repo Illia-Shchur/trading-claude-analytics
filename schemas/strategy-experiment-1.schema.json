@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema", "$id": "strategy-experiment/1", "type": "object",
+  "required": ["schema", "experiment_id", "created_at", "definition", "evidence_phase", "required_assets", "grid", "candidate_set", "acceptance"],
+  "properties": {
+    "schema": { "const": "strategy-experiment/1" }, "experiment_id": { "type": "string" }, "created_at": { "type": "string", "format": "date-time" },
+    "definition": { "type": "object", "required": ["path", "sha256"] },
+    "evidence_phase": { "enum": ["DEVELOPMENT", "WALK_FORWARD_OOS", "EXPOSED_CONFIRMATION", "SEALED_CONFIRMATION", "PROSPECTIVE_LIVE"] },
+    "required_assets": { "type": "array", "minItems": 1, "uniqueItems": true }, "grid": { "type": "object" },
+    "candidate_set": { "type": "object", "required": ["path", "sha256"] }, "acceptance": { "type": "object" }
+  }
+}

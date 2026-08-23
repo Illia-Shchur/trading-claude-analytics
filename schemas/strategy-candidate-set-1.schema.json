@@ -1,0 +1,5 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema", "$id": "strategy-candidate-set/1", "type": "object",
+  "required": ["schema", "experiment_id", "declared_k", "effective_k", "declared_sha256", "effective_sha256", "per_series", "candidates"],
+  "properties": { "schema": { "const": "strategy-candidate-set/1" }, "declared_k": { "type": "integer", "minimum": 0 }, "effective_k": { "type": "integer", "minimum": 0 }, "candidates": { "type": "array" } }
+}

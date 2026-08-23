@@ -1,0 +1,79 @@
+{
+  "schema": "strategy-run/1",
+  "evidence_phase": "SEALED_CONFIRMATION",
+  "experiment": {
+    "experiment_id": "legacy-30d573bfe2569edc",
+    "sha256": "f0aa0eeaf995ad7a6f84c33e58507888f51cb2921ed684e4a166c0226c4bbe64",
+    "definition_sha256": "a8a4a23c10639312647a5007f30178e8a0f12750060fb8b4ad7781d6285f8d07",
+    "candidate_set_sha256": "c962b1af3643fcdd3328f0f97b0db5e829dba8122ae2acc0835c4204ca32102c"
+  },
+  "engine": null,
+  "candidate_accounting": {
+    "declared_k": 1,
+    "effective_k": 1,
+    "declared_sha256": "0af15f5761f5fab8526667d287505b1625833a1f93ddd4b669e9416d06215906",
+    "effective_sha256": "771b0136583fa513c73cd9531d4d95d5126fa1c51833552296d79b16688dedc0",
+    "per_series": []
+  },
+  "artifacts": {
+    "candidates": {
+      "path": "candidates.jsonl",
+      "sha256": "ed37e5591c3a28866bb7ad5d41e4ebf96ddbf2ff420ac9fe4b7b685e390c459e",
+      "rows": 1
+    },
+    "metrics": {
+      "path": "metrics.jsonl",
+      "sha256": "34616c23ca0590336e2e2f2ef6f49d271a1218d2f23d21568c4471967fbef399",
+      "rows": 1
+    },
+    "trades": {
+      "path": "trades.jsonl",
+      "sha256": "7e5a43ba64bc6315ba2e92ae8b0e8837724c4fb8c7a698090f3d7784c9ae42e1",
+      "rows": 40
+    }
+  },
+  "decisions": {
+    "per_asset": [
+      {
+        "asset": "link",
+        "status": "REJECTED",
+        "reasons": [
+          "POINT_IN_TIME_NOT_VERIFIED",
+          "MISSING_OR_NONPOSITIVE_SEARCH_ADJUSTED_EXPECTANCY",
+          "BELOW_PROFIT_FACTOR"
+        ],
+        "selected_candidate_id": "fk-frb-balanced-ema-router-v1"
+      }
+    ],
+    "portfolio": {
+      "status": "REJECTED",
+      "reasons": [
+        "POINT_IN_TIME_NOT_VERIFIED",
+        "NO_COMPLETED_TRADES",
+        "MISSING_OR_NONPOSITIVE_SEARCH_ADJUSTED_EXPECTANCY",
+        "BELOW_COMPLETED_TRADES",
+        "BELOW_PROFIT_FACTOR"
+      ]
+    }
+  },
+  "activation": {
+    "authorized": false,
+    "status": "SHADOW",
+    "reason": "A research record cannot authorize trades; activation requires a separate governed review."
+  },
+  "legacy": {
+    "source_path": ".report-run/strategy-v2/link-balanced-router-validation-v1.json",
+    "source_sha256": "1675515888220cc47848e971d24b6c21ff37af7b8f6dde51815813eb0b1f1ca4",
+    "source_schema": "swing-strategy-cross-asset-validation/1",
+    "source_generated_at": "2026-08-22T15:50:40.300Z",
+    "asset": "link",
+    "evidence_phase": "SEALED_CONFIRMATION",
+    "explicit_omissions": [
+      "NO_EXPLICIT_FEATURE_CONTRACT",
+      "EVIDENCE_PHASE_INFERRED"
+    ]
+  },
+  "generated_at": "2026-08-22T15:50:40.300Z",
+  "run_id": "7ad6e4d86fdd249ce61536135c44ad07e94e74f506a41c833296648577fdc2ab",
+  "content_sha256": "7ad6e4d86fdd249ce61536135c44ad07e94e74f506a41c833296648577fdc2ab"
+}

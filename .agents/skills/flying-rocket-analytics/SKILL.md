@@ -1,6 +1,6 @@
 ---
 name: flying-rocket-analytics
-description: "Proprietary crypto market analysis framework for identifying optimal SHORT entry points during periods of extreme euphoria, overextension, and structural distribution. The inverse companion to fallen-knives-analytics. Works for any crypto asset (BTC, ETH, SOL, major alts) with asset-appropriate substitutions; smaller alts require explicit confirmation due to short-borrow and squeeze risk. Use whenever the user asks for a Flying Rocket update/score/analytics, where to short, when to short, top-signal assessment, euphoria/blow-off readout, distribution analysis, short deployment strategy, or any variant of 'flying rocket [asset]' / 'rocket update'. This skill MUST fetch live data from the internet before any analysis — never rely on stale or memorized data. Output is a structured multi-section report with composite scoring, derived probability matrix, phased short-deployment gates, mandatory stops, carry-cost ledger, and a symmetric cover/exit framework."
+description: "Proprietary crypto short-side framework for 3–30 day swing trades during euphoria, distribution, and failed rallies, using the completed-bar market-flow panel, dynamic technical/macro sentiment scoring, mechanical phase triggers, hard vetoes, carry controls, stops, and symmetric covers. Inverse companion to fallen-knives-analytics; smaller alts require explicit confirmation because of borrow and squeeze risk. Use for Flying Rocket updates, short timing, distribution readouts, short deployment, or cover planning. MUST fetch live data before analysis; never rely on stale or memorized data."
 ---
 
 # Flying Rocket Analytics — Crypto Short / Distribution Framework
@@ -57,7 +57,7 @@ Before writing ANY analysis, fetch live data for ALL categories. Never use memor
 3. **Spot ETF flows** (BTC/ETH) — Farside, SoSoValue, CoinGlass. Look specifically for **flow inflection from inflows to outflows** and **late-stage parabolic inflows** (both are distribution tells).
 4. **Macro risk regime** — VIX level + 5-day Δ, US 10y yield, DXY, gold. Risk-off turns favor shorts.
 5. **Equities breadth** — S&P 500, Nasdaq, equal-weight vs cap-weight spread (NYSE A/D, % stocks above 200d). Narrowing breadth in a rally = vulnerability signal.
-6. **Derivatives positioning** — Funding rates (target: high positive), open interest delta + position vs 90-day OI high, long/short ratio, perp basis, options skew/put-call ratio.
+6. **Derivatives positioning + market flow** — Funding rates (including OI-weighted), aggregate OI candles + position vs 90-day OI high, long/short ratio, perp basis, options skew/put-call ratio, spot CVD, futures taker bid/ask delta, and futures CVD. Read flow jointly with price and OI; a CVD direction alone is not a short signal.
 7. **On-chain distribution** — MVRV-Z, LTH supply trend (rising distribution rate), exchange inflows (large addresses sending to exchanges), Coinbase Premium turning negative.
 8. **Borrow/carry costs** — Perp funding (8h × 3 × 365 = annualized); spot borrow rates where applicable. **Sign matters (corrected Jul 2026) — standard perp convention:** POSITIVE funding = longs pay shorts (carry INCOME to a short); NEGATIVE funding = shorts pay longs (carry COST — and a crowded-short squeeze flag, see §4 penalty). Search-and-correct all prose worked examples elsewhere in this SKILL using the old (inverted) sign convention.
 9. **Rotation regime** — Altcoin Season Index (CoinMarketCap), BTC dominance level + 30d trend. Drives the asset-selection pre-check (see §2.5) and feeds the structural-vulnerability sub-gate.
@@ -67,7 +67,7 @@ Tag every figure with **source + timestamp**.
 
 ### JSON-first report publication
 
-New reports use immutable `report-machine/2`: author a strict JSON draft,
+Historical reports use immutable `report-machine/2`: author a strict JSON draft,
 finalize it under `reports/`, render deterministic `report-markdown/1` full
 Markdown, and pair-lint JSON plus Markdown before export. The contract retains
 all FR channel, price/time-stop, carry, ratchet, cap, and tag protections; it
@@ -75,15 +75,148 @@ does not loosen Hard Rule 6. Unknown/data-limited positions may not become a
 fabricated `HOLD` or `RETAIN`. Legacy `report-machine/1` Markdown remains a
 read-compatible adapter.
 
+## Swing-score/1 operating contract (SHADOW until activation)
+
+The swing objective is a 3–30 day short using completed 4h bars. This section
+defines the compact v3 report format and deterministic shadow calculations. It
+does not authorize entries yet: activation requires a committed BTC+ETH
+walk-forward artifact that passes both long and short holdouts. Until that
+artifact exists, legacy report-machine/1–2 decision rules remain operative for
+live decisions. Never mix v3 scores with legacy gates. Analyst discretion is
+commentary/score context only and can never unlock a phase, clear a veto, or
+alter risk.
+
+The calibration path is `node tools/swing-calibrate.mjs`: it joins completed
+4h Binance spot/futures taker flow, Binance Data Vision OI samples, Binance
+funding, FRED DXY/real-yield, Coin Metrics MVRV, and Alternative.me sentiment.
+Funding is an explicitly carried latest-settled event state; macro/sentiment/
+valuation use prior completed observations with revision/vintage risk disclosed.
+The backfill applies a conservative next-UTC-day availability lag and fetches a
+one-year warmup for calendar lookbacks; labels remain restricted to the request
+window. The full OHLC label denominator is retained and feature coverage is measured
+against it. The
+chronological split is 18-month development, quarterly folds, and an untouched
+6-month holdout. Non-overlapping 30-day episodes debit round-trip fee/slippage
+in R. Activation is fail-closed unless each BTC and ETH FK-long, FR-A-short,
+and FR-B-short series has at least 5 holdout episodes, precision ≥45%, positive
+net expectancy, early capture >0, signals across ≥3 regimes, and ≥80%
+aligned-feature coverage against the full OHLC label universe (excluded labels
+remain in the denominator). A passing run writes a hashed
+`calibrations/swing-btc-eth.json`; it additionally requires point-in-time-safe
+vintages and explicit acceptance of the historical proxy contract. Otherwise
+the model remains `SHADOW`.
+
+### Rejected dynamic-router research (2026-08-22)
+
+Do not promote the frozen `fk-frb-percentile-atr-router-v1`. It combined a
+70th-percentile completed-bar score gate (current bar excluded; 540-bar prior
+window, minimum 180), a 50d/200d EMA direction router, 3×ATR stops clamped to
+3–6%, and 5% per-direction caps. Its seven-asset development result was
+positive, but the precommitted final unseen AAVE validation failed: 29 completed
+trades, 15 wins (51.7%), −0.0480R expectancy, 0.892 R profit factor, −0.43%
+return, and −0.189R bootstrap p20; doubled costs produced −0.0906R and 0.802
+dollar profit factor. Coverage was 99.62%, derivatives coverage was 100%, and
+funding was charged, so this is not a data-quality waiver. The durable decision
+is `calibrations/swing-percentile-atr-router-aave-rejection-20260822.json`.
+
+Consequences: the percentile/EMA/ATR combination is research-only, cannot
+unlock an FR tranche, and may not be tuned on AAVE or replaced by an AAVE
+diagnostic. Candidate selection must hard-block nonpositive search-adjusted
+expectancy using the declared number of searched hypotheses. All FR price/time
+stops, ratchets, size caps, carry controls, and funding vetoes remain unchanged;
+legacy rules remain responsible for live authorization and v3 remains `SHADOW`.
+
+### Durable strategy-research registry (mandatory for new tests)
+
+Record new grids, reruns, finalists, and validation evidence under
+`strategy-research/` with `node tools/strategy-research.mjs`. Definitions are
+immutable/versioned; runs are append-only and content-addressed; all-candidate
+per-asset metrics and declared/effective search K remain auditable. Raw feature
+stores stay outside Git.
+
+Use exact evidence phases (`DEVELOPMENT`, `WALK_FORWARD_OOS`,
+`EXPOSED_CONFIRMATION`, `SEALED_CONFIRMATION`, `PROSPECTIVE_LIVE`) and exact
+decisions (`REJECTED`, `SHADOW`, `CANDIDATE_REVIEW`, `ACTIVE`) independently per
+asset and portfolio. Missing PIT safety or failed gates never authorize a
+short. `CANDIDATE_REVIEW` is still non-active: registry recording cannot bypass
+governed activation. Every FR stop, clock, ratchet, cap, carry control, and funding veto
+remains binding. Legacy imports are provenance, not activation evidence. See
+`strategy-research/README.md`.
+
+- Compute `swing-score/1` with six legs: market flow 5, technical structure 4,
+  macro impulse 3, sentiment/institutional impulse 3, valuation/cycle 3, and
+  structural distribution 2. Scores are mechanical half-points in `[0,20]`;
+  an optional analyst term is limited to ±1.0 in 0.5 steps and can shade the
+  dashboard but cannot unlock a phase, clear a veto, or alter short-side risk.
+- Persist the non-flow legs as explicit state/impulse pairs: technical 2+2,
+  macro 1.5+1.5, sentiment/institutional 1.5+1.5, valuation/cycle 2+1, and
+  structural distribution 1+1. Each completed-bar check contributes 0.5 only
+  when it aligns with the short setup; neutral, missing, or opposing checks
+  score zero. Technical uses 20/50-EMA rejection, lower-high/RSI regime for
+  state and 4h RSI rollover, adverse ATR-normalized return, volume, and failed
+  break/retest for impulse. Macro uses the 20-session regime and 3-day change
+  in DXY, real yields, and net liquidity. Sentiment uses the level and 3-day
+  change in greed plus ETF/stablecoin/funding institutional flow. Valuation
+  uses MVRV, distance from the 1-year/ATH high, 200-week multiple, and
+  realized-price extension plus their weekly direction. Structural
+  distribution uses the 30-day level and 3-day change in ETF demand, exchange
+  reserves, and stablecoin supply. Store every awarded check in provenance;
+  data presence alone never earns a half-point.
+- Read `context.market_flow` as one evidence family. Score current state and
+  impulse separately; full flow credit requires completed-bar coverage across
+  both 24h and 3d. Partial or mismatched Binance aggregate coverage caps the
+  flow leg at 2.5 and blocks a new trigger. The panel's five rows are always
+  printed, with Binance aggregate explicitly labelled single-venue when
+  CoinGlass is unavailable. Spot/futures rows read their signed flow directly;
+  funding is setup-inverted (positive/crowded longs aligns with FR), while open
+  interest must carry an explicit setup-relative interpretation against price
+  and CVD because OI direction alone is ambiguous.
+- Replace the nine-gate board with three mechanical gates: phase score line,
+  a completed 4h price/flow trigger, and no active veto. FR-A phase lines remain
+  11/13/15/19 and FR-B remains 13/15/17 with no Phase 3; size caps remain
+  5/10/15/20%. Every deeper phase needs a fresh higher-price trigger and a
+  two-completed-bar retest window.
+- Hard vetoes are incomplete flow, opposing two-horizon flow, regime mismatch,
+  exhausted portfolio/asset risk, narrative exit, carry/funding veto, and an
+  opposing multi-family macro shock at the rolling 97.5th percentile. Existing
+  FR funding/carry vetoes and mandatory stops always remain binding.
+- Size as `min(phase cap, 1.5% portfolio equity risk / stop distance, 3% asset
+  risk / stop distance)`, subject to the stricter FR short-book protections. If
+  measured equity or a valid stop is missing, deployment is DATA_LIMITED. Keep
+  hard price stops, time stops, ratchets, carry vetoes, and Channel B's 30%
+  cap/no-Phase-3 rule without exception.
+- Default tranche exits are 40% at 1R, 40% at 2R, and 20% trailing toward 3R
+  or the time stop. FR clocks are 7/14/21/30 days; no extension is allowed for
+  any phase, and Channel B remains limited to 7/14/21 days.
+
+### v3 publication and compact report
+
+Shadow swing reports may use canonical `report-machine/3` sidecars. They retain
+sources, provenance, position controls, and phase attribution internally, but
+the Markdown view contains only: decision snapshot; five-row market-flow plus
+technical/macro/sentiment dashboard; score/trigger/veto/phase state;
+entry/stop/targets/expected-R/sizing; position/ratchet/time-stop/exit status;
+watchlist and changes. Do not print separate Market/evidence/data-quality,
+Substitutions/source-register/provenance, Phase-registry/canonical-tags, or
+Canonical-machine-payload sections. The sidecar hash is carried only in the
+compact audit footer. A v3 sidecar is not an activation artifact and cannot
+authorize an entry until the BTC+ETH walk-forward holdout passes. Use
+`tools/finalize-report.mjs`, `tools/render-report.mjs`,
+`tools/lint-report.mjs`, and `tools/export-signals.mjs`; v1–2 artifacts remain
+read-compatible and are never rewritten.
+The sidecar records `model_activation.status`: `SHADOW` and
+`CANDIDATE_REVIEW` force `entry_authorized:false`; `ACTIVE` requires a
+committed calibration artifact path, SHA-256, and activation timestamp.
+
 ### Deterministic toolchain (mandatory, Jul 2026 — shared with Fallen Knives)
 
 Use the repo toolchain (`tools/README.md`) for every computable number:
 
 0. **Position (Hard Rule 8):** run `node tools/position.mjs <asset>` first. Real dry powder against the 50% book cap, open shorts reconciled against the tranche ledger, and per-channel realized win rate (`FR-A-` vs `FR-B-`) all come from it — see §6 "Position & Performance". Exit-code contract per AGENTS.md / `tools/README.md`.
-1. **Fetch:** `node tools/fetch.mjs <asset>` (+ `macro`) — cross-checked spot (>1.5% divergence flagged, feeding the canonical-spot reconciliation), computed weekly Wilder RSI-14, **trailing-1-year high with % below** (the §4 phase-of-cycle cap input, computed not eyeballed), F&G 3-day average, VIX/DXY/real-yield/Brent macro block. The same fetch also feeds the mandatory computed Fallen Knives companion score — both sides score off one data pull, making Hard Rule 5's inverse check same-timestamp by construction.
+1. **Fetch:** `node tools/fetch.mjs <asset>` (+ `macro`) — cross-checked spot (>1.5% divergence flagged, feeding the canonical-spot reconciliation), computed weekly Wilder RSI-14, **trailing-1-year high with % below** (the §4 phase-of-cycle cap input, computed not eyeballed), F&G 3-day average, VIX/DXY/real-yield/Brent macro block. For BTC/ETH it also emits `onchain` (reconstructed current MVRV-Z, exchange reserve and inflow/outflow), `coinbase_premium` (completed-day three-print streak), and `context.positioning.open_interest_90d` (official Binance daily archives). `macro.equities_breadth_200dma` supplies SPY-universe breadth with a 95% coverage floor. These fields are mandatory to inspect before declaring the corresponding item UNKNOWN/NOT_COVERED. The same fetch also feeds the mandatory computed Fallen Knives companion score — both sides score off one data pull, making Hard Rule 5's inverse check same-timestamp by construction.
 2. **Compute:** `tools/compute.mjs` covers funding annualization, cycle-cap tier, rubric bands, EV, ADR, the squeeze-trap penalty, and the carry-veto/minimum-edge check — see `tools/README.md` for the current flag catalogue; the tool prints its own fields, so this SKILL does not re-enumerate them. **Trap warning kept:** take `--sustained3` from `tools/fetch.mjs`'s `funding.sustained3_below_minus5`, never `longest_negative_run_intervals`. **Edge convention codified in code (Hard Rule 6):** where §4's dash-range bands leave an exact edge ambiguous, `tools/lib.mjs` resolves it to the LOWER-score band — the harder-to-short reading (RSI exactly 75 → 3, not 4; MVRV-Z exactly 5 → 4; exactly 10% below 1y-ATH → cap 14 applies). A tightening-or-neutral mirror of the FK edge rule, never a loosening.
-3. **Scope honesty + failure:** ETF flows, on-chain (MVRV-Z, LTH, reserves), and news remain live web fetches per Hard Rule 1; spot borrow now has a disclosed-context feed (step 4) but that single-venue lending-rate proxy does not itself discharge Hard Rule 1 if a stronger per-venue quote is available. On tool-source failure, follow the documented fallback rules and disclose.
-4. **Context Panel (market-data-extension plan, 2026-08, optional):** derivatives positioning under `outp.context` — see the fuller Context Panel entry in §2's live-data table for field names and the Deribit skew sign convention. **DISCLOSED CONTEXT ONLY** — none of this is a scored leg, gate, threshold, phase size, stop, or cap, and it does not relax the Hard Rule 1 web-fetch requirement for ETF flows/on-chain/news above. `tools/tripwire.mjs` (run by hand, not part of the mandatory workflow) can flag a scoring-relevant boundary crossing between two stored `tools/snapshot.mjs` runs without a full report — including, as of 2026-08-05, every §4A/§4B band edge and the actual gate-8 funding boundary, not just the informational funding-sign flip it started with.
+3. **Scope honesty + failure:** ETF flows, true LTH supply/flow, and news remain separate live web/provider fetches per Hard Rule 1. Coin Metrics Community covers MVRV-Z reconstruction plus reserves/flows but not true LTH; `onchain.lth.status=PROVIDER_GATED` must remain explicit and no alternate age band may be silently substituted. Spot borrow has a disclosed-context feed (step 4), but that single-venue lending-rate proxy does not itself discharge Hard Rule 1 if a stronger per-venue quote is available. On tool-source failure, follow the documented fallback rules and disclose.
+4. **Context Panel (market-data-extension plan, 2026-08):** derivatives positioning under `outp.context` — see the fuller Context Panel entry in §2's live-data table for field names and the Deribit skew sign convention. For crypto, **inspect `context.market_flow` every report**; other context fields remain optional. **LEGACY v1–2 ONLY:** this block is disclosed context, not a scored leg or gate. An activated v3 report instead follows the Swing-score/1 contract above, where only the audited market-flow family is scored; no other context field is promoted. Existing carry/funding vetoes remain separate and binding. `context.positioning.open_interest_90d` still uses official Binance Data Vision archives for the legacy squeeze-penalty condition when `available:true`; it does not make the measure market-wide. `tools/tripwire.mjs` (run by hand, not part of the mandatory workflow) can flag a scoring-relevant boundary crossing between two stored `tools/snapshot.mjs` runs without a full report — including, as of 2026-08-05, every §4A/§4B band edge and the actual gate-8 funding boundary, not just the informational funding-sign flip it started with.
 
 ## Report Structure
 
@@ -108,11 +241,32 @@ Tables with **source + timestamp** for every cell:
 - **Sentiment**: Source | Reading | Status (extreme fear / fear / neutral / greed / **extreme greed**)
 - **ETF Flows (BTC/ETH)**: Window | Net Flow | % of AUM | Inflection? (Y/N)
 - **Macro Risk Regime**: VIX | 10y | DXY | Gold | Δ5d
-- **Equities Breadth**: SPX/NDX | % above 200d | A/D spread | Source
+- **Equities Breadth**: SPX/NDX | % above 200d (`macro.equities_breadth_200dma`) | A/D spread | Source
 - **Derivatives**: Funding (8h & annualized) | OI Δ7d | L/S ratio | Perp basis | Skew/PCR
-- **On-Chain**: MVRV-Z | LTH 30d Δ | Exchange inflow trend | Coinbase Premium
+- **On-Chain**: MVRV-Z (`onchain.mvrv_z`) | LTH 30d Δ (provider-gated unless separately sourced) | Exchange reserve/inflow trend (`onchain`) | Coinbase Premium (`coinbase_premium`)
 - **Carry**: Perp funding annualized | Spot borrow (if applicable — `tools/fetch.mjs`'s `context.borrow`, BTC/ETH/SOL only, Bitfinex single-venue, disclosed context; a stronger per-venue quote still wins if available) | Implied bleed/month
 - **Context Panel** (market-data-extension plan, 2026-08) — optional, **disclosed context only, never a scored leg or gate**: several columns above that used to be eyeballed are now tool-computed — `tools/fetch.mjs`'s `outp.context.basis` (perp basis + annualized carry, same sign convention as `fr-funding`) and `outp.context.positioning` (Binance long/short ratio, taker buy/sell ratio, OI — ~30-day history, single-venue, stated in the output) cover the **Derivatives**/**Carry** rows' funding/OI/L-S/basis cells; `outp.context.deribit` (BTC/ETH only) gives ATM IV + a MONEYNESS-based skew (`skew_90_110_moneyness_pct` — not a true 25-delta risk reversal) + VRP for the **Skew/PCR** cell — **sign convention (2026-08-05, FR-parity plan): POSITIVE = the ~10% OTM put is richer than the ~10% OTM call = a downside hedging bid; a distribution blow-off shows this skew COMPRESSING toward zero or INVERTING (calls bid), never richening further** — `skew_sign_convention` states this in the field's own output, the same discipline as `fundingBlock`'s and `basisBlock`'s sign lines; realized-vol/drawdown/RSI percentiles and macro-scope `net_liquidity`/`hy_oas`/`nfci`/`stablecoin_supply` round out the panel. Include when it sharpens the read (e.g. skew compressing or inverting into a blow-off, OI at a percentile extreme); a report is complete without it. Promoting any field here into the rubric is a `framework-calibration` job, not something this skill does inline.
+- **Market Flow Panel** (crypto; mandatory inspection, print all five rows even when one is unavailable): `context.market_flow.spot_cvd` · `.futures_bid_ask_delta` · `.futures_cvd` · `.open_interest` · `.oi_weighted_funding`. Preferred scope is Coinglass cross-exchange (`Binance,OKX,Bybit`). Without `COINGLASS_API_KEY`, the tool aggregates all active Binance stable-USD spot pairs and USD-M perpetuals discovered for the asset; label it **Binance aggregate, single venue**, list the included symbols from `binance_aggregate`, and never call it cross-exchange. Its OI candles are sampled from 30-minute USD-OI observations and its funding is OI-weighted across the included Binance contracts. CVD is rebased at the first completed bar, so the portable information is **24h / 3d / full-window direction, imbalance, and divergence**, not absolute CVD.
+
+**How to print and use the keyless Binance aggregate in a report:**
+
+1. Print `Metric | Scope/coverage | 24h | 3d | Full window/latest | Read`, captioned with `interval_hours` and `completed_through` (bar close; `as_of` is the bar's opening timestamp). CVD rows use `delta_*_usd`, direction, and imbalance percent. Never compare the rebased cumulative CVD level with a prior report.
+2. OI prints the latest sampled OHLC plus `change_24h_pct` / `change_window_pct`. Quote `ohlc_method`; 30-minute sampling can miss an intrabar extreme. Any incomplete bar, incomplete contract coverage, non-empty `binance_aggregate.errors`, or mismatch between discovered and corresponding included symbols is labeled **PARTIAL** and cannot support S1 or a bearish scenario-grid departure.
+3. Binance aggregate funding is a raw fraction (`0.0001 = 0.01%`) weighted by contemporaneous USD OI. Convert ×100 for percent display, and use sign/latest/24h mean/relative percentile. Do not annualize it until every included contract's funding interval is verified; otherwise write `interval-unverified — sign/relative-history use only`. The separately scored/carry-veto funding series keeps its existing verified interval contract and is not silently replaced by this context row.
+4. Caption the panel with both limitations: stablecoin quotes are treated as nominal USD; all five rows remain one Binance provider/derived family. They can supply only one S1 reason in total and need the strongest contrary reading plus a falsifier.
+5. CoinGlass remains preferred for market-wide claims. When fields fall back independently, keep every `source` label visible; do not narrate mixed-provider rows as one homogeneous cross-exchange panel.
+
+**How Flying Rocket reads the Market Flow Panel (context, never a veto substitute):**
+
+- Price up + **spot CVD down** across more than one horizon → potential distribution / spot non-confirmation.
+- Price up + futures CVD up + spot CVD flat/down + **OI up** → leverage-led rally; fragile, but still wait for the channel's required stall/breakdown confirmation.
+- Price up + futures CVD up + **OI down** → short covering. The rally may lack fresh demand, but squeeze risk is realized now; do not front-run the stop/stall rules.
+- Price down + futures CVD down + **OI up** → fresh short build, a crowding/squeeze warning rather than clean top confirmation.
+- Positive OI-weighted funding + rising OI + futures buy imbalance while spot CVD lags → crowded leveraged longs; useful distribution context, not permission to waive preflight, edge, carry, stop, clock, or gate 8.
+
+Use completed 4h bars by default. One bar is observation, not structure: an S1 or bearish grid departure needs agreement across at least two horizons (normally 24h and 3d), stated magnitude, the strongest contrary reading, and a falsifier. Every field in this panel is **one provider/derived family**, not independent corroboration; spot CVD + futures CVD + OI cannot be presented as three separate S1 reasons. A Binance aggregate is additionally single-venue even when it covers several pairs/contracts. Promoting a field into any rubric, gate, threshold, veto, or cap requires `framework-calibration` and may never relax Hard Rule 6.
+
+**Coverage accounting:** count only unavailable market/account inputs as data gaps or stale inputs. “No order execution was authorized/performed” is an execution-scope statement, and “context fields are not promoted into rubric legs” is a methodology statement; neither belongs in the data-gap total. Keep those in a separate Scope/Method note so the headline gap count remains diagnostic.
 
 **Canonical-spot reconciliation (Jun 2026).** Governed by Fallen Knives' `[R:canonical-spot]` rule — same computation (median of the primary source + ≥2 others, timestamped), same >0.5%-spread reporting duty, same sign-flip-triggers-low-confidence test. **Corrected 2026-08-07 (C7):** this was labeled a "mirror," which overstated the symmetry — FK's rule additionally carries a synchronized-quote window (2hr), explicit "live"/"frozen-stale" row labelling, and an EXCLUDED-tag requirement for divergent stale quotes; FR has none of those and is **silently tighter as of this correction**, not looser: an FR report now inherits the AND-conjunct FK actually enforces (sign flip **AND** |median EV-vs-spot| < spread) rather than the OR this paragraph previously implied by omission. FR's own delta: the sign-flip test reads **Total Short EV**, not EV-vs-spot, and the two-extremes computation is required whenever the spread threshold is crossed, with no separate "fewer than 3 synchronized quotes" carve-out stated here. Do not act on a short whose entire edge sits inside the price-source noise.
 
@@ -748,7 +902,7 @@ reports/[asset]_flying_rocket_[YYYYMMDD]_[HHMM].md
 
 Path is repo-relative, per AGENTS.md's Output Convention (which also governs the post-save commit/push). Filename uses lowercase asset symbol. Example: `btc_flying_rocket_20260514_1030.md`.
 
-**Machine block + lint (mandatory, Jul 2026; extended 2026-08-12).** Every report ends with a fenced ` ```json machine ` block (schema `report-machine/1`, field list in `tools/lint-report.mjs`). Every report also carries a `tagging` object with `mode: "phase_registry"`, the instrument class, `reserved_tags`, `active_tags`, and a status. FR-specific enforcement: every tranche in the block must carry BOTH a price `stop` and a `time_stop` (the linter errors on either missing), tranche sizes are checked against 5/10/15/20 with the ≤50% short-book cap, and the cycle cap is cross-checked against the recorded % below 1-year ATH. A dry or locked report still prints reserved tags; only a confirmed fill may populate `active_tags`.
+**Machine contract + lint (mandatory).** Historical report-machine/1 and report-machine/2 reports retain their fenced machine block and legacy lint rules. New swing reports use report-machine/3: the canonical JSON sidecar is paired with compact Markdown and has **no embedded machine block or visible tag registry**. Run `node tools/finalize-report.mjs`, `node tools/render-report.mjs`, `node tools/lint-report.mjs`, and `node tools/export-signals.mjs`; the v3 linter checks score/trigger/veto/risk arithmetic, the sidecar hash footer, and the removed-section contract. FR's mandatory price/time stops, ratchets, carry vetoes, and Channel B protections remain in the sidecar. A dry or locked v3 setup retains tags only in its sidecar; no tag registry is printed in Markdown.
 
 Added 2026-07-27, all fail-closed:
 - `channel` at report level: `"A"`, `"B"`, or `"none"` — required; `"B"` additionally requires `regime.pct_below_1y_ath > 20` and `regime.ma200_falling === true`, so a Channel B report cannot be written outside the regime that defines it.

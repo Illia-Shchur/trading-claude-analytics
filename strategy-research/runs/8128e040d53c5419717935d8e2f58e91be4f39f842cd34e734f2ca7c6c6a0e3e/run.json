@@ -1,0 +1,79 @@
+{
+  "schema": "strategy-run/1",
+  "evidence_phase": "WALK_FORWARD_OOS",
+  "experiment": {
+    "experiment_id": "legacy-cca959aec50e625c",
+    "sha256": "fb0c68b942750a992673ef1baf94d0ea0e6200bf0a3b8be15f24baaf169a2fd9",
+    "definition_sha256": "a8a4a23c10639312647a5007f30178e8a0f12750060fb8b4ad7781d6285f8d07",
+    "candidate_set_sha256": "ba9a265dbbdf7e53a81af06466ef955caf16810a48ca93c4fb52ba10335ae335"
+  },
+  "engine": null,
+  "candidate_accounting": {
+    "declared_k": 35,
+    "effective_k": 35,
+    "declared_sha256": "b00d2493a6057c8afe4440dface12624a86d025c27d627f52fddb08a8e831b2b",
+    "effective_sha256": "202bfcc2b54eeb21ca0c22347dfd407e741f85e72cfb71f839817c36d4f2500d",
+    "per_series": []
+  },
+  "artifacts": {
+    "candidates": {
+      "path": "candidates.jsonl",
+      "sha256": "84f75877ce7f224d302054dcc1300fa10d7efe72a468572ac16df0ed7eb8f6bb",
+      "rows": 35
+    },
+    "metrics": {
+      "path": "metrics.jsonl",
+      "sha256": "313a54434a0e3972bb95771fef46845d02dea101a2d3d5da71228ea91cd12823",
+      "rows": 38
+    },
+    "trades": {
+      "path": "trades.jsonl",
+      "sha256": "e265d87d90ea5ae6bae1d5e3775a9fc15959b72eccf8756af066733eaec0412e",
+      "rows": 67
+    }
+  },
+  "decisions": {
+    "per_asset": [
+      {
+        "asset": "eth",
+        "status": "REJECTED",
+        "reasons": [
+          "POINT_IN_TIME_NOT_VERIFIED",
+          "MISSING_OR_NONPOSITIVE_SEARCH_ADJUSTED_EXPECTANCY",
+          "BELOW_PROFIT_FACTOR"
+        ],
+        "selected_candidate_id": "fk-volatility-exhaustion-fast"
+      }
+    ],
+    "portfolio": {
+      "status": "REJECTED",
+      "reasons": [
+        "POINT_IN_TIME_NOT_VERIFIED",
+        "NO_COMPLETED_TRADES",
+        "MISSING_OR_NONPOSITIVE_SEARCH_ADJUSTED_EXPECTANCY",
+        "BELOW_COMPLETED_TRADES",
+        "BELOW_PROFIT_FACTOR"
+      ]
+    }
+  },
+  "activation": {
+    "authorized": false,
+    "status": "SHADOW",
+    "reason": "A research record cannot authorize trades; activation requires a separate governed review."
+  },
+  "legacy": {
+    "source_path": ".report-run/strategy-v2/market-context-run.json",
+    "source_sha256": "db23b0e55d7f0051082ff6f2af247baf1edc5248310075a548904f8bd49f3ea6",
+    "source_schema": "swing-backtest/1",
+    "source_generated_at": "2026-08-22T14:02:22.469Z",
+    "asset": "eth",
+    "evidence_phase": "WALK_FORWARD_OOS",
+    "explicit_omissions": [
+      "NO_EXPLICIT_FEATURE_CONTRACT",
+      "EVIDENCE_PHASE_INFERRED"
+    ]
+  },
+  "generated_at": "2026-08-22T14:02:22.469Z",
+  "run_id": "8128e040d53c5419717935d8e2f58e91be4f39f842cd34e734f2ca7c6c6a0e3e",
+  "content_sha256": "8128e040d53c5419717935d8e2f58e91be4f39f842cd34e734f2ca7c6c6a0e3e"
+}

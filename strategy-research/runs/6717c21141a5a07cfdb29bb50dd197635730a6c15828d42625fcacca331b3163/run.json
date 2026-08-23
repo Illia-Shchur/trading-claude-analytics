@@ -1,0 +1,78 @@
+{
+  "schema": "strategy-run/1",
+  "evidence_phase": "EXPOSED_CONFIRMATION",
+  "experiment": {
+    "experiment_id": "legacy-a3478432c7cc5bee",
+    "sha256": "6652708c6de084856ca1926b55b4327f7cba96550f5055e333c585b93f99209a",
+    "definition_sha256": "a8a4a23c10639312647a5007f30178e8a0f12750060fb8b4ad7781d6285f8d07",
+    "candidate_set_sha256": "5124eb4dcb2e950ab3e59336ec925aa9e8d99e72ccc380420b9e22f7a4a3ec0e"
+  },
+  "engine": null,
+  "candidate_accounting": {
+    "declared_k": 3,
+    "effective_k": 3,
+    "declared_sha256": "291c2d056194c5b0661ae80e587c102e4a7703ddf25c0ed2fe053460fdf42d09",
+    "effective_sha256": "03818e413b7a843df31c72daa3920425be488d358f1ce3312f65fd06be287a7e",
+    "per_series": []
+  },
+  "artifacts": {
+    "candidates": {
+      "path": "candidates.jsonl",
+      "sha256": "d8e7f5007b1e11f8c7c64ad3ab666e08d4c7d6e27f96940796c5fe5d0deb8322",
+      "rows": 3
+    },
+    "metrics": {
+      "path": "metrics.jsonl",
+      "sha256": "6fe9684cfdffcc7e5d3e6b5d722b0af632f9bb65de4e241418df842d16a062c0",
+      "rows": 3
+    },
+    "trades": {
+      "path": "trades.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "rows": 0
+    }
+  },
+  "decisions": {
+    "per_asset": [
+      {
+        "asset": "bnb",
+        "status": "REJECTED",
+        "reasons": [
+          "POINT_IN_TIME_NOT_VERIFIED",
+          "NO_COMPLETED_TRADES",
+          "MISSING_OR_NONPOSITIVE_SEARCH_ADJUSTED_EXPECTANCY",
+          "BELOW_COMPLETED_TRADES",
+          "BELOW_PROFIT_FACTOR"
+        ],
+        "selected_candidate_id": null
+      }
+    ],
+    "portfolio": {
+      "status": "REJECTED",
+      "reasons": [
+        "POINT_IN_TIME_NOT_VERIFIED"
+      ]
+    }
+  },
+  "activation": {
+    "authorized": false,
+    "status": "SHADOW",
+    "reason": "A research record cannot authorize trades; activation requires a separate governed review."
+  },
+  "legacy": {
+    "source_path": ".report-run/strategy-v2/bnb-cross-asset-validation-v2.json",
+    "source_sha256": "20b56180252952c297cd137cfc71e9252d180577eee7cd9db986706f84034066",
+    "source_schema": "swing-cross-asset-validation/1",
+    "source_generated_at": "2026-08-22T14:34:49.621Z",
+    "asset": "bnb",
+    "evidence_phase": "EXPOSED_CONFIRMATION",
+    "explicit_omissions": [
+      "NO_RECOVERABLE_COMPACT_TRADES",
+      "NO_EXPLICIT_FEATURE_CONTRACT",
+      "EVIDENCE_PHASE_INFERRED"
+    ]
+  },
+  "generated_at": "2026-08-22T14:34:49.621Z",
+  "run_id": "6717c21141a5a07cfdb29bb50dd197635730a6c15828d42625fcacca331b3163",
+  "content_sha256": "6717c21141a5a07cfdb29bb50dd197635730a6c15828d42625fcacca331b3163"
+}

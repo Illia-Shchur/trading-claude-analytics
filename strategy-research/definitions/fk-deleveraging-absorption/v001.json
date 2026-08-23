@@ -1,0 +1,45 @@
+{
+  "schema": "strategy-definition/1",
+  "strategy_id": "fk-deleveraging-absorption",
+  "version": "v001",
+  "created_at": "2026-08-23T00:00:00.000Z",
+  "status": "FROZEN",
+  "description": "Research-only FK deleveraging/absorption baseline; no positive edge is asserted.",
+  "lineage": { "parent_version": null, "change_summary": "Initial durable reconstruction from legacy FK research artifacts." },
+  "candidate_template": {
+    "id": "fk-deleveraging-absorption", "framework": "fallen_knives", "direction": "long", "phase": "1A",
+    "setup_family": "FK_DELEVERAGING_ABSORPTION", "score_threshold": 4.5, "stop_pct": 6, "target_r": 1,
+    "partial_exit_pct": 0.5, "partial_target_r": 0.75, "max_hold_bars": 18, "max_concurrent": 1,
+    "fee_pct": 0.1, "slippage_pct": 0.05
+  },
+  "feature_contract": {
+    "description": "UNKNOWN is intentional where legacy availability manifests were not retained.",
+    "series": [
+      { "series_id": "btc-4h-fk", "asset": "btc", "timeframe": "4h", "point_in_time": { "status": "UNKNOWN", "completed_bar_only": true }, "availability_lag": { "status": "NOT_RETAINED" } },
+      { "series_id": "eth-4h-fk", "asset": "eth", "timeframe": "4h", "point_in_time": { "status": "UNKNOWN", "completed_bar_only": true }, "availability_lag": { "status": "NOT_RETAINED" } },
+      { "series_id": "sol-4h-fk", "asset": "sol", "timeframe": "4h", "point_in_time": { "status": "UNKNOWN", "completed_bar_only": true }, "availability_lag": { "status": "NOT_RETAINED" } },
+      { "series_id": "bnb-4h-fk", "asset": "bnb", "timeframe": "4h", "point_in_time": { "status": "UNKNOWN", "completed_bar_only": true }, "availability_lag": { "status": "NOT_RETAINED" } },
+      { "series_id": "xrp-4h-fk", "asset": "xrp", "timeframe": "4h", "point_in_time": { "status": "UNKNOWN", "completed_bar_only": true }, "availability_lag": { "status": "NOT_RETAINED" } },
+      { "series_id": "ada-4h-fk", "asset": "ada", "timeframe": "4h", "point_in_time": { "status": "UNKNOWN", "completed_bar_only": true }, "availability_lag": { "status": "NOT_RETAINED" } },
+      { "series_id": "link-4h-fk", "asset": "link", "timeframe": "4h", "point_in_time": { "status": "UNKNOWN", "completed_bar_only": true }, "availability_lag": { "status": "NOT_RETAINED" } },
+      { "series_id": "aave-4h-fk", "asset": "aave", "timeframe": "4h", "point_in_time": { "status": "UNKNOWN", "completed_bar_only": true }, "availability_lag": { "status": "NOT_RETAINED" } }
+    ],
+    "inputs": [
+      {
+        "input_id": "legacy-market-flow-panel",
+        "field_path": "legacy.factors.*",
+        "source": { "provider": "LEGACY_RESEARCH_ARTIFACT", "scope": "mixed market, macro, sentiment and flow" },
+        "transformation": { "version": "not-retained", "method": "UNKNOWN" },
+        "availability": { "rule": "Original per-field availability timestamps were not retained." },
+        "point_in_time": { "status": "UNKNOWN", "completed_bar_only": true },
+        "minimum_coverage": 0,
+        "role": "CONTEXT"
+      }
+    ]
+  },
+  "evidence_policy": {
+    "activation_allowed": false,
+    "required_sequence": ["DEVELOPMENT", "WALK_FORWARD_OOS", "EXPOSED_CONFIRMATION", "SEALED_CONFIRMATION", "PROSPECTIVE_LIVE"],
+    "notes": "Every asset and the portfolio fail closed; governed activation is separate."
+  }
+}

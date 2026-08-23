@@ -1,0 +1,80 @@
+{
+  "schema": "strategy-run/1",
+  "evidence_phase": "EXPOSED_CONFIRMATION",
+  "experiment": {
+    "experiment_id": "legacy-152a5c1eef67a6cd",
+    "sha256": "d2a568015c0be8f259add0f196e5db5fa67f40c4690c90a913fcd6135a494cff",
+    "definition_sha256": "a8a4a23c10639312647a5007f30178e8a0f12750060fb8b4ad7781d6285f8d07",
+    "candidate_set_sha256": "ec874d55148c95ac3addb3eda24b3d154ea9393515e693df332af12273cd0560"
+  },
+  "engine": null,
+  "candidate_accounting": {
+    "declared_k": 924,
+    "effective_k": 924,
+    "declared_sha256": "784655bfb58a5da98a8a4c29e4100c14bfb07ffea959c63a4240ef3244cb0204",
+    "effective_sha256": "e8d65217a4a0a802c3815495d45c7b15dd44a5ca1c8dfa410c0aeff618485e6f",
+    "per_series": []
+  },
+  "artifacts": {
+    "candidates": {
+      "path": "candidates.jsonl",
+      "sha256": "bae3a49b50739fd8342a9e346d42619129b60ee6e78f82898ed7d6e837ea514c",
+      "rows": 924
+    },
+    "metrics": {
+      "path": "metrics.jsonl",
+      "sha256": "869fe587cb7b4de57948e699dc4192e10356b2b9b4f1106a8eb8e027d96a818e",
+      "rows": 924
+    },
+    "trades": {
+      "path": "trades.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "rows": 0
+    }
+  },
+  "decisions": {
+    "per_asset": [
+      {
+        "asset": "btc",
+        "status": "REJECTED",
+        "reasons": [
+          "POINT_IN_TIME_NOT_VERIFIED",
+          "MISSING_OR_NONPOSITIVE_SEARCH_ADJUSTED_EXPECTANCY",
+          "BELOW_PROFIT_FACTOR"
+        ],
+        "selected_candidate_id": "fk-da-base-fast18-fear-s35"
+      }
+    ],
+    "portfolio": {
+      "status": "REJECTED",
+      "reasons": [
+        "POINT_IN_TIME_NOT_VERIFIED",
+        "NO_COMPLETED_TRADES",
+        "MISSING_OR_NONPOSITIVE_SEARCH_ADJUSTED_EXPECTANCY",
+        "BELOW_COMPLETED_TRADES",
+        "BELOW_PROFIT_FACTOR"
+      ]
+    }
+  },
+  "activation": {
+    "authorized": false,
+    "status": "SHADOW",
+    "reason": "A research record cannot authorize trades; activation requires a separate governed review."
+  },
+  "legacy": {
+    "source_path": ".report-run/strategy-v2/refinement-search/results.json",
+    "source_sha256": "9b99c1416311fe273f6e07e1ed6f844670fc0f7f2036b679a1d400682c6d6ba4",
+    "source_schema": "fk-da-refinement-search/1",
+    "source_generated_at": "2026-08-22T14:15:54.007Z",
+    "asset": "btc",
+    "evidence_phase": "EXPOSED_CONFIRMATION",
+    "explicit_omissions": [
+      "NO_RECOVERABLE_COMPACT_TRADES",
+      "NO_EXPLICIT_FEATURE_CONTRACT",
+      "EVIDENCE_PHASE_INFERRED"
+    ]
+  },
+  "generated_at": "2026-08-22T14:15:54.007Z",
+  "run_id": "881e7b8a9e272574c080ce245e93631f5745a61f5c07994103441b4eee9e39df",
+  "content_sha256": "881e7b8a9e272574c080ce245e93631f5745a61f5c07994103441b4eee9e39df"
+}

@@ -1,6 +1,20 @@
 # Deterministic Toolchain
 
-## Machine-first report pipeline (report-machine/2)
+## Durable strategy research registry
+
+`node tools/strategy-research.mjs` manages the Git-tracked
+`strategy-research/` audit record. Commands: `generate`, `run`, `record`,
+`validate`, `rebuild-index`, `list`, `show`, `compare`, and `import-legacy`.
+It delegates simulation to `tools/swing-engine.mjs`, deterministically expands
+grids, deduplicates effective behavior, rejects candidate-ID conflicts, records
+declared/effective K and hashes per series, and refuses overwrites.
+
+Only compact evidence is tracked; raw feature stores and caches stay outside
+Git. All statuses fail closed per asset and portfolio, and no registry run can
+bypass the separately governed activation contract. Full details and examples:
+`strategy-research/README.md`.
+
+## Machine-first report pipeline (report-machine/2 and report-machine/3)
 
 New reports are authored as strict JSON drafts and published as an immutable
 `report-machine/2` payload plus a deterministic `report-markdown/1` view. JSON
@@ -36,6 +50,132 @@ zone, risk, and execution-audit set; data-limited positions cannot fabricate
 `HOLD`/`RETAIN`. The v2 validator and renderer make no network calls and read
 no current clock. Legacy `report-machine/1` Markdown remains supported.
 
+Shadow swing reports may use `report-machine/3`: the JSON sidecar is canonical and
+the Markdown view is deliberately compact. It carries `setup`, `features`,
+`trigger`, `vetoes`, `risk_budget`, `expectancy_r`, and `audit`, while source,
+provenance, position, and phase-attribution details stay in the sidecar. The
+view has no embedded machine block; its final audit line includes the sidecar
+SHA-256 prefix. This contract cannot authorize entries until a BTC+ETH
+walk-forward activation artifact passes; legacy v1–2 decision rules remain
+operative until then and must not be mixed with v3 scores. `lint-report.mjs`
+checks the pair and rejects the removed
+Market/evidence/data-quality, substitutions/source-register/provenance,
+phase-registry/canonical-tags, and canonical-payload sections. v1–2 reports
+remain read-compatible.
+
+Every v3 sidecar records `model_activation`. `SHADOW` and `CANDIDATE_REVIEW`
+force `entry_authorized:false`; `ACTIVE` requires the committed calibration
+artifact path, its full SHA-256, and an activation timestamp. Non-flow legs
+also retain their state/impulse decomposition: technical 2+2, macro 1.5+1.5,
+sentiment 1.5+1.5, valuation 2+1, and structure 1+1.
+
+`tools/swing-score.mjs` is the shared pure implementation of swing-score/1:
+six bounded legs, completed-bar flow coverage, three mechanical gates,
+phase lines/caps, hard vetoes, 1.5% portfolio and 3% asset risk sizing, and
+the two-bar trigger window. `tools/swing-calibrate.mjs` backfills up to three
+years of BTC/ETH completed 4h features. The default backfill joins Binance
+spot/futures taker quote flow, Binance Data Vision OI samples, Binance funding,
+FRED DXY/real-yield observations, Coin Metrics MVRV, and Alternative.me
+sentiment. Absent observations remain in the full OHLC label denominator and
+are listed in coverage metadata. Funding is explicitly a carried
+latest-settled event state; macro/sentiment/valuation use prior completed
+observations with a conservative next-UTC-day availability lag and carry/revision risk is disclosed. A one-year warmup is fetched for calendar lookbacks but labels remain restricted to the requested window. The six non-flow legs carry
+explicit state/impulse checks and source provenance, while OI/funding are
+interpreted relative to FK-long, FR-A-short, and FR-B-short setup direction.
+The calibration then runs an 18-month development / quarterly chronological
+walk-forward / untouched six-month holdout layout. Signals are de-duplicated
+into non-overlapping 30-day episodes and round-trip fees/slippage are debited
+in R. Activation requires all six BTC/ETH series to meet the declared five
+episode floor, positive net expectancy, precision ≥45%, early capture >0,
+three regimes, and ≥80% aligned-feature coverage against the full OHLC label
+universe (excluded labels remain in the denominator).
+OHLC-only backfills remain label generation, not feature calibration, and stay
+`SHADOW`; a failed holdout never promotes a threshold. Activation also requires
+point-in-time-safe vintages and explicit acceptance of the historical proxy
+contract. The current revised FRED/Coin Metrics histories and missing
+ETF/on-chain/reserve/stablecoin inputs therefore cannot activate it.
+
+### Fast swing research engine
+
+`tools/swing-engine.mjs` separates backfill from evaluation. It consumes
+`datasets[].features` (or can call the deterministic BTC/ETH backfill adapter),
+deduplicates bars by asset/timeframe/framework/channel, and writes a hashed
+columnar feature store. Candidates are declarative FK/FR contracts; lifecycle
+simulation uses next-bar fills, OHLC stops/targets/time stops, partial exits,
+fees, slippage, funding-event de-duplication, risk-budget sizing, and
+episode-level anti-overlap. Feature rows are routed by completed-bar
+availability (not bar-open month), and future-label fields are rejected at
+cache-build time. Selection uses purged development rows only. A candidate must
+have at least 10 costed trades, two regimes, positive expectancy/PF, and
+compliant drawdown and positive search-adjusted expectancy before it can be
+measured OOS; feasible candidates rank by the deterministic bootstrap
+20th-percentile mean R. The conservative `sqrt(2 log K/n)` adjustment is a
+hard selection gate, with K counted from the eligible distinct candidate models
+for that series. Holdout evaluation opens only after at least 20 aggregated OOS
+trades, positive OOS expectancy/PF, and three positive folds.
+
+```sh
+# Build from a saved feature export (or use --assets btc,eth --years 3).
+node tools/swing-engine.mjs build-cache --input features.json \
+  --out .report-run/fast-backtest/features.json.gz
+node tools/swing-engine.mjs build-cache --assets btc,eth --years 3 \
+  --cache-dir data/swing-calibration/cache \
+  --out .report-run/fast-backtest/btc-eth-feature-store.json.gz
+
+# Run candidates and render the development/OOS/holdout summary.
+node tools/swing-engine.mjs run --cache .report-run/fast-backtest/btc-eth-feature-store.json.gz \
+  --candidates candidates.json --out .report-run/fast-backtest/run.json \
+  --summary .report-run/fast-backtest/summary.md
+
+# Emit the frozen market-context library, or evaluate an explicit ID subset.
+node tools/swing-candidates.mjs > .report-run/fast-backtest/candidates.json
+node tools/swing-engine.mjs run --cache .report-run/fast-backtest/btc-eth-feature-store.json.gz \
+  --candidates .report-run/fast-backtest/candidates.json \
+  --candidate-ids fk-deleveraging-absorption-fast \
+  --out .report-run/fast-backtest/fixed-run.json
+
+# Measure cached candidate throughput and inspect admitted holdout trades.
+node tools/swing-engine.mjs benchmark --cache .report-run/fast-backtest/btc-eth-feature-store.json.gz \
+  --candidate-count 1000 --out .report-run/fast-backtest/benchmark.json
+node tools/swing-engine.mjs inspect-trades \
+  --run .report-run/fast-backtest/run.json
+```
+
+The feature store's `features_sha256` and run artifact's `run_sha256` are
+verified before reads, evaluation, benchmarking, or trade inspection; tamper
+or missing-feature checks fail closed. These artifacts are research-only and
+always `SHADOW`: a `point_in_time_safe:false` backfill, revised public history,
+or incomplete carry/proxy coverage cannot activate live FK/FR gates. Full-sample
+diagnostics that could expose the confirmation window are not emitted. Ordinary
+local confirmation is labelled `EXPOSED_CONFIRMATION`; `SEALED_CONFIRMATION`
+requires a caller-supplied token and matching precommitted holdout-data hash.
+
+For a fixed candidate selected on prior assets, `tools/swing-cross-validate.mjs`
+opens one precommitted validation asset once, verifies the frozen candidate
+hash, and reports per-calendar-year stability, after-cost expectancy/PF,
+bootstrap downside, drawdown, and whether funding was actually charged. It
+refuses to overwrite an existing validation output, and secondary diagnostics
+cannot replace a failed primary candidate.
+
+For a frozen multi-component long/short router,
+`tools/swing-strategy-cross-validate.mjs` additionally merges both directions
+onto one chronological per-asset episode timeline. Its precommit binds the
+strategy/component hashes, unseen asset, lifecycle, costs, coverage gates, and
+one-time output. Set `selection_hypothesis_count` to the full declared search
+multiplicity; that K flows into the hard search-adjusted expectancy check.
+The validator also requires R and dollar profit factors, positive total return,
+calendar/block consistency, doubled-cost survival, actual funding charges, and
+a sealed feature-store hash. It refuses to overwrite an opened result.
+
+Validate an emitted artifact with `node tools/lint-swing-calibration.mjs
+<calibration.json>`. An `ACTIVE` artifact's digest is recomputed after stripping
+only its self-referential activation metadata (and the convenience `artifact`
+object); a mismatch fails lint.
+
+For a single normalized calculation, use
+`node tools/compute.mjs swing-score --legs '<json>' [--flow '<json>']
+--framework fallen_knives|flying_rocket --phase 1A --trigger-valid`.
+
 `schemas/report-machine-2.schema.json` is the Draft 2020-12 shape;
 `tools/report-contract.mjs` is the shared schema + semantic validator;
 `finalize-report.mjs` is the only v2 publisher; and `render-report.mjs` is the
@@ -65,6 +205,25 @@ Node scripts (no dependencies, Node ≥18) that make the frameworks' numbers com
 ## Report-phase attribution contract (2026-08-14)
 
 Machine reports dated on/after 2026-08-12 publish an immutable `report-phase-registry/1` under `tagging.registry`. `canonicalReportPhaseTag()` derives exact tags from the filename's framework, asset, date, and local HHMM: `FK-P1A-BTC-20260813-1744` and `FR-A-1A-SP500-20260812-1542` are representative examples. Decisions are `AUTHORIZED`, `LOCKED`, `STAND_DOWN`, or `UNVERIFIED`; they are not encoded as tag suffixes and are never inferred from a later fill. `FR-B-3` is invalid, and FR channel `none` uses FR-A's rubric vocabulary. `active_tags`/`reserved_tags` remain compatibility fields only; registry validity is independent of fills. Run `node tools/backfill-report-phase-registry.mjs --check` to audit the expected 67 machine-block / 66 prose-only split, then run it to backfill only machine reports.
+
+## Automated market-gap coverage (2026-08-19)
+
+`fetch.mjs` now closes four recurring BTC/ETH report gaps. `onchain` uses Coin Metrics Community data to reconstruct MVRV-Z and report exchange reserves/flows; `coinbase_premium` computes the completed-day premium and three-day streak; `context.positioning.open_interest_90d` reads official Binance Data Vision archives; and `macro.equities_breadth_200dma` calculates SPY-universe breadth from current State Street holdings plus TradingView close/SMA200 data, failing closed below 95% coverage. True LTH remains explicitly `PROVIDER_GATED`—no unrelated age band is substituted. ETF flows and news remain separate live-web inputs. These additions do not change any rubric band; only the pre-existing OI squeeze condition may now receive a verified boolean instead of `null`. This section supersedes the older `fetch.mjs` table-row sentence saying all on-chain data is uncovered.
+
+## Coinglass-style market-flow panel (2026-08-22)
+
+For crypto assets, `fetch.mjs` emits `context.market_flow` (`market-flow/1`) on completed 4-hour bars:
+
+- aggregated spot CVD;
+- aggregated futures taker bid/ask delta and futures CVD;
+- aggregate OI candles;
+- OI-weighted funding candles.
+
+Set `COINGLASS_API_KEY` to use Coinglass cross-exchange data (`Binance,OKX,Bybit`). The integration uses the all-plan aggregated taker buy/sell endpoints and computes window-relative CVD as cumulative `taker_buy_usd - taker_sell_usd`; OI OHLC and OI-weighted funding come from their dedicated endpoints. Coinglass's native aggregated-CVD endpoints require Startup or higher, so they are not required for this implementation. Never commit the key.
+
+Without the key, the tool discovers every active Binance spot market for the asset quoted in USDT/USDC/FDUSD/TUSD/BUSD/USDP and every active stable-USD USD-M perpetual. It sums quote-volume taker flow into Binance-aggregate spot/futures CVD, aggregates each perpetual's 30-minute `sumOpenInterestValue`, and resamples completed 4-hour sampled OI OHLC candles. For funding it forward-fills each contract's latest settled `fundingRate` onto the contemporaneous 30-minute OI observations, computes `Σ(rate × USD OI) / Σ(USD OI)`, and resamples that Binance-wide weighted series to completed 4-hour candles.
+
+The fallback is explicitly **single venue**, not cross-exchange. Stablecoin quotes are nominal USD; OI high/low are sampled 30-minute observations rather than continuous extrema; and the aggregate funding rate remains a raw fraction per each contract's funding interval (`0.0001 = 0.01%`). Do not annualize it unless all included contract intervals are verified. `context.market_flow.binance_aggregate` lists discovered/included symbols, sampling method, units, coverage, and partial fetch errors. CVD remains rebased to zero at the first returned completed bar, so absolute CVD is not comparable across runs. The panel is disclosed context only; the two framework skills define how it may inform Analyst Read/discretion without becoming an automatic score or gate.
 
 | Tool | Purpose |
 |---|---|

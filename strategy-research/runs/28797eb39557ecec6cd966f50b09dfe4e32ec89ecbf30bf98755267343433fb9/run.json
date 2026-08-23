@@ -1,0 +1,79 @@
+{
+  "schema": "strategy-run/1",
+  "evidence_phase": "EXPOSED_CONFIRMATION",
+  "experiment": {
+    "experiment_id": "legacy-17ed20b8eec64e5e",
+    "sha256": "7a23236a9708cfa7d26f712679517434cebafc922029e5ae50fe9e9281e04caa",
+    "definition_sha256": "a8a4a23c10639312647a5007f30178e8a0f12750060fb8b4ad7781d6285f8d07",
+    "candidate_set_sha256": "ff200bd34aa145a9c8cb92630db1778a73edfd21a8766c63c6d01f6554a91150"
+  },
+  "engine": null,
+  "candidate_accounting": {
+    "declared_k": 4,
+    "effective_k": 4,
+    "declared_sha256": "93178412c0d9802c8183d4c997eacc1705d0458cfa3bac4aab47ee9aeeb5ca16",
+    "effective_sha256": "775eddb6706a4c8e1a7354320d9fa448285d0fde31d9b60fc28506ffe6a9a806",
+    "per_series": []
+  },
+  "artifacts": {
+    "candidates": {
+      "path": "candidates.jsonl",
+      "sha256": "b1c6a5031aeea29896319422d0e8cb5af0bbae3e0b2bd6cd088dbd353a4f9544",
+      "rows": 4
+    },
+    "metrics": {
+      "path": "metrics.jsonl",
+      "sha256": "80283a80f4785fb6000278e73dfaa333645e2e592189e3c5f6c23334b380a6a5",
+      "rows": 4
+    },
+    "trades": {
+      "path": "trades.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "rows": 0
+    }
+  },
+  "decisions": {
+    "per_asset": [
+      {
+        "asset": "sol",
+        "status": "REJECTED",
+        "reasons": [
+          "POINT_IN_TIME_NOT_VERIFIED",
+          "NO_COMPLETED_TRADES",
+          "MISSING_OR_NONPOSITIVE_SEARCH_ADJUSTED_EXPECTANCY",
+          "BELOW_COMPLETED_TRADES",
+          "BELOW_PROFIT_FACTOR"
+        ],
+        "selected_candidate_id": null
+      }
+    ],
+    "portfolio": {
+      "status": "REJECTED",
+      "reasons": [
+        "POINT_IN_TIME_NOT_VERIFIED",
+        "BELOW_PROFIT_FACTOR"
+      ]
+    }
+  },
+  "activation": {
+    "authorized": false,
+    "status": "SHADOW",
+    "reason": "A research record cannot authorize trades; activation requires a separate governed review."
+  },
+  "legacy": {
+    "source_path": ".report-run/strategy-v2/sol-cross-asset-validation.json",
+    "source_sha256": "f1582c6f6127f34d1d7c637d833a73e56347f31de3d587b66bb5f4cb1c675b30",
+    "source_schema": "swing-cross-asset-validation/1",
+    "source_generated_at": "2026-08-22T14:10:20.879Z",
+    "asset": "sol",
+    "evidence_phase": "EXPOSED_CONFIRMATION",
+    "explicit_omissions": [
+      "NO_RECOVERABLE_COMPACT_TRADES",
+      "NO_EXPLICIT_FEATURE_CONTRACT",
+      "EVIDENCE_PHASE_INFERRED"
+    ]
+  },
+  "generated_at": "2026-08-22T14:10:20.879Z",
+  "run_id": "28797eb39557ecec6cd966f50b09dfe4e32ec89ecbf30bf98755267343433fb9",
+  "content_sha256": "28797eb39557ecec6cd966f50b09dfe4e32ec89ecbf30bf98755267343433fb9"
+}

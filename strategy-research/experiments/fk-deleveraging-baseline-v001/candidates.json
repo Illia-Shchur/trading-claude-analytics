@@ -1,0 +1,220 @@
+{
+  "schema": "strategy-candidate-set/1",
+  "experiment_id": "fk-deleveraging-baseline-v001",
+  "declared_k": 8,
+  "effective_k": 8,
+  "declared_sha256": "6d33d941aa5e9da0b21acef0de9166b39e2267713642b8351cce3ef8d0dbbd3b",
+  "effective_sha256": "e6f57833b21c18f9b1494d629cff8b942f6cea3a96cf148567ba5cb6e8ebd393",
+  "per_series": [
+    {
+      "series_id": "btc-4h-fk",
+      "declared_k": 8,
+      "effective_k": 8,
+      "effective_behavior_sha256": "3ab3fd20e7ea9776f045b40d50bed82530fbea83dd7f550b247564a4614b01d9"
+    },
+    {
+      "series_id": "eth-4h-fk",
+      "declared_k": 8,
+      "effective_k": 8,
+      "effective_behavior_sha256": "3ab3fd20e7ea9776f045b40d50bed82530fbea83dd7f550b247564a4614b01d9"
+    },
+    {
+      "series_id": "sol-4h-fk",
+      "declared_k": 8,
+      "effective_k": 8,
+      "effective_behavior_sha256": "3ab3fd20e7ea9776f045b40d50bed82530fbea83dd7f550b247564a4614b01d9"
+    },
+    {
+      "series_id": "bnb-4h-fk",
+      "declared_k": 8,
+      "effective_k": 8,
+      "effective_behavior_sha256": "3ab3fd20e7ea9776f045b40d50bed82530fbea83dd7f550b247564a4614b01d9"
+    },
+    {
+      "series_id": "xrp-4h-fk",
+      "declared_k": 8,
+      "effective_k": 8,
+      "effective_behavior_sha256": "3ab3fd20e7ea9776f045b40d50bed82530fbea83dd7f550b247564a4614b01d9"
+    },
+    {
+      "series_id": "ada-4h-fk",
+      "declared_k": 8,
+      "effective_k": 8,
+      "effective_behavior_sha256": "3ab3fd20e7ea9776f045b40d50bed82530fbea83dd7f550b247564a4614b01d9"
+    },
+    {
+      "series_id": "link-4h-fk",
+      "declared_k": 8,
+      "effective_k": 8,
+      "effective_behavior_sha256": "3ab3fd20e7ea9776f045b40d50bed82530fbea83dd7f550b247564a4614b01d9"
+    },
+    {
+      "series_id": "aave-4h-fk",
+      "declared_k": 8,
+      "effective_k": 8,
+      "effective_behavior_sha256": "3ab3fd20e7ea9776f045b40d50bed82530fbea83dd7f550b247564a4614b01d9"
+    }
+  ],
+  "candidates": [
+    {
+      "candidate_id": "fk-deleveraging-absorption-0006",
+      "behavior_sha256": "2703d6f75594e6441f5f1a0db321619209dce1437f6f8ece067e4ae90bf7e664",
+      "definition": {
+        "id": "fk-deleveraging-absorption-0006",
+        "framework": "fallen_knives",
+        "direction": "long",
+        "phase": "1A",
+        "setup_family": "FK_DELEVERAGING_ABSORPTION",
+        "score_threshold": 4.5,
+        "stop_pct": 8,
+        "target_r": 1,
+        "partial_exit_pct": 0.5,
+        "partial_target_r": 0.75,
+        "max_hold_bars": 36,
+        "max_concurrent": 1,
+        "fee_pct": 0.1,
+        "slippage_pct": 0.05
+      }
+    },
+    {
+      "candidate_id": "fk-deleveraging-absorption-0005",
+      "behavior_sha256": "288034213b2e77c04a09b02b9bc17785b1db935a800b1e0c51c1c43414dfd42a",
+      "definition": {
+        "id": "fk-deleveraging-absorption-0005",
+        "framework": "fallen_knives",
+        "direction": "long",
+        "phase": "1A",
+        "setup_family": "FK_DELEVERAGING_ABSORPTION",
+        "score_threshold": 4.5,
+        "stop_pct": 6,
+        "target_r": 1,
+        "partial_exit_pct": 0.5,
+        "partial_target_r": 0.75,
+        "max_hold_bars": 36,
+        "max_concurrent": 1,
+        "fee_pct": 0.1,
+        "slippage_pct": 0.05
+      }
+    },
+    {
+      "candidate_id": "fk-deleveraging-absorption-0004",
+      "behavior_sha256": "332384480d9fb3a6c35bfd98ab885607bd51d42f9be36f872f262446ca93dbbf",
+      "definition": {
+        "id": "fk-deleveraging-absorption-0004",
+        "framework": "fallen_knives",
+        "direction": "long",
+        "phase": "1A",
+        "setup_family": "FK_DELEVERAGING_ABSORPTION",
+        "score_threshold": 5.5,
+        "stop_pct": 8,
+        "target_r": 1,
+        "partial_exit_pct": 0.5,
+        "partial_target_r": 0.75,
+        "max_hold_bars": 18,
+        "max_concurrent": 1,
+        "fee_pct": 0.1,
+        "slippage_pct": 0.05
+      }
+    },
+    {
+      "candidate_id": "fk-deleveraging-absorption-0001",
+      "behavior_sha256": "39f98005572786477e78e353df7ca113f560b8ea3d9a82e2b31b0761e29b90b7",
+      "definition": {
+        "id": "fk-deleveraging-absorption-0001",
+        "framework": "fallen_knives",
+        "direction": "long",
+        "phase": "1A",
+        "setup_family": "FK_DELEVERAGING_ABSORPTION",
+        "score_threshold": 4.5,
+        "stop_pct": 6,
+        "target_r": 1,
+        "partial_exit_pct": 0.5,
+        "partial_target_r": 0.75,
+        "max_hold_bars": 18,
+        "max_concurrent": 1,
+        "fee_pct": 0.1,
+        "slippage_pct": 0.05
+      }
+    },
+    {
+      "candidate_id": "fk-deleveraging-absorption-0008",
+      "behavior_sha256": "481e2bb124933a8258569371a581921712739b5bd9bd4d781369d9daf26d2d68",
+      "definition": {
+        "id": "fk-deleveraging-absorption-0008",
+        "framework": "fallen_knives",
+        "direction": "long",
+        "phase": "1A",
+        "setup_family": "FK_DELEVERAGING_ABSORPTION",
+        "score_threshold": 5.5,
+        "stop_pct": 8,
+        "target_r": 1,
+        "partial_exit_pct": 0.5,
+        "partial_target_r": 0.75,
+        "max_hold_bars": 36,
+        "max_concurrent": 1,
+        "fee_pct": 0.1,
+        "slippage_pct": 0.05
+      }
+    },
+    {
+      "candidate_id": "fk-deleveraging-absorption-0007",
+      "behavior_sha256": "4b4301109b0bc380f69ef0e0a0fc1800c3f0431487e847f3e10038e756573c14",
+      "definition": {
+        "id": "fk-deleveraging-absorption-0007",
+        "framework": "fallen_knives",
+        "direction": "long",
+        "phase": "1A",
+        "setup_family": "FK_DELEVERAGING_ABSORPTION",
+        "score_threshold": 5.5,
+        "stop_pct": 6,
+        "target_r": 1,
+        "partial_exit_pct": 0.5,
+        "partial_target_r": 0.75,
+        "max_hold_bars": 36,
+        "max_concurrent": 1,
+        "fee_pct": 0.1,
+        "slippage_pct": 0.05
+      }
+    },
+    {
+      "candidate_id": "fk-deleveraging-absorption-0003",
+      "behavior_sha256": "5ef5fb1f0a9205acf111de9c472082a157e185c84118db52d2fabb8bad77d3c2",
+      "definition": {
+        "id": "fk-deleveraging-absorption-0003",
+        "framework": "fallen_knives",
+        "direction": "long",
+        "phase": "1A",
+        "setup_family": "FK_DELEVERAGING_ABSORPTION",
+        "score_threshold": 5.5,
+        "stop_pct": 6,
+        "target_r": 1,
+        "partial_exit_pct": 0.5,
+        "partial_target_r": 0.75,
+        "max_hold_bars": 18,
+        "max_concurrent": 1,
+        "fee_pct": 0.1,
+        "slippage_pct": 0.05
+      }
+    },
+    {
+      "candidate_id": "fk-deleveraging-absorption-0002",
+      "behavior_sha256": "edff15274b1f09d83ae4437e3b8350445f7f48edd312c943e83ec6b516397f9d",
+      "definition": {
+        "id": "fk-deleveraging-absorption-0002",
+        "framework": "fallen_knives",
+        "direction": "long",
+        "phase": "1A",
+        "setup_family": "FK_DELEVERAGING_ABSORPTION",
+        "score_threshold": 4.5,
+        "stop_pct": 8,
+        "target_r": 1,
+        "partial_exit_pct": 0.5,
+        "partial_target_r": 0.75,
+        "max_hold_bars": 18,
+        "max_concurrent": 1,
+        "fee_pct": 0.1,
+        "slippage_pct": 0.05
+      }
+    }
+  ]
+}

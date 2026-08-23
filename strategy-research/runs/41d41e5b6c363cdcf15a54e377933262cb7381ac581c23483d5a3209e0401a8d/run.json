@@ -1,0 +1,79 @@
+{
+  "schema": "strategy-run/1",
+  "evidence_phase": "SEALED_CONFIRMATION",
+  "experiment": {
+    "experiment_id": "legacy-422322157c18dcb9",
+    "sha256": "80322d5d5841c406e39b9e977c962c1d58b6f4aac3e24ecab2a698e0efd9577b",
+    "definition_sha256": "a8a4a23c10639312647a5007f30178e8a0f12750060fb8b4ad7781d6285f8d07",
+    "candidate_set_sha256": "4cd6a70566bfb06ae9510f0109ab2b4290a2c1291e7193733a8810b896e42f0b"
+  },
+  "engine": null,
+  "candidate_accounting": {
+    "declared_k": 1,
+    "effective_k": 1,
+    "declared_sha256": "f8d39080d49d42caa8c17711e365cfd9222801f2c6e3b3c9e90ae30210b1da74",
+    "effective_sha256": "9947f5f255686602a4ce1bded8e1412dd6edde5c73977aa136cbc2158ee2448a",
+    "per_series": []
+  },
+  "artifacts": {
+    "candidates": {
+      "path": "candidates.jsonl",
+      "sha256": "36437b894943a82a7b33392786bddb08f75b7f6d10fd1c6c7942c35297b184fb",
+      "rows": 1
+    },
+    "metrics": {
+      "path": "metrics.jsonl",
+      "sha256": "59bb617571e39f61c9b4a1aee22535481d4db0270f556cd6e9e63e8e5336b28c",
+      "rows": 1
+    },
+    "trades": {
+      "path": "trades.jsonl",
+      "sha256": "24356ba1df3766bf0ab2f3cce5d8d8bf6b8cc44743b70066b3d7fbafd097fbcb",
+      "rows": 61
+    }
+  },
+  "decisions": {
+    "per_asset": [
+      {
+        "asset": "ada",
+        "status": "REJECTED",
+        "reasons": [
+          "POINT_IN_TIME_NOT_VERIFIED",
+          "MISSING_OR_NONPOSITIVE_SEARCH_ADJUSTED_EXPECTANCY",
+          "BELOW_PROFIT_FACTOR"
+        ],
+        "selected_candidate_id": "fk-frb-ema-spread-router-v1"
+      }
+    ],
+    "portfolio": {
+      "status": "REJECTED",
+      "reasons": [
+        "POINT_IN_TIME_NOT_VERIFIED",
+        "NO_COMPLETED_TRADES",
+        "MISSING_OR_NONPOSITIVE_SEARCH_ADJUSTED_EXPECTANCY",
+        "BELOW_COMPLETED_TRADES",
+        "BELOW_PROFIT_FACTOR"
+      ]
+    }
+  },
+  "activation": {
+    "authorized": false,
+    "status": "SHADOW",
+    "reason": "A research record cannot authorize trades; activation requires a separate governed review."
+  },
+  "legacy": {
+    "source_path": ".report-run/strategy-v2/ada-structural-router-validation-v1.json",
+    "source_sha256": "efb7b3e745e67c29e28fd0a45ca4630e1d6dfc50ba6d9b25fd6f939fe6e9e720",
+    "source_schema": "swing-strategy-cross-asset-validation/1",
+    "source_generated_at": "2026-08-22T15:33:09.943Z",
+    "asset": "ada",
+    "evidence_phase": "SEALED_CONFIRMATION",
+    "explicit_omissions": [
+      "NO_EXPLICIT_FEATURE_CONTRACT",
+      "EVIDENCE_PHASE_INFERRED"
+    ]
+  },
+  "generated_at": "2026-08-22T15:33:09.943Z",
+  "run_id": "41d41e5b6c363cdcf15a54e377933262cb7381ac581c23483d5a3209e0401a8d",
+  "content_sha256": "41d41e5b6c363cdcf15a54e377933262cb7381ac581c23483d5a3209e0401a8d"
+}

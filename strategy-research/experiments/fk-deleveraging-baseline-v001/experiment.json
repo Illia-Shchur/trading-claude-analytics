@@ -1,0 +1,47 @@
+{
+  "schema": "strategy-experiment/1",
+  "experiment_id": "fk-deleveraging-baseline-v001",
+  "created_at": "2026-08-23T00:00:00.000Z",
+  "definition": {
+    "path": "definitions/fk-deleveraging-absorption/v001.json",
+    "sha256": "a8a4a23c10639312647a5007f30178e8a0f12750060fb8b4ad7781d6285f8d07"
+  },
+  "evidence_phase": "DEVELOPMENT",
+  "required_assets": [
+    "btc",
+    "eth",
+    "sol",
+    "bnb",
+    "xrp",
+    "ada",
+    "link",
+    "aave"
+  ],
+  "grid": {
+    "score_threshold": [
+      4.5,
+      5.5
+    ],
+    "max_hold_bars": [
+      18,
+      36
+    ],
+    "stop_pct": [
+      6,
+      8
+    ]
+  },
+  "candidate_set": {
+    "path": "candidates.json",
+    "sha256": "12690352b0b9670207f5d1134466d1f76e6c20ad0cc9e12897f799a138fa7523"
+  },
+  "finalist_candidate_ids": [],
+  "acceptance": {
+    "minimums": {
+      "completed_trades": 30,
+      "profit_factor": 1.1,
+      "search_adjusted_expectancy_r": 0.000001
+    },
+    "portfolio_activation_requires_all_assets": true
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "schema": "strategy-run/1",
+  "evidence_phase": "DEVELOPMENT",
+  "experiment": {
+    "experiment_id": "legacy-13076105a020a6d5",
+    "sha256": "c646849ced2ba4df17d70bda2e4abcbd552459c04674b7c45b60620460bc99e5",
+    "definition_sha256": "a8a4a23c10639312647a5007f30178e8a0f12750060fb8b4ad7781d6285f8d07",
+    "candidate_set_sha256": "85e92ccc5f6fd22a3b82ee30c0051fc6547fc6ed4776972ab1fd53fa334b7d4b"
+  },
+  "engine": null,
+  "candidate_accounting": {
+    "declared_k": 9,
+    "effective_k": 9,
+    "declared_sha256": "9c48c53a4d34df233e47b470041823f068947fa0f8b2b63ffdbabd7aaa987b40",
+    "effective_sha256": "b02d16aac1e50dc197b21061ed7ff4f3aca7d83bf0fba64d253941b7b9655197",
+    "per_series": []
+  },
+  "artifacts": {
+    "candidates": {
+      "path": "candidates.jsonl",
+      "sha256": "7008c28b6246678cd4e54410a01e3896f383c599e4b0b3f569b8d2a2014d8f07",
+      "rows": 9
+    },
+    "metrics": {
+      "path": "metrics.jsonl",
+      "sha256": "9e3e4e4ae4c22537f9244c2d0a487dcf5a72946097e96c063cdb380f929ed770",
+      "rows": 9
+    },
+    "trades": {
+      "path": "trades.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "rows": 0
+    }
+  },
+  "decisions": {
+    "per_asset": [
+      {
+        "asset": "eth",
+        "status": "REJECTED",
+        "reasons": [
+          "POINT_IN_TIME_NOT_VERIFIED",
+          "NO_COMPLETED_TRADES",
+          "MISSING_OR_NONPOSITIVE_SEARCH_ADJUSTED_EXPECTANCY",
+          "BELOW_COMPLETED_TRADES",
+          "BELOW_PROFIT_FACTOR"
+        ],
+        "selected_candidate_id": "p0.75-ema-0.1-atr2-frb-swing"
+      }
+    ],
+    "portfolio": {
+      "status": "REJECTED",
+      "reasons": [
+        "POINT_IN_TIME_NOT_VERIFIED",
+        "NO_COMPLETED_TRADES",
+        "MISSING_OR_NONPOSITIVE_SEARCH_ADJUSTED_EXPECTANCY",
+        "BELOW_COMPLETED_TRADES",
+        "BELOW_PROFIT_FACTOR"
+      ]
+    }
+  },
+  "activation": {
+    "authorized": false,
+    "status": "SHADOW",
+    "reason": "A research record cannot authorize trades; activation requires a separate governed review."
+  },
+  "legacy": {
+    "source_path": ".report-run/strategy-v2/percentile-atr-search-v2.json",
+    "source_sha256": "afc34202ba0bbcd3eec5ba6f076015a610f0fd3fee162cf6d6ce9ecd8d114394",
+    "source_schema": "swing-percentile-atr-search/1",
+    "source_generated_at": "2026-08-22T15:55:32.544Z",
+    "asset": "eth",
+    "evidence_phase": "DEVELOPMENT",
+    "explicit_omissions": [
+      "NO_RECOVERABLE_COMPACT_TRADES",
+      "NO_EXPLICIT_FEATURE_CONTRACT",
+      "EVIDENCE_PHASE_INFERRED"
+    ]
+  },
+  "generated_at": "2026-08-22T15:55:32.544Z",
+  "run_id": "38100458d439c005b689b6f67966ad275f249ab8e39b9b60ac6f5675c991a701",
+  "content_sha256": "38100458d439c005b689b6f67966ad275f249ab8e39b9b60ac6f5675c991a701"
+}

@@ -1,0 +1,81 @@
+{
+  "schema": "strategy-run/1",
+  "evidence_phase": "DEVELOPMENT",
+  "experiment": {
+    "experiment_id": "legacy-b9d41f438458108f",
+    "sha256": "42bdd02476b4ad473ac310c781419621c60b7ac330b19509a24a8458d1657e7d",
+    "definition_sha256": "a8a4a23c10639312647a5007f30178e8a0f12750060fb8b4ad7781d6285f8d07",
+    "candidate_set_sha256": "99ca50c22d1b878db3861307a99302bb08d634778b26ed200bd2f9e8d8a03b99"
+  },
+  "engine": null,
+  "candidate_accounting": {
+    "declared_k": 48,
+    "effective_k": 48,
+    "declared_sha256": "a60981b6096a9f06d5ca80a196c33829a2ab11434736471e46e09f249bca05e1",
+    "effective_sha256": "63beb2189b868d7dc9aa658cbfeda67f13a83421efa4ee5ffcf9b08097f5ed9f",
+    "per_series": []
+  },
+  "artifacts": {
+    "candidates": {
+      "path": "candidates.jsonl",
+      "sha256": "ae2060c93b2fa654a01214e9b54df7268d6945ccb174b37b347ae6cbc7c2ef5f",
+      "rows": 48
+    },
+    "metrics": {
+      "path": "metrics.jsonl",
+      "sha256": "203ae3a0a3bf814dfd78e446f6f08224363f6cfae31ef0b2e6e1a42c348d52cc",
+      "rows": 48
+    },
+    "trades": {
+      "path": "trades.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "rows": 0
+    }
+  },
+  "decisions": {
+    "per_asset": [
+      {
+        "asset": "eth",
+        "status": "REJECTED",
+        "reasons": [
+          "POINT_IN_TIME_NOT_VERIFIED",
+          "NO_COMPLETED_TRADES",
+          "MISSING_OR_NONPOSITIVE_SEARCH_ADJUSTED_EXPECTANCY",
+          "BELOW_COMPLETED_TRADES"
+        ],
+        "selected_candidate_id": "fk-exhaustion+frb-core-fast@age-108"
+      }
+    ],
+    "portfolio": {
+      "status": "REJECTED",
+      "reasons": [
+        "POINT_IN_TIME_NOT_VERIFIED",
+        "NO_COMPLETED_TRADES",
+        "MISSING_OR_NONPOSITIVE_SEARCH_ADJUSTED_EXPECTANCY",
+        "BELOW_COMPLETED_TRADES",
+        "BELOW_PROFIT_FACTOR"
+      ]
+    }
+  },
+  "activation": {
+    "authorized": false,
+    "status": "SHADOW",
+    "reason": "A research record cannot authorize trades; activation requires a separate governed review."
+  },
+  "legacy": {
+    "source_path": ".report-run/strategy-v2/direction-router-search-v2.json",
+    "source_sha256": "985381ff43df56f55f693660cfa343310d91e5c97a1a29281e568890944d1661",
+    "source_schema": "swing-direction-router-search/2",
+    "source_generated_at": "2026-08-22T15:12:06.219Z",
+    "asset": "eth",
+    "evidence_phase": "DEVELOPMENT",
+    "explicit_omissions": [
+      "NO_RECOVERABLE_COMPACT_TRADES",
+      "NO_EXPLICIT_FEATURE_CONTRACT",
+      "EVIDENCE_PHASE_INFERRED"
+    ]
+  },
+  "generated_at": "2026-08-22T15:12:06.219Z",
+  "run_id": "dea1925ec2478f0048c4953ac66dd478a16935ac25a444f84d5337bb6c097ba0",
+  "content_sha256": "dea1925ec2478f0048c4953ac66dd478a16935ac25a444f84d5337bb6c097ba0"
+}
