@@ -10,6 +10,7 @@ import { decodeFeatureStore, evaluateCandidate, readFeatureStoreArtifact, verify
 import { queryParquet, readRows as readResearchRows, validateManifest } from './research-data.mjs'
 import { validateAcceptanceContract, makeAcceptanceContract, validateExperimentV3, validateRunV3, validateEvidenceBundleV2, validateExposedParentEvidence, frozenSelectionByAsset, makeEvidenceBundle, makeRunV3, computeCandidateMetrics, evaluateAcceptance, walkForwardV3, makeConfirmationReservation, burnReservation, signAttestation, verifyAttestation, importAttestation, validateConfirmationReservation, hash as hashV3, ownHash } from './strategy-research-v3.mjs'
 import { validateContractSchema } from './research-schema-registry.mjs'
+import * as nextStack from './strategy-research-next.mjs'
 import { parseFlagOptions } from './cli-options.mjs'
 
 const args = process.argv.slice(2); const command = args.shift()
@@ -304,5 +305,8 @@ if (process.argv[1] && resolve(process.argv[1]) === resolve(fileURLToPath(import
       }
     }
     print(imported)
-  } else process.stdout.write('usage: strategy-research.mjs precommit|generate|evaluate|evaluate-v3|run|v3-validate|v3-metrics|v3-accept|wfo-v3|acceptance-contract|freeze-confirmation|burn-confirmation|verify-attestation|import-attestation|stats|plateau|ablations|portfolio|stress|monitor|record|validate|rebuild-index|list|show|compare|import-legacy\n')
+  } else if (command === 'readiness') print(nextStack.readinessAudit())
+  else if (command === 'next-stats') print(nextStack.stationaryBlockMaxStatistic(readJSON(resolveInput(options.input)), { iterations: Number(options.iterations || 2000), seed: Number(options.seed || 1) }))
+  else if (command === 'next-validate') { const value = readJSON(resolveInput(options.input)); if (value.schema === nextStack.SOURCE_RECEIPT_SCHEMA) nextStack.validateSourceReceipt(value); else if (value.schema === nextStack.EXPOSURE_SCHEMA) nextStack.validateExposureLedger(value); else if (value.schema === nextStack.EXECUTION_SCHEMA) nextStack.validateExecutionPolicy(value); else if (value.schema === nextStack.PORTFOLIO_SCHEMA) nextStack.validatePortfolioPolicy(value); else if (value.schema === nextStack.PROSPECTIVE_SCHEMA) nextStack.validateProspectiveLedger(value); else throw new Error(`unsupported next-generation schema ${value.schema}`); print({ valid: true, schema: value.schema }) }
+  else process.stdout.write('usage: strategy-research.mjs precommit|generate|evaluate|evaluate-v3|run|v3-validate|v3-metrics|v3-accept|wfo-v3|acceptance-contract|freeze-confirmation|burn-confirmation|verify-attestation|import-attestation|stats|plateau|ablations|portfolio|stress|monitor|record|validate|rebuild-index|list|show|compare|import-legacy|readiness|next-stats|next-validate\n')
 } catch (error) { process.stderr.write(`${error.message}\n`); process.exitCode = 1 }

@@ -1,0 +1,34 @@
+name: strategy-prospective-time-seal
+
+on:
+  schedule:
+    - cron: '7 * * * *'
+  workflow_dispatch:
+    inputs:
+      ledger:
+        description: repository-relative frozen prospective ledger path
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  prospective:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 1
+      # The reservation and append-only ledger are committed artifacts.  A
+      # committed, pinned publisher is a deployment prerequisite; this local
+      # workflow intentionally fails closed until one is present.
+      - name: Verify frozen future-only reservation
+        env:
+          LEDGER: ${{ inputs.ledger || vars.PROD_PROSPECTIVE_LEDGER }}
+        run: node tools/strategy-prospective-runner.mjs preflight --ledger "$LEDGER"
+      - name: Fail closed until committed custody publisher is deployed
+        run: |
+          echo 'No dynamic shell capture is permitted. A pinned capture/publisher artifact and trust root must be deployed before prospective readiness can be claimed.'
+          exit 1

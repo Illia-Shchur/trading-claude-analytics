@@ -23,6 +23,8 @@ credentials.json
 # realized PnL; verify the remote visibility before pushing a snapshot commit.
 /exchange/
 /data/
+/strategy-research/lake/
+/strategy-research/raw/
 *.snapshot.json
 exports/*.tmp
 node_modules/

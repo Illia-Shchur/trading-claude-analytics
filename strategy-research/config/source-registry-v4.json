@@ -1,0 +1,14 @@
+{
+  "schema": "strategy-source-registry/1",
+  "content_sha256": "27a6b5e47f2f9e65863ae98c366a3a3213bafbce21ed2bd145d39bb40b51a92e",
+  "policy": "adapter assigns maximum tier; callers cannot self-upgrade; unknown/custom imports are development-only",
+  "sources": [
+    { "source_id": "binance:spot-ohlcv", "public": true, "maximum_pit_tier": "IMMUTABLE_EVENT_ARCHIVE", "source_url": "https://data.binance.vision/" },
+    { "source_id": "binance:usd-m-ohlcv", "public": true, "maximum_pit_tier": "IMMUTABLE_EVENT_ARCHIVE", "source_url": "https://data.binance.vision/" },
+    { "source_id": "binance:public-trades", "public": true, "maximum_pit_tier": "IMMUTABLE_EVENT_ARCHIVE", "source_url": "https://data.binance.vision/" },
+    { "source_id": "binance:funding", "public": true, "maximum_pit_tier": "VINTAGE_REVISION_AWARE", "source_url": "https://data.binance.vision/" },
+    { "source_id": "binance:open-interest", "public": true, "maximum_pit_tier": "VINTAGE_REVISION_AWARE", "source_url": "https://data.binance.vision/" },
+    { "source_id": "capture-forward", "public": true, "maximum_pit_tier": "CAPTURE_FORWARD", "source_url": null }
+  ],
+  "unavailable_derivatives_policy": "do not fabricate missing funding, open interest, private fills, or historical queue state"
+}

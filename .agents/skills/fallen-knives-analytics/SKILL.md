@@ -10,6 +10,14 @@ its v3 foundation: PIT Parquet/DuckDB data, separate features/labels, frozen
 candidates, WFO/stress/portfolio evidence, and SHADOW-only decisions. This
 report skill never mints SEALED or ACTIVE research evidence.
 
+For new work, use the additive strategy-research/4 policy core at
+`tools/strategy-research-next.mjs`: reviewed source-registry PIT tiers,
+family×dataset cumulative K, nested purge/embargo selection, Binance
+market/stop-market execution, the frozen portfolio risk profile, future-only
+prospective ledger, and signed activation lease. FK reports may consume only
+`REJECTED`, `SHADOW`, or `CANDIDATE_REVIEW` research output; they cannot bypass
+the asset+portfolio Ed25519 approval required for `ACTIVE`.
+
 ## Overview
 
 Fallen Knives is a proprietary framework for two symmetric tasks:

@@ -27,6 +27,35 @@ This protocol governs new strategy families. It separates idea formation,
 selection, confirmation, portfolio feasibility, and activation so a promising
 chart pattern cannot silently become a live rule.
 
+## 0. Additive strategy-research/4 path
+
+`tools/strategy-research-next.mjs` is the canonical next-generation policy
+surface. It does not mutate v1-v3 artifacts. Its source registry assigns the
+maximum permitted PIT tier; caller tier claims are audit-only and
+unknown/custom data is development-only. The path freezes the exact eight-asset
+crypto universe (BTC, ETH, SOL, BNB, XRP, ADA, LINK, AAVE), Binance spot and
+USD-M linear perpetual/futures scope, source receipts, feature/label physical
+separation, completed-bar/as-of joins, and cumulative family×dataset exposure.
+
+All generators—including random, genetic, and ML configurations—are searched
+hypotheses. Runtime behavior aliases and the append-only exposure ledger
+preserve cumulative `K`; renaming a candidate cannot reset the search penalty.
+Selection is nested chronological WFO with purge/embargo and synchronized
+stationary market-episode candidate-set max statistics. Execution and
+portfolio contracts freeze the aggressive risk profile and fail closed on
+unsupported order types, unavailable funding, missing marks, ambiguous
+collisions, capacity, outage, margin, or liquidation inputs.
+
+Prospective evidence is future-only: a reservation freezes lineage before the
+start time, signal decisions precede outcome records, and each append is a
+hash-chain event. The fast review floor is 60 calendar days, 25 completed
+portfolio trades, and 8 per proposed asset; these are not substitutes for
+expectancy, confidence, cost, stress, and portfolio gates. Activation is a
+separate Ed25519-signed 90-day lease requiring both asset and portfolio
+approval. A research result can only be `REJECTED`, `SHADOW`, or
+`CANDIDATE_REVIEW`; actual `ACTIVE` status requires signature verification and
+is never emitted by a research run.
+
 The tradable universe is crypto infrastructure only: crypto spot, perpetuals,
 dated futures, options, basis, funding, carry, and other explicitly described
 crypto derivative expressions. Every derivative declares venue, collateral,

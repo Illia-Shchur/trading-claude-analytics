@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-portfolio-policy/1",
+  "type": "object",
+  "required": ["schema", "initial_risk_per_trade_pct", "max_total_open_risk_pct", "max_asset_open_risk_pct", "max_cluster_open_risk_pct", "max_gross_exposure_x", "max_net_exposure_x", "max_collateral_pct", "max_positions", "max_positions_per_asset", "max_drawdown_pct", "ruin_boundary_pct", "max_ruin_probability", "max_mark_gap_ms", "content_sha256"],
+  "properties": {
+    "schema": { "const": "strategy-portfolio-policy/1" }, "initial_risk_per_trade_pct": { "const": 1.5 }, "max_total_open_risk_pct": { "const": 6 }, "max_asset_open_risk_pct": { "const": 3 }, "max_cluster_open_risk_pct": { "const": 4.5 }, "max_gross_exposure_x": { "const": 3 }, "max_net_exposure_x": { "const": 2 }, "max_collateral_pct": { "const": 70 }, "max_positions": { "const": 6 }, "max_positions_per_asset": { "const": 2 }, "max_drawdown_pct": { "const": 18 }, "ruin_boundary_pct": { "const": 30 }, "max_ruin_probability": { "const": 0.05 }, "max_mark_gap_ms": { "type": "number", "exclusiveMinimum": 0 }, "full_risk_after_activation": { "const": true }, "probation_ramp": { "const": false }, "content_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }, "additionalProperties": false
+}

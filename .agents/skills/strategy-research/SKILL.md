@@ -152,6 +152,39 @@ Use `node tools/strategy-research.mjs precommit` before `generate`. The CLI and
 registry are authoritative for immutable hashes, candidate accounting, run
 recording, indexes, and tamper checks; narrated results do not replace them.
 
+## Additive v4 stack boundary
+
+The canonical next-generation path is `node tools/strategy-research-next.mjs`:
+freeze the filled canonical precommit, generate candidates, append the durable
+family×dataset exposure ledger, bind a PIT snapshot/receipts, then run the
+authoritative feature-backed `evaluate` command with separate raw feature/label
+rows plus frozen `--feature-set` and `--label-set` artifacts. The `wfo` command
+requires the same frozen stack, manifest, feature/label sets, receipts, and
+folds. `GRID`, `RANDOM`, and `ML`
+outputs carry frozen seeds/budgets/cutoffs. The GENETIC contract is recognized
+but remains fail-closed until a recorded evolutionary fitness/selection
+implementation is supplied; deterministic sampling is never mislabelled as a
+genetic optimizer. Caller-supplied WFO metrics are rejected.
+
+The v4 executor is Binance spot and USD-M linear swing scope only (MARKET and
+STOP_MARKET), with completed-bar → next 1m-child ordering, adverse OHLC
+collisions, bound fee/funding receipts, capacity and outage fail-closed rules.
+Its portfolio simulator is event-time based: entries reserve current-equity
+capacity and PnL/funding are credited only at exit/settlement events. PIT
+validation requires source-registry receipts, row bindings, physical hashes,
+and complete eight-asset 1m/1h/4h/1d coverage for non-development evidence.
+
+Prospective signals/outcomes are reservation- and lineage-bound; one matching
+signal, declared horizon, capture receipt, and one resolution are mandatory.
+Fast minimums (60 days, 25 portfolio trades, 8 per proposed asset) do not waive
+statistical, stress, monitoring, or portfolio gates. Research emits only
+`REJECTED`, `SHADOW`, or `CANDIDATE_REVIEW`; activation requires an external
+trust-root Ed25519 signature, distinct asset/portfolio approvers, exact evidence
+digests, a 90-day lease, and revocation/drift checks. Local readiness reports
+activation infrastructure separately and keeps actual active strategies at 0.
+Missing GitHub/OIDC custody or external trust roots is an honest fail-closed
+limitation, not a readiness pass.
+
 ## Canonical v3 execution (mandatory for new research)
 
 New strategy-research/3 outcome work must use `node tools/strategy-research.mjs

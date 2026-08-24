@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-readiness-audit/1",
+  "type": "object",
+  "required": ["schema", "generated_at", "readiness_basis", "dimensions", "activation_infrastructure", "active_strategy_count", "content_sha256"],
+  "properties": {
+    "schema": { "const": "strategy-readiness-audit/1" }, "generated_at": { "type": "string" }, "readiness_basis": { "const": "IMPLEMENTATION_CONTRACT_COVERAGE_NOT_EMPIRICAL_PERFORMANCE" }, "machine_checks": { "type": "object" }, "dimensions": { "type": "array", "minItems": 7 }, "activation_infrastructure": { "type": "object" }, "active_strategy_count": { "const": 0 }, "limitations": { "type": "array" }, "content_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }, "additionalProperties": false
+}

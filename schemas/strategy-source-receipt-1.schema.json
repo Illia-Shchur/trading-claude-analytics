@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-source-receipt/1",
+  "type": "object",
+  "required": ["schema", "source_id", "source", "assigned_pit_tier", "event_time_policy", "availability_time_policy", "content_sha256"],
+  "properties": {
+    "schema": { "const": "strategy-source-receipt/1" }, "source_id": { "type": "string" }, "source": { "type": "string" }, "source_url": { "type": ["string", "null"] }, "requested_pit_tier": { "type": ["string", "null"] }, "assigned_pit_tier": { "enum": ["IMMUTABLE_EVENT_ARCHIVE", "VINTAGE_REVISION_AWARE", "CAPTURE_FORWARD", "UNVERIFIED_DEVELOPMENT_ONLY"] }, "authority": { "enum": ["REVIEWED_SOURCE_REGISTRY", "CUSTOM_IMPORT_DEVELOPMENT_ONLY"] }, "event_time_policy": { "type": "string" }, "availability_time_policy": { "type": "string" }, "capture_time": { "type": ["string", "null"] }, "archive_checksum": { "type": ["string", "null"] }, "adapter_sha256": { "type": ["string", "null"] }, "revision_policy": { "type": "string" }, "content_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }, "additionalProperties": false
+}

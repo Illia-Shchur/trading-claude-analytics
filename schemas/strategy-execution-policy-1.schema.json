@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-execution-policy/1",
+  "type": "object",
+  "required": ["schema", "venue", "instrument_scope", "order_types", "bar_convention", "same_bar_collision", "fee_model", "slippage_model", "capacity_model", "content_sha256"],
+  "properties": {
+    "schema": { "const": "strategy-execution-policy/1" }, "venue": { "const": "binance" },
+    "instrument_scope": { "const": ["SPOT", "USD_M_LINEAR_PERPETUAL", "USD_M_LINEAR_FUTURE"] },
+    "order_types": { "const": ["MARKET", "STOP_MARKET"] }, "bar_convention": { "const": "completed_signal_bar_then_next_executable_1m_child" },
+    "same_bar_collision": { "const": "ADVERSE" }, "fee_model": { "type": "object" }, "slippage_model": { "type": "object" }, "capacity_model": { "type": "object" }, "funding_model": { "type": "object" }, "outage_model": { "type": "object" },
+    "content_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }, "additionalProperties": false
+}

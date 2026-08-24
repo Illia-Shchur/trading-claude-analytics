@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-prospective-ledger/1",
+  "type": "object",
+  "required": ["schema", "reservation", "events", "head_sha256", "content_sha256"],
+  "properties": {
+    "schema": { "const": "strategy-prospective-ledger/1" }, "reservation": { "type": "object", "required": ["frozen_at", "start_at", "lineage"] }, "events": { "type": "array" }, "head_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "content_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }, "additionalProperties": false
+}

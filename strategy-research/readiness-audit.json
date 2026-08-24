@@ -1,0 +1,114 @@
+{
+  "schema": "strategy-readiness-audit/1",
+  "generated_at": "2026-08-24T00:00:00.000Z",
+  "readiness_basis": "IMPLEMENTATION_CONTRACT_COVERAGE_NOT_EMPIRICAL_PERFORMANCE",
+  "machine_checks": {
+    "governance": true,
+    "statistics": true,
+    "execution": true,
+    "portfolio": true,
+    "pit": true,
+    "prospective": false,
+    "runner_attestation": false,
+    "prospective_gates": false,
+    "external_trust_root": false,
+    "revocation_registry": false,
+    "activation": false,
+    "prospective_runner_available": false,
+    "external_attestation_available": false,
+    "external_trust_root_configured": false
+  },
+  "dimensions": [
+    {
+      "id": "governance_reproducibility",
+      "target": 9.5,
+      "score": 9.5,
+      "evidence": [
+        "immutable precommit",
+        "content hashes",
+        "append-only exposure ledger"
+      ]
+    },
+    {
+      "id": "statistical_selection",
+      "target": 9,
+      "score": 9,
+      "cap_reason": "implementation-contract coverage only; no empirical strategy performance or production readiness is implied",
+      "evidence": [
+        "deterministic stationary max-stat probe",
+        "nested purge/embargo WFO contract",
+        "plateau and ablation contracts"
+      ]
+    },
+    {
+      "id": "pit_data_readiness",
+      "target": 8,
+      "score": 8,
+      "cap_reason": "public historical data cannot reproduce every private revision/vintage",
+      "evidence": [
+        "hashed source registry",
+        "feature/label separation",
+        "availability-time receipts"
+      ]
+    },
+    {
+      "id": "execution_realism",
+      "target": 7,
+      "score": 7,
+      "cap_reason": "implementation-contract coverage only; public bars cannot reproduce historical order-book queues/private fills",
+      "evidence": [
+        "validated execution-policy probe",
+        "all next 1m children",
+        "adverse collision/capacity/outage contract"
+      ]
+    },
+    {
+      "id": "portfolio_risk_realism",
+      "target": 9,
+      "score": 9,
+      "evidence": [
+        "mandatory risk policy",
+        "event-time MTM",
+        "ES/loss runs/MRC/ruin"
+      ]
+    },
+    {
+      "id": "prospective_validation",
+      "target": 9,
+      "score": 4,
+      "cap_reason": "future-only GitHub/OIDC runner and attestation are not configured",
+      "evidence": [
+        "future-only reservation",
+        "hash-chained outcomes",
+        "fast gate and drift controls"
+      ]
+    },
+    {
+      "id": "activation_infrastructure",
+      "target": 9,
+      "score": 3,
+      "cap_reason": "external trust root, revocation registry, and attestation are not configured",
+      "evidence": [
+        "Ed25519 lease",
+        "asset + portfolio approvals",
+        "expiry/revocation/drift demotion"
+      ]
+    }
+  ],
+  "activation_infrastructure": {
+    "ready": false,
+    "active_requires_signature": true,
+    "full_risk_after_approval": true,
+    "probation_ramp": false
+  },
+  "active_strategy_count": 0,
+  "limitations": [
+    "Scores are machine-checked implementation-contract coverage, not empirical strategy performance or production readiness.",
+    "No strategy is ACTIVE from research output.",
+    "Historical PIT authority remains source-dependent.",
+    "Execution is public-bar based and not a queue simulator.",
+    "GitHub/OIDC artifact custody and independent external attestation root are deployment prerequisites.",
+    "Prospective and activation scores remain below target until those artifacts are machine-verified."
+  ],
+  "content_sha256": "43462947667a1e0e713c8d60f2d85a2485ece04ab5225bc3060126f884113836"
+}

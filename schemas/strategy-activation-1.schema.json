@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-activation/1",
+  "type": "object",
+  "required": ["schema", "status", "strategy_sha256", "candidate_sha256", "asset_approval", "portfolio_approval", "venue", "risk_policy_sha256", "evidence_status", "gate_results", "drift_status", "trust_root_key_id", "evidence_digests", "issued_at", "expires_at", "signature", "content_sha256"],
+  "properties": {
+    "schema": { "const": "strategy-activation/1" }, "status": { "enum": ["ACTIVE", "REVOKED", "EXPIRED", "DEMOTED"] }, "strategy_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "candidate_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "assets": { "type": "array" }, "instruments": { "type": "array" }, "asset_approval": { "type": "object" }, "portfolio_approval": { "type": "object" }, "venue": { "const": "binance" }, "risk_policy_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "evidence_status": { "const": "CANDIDATE_REVIEW" }, "gate_results": { "type": "object" }, "drift_status": { "const": "CLEAR" }, "trust_root_key_id": { "type": "string", "minLength": 1 }, "evidence_digests": { "type": "object" }, "issued_at": { "type": "string" }, "expires_at": { "type": "string" }, "revocation_conditions": { "type": "array" }, "public_key_pem": { "type": "string" }, "signature": { "type": "string", "minLength": 1 }, "content_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }, "additionalProperties": false
+}
