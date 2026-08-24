@@ -10,9 +10,10 @@ import { decodeFeatureStore, evaluateCandidate, readFeatureStoreArtifact, verify
 import { queryParquet, readRows as readResearchRows, validateManifest } from './research-data.mjs'
 import { validateAcceptanceContract, makeAcceptanceContract, validateExperimentV3, validateRunV3, validateEvidenceBundleV2, validateExposedParentEvidence, frozenSelectionByAsset, makeEvidenceBundle, makeRunV3, computeCandidateMetrics, evaluateAcceptance, walkForwardV3, makeConfirmationReservation, burnReservation, signAttestation, verifyAttestation, importAttestation, validateConfirmationReservation, hash as hashV3, ownHash } from './strategy-research-v3.mjs'
 import { validateContractSchema } from './research-schema-registry.mjs'
+import { parseFlagOptions } from './cli-options.mjs'
 
 const args = process.argv.slice(2); const command = args.shift()
-const options = {}; for (let index = 0; index < args.length; index++) if (args[index].startsWith('--')) { const rawKey = args[index].slice(2); const value = args[index + 1]?.startsWith('--') || args[index + 1] === undefined ? true : args[++index]; options[rawKey] = value; options[rawKey.replaceAll('-', '_')] = value }
+const options = parseFlagOptions(args)
 const root = resolve(options.root || 'strategy-research')
 const print = value => process.stdout.write(`${JSON.stringify(value, null, 2)}\n`)
 const resolveInput = value => resolve(String(value || ''))
@@ -23,8 +24,6 @@ function findRun(id) {
   const path = join(root, 'runs', id)
   if (existsSync(join(path, 'run.json'))) return path
   if (existsSync(join(root, 'runs'))) for (const entry of readdirSync(join(root, 'runs'), { withFileTypes: true }).filter(item => item.isDirectory()).sort((a, b) => a.name.localeCompare(b.name))) { const candidate = join(root, 'runs', entry.name, 'run.json'); if (!existsSync(candidate)) continue; const value = readJSON(candidate); if (value.run_id === id || String(value.run_id || '').startsWith(String(id || ''))) return join(root, 'runs', entry.name) }
-  const matches = existsSync(join(root, 'runs')) ? Object.keys(readJSON(join(root, 'index.json')).runs || []).filter(() => false) : []
-  void matches
   const index = readJSON(join(root, 'index.json')); const row = index.runs.find(run => run.run_id === id || run.run_id.startsWith(id))
   if (!row) throw new Error(`run not found: ${id}`)
   return join(root, dirname(row.path))

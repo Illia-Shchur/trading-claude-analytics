@@ -6,10 +6,11 @@
  */
 import { createHash } from 'node:crypto'
 import { execFileSync } from 'node:child_process'
-import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, statSync, unlinkSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, unlinkSync, writeFileSync } from 'node:fs'
 import { basename, dirname, extname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import canonicalize from 'canonicalize'
+import { parseFlagOptions } from './cli-options.mjs'
 
 export const DATASET_MANIFEST_SCHEMA = 'strategy-data-manifest/2'
 export const FEATURE_SET_SCHEMA = 'research-feature-set/1'
@@ -85,12 +86,14 @@ function readDelimited(text) {
   return records.map(values => Object.fromEntries(headers.map((header, index) => [header, values[index] ?? ''])))
 }
 
-export function readRows(path) {
-  const source = readFileSync(resolve(path), 'utf8')
+function parseRows(path, source) {
   if (extname(path).toLowerCase() === '.csv') return readDelimited(source)
   if (extname(path).toLowerCase() === '.jsonl' || extname(path).toLowerCase() === '.ndjson') return source.split(/\r?\n/).filter(Boolean).map(line => JSON.parse(line))
   return asRows(JSON.parse(source))
 }
+
+export function readRows(path) { return parseRows(path, readFileSync(resolve(path), 'utf8')) }
+function readRowsWithBytes(path) { const bytes = readFileSync(resolve(path)); return { bytes, rows: parseRows(path, bytes.toString('utf8')) } }
 
 export function rowTime(row, name = 'event_time') {
   const raw = row[name] ?? row.time ?? row.timestamp ?? row.open_time
@@ -170,12 +173,25 @@ export function buildManifest({ manifestId, rows = [], labelRows = [], datasets 
   const labelGrouped = new Map()
   for (const row of labelRows) { const key = `${row.dataset_id || 'dataset'}|${row.dataset_version || row.dataset_id || 'dataset'}|${row.asset || ''}|${row.venue || ''}|${row.instrument || ''}|${row.timeframe || '4h'}`; if (!labelGrouped.has(key)) labelGrouped.set(key, []); labelGrouped.get(key).push(row) }
   const labelDatasetRows = derive(labelGrouped)
-  const coverageSummary = Object.fromEntries(['price', 'derivatives', 'funding'].map(kind => { const selected = datasetRows.filter(dataset => kind === 'price' ? String(dataset.instrument_id || '').toLowerCase() === 'spot' || String(dataset.asset_class || '').toLowerCase() === 'crypto' && !String(dataset.instrument_id || '').toLowerCase().includes('perp') : kind === 'derivatives' ? String(dataset.instrument_id || '').toLowerCase().includes('perp') || String(dataset.instrument_id || '').toLowerCase().includes('future') : String(dataset.source || '').toLowerCase().includes('funding')); const expected = selected.reduce((sum, dataset) => sum + Number(dataset.coverage?.expected_rows || 0), 0); const observed = selected.reduce((sum, dataset) => sum + Number(dataset.coverage?.observed_rows || 0), 0); return [`${kind}_fraction`, expected ? observed / expected : null] }))
+  const coverageSummary = coverageSummaryFor(datasetRows)
   const normalizedLineage = { adapter_sha256: lineage.adapter_sha256 || sha256(`adapter:${source}`), code_sha256: lineage.code_sha256 || RESEARCH_DATA_CODE_SHA256, container_sha256: lineage.container_sha256 || DUCKDB_IMAGE_DIGEST, config_sha256: lineage.config_sha256 || sha256({ source, role, publicSource, partitioning: ['dataset_version', 'asset', 'venue', 'instrument', 'timeframe', 'utc_year', 'utc_month'] }) }
-  const labelCoverageSummary = Object.fromEntries(['price', 'derivatives', 'funding'].map(kind => { const selected = labelDatasetRows.filter(dataset => kind === 'price' ? String(dataset.instrument_id || '').toLowerCase() === 'spot' || String(dataset.asset_class || '').toLowerCase() === 'crypto' && !String(dataset.instrument_id || '').toLowerCase().includes('perp') : kind === 'derivatives' ? String(dataset.instrument_id || '').toLowerCase().includes('perp') || String(dataset.instrument_id || '').toLowerCase().includes('future') : String(dataset.source || '').toLowerCase().includes('funding')); const expected = selected.reduce((sum, dataset) => sum + Number(dataset.coverage?.expected_rows || 0), 0); const observed = selected.reduce((sum, dataset) => sum + Number(dataset.coverage?.observed_rows || 0), 0); return [`${kind}_fraction`, expected ? observed / expected : null] }))
+  const labelCoverageSummary = coverageSummaryFor(labelDatasetRows)
   const manifest = { schema: DATASET_MANIFEST_SCHEMA, manifest_id: manifestId || `snapshot-${sha256({ datasetRows, labelDatasetRows, gaps, featureStore, lineage: normalizedLineage }).slice(0, 16)}`, snapshot_id: snapshotId, role, source, public_source: publicSource, partitioning: ['dataset_version', 'asset', 'venue', 'instrument', 'timeframe', 'utc_year', 'utc_month'], lineage: normalizedLineage, feature_store: featureStore, datasets: datasetRows, label_datasets: labelDatasetRows, coverage_summary: coverageSummary, label_coverage_summary: labelCoverageSummary, gaps, data_root_sha256: sha256({ datasetRows, labelDatasetRows, coverageSummary, labelCoverageSummary, gaps, featureStore, lineage: normalizedLineage }), authoritative: ['FEATURE', 'LABEL'].includes(role) && [...datasetRows, ...labelDatasetRows].every(row => ['PIT_SAFE', 'VERIFIED', 'COMPLETED_BAR'].includes(String(row.point_in_time_status).toUpperCase())), content_sha256: null }
   manifest.content_sha256 = manifestOwnHash(manifest)
   return manifest
+}
+
+function coverageSummaryFor(datasetRows) {
+  return Object.fromEntries(['price', 'derivatives', 'funding'].map(kind => {
+    const selected = datasetRows.filter(dataset => kind === 'price'
+      ? String(dataset.instrument_id || '').toLowerCase() === 'spot' || String(dataset.asset_class || '').toLowerCase() === 'crypto' && !String(dataset.instrument_id || '').toLowerCase().includes('perp')
+      : kind === 'derivatives'
+        ? String(dataset.instrument_id || '').toLowerCase().includes('perp') || String(dataset.instrument_id || '').toLowerCase().includes('future')
+        : String(dataset.source || '').toLowerCase().includes('funding'))
+    const expected = selected.reduce((sum, dataset) => sum + Number(dataset.coverage?.expected_rows || 0), 0)
+    const observed = selected.reduce((sum, dataset) => sum + Number(dataset.coverage?.observed_rows || 0), 0)
+    return [`${kind}_fraction`, expected ? observed / expected : null]
+  }))
 }
 
 export function buildFeatureSet({ featureSetId, dataManifestSha256, featureCodeSha256, lineage = [], warmupBars = 0, coverage = {}, partitions = [] } = {}) {
@@ -193,8 +209,9 @@ export function buildLabelSet({ labelSetId, dataManifestSha256, labelCodeSha256,
 function writeJsonl(path, rows) {
   mkdirSync(dirname(path), { recursive: true })
   const bytes = Buffer.from(rows.map(row => JSON.stringify(row)).join('\n') + (rows.length ? '\n' : ''))
-  if (existsSync(path)) { if (sha256(readFileSync(path)) !== sha256(bytes)) throw new Error(`immutable artifact collision: ${path}`) } else writeFileSync(path, bytes, { flag: 'wx' })
-  return { path, sha256: sha256(bytes), rows: rows.length }
+  const digest = sha256(bytes)
+  if (existsSync(path)) { if (sha256(readFileSync(path)) !== digest) throw new Error(`immutable artifact collision: ${path}`) } else writeFileSync(path, bytes, { flag: 'wx' })
+  return { path, sha256: digest, rows: rows.length }
 }
 
 function writeImmutableJson(path, value) {
@@ -217,15 +234,16 @@ export function rebuildCatalog(outputRoot = 'data/research-lake') {
 export function writeParquet(stagingJsonl, parquetPath) {
   mkdirSync(dirname(parquetPath), { recursive: true })
   const input = resolve(stagingJsonl); const output = resolve(parquetPath)
-  const inputParent = resolve(dirname(input)); const outputParent = resolve(dirname(output)); const inputName = basename(input); const outputName = basename(output); const candidateName = `.${outputName}.${sha256(readFileSync(input)).slice(0, 16)}.tmp`
+  const inputParent = resolve(dirname(input)); const outputParent = resolve(dirname(output)); const inputName = basename(input); const outputName = basename(output); const inputBytes = readFileSync(input); const candidateName = `.${outputName}.${sha256(inputBytes).slice(0, 16)}.tmp`
+  let finalBytes; let finalHash
   try {
     execFileSync('docker', ['run', '--rm', '--network', 'none', '-v', `${inputParent}:/input:ro`, '-v', `${outputParent}:/output:rw`, DUCKDB_IMAGE, '/duckdb', '-c', `COPY (SELECT * FROM read_json_auto('/input/${inputName}', union_by_name=true)) TO '/output/${candidateName}' (FORMAT PARQUET, COMPRESSION ZSTD);`], { stdio: 'pipe' })
-    const candidatePath = join(outputParent, candidateName); const candidateHash = sha256(readFileSync(candidatePath)); if (existsSync(output)) { if (sha256(readFileSync(output)) !== candidateHash) throw new Error(`immutable Parquet artifact collision: ${output}`); unlinkSync(candidatePath) } else renameSync(candidatePath, output)
+    const candidatePath = join(outputParent, candidateName); const candidateBytes = readFileSync(candidatePath); const candidateHash = sha256(candidateBytes); if (existsSync(output)) { const existingBytes = readFileSync(output); if (sha256(existingBytes) !== candidateHash) throw new Error(`immutable Parquet artifact collision: ${output}`); finalBytes = existingBytes; finalHash = candidateHash; unlinkSync(candidatePath) } else { finalBytes = candidateBytes; finalHash = candidateHash; renameSync(candidatePath, output) }
   } catch (error) {
     const candidatePath = join(outputParent, candidateName); if (existsSync(candidatePath)) unlinkSync(candidatePath)
     throw new Error(`DuckDB Parquet conversion failed; JSONL staging remains at ${stagingJsonl}: ${error.stderr ? String(error.stderr) : error.message}`)
   }
-  return { path: parquetPath, sha256: sha256(readFileSync(parquetPath)), bytes: statSync(parquetPath).size }
+  return { path: parquetPath, sha256: finalHash, bytes: finalBytes.byteLength }
 }
 
 export function queryParquet(parquetPath, { from = -Infinity, to = Infinity, assets = null } = {}) {
@@ -249,7 +267,7 @@ export function queryParquet(parquetPath, { from = -Infinity, to = Infinity, ass
 export function snapshot({ input, outputRoot = 'data/research-lake', datasetId = basename(input, extname(input)), asset = null, venue = null, instrument = null, pitTier = 'UNVERIFIED', role = 'FEATURE', format = 'parquet', source = 'public', publicSource = true, adapterSha256 = null, codeSha256 = null, containerSha256 = null, configSha256 = null, labelHorizon = null, labelCodeSha256 = null } = {}) {
   if (!input) throw new Error('snapshot requires input')
   datasetId = validateDatasetId(datasetId)
-  const raw = readRows(input)
+  const inputRead = readRowsWithBytes(input); const raw = inputRead.rows
   // Split targets before feature normalization: targets are legal in staging,
   // but are never allowed to become predictor columns.
   const splitRaw = rows => rows.reduce((result, row) => {
@@ -269,7 +287,7 @@ export function snapshot({ input, outputRoot = 'data/research-lake', datasetId =
   const normalized = [...normalizedFeatures, ...normalizedLabels].sort((a, b) => a.event_time - b.event_time || String(a.asset).localeCompare(String(b.asset)))
   const features = normalizedFeatures
   const labels = normalizedLabels
-  const inputBytesSha256 = sha256(readFileSync(resolve(input))); const lineage = { adapter_sha256: adapterSha256 || normalized[0]?.adapter_code_sha256 || sha256(`adapter:${source}`), code_sha256: codeSha256 || RESEARCH_DATA_CODE_SHA256, container_sha256: containerSha256 || DUCKDB_IMAGE_DIGEST, config_sha256: configSha256 || sha256({ datasetId, asset, venue, instrument, pitTier, role, format, source, publicSource, labelHorizon, labelCodeSha256 }) }; const snapshotIdentity = { dataset_id: datasetId, input_bytes_sha256: inputBytesSha256, input_sha256: sha256(raw), normalized_sha256: sha256(normalized), asset, venue, instrument, pit_tier: pitTier, role, format, source, public_source: publicSource, label_horizon: labelHorizon, label_code_sha256: labelCodeSha256, lineage }
+  const inputBytesSha256 = sha256(inputRead.bytes); const lineage = { adapter_sha256: adapterSha256 || normalized[0]?.adapter_code_sha256 || sha256(`adapter:${source}`), code_sha256: codeSha256 || RESEARCH_DATA_CODE_SHA256, container_sha256: containerSha256 || DUCKDB_IMAGE_DIGEST, config_sha256: configSha256 || sha256({ datasetId, asset, venue, instrument, pitTier, role, format, source, publicSource, labelHorizon, labelCodeSha256 }) }; const snapshotIdentity = { dataset_id: datasetId, input_bytes_sha256: inputBytesSha256, input_sha256: sha256(raw), normalized_sha256: sha256(normalized), asset, venue, instrument, pit_tier: pitTier, role, format, source, public_source: publicSource, label_horizon: labelHorizon, label_code_sha256: labelCodeSha256, lineage }
   const snapshotId = `${datasetId}-${sha256(snapshotIdentity).slice(0, 16)}`
   const root = resolve(outputRoot, snapshotId); mkdirSync(root, { recursive: true }); const identityPath = join(root, 'snapshot-identity.json'); if (existsSync(identityPath)) { const previous = JSON.parse(readFileSync(identityPath, 'utf8')); if (sha256(previous) !== sha256(snapshotIdentity)) throw new Error(`immutable snapshot root collision: ${root}`) } else if (readdirSync(root).length) throw new Error(`existing snapshot root lacks identity receipt; refusing overwrite: ${root}`); else writeFileSync(identityPath, json(snapshotIdentity), { flag: 'wx' })
   // These four directories are deliberately physical boundaries. Raw and
@@ -328,10 +346,8 @@ export function validateManifest(manifest, { phase = 'DEVELOPMENT', requiredAsse
   return true
 }
 
-function parseOptions(argv) { const options = {}; for (let i = 0; i < argv.length; i++) if (argv[i].startsWith('--')) { const rawKey = argv[i].slice(2); const value = argv[i + 1]?.startsWith('--') || argv[i + 1] === undefined ? true : argv[++i]; options[rawKey] = value; options[rawKey.replaceAll('-', '_')] = value }; return options }
-
 if (process.argv[1] && resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url))) {
-  const command = process.argv[2]; const options = parseOptions(process.argv.slice(3)); const print = value => process.stdout.write(json(value))
+  const command = process.argv[2]; const options = parseFlagOptions(process.argv.slice(3)); const print = value => process.stdout.write(json(value))
   try {
     if (command === 'init') { const root = resolve(options.out || options.root || 'data/research-lake'); for (const layer of ['raw', 'normalized', 'features', 'labels', 'quality', 'manifests']) mkdirSync(join(root, layer), { recursive: true }); print({ root, layers: ['raw', 'normalized', 'features', 'labels', 'quality', 'manifests'], authoritative_format: 'parquet', duckdb_image: DUCKDB_IMAGE }) }
     else if (command === 'snapshot' || command === 'ingest' || command === 'build-features') print(snapshot({ input: options.input, outputRoot: options.out || options.output || 'data/research-lake', datasetId: options.dataset || options.dataset_id || options['dataset-id'], asset: options.asset, venue: options.venue, instrument: options.instrument, pitTier: options.pit_tier || options['pit-tier'] || options.pit || 'UNVERIFIED', role: command === 'build-features' ? 'FEATURE' : (options.role || 'FEATURE'), format: options.format || 'parquet', source: options.source || 'public', publicSource: options.public_source !== 'false' && options['public-source'] !== 'false', labelHorizon: options.horizon_bars || options['horizon-bars'] ? { bars: Number(options.horizon_bars || options['horizon-bars']), unit: options.horizon_unit || options['horizon-unit'] || 'bars' } : null, labelCodeSha256: options.label_code_sha256 || options['label-code-sha256'] || null }))
@@ -340,7 +356,7 @@ if (process.argv[1] && resolve(process.argv[1]) === resolve(fileURLToPath(import
     else if (command === 'query') { const from = options.from ? Date.parse(options.from) : -Infinity; const to = options.to ? Date.parse(options.to) : Infinity; const assets = options.asset ? String(options.asset).split(',').map(value => value.toLowerCase()) : null; if (extname(options.input).toLowerCase() !== '.parquet') throw new Error('authoritative query requires Parquet; JSONL/CSV are staging/debug only'); print(queryParquet(options.input, { from, to, assets })) }
     else if (command === 'catalog-rebuild') print(rebuildCatalog(options.root || options.out || 'data/research-lake'))
     else if (command === 'diff') { const left = JSON.parse(readFileSync(resolve(options.left), 'utf8')); const right = JSON.parse(readFileSync(resolve(options.right), 'utf8')); print({ left: left.content_sha256, right: right.content_sha256, same: left.content_sha256 === right.content_sha256, dataset_changes: (right.datasets || []).filter(row => JSON.stringify((left.datasets || []).find(item => item.dataset_id === row.dataset_id)) !== JSON.stringify(row)).map(row => row.dataset_id) }) }
-    else if (command === 'pack') { const manifestPath = resolve(options.manifest); const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')); validateManifest(manifest); const lakeRoot = resolve(dirname(manifestPath), '..'); const files = lakeFiles(lakeRoot).map(path => ({ path: relative(lakeRoot, path), sha256: sha256(readFileSync(path)), bytes_base64: readFileSync(path).toString('base64') })); const pack = { schema: 'research-lake-pack/1', pack_version: 1, manifest, root_name: basename(lakeRoot), files }; const out = resolve(options.out || `${manifest.manifest_id}.pack.json`); writeFileSync(out, json(pack), { flag: 'wx' }); print({ path: out, files: pack.files.length, manifest_sha256: manifest.content_sha256, embedded: true }) }
+    else if (command === 'pack') { const manifestPath = resolve(options.manifest); const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')); validateManifest(manifest); const lakeRoot = resolve(dirname(manifestPath), '..'); const files = lakeFiles(lakeRoot).map(path => { const bytes = readFileSync(path); return { path: relative(lakeRoot, path), sha256: sha256(bytes), bytes_base64: bytes.toString('base64') } }); const pack = { schema: 'research-lake-pack/1', pack_version: 1, manifest, root_name: basename(lakeRoot), files }; const out = resolve(options.out || `${manifest.manifest_id}.pack.json`); writeFileSync(out, json(pack), { flag: 'wx' }); print({ path: out, files: pack.files.length, manifest_sha256: manifest.content_sha256, embedded: true }) }
     else if (command === 'restore') { const pack = JSON.parse(readFileSync(resolve(options.pack), 'utf8')); if (pack.schema !== 'research-lake-pack/1' || pack.pack_version !== 1) throw new Error('unsupported lake pack'); const outRoot = resolve(options.out || '.'); for (const file of pack.files || []) { if (!file.path || file.path.startsWith('/') || relative('.', file.path).startsWith('..')) throw new Error(`unsafe pack path: ${file.path}`); const bytes = Buffer.from(String(file.bytes_base64 || ''), 'base64'); if (sha256(bytes) !== file.sha256) throw new Error(`embedded pack content hash mismatch: ${file.path}`); const target = resolve(outRoot, file.path); mkdirSync(dirname(target), { recursive: true }); if (existsSync(target)) { if (sha256(readFileSync(target)) !== file.sha256) throw new Error(`restore collision with mismatched file: ${file.path}`) } else writeFileSync(target, bytes, { flag: 'wx' }) } const restoredManifest = resolve(outRoot, 'manifests/dataset-manifest.json'); if (!existsSync(restoredManifest)) throw new Error('pack omitted dataset manifest'); const manifest = JSON.parse(readFileSync(restoredManifest, 'utf8')); if (manifest.content_sha256 !== pack.manifest?.content_sha256) throw new Error('restored manifest hash mismatch'); validateManifest(manifest, { root: outRoot }); print({ restored: (pack.files || []).length, manifest_sha256: manifest.content_sha256, complete: true }) }
     else process.stdout.write('usage: research-data.mjs init|snapshot|ingest|build-features|build-labels|validate|query|diff|pack|restore --input/--manifest ...\n')
   } catch (error) { process.stderr.write(`${error.message}\n`); process.exitCode = 1 }

@@ -12,7 +12,7 @@ const root = resolve(process.argv[2] || 'strategy-research'); const output = res
 const runsRoot = join(root, 'runs'); const files = []; const index = Object.fromEntries(CORE_UNIVERSE.map(asset => [asset, []]))
 if (existsSync(runsRoot)) for (const run of readdirSync(runsRoot).sort()) {
   const runDir = join(runsRoot, run); const path = join(runDir, 'run.json'); if (!existsSync(path)) continue
-  const runValue = JSON.parse(readFileSync(path, 'utf8')); const runRecord = { run_id: run, path: `runs/${run}/run.json`, sha256: hash(readFileSync(path)), schema: runValue.schema, phase: runValue.evidence_phase || runValue.experiment?.evidence_phase || null, status: runValue.decisions?.portfolio?.status || null, artifact_hashes: Object.fromEntries(Object.entries(runValue.artifacts || {}).map(([name, artifact]) => [name, artifact.sha256 || null])) }; files.push(runRecord)
+  const runBytes = readFileSync(path); const runValue = JSON.parse(runBytes.toString('utf8')); const runRecord = { run_id: run, path: `runs/${run}/run.json`, sha256: hash(runBytes), schema: runValue.schema, phase: runValue.evidence_phase || runValue.experiment?.evidence_phase || null, status: runValue.decisions?.portfolio?.status || null, artifact_hashes: Object.fromEntries(Object.entries(runValue.artifacts || {}).map(([name, artifact]) => [name, artifact.sha256 || null])) }; files.push(runRecord)
   const metricsPath = runValue.artifacts?.metrics?.path ? join(runDir, runValue.artifacts.metrics.path) : null; if (!metricsPath || !existsSync(metricsPath)) continue
   for (const line of readFileSync(metricsPath, 'utf8').split(/\r?\n/).filter(Boolean)) {
     let metric; try { metric = JSON.parse(line) } catch { continue }

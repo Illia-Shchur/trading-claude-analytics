@@ -1,5 +1,9 @@
 import { strict as assert } from 'node:assert'
-import { latestPrior, mechanicalTrigger, setupFamiliesAt, labelsForBars, BAR_MS, DAY_MS } from '../tools/swing-backfill.mjs'
+import { latestPrior, mechanicalTrigger, setupFamiliesAt, labelsForBars, firstByTime, BAR_MS, DAY_MS } from '../tools/swing-backfill.mjs'
+
+const duplicateTime = [{ time: 1, value: 'first' }, { time: 1, value: 'second' }]
+assert.equal(firstByTime(duplicateTime).get(1).value, 'first', 'futures duplicate timestamps preserve find() first-match semantics')
+assert.equal(firstByTime([{ time: Number.NaN, value: 'nan' }]).has(Number.NaN), false, 'non-equal NaN timestamps remain unmatched like Array.find')
 
 // Availability lag: an observation dated today is not readable from a bar
 // opened today; only the explicitly lagged prior observation is eligible.

@@ -137,7 +137,7 @@ export function expandGrid(template, grid = {}) {
 }
 
 function effectiveCandidate(candidate) {
-  const copy = structuredClone(normalizeCandidate(candidate))
+  const copy = structuredClone(candidate)
   delete copy.id; delete copy.raw; delete copy._state; delete copy._impulse
   return copy
 }
@@ -145,15 +145,15 @@ function effectiveCandidate(candidate) {
 export function accountCandidates(candidates, series = []) {
   const ids = new Map(), behaviors = new Map(), declared = []
   for (const raw of candidates) {
-    const normalized = normalizeCandidate(raw); const behaviorSha = hash(effectiveCandidate(raw))
+    const normalized = normalizeCandidate(raw); const behaviorSha = hash(effectiveCandidate(normalized))
     if (normalized.max_concurrent > 1) throw new Error(`candidate ${normalized.id} has max_concurrent > 1 without portfolio concurrency support`)
     if (ids.has(normalized.id) && ids.get(normalized.id) !== behaviorSha) throw new Error(`candidate id conflict: ${normalized.id}`)
     ids.set(normalized.id, behaviorSha); declared.push({ id: normalized.id, behavior_sha256: behaviorSha })
-    if (!behaviors.has(behaviorSha)) behaviors.set(behaviorSha, { ...raw, id: normalized.id })
+    if (!behaviors.has(behaviorSha)) behaviors.set(behaviorSha, { candidate: { ...raw, id: normalized.id }, normalized })
   }
-  const effective = [...behaviors.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([behavior_sha256, candidate]) => ({ behavior_sha256, candidate }))
+  const effective = [...behaviors.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([behavior_sha256, value]) => ({ behavior_sha256, ...value }))
   const perSeries = series.map(item => {
-    const applicable = effective.filter(({ candidate }) => { const c = normalizeCandidate(candidate); return (!c.assets.length || c.assets.includes(item.asset)) && (!c.timeframes.length || c.timeframes.includes(item.timeframe)) && (!item.framework || c.framework === item.framework) && (!item.channel || c.channel === item.channel) }).map(x => x.behavior_sha256).sort()
+    const applicable = effective.filter(({ normalized: c }) => (!c.assets.length || c.assets.includes(item.asset)) && (!c.timeframes.length || c.timeframes.includes(item.timeframe)) && (!item.framework || c.framework === item.framework) && (!item.channel || c.channel === item.channel)).map(x => x.behavior_sha256).sort()
     return { series_id: item.series_id, declared_k: declared.length, effective_k: new Set(applicable).size, effective_behavior_sha256: hash(applicable) }
   })
   const canonicalCandidates = effective.map(({ behavior_sha256, candidate }) => ({ candidate_id: candidate.id, behavior_sha256, definition: candidate }))
@@ -242,35 +242,48 @@ export function writeRunBundle(root, bundle) {
 }
 
 export function validateRunDirectory(runRoot) {
-  const run = readJSON(join(runRoot, 'run.json')); validateRun(run)
+  return validateRunDirectoryValue(runRoot, readJSON(join(runRoot, 'run.json')))
+}
+
+function validateRunDirectoryValue(runRoot, run) {
+  validateRun(run)
   if (basename(runRoot) !== run.run_id) throw new Error('run directory name does not match run_id')
   for (const artifact of Object.values(run.artifacts)) {
     const path = join(runRoot, artifact.path)
     if (!existsSync(path)) throw new Error(`missing run artifact ${artifact.path}`)
     const bytes = readFileSync(path)
     if (hash(bytes) !== artifact.sha256) throw new Error(`artifact hash mismatch: ${artifact.path}`)
-    if (readJSONL(path).length !== artifact.rows) throw new Error(`artifact row count mismatch: ${artifact.path}`)
+    if (bytes.toString('utf8').split(/\r?\n/).filter(Boolean).map(line => JSON.parse(line)).length !== artifact.rows) throw new Error(`artifact row count mismatch: ${artifact.path}`)
   }
   return run
 }
 
 function definitionRows(root) { return walk(join(root, 'definitions')).filter(path => path.endsWith('.json')).map(path => ({ path: relative(root, path), value: readJSON(path) })) }
 function experimentRows(root) { return walk(join(root, 'experiments')).filter(path => basename(path) === 'experiment.json').map(path => ({ path: relative(root, path), value: readJSON(path) })) }
-function runRows(root) { return walk(join(root, 'runs')).filter(path => basename(path) === 'run.json').map(path => ({ path, raw: readJSON(path) })).filter(({ raw }) => raw.schema !== RUN_V2_SCHEMA && raw.schema !== RUN_V3_SCHEMA).map(({ path }) => ({ path: relative(root, path), value: validateRunDirectory(dirname(path)) })) }
-function runV2Rows(root) { return walk(join(root, 'runs')).filter(path => basename(path) === 'run.json').map(path => ({ path: relative(root, path), raw: readJSON(path) })).filter(({ raw }) => raw.schema === RUN_V2_SCHEMA).map(({ path, raw }) => { validateV2Document(raw); return { path, value: raw } }) }
-function runV3Rows(root) {
-  return walk(join(root, 'runs')).filter(path => basename(path) === 'run.json').map(path => ({ path, raw: readJSON(path) })).filter(({ raw }) => raw.schema === RUN_V3_SCHEMA).map(({ path, raw }) => {
-    validateRunV3(raw); const absolute = join(root, path); if (basename(dirname(absolute)) !== raw.run_id) throw new Error('v3 run directory name does not match run_id')
+
+function collectRunRecords(root) {
+  const records = { legacy: [], v2: [], v3: [] }
+  const parsed = walk(join(root, 'runs')).filter(path => basename(path) === 'run.json').map(absolute => ({ absolute, raw: readJSON(absolute) }))
+  for (const { absolute, raw } of parsed.filter(({ raw }) => raw.schema !== RUN_V2_SCHEMA && raw.schema !== RUN_V3_SCHEMA)) records.legacy.push({ path: relative(root, absolute), value: validateRunDirectoryValue(dirname(absolute), raw) })
+  for (const { absolute, raw } of parsed.filter(({ raw }) => raw.schema === RUN_V2_SCHEMA)) { validateV2Document(raw); records.v2.push({ path: relative(root, absolute), value: raw }) }
+  for (const { absolute, raw } of parsed.filter(({ raw }) => raw.schema === RUN_V3_SCHEMA)) {
+    validateRunV3(raw); if (basename(dirname(absolute)) !== raw.run_id) throw new Error('v3 run directory name does not match run_id')
     let evidence = null
-    if (raw.evidence_bundle_sha256) { const evidencePath = join(root, 'evidence-bundles', `${raw.evidence_bundle_sha256}.json`); if (!existsSync(evidencePath)) throw new Error('v3 run evidence bundle is missing'); evidence = readJSON(evidencePath); validateEvidenceBundleV2(evidence); if (evidence.content_sha256 !== raw.evidence_bundle_sha256 || evidence.experiment_sha256 !== raw.experiment_sha256 || evidence.evidence_phase !== raw.evidence_phase || stable(evidence.decisions) !== stable(raw.decisions)) throw new Error('v3 run/evidence decision or hash mismatch') }
-    return { path, value: raw, evidence }
-  })
+    if (raw.evidence_bundle_sha256) {
+      const evidencePath = join(root, 'evidence-bundles', `${raw.evidence_bundle_sha256}.json`)
+      if (!existsSync(evidencePath)) throw new Error('v3 run evidence bundle is missing')
+      evidence = readJSON(evidencePath); validateEvidenceBundleV2(evidence)
+      if (evidence.content_sha256 !== raw.evidence_bundle_sha256 || evidence.experiment_sha256 !== raw.experiment_sha256 || evidence.evidence_phase !== raw.evidence_phase || stable(evidence.decisions) !== stable(raw.decisions)) throw new Error('v3 run/evidence decision or hash mismatch')
+    }
+    records.v3.push({ path: relative(root, absolute), value: raw, evidence })
+  }
+  return records
 }
 
 export function rebuildIndex(root) {
   const definitions = definitionRows(root).map(({ path, value }) => ({ path, ...pick(value, ['strategy_id', 'version', 'created_at', 'status', 'stage', 'hypothesis_family', 'precommit', 'parent_evidence']) })).sort(byPath)
   const experiments = experimentRows(root).map(({ path, value }) => ({ path, ...pick(value, ['experiment_id', 'created_at', 'evidence_phase', 'required_assets', 'stage', 'hypothesis_family', 'evidence_family_ids', 'ablation_role', 'parent_evidence']) })).sort(byPath)
-  const runRecords = runRows(root); const runV2Records = runV2Rows(root); const runV3Records = runV3Rows(root)
+  const collected = collectRunRecords(root); const runRecords = collected.legacy; const runV2Records = collected.v2; const runV3Records = collected.v3
   const decisionsByRun = new Map([...runRecords, ...runV2Records, ...runV3Records].map(({ value }) => [value.run_id, value.decisions]))
   const runs = [...runRecords.map(({ path, value }) => ({ path, run_id: value.run_id, generated_at: value.generated_at, evidence_phase: value.evidence_phase, experiment_id: value.experiment.experiment_id, portfolio_status: value.decisions.portfolio.status, assets: value.decisions.per_asset.map(x => x.asset), legacy_source: value.legacy ? pick(value.legacy, ['source_path', 'source_sha256', 'source_schema', 'source_generated_at']) : null, counts: Object.fromEntries(Object.entries(value.artifacts).map(([key, artifact]) => [key, artifact.rows])) })), ...runV2Records.map(({ path, value }) => ({ path, schema: value.schema, run_id: value.run_id, generated_at: value.generated_at || null, evidence_phase: value.evidence_phase, experiment_id: value.experiment_id, portfolio_status: value.decisions.portfolio.status, assets: value.decisions.per_asset.map(x => x.asset), legacy_source: null, counts: { metrics: Array.isArray(value.metrics) ? value.metrics.length : 0, trades: Array.isArray(value.trades) ? value.trades.length : 0 } })), ...runV3Records.map(({ path, value, evidence }) => ({ path, schema: value.schema, run_id: value.run_id, generated_at: null, evidence_phase: value.evidence_phase, experiment_id: null, portfolio_status: value.decisions.portfolio.status, assets: value.decisions.per_asset.map(x => x.asset), legacy_source: null, counts: { metrics: Array.isArray(evidence?.metrics) ? evidence.metrics.length : 0, trades: Array.isArray(evidence?.trades) ? evidence.trades.length : 0 } }))].sort(byPath)
   const performance = []

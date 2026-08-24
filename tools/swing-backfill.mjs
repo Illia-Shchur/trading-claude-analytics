@@ -131,6 +131,24 @@ function parseCSV(text) {
   })
 }
 
+function normalizeMetricCsv(csv, date) {
+  return parseCSV(csv).map(r => ({
+    time: Date.parse(`${r.create_time.replace(' ', 'T')}Z`), value: Number(r.sum_open_interest_value),
+    oi: Number(r.sum_open_interest),
+    top_trader_account_ratio: Number(r.count_toptrader_long_short_ratio),
+    top_trader_position_ratio: Number(r.sum_toptrader_long_short_ratio),
+    global_account_ratio: Number(r.count_long_short_ratio),
+    taker_long_short_ratio: Number(r.sum_taker_long_short_vol_ratio),
+    source: 'Binance Data Vision daily metrics', date,
+  })).filter(r => finite(r.time) && finite(r.value))
+}
+
+export function firstByTime(rows) {
+  const index = new Map()
+  for (const row of rows) if (row.time === row.time && !index.has(row.time)) index.set(row.time, row)
+  return index
+}
+
 async function fetchMetrics(asset, { start, end, cacheDir, concurrency = 8 } = {}) {
   const symbol = symbolFor(asset)
   const dates = utcDates(start, end)
@@ -154,29 +172,13 @@ async function fetchMetrics(asset, { start, end, cacheDir, concurrency = 8 } = {
             const tempPath = join(tempDir, `${symbol}-${date}.zip`)
             writeFileSync(tempPath, bytes)
             const csv = execFileSync('unzip', ['-p', tempPath], { encoding: 'utf8', maxBuffer: 20 * 1024 * 1024 })
-            rows.push(...parseCSV(csv).map(r => ({
-              time: Date.parse(`${r.create_time.replace(' ', 'T')}Z`), value: Number(r.sum_open_interest_value),
-              oi: Number(r.sum_open_interest),
-              top_trader_account_ratio: Number(r.count_toptrader_long_short_ratio),
-              top_trader_position_ratio: Number(r.sum_toptrader_long_short_ratio),
-              global_account_ratio: Number(r.count_long_short_ratio),
-              taker_long_short_ratio: Number(r.sum_taker_long_short_vol_ratio),
-              source: 'Binance Data Vision daily metrics', date,
-            })).filter(r => finite(r.time) && finite(r.value)))
+            rows.push(...normalizeMetricCsv(csv, date))
             rmSync(tempPath, { force: true })
             continue
           }
         }
         const csv = execFileSync('unzip', ['-p', zipPath], { encoding: 'utf8', maxBuffer: 20 * 1024 * 1024 })
-        rows.push(...parseCSV(csv).map(r => ({
-          time: Date.parse(`${r.create_time.replace(' ', 'T')}Z`), value: Number(r.sum_open_interest_value),
-          oi: Number(r.sum_open_interest),
-          top_trader_account_ratio: Number(r.count_toptrader_long_short_ratio),
-          top_trader_position_ratio: Number(r.sum_toptrader_long_short_ratio),
-          global_account_ratio: Number(r.count_long_short_ratio),
-          taker_long_short_ratio: Number(r.sum_taker_long_short_vol_ratio),
-          source: 'Binance Data Vision daily metrics', date,
-        })).filter(r => finite(r.time) && finite(r.value)))
+        rows.push(...normalizeMetricCsv(csv, date))
       } catch {
         // Missing daily archives are retained in coverage diagnostics by the caller.
       }
@@ -743,12 +745,13 @@ function makeComponents(rows, index, direction, framework, channel, macroByDate,
 function setupRows({ asset, spot, futures, oi, funding, macro, sentiment, valuation, benchmarkSpot, direction, framework, channel, labels }) {
   const oiBuckets = bucketSamples(oi)
   const benchmarkByTime = new Map((benchmarkSpot || []).map(row => [row.time, row]))
+  const futuresByTime = firstByTime(futures)
   const byTime = new Map(spot.map((r, i) => {
     const prior = spot[i - 1], benchmark = benchmarkByTime.get(r.time), benchmarkPrior = benchmarkByTime.get(r.time - BAR_MS)
     const ownLogReturn = prior?.time === r.time - BAR_MS && finite(prior.close) && Number(prior.close) > 0 && finite(r.close) && Number(r.close) > 0 ? Math.log(r.close / prior.close) : null
     const benchmarkReturn = benchmark && benchmarkPrior && finite(benchmark.close) && Number(benchmark.close) > 0 && finite(benchmarkPrior.close) && Number(benchmarkPrior.close) > 0
       ? Math.log(benchmark.close / benchmarkPrior.close) : null
-    return [r.time, { ...r, futures: futures.find(f => f.time === r.time), benchmark_return_4h: benchmarkReturn,
+    return [r.time, { ...r, futures: futuresByTime.get(r.time), benchmark_return_4h: benchmarkReturn,
       relative_return_4h_vs_btc: allFinite(ownLogReturn, benchmarkReturn) ? ownLogReturn - benchmarkReturn : null }]
   }))
   const rows = []

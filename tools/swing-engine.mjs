@@ -229,8 +229,9 @@ export function verifyFeatureStoreHash(store) {
 export function writeFeatureStore(path, store) {
   mkdirSync(dirname(resolve(path)), { recursive: true })
   const body = Buffer.from(JSON.stringify(store) + '\n')
-  writeFileSync(resolve(path), String(path).endsWith('.gz') ? gzipSync(body, { mtime: 0 }) : body)
-  return { path: resolve(path), sha256: sha256(store), bytes: readFileSync(resolve(path)).byteLength }
+  const encoded = String(path).endsWith('.gz') ? gzipSync(body, { mtime: 0 }) : body
+  writeFileSync(resolve(path), encoded)
+  return { path: resolve(path), sha256: sha256(store), bytes: encoded.byteLength }
 }
 
 function readJSONPath(path) {
@@ -1171,8 +1172,7 @@ async function main() {
   }
   if (args.command === 'run') {
     if (!args.cache || !args.out) throw new Error('run requires --cache and --out')
-    const store = readJSONPath(args.cache)
-    if (!verifyFeatureStoreHash(store)) throw new Error('feature-store hash mismatch; refuse tampered cache')
+    const store = readFeatureStoreArtifact(args.cache)
     const candidatePayload = args.candidates ? json(args.candidates) : defaultCandidates()
     let candidates = Array.isArray(candidatePayload) ? candidatePayload : candidatePayload.candidates
     if (args.candidate_ids) {
@@ -1196,8 +1196,7 @@ async function main() {
   }
   if (args.command === 'benchmark') {
     if (!args.cache) throw new Error('benchmark requires --cache')
-    const store = readJSONPath(args.cache)
-    if (!verifyFeatureStoreHash(store)) throw new Error('feature-store hash mismatch; refuse tampered cache')
+    const store = readFeatureStoreArtifact(args.cache)
     const rows = decodeFeatureStore(store), count = Math.max(1, Number(args.candidate_count || 1000))
     const base = defaultCandidates(), candidates = Array.from({ length: count }, (_, i) => ({ ...base[i % base.length], id: `benchmark-${i}`, threshold_offset: (i % 7) - 3, min_flow_aligned: i % 6 }))
     const start = process.hrtime.bigint(); runResearch(rows, candidates, { feature_store_sha256: store.features_sha256, minTrades: 1, minRegimes: 1, skip_validation: true, bootstrap_rounds: 100 }); const elapsed = Number(process.hrtime.bigint() - start) / 1e6

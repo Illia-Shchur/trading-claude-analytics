@@ -10,9 +10,9 @@ import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { validateConfirmationReservation } from './strategy-research-v3.mjs'
+import { parseFlagOptions } from './cli-options.mjs'
 
-const parse = argv => { const out = {}; for (let i = 0; i < argv.length; i++) if (argv[i].startsWith('--')) { const rawKey = argv[i].slice(2); const value = argv[i + 1]?.startsWith('--') || argv[i + 1] === undefined ? true : argv[++i]; out[rawKey] = value; out[rawKey.replaceAll('-', '_')] = value }; return out }
-const options = parse(process.argv.slice(2))
+const options = parseFlagOptions(process.argv.slice(2))
 try {
   if (!options.reservation) throw new Error('confirmation evaluator requires --reservation')
   const reservationPath = resolve(options.reservation); const reservation = JSON.parse(readFileSync(reservationPath, 'utf8'))
