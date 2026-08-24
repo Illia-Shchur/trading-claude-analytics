@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-research-run/5",
+  "type": "object",
+  "required": ["schema", "version", "provenance", "pipeline", "lineage", "manifest_sha256", "feature_rows_sha256", "label_rows_sha256", "execution_rows_sha256", "mark_rows_sha256", "candidate_metrics", "accounting", "decision", "gate_status", "content_sha256"],
+  "properties": {
+    "schema": { "const": "strategy-research-run/5" },
+    "version": { "const": 1 },
+    "provenance": { "const": "AUTHORITATIVE_RECOMPUTED" },
+    "pipeline": { "type": "array", "minItems": 8, "uniqueItems": true, "items": { "enum": ["features", "signal_intent", "labels", "execution_fills", "trades", "metrics", "stresses", "portfolio", "wfo"] } },
+    "lineage": {
+      "type": "object",
+      "required": ["manifest_sha256", "feature_rows_sha256", "label_rows_sha256", "execution_rows_sha256", "mark_rows_sha256"],
+      "properties": {
+        "manifest_sha256": { "$ref": "#/$defs/hash" },
+        "envelope_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+        "candidate_set_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+        "feature_rows_sha256": { "$ref": "#/$defs/hash" },
+        "label_rows_sha256": { "$ref": "#/$defs/hash" },
+        "execution_rows_sha256": { "$ref": "#/$defs/hash" },
+        "mark_rows_sha256": { "$ref": "#/$defs/hash" },
+        "wfo_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" }
+      },
+      "additionalProperties": false
+    },
+    "manifest_sha256": { "$ref": "#/$defs/hash" },
+    "envelope_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+    "cutoff": { "type": ["string", "null"], "format": "date-time" },
+    "feature_rows_sha256": { "$ref": "#/$defs/hash" },
+    "label_rows_sha256": { "$ref": "#/$defs/hash" },
+    "execution_rows_sha256": { "$ref": "#/$defs/hash" },
+    "mark_rows_sha256": { "$ref": "#/$defs/hash" },
+    "candidate_metrics": { "type": "array", "items": { "$ref": "#/$defs/candidateMetric" } },
+    "accounting": {
+      "type": "object",
+      "required": ["declared_k", "evaluated_k", "market_episode_count", "zero_episode_binding"],
+      "properties": { "declared_k": { "type": "integer", "minimum": 0 }, "evaluated_k": { "type": "integer", "minimum": 0 }, "market_episode_count": { "type": "integer", "minimum": 0 }, "zero_episode_binding": { "const": true } },
+      "additionalProperties": false
+    },
+    "wfo": { "type": "object", "required": ["pass"], "properties": { "pass": { "type": "boolean" }, "status": { "type": "string" }, "reason": { "type": "string" } }, "additionalProperties": true },
+    "decision": { "enum": ["REJECTED", "SHADOW", "CANDIDATE_REVIEW"] },
+    "gate_status": {
+      "type": "object",
+      "required": ["wfo", "stress", "portfolio", "all_required_stages"],
+      "properties": { "wfo": { "type": "boolean" }, "stress": { "type": "boolean" }, "portfolio": { "type": "boolean" }, "all_required_stages": { "type": "boolean" } },
+      "additionalProperties": false
+    },
+    "content_sha256": { "$ref": "#/$defs/hash" }
+  },
+  "allOf": [{ "if": { "properties": { "decision": { "enum": ["SHADOW", "CANDIDATE_REVIEW"] } } }, "then": { "properties": { "gate_status": { "properties": { "all_required_stages": { "const": true } } } } } }],
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "candidateMetric": {
+      "type": "object",
+      "required": ["candidate_id", "behavior_sha256", "signal_intent", "trades", "metrics", "stresses", "portfolio"],
+      "properties": {
+        "candidate_id": { "type": "string", "minLength": 1 },
+        "behavior_sha256": { "$ref": "#/$defs/hash" },
+        "signal_intent": { "type": "array", "items": { "type": "object" } },
+        "trades": { "type": "array", "items": { "type": "object" } },
+        "metrics": { "type": "object", "required": ["expectancy_r", "episode_returns"], "properties": { "expectancy_r": { "type": "number" }, "episode_returns": { "type": ["array", "object"] } }, "additionalProperties": true },
+        "stresses": { "type": "object" },
+        "portfolio": { "type": "object" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

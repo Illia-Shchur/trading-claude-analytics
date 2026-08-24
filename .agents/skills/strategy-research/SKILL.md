@@ -261,3 +261,46 @@ Research may decide `REJECTED`, `SHADOW`, or `CANDIDATE_REVIEW`. It never
 decides `ACTIVE`, authorizes a live trade, or promotes a per-asset result into a
 portfolio pass. Activation is a separate governed decision after sufficient
 sealed and prospective evidence.
+
+## Additive strategy-research/5 implementation
+
+The v5 implementation is exposed by `node tools/strategy-research-v5.mjs` (and
+the same command names through `strategy-research-next.mjs`). It preserves all
+v1--v4 records and schemas as immutable read-compatible history. `generate
+--method GENETIC` remains fail-closed; only `search-genetic` runs an adaptive
+NSGA-II evaluator. Authoritative search also requires a persistent canonical
+exposure-head path; a process-local ledger is test-only evidence.
+
+The v5 chromosome contract freezes typed continuous, ordered-discrete,
+categorical, and structural genes, population history, operators, parents,
+seeds, hard constraints, direct-neighbour confirmation, a simple baseline, and
+an append-only family exposure HEAD. Defaults are population 48, maximum 20
+generations, minimum 10 generations, five-generation no-new-Pareto-signature
+stopping, 0.90 crossover, and `1/gene_count` mutation. Three seeds are
+independent search exposure and never reduce cumulative K. A missing/stale/
+competing HEAD fails closed; genesis is explicit and one-time.
+
+The v5 data planner freezes the latest five completed years for the eight
+required crypto assets and declares Binance spot, USD-M perpetual, and available
+dated-future series. It writes a resumable public-data plan, not fabricated
+rows; raw data remains gitignored. The opportunity envelope commits the full
+execution universe before outcomes, including 1-minute bars for every eligible
+asset/window and maximum 30-day lifecycle.
+
+Authoritative v5 evaluation derives `features -> signal intent -> labels ->
+execution fills -> trades -> metrics -> stresses -> portfolio -> WFO`. Feature,
+label, and execution rows are physically and hash separated. Labels cannot
+enter predicates; missing/mismatched labels, fills, funding, expiry, margin,
+liquidation, marks, or costs fail closed. It emits market-wide episode vectors
+with internal zeros. The v5 WFO contract freezes eight quarterly outer folds,
+a 30-day purge, seven-day embargo, training-only 18-month recency weighting,
+and unweighted OOS. Its public runner remains `REJECTED` until every fold-level
+statistical artifact is authoritatively retained and hash-bound; partial or
+caller-supplied evidence cannot emit `SHADOW`.
+
+`overfit-audit` fails closed unless p20, cumulative max-statistic, search-
+adjusted expectancy, DSR/PBO, independent episodes, recent/earlier blocks,
+positive years/folds, connected plateau/neighbours, three-seed stability,
+stress, null/permutation/shift/baseline, and portfolio controls pass. V5 only
+returns `REJECTED`, `SHADOW`, or `CANDIDATE_REVIEW`; prospective custody and an
+offline activation root remain external deployment prerequisites.

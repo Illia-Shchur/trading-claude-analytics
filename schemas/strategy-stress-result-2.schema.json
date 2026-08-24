@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-stress-result/2",
+  "type": "object",
+  "required": ["schema", "version", "scenarios", "required_scenarios", "pass", "provenance", "content_sha256"],
+  "properties": {
+    "schema": { "const": "strategy-stress-result/2" },
+    "version": { "const": 1 },
+    "lineage": {
+      "type": ["object", "null"],
+      "properties": {
+        "dataset_root_sha256": { "$ref": "#/$defs/hash" },
+        "selected_candidate_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+        "manifest_sha256": { "$ref": "#/$defs/hash" },
+        "candidate_set_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+        "feature_rows_sha256": { "$ref": "#/$defs/hash" },
+        "label_rows_sha256": { "$ref": "#/$defs/hash" },
+        "execution_rows_sha256": { "$ref": "#/$defs/hash" },
+        "mark_rows_sha256": { "$ref": "#/$defs/hash" }
+      },
+      "additionalProperties": false
+    },
+    "scenarios": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/scenario" }
+    },
+    "required_scenarios": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "enum": ["DOUBLED_COSTS", "DELAYED_ENTRY", "ADVERSE_OHLC_COLLISION", "GAP", "LIQUIDITY", "CAPACITY", "VENUE_OUTAGE", "FUNDING", "EXPIRY", "LIQUIDATION"] }
+    },
+    "pass": { "type": "boolean" },
+    "provenance": { "const": "AUTHORITATIVE_RECOMPUTED" },
+    "content_sha256": { "$ref": "#/$defs/hash" }
+  },
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "scenario": {
+      "type": "object",
+      "required": ["name", "pass", "missing_inputs", "adjusted_expectancy_r", "provenance", "inputs_bound"],
+      "properties": {
+        "name": { "enum": ["DOUBLED_COSTS", "DELAYED_ENTRY", "ADVERSE_OHLC_COLLISION", "GAP", "LIQUIDITY", "CAPACITY", "VENUE_OUTAGE", "FUNDING", "EXPIRY", "LIQUIDATION"] },
+        "pass": { "type": "boolean" },
+        "missing_inputs": { "type": "boolean" },
+        "adjusted_expectancy_r": { "type": ["number", "null"] },
+        "provenance": { "const": "DERIVED_FROM_AUTHORITATIVE_TRADES" },
+        "inputs_bound": { "type": "boolean" },
+        "not_applicable_allowed": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

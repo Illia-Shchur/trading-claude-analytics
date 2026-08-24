@@ -25,6 +25,11 @@ credentials.json
 /data/
 /strategy-research/lake/
 /strategy-research/raw/
+/strategy-research/v5-cache/
+/strategy-research/v5-checkpoints/
+/strategy-research/v5-raw/
+/strategy-research/v5-data/
+/strategy-research/prospective-v5/
 *.snapshot.json
 exports/*.tmp
 node_modules/

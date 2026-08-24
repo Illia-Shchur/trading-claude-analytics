@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-exposure-ledger/2",
+  "type": "object",
+  "required": ["schema", "version", "status", "hypothesis_family", "dataset_root_sha256", "dataset_roots", "entries", "cumulative_k", "behavior_aliases", "head_pointer_sha256", "content_sha256"],
+  "properties": {
+    "schema": {"const": "strategy-exposure-ledger/2"}, "version": {"const": 1}, "status": {"const": "HEAD"}, "hypothesis_family": {"type": "string", "minLength": 1}, "dataset_root_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "dataset_roots": {"type": "array", "minItems": 1, "items": {"type": "string", "pattern": "^[a-f0-9]{64}$"}}, "canonical_head_path": {"type": "string", "minLength": 1}, "prior_head_sha256": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"}, "genesis": {"type": "boolean"},
+    "entries": {"type": "array", "items": {"type": "object", "required": ["behavior_sha256", "candidate_id", "observed_at", "dataset_root_sha256", "source", "sequence", "previous_sha256"], "properties": {"behavior_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "candidate_id": {"type": "string", "minLength": 1}, "observed_at": {"type": ["string", "null"]}, "dataset_root_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "source": {"type": "string", "minLength": 1}, "sequence": {"type": "integer", "minimum": 1}, "previous_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}}, "additionalProperties": false}},
+    "cumulative_k": {"type": "integer", "minimum": 0}, "new_k": {"type": "integer", "minimum": 0}, "behavior_aliases": {"type": "array", "items": {"type": "string", "pattern": "^[a-f0-9]{64}$"}}, "head_pointer_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "competing_head_sha256": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"}, "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": false
+}

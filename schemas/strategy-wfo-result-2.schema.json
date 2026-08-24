@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-wfo-result/2",
+  "type": "object",
+  "required": ["schema", "version", "lineage", "folds", "fold_count", "cumulative_runtime_k", "selection_phase", "test_phase", "oos_weighting", "gate_status", "decision", "gate_pass", "content_sha256"],
+  "properties": {
+    "schema": { "const": "strategy-wfo-result/2" },
+    "version": { "const": 1 },
+    "lineage": {
+      "type": "object",
+      "required": ["dataset_root_sha256", "precommit_sha256", "experiment_sha256", "objective_contract_sha256", "acceptance_sha256"],
+      "properties": {
+        "dataset_root_sha256": { "$ref": "#/$defs/hash" },
+        "precommit_sha256": { "$ref": "#/$defs/hash" },
+        "experiment_sha256": { "$ref": "#/$defs/hash" },
+        "objective_contract_sha256": { "$ref": "#/$defs/hash" },
+        "acceptance_sha256": { "$ref": "#/$defs/hash" }
+      },
+      "additionalProperties": false
+    },
+    "folds": { "type": "array", "minItems": 8, "maxItems": 8, "items": { "$ref": "#/$defs/fold" } },
+    "fold_count": { "const": 8 },
+    "cumulative_runtime_k": { "type": "integer", "minimum": 0 },
+    "exposure_ledger_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+    "selection_phase": { "const": "TRAIN_ONLY" },
+    "test_phase": { "const": "OUTER_OOS_UNWEIGHTED" },
+    "purge_ms": { "type": "integer", "minimum": 2592000000 },
+    "embargo_ms": { "type": "integer", "minimum": 604800000 },
+    "oos_trades": { "type": "array", "items": { "type": "object" } },
+    "oos_weighting": { "const": "UNWEIGHTED" },
+    "overfit_audit": { "type": "object" },
+    "gate_status": {
+      "type": "object",
+      "required": ["positive_outer_folds", "stress", "portfolio", "all_required_stages"],
+      "properties": {
+        "positive_outer_folds": { "type": "boolean" },
+        "stress": { "type": "boolean" },
+        "portfolio": { "type": "boolean" },
+        "all_required_stages": { "type": "boolean" },
+        "overfit": { "type": "boolean" },
+        "asset_portfolio": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "decision": { "enum": ["REJECTED", "SHADOW", "CANDIDATE_REVIEW"] },
+    "gate_pass": { "type": "boolean" },
+    "content_sha256": { "$ref": "#/$defs/hash" }
+  },
+  "allOf": [
+    { "if": { "properties": { "gate_status": { "properties": { "all_required_stages": { "const": true } } } } }, "then": { "properties": { "gate_pass": { "const": true }, "decision": { "enum": ["SHADOW", "CANDIDATE_REVIEW"] } } } },
+    { "if": { "properties": { "gate_pass": { "const": true } } }, "then": { "properties": { "gate_status": { "properties": { "all_required_stages": { "const": true } } } } } }
+  ],
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "time": { "type": "string", "format": "date-time" },
+    "innerFold": {
+      "type": "object",
+      "required": ["inner_fold_id", "train_end", "validation_start", "validation_end", "purge_ms", "embargo_ms", "recency_weighting"],
+      "properties": {
+        "inner_fold_id": { "type": "string", "minLength": 1 },
+        "train_end": { "$ref": "#/$defs/time" },
+        "validation_start": { "$ref": "#/$defs/time" },
+        "validation_end": { "$ref": "#/$defs/time" },
+        "purge_ms": { "type": "integer", "minimum": 2592000000 },
+        "embargo_ms": { "type": "integer", "minimum": 604800000 },
+        "recency_weighting": { "const": "TRAIN_ONLY" }
+      },
+      "additionalProperties": false
+    },
+    "fold": {
+      "type": "object",
+      "required": ["fold_id", "train_start", "train_end", "test_start", "test_end", "purge_ms", "embargo_ms", "selection_phase", "status", "train", "test"],
+      "properties": {
+        "fold_id": { "type": "string", "minLength": 1 },
+        "train_start": { "$ref": "#/$defs/time" },
+        "train_end": { "$ref": "#/$defs/time" },
+        "test_start": { "$ref": "#/$defs/time" },
+        "test_end": { "$ref": "#/$defs/time" },
+        "purge_ms": { "type": "integer", "minimum": 2592000000 },
+        "embargo_ms": { "type": "integer", "minimum": 604800000 },
+        "selection_phase": { "const": "TRAIN_ONLY" },
+        "recency_weighting": { "const": "TRAIN_ONLY" },
+        "status": { "enum": ["EVALUATED", "REJECTED"] },
+        "reason": { "type": "string" },
+        "selected_candidate_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+        "train": { "$ref": "#/$defs/train" },
+        "test": { "$ref": "#/$defs/test" }
+      },
+      "additionalProperties": false
+    },
+    "train": {
+      "type": "object",
+      "required": ["oos_inaccessible"],
+      "properties": {
+        "oos_inaccessible": { "const": true },
+        "weighted_recency": { "type": ["boolean", "string"] },
+        "recency_half_life_months": { "type": "number", "exclusiveMinimum": 0 },
+        "evaluated_k": { "type": "integer", "minimum": 0 },
+        "inner_validation": {
+          "type": "object",
+          "required": ["chronological", "train_only", "folds", "purge_ms", "embargo_ms"],
+          "properties": {
+            "chronological": { "const": true },
+            "train_only": { "const": true },
+            "folds": { "type": "array", "minItems": 2, "items": { "$ref": "#/$defs/innerFold" } },
+            "purge_ms": { "type": "integer", "minimum": 2592000000 },
+            "embargo_ms": { "type": "integer", "minimum": 604800000 }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "test": {
+      "type": "object",
+      "required": ["weighted_recency"],
+      "properties": {
+        "weighted_recency": { "const": false },
+        "trades": { "type": "array", "items": { "type": "object" } },
+        "metrics": { "type": "object" },
+        "stress": { "type": "object" },
+        "portfolio": { "type": "object" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

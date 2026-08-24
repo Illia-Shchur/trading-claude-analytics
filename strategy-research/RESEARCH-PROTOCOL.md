@@ -359,3 +359,45 @@ set `ACTIVE` or authorize a live trade.
 The v1 registry and historical imports remain read-compatible and retain their
 original evidence labels. New research uses v3 (`evaluate-v3`); old evidence is
 never rewritten to appear stronger than it was.
+
+## 11. Additive v5 path
+
+The v5 implementation in `tools/strategy-research-v5.mjs` is an additive
+research path; it does not rewrite v1--v4 artifacts. The `search-genetic`
+command is the only adaptive genetic entry point. Static `generate --method
+GENETIC` remains rejected so a deterministic sample cannot be described as an
+evolutionary search.
+
+V5 freezes typed chromosomes, NSGA-II operators and objectives, hard
+constraints, population history, three seeds, a simple baseline, direct
+neighbours, and one persistent canonical cumulative family/data exposure HEAD.
+Every
+distinct behaviour observed across generations, seeds, folds, reruns,
+neighbours, and overlapping data is in cumulative K. A stale or absent HEAD is
+a hard failure after explicit one-time genesis.
+
+The five-year requirement-driven plan covers BTC, ETH, SOL, BNB, XRP, ADA,
+LINK, and AAVE on Binance spot, USD-M perpetuals, and available dated futures.
+The plan never fabricates history. The frozen opportunity envelope requires
+complete 4-hour signal data and 1-minute execution hydration for every eligible
+asset and maximum 30-day lifecycle before outcomes are viewed; raw downloads
+remain outside Git.
+
+V5 authoritative evaluation physically separates predictors, outcome labels,
+and execution child bars and derives every trade/result from those rows. An
+eligible signal without a matching label or fill fails closed; labels cannot be
+read by signal predicates. Its episode return vector is market-wide with
+explicit internal zeros. The WFO contract freezes eight quarterly outer folds,
+a 30-day purge, and a seven-day embargo. Eighteen-month decay is a train-only
+objective; OOS, portfolio, and prospective evidence remain unweighted. The
+public WFO runner stays `REJECTED` until fold-level statistical artifacts are
+authoritatively retained and hash-bound.
+
+The v5 overfit audit requires the cumulative candidate-set max statistic,
+bootstrap p20, search-adjusted expectancy, DSR/PBO when supported, episode and
+year/fold minimums, recent/earlier blocks, connected plateau/neighbour
+robustness, seed stability, doubled-cost and execution/liquidation stresses,
+and null/permutation/shift/random-baseline/winner's-curse controls. Missing
+inputs fail closed. Prospective workflows are preflight-only until independent
+GitHub branch protection, OIDC custody, separate approvals, and an offline
+activation trust root are deployed; research never emits ACTIVE.

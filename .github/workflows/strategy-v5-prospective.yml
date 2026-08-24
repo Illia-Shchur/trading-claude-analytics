@@ -1,0 +1,72 @@
+name: strategy-v5-prospective-preflight
+
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+    inputs:
+      reservation:
+        description: repository-relative frozen v5 reservation path
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  id-token: write
+
+env:
+  V5_EVIDENCE_BRANCH: strategy-v5-evidence
+
+jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    environment: prospective-v5
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 1
+      - name: Capture GitHub settings and OIDC evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node tools/capture-github-settings.mjs
+      - name: Verify repository-side custody and approval contract
+        env:
+          GITHUB_REPOSITORY_PRIVATE: ${{ vars.V5_REPOSITORY_PRIVATE }}
+          GITHUB_APPEND_ONLY: ${{ vars.V5_APPEND_ONLY_BRANCH_PROTECTED }}
+          GITHUB_ENVIRONMENT_PROTECTED: ${{ vars.V5_PROSPECTIVE_ENVIRONMENT_PROTECTED }}
+          GITHUB_OIDC_RESTRICTED: ${{ vars.V5_OIDC_SUBJECT_RESTRICTED }}
+          GITHUB_ACTIONS_SECRET: ${{ secrets.V5_ACTIONS_ATTESTATION_SECRET }}
+          V5_ASSET_PUBLIC_KEY_PEM: ${{ vars.V5_ASSET_PUBLIC_KEY_PEM }}
+          V5_PORTFOLIO_PUBLIC_KEY_PEM: ${{ vars.V5_PORTFOLIO_PUBLIC_KEY_PEM }}
+          V5_TRUST_ROOT_VERIFIED: ${{ vars.V5_TRUST_ROOT_VERIFIED }}
+          V5_ACTIVATION_ROOT_VERIFIED: ${{ vars.V5_ACTIVATION_ROOT_VERIFIED }}
+          V5_REPLAY_PROTECTION: ${{ vars.V5_REPLAY_PROTECTION }}
+          V5_REVOCATION_LIST: ${{ vars.V5_REVOCATION_LIST }}
+          V5_LEASE_ENFORCED: ${{ vars.V5_LEASE_ENFORCED }}
+          V5_PUBLIC_KEYS_PATH: ${{ vars.V5_PUBLIC_KEYS_PATH }}
+          V5_APPROVALS_PATH: ${{ vars.V5_APPROVALS_PATH }}
+          V5_TRUST_ROOT_PATH: ${{ vars.V5_TRUST_ROOT_PATH }}
+        run: |
+          node --input-type=module -e "import {readFileSync,writeFileSync} from 'node:fs'; import {makeDeploymentAuditV5} from './tools/strategy-research-v5.mjs'; const capture=JSON.parse(readFileSync('github-deployment-settings-capture.json','utf8')); const load=p=>p?JSON.parse(readFileSync(p,'utf8')):{}; const audit=makeDeploymentAuditV5({settings:{repository_private:process.env.GITHUB_REPOSITORY_PRIVATE==='true',actions_only_secret:Boolean(process.env.GITHUB_ACTIONS_SECRET),replay_protection:process.env.V5_REPLAY_PROTECTION==='true',revocation_list:process.env.V5_REVOCATION_LIST==='true',lease_enforced:process.env.V5_LEASE_ENFORCED==='true'},settingsCapture:capture,keys:load(process.env.V5_PUBLIC_KEYS_PATH),approvals:load(process.env.V5_APPROVALS_PATH),trustRoot:load(process.env.V5_TRUST_ROOT_PATH)}); writeFileSync('v5-deployment-audit.json',JSON.stringify({...audit,settings_capture:capture},null,2)+'\\n'); if(audit.blocked) process.exitCode=1"
+      - name: Upload blocked deployment audit
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: strategy-v5-deployment-audit
+          path: v5-deployment-audit.json
+          if-no-files-found: error
+      - name: Verify completed-bar v5 runner contract
+        if: success()
+        env:
+          RESERVATION: ${{ inputs.reservation || vars.PROD_V5_PROSPECTIVE_RESERVATION }}
+        run: |
+          if [ -z "$RESERVATION" ] || [ ! -f "$RESERVATION" ]; then
+            echo 'No frozen reservation is configured; fail closed.'
+            exit 1
+          fi
+          node tools/strategy-research-v5.mjs prospective-runner --reservation "$RESERVATION"
+      # The workflow deliberately stops until the deployment audit is backed
+      # by real protected settings, OIDC identity, approval keys and offline
+      # activation-root verification. It never prints or commits secrets.
