@@ -5,6 +5,11 @@ description: "Proprietary crypto short-side framework for 3–30 day swing trade
 
 # Flying Rocket Analytics — Crypto Short / Distribution Framework
 
+New strategy-family research routes to `.agents/skills/strategy-research` and
+its v3 foundation: PIT Parquet/DuckDB data, separate features/labels, frozen
+candidates, WFO/stress/portfolio evidence, and SHADOW-only decisions. This
+report skill never mints SEALED or ACTIVE research evidence.
+
 ## Overview
 
 Flying Rocket is the inverse companion to Fallen Knives. It identifies points where crypto exposure should be **shorted** (or, for cash-only operators, **rotated out of**) because the asset is exhibiting euphoria, valuation extreme, momentum overextension, and structural distribution — and where the reward-to-risk for shorting is asymmetrically favorable.

@@ -16,7 +16,8 @@ bypass the separately governed activation contract. Full details and examples:
 `strategy-research/README.md`.
 
 New candidate families must use `strategy-precommit/1` and the staged
-`strategy-definition/2` + `strategy-experiment/2` contract. The precommit is
+`strategy-definition/2` + canonical `strategy-experiment/3` contract. The
+legacy v1/v2 experiment/evidence surfaces are read-only. The precommit is
 immutable and contains the premise, falsifier, ranges, PIT/availability
 contract, replication groups, deferred score role, and crypto-only tradable
 universe. Use `precommit --input <filled.json>` followed by
@@ -222,6 +223,32 @@ This section supersedes the older age-band sentence retained in the compact `pos
 
 Node scripts (no dependencies, Node ≥18) that make the frameworks' numbers computed, not narrated. Introduced 2026-07-10 after the doc audit found the recurring failure modes were exactly the hand-done steps: RSI never computed (4-report NOT-FOUND debt), `ceil(7/9×8)` misprinted as 6 in three reports, EV sum-checks done by eye, ADR silently absorbing a half-session.
 
+## Strategy research foundation v3 (canonical path)
+
+Use `node tools/research-data.mjs snapshot` to create an immutable
+`strategy-data-manifest/2` snapshot. Raw/normalized/features/labels/quality are
+separate physical layers; Parquet/DuckDB is authoritative and JSONL/CSV is
+staging only. The snapshot identity excludes wall-clock receipts, computes real
+coverage/gaps, and partitions by dataset version, asset, venue, instrument,
+timeframe, year, and month. Public adapters live in
+`tools/public-data-adapters.mjs` (Binance spot/linear OHLC, OI, funding,
+Alternative.me, ALFRED/FRED vintages, and timestamped prospective capture).
+Bounded OHLC, open-interest, and funding backfills expose response-byte hashes,
+retry/rate-limit policy, coverage receipts, and `--resume` continuation; hitting
+a page/row bound remains explicitly incomplete.
+
+The v3 evaluator requires frozen lineage and never accepts caller-authored
+metrics/trades for authoritative phases. `evaluate-v3` executes local
+DEVELOPMENT/WALK_FORWARD_OOS research from the frozen experiment, candidate
+set, PIT feature/label manifests, and pinned swing executor. The specialized
+public-unseen-data custody runner is not shipped. `CI_ATTESTED_CONFIRMATION`
+is a signed SHADOW result only; local code cannot mint SEALED or ACTIVE. Use
+`strategy-attestation.mjs keygen --private-out ... --public-out ...`, a remote
+immutable burn tag/receipt, and append-only import records. v1/v2 remain
+read-only. Run `npm run research:docker` for the pinned DuckDB integration
+test and `npm run research:migrate` for the deterministic eight-asset legacy
+index (BTC, ETH, SOL, BNB, XRP, ADA, LINK, AAVE; DOGE excluded).
+
 ## Report-phase attribution contract (2026-08-14)
 
 Machine reports dated on/after 2026-08-12 publish an immutable `report-phase-registry/1` under `tagging.registry`. `canonicalReportPhaseTag()` derives exact tags from the filename's framework, asset, date, and local HHMM: `FK-P1A-BTC-20260813-1744` and `FR-A-1A-SP500-20260812-1542` are representative examples. Decisions are `AUTHORIZED`, `LOCKED`, `STAND_DOWN`, or `UNVERIFIED`; they are not encoded as tag suffixes and are never inferred from a later fill. `FR-B-3` is invalid, and FR channel `none` uses FR-A's rubric vocabulary. `active_tags`/`reserved_tags` remain compatibility fields only; registry validity is independent of fills. Run `node tools/backfill-report-phase-registry.mjs --check` to audit the expected 67 machine-block / 66 prose-only split, then run it to backfill only machine reports.
@@ -264,17 +291,19 @@ The fallback is explicitly **single venue**, not cross-exchange. Stablecoin quot
 
 Workflow per report: `position` → `fetch` → score with `compute` outputs → save report ending in the machine block → `lint` → `export-signals` → commit. `position` comes first because what you already hold changes what the rest of the report is deciding — sizing a Phase 3 before checking the dry powder exists is how a plan ends up spending money it does not have. The SKILLs' "Deterministic Toolchain" sections are authoritative for what is mandatory.
 
-### Strategy-research/2 authoritative path
+### Strategy-research/3 authoritative path
 
-Use `strategy-research.mjs evaluate` for new research. It requires a frozen
-v2 experiment/candidate set, a hashed swing feature store and a
-`strategy-data-manifest/1`; it writes a content-addressed
-`strategy-evidence-bundle/1`. The bundle derives every candidate × asset row,
-runtime behavioural K, canonical trades, metrics, stress and a union-timeline
+Use `strategy-research.mjs evaluate-v3` for new research, with
+`--experiment`, `--manifest`, `--features`, `--labels`, and `--candidates`.
+EXPOSED_CONFIRMATION additionally requires `--parent-evidence` pointing to the
+validated prior WFO bundle. It requires a frozen v3 experiment/candidate set,
+PIT feature/label sets and a `strategy-data-manifest/2`; it writes a content-addressed
+`strategy-evidence-bundle/2`. The bundle derives every candidate × asset row,
+runtime candidate accounting, compact canonical selected/OOS trades, metrics, stress and a union-timeline
 mark-to-market crypto portfolio through the registered `swing-engine/1`
 adapter. It binds executor source/config, data/feature/environment/package
 hashes, chronology and reconciliation hashes. Use --record-root to append
-the bundle and linked strategy-run/2; --out alone is not a durable registry
+the bundle and linked strategy-run/3; --out alone is not a durable registry
 record. The old `run` command is
 read-compatible import/migration only: caller metrics/trades/stress/portfolio
 are `EXTERNAL_EXPOSED`, cannot satisfy an authoritative gate, and never produce

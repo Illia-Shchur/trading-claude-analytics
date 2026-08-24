@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-attestation/1",
+  "type": "object",
+  "required": ["schema", "attestation_type", "seal_id", "reservation_sha256", "result_sha256", "run_attempt", "signature", "content_sha256"],
+  "properties": {
+    "schema": { "const": "strategy-attestation/1" }, "attestation_type": { "const": "CI_ATTESTED_CONFIRMATION" }, "seal_id": { "type": "string" },
+    "provider": { "type": "string" }, "reservation_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "repository": { "type": "string" }, "commit_sha": { "type": "string", "pattern": "^[a-f0-9]{40}$" }, "workflow_sha": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "run_id": { "type": "string" },
+    "precommit_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "definition_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "experiment_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "candidate_set_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "data_root_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "acceptance_contract_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "container_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "executor_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "burn_receipt": { "type": "object" }, "result": { "type": "object" }, "issued_at": { "type": "string" },
+    "result_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "run_attempt": { "const": 1 }, "signature": { "type": "string", "minLength": 1 }, "content_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }, "additionalProperties": false
+}

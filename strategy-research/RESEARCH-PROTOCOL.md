@@ -1,4 +1,27 @@
-# Premise-first crypto strategy research/2
+# Premise-first crypto strategy research/3
+
+## Foundation contract (mandatory)
+
+Authoritative datasets use only `strategy-data-manifest/2` with physically
+separate feature and label sets. Canonical storage is partitioned Parquet
+queried through the pinned DuckDB image; JSONL/CSV are staging/debug only and
+cannot satisfy WFO or confirmation gates. Every completed OHLC bar carries an
+explicit close/availability timestamp, and ALFRED/FRED uses release/vintage
+timestamps. Required tradable assets are BTC, ETH, SOL, BNB, XRP, ADA, LINK,
+and AAVE; non-crypto series remain CONTEXT.
+
+The balanced-swing-v1 contract requires all five named stress scenarios,
+verified price/derivatives coverage, actual settlement events (including zero
+rates), seeded event/time-block bootstrap p20, centered shared candidate-set
+max-statistics, chronological purge/embargo WFO, and capital-aware portfolio
+diagnostics. Missing inputs fail closed. v1/v2 artifacts are read-only.
+
+CI confirmation is always `CI_ATTESTED_CONFIRMATION` and SHADOW. It requires a
+committed reservation bound to the current 40-character commit, workflow bytes,
+all lineage/container/executor hashes, a remote immutable burn receipt, and an
+append-only import record. Until a specialized public-unseen-data evaluator is
+implemented, the CI runner reports capability unavailable and never consumes
+repository result/trade/metric files. No local path can mint SEALED or ACTIVE.
 
 This protocol governs new strategy families. It separates idea formation,
 selection, confirmation, portfolio feasibility, and activation so a promising
@@ -140,7 +163,8 @@ Use the evidence label that describes what the researcher truly knows:
 - `DEVELOPMENT`: idea formation and diagnostics; never confirmation.
 - `WALK_FORWARD_OOS`: repeated chronological train/purge/test folds.
 - `EXPOSED_CONFIRMATION`: nominal confirmation data was viewed or searched.
-- `SEALED_CONFIRMATION`: one-time evaluation of a frozen candidate and hashes.
+- `SEALED_CONFIRMATION`: historical/external one-time evaluation of a frozen
+  candidate and hashes; local v3 constructors and validators reject this label.
 - `PROSPECTIVE_LIVE`: forward signals recorded after freezing.
 
 Confirmation and prospective evidence consume a frozen, lineage-bound
@@ -166,8 +190,9 @@ heuristic diagnostic. Selection also requires:
 - per-asset and portfolio metrics, folds/years/regimes, costs, drawdown, and tails.
 
 One shared sequence of market-episode draws preserves cross-candidate and
-cross-asset dependence. Candidate/episode absences are explicit zeros in this
-conditional estimand. The result is not SPA and is not a distribution-free
+cross-asset dependence. Candidate/episode absences are explicit internal zeros
+in this conditional estimand and are bound by the candidate-accounting digest;
+they are not persisted as a giant trade matrix. The result is not SPA and is not a distribution-free
 guarantee. Episode IDs therefore require a stable market-wide definition.
 
 For a searched grid, neighbours differ by one adjacent declared coordinate.
@@ -188,7 +213,11 @@ expectancy gates:
 
 Missing model inputs fail the affected scenario. The stress result carries the
 suite hash, so another set of assumptions cannot be substituted at recording
-time. These are deterministic sensitivity tests, not an order-book simulator.
+time. A venue-outage scenario must actually overlap at least one evaluated
+trade; a historical window that touches nothing fails as a no-op. Overlapping
+trades are removed and the remaining observations are re-evaluated against the
+frozen minimums. These are deterministic sensitivity tests, not an order-book
+simulator.
 
 ## 8. Test the crypto portfolio independently
 
@@ -215,7 +244,8 @@ signals are rejected even when supplied beside valid context features.
 ## 9. Record every candidate and monitor frozen survivors
 
 Store metrics for every effective candidate and per asset. Store compact trades
-for selected/finalist/frozen candidates. A v2 run embeds its metrics, trades,
+for selected/finalist/frozen candidates. A v3 run embeds its metrics, compact
+trades, candidate-accounting digest,
 stress, portfolio, decisions, source hashes, and evidence phase; generated
 indexes expose these by strategy, experiment, asset, candidate, phase, and
 status.
@@ -243,20 +273,20 @@ It may return `REJECTED`, `SHADOW`, or `CANDIDATE_REVIEW`, never `ACTIVE`.
 ### 9.1 Authoritative execution contract
 
 An ordinary swing research run is authoritative only when it is evaluated from
-a frozen v2 experiment/candidate set, a verified feature-store hash and a
-`strategy-data-manifest/1`. The manifest records source hashes, row counts,
+a frozen v3 experiment/candidate set, verified feature/label hashes and a
+`strategy-data-manifest/2`. The manifest records source hashes, row counts,
 time bounds, availability-time policy, coverage/gaps, PIT and revision status,
 and venue/instrument provenance. Development may disclose proxies or revised
 history; walk-forward, confirmation and prospective evidence fail closed on
 unknown/revised/non-PIT load-bearing data.
 
-The local evaluator is `swing-engine/1`. It hashes its source bytes,
+The local v3 evaluator uses the `swing-engine/1` adapter. It hashes its source bytes,
 package-lock/environment, config, seeds, timezone/bar convention,
 same-bar-collision policy and cost/funding assumptions. It computes canonical
 trades and metrics for every effective candidate × required asset, including
-zero-trade rows, and recomputes stress and portfolio outputs from those exact
-trades. Reconciliation hashes bind the candidate trade set, all trades,
-selected trades, derived metrics, stress and portfolio results. External JSON
+internal zero-trade episode accounting, and recomputes stress and portfolio
+outputs from those exact trades. Only compact selected/OOS trades are persisted;
+the accounting digest binds omitted episodes and candidates. External JSON
 may be imported for history only as `EXTERNAL_EXPOSED` evidence and is forever
 `REJECTED`/`SHADOW`.
 
@@ -293,10 +323,10 @@ or remain diagnostic/SHADOW until a specialized adapter exists.
 `REJECTED` means the declared candidate or evidence failed. `SHADOW` means it
 may continue gathering evidence but cannot authorize a trade.
 `CANDIDATE_REVIEW` means the frozen research evidence is ready for the separate
-human/governance activation process. No `strategy-research/2` definition,
+human/governance activation process. No `strategy-research/3` definition,
 experiment, run, per-asset result, portfolio result, or prospective monitor can
 set `ACTIVE` or authorize a live trade.
 
 The v1 registry and historical imports remain read-compatible and retain their
-original evidence labels. New research uses v2; old evidence is never rewritten
-to appear stronger than it was.
+original evidence labels. New research uses v3 (`evaluate-v3`); old evidence is
+never rewritten to appear stronger than it was.

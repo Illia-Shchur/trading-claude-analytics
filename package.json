@@ -3,7 +3,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node test/report-v2-test.mjs && node test/report-v3-test.mjs && node test/swing-calibration-test.mjs && node test/swing-backfill-contract-test.mjs && node test/swing-calibration-lint-test.mjs && node test/swing-candidates-test.mjs && node test/swing-cross-validate-test.mjs && node test/swing-strategy-cross-validate-test.mjs && node test/swing-engine-test.mjs && node test/swing-engine-cli-test.mjs && node test/strategy-research-test.mjs && node test/strategy-research-v2-test.mjs && node test/strategy-research-authoritative-test.mjs"
+    "test": "node test/report-v2-test.mjs && node test/report-v3-test.mjs && node test/swing-calibration-test.mjs && node test/swing-backfill-contract-test.mjs && node test/swing-calibration-lint-test.mjs && node test/swing-candidates-test.mjs && node test/swing-cross-validate-test.mjs && node test/swing-strategy-cross-validate-test.mjs && node test/swing-engine-test.mjs && node test/swing-engine-cli-test.mjs && node test/strategy-research-test.mjs && node test/strategy-research-v2-test.mjs && node test/strategy-research-authoritative-test.mjs && node test/research-schema-test.mjs && node test/research-data-csv-test.mjs && node test/public-data-adapters-test.mjs && node test/research-foundation-v3-gates-test.mjs && node test/research-foundation-v3-test.mjs && node test/research-foundation-v3-pack-test.mjs && node test/research-foundation-v3-migration-test.mjs && node test/research-foundation-v3-migration-nested-test.mjs && node test/research-foundation-v3-correction-test.mjs && node test/research-foundation-v3-cli-evaluate-test.mjs && node test/research-foundation-v3-cli-registry-test.mjs && node test/research-foundation-v3-portfolio-risk-test.mjs && node test/research-foundation-v3-ci-order-test.mjs && node test/research-foundation-v3-docker-test.mjs && node tools/research-smoke.mjs",
+    "research:data": "node tools/research-data.mjs",
+    "research:attestation": "node tools/strategy-attestation.mjs",
+    "research:smoke": "node tools/research-smoke.mjs",
+    "research:docker": "node test/research-foundation-v3-docker-test.mjs",
+    "research:migrate": "node tools/migrate-research-v3.mjs"
   },
   "engines": {
     "node": ">=18"

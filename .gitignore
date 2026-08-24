@@ -30,6 +30,9 @@ node_modules/
 # report-machine/2 draft and renderer scratch (never committed)
 /.report-run/
 
+# Disposable DuckDB catalogs, staging data, confirmation reservations and burns
+/.research-run/
+
 # framework-calibration run scratch (corpus slices, digests, manifests) —
 # reproducible from reports/ on demand, not repo state.
 /.calib-run/

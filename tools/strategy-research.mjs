@@ -1,21 +1,28 @@
 #!/usr/bin/env node
-import { existsSync, mkdirSync, readFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
 import { basename, dirname, join, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { buildCandidateSet, compactLegacy, hash, LEGACY_SOURCES, makeRunBundle, readJSON, readJSONL, rebuildIndex, runExperiment, validateDefinition, validateExperiment, validateRegistry, validateRunDirectory, writeImmutable, writeRunBundle } from './strategy-research-lib.mjs'
 import { CANDIDATE_SET_V2_SCHEMA, DEFINITION_V2_SCHEMA, EXPERIMENT_V2_SCHEMA, PRECOMMIT_SCHEMA, RUN_V2_SCHEMA, blockBootstrapExpectancy, candidateSetMaxStatisticPValue, compareProspectiveExpectation, designCandidates, designContextAblations, evaluateAuthoritative, freezePrecommit, hash as hashV2, makeAuthoritativeRun, makeV2Definition, makeV2Run, plateauDiagnostics, renderPremiseMarkdown, runStressSuite, validateCandidateSetV2, validateDefinitionV2, validateExperimentV2, validatePrecommit, validateEvidenceBundle, validateV2Document, withHash } from './strategy-research-v2.mjs'
 import { simulateCryptoPortfolio } from './strategy-portfolio.mjs'
-import { readFeatureStoreArtifact } from './swing-engine.mjs'
+import { decodeFeatureStore, evaluateCandidate, readFeatureStoreArtifact, verifyFeatureStoreHash } from './swing-engine.mjs'
+import { queryParquet, readRows as readResearchRows, validateManifest } from './research-data.mjs'
+import { validateAcceptanceContract, makeAcceptanceContract, validateExperimentV3, validateRunV3, validateEvidenceBundleV2, validateExposedParentEvidence, frozenSelectionByAsset, makeEvidenceBundle, makeRunV3, computeCandidateMetrics, evaluateAcceptance, walkForwardV3, makeConfirmationReservation, burnReservation, signAttestation, verifyAttestation, importAttestation, validateConfirmationReservation, hash as hashV3, ownHash } from './strategy-research-v3.mjs'
+import { validateContractSchema } from './research-schema-registry.mjs'
 
 const args = process.argv.slice(2); const command = args.shift()
-const options = {}; for (let index = 0; index < args.length; index++) if (args[index].startsWith('--')) options[args[index].slice(2)] = args[index + 1]?.startsWith('--') || args[index + 1] === undefined ? true : args[++index]
+const options = {}; for (let index = 0; index < args.length; index++) if (args[index].startsWith('--')) { const rawKey = args[index].slice(2); const value = args[index + 1]?.startsWith('--') || args[index + 1] === undefined ? true : args[++index]; options[rawKey] = value; options[rawKey.replaceAll('-', '_')] = value }
 const root = resolve(options.root || 'strategy-research')
 const print = value => process.stdout.write(`${JSON.stringify(value, null, 2)}\n`)
 const resolveInput = value => resolve(String(value || ''))
-function writeContentAddressed(path, value) { if (existsSync(path)) { const existing = readJSON(path); if (existing.content_sha256 === value.content_sha256) return false; throw new Error(`content-addressed artifact collision: ${path}`) } writeImmutable(path, value); return true }
+const stressTimestamp = value => { const parsed = typeof value === 'number' ? value : Date.parse(value); if (!Number.isFinite(parsed)) throw new Error(`stress timestamp is invalid: ${value}`); return parsed }
+function writeContentAddressed(path, value) { if (existsSync(path)) { const existing = readJSON(path); const actual = existing.schema === 'strategy-run/3' ? hashV3({ ...existing, run_id: undefined, content_sha256: undefined }) : ownHash(existing); if (existing.content_sha256 !== actual) throw new Error(`content-addressed retained-hash tampering: ${path}`); if (existing.content_sha256 === value.content_sha256) return false; throw new Error(`content-addressed artifact collision: ${path}`) } writeImmutable(path, value); return true }
 
 function findRun(id) {
   const path = join(root, 'runs', id)
   if (existsSync(join(path, 'run.json'))) return path
+  if (existsSync(join(root, 'runs'))) for (const entry of readdirSync(join(root, 'runs'), { withFileTypes: true }).filter(item => item.isDirectory()).sort((a, b) => a.name.localeCompare(b.name))) { const candidate = join(root, 'runs', entry.name, 'run.json'); if (!existsSync(candidate)) continue; const value = readJSON(candidate); if (value.run_id === id || String(value.run_id || '').startsWith(String(id || ''))) return join(root, 'runs', entry.name) }
   const matches = existsSync(join(root, 'runs')) ? Object.keys(readJSON(join(root, 'index.json')).runs || []).filter(() => false) : []
   void matches
   const index = readJSON(join(root, 'index.json')); const row = index.runs.find(run => run.run_id === id || run.run_id.startsWith(id))
@@ -26,14 +33,203 @@ function findRun(id) {
 function readRunView(runRoot) {
   const raw = readJSON(join(runRoot, 'run.json'))
   if (raw.schema === RUN_V2_SCHEMA) { validateV2Document(raw); const experiment = readJSON(join(root, 'experiments', raw.experiment_id, 'experiment.json')); return { run: raw, candidates: readJSON(join(root, 'experiments', raw.experiment_id, experiment.candidate_set.path)).candidates, metrics: raw.metrics || [], trades: raw.trades || [] } }
+  if (raw.schema === 'strategy-run/3') { validateRunV3(raw); const bundlePath = raw.evidence_bundle_sha256 ? join(root, 'evidence-bundles', `${raw.evidence_bundle_sha256}.json`) : null; const bundle = bundlePath && existsSync(bundlePath) ? readJSON(bundlePath) : null; if (bundle) { validateEvidenceBundleV2(bundle); if (bundle.content_sha256 !== raw.evidence_bundle_sha256 || bundle.experiment_sha256 !== raw.experiment_sha256 || bundle.evidence_phase !== raw.evidence_phase || hashV3(bundle.decisions) !== hashV3(raw.decisions)) throw new Error('v3 run/evidence reconciliation failed') }; return { run: raw, candidates: [], metrics: bundle?.metrics || [], trades: bundle?.trades || [], evidence: bundle } }
   const run = validateRunDirectory(runRoot)
   return { run, candidates: readJSONL(join(runRoot, run.artifacts.candidates.path)), metrics: readJSONL(join(runRoot, run.artifacts.metrics.path)), trades: readJSONL(join(runRoot, run.artifacts.trades.path)) }
 }
 
+function rebuildV3Index(recordRoot = root) {
+  const runs = []; const runsRoot = join(recordRoot, 'runs')
+  if (existsSync(runsRoot)) for (const entry of readdirSync(runsRoot, { withFileTypes: true }).filter(item => item.isDirectory()).sort((a, b) => a.name.localeCompare(b.name))) { const runPath = join(runsRoot, entry.name, 'run.json'); if (!existsSync(runPath)) continue; const run = readJSON(runPath); if (run.schema !== 'strategy-run/3') continue; validateRunV3(run); if (entry.name !== run.run_id) throw new Error(`v3 run directory name does not match run_id: ${entry.name}`); const evidencePath = run.evidence_bundle_sha256 ? join(recordRoot, 'evidence-bundles', `${run.evidence_bundle_sha256}.json`) : null; const evidence = evidencePath && existsSync(evidencePath) ? readJSON(evidencePath) : null; if (evidence) { validateEvidenceBundleV2(evidence); if (evidence.content_sha256 !== run.evidence_bundle_sha256 || evidence.experiment_sha256 !== run.experiment_sha256 || evidence.evidence_phase !== run.evidence_phase || hashV3(evidence.decisions) !== hashV3(run.decisions)) throw new Error(`v3 run/evidence mismatch: ${run.run_id}`) } runs.push({ run_id: run.run_id, evidence_bundle_sha256: run.evidence_bundle_sha256, evidence_phase: run.evidence_phase, decisions: run.decisions }) }
+  const index = { schema: 'strategy-research-index/3', runs: runs.sort((a, b) => a.run_id.localeCompare(b.run_id)), content_sha256: null }; index.content_sha256 = ownHash(index); const path = join(recordRoot, 'index-v3.json'); if (existsSync(path)) { const prior = readJSON(path); if (prior.content_sha256 !== ownHash(prior)) throw new Error('v3 index retained-hash tampering') }; writeFileSync(path, JSON.stringify(index, null, 2) + '\n', { flag: 'w' }); return { path, index }
+}
+
 function experimentPath(id) { return join(root, 'experiments', id) }
 
-try {
-  if (command === 'precommit') {
+function readV3FeatureRows(path) {
+  const input = resolveInput(path)
+  if (input.endsWith('.parquet')) return queryParquet(input)
+  const value = readJSON(input)
+  if (value?.schema === 'swing-feature-store/1') { if (!verifyFeatureStoreHash(value)) throw new Error('feature store content hash verification failed'); return decodeFeatureStore(value) }
+  if (value?.schema === 'research-feature-set/1') { const lakeRoot = resolve(dirname(input), '..'); const partitions = value.partitions || []; if (!partitions.length) throw new Error('feature set has no physical feature partitions'); return partitions.flatMap(partition => { const target = resolve(lakeRoot, partition.path); return target.endsWith('.parquet') ? queryParquet(target) : readResearchRows(target) }) }
+  const rows = Array.isArray(value) ? value : Array.isArray(value?.rows) ? value.rows : Array.isArray(value?.data) ? value.data : null
+  if (!rows) throw new Error('v3 features must be a swing feature store, row array, or authoritative Parquet')
+  return rows
+}
+
+function normalizeV3FeatureRow(row) {
+  const time = Number(row.time ?? row.event_time ?? row.timestamp); if (!Number.isFinite(time)) throw new Error('feature row requires event_time/time')
+  if (row.target !== undefined || row.label !== undefined || row.outcome !== undefined || row.forward_return !== undefined || row.future_return !== undefined) throw new Error('future-label field entered predictor feature rows')
+  return { ...row, time, available_at: Number(row.available_at ?? row.availability_time ?? time), asset: String(row.asset || '').toLowerCase(), timeframe: row.timeframe || '4h' }
+}
+
+function v3CandidateDefinition(candidate) {
+  const definition = candidate.definition || candidate.candidate || candidate
+  return { ...definition, id: candidate.candidate_id || candidate.id || definition.id }
+}
+
+function isDerivativeTrade(trade) {
+  const type = String(trade?.instrument?.instrument_type || trade?.instrument_type || trade?.instrument?.type || trade?.instrument_class || '').toLowerCase()
+  return type !== '' && type !== 'spot' && type !== 'cash'
+}
+
+function candidateDeclaresDerivative(candidate) {
+  const definition = candidate?.definition || candidate?.candidate || candidate || {}
+  const type = String(definition.instrument?.instrument_type || definition.instrument_type || definition.instrument?.type || definition.instrument_class || '').toLowerCase()
+  return type.includes('perp') || type.includes('future') || type.includes('derivative') || type.includes('margin')
+}
+
+function hasAuthoritativeFundingSettlements(trade) {
+  return Array.isArray(trade?.funding_settlements) && trade.funding_settlements.every(settlement => Number.isFinite(Number(settlement.amount ?? settlement.pnl)) && settlement.event_id && settlement.source && (settlement.venue || trade.instrument?.venue) && (settlement.instrument || trade.instrument?.symbol || trade.instrument?.instrument_id))
+}
+
+function stressSuiteHash(contract, scenarios, derivativesRequired, experimentSha256) {
+  return hash({ contract_sha256: contract.content_sha256, scenarios: scenarios.map(row => ({ name: row.name, parameters: row.parameters })), derivatives_required: derivativesRequired, experiment_sha256: experimentSha256 })
+}
+
+export function v3Stress(trades, contract, derivativesRequired = false, experimentSha256 = null) {
+  validateAcceptanceContract(contract)
+  const contractScenarios = contract.stress_scenarios
+  const scenarios = contractScenarios.map(row => {
+    const name = row.name; const spec = row.parameters
+    const missing = []
+    const violations = []
+    const affected = []
+    const values = []
+    for (const trade of trades) {
+      const id = trade.trade_id || trade.signal_id || 'UNKNOWN_TRADE'
+      const base = Number(trade.net_r ?? trade.return_r ?? trade.r)
+      const risk = Number(trade.risk_dollars ?? trade.risk_amount)
+      const normalized = value => Number.isFinite(Number(value)) ? Number(value) : null
+      const debitInR = (direct, accountCurrency) => {
+        const directValue = normalized(direct)
+        if (directValue !== null) return directValue
+        const accountValue = normalized(accountCurrency)
+        return accountValue !== null && risk > 0 ? accountValue / risk : null
+      }
+      if (!Number.isFinite(base)) { missing.push(id); continue }
+      let value = base
+      if (name === 'DOUBLED_FEES_SLIPPAGE') {
+        const fee = debitInR(trade.fee_r, trade.fees)
+        const slippage = debitInR(trade.slippage_r, trade.slippage_debit)
+        if (fee === null || slippage === null) { missing.push(id); continue }
+        value -= (Math.abs(fee) + Math.abs(slippage)) * (spec.multiplier - 1)
+      }
+      if (name === 'DOUBLED_FUNDING' && derivativesRequired) {
+        const debit = debitInR(trade.funding_debit_r, Math.max(0, -(Number(trade.funding_pnl) || 0)))
+        if (debit === null) { missing.push(id); continue }
+        value -= Math.abs(debit) * (spec.multiplier - 1)
+      }
+      if (name === 'ADVERSE_GAP') {
+        const notional = normalized(trade.notional)
+        const canonicalMaeR = normalized(trade.mae_r) ?? (normalized(trade.mae_pct) !== null && notional !== null && risk > 0 ? Math.abs(Number(trade.mae_pct)) / 100 * notional / risk : null)
+        const gap = normalized(trade.adverse_gap_r ?? trade.gap_r ?? trade.adverse_gap_debit_r) ?? (normalized(trade.adverse_gap_debit) !== null && risk > 0 ? Number(trade.adverse_gap_debit) / risk : canonicalMaeR)
+        if (gap === null) { missing.push(id); continue }
+        value -= Math.abs(gap || spec.debit_r)
+      }
+      if (name === 'LIQUIDITY_CAPACITY') {
+        const notional = Number(trade.notional)
+        const available = Number(trade.available_liquidity_notional ?? trade.venue_capacity_notional)
+        if (!(notional >= 0 && available > 0)) { missing.push(id); continue }
+        if (notional / available > spec.maximum_participation_rate) { violations.push(id); continue }
+      }
+      if (name === 'VENUE_OUTAGE') {
+        const venue = String(trade.venue || trade.instrument?.venue || '')
+        const entryTime = trade.entry_time ?? trade.signal_time ?? trade.time
+        const exitTime = trade.exit_time ?? trade.close_time ?? entryTime
+        if (!venue || entryTime === undefined || exitTime === undefined) { missing.push(id); continue }
+        const entry = Number.isFinite(Number(entryTime)) ? Number(entryTime) : Date.parse(entryTime); const exit = Number.isFinite(Number(exitTime)) ? Number(exitTime) : Date.parse(exitTime)
+        if (!Number.isFinite(entry) || !Number.isFinite(exit)) { missing.push(id); continue }
+        const outage = spec.blackout_windows.some(window => (window.venue === '*' || String(window.venue).toLowerCase() === venue.toLowerCase()) && entry < stressTimestamp(window.end_time) && exit >= stressTimestamp(window.start_time))
+        if (outage) { affected.push(id); continue }
+      }
+      values.push(value)
+    }
+    const expectancy = values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null
+    const uniqueMissing = [...new Set(missing)].sort()
+    const uniqueViolations = [...new Set(violations)].sort()
+    const affectedTradeIds = [...new Set(affected)].sort()
+    if (name === 'VENUE_OUTAGE' && !affectedTradeIds.length) uniqueViolations.push('NO_TRADE_OVERLAPPED_DECLARED_OUTAGE')
+    return { name, parameters: spec, pass: !uniqueMissing.length && !uniqueViolations.length && values.length >= spec.minimum_observations && expectancy !== null && expectancy >= spec.minimum_expectancy_r, expectancy_r: expectancy, observations: values.length, affected_trade_ids: affectedTradeIds, missing_model_inputs: uniqueMissing, violations: uniqueViolations, model_completeness: uniqueMissing.length === 0 && !uniqueViolations.length && trades.length > 0 }
+  })
+  return { schema: 'strategy-stress-result/1', suite_sha256: stressSuiteHash(contract, scenarios, derivativesRequired, experimentSha256), experiment_sha256: experimentSha256, contract_sha256: contract.content_sha256, derivatives_required: derivativesRequired, scenarios, pass: scenarios.every(row => row.pass), model_completeness: scenarios.every(row => row.model_completeness), provenance: 'AUTHORITATIVE_RECOMPUTED' }
+}
+
+export function evaluateLocalV3({ experiment, manifest, featureSet, labelSet, candidates, featureRows, precommit = null, definition = null, parentEvidence = null, evaluateCandidateImpl = evaluateCandidate } = {}) {
+  validateExperimentV3(experiment, { acceptance: experiment.acceptance_contract }); validateAcceptanceContract(experiment.acceptance_contract)
+  if (experiment.evidence_phase === 'CI_ATTESTED_CONFIRMATION') throw new Error('CONFIRMATION_RUNNER_UNAVAILABLE: CI_ATTESTED_CONFIRMATION requires the unavailable public-unseen-data custody runner')
+  // Keep the API safe even when called directly (the CLI repeats these checks
+  // at its file boundary).  Synthetic unit fixtures may omit hashes, but a
+  // supplied content hash is never trusted as a claim.
+  if (manifest?.content_sha256) { const manifestCopy = structuredClone(manifest); delete manifestCopy.content_sha256; delete manifestCopy.created_at; if (manifest.content_sha256 !== hashV3(manifestCopy)) throw new Error('data manifest retained-hash tampering'); if (experiment.data_manifest_sha256 && experiment.data_manifest_sha256 !== manifest.content_sha256) throw new Error('experiment/data manifest lineage mismatch') }
+  for (const [name, value] of [['feature set', featureSet], ['label set', labelSet], ['candidate set', candidates]]) if (value?.content_sha256 && value.content_sha256 !== ownHash(value)) throw new Error(`${name} retained-hash tampering`)
+  if (featureSet?.labels_allowed === true) throw new Error('feature set permits labels'); if (labelSet?.predictor_eligible === true) throw new Error('label set is predictor-eligible'); if (manifest?.content_sha256 && featureSet?.data_manifest_sha256 && featureSet.data_manifest_sha256 !== manifest.content_sha256) throw new Error('feature set/data manifest lineage mismatch'); if (manifest?.content_sha256 && labelSet?.data_manifest_sha256 && labelSet.data_manifest_sha256 !== manifest.content_sha256) throw new Error('label set/data manifest lineage mismatch'); if (featureSet?.content_sha256 && experiment.feature_set_sha256 && featureSet.content_sha256 !== experiment.feature_set_sha256) throw new Error('experiment/feature set lineage mismatch'); if (labelSet?.content_sha256 && experiment.label_set_sha256 && labelSet.content_sha256 !== experiment.label_set_sha256) throw new Error('experiment/label set lineage mismatch'); if (candidates?.content_sha256 && experiment.candidate_set_sha256 && candidates.content_sha256 !== experiment.candidate_set_sha256) throw new Error('experiment/candidate set lineage mismatch')
+  const requiredAssets = experiment.required_assets.map(item => String(typeof item === 'string' ? item : item.asset).toLowerCase()); if (requiredAssets.some(asset => asset === 'doge')) throw new Error('DOGE is excluded from the v3 research universe')
+  const parentWfo = experiment.evidence_phase === 'EXPOSED_CONFIRMATION' ? validateExposedParentEvidence(parentEvidence, experiment) : null; const frozenByAsset = experiment.evidence_phase === 'EXPOSED_CONFIRMATION' ? frozenSelectionByAsset(experiment) : null; const frozenIds = frozenByAsset ? new Set(Object.values(frozenByAsset)) : null
+  const candidateInputRows = candidates.candidates || candidates; const candidateRows = frozenIds ? candidateInputRows.filter(candidate => frozenIds.has(String(candidate.candidate_id || candidate.id))) : candidateInputRows; if (!Array.isArray(candidateRows) || !candidateRows.length) throw new Error('v3 candidate set is empty or lacks the frozen exposed selection')
+  const declaredK = experiment.evidence_phase === 'EXPOSED_CONFIRMATION' ? candidateRows.length : Number(candidates.effective_k ?? candidates.declared_k ?? candidateRows.length); if (declaredK !== candidateRows.length) throw new Error(`candidate accounting mismatch: declared K=${declaredK}, effective K=${candidateRows.length}`)
+  const normalized = featureRows.map(normalizeV3FeatureRow).filter(row => requiredAssets.includes(row.asset)).sort((a, b) => a.time - b.time || a.asset.localeCompare(b.asset)); const byAsset = new Map(requiredAssets.map(asset => [asset, normalized.filter(row => row.asset === asset)])); const missingAssets = requiredAssets.filter(asset => !byAsset.get(asset)?.length); if (missingAssets.length) throw new Error(`feature set is missing required crypto assets: ${missingAssets.join(', ')}`)
+  for (const [asset, series] of byAsset) for (let index = 0; index < series.length; index++) { const timeframe = String(series[index].timeframe || '4h').toLowerCase(); const inferredBarMs = Number({ '1m': 60_000, '5m': 300_000, '15m': 900_000, '1h': 3_600_000, '4h': 14_400_000, '1d': 86_400_000 }[timeframe] || 0); const boundary = series[index + 1]?.time ?? series[index].time + Number(experiment.chronology.bar_duration_ms || inferredBarMs); if (!(Number(series[index].available_at) <= boundary)) throw new Error(`feature availability leak for ${asset} at ${series[index].time}: available_at is after next-entry boundary`) }
+  const wfoPhase = experiment.evidence_phase === 'WALK_FORWARD_OOS'; const allTrades = []; const zeroEpisodes = []; const candidateTradeMap = new Map(); const seed = Number(experiment.chronology.seeds[0]); const candidateIds = candidateRows.map(candidate => String(candidate.candidate_id || candidate.id)); const runCandidate = (series, candidate, options) => evaluateCandidateImpl(series, v3CandidateDefinition(candidate), options)
+for (const candidate of candidateRows) {
+    const id = candidate.candidate_id || candidate.id
+    if (!id) throw new Error('candidate_id is required')
+    for (const asset of requiredAssets) {
+      const series = byAsset.get(asset)
+      const frozenForAsset = frozenByAsset?.[asset] || null
+      const isFrozenSelection = !frozenForAsset || String(frozenForAsset) === String(id)
+      const report = wfoPhase || !isFrozenSelection ? { trades: [] } : runCandidate(series, candidate, { candidate_count: declaredK, bootstrap_rounds: 0, same_bar_collision: 'stop-first' })
+      const trades = (report.trades || []).map((trade, index) => ({ ...trade, candidate_id: id, asset, trade_id: trade.trade_id || (id + '|' + asset + '|' + index), episode_id: asset + '|' + (trade.signal_time || trade.entry_time || index), venue: trade.venue || 'public', instrument: trade.instrument || { asset, asset_class: 'crypto', instrument_type: 'spot', venue: 'public', symbol: asset.toUpperCase() + 'USDT' } }))
+      allTrades.push(...trades)
+      candidateTradeMap.set(id + '|' + asset, trades)
+      if (!wfoPhase) {
+        const observed = new Set(trades.map(trade => trade.episode_id))
+        for (const [episodeIndex, bar] of series.entries()) {
+          const episode = asset + '|' + bar.time
+          if (!observed.has(episode)) zeroEpisodes.push({ candidate_id: id, asset, trade_id: id + '|' + episode + '|ZERO', episode_id: episode, entry_time: bar.time, exit_time: bar.time + Number(experiment.chronology.bar_duration_ms || 1), net_r: 0, net_pnl: 0, zero_episode: true, venue: 'public', instrument: { asset, asset_class: 'crypto', instrument_type: 'spot', venue: 'public', symbol: asset.toUpperCase() + 'USDT' }, market_episode_index: episodeIndex })
+        }
+      }
+    }
+  }
+  const manifestPriceFraction = Number.isFinite(Number(manifest.coverage_summary?.price_fraction)) ? Number(manifest.coverage_summary.price_fraction) : 0; const manifestDerivativesFraction = Number.isFinite(Number(manifest.coverage_summary?.derivatives_fraction)) ? Number(manifest.coverage_summary.derivatives_fraction) : 0; const internalTrades = [...allTrades, ...zeroEpisodes]; const metrics = []; if (!wfoPhase) for (const candidate of candidateRows) for (const asset of requiredAssets) { const id = String(candidate.candidate_id || candidate.id); const trades = candidateTradeMap.get(`${id}|${asset}`) || []; const derivativesRequired = candidateDeclaresDerivative(candidate) || trades.some(isDerivativeTrade); const fundingProcessed = !derivativesRequired || trades.length > 0 && trades.every(hasAuthoritativeFundingSettlements); const metric = computeCandidateMetrics(trades, { candidateId: id, asset, candidateCount: declaredK, candidateIds, allTrades: internalTrades, initialEquity: Number(experiment.portfolio_policy?.initial_equity || 100000), seed, bootstrapIterations: Number(experiment.chronology.bootstrap_iterations || 512), coverage: { price_fraction: manifestPriceFraction, derivatives_fraction: manifestDerivativesFraction }, fundingProcessed }); metrics.push({ ...metric, derivatives_required: derivativesRequired, funding_processed: fundingProcessed, candidate_id: id, asset, selected: false, selection_basis: wfoPhase ? 'WFO_TRAIN_ONLY_ACCOUNTING' : experiment.evidence_phase === 'EXPOSED_CONFIRMATION' ? 'FROZEN_PARENT_SELECTION_DIAGNOSTIC' : 'DEVELOPMENT_FULL_SAMPLE_DIAGNOSTIC', execution: { status: wfoPhase ? 'TRAIN_ONLY_DIAGNOSTIC' : 'EVALUATED', adapter: experiment.executor_sha256 } }) }
+  let wfo = null; if (wfoPhase) { const folds = (experiment.chronology.folds || []).map((fold, index) => ({ ...fold, fold_id: fold.fold_id || `fold-${index + 1}`, train_start: fold.train_start ?? fold.train?.start, train_end: fold.train_end ?? fold.train?.end, test_start: fold.test_start ?? fold.test?.start, test_end: fold.test_end ?? fold.test?.end })); const evaluateWindow = (candidate, fold, start, end) => { const id = candidate.candidate_id || candidate.id; const trades = []; const byAssetMetrics = []; for (const asset of requiredAssets) { const series = byAsset.get(asset).filter(row => row.time >= Number(start) && row.time < Number(end)); const report = runCandidate(series, candidate, { candidate_count: declaredK, bootstrap_rounds: 0, same_bar_collision: 'stop-first' }); const assetTrades = (report.trades || []).map((trade, index) => ({ ...trade, candidate_id: id, asset, trade_id: `${id}|${asset}|${fold.fold_id}|${index}`, episode_id: `${asset}|${trade.entry_time || trade.signal_time || index}`, venue: trade.venue || 'public', instrument: trade.instrument || { asset, asset_class: 'crypto', instrument_type: 'spot', venue: 'public', symbol: `${asset.toUpperCase()}USDT` } })); trades.push(...assetTrades); const assetMetrics = computeCandidateMetrics(assetTrades, { candidateId: id, asset, candidateCount: 1, candidateIds: [String(id)], allTrades: assetTrades.length ? assetTrades : [{ candidate_id: id, episode_id: `${fold.fold_id}|${id}|${asset}|ZERO`, net_r: 0, exit_time: end }], seed, bootstrapIterations: 256 }); byAssetMetrics.push({ ...assetMetrics, candidate_id: id, asset }) } const accountingTrades = trades.length ? trades : [{ candidate_id: id, episode_id: `${fold.fold_id}|${id}|ZERO`, net_r: 0, exit_time: end }]; return { trades, metrics: computeCandidateMetrics(trades, { candidateId: id, candidateCount: 1, candidateIds: [String(id)], allTrades: accountingTrades, seed, bootstrapIterations: 256 }), by_asset: byAssetMetrics } }; wfo = walkForwardV3({ candidates: candidateRows, folds, requiredAssets, acceptance: experiment.acceptance_contract, barDurationMs: experiment.chronology.bar_duration_ms, purgeBars: experiment.chronology.purge_bars || 0, embargoBars: experiment.chronology.embargo_bars || 0, trainingSelectionPolicy: experiment.training_selection_policy, experimentSha256: experiment.content_sha256, evaluateTrain: (candidate, fold) => evaluateWindow(candidate, fold, fold.train_start, fold.train_end), evaluateTest: (candidate, fold) => evaluateWindow(candidate, fold, fold.test_start, fold.test_end) }); metrics.length = 0; for (const fold of wfo.folds) { for (const row of fold.train.candidates) for (const assetMetric of row.candidate_asset_metrics || []) metrics.push({ ...assetMetric, phase: 'TRAIN', fold_id: fold.fold_id, window: fold.train_window, selected: false, selection_basis: 'WFO_TRAIN_ONLY_POLICY', execution: { status: 'TRAIN_EVALUATED', adapter: experiment.executor_sha256 } }); for (const assetMetric of fold.test.candidate_asset_metrics || []) metrics.push({ ...assetMetric, phase: 'OOS', fold_id: fold.fold_id, window: fold.test_window, selected: true, selection_basis: 'WFO_TRAIN_ONLY_POLICY', execution: { status: 'OOS_WINNER_ONLY', adapter: experiment.executor_sha256 } }) } }
+  const selectedByAsset = new Map(); let fullSelectedTrades = []; let selectedTrades = []; const marks = normalized.filter(row => Number.isFinite(Number(row.close))).map(row => ({ asset: row.asset, time: row.time, price: Number(row.close), venue: row.venue || 'public', symbol: row.symbol || `${row.asset.toUpperCase()}USDT` }));
+  if (wfo) { for (const [asset, id] of Object.entries(wfo.final_selection_by_asset || {})) if (id) selectedByAsset.set(asset, id) } else if (parentWfo) { for (const [asset, id] of Object.entries(frozenByAsset || {})) if (id) selectedByAsset.set(asset, id) } else { const winnerByAsset = new Map(); for (const asset of requiredAssets) { const frozenId = frozenByAsset?.[asset] || null; const scoped = metrics.filter(row => row.asset === asset && (frozenId ? row.candidate_id === frozenId : true)).sort((a, b) => Number(b.expectancy_r ?? -Infinity) - Number(a.expectancy_r ?? -Infinity) || String(a.candidate_id).localeCompare(String(b.candidate_id))); const winner = frozenId ? scoped.find(row => row.candidate_id === frozenId) : scoped[0]; if (winner) { winner.selected = true; winner.selection_basis = frozenId ? 'FROZEN_PARENT_WFO_SELECTION' : 'DEVELOPMENT_FULL_SAMPLE'; winnerByAsset.set(asset, winner.candidate_id) } } for (const [asset, id] of winnerByAsset) selectedByAsset.set(asset, id) }
+  fullSelectedTrades = allTrades.filter(trade => trade.zero_episode !== true && String(selectedByAsset.get(String(trade.asset).toLowerCase()) || '') === String(trade.candidate_id)); selectedTrades = wfo ? wfo.oos_trades.filter(trade => trade.zero_episode !== true) : fullSelectedTrades;
+  const frozenAggregateTrades = selectedTrades.map(trade => ({ ...trade, candidate_id: '__frozen_selection__' })); const frozenAggregate = experiment.evidence_phase === 'EXPOSED_CONFIRMATION' ? { ...computeCandidateMetrics(frozenAggregateTrades, { candidateId: '__frozen_selection__', candidateCount: 1, candidateIds: ['__frozen_selection__'], allTrades: frozenAggregateTrades, initialEquity: Number(experiment.portfolio_policy?.initial_equity || 100000), seed, bootstrapIterations: Number(experiment.chronology.bootstrap_iterations || 512), coverage: { price_fraction: manifestPriceFraction, derivatives_fraction: manifestDerivativesFraction }, fundingProcessed: false }), candidate_id: '__frozen_selection__', asset: null, selection_basis: 'FROZEN_PARENT_WFO_SELECTION' } : null; const aggregate = wfo ? { ...wfo.aggregate_oos_metrics, candidate_id: '__aggregate_oos__', asset: null, selection_basis: 'WALK_FORWARD_OOS_AGGREGATE' } : (frozenAggregate || metrics.slice().sort((a, b) => Number(b.expectancy_r ?? -Infinity) - Number(a.expectancy_r ?? -Infinity))[0] || metrics[0]); const evidenceWfo = wfo || (parentWfo ? { ...parentWfo, parent_evidence_sha256: experiment.parent_evidence_sha256 } : null);
+  const signals = selectedTrades.map(trade => ({ ...trade, signal_id: trade.trade_id, instrument: trade.instrument })); let portfolio; try { portfolio = simulateCryptoPortfolio(signals, { ...(experiment.portfolio_policy || {}), authoritative: true, advanced_risk: true, require_authoritative_funding_identity: true, initial_equity: Number(experiment.portfolio_policy?.initial_equity || 100000), max_mark_gap_ms: experiment.portfolio_policy?.max_mark_gap_ms ?? experiment.chronology.bar_duration_ms ?? Infinity, marks, acceptance: experiment.portfolio_policy?.acceptance || {} }) } catch (error) { portfolio = { pass: false, failures: ['PORTFOLIO_RECOMPUTATION_FAILED'], rejection_reason: error.message, activation: 'RESEARCH_ONLY' } }
+  const derivativesRequired = selectedTrades.some(isDerivativeTrade) || metrics.some(row => row.derivatives_required && (row.selected || !wfo)); const fundingProcessed = !derivativesRequired || selectedTrades.length > 0 && selectedTrades.every(hasAuthoritativeFundingSettlements); const stress = v3Stress(selectedTrades, experiment.acceptance_contract, derivativesRequired, experiment.content_sha256); const coverage = { verified: manifest.authoritative === true || experiment.evidence_phase === 'DEVELOPMENT', price_fraction: manifestPriceFraction, derivatives_fraction: manifestDerivativesFraction, derivatives_required: derivativesRequired }; const acceptance = evaluateAcceptance(aggregate, experiment.acceptance_contract, { phase: experiment.evidence_phase, wfo: evidenceWfo, stress, portfolio, funding: derivativesRequired ? fundingProcessed : null, coverage }); const acceptanceBasis = wfo ? 'WALK_FORWARD_OOS_AGGREGATE' : experiment.evidence_phase === 'EXPOSED_CONFIRMATION' ? 'FROZEN_PARENT_WFO_SELECTION' : 'DEVELOPMENT_FULL_SAMPLE'; const decision = { status: acceptance.decision, reasons: acceptance.failures, acceptance_result: { ...acceptance, acceptance_basis: acceptanceBasis } }; for (const row of metrics) row.acceptance = !wfo && row.candidate_id === aggregate.candidate_id && row.asset === aggregate.asset ? acceptance : null
+const wfoAccounting = wfo?.candidate_accounting || null; const accountingRows = wfoAccounting || candidateRows.flatMap(candidate => requiredAssets.map(asset => { const id = String(candidate.candidate_id || candidate.id); const actual = candidateTradeMap.get(`${id}|${asset}`) || []; const zeros = zeroEpisodes.filter(row => row.candidate_id === id && row.asset === asset); return { candidate_id: id, asset, phase: 'DEVELOPMENT', actual_trade_count: actual.length, zero_trade: actual.length === 0, zero_episode_count: zeros.length, outcome_digest_sha256: hash([...actual, ...zeros].map(row => ({ episode_id: row.episode_id, net_r: row.net_r, zero_episode: row.zero_episode === true }))) } })); const candidateAccounting = withHash({ schema: 'strategy-candidate-accounting/1', declared_k: declaredK, effective_k: candidateRows.length, candidate_ids: candidateIds, market_episode_ids_sha256: hash([...new Set(normalized.map(row => `${row.asset}|${row.time}`))].sort()), per_candidate_asset: accountingRows, zero_episode_digest_sha256: wfoAccounting ? hash(accountingRows.filter(row => row.zero_trade === true)) : hash(zeroEpisodes), internal_trade_digest_sha256: wfoAccounting ? wfo.candidate_accounting_sha256 : hash(internalTrades), wfo_accounting_sha256: wfoAccounting ? wfo.candidate_accounting_sha256 : null, storage_policy: 'zero episodes and non-selected trades are internal; only compact selected/OOS trades are persisted' }); const persistedTrades = selectedTrades; const decisions = { per_asset: requiredAssets.map(asset => ({ asset, candidate_id: selectedByAsset.get(asset) || null, status: 'SHADOW', reasons: ['RESEARCH_EVIDENCE_ONLY'] })), portfolio: { status: decision.status, reasons: decision.reasons } }; const bundle = makeEvidenceBundle({ experiment, metrics, trades: persistedTrades, stress, portfolio, wfo: evidenceWfo, decision, decisions, candidateAccounting, acceptanceBasis, parentEvidence, provenance: 'AUTHORITATIVE_RECOMPUTED' }); const run = makeRunV3({ experiment, evidenceBundle: bundle, decisions, provenance: 'AUTHORITATIVE_RECOMPUTED' }); return { bundle, run, metrics, trades: persistedTrades, selected_trades: selectedTrades, portfolio, stress, acceptance, coverage, wfo: evidenceWfo, selected_by_asset: Object.fromEntries(selectedByAsset), candidate_accounting: candidateAccounting }
+}
+
+if (process.argv[1] && resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url))) try {
+  if (command === 'acceptance-contract') {
+    const contract = makeAcceptanceContract({ contractId: options.id || 'balanced-swing-v1', profile: options.profile || 'balanced-swing-v1' }); if (options.out) writeImmutable(resolve(options.out), contract); print(contract)
+  } else if (command === 'freeze-confirmation') {
+    const contract = options.acceptance ? readJSON(resolveInput(options.acceptance)) : makeAcceptanceContract()
+    validateAcceptanceContract(contract)
+    const reservation = makeConfirmationReservation({ sealId: options.seal_id || options.seal, repository: options.repository, commitSha: options.commit_sha || options.commit, workflowSha256: options.workflow_sha256 || options.workflow, precommitSha256: options.precommit_sha256, definitionSha256: options.definition_sha256, experimentSha256: options.experiment_sha256, candidateSetSha256: options.candidate_set_sha256, dataRootSha256: options.data_root_sha256, acceptanceContractSha256: contract.content_sha256, containerSha256: options.container_sha256, executorSha256: options.executor_sha256, experimentPath: options.experiment_path, dataPath: options.data_path, output: options.output })
+    const out = resolve(options.out || join(root, 'confirmations', `${reservation.seal_id}.json`)); const currentCommit = process.env.GITHUB_SHA || execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(); validateConfirmationReservation(reservation, { repository: options.repository, currentCommit, workflowPath: options.workflow_path || '.github/workflows/strategy-confirmation.yml', reservationPath: out }); writeImmutable(out, reservation); print({ path: out, reservation })
+  } else if (command === 'verify-attestation') {
+    const attestation = readJSON(resolveInput(options.attestation)); const reservation = options.reservation ? readJSON(resolveInput(options.reservation)) : null; const result = verifyAttestation(attestation, { publicKeyPem: readFileSync(resolveInput(options.public_key), 'utf8'), reservation, expectedRepository: options.repository, expectedCommitSha: options.commit_sha, expectedRunId: options.run_id, reservationPath: options.reservation, workflowPath: options.workflow_path || '.github/workflows/strategy-confirmation.yml', burnRoot: options.burn_root || '.research-run/burn' }); print(result)
+  } else if (command === 'import-attestation') {
+    const attestation = readJSON(resolveInput(options.attestation)); const reservation = options.reservation ? readJSON(resolveInput(options.reservation)) : null; const result = importAttestation(attestation, { publicKeyPem: readFileSync(resolveInput(options.public_key), 'utf8'), reservation, expectedRepository: options.repository, expectedCommitSha: options.commit_sha, expectedRunId: options.run_id, reservationPath: options.reservation, workflowPath: options.workflow_path || '.github/workflows/strategy-confirmation.yml', burnRoot: options.burn_root || '.research-run/burn', out: options.out }); print(result)
+  } else if (command === 'v3-validate') {
+    const experiment = readJSON(resolveInput(options.experiment)); const acceptance = options.acceptance ? readJSON(resolveInput(options.acceptance)) : experiment.acceptance_contract; validateContractSchema(experiment); validateExperimentV3(experiment, { acceptance }); print({ valid: true, schema: experiment.schema, acceptance_contract_sha256: acceptance?.content_sha256 || null })
+  } else if (command === 'evaluate-v3') {
+    if (options.metrics || options.trades) throw new Error('evaluate-v3 never accepts caller-authored metrics or trades')
+    if (!options.experiment || !options.manifest || !options.features || !options.labels || !options.candidates) throw new Error('evaluate-v3 requires frozen experiment, manifest, feature set, label set and candidate set')
+    const experiment = readJSON(resolveInput(options.experiment)); const manifestPath = resolveInput(options.manifest); const manifest = readJSON(manifestPath); const featureSet = readJSON(resolveInput(options.features).endsWith('.json') ? resolveInput(options.features) : resolveInput(options.features).replace(/\.(parquet|jsonl)$/i, '.json')); const labelSet = readJSON(resolveInput(options.labels)); const candidates = readJSON(resolveInput(options.candidates)); validateContractSchema(experiment); validateContractSchema(manifest); validateContractSchema(featureSet); validateContractSchema(labelSet); validateExperimentV3(experiment, { acceptance: experiment.acceptance_contract }); if (featureSet.content_sha256 !== ownHash(featureSet) || labelSet.content_sha256 !== ownHash(labelSet)) throw new Error('feature/label set retained-hash tampering'); if (featureSet.content_sha256 !== experiment.feature_set_sha256 || labelSet.content_sha256 !== experiment.label_set_sha256) throw new Error('experiment feature/label set lineage mismatch'); if (candidates.content_sha256 && candidates.content_sha256 !== ownHash(candidates)) throw new Error('candidate set retained-hash tampering'); if (manifest.schema !== 'strategy-data-manifest/2') throw new Error('evaluate-v3 requires strategy-data-manifest/2'); validateManifest(manifest, { phase: experiment.evidence_phase, requiredAssets: experiment.required_assets, root: resolve(dirname(manifestPath), '..') }); if (experiment.data_manifest_sha256 !== manifest.content_sha256) throw new Error('experiment/data manifest lineage mismatch'); if (featureSet.data_manifest_sha256 !== manifest.content_sha256 || featureSet.labels_allowed === true) throw new Error('feature set is not bound to the frozen data manifest or permits labels'); if (labelSet.data_manifest_sha256 !== manifest.content_sha256 || labelSet.predictor_eligible !== false) throw new Error('label set is not bound to the frozen data manifest or is predictor-eligible'); const candidateHash = candidates.content_sha256 ? ownHash(candidates) : hashV3(candidates); if (experiment.candidate_set_sha256 !== candidateHash && experiment.candidate_set_sha256 !== hashV3({ ...candidates, content_sha256: undefined })) throw new Error('experiment/candidate set lineage mismatch'); const featureRows = readV3FeatureRows(options.features); const parentEvidence = options.parent_evidence ? readJSON(resolveInput(options.parent_evidence)) : null; const result = evaluateLocalV3({ experiment, manifest, featureSet, labelSet, candidates, featureRows, parentEvidence, precommit: options.precommit ? readJSON(resolveInput(options.precommit)) : null, definition: options.definition ? readJSON(resolveInput(options.definition)) : null }); validateContractSchema(result.bundle); validateContractSchema(result.run); const outputs = { schema: result.bundle.schema, content_sha256: result.bundle.content_sha256, run_id: result.run.run_id, decisions: result.run.decisions, acceptance: result.acceptance, selected_by_asset: result.selected_by_asset }; if (options.out) { writeContentAddressed(resolve(options.out), result.bundle); outputs.out = resolve(options.out) } if (options['record-root']) { const recordRoot = resolve(options['record-root']); const evidenceDir = join(recordRoot, 'evidence-bundles'); const runDir = resolve(recordRoot, 'runs', result.run.run_id); mkdirSync(evidenceDir, { recursive: true }); mkdirSync(runDir, { recursive: true }); const evidencePath = resolve(evidenceDir, `${result.bundle.content_sha256}.json`); writeContentAddressed(evidencePath, result.bundle); writeContentAddressed(join(runDir, 'run.json'), result.run); const indexPath = resolve(recordRoot, 'index-v3.json'); const prior = existsSync(indexPath) ? readJSON(indexPath) : { schema: 'strategy-research-index/3', runs: [] }; if (prior.content_sha256 && prior.content_sha256 !== ownHash(prior)) throw new Error('v3 index retained-hash tampering'); if (prior.runs.some(row => row.run_id === result.run.run_id)) throw new Error(`duplicate v3 run recording: ${result.run.run_id}`); prior.runs = [...prior.runs, { run_id: result.run.run_id, evidence_bundle_sha256: result.bundle.content_sha256, evidence_phase: experiment.evidence_phase, decisions: result.run.decisions }].sort((a, b) => a.run_id.localeCompare(b.run_id)); prior.content_sha256 = ownHash(prior); writeFileSync(indexPath, JSON.stringify(prior, null, 2) + '\n', { flag: 'w' }); outputs.record_root = recordRoot; outputs.evidence_bundle = evidencePath; outputs.run = join(runDir, 'run.json') } print(outputs)
+  } else if (command === 'v3-metrics') {
+    if (options.phase && options.phase !== 'DEVELOPMENT') throw new Error('v3-metrics caller-trade diagnostic is DEVELOPMENT-only; authoritative phases require evaluate-v3')
+    const trades = readJSON(resolveInput(options.trades)); const metrics = computeCandidateMetrics(trades, { candidateId: options.candidate, asset: options.asset, candidateCount: Number(options.candidate_count || 1), initialEquity: Number(options.initial_equity || 100000), seed: Number(options.seed || 1), bootstrapIterations: Number(options.iterations || 2000) }); if (options.acceptance) metrics.acceptance = evaluateAcceptance(metrics, readJSON(resolveInput(options.acceptance))); print(metrics)
+  } else if (command === 'v3-accept') {
+    const metrics = readJSON(resolveInput(options.metrics)); const contract = options.acceptance ? readJSON(resolveInput(options.acceptance)) : makeAcceptanceContract(); print(evaluateAcceptance(metrics, contract, { phase: options.phase || 'DEVELOPMENT', stress: options.stress ? readJSON(resolveInput(options.stress)) : null, portfolio: options.portfolio ? readJSON(resolveInput(options.portfolio)) : null }))
+  } else if (command === 'wfo-v3') {
+    const config = readJSON(resolveInput(options.input)); print(walkForwardV3(config))
+  } else if (command === 'burn-confirmation') {
+    const reservation = readJSON(resolveInput(options.reservation)); print({ burned: burnReservation(reservation, options.burn_root || '.research-run/burn') })
+  } else if (command === 'precommit') {
     const inputPath = resolveInput(options.input); if (!inputPath) throw new Error('precommit requires --input <filled-premise.json>')
     const frozen = freezePrecommit(readJSON(inputPath)); const out = resolve(options.out || join(root, 'precommits', `${frozen.precommit_id}.json`)); writeImmutable(out, frozen)
     const markdown = resolve(options.markdown || out.replace(/\.json$/i, '.md')); writeImmutable(markdown, renderPremiseMarkdown(frozen)); print({ precommit: out, markdown, sha256: frozen.content_sha256, immutable: true })
@@ -76,9 +272,12 @@ try {
   else if (command === 'monitor') print(compareProspectiveExpectation(readJSON(resolveInput(options.profile)), readJSON(resolveInput(options.evidence))))
   else if (command === 'validate' && options.input) { const value = readJSON(resolveInput(options.input)); print({ valid: validateV2Document(value) === true, schema: value.schema })
   } else if (command === 'validate') print(validateRegistry(root))
-  else if (command === 'rebuild-index') print(rebuildIndex(root))
+  else if (command === 'rebuild-index') { const legacyIndex = rebuildIndex(root); const v3Index = rebuildV3Index(root); print({ legacy: legacyIndex, v3: v3Index.index, v3_index: v3Index.path }) }
   else if (command === 'list') {
-    const index = readJSON(join(root, 'index.json')); const kind = options.kind || 'performance'; let rows = index[kind] || []
+    // The v3 index is a compact run registry and intentionally has no legacy
+    // performance table. Keep `list --kind performance` on index.json even
+    // when rebuild-index has also emitted an empty v3 index.
+    const v3Path = join(root, 'index-v3.json'); const v3Index = existsSync(v3Path) ? readJSON(v3Path) : null; if (v3Index?.schema === 'strategy-research-index/3' && v3Index.content_sha256 !== ownHash(v3Index)) throw new Error('v3 index retained-hash tampering'); const useV3 = Boolean(v3Index && (!options.kind || options.kind === 'runs') && v3Index.runs?.length); const index = useV3 ? v3Index : readJSON(join(root, 'index.json')); const kind = useV3 ? 'runs' : (options.kind || 'performance'); let rows = index[kind] || []
     for (const field of ['asset', 'evidence_phase', 'status', 'candidate_id', 'experiment_id']) if (options[field]) rows = rows.filter(row => String(row[field] || '').toLowerCase() === String(options[field]).toLowerCase())
     if (options.strategy) rows = rows.filter(row => `${row.strategy_id || ''}@${row.version || ''}` === options.strategy || row.candidate_id === options.strategy)
     print(rows)
@@ -106,5 +305,5 @@ try {
       }
     }
     print(imported)
-  } else process.stdout.write('usage: strategy-research.mjs precommit|generate|evaluate|run|stats|plateau|ablations|portfolio|stress|monitor|record|validate|rebuild-index|list|show|compare|import-legacy\n')
+  } else process.stdout.write('usage: strategy-research.mjs precommit|generate|evaluate|evaluate-v3|run|v3-validate|v3-metrics|v3-accept|wfo-v3|acceptance-contract|freeze-confirmation|burn-confirmation|verify-attestation|import-attestation|stats|plateau|ablations|portfolio|stress|monitor|record|validate|rebuild-index|list|show|compare|import-legacy\n')
 } catch (error) { process.stderr.write(`${error.message}\n`); process.exitCode = 1 }

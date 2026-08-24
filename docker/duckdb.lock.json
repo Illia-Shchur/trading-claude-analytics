@@ -1,0 +1,10 @@
+{
+  "image": "docker.io/duckdb/duckdb:1.4.4",
+  "digest": "sha256:2a5c5fb1bf8a7a93a43893b583cf15fcfebc0b8e02a39110593582907f96d8ad",
+  "version": "1.4.4",
+  "platforms": {
+    "linux/amd64": "sha256:9973a5c6b95b7ce999a1ea0873cfd114ba237f563cf7ba6684196440e4c2ad67",
+    "linux/arm64": "sha256:fc29c63673fa35b8883cfef647528361592c86711437fc9a3573bd813bbd1f55"
+  },
+  "purpose": "reproducible research-lake DuckDB CLI; the catalog is disposable and Parquet snapshots are authoritative"
+}

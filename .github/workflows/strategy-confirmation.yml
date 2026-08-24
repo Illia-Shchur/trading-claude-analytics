@@ -1,0 +1,29 @@
+name: strategy-ci-attested-confirmation
+
+on:
+  workflow_dispatch:
+    inputs:
+      reservation:
+        description: committed reservation path
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  confirm:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+      # The public-unseen-data custody runner is not shipped yet.  Preflight is
+      # deliberately the only executable step: it fails closed before any
+      # immutable burn/tag/sign operation can consume a reservation.
+      - name: Preflight unavailable runner (no burn)
+        env:
+          RESERVATION: ${{ inputs.reservation }}
+        run: |
+          node tools/ci-confirmation.mjs --preflight --reservation "$RESERVATION"

@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-acceptance-contract/1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "contract_id", "profile", "gates", "stress_scenarios", "content_sha256"],
+  "properties": {
+    "schema": { "const": "strategy-acceptance-contract/1" },
+    "contract_id": { "type": "string", "minLength": 1 },
+    "profile": { "type": "string", "minLength": 1 },
+    "gates": {
+      "type": "object", "additionalProperties": false,
+      "required": ["minimum_independent_episodes", "minimum_completed_episodes", "minimum_expectancy_r", "minimum_search_adjusted_expectancy_r", "minimum_r_profit_factor", "minimum_account_profit_factor", "minimum_total_return", "minimum_bootstrap_p20_expectancy_r", "maximum_candidate_set_p_value", "maximum_drawdown_pct", "minimum_positive_years", "minimum_episodes_per_positive_year", "minimum_positive_blocks", "maximum_negative_block_expectancy_r", "minimum_doubled_cost_expectancy_r", "minimum_doubled_cost_account_profit_factor", "minimum_coverage_fraction", "maximum_undeclared_gap_bars", "minimum_wfo_oos_episodes", "minimum_wfo_positive_folds"],
+      "properties": {
+        "minimum_independent_episodes": { "type": "number" }, "minimum_completed_episodes": { "type": "number" }, "minimum_expectancy_r": { "type": "number" }, "minimum_search_adjusted_expectancy_r": { "type": "number" }, "minimum_r_profit_factor": { "type": "number" }, "minimum_account_profit_factor": { "type": "number" }, "minimum_total_return": { "type": "number" }, "minimum_bootstrap_p20_expectancy_r": { "type": "number" }, "maximum_candidate_set_p_value": { "type": "number" }, "maximum_drawdown_pct": { "type": "number" }, "minimum_positive_years": { "type": "number" }, "minimum_episodes_per_positive_year": { "type": "number" }, "minimum_positive_blocks": { "type": "number" }, "maximum_negative_block_expectancy_r": { "type": "number" }, "minimum_doubled_cost_expectancy_r": { "type": "number" }, "minimum_doubled_cost_account_profit_factor": { "type": "number" }, "minimum_coverage_fraction": { "type": "number" }, "maximum_undeclared_gap_bars": { "type": "number" }, "minimum_wfo_oos_episodes": { "type": "number" }, "minimum_wfo_positive_folds": { "type": "number" }
+      }
+    },
+    "stress_scenarios": {
+      "type": "array", "minItems": 5, "maxItems": 5,
+      "items": { "oneOf": [
+        { "$ref": "#/$defs/fee" }, { "$ref": "#/$defs/funding" }, { "$ref": "#/$defs/gap" }, { "$ref": "#/$defs/liquidity" }, { "$ref": "#/$defs/outage" }
+      ] }
+    },
+    "content_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  },
+  "$defs": {
+    "fee": { "type": "object", "additionalProperties": false, "required": ["name", "required", "parameters"], "properties": { "name": { "const": "DOUBLED_FEES_SLIPPAGE" }, "required": { "const": true }, "parameters": { "type": "object", "additionalProperties": false, "required": ["multiplier", "minimum_observations", "minimum_expectancy_r"], "properties": { "multiplier": { "type": "number", "minimum": 1 }, "minimum_observations": { "type": "integer", "minimum": 1 }, "minimum_expectancy_r": { "type": "number" } } } } },
+    "funding": { "type": "object", "additionalProperties": false, "required": ["name", "required", "parameters"], "properties": { "name": { "const": "DOUBLED_FUNDING" }, "required": { "const": true }, "parameters": { "type": "object", "additionalProperties": false, "required": ["multiplier", "minimum_observations", "minimum_expectancy_r"], "properties": { "multiplier": { "type": "number", "minimum": 1 }, "minimum_observations": { "type": "integer", "minimum": 1 }, "minimum_expectancy_r": { "type": "number" } } } } },
+    "gap": { "type": "object", "additionalProperties": false, "required": ["name", "required", "parameters"], "properties": { "name": { "const": "ADVERSE_GAP" }, "required": { "const": true }, "parameters": { "type": "object", "additionalProperties": false, "required": ["debit_r", "gap_model", "minimum_observations", "minimum_expectancy_r"], "properties": { "debit_r": { "type": "number", "minimum": 0 }, "gap_model": { "const": "declared_gap_or_observed_mae" }, "minimum_observations": { "type": "integer", "minimum": 1 }, "minimum_expectancy_r": { "type": "number" } } } } },
+    "liquidity": { "type": "object", "additionalProperties": false, "required": ["name", "required", "parameters"], "properties": { "name": { "const": "LIQUIDITY_CAPACITY" }, "required": { "const": true }, "parameters": { "type": "object", "additionalProperties": false, "required": ["capacity_model", "maximum_participation_rate", "minimum_observations", "minimum_expectancy_r"], "properties": { "capacity_model": { "const": "venue_available_liquidity_notional" }, "maximum_participation_rate": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 }, "minimum_observations": { "type": "integer", "minimum": 1 }, "minimum_expectancy_r": { "type": "number" } } } } },
+    "outage": { "type": "object", "additionalProperties": false, "required": ["name", "required", "parameters"], "properties": { "name": { "const": "VENUE_OUTAGE" }, "required": { "const": true }, "parameters": { "type": "object", "additionalProperties": false, "required": ["outage_rule", "blackout_windows", "minimum_observations", "minimum_expectancy_r"], "properties": { "outage_rule": { "const": "declared_blackout_windows" }, "blackout_windows": { "type": "array", "minItems": 1, "items": { "type": "object", "additionalProperties": false, "required": ["venue", "start_time", "end_time"], "properties": { "venue": { "type": "string", "minLength": 1 }, "start_time": { "type": ["string", "number"] }, "end_time": { "type": ["string", "number"] } } } }, "minimum_observations": { "type": "integer", "minimum": 1 }, "minimum_expectancy_r": { "type": "number" } } } } }
+  }
+}

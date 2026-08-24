@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "research-lake-catalog/1",
+  "type": "object",
+  "required": ["schema", "snapshots", "content_sha256"],
+  "properties": {
+    "schema": { "const": "research-lake-catalog/1" },
+    "snapshots": { "type": "array" },
+    "content_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  },
+  "additionalProperties": false
+}

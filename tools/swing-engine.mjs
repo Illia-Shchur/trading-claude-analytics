@@ -332,7 +332,10 @@ export function normalizeCandidate(input = {}) {
   const maxHold = Math.trunc(Number(input.time_stop_bars ?? input.max_hold_bars ?? 180))
   if (maxHold < 1 || maxHold > MAX_HOLD_BARS) throw new Error('time stop must be between 1 and 180 bars')
   const maxConcurrent = Math.trunc(Number(input.max_concurrent ?? 1))
-  if (maxConcurrent !== 1) throw new Error('max_concurrent > 1 is unsupported; declare one active episode per strategy/asset')
+  if (maxConcurrent < 1) throw new Error('max_concurrent must be at least 1')
+  // The evaluator currently has a single-episode exclusion path.  Reject a
+  // larger cap rather than accepting it and silently serializing signals.
+  if (maxConcurrent !== 1) throw new Error('max_concurrent > 1 is unsupported until the capital-aware scheduler is authoritative')
   const stopPct = n(input.stop_pct ?? input.stop_distance_pct)
   const stopCeilingPct = stopCeiling({ framework, channel, phase })
   if (stopPct !== null && (stopPct <= 0 || stopPct > stopCeilingPct)) throw new Error(`stop_pct must be >0 and <=${stopCeilingPct}% for this phase/channel`)
@@ -373,7 +376,7 @@ export function normalizeCandidate(input = {}) {
     fee_pct: n(input.fee_pct ?? input.fee_pct_one_way) ?? 0.1,
     slippage_pct: n(input.slippage_pct ?? input.slippage_pct_one_way) ?? 0.05,
     funding_debit: input.funding_debit !== false, initial_equity: n(input.initial_equity) ?? DEFAULT_INITIAL_EQUITY,
-    max_concurrent: maxConcurrent, active_from: activeFrom, active_to: activeTo,
+    max_concurrent: maxConcurrent, concurrency_policy: 'SINGLE_EPISODE', active_from: activeFrom, active_to: activeTo,
     require_protective_controls: framework === 'flying_rocket' || input.require_protective_controls === true,
     _state: Object.keys(asMinimumMap(input.min_state ?? input.state_leg_minimums)).length ? asMinimumMap(input.min_state ?? input.state_leg_minimums) : null,
     _impulse: Object.keys(asMinimumMap(input.min_impulse ?? input.impulse_leg_minimums)).length ? asMinimumMap(input.min_impulse ?? input.impulse_leg_minimums) : null,
@@ -562,6 +565,7 @@ export function simulateTrade(rows, signalIndex, candidateInput, options = {}) {
   const units = notional / entry
   const entryFee = notional * candidate.fee_pct / 100
   let remaining = 1, gross = -entryFee, fees = entryFee, funding = 0, partial = false, stopLevel = stop
+  const fundingSettlements = []
   const fundingEvents = new Set()
   let exitIndex = null, exitRaw = null, exitType = 'TIME_STOP', exitedFraction = 0
   let maxFavorable = 0, maxAdverse = 0
@@ -582,11 +586,11 @@ export function simulateTrade(rows, signalIndex, candidateInput, options = {}) {
     const adverse = direction === 'long' ? (1 - bar.low / entry) : (bar.high / entry - 1)
     maxFavorable = Math.max(maxFavorable, favorable)
     maxAdverse = Math.max(maxAdverse, adverse)
-    const fundingEventTime = n(bar.funding_event_time) ?? Math.floor(bar.time / (8 * 60 * 60 * 1000)) * (8 * 60 * 60 * 1000)
-    // A carried latest-settled rate is not a new debit at entry.  Charge only
-    // settlement events whose event timestamp falls inside the actual holding
-    // interval and only once per event.
-    if (fundingEventTime >= entryBar.time && fundingEventTime <= bar.time && !fundingEvents.has(fundingEventTime)) { funding += fundingForBar(bar, direction, notional * remaining, candidate.funding_debit); fundingEvents.add(fundingEventTime) }
+    const fundingEventTime = n(bar.funding_event_time ?? bar.funding?.event_time)
+    // A carried latest-settled rate is not a new debit at entry.  Authoritative
+    // derivatives paths must provide the actual event timestamp and stable
+    // event identity; never synthesize a settlement from the OHLC bar clock.
+    if (fundingEventTime !== null && fundingEventTime >= entryBar.time && fundingEventTime <= bar.time && !fundingEvents.has(fundingEventTime)) { const settlementNotional = notional * remaining; const settlementAmount = fundingForBar(bar, direction, settlementNotional, candidate.funding_debit); const fundingVenue = bar.funding_venue || bar.funding?.venue || bar.venue || null; const fundingInstrument = bar.funding_instrument || bar.funding?.instrument || bar.instrument || null; const fundingSource = bar.funding_source || bar.funding?.source || 'unknown'; const authoritativeIdentity = Boolean(bar.funding_event_id && fundingSource !== 'unknown' && fundingVenue && fundingInstrument); fundingSettlements.push({ time: fundingEventTime, event_id: bar.funding_event_id ?? `${fundingVenue || 'unknown'}|${fundingInstrument || 'unknown'}|${fundingEventTime}`, rate: n(bar.funding_rate ?? bar.funding?.rate) ?? 0, notional: settlementNotional, amount: settlementAmount, source: fundingSource, venue: fundingVenue, instrument: fundingInstrument, identity_status: authoritativeIdentity ? 'AUTHORITATIVE' : 'INFERRED' }); funding += settlementAmount; fundingEvents.add(fundingEventTime) }
     const event = exitReasonForBar(bar, direction, stopLevel, target, partial || !partialPct ? null : partialTarget, collision)
     if (event?.type === 'PARTIAL') {
       const p = fillPrice(partialTarget, direction, candidate.slippage_pct, false)
@@ -635,7 +639,7 @@ export function simulateTrade(rows, signalIndex, candidateInput, options = {}) {
     exit_type: exitType, partial_exit: partial, partial_exit_pct: partial ? partialPct : 0, hold_bars: holdBars,
     notional, risk_dollars: riskDollars, risk_budget: { phase_cap_pct: capPct, portfolio_risk_pct: PORTFOLIO_RISK_PCT, asset_risk_pct: ASSET_RISK_PCT, phase_notional: phaseNotional, portfolio_risk_notional: portfolioRiskNotional, asset_risk_notional: assetRiskNotional }, gross_pnl: gross, net_pnl: netPnl, net_r: netR,
     fees, slippage_debit: notional * candidate.slippage_pct / 100 + Math.abs(fillPrice(exitRaw, direction, candidate.slippage_pct, false) * units) * candidate.slippage_pct / 100,
-    funding_pnl: funding, mae_pct: -maxAdverse * 100, mfe_pct: maxFavorable * 100,
+    funding_pnl: funding, funding_settlements: fundingSettlements, mae_pct: -maxAdverse * 100, mfe_pct: maxFavorable * 100,
     early_capture: exitType === 'TARGET' && holdBars <= Math.floor(candidate.max_hold_bars * 0.25),
     stop_out_then_target: null, stop_out_then_target_status: 'UNAVAILABLE_COUNTERFACTUAL', collision_policy: collision,
   }

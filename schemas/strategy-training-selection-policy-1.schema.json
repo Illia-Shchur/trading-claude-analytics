@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-training-selection-policy/1",
+  "type": "object",
+  "required": ["schema", "minimum_completed_trades", "minimum_expectancy_r", "objective", "tie_break", "nested_search_control", "content_sha256"],
+  "properties": {
+    "schema": { "const": "strategy-training-selection-policy/1" },
+    "minimum_completed_trades": { "type": "integer", "minimum": 1 },
+    "minimum_expectancy_r": { "type": "number" },
+    "objective": { "const": "expectancy_r_desc" },
+    "tie_break": { "const": "candidate_id_asc" },
+    "nested_search_control": { "const": "WFO_NESTED_SELECTION" },
+    "content_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  },
+  "additionalProperties": false
+}

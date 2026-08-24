@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "research-label-set/1",
+  "type": "object",
+  "required": ["schema", "label_set_id", "data_manifest_sha256", "label_code_sha256", "content_sha256"],
+  "properties": {
+    "schema": { "const": "research-label-set/1" }, "label_set_id": { "type": "string" },
+    "data_manifest_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "label_code_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "horizon": { "type": "object", "properties": { "bars": { "type": "integer", "minimum": 1 }, "unit": { "const": "bars" } }, "additionalProperties": false }, "derivation": { "type": "object", "required": ["label_code_sha256", "source_manifest_sha256", "predictor_eligible"], "properties": { "label_code_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "source_manifest_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "availability": { "type": "string" }, "resolution_field": { "type": "string" }, "predictor_eligible": { "const": false } }, "additionalProperties": false }, "partitions": { "type": "array", "items": { "$ref": "#/$defs/artifact" } }, "predictor_eligible": { "const": false }, "content_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }, "additionalProperties": false,
+  "$defs": { "artifact": { "type": "object", "required": ["path", "sha256", "format", "row_count"], "properties": { "path": { "type": "string" }, "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "format": { "enum": ["parquet", "jsonl"] }, "bytes": { "type": "integer", "minimum": 0 }, "rows": { "type": "integer", "minimum": 0 }, "row_count": { "type": "integer", "minimum": 0 } }, "additionalProperties": false } }
+}

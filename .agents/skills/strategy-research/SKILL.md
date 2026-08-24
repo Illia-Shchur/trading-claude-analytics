@@ -152,24 +152,24 @@ Use `node tools/strategy-research.mjs precommit` before `generate`. The CLI and
 registry are authoritative for immutable hashes, candidate accounting, run
 recording, indexes, and tamper checks; narrated results do not replace them.
 
-## Authoritative v2 execution (mandatory for new backtests)
+## Canonical v3 execution (mandatory for new research)
 
-New strategy-research/2 outcome work must use `node tools/strategy-research.mjs
-evaluate` with a frozen experiment/candidate set, hashed feature store and
-`strategy-data-manifest/1`. The registered `swing-engine/1` adapter is the
+New strategy-research/3 outcome work must use `node tools/strategy-research.mjs
+evaluate-v3` with a frozen experiment/candidate set, PIT feature/label sets and
+`strategy-data-manifest/2`. The registered `swing-engine/1` adapter is the
 implemented ordinary completed-bar swing capability. It hashes adapter source,
 config, supported features/instruments, feature/data manifests,
 package-lock/environment, seed ledger, timezone/bar convention, same-bar
 collision and cost/funding assumptions. It derives canonical trades and
-metrics for every effective candidate × required asset, including zero-trade
-rows, and recomputes the selected-candidate stress suite and mark-to-market
-linear crypto portfolio from those trades. `strategy-evidence-bundle/1` binds
-candidate-trade-set, all-trades, selected-trades, derived-metrics, stress and
+metrics for every effective candidate × required asset, while zero-trade
+episodes remain internal and digest-bound; it recomputes the selected/OOS stress suite and mark-to-market
+linear crypto portfolio from those trades. `strategy-evidence-bundle/2` binds
+candidate accounting, compact selected/OOS trades, derived-metrics, stress and
 portfolio hashes.
 
 The local path rejects `SEALED_CONFIRMATION`; an externally signed attestation
 bound to experiment/candidate/data hashes is required for that label, and no
-v2 path can produce `ACTIVE`. Caller-supplied metrics, trades, stress or
+v3 path can produce `ACTIVE`. Caller-supplied metrics, trades, stress or
 portfolio JSON is only an `EXTERNAL_EXPOSED` migration/read path and remains
 `REJECTED`/`SHADOW`. Require explicit chronology (development/training,
 chronological folds, purge/embargo, test/holdout or prospective bounds,
@@ -188,6 +188,23 @@ mark path supports crypto spot, linear perpetuals and linear dated futures;
 leveraged positions without exact entry/exit marks, a declared mark-gap
 contract, or actual funding/collateral terms fail. Marks carry forward only
 within that gap, and cross-margin maintenance is aggregate-account math.
+
+## Foundation v3 implementation boundary
+
+The repository also carries additive `strategy-experiment/3`,
+`strategy-evidence-bundle/2`, and `strategy-run/3` contracts. These bind
+immutable PIT-tiered data manifests, physically separate feature and label
+sets, executor/container hashes, candidate accounting, the acceptance
+contract, and chronological seeds. The `balanced-swing-v1` acceptance profile
+includes independent episodes, raw and search-adjusted expectancy, R/account
+profit factors, bootstrap p20, candidate max-statistic, years, chronological
+blocks, doubled costs, coverage and declared gaps.
+
+`node tools/research-data.mjs` owns snapshots and the pinned Docker DuckDB
+conversion. `node tools/strategy-attestation.mjs` owns reservations, burn
+records, Ed25519 signing, verification and append-only import. GitHub Actions
+may produce `CI_ATTESTED_CONFIRMATION`; it must never be described as sealed
+without independent unseen-data custody. No v3 path can produce `ACTIVE`.
 
 ## Deliverables by request type
 

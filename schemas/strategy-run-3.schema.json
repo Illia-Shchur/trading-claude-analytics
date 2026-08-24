@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-run/3",
+  "type": "object",
+  "required": ["schema", "run_id", "experiment_sha256", "evidence_bundle_sha256", "provenance", "evidence_phase", "decisions", "activation", "content_sha256"],
+  "properties": {
+    "schema": { "const": "strategy-run/3" }, "run_id": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "experiment_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "evidence_bundle_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+    "provenance": { "enum": ["AUTHORITATIVE_RECOMPUTED", "CI_ATTESTED", "EXTERNAL_EXPOSED"] }, "evidence_phase": { "enum": ["DEVELOPMENT", "WALK_FORWARD_OOS", "EXPOSED_CONFIRMATION", "CI_ATTESTED_CONFIRMATION", "PROSPECTIVE_LIVE"] },
+    "decisions": { "type": "object", "required": ["per_asset", "portfolio"], "properties": { "per_asset": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/decision" } }, "portfolio": { "$ref": "#/$defs/decision" } }, "additionalProperties": false }, "activation": { "const": { "authorized": false, "status": "RESEARCH_ONLY" } },
+    "content_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }, "additionalProperties": false,
+  "$defs": { "decision": { "type": "object", "required": ["status"], "properties": { "asset": { "type": "string" }, "candidate_id": { "type": ["string", "null"] }, "status": { "enum": ["REJECTED", "SHADOW", "CANDIDATE_REVIEW"] }, "reasons": { "type": "array", "items": { "type": "string" } } }, "additionalProperties": false } }
+}

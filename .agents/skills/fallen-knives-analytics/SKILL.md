@@ -5,6 +5,11 @@ description: "Proprietary crypto accumulation and exit framework for 3–30 day 
 
 # Fallen Knives Analytics — Crypto Accumulation & Exit Framework
 
+New strategy-family research routes to `.agents/skills/strategy-research` and
+its v3 foundation: PIT Parquet/DuckDB data, separate features/labels, frozen
+candidates, WFO/stress/portfolio evidence, and SHADOW-only decisions. This
+report skill never mints SEALED or ACTIVE research evidence.
+
 ## Overview
 
 Fallen Knives is a proprietary framework for two symmetric tasks:

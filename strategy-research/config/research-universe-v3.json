@@ -1,0 +1,10 @@
+{
+  "schema": "research-universe/3",
+  "tradable_assets": ["btc", "eth", "sol", "bnb", "xrp", "ada", "link", "aave"],
+  "context_only_assets": [],
+  "excluded_assets": ["doge"],
+  "policy": "crypto-only-tradable; non-crypto series may be context only and never contribute PnL or holdings",
+  "spot": { "venue": "binance", "instrument_type": "spot" },
+  "linear_perpetual": { "venue": "binance", "instrument_type": "perpetual", "collateral": "usdt", "funding_contract": "exact settlement events" },
+  "linear_dated_future": { "venue": "binance", "instrument_type": "dated_future", "collateral": "usdt", "funding_contract": "not_applicable" }
+}
