@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-prospective-trust-root/1",
+  "type": "object",
+  "required": ["schema", "version", "root_key_id", "root_public_key_pem", "pinned_fingerprint", "genesis_pinned_fingerprint", "generation", "delegations", "revoked_key_ids", "root_signature", "content_sha256"],
+  "properties": {
+    "schema": {"const": "strategy-prospective-trust-root/1"},
+    "version": {"const": 1},
+    "root_key_id": {"type": "string", "minLength": 1},
+    "root_public_key_pem": {"type": "string", "minLength": 1},
+    "pinned_fingerprint": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "genesis_pinned_fingerprint": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "generation": {"type": "integer", "minimum": 1},
+    "root_signature": {"type": "string", "minLength": 1},
+    "delegations": {"type": "array", "minItems": 3, "contains": {"type": "object", "properties": {"role": {"const": "asset"}}}, "allOf": [{"contains": {"type": "object", "properties": {"role": {"const": "portfolio"}}}}, {"contains": {"type": "object", "properties": {"role": {"const": "revocation"}}}}], "items": {"type": "object", "required": ["role", "key_id", "public_key_pem", "signature", "public_key_sha256"], "properties": {"role": {"enum": ["asset", "portfolio", "revocation"]}, "key_id": {"type": "string", "minLength": 1}, "public_key_pem": {"type": "string", "minLength": 1}, "public_key_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "signature": {"type": "string", "minLength": 1}, "valid_from": {"type": ["string", "null"], "format": "date-time"}, "valid_until": {"type": ["string", "null"], "format": "date-time"}}, "additionalProperties": false}},
+    "revoked_key_ids": {"type": "array"},
+    "previous_root_pinned_fingerprint": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+    "previous_root_sha256": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+    "previous_root_key_id": {"type": ["string", "null"]},
+    "rotation_signature": {"type": ["string", "null"]},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": false
+}

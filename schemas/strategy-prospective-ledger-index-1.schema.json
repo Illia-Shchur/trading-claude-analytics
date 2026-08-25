@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-prospective-ledger-index/1",
+  "type": "object",
+  "required": ["schema", "version", "lineage_sha256", "sequence", "head_sha256", "event_refs", "content_sha256"],
+  "properties": {"schema": {"const": "strategy-prospective-ledger-index/1"}, "version": {"const": 1}, "lineage_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "sequence": {"type": "integer", "minimum": 0}, "head_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "assets": {"type": "array", "items": {"type": "string"}}, "frozen_start": {"type": ["string", "null"], "format": "date-time"}, "frozen_end": {"type": ["string", "null"], "format": "date-time"}, "event_refs": {"type": "array", "items": {"type": "object", "required": ["sequence", "event_sha256", "byte_sha256", "path"], "properties": {"sequence": {"type": "integer", "minimum": 1}, "event_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "byte_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "path": {"type": "string"}}, "additionalProperties": false}}, "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}},
+  "additionalProperties": false
+}

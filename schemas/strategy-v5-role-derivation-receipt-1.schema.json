@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-v5-role-derivation-receipt/1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "version", "role", "provenance_mode", "producer_command", "producer_code_sha256", "producer_code_reference", "artifact_sha256", "source_manifest_sha256", "source_dataset_root_sha256", "predictor_registry_sha256", "code_sha256", "code_reference", "precommit_sha256", "envelope_sha256", "config_sha256", "plan_reference", "predictor_registry_reference", "precommit_reference", "envelope_reference", "config_reference", "content_sha256"],
+  "properties": {
+    "schema": { "const": "strategy-v5-role-derivation-receipt/1" },
+    "version": { "const": 1 },
+    "role": { "enum": ["FEATURE", "LABEL", "EXECUTION", "MARK"] },
+    "provenance_mode": { "enum": ["AUTHORITATIVE_INTERNAL", "FIXTURE_ONLY"] },
+    "producer_command": { "type": "string", "enum": ["strategy-v5-feature-producer/1", "strategy-v5-label-producer/1", "strategy-v5-execution-producer/1", "strategy-v5-mark-producer/1"] },
+    "producer_code_sha256": { "$ref": "#/$defs/hash" },
+    "producer_code_reference": { "$ref": "#/$defs/byteReference" },
+    "artifact_sha256": { "$ref": "#/$defs/hash" },
+    "source_manifest_sha256": { "$ref": "#/$defs/hash" },
+    "source_dataset_root_sha256": { "$ref": "#/$defs/hash" },
+    "predictor_registry_sha256": { "$ref": "#/$defs/hash" },
+    "code_sha256": { "$ref": "#/$defs/hash" },
+    "code_reference": { "$ref": "#/$defs/byteReference" },
+    "precommit_sha256": { "$ref": "#/$defs/hash" },
+    "envelope_sha256": { "$ref": "#/$defs/hash" },
+    "config_sha256": { "$ref": "#/$defs/hash" },
+    "plan_reference": { "$ref": "#/$defs/jsonReference" },
+    "predictor_registry_reference": { "$ref": "#/$defs/jsonReference" },
+    "precommit_reference": { "$ref": "#/$defs/jsonReference" },
+    "envelope_reference": { "$ref": "#/$defs/jsonReference" },
+    "config_reference": { "$ref": "#/$defs/jsonReference" },
+    "content_sha256": { "$ref": "#/$defs/hash" }
+  },
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "byteReference": { "type": "object", "additionalProperties": false, "required": ["path", "byte_sha256", "bytes"], "properties": { "path": { "type": "string", "minLength": 1 }, "byte_sha256": { "$ref": "#/$defs/hash" }, "bytes": { "type": "integer", "minimum": 1 } } },
+    "jsonReference": { "type": "object", "additionalProperties": false, "required": ["path", "content_sha256", "byte_sha256", "bytes"], "properties": { "path": { "type": "string", "minLength": 1 }, "content_sha256": { "$ref": "#/$defs/hash" }, "byte_sha256": { "$ref": "#/$defs/hash" }, "bytes": { "type": "integer", "minimum": 1 } } }
+  }
+}

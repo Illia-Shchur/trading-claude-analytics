@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-v5-authoritative-command-receipt/1",
+  "type": "object",
+  "required": ["schema", "version", "command", "status", "inputs", "outputs", "limitations", "content_sha256"],
+  "properties": {
+    "schema": { "const": "strategy-v5-authoritative-command-receipt/1" },
+    "version": { "const": 1 },
+    "command": { "enum": ["data-backfill", "opportunity-envelope", "search-genetic", "research-run", "overfit-audit", "prospective-runner", "readiness-audit", "deployment-audit", "validate", "index"] },
+    "status": { "enum": ["PLANNED", "COMPLETE", "BLOCKED", "REJECTED"] },
+    "inputs": { "type": "array", "items": { "$ref": "#/$defs/reference" } },
+    "outputs": { "type": "array", "items": { "$ref": "#/$defs/reference" } },
+    "limitations": { "type": "array", "items": { "type": "string" } },
+    "details": { "$ref": "#/$defs/details" },
+    "content_sha256": { "$ref": "#/$defs/hash" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "nullableHash": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+    "details": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": { "type": "string" },
+        "pipeline": { "type": "array", "items": { "enum": ["features", "signal_intent", "labels", "execution_fills", "trades", "metrics", "stresses", "portfolio", "wfo"] } },
+        "reason": { "type": "string" },
+        "record_count": { "type": "integer", "minimum": 0 },
+        "plan_sha256": { "$ref": "#/$defs/nullableHash" },
+        "catalog_sha256": { "$ref": "#/$defs/nullableHash" },
+        "coverage_sha256": { "$ref": "#/$defs/nullableHash" },
+        "acquisition_sha256": { "$ref": "#/$defs/nullableHash" },
+        "parquet_sha256": { "$ref": "#/$defs/nullableHash" },
+        "dataset_root_sha256": { "$ref": "#/$defs/nullableHash" },
+        "checkpoint_sha256": { "$ref": "#/$defs/nullableHash" },
+        "checkpoint_content_sha256": { "$ref": "#/$defs/nullableHash" },
+        "checkpoint_path": { "type": ["string", "null"] },
+        "rate_limit_ms": { "type": ["integer", "null"], "minimum": 0 },
+        "lock_stale_ms": { "type": ["integer", "null"], "minimum": 0 },
+        "envelope_sha256": { "$ref": "#/$defs/nullableHash" },
+        "opportunity_domain_sha256": { "$ref": "#/$defs/nullableHash" },
+        "hydration_sha256": { "$ref": "#/$defs/nullableHash" },
+        "physical_hydration_sha256": { "$ref": "#/$defs/nullableHash" },
+        "physical_partition_root_sha256": { "$ref": "#/$defs/nullableHash" },
+        "envelope_schema": { "type": ["string", "null"] },
+        "hydration_schema": { "type": ["string", "null"] },
+        "evaluator_manifest_sha256": { "$ref": "#/$defs/nullableHash" },
+        "evaluator_spec_sha256": { "$ref": "#/$defs/nullableHash" },
+        "experiment_sha256": { "$ref": "#/$defs/nullableHash" },
+        "constraints_sha256": { "$ref": "#/$defs/nullableHash" },
+        "training_cutoff": { "type": ["string", "null"], "format": "date-time" },
+        "training_phase": { "type": ["string", "null"] },
+        "reserved_test_start": { "type": ["string", "null"], "format": "date-time" },
+        "training_episode_ids_sha256": { "$ref": "#/$defs/nullableHash" },
+        "behavior_registry_sha256": { "$ref": "#/$defs/nullableHash" },
+        "behavior_registry_root_sha256": { "$ref": "#/$defs/nullableHash" },
+        "exposure_head_sha256": { "$ref": "#/$defs/nullableHash" },
+        "genetic_sha256": { "$ref": "#/$defs/nullableHash" },
+        "audit_sha256": { "$ref": "#/$defs/nullableHash" },
+        "null_controls_sha256": { "$ref": "#/$defs/nullableHash" },
+        "ledger_prior_head_sha256": { "$ref": "#/$defs/nullableHash" },
+        "ledger_new_head_sha256": { "$ref": "#/$defs/nullableHash" },
+        "ledger_sequence": { "type": ["integer", "null"], "minimum": 0 },
+        "bound_hashes": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "evaluator_sha256": { "$ref": "#/$defs/nullableHash" },
+            "data_sha256": { "$ref": "#/$defs/nullableHash" },
+            "plan_sha256": { "$ref": "#/$defs/nullableHash" },
+            "genetic_sha256": { "$ref": "#/$defs/nullableHash" },
+            "wfo_sha256": { "$ref": "#/$defs/nullableHash" },
+            "selected_fills_sha256": { "$ref": "#/$defs/nullableHash" },
+            "stress_sha256": { "$ref": "#/$defs/nullableHash" },
+            "portfolio_sha256": { "$ref": "#/$defs/nullableHash" }
+            ,"behavior_registry_sha256": { "$ref": "#/$defs/nullableHash" },
+            "opportunity_envelope_sha256": { "$ref": "#/$defs/nullableHash" },
+            "opportunity_domain_sha256": { "$ref": "#/$defs/nullableHash" },
+            "opportunity_hydration_sha256": { "$ref": "#/$defs/nullableHash" },
+            "opportunity_partition_root_sha256": { "$ref": "#/$defs/nullableHash" }
+          }
+        },
+        "active": { "const": false },
+        "activated": { "const": false }
+      }
+    },
+    "reference": {
+      "type": "object",
+      "required": ["role", "storage", "path", "byte_sha256", "content_sha256", "bytes"],
+      "properties": {
+        "role": { "type": "string", "minLength": 1 },
+        "storage": { "enum": ["PHYSICAL", "INLINE"] },
+        "path": { "type": ["string", "null"] },
+        "byte_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+        "content_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+        "bytes": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": { "properties": { "storage": { "const": "PHYSICAL" } } },
+          "then": {
+            "properties": { "path": { "type": "string", "minLength": 1 }, "byte_sha256": { "$ref": "#/$defs/hash" }, "bytes": { "type": "integer", "minimum": 1 } }
+          }
+        },
+        {
+          "if": { "properties": { "storage": { "const": "INLINE" } } },
+          "then": {
+            "required": ["content_sha256"],
+            "properties": { "path": { "type": "null" }, "byte_sha256": { "type": "null" }, "content_sha256": { "$ref": "#/$defs/hash" }, "bytes": { "const": 0 } }
+          }
+        }
+      ]
+    }
+  }
+}

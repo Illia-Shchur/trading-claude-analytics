@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-v5-promoted-coverage/1",
+  "type": "object",
+  "required": [
+    "schema", "version", "status", "plan_sha256", "requirements_sha256",
+    "acquisition_sha256", "parquet_sha256", "base_complete",
+    "declared_requirements_complete", "full_plan_complete", "require_parquet",
+    "required_series_count", "required_complete_count", "optional_series_count",
+    "optional_complete_count", "optional_unavailable", "series", "limitations",
+    "content_sha256"
+  ],
+  "properties": {
+    "schema": { "const": "strategy-v5-promoted-coverage/1" },
+    "version": { "const": 1 },
+    "status": { "enum": ["READY", "BLOCKED"] },
+    "plan_sha256": { "$ref": "#/$defs/hash" },
+    "requirements_sha256": { "$ref": "#/$defs/nullableHash" },
+    "acquisition_sha256": { "$ref": "#/$defs/hash" },
+    "parquet_sha256": { "$ref": "#/$defs/nullableHash" },
+    "base_complete": { "type": "boolean" },
+    "declared_requirements_complete": { "type": "boolean" },
+    "full_plan_complete": { "type": "boolean" },
+    "require_parquet": { "type": "boolean" },
+    "required_series_count": { "type": "integer", "minimum": 0 },
+    "required_complete_count": { "type": "integer", "minimum": 0 },
+    "optional_series_count": { "type": "integer", "minimum": 0 },
+    "optional_complete_count": { "type": "integer", "minimum": 0 },
+    "optional_unavailable": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "series": { "type": "array", "items": { "$ref": "#/$defs/series" } },
+    "limitations": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "content_sha256": { "$ref": "#/$defs/hash" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "nullableHash": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+    "series": {
+      "type": "object",
+      "required": [
+        "asset", "venue", "instrument", "symbol", "interval", "series_type",
+        "series_role", "trade_scope", "identity", "required", "observed_rows", "expected_rows",
+        "observed_min_event_time", "observed_max_event_time",
+        "observed_min_availability_time", "observed_max_availability_time", "gaps",
+        "acquisition_complete", "parquet_complete", "complete",
+        "acquisition_partition_sha256", "parquet_partition_sha256"
+      ],
+      "properties": {
+        "asset": { "type": "string" },
+        "venue": { "type": "string" },
+        "instrument": { "type": "string" },
+        "symbol": { "type": "string" },
+        "interval": { "type": "string" },
+        "series_type": { "type": "string" },
+        "series_role": { "type": "string" },
+        "trade_scope": { "enum": ["TRADEABLE_CRYPTO", "CONTEXT_ONLY"] },
+        "identity": { "type": "string" },
+        "required": { "type": "boolean" },
+        "observed_rows": { "type": "integer", "minimum": 0 },
+        "expected_rows": { "type": ["integer", "null"], "minimum": 0 },
+        "observed_min_event_time": { "type": ["string", "number", "null"] },
+        "observed_max_event_time": { "type": ["string", "number", "null"] },
+        "observed_min_availability_time": { "type": ["string", "number", "null"] },
+        "observed_max_availability_time": { "type": ["string", "number", "null"] },
+        "gaps": { "type": "array", "items": { "type": "string" } },
+        "acquisition_complete": { "type": "boolean" },
+        "parquet_complete": { "type": "boolean" },
+        "complete": { "type": "boolean" },
+        "acquisition_partition_sha256": { "$ref": "#/$defs/nullableHash" },
+        "parquet_partition_sha256": { "$ref": "#/$defs/nullableHash" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

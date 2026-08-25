@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-prospective-replay-registry/1",
+  "type": "object",
+  "required": ["schema", "version", "lineage_sha256", "sequence", "head_sha256", "current_head_sha256", "entries", "entry_refs", "index_path", "content_sha256"],
+  "properties": {
+    "schema": {"const": "strategy-prospective-replay-registry/1"},
+    "version": {"const": 1},
+    "lineage_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "sequence": {"type": "integer", "minimum": 0},
+    "head_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "current_head_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "entries": {"type": "array", "items": {"type": "object", "required": ["nonce", "action", "sequence", "previous_head_sha256", "entry_sha256"], "properties": {"nonce": {"type": "string", "minLength": 1}, "action": {"enum": ["USE", "REVOKE"]}, "sequence": {"type": "integer", "minimum": 1}, "previous_head_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "entry_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "publication_payload_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "used_at": {"type": "string", "format": "date-time"}, "reason": {"type": "string"}, "revoked_at": {"type": "string", "format": "date-time"}, "key_id": {"type": "string"}, "signature": {"type": "string"}, "trust_root_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "trust_root_generation": {"type": "integer", "minimum": 1}}, "additionalProperties": false}},
+    "entry_refs": {"type": "array", "items": {"type": "object", "required": ["sequence", "entry_sha256", "byte_sha256", "path"], "properties": {"sequence": {"type": "integer", "minimum": 1}, "entry_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "byte_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "path": {"type": "string"}}, "additionalProperties": false}},
+    "index_path": {"type": "string"},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": false
+}

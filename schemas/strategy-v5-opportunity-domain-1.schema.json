@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-v5-opportunity-domain/1",
+  "type": "object",
+  "required": [
+    "schema", "version", "status", "fixture_only", "provenance", "domain_complete",
+    "precommit_sha256", "candidate_set_sha256", "gene_space_sha256",
+    "evaluator_spec_sha256", "predictor_registry_sha256", "branch_count", "branches",
+    "content_sha256"
+  ],
+  "properties": {
+    "schema": { "const": "strategy-v5-opportunity-domain/1" },
+    "version": { "const": 1 },
+    "status": { "const": "FROZEN" },
+    "fixture_only": { "type": "boolean" },
+    "provenance": { "type": "string", "minLength": 1 },
+    "domain_complete": { "const": true },
+    "precommit_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+    "candidate_set_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+    "gene_space_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+    "evaluator_spec_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+    "predictor_registry_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+    "branch_count": { "type": "integer", "minimum": 1 },
+    "branches": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["branch_id", "candidate_id", "predicate", "behavior_sha256", "definition_sha256"],
+        "properties": {
+          "branch_id": { "type": "string", "minLength": 1 },
+          "candidate_id": { "type": ["string", "null"] },
+          "predicate": { "type": "object", "minProperties": 1 },
+          "behavior_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+          "definition_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "content_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  },
+  "additionalProperties": false
+}

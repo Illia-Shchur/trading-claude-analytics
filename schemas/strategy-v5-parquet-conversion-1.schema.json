@@ -1,0 +1,672 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-v5-parquet-conversion/1",
+  "type": "object",
+  "required": [
+    "schema",
+    "version",
+    "status",
+    "source_manifest_sha256",
+    "plan_sha256",
+    "output_root_reference",
+    "format",
+    "storage_role",
+    "authoritative",
+    "threads",
+    "captures",
+    "dataset_root_sha256",
+    "content_sha256"
+  ],
+  "properties": {
+    "schema": {
+      "const": "strategy-v5-parquet-conversion/1"
+    },
+    "version": {
+      "const": 1
+    },
+    "status": {
+      "const": "AUTHORITATIVE_PARQUET"
+    },
+    "source_manifest_sha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "plan_sha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "output_root_reference": {
+      "type": "string"
+    },
+    "format": {
+      "const": "PARQUET"
+    },
+    "storage_role": {
+      "const": "AUTHORITATIVE"
+    },
+    "authoritative": {
+      "const": true
+    },
+    "threads": {
+      "const": 1
+    },
+    "captures": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/capture"
+      }
+    },
+    "dataset_root_sha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "content_sha256": {
+      "$ref": "#/$defs/hash"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "partition": {
+      "type": "object",
+      "required": [
+        "path",
+        "sha256",
+        "bytes",
+        "row_count",
+        "format",
+        "storage_role",
+        "authoritative",
+        "source_jsonl_sha256",
+        "schema_sha256"
+      ],
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "sha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "row_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "format": {
+          "const": "PARQUET"
+        },
+        "storage_role": {
+          "const": "AUTHORITATIVE"
+        },
+        "authoritative": {
+          "const": true
+        },
+        "source_jsonl_sha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "schema_sha256": {
+          "$ref": "#/$defs/hash"
+        }
+      },
+      "additionalProperties": false
+    },
+    "coverage": {
+      "type": "object",
+      "properties": {
+        "complete": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "expected_rows": {
+          "type": "integer"
+        },
+        "observed_rows": {
+          "type": "integer"
+        },
+        "observed_events": {
+          "type": "integer"
+        },
+        "min_event_time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "max_event_time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "min_availability_time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "max_availability_time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "coverage_mode": {
+          "enum": [
+            "EVENT_SEQUENCE"
+          ]
+        },
+        "expected_slots": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "missing_slots": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "missing_days": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "missing_months": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "missing_buckets": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "gap_starts": {
+          "type": "array",
+          "items": {
+            "type": [
+              "string",
+              "number"
+            ]
+          }
+        },
+        "duplicate_events": {
+          "type": "array",
+          "items": {
+            "type": [
+              "string",
+              "number"
+            ]
+          }
+        },
+        "irregular_bars": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "field_coverage": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "minimum_field_coverage": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "settlement_mark_source": {
+          "type": "string"
+        },
+        "settlement_mark_source_response_sha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "settlement_mark_events": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "slot_tolerance_ms": {
+          "type": "integer"
+        },
+        "cadence_segments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/cadenceSegment"
+          }
+        },
+        "source_pagination_complete": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "query_start_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "query_end_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "first_event_time": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "last_event_time": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "expected_first_event_time": {
+          "type": [
+            "string",
+            "number",
+            "null"
+          ]
+        },
+        "expected_last_event_time": {
+          "type": [
+            "string",
+            "number",
+            "null"
+          ]
+        },
+        "boundaries_covered": {
+          "type": "boolean"
+        },
+        "archive_files": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "bounded": {
+          "type": "boolean"
+        },
+        "concurrency": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "native_step_ms": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "aggregation": {
+          "type": "string"
+        },
+        "expected_step_ms": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "source": {
+          "type": "string"
+        },
+        "checkpoint_path": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "checkpoint_sha256": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "captured_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "raw_archive_coverage": {
+          "type": [
+            "object",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "rawReceipt": {
+      "type": "object",
+      "required": [
+        "schema",
+        "version",
+        "content_sha256",
+        "path",
+        "byte_sha256",
+        "bytes",
+        "format",
+        "storage_role",
+        "authoritative"
+      ],
+      "properties": {
+        "schema": {
+          "const": "strategy-v5-source-receipt/1"
+        },
+        "version": {
+          "const": 1
+        },
+        "content_sha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "path": {
+          "type": "string"
+        },
+        "byte_sha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "format": {
+          "const": "RAW_BYTES"
+        },
+        "storage_role": {
+          "const": "RAW_IGNORED"
+        },
+        "authoritative": {
+          "const": false
+        },
+        "source": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "request": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "endpoint": {
+              "type": "string"
+            },
+            "symbol": {
+              "type": "string"
+            },
+            "interval": {
+              "type": "string"
+            },
+            "response_sha256": {
+              "$ref": "#/$defs/hash"
+            },
+            "start_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "end_at": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "receiptSummary": {
+      "type": "object",
+      "required": [
+        "path",
+        "sha256",
+        "schema",
+        "status",
+        "raw_count"
+      ],
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "sha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "content_sha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "byte_sha256": {
+          "type": [
+            "string",
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/$defs/hash"
+          }
+        },
+        "raw_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "schema": {
+          "const": "strategy-v5-source-receipt/1"
+        },
+        "status": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "capture": {
+      "type": "object",
+      "required": [
+        "asset",
+        "instrument",
+        "symbol",
+        "partition",
+        "coverage"
+      ],
+      "properties": {
+        "asset": {
+          "type": "string"
+        },
+        "venue": {
+          "type": "string"
+        },
+        "instrument": {
+          "type": "string"
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "interval": {
+          "type": "string"
+        },
+        "series_type": {
+          "type": "string"
+        },
+        "series_role": {
+          "type": "string"
+        },
+        "start_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "end_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "availability_cutoff_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "completed_bars_only": {
+          "type": "boolean"
+        },
+        "require_availability_time": {
+          "type": "boolean"
+        },
+        "expected_step_ms": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "expected_event_count": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "slot_tolerance_ms": {
+          "type": "integer"
+        },
+        "event_driven": {
+          "type": "boolean"
+        },
+        "event_sequence_mode": {
+          "type": "boolean"
+        },
+        "cadence_segments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/cadenceSegment"
+          }
+        },
+        "expiry": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "expiry_observed_date_utc": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "expiry_binding_status": {
+          "type": "string"
+        },
+        "tradeable": {
+          "type": "boolean"
+        },
+        "fee_schedule_status": {
+          "type": "string"
+        },
+        "contract_specification_status": {
+          "type": "string"
+        },
+        "funding_status": {
+          "type": "string"
+        },
+        "margin_status": {
+          "type": "string"
+        },
+        "liquidation_status": {
+          "type": "string"
+        },
+        "metric_required_fields": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "open_interest",
+              "open_interest_value",
+              "top_trader_account_long_short_ratio",
+              "top_trader_position_long_short_ratio",
+              "global_long_short_ratio",
+              "taker_buy_sell_volume_ratio"
+            ]
+          }
+        },
+        "metric_minimum_field_coverage": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "series_sha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "partition": {
+          "$ref": "#/$defs/partition"
+        },
+        "coverage": {
+          "$ref": "#/$defs/coverage"
+        },
+        "source_receipts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/receiptSummary"
+          }
+        },
+        "source_receipt_sha256": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/hash"
+          }
+        },
+        "source_receipt_byte_sha256": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/hash"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "cadenceSegment": {
+      "type": "object",
+      "required": [
+        "effective_from",
+        "effective_to",
+        "cadence_ms",
+        "origin_at",
+        "discovery"
+      ],
+      "properties": {
+        "effective_from": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "effective_to": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "cadence_ms": {
+          "type": "integer",
+          "enum": [
+            7200000,
+            14400000,
+            28800000
+          ]
+        },
+        "origin_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "discovery": {
+          "const": "OBSERVED_EVENT_GAPS"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

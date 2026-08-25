@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-selected-trades/1",
+  "type": "object",
+  "required": ["schema", "version", "status", "lineage_sha256", "evaluation_sha256", "rows", "content_sha256"],
+  "properties": {
+    "schema": {"const": "strategy-selected-trades/1"},
+    "version": {"const": 1},
+    "status": {"enum": ["SELECTED", "FIXTURE"]},
+    "lineage_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "evaluation_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "rows": {"type": "array", "items": {"type": "object", "required": ["signal_id", "asset", "venue", "symbol", "instrument_type", "direction", "quantity", "entry_time", "exit_time", "stop_price"], "properties": {"signal_id": {"type": "string", "minLength": 1}, "trade_id": {"type": "string"}, "candidate_id": {"type": "string"}, "asset": {"type": "string"}, "venue": {"type": "string"}, "symbol": {"type": "string"}, "instrument_type": {"type": "string"}, "direction": {"enum": ["long", "short"]}, "quantity": {"type": "number", "exclusiveMinimum": 0}, "entry_time": {"type": "string", "format": "date-time"}, "exit_time": {"type": "string", "format": "date-time"}, "stop_price": {"type": "number", "exclusiveMinimum": 0}, "notional": {"type": "number"}, "collateral_used": {"type": "number"}, "collateral": {"type": "number"}, "leverage": {"type": "number", "exclusiveMinimum": 0}, "margin_mode": {"type": "string"}, "margin_tier_id": {"type": "string"}, "holding_horizon": {"type": "number"}, "entry_reason": {"type": "string"}}, "additionalProperties": false}},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": false
+}

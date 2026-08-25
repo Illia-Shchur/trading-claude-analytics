@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-readiness-audit/2",
+  "type": "object",
+  "required": ["schema", "version", "generated_at", "basis", "dimensions", "strategy_testing_readiness", "activation", "artifact_verification", "content_sha256"],
+  "properties": {
+    "schema": {"const": "strategy-readiness-audit/2"},
+    "version": {"const": 2},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "basis": {"const": "EVIDENCE_DERIVED_OPERATIONAL"},
+    "dimensions": {"type": "array", "minItems": 7, "items": {"type": "object", "required": ["id", "capability", "operational", "score", "status", "blockers"]}},
+    "strategy_testing_readiness": {"type": "object", "required": ["score", "status", "required_dimensions", "blockers"]},
+    "activation": {"type": "object", "required": ["status", "ready", "active_strategy_count"]},
+    "artifact_verification": {"type": "array"},
+    "limitations": {"type": "array", "items": {"type": "string"}},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": false
+}

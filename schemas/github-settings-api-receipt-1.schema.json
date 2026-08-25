@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "github-settings-api-receipt/1",
+  "type": "object",
+  "required": ["schema", "version", "repository", "captured_at", "evidence_branch", "repository_visibility", "repository_visibility_verified", "endpoints", "settings_token_identity", "settings_token_secret", "oidc_signature_verified", "verified", "blockers", "content_sha256"],
+  "properties": {
+    "schema": {"const": "github-settings-api-receipt/1"},
+    "version": {"const": 1},
+    "repository": {"type": "string", "minLength": 1},
+    "captured_at": {"type": "string", "format": "date-time"},
+    "evidence_branch": {"type": "string", "minLength": 1},
+    "repository_visibility": {"enum": ["PUBLIC", "PRIVATE"]},
+    "repository_visibility_verified": {"type": "boolean"},
+    "endpoints": {"type": "object", "required": ["repository", "branch_protection", "branch_head", "environment_protection", "rulesets", "ruleset_details", "installation", "settings_token_identity", "settings_token_secret", "oidc_subject_restriction"], "additionalProperties": false, "properties": {"repository": {"$ref": "#/$defs/endpoint"}, "branch_protection": {"$ref": "#/$defs/endpoint"}, "branch_head": {"$ref": "#/$defs/endpoint"}, "environment_protection": {"$ref": "#/$defs/endpoint"}, "rulesets": {"$ref": "#/$defs/endpoint"}, "ruleset_details": {"$ref": "#/$defs/endpoint"}, "installation": {"$ref": "#/$defs/endpoint"}, "settings_token_identity": {"$ref": "#/$defs/endpoint"}, "settings_token_secret": {"$ref": "#/$defs/endpoint"}, "oidc_subject_restriction": {"$ref": "#/$defs/endpoint"}}},
+    "actions_secret": {"type": "object", "required": ["name", "environment_status", "environment_body_sha256", "repository_status", "repository_body_sha256", "organization_status", "organization_body_sha256", "verified"], "properties": {"name": {"type": "string", "minLength": 1}, "environment_status": {"type": "integer", "minimum": 0}, "environment_body_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "repository_status": {"type": "integer", "minimum": 0}, "repository_body_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "organization_status": {"type": "integer", "minimum": 0}, "organization_body_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "verified": {"type": "boolean"}}, "additionalProperties": false},
+    "settings_token_identity": {"type": "object", "required": ["api_status", "app_id", "user_id", "login", "token_kind", "expected_user_id", "expected_login", "secret_name", "secret_environment_status", "secret_environment_body_sha256", "secret_repository_status", "secret_repository_body_sha256", "secret_organization_status", "secret_organization_body_sha256", "body_sha256", "verified"], "properties": {"api_status": {"type": "integer", "minimum": 0}, "status": {"type": "integer", "minimum": 0}, "body_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "app_id": {"type": ["integer", "null"]}, "user_id": {"type": ["integer", "null"]}, "login": {"type": ["string", "null"]}, "token_kind": {"enum": ["PAT", "APP"]}, "expected_user_id": {"type": ["integer", "null"]}, "expected_login": {"type": ["string", "null"]}, "secret_name": {"type": "string", "minLength": 1}, "secret_environment_status": {"type": "integer", "minimum": 0}, "secret_environment_body_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "secret_repository_status": {"type": "integer", "minimum": 0}, "secret_repository_body_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "secret_organization_status": {"type": "integer", "minimum": 0}, "secret_organization_body_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "verified": {"type": "boolean"}}, "additionalProperties": false},
+    "settings_token_secret": {"type": "object", "required": ["name", "environment_status", "environment_body_sha256", "repository_status", "repository_body_sha256", "organization_status", "organization_body_sha256", "verified"], "properties": {"name": {"type": "string", "minLength": 1}, "environment_status": {"type": "integer", "minimum": 0}, "environment_body_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "repository_status": {"type": "integer", "minimum": 0}, "repository_body_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "organization_status": {"type": "integer", "minimum": 0}, "organization_body_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "verified": {"type": "boolean"}}, "additionalProperties": false},
+    "oidc_signature_verified": {"type": "boolean"},
+    "verified": {"type": "boolean"},
+    "blockers": {"type": "array", "items": {"type": "string"}},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "$defs": {"endpoint": {"type": "object", "required": ["status", "body_sha256"], "properties": {"status": {"type": "integer", "minimum": 0}, "body_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}}, "additionalProperties": false}},
+  "additionalProperties": false
+}

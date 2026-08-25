@@ -1,12 +1,12 @@
 import { parentPort, workerData } from 'node:worker_threads'
-import { buildAuthoritativeTrades, marketWideEpisodeVector, metricsFromTrades } from './strategy-research-v5.mjs'
+import { buildAuthoritativeTradesFixture, marketWideEpisodeVector, metricsFromTrades } from './strategy-research-v5.mjs'
 
 const { shared, featureRows, labelRows, executionRows, manifestSha256 } = workerData
 const control = new Int32Array(shared, 0, 2)
 const output = Buffer.from(shared, 8)
 parentPort?.on('message', candidate => {
   try {
-    const trades = buildAuthoritativeTrades({ featureRows, labelRows, executionRows, candidate, manifestSha256 })
+    const trades = buildAuthoritativeTradesFixture({ featureRows, labelRows, executionRows, candidate, manifestSha256 })
     const metrics = metricsFromTrades(trades, marketWideEpisodeVector({ labelRows, trades }))
     const bytes = Buffer.from(JSON.stringify({ metrics }), 'utf8')
     if (bytes.length > output.length) throw new Error('bounded worker result exceeds shared output capacity')

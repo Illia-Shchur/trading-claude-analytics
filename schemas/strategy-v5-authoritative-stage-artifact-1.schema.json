@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-v5-authoritative-stage-artifact/1",
+  "type": "object",
+  "required": ["schema", "version", "stage", "provenance", "source_manifest_sha256", "rows", "content_sha256"],
+  "properties": {
+    "schema": { "const": "strategy-v5-authoritative-stage-artifact/1" },
+    "version": { "const": 1 },
+    "stage": { "enum": ["GENETIC", "EXECUTION_FILLS", "SELECTED_TRADES", "STRESSES", "PORTFOLIO"] },
+    "provenance": { "const": "AUTHORITATIVE_RECOMPUTED" },
+    "source_manifest_sha256": { "$ref": "#/$defs/hash" },
+    "upstream_reference": { "$ref": "#/$defs/jsonReference" },
+    "wfo_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+    "marks_bound": { "type": ["boolean", "null"] },
+    "funding_status": { "type": ["string", "null"] },
+    "rows": { "type": "array", "items": { "type": "object" } },
+    "content_sha256": { "$ref": "#/$defs/hash" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "jsonReference": { "type": "object", "additionalProperties": false, "required": ["path", "content_sha256", "byte_sha256", "bytes"], "properties": { "path": { "type": "string", "minLength": 1 }, "content_sha256": { "$ref": "#/$defs/hash" }, "byte_sha256": { "$ref": "#/$defs/hash" }, "bytes": { "type": "integer", "minimum": 1 } } }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-v5-feature-plan/1",
+  "type": "object",
+  "required": ["schema", "version", "status", "fixture_only", "provenance", "graph_sha256", "requirements", "code_sha256", "content_sha256"],
+  "properties": {
+    "schema": { "const": "strategy-v5-feature-plan/1" },
+    "version": { "const": 1 },
+    "status": { "const": "FROZEN" },
+    "fixture_only": { "type": "boolean" },
+    "provenance": { "type": "string", "minLength": 1 },
+    "graph_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "precommit_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+    "config_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+    "code_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "source_registry_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "requirements": { "type": "array", "items": { "type": "object", "required": ["source_series", "timeframe", "lookback_bars", "warmup_bars", "nodes", "stateful_nodes", "checkpoint_state_required"], "properties": { "source_series": { "type": "string" }, "timeframe": { "type": "string" }, "lookback_bars": { "type": "integer", "minimum": 0 }, "warmup_bars": { "type": "integer", "minimum": 0 }, "nodes": { "type": "array", "items": { "type": "string" } }, "stateful_nodes": { "type": "array", "items": { "type": "string" } }, "checkpoint_state_required": { "type": "boolean" } }, "additionalProperties": true } },
+    "content_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  },
+  "additionalProperties": true
+}

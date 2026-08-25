@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-v5-data-checkpoint/1",
+  "type": "object",
+  "required": ["schema", "version", "plan_sha256", "root_reference", "completed", "content_sha256"],
+  "properties": { "schema": { "const": "strategy-v5-data-checkpoint/1" }, "version": { "const": 1 }, "plan_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "root_reference": { "type": "string" }, "prior_checkpoint_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" }, "producer_code_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "coverage_rules_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "envelope_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "candidate_set_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "max_lifecycle_ms": { "type": "integer", "minimum": 1 }, "capture_lineage": { "type": "object", "additionalProperties": { "type": "object", "required": ["producer_code_sha256", "producer_binding_status", "adapter_code_sha256", "adapter_binding_status"], "properties": { "producer_code_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" }, "producer_binding_status": { "enum": ["BOUND", "UNBOUND_LEGACY"] }, "adapter_code_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" }, "adapter_binding_status": { "enum": ["BOUND", "ROW_ONLY_LEGACY", "RECEIPT_ONLY_LEGACY", "UNBOUND_LEGACY"] } }, "additionalProperties": false } }, "completed": { "type": "object", "additionalProperties": { "type": "object" } }, "content_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" } },
+  "additionalProperties": false
+}

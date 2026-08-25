@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-v5-authoritative-coverage/1",
+  "type": "object",
+  "required": [
+    "schema", "version", "status", "mode", "captured_at", "plan_sha256",
+    "catalog_sha256", "acquisition_sha256", "parquet_sha256", "window",
+    "assets", "series", "dated_futures", "source_receipt_sha256",
+    "source_receipt_byte_sha256", "raw_receipt_sha256", "raw_receipt_byte_sha256",
+    "limitations", "content_sha256"
+  ],
+  "properties": {
+    "schema": { "const": "strategy-v5-authoritative-coverage/1" },
+    "version": { "const": 1 },
+    "status": { "enum": ["PLANNED", "OBSERVED_PARTIAL", "OBSERVED_COMPLETE"] },
+    "mode": { "enum": ["PLAN_ONLY", "CATALOG_ONLY_PLAN", "DOWNLOAD_AND_AUTHORITATIVE_REOPEN"] },
+    "captured_at": { "type": "string", "format": "date-time" },
+    "plan_sha256": { "$ref": "#/$defs/hash" },
+    "catalog_sha256": { "$ref": "#/$defs/nullableHash" },
+    "acquisition_sha256": { "$ref": "#/$defs/nullableHash" },
+    "parquet_sha256": { "$ref": "#/$defs/nullableHash" },
+    "dataset_root_sha256": { "$ref": "#/$defs/nullableHash" },
+    "window": {
+      "type": "object",
+      "required": ["years", "start_at", "end_at", "completed_through_at"],
+      "properties": {
+        "years": { "const": 5 },
+        "start_at": { "type": "string", "format": "date-time" },
+        "end_at": { "type": "string", "format": "date-time" },
+        "completed_through_at": { "type": "string", "format": "date-time" }
+      },
+      "additionalProperties": false
+    },
+    "assets": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+    "series": { "type": "array", "items": { "$ref": "#/$defs/series" } },
+    "dated_futures": { "type": "array", "items": { "$ref": "#/$defs/datedFuture" } },
+    "source_receipt_sha256": { "type": "array", "items": { "$ref": "#/$defs/hash" }, "uniqueItems": true },
+    "source_receipt_byte_sha256": { "type": "array", "items": { "$ref": "#/$defs/hash" }, "uniqueItems": true },
+    "raw_receipt_sha256": { "type": "array", "items": { "$ref": "#/$defs/hash" }, "uniqueItems": true },
+    "raw_receipt_byte_sha256": { "type": "array", "items": { "$ref": "#/$defs/hash" }, "uniqueItems": true },
+    "limitations": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "content_sha256": { "$ref": "#/$defs/hash" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "nullableHash": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+    "nullableTime": { "type": ["string", "null"], "format": "date-time" },
+    "series": {
+      "type": "object",
+      "required": [
+        "asset", "venue", "instrument", "symbol", "interval", "series_type",
+        "series_role", "requested_start_at", "requested_end_at",
+        "availability_cutoff_at", "required", "tradeable", "observed_rows",
+        "expected_rows", "observed_min_event_time", "observed_max_event_time",
+        "observed_min_availability_time", "observed_max_availability_time",
+        "gaps", "complete", "raw_receipt_sha256", "raw_receipt_byte_sha256",
+        "limitations"
+      ],
+      "properties": {
+        "asset": { "type": "string", "minLength": 1 },
+        "venue": { "type": "string", "minLength": 1 },
+        "instrument": { "type": "string", "minLength": 1 },
+        "symbol": { "type": "string", "minLength": 1 },
+        "interval": { "type": "string", "minLength": 1 },
+        "series_type": { "type": "string", "minLength": 1 },
+        "series_role": { "type": "string", "minLength": 1 },
+        "requested_start_at": { "type": "string", "format": "date-time" },
+        "requested_end_at": { "type": "string", "format": "date-time" },
+        "availability_cutoff_at": { "type": "string", "format": "date-time" },
+        "required": { "type": "boolean" },
+        "tradeable": { "type": "boolean" },
+        "observed_rows": { "type": "integer", "minimum": 0 },
+        "expected_rows": { "type": ["integer", "null"], "minimum": 0 },
+        "observed_min_event_time": { "$ref": "#/$defs/nullableTime" },
+        "observed_max_event_time": { "$ref": "#/$defs/nullableTime" },
+        "observed_min_availability_time": { "$ref": "#/$defs/nullableTime" },
+        "observed_max_availability_time": { "$ref": "#/$defs/nullableTime" },
+        "gaps": { "type": "array", "items": { "type": "string" } },
+        "complete": { "type": "boolean" },
+        "raw_receipt_sha256": { "type": "array", "items": { "$ref": "#/$defs/hash" }, "uniqueItems": true },
+        "raw_receipt_byte_sha256": { "type": "array", "items": { "$ref": "#/$defs/hash" }, "uniqueItems": true },
+        "source_receipt_sha256": { "type": "array", "items": { "$ref": "#/$defs/hash" }, "uniqueItems": true },
+        "source_receipt_byte_sha256": { "type": "array", "items": { "$ref": "#/$defs/hash" }, "uniqueItems": true },
+        "jsonl_partition": { "anyOf": [{ "$ref": "#/$defs/partition" }, { "type": "null" }] },
+        "parquet_partition": { "anyOf": [{ "$ref": "#/$defs/partition" }, { "type": "null" }] },
+        "limitations": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
+      },
+      "additionalProperties": false
+    },
+    "partition": {
+      "type": "object",
+      "required": ["path", "byte_sha256", "bytes", "row_count", "format", "authoritative"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "byte_sha256": { "$ref": "#/$defs/hash" },
+        "bytes": { "type": "integer", "minimum": 1 },
+        "row_count": { "type": "integer", "minimum": 0 },
+        "format": { "enum": ["JSONL", "PARQUET"] },
+        "authoritative": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    },
+    "datedFuture": {
+      "type": "object",
+      "required": ["asset", "instrument", "symbol", "history_status", "tradeable", "contracts", "limitations"],
+      "properties": {
+        "asset": { "type": "string", "minLength": 1 },
+        "instrument": { "const": "BINANCE_USDM_DATED_FUTURE" },
+        "symbol": { "type": ["string", "null"] },
+        "history_status": { "enum": ["SIGNAL_HISTORY_AVAILABLE", "UNAVAILABLE"] },
+        "tradeable": { "type": "boolean" },
+        "contracts": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+        "limitations": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
+      },
+      "additionalProperties": false
+    }
+  }
+}

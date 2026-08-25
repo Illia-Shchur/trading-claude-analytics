@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-v5-lifecycle-trust/1",
+  "type": "object",
+  "required": ["schema", "version", "fixture_only", "provenance", "root_reference", "receipts", "lineage", "bundle_sha256", "content_sha256"],
+  "properties": {
+    "schema": { "const": "strategy-v5-lifecycle-trust/1" },
+    "version": { "const": 1 },
+    "fixture_only": { "const": false },
+    "provenance": { "const": "AUTHORITATIVE" },
+    "root_reference": { "type": ["string", "null"], "minLength": 1 },
+    "bundle_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "content_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "lineage": { "type": "object" },
+    "receipts": {
+      "type": "object",
+      "required": ["contract_spec", "execution_model", "capacity", "bars"],
+      "properties": {
+        "contract_spec": { "$ref": "#/$defs/receipt" },
+        "execution_model": { "$ref": "#/$defs/receipt" },
+        "capacity": { "$ref": "#/$defs/receipt" },
+        "bars": { "$ref": "#/$defs/receipt" },
+        "funding": { "$ref": "#/$defs/receipt" },
+        "marks": { "$ref": "#/$defs/receipt" },
+        "hydration": { "$ref": "#/$defs/receipt" }
+      },
+      "additionalProperties": false
+    },
+    "values": { "type": "object" }
+  },
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "receipt": {
+      "type": "object",
+      "required": ["path", "bytes", "byte_sha256", "content_sha256"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "bytes": { "type": "integer", "minimum": 0 },
+        "byte_sha256": { "$ref": "#/$defs/hash" },
+        "content_sha256": { "$ref": "#/$defs/hash" },
+        "rows_sha256": { "$ref": "#/$defs/hash" },
+        "schema": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

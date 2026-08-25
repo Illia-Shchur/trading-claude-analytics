@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-portfolio-stress-result/1",
+  "type": "object",
+  "required": ["schema", "version", "provenance", "selected_trades_sha256", "evaluation_sha256", "execution_fills_sha256", "policy_sha256", "scenarios", "content_sha256"],
+  "properties": {
+    "schema": {"const": "strategy-portfolio-stress-result/1"},
+    "version": {"const": 1},
+    "provenance": {"const": "AUTHORITATIVE_RECOMPUTED"},
+    "selected_trades_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "evaluation_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "execution_fills_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "policy_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "scenarios": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["scenario_id", "kind", "pass"],
+        "properties": {
+          "scenario_id": {"type": "string", "minLength": 1},
+          "kind": {"enum": ["DOUBLED_COST", "DELAYED_ENTRY", "ADVERSE_COLLISION", "GAP", "LIQUIDITY", "CAPACITY", "OUTAGE", "FUNDING", "EXPIRY", "LIQUIDATION"]},
+          "pass": {"type": "boolean"},
+          "parameters": {"type": "object"},
+          "limitations": {"type": "array", "items": {"type": "string"}}
+        },
+        "additionalProperties": true
+      }
+    },
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": false
+}

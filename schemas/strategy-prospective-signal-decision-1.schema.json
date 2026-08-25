@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-prospective-signal-decision/1",
+  "type": "object",
+  "required": ["schema", "version", "decision", "signal_state", "signal_intent", "candidate_id", "completed_bar_id", "source_receipt_sha256", "reservation_sha256", "candidate_set_sha256", "evaluator_code_sha256", "feature_input_sha256", "feature_row_sha256", "availability_cutoff_time", "decision_time", "lineage_sha256", "content_sha256"],
+  "properties": {"schema": {"const": "strategy-prospective-signal-decision/1"}, "version": {"const": 1}, "decision": {"const": "SHADOW"}, "signal_state": {"const": "SHADOW"}, "signal_intent": {"type": "boolean"}, "candidate_id": {"type": "string", "minLength": 1}, "completed_bar_id": {"type": "string", "minLength": 1}, "source_receipt_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "reservation_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "candidate_set_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "evaluator_code_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "feature_input_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "feature_row_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "availability_cutoff_time": {"type": "string", "format": "date-time"}, "decision_time": {"type": "string", "format": "date-time"}, "lineage_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}},
+  "additionalProperties": false
+}

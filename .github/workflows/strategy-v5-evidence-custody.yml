@@ -1,0 +1,73 @@
+name: strategy-v5-evidence-custody
+
+on:
+  pull_request:
+    branches:
+      - strategy-v5-evidence
+
+# This verifier is deliberately read-only.  The protected evidence ruleset
+# requires its `strategy-v5-evidence-custody` check before an append can merge.
+permissions: {}
+
+jobs:
+  verify:
+    name: strategy-v5-evidence-custody
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Checkout the proposed merge tree
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Install pinned verifier dependencies
+        run: npm ci
+
+      - name: Verify additive-only immutable evidence
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git diff --name-status --find-renames "$BASE_SHA...$HEAD_SHA" > .v5-custody-diff
+          awk 'BEGIN { ok = 1 } { if ($1 != "A" || index($2, "evidence/prospective-v5/") != 1) { print "non-additive or out-of-scope evidence change: " $0 > "/dev/stderr"; ok = 0 } } END { if (NR == 0 || !ok) exit 1 }' .v5-custody-diff
+          node --input-type=module <<'NODE'
+          import { existsSync, readFileSync, readdirSync, lstatSync } from 'node:fs'
+          import { join, resolve } from 'node:path'
+          import { validateKnownContractSchema } from './tools/research-schema-registry.mjs'
+          import { ownHash, readProspectiveLedger } from './tools/strategy-prospective-v5.mjs'
+          import { selectProspectiveLedgerCandidateV5, verifySafeTree } from './tools/strategy-v5-workflow-security.mjs'
+
+          const evidenceRoot = resolve('evidence/prospective-v5')
+          if (!existsSync(evidenceRoot) || !lstatSync(evidenceRoot).isDirectory()) throw new Error('evidence/prospective-v5 is missing')
+          verifySafeTree(evidenceRoot, 'prospective evidence tree')
+
+          const ledgerRoots = []
+          const walk = directory => {
+            for (const entry of readdirSync(directory, { withFileTypes: true })) {
+              const path = join(directory, entry.name)
+              if (entry.isDirectory()) walk(path)
+              else if (entry.name === 'HEAD.json' && directory.endsWith('/ledger')) ledgerRoots.push(directory)
+              else if (!entry.name.endsWith('.json')) throw new Error(`non-JSON evidence file is forbidden: ${path}`)
+              else {
+                const value = JSON.parse(readFileSync(path, 'utf8'))
+                validateKnownContractSchema(value)
+                const field = value.event_sha256 ? 'event_sha256' : value.entry_sha256 ? 'entry_sha256' : 'content_sha256'
+                if (typeof value[field] !== 'string' || value[field] !== ownHash(value, field)) throw new Error(`immutable artifact hash mismatch: ${path}`)
+              }
+            }
+          }
+          walk(evidenceRoot)
+
+          const candidates = []
+          for (const path of ledgerRoots) {
+            const ledger = readProspectiveLedger(path, { nowAt: Date.now(), allowFuture: true })
+            candidates.push({ path, sequence: ledger.sequence, head: ledger.current_head_sha256, lineage: ledger.lineage_sha256, eventHeads: ledger.events.map(event => event.event_sha256) })
+          }
+          if (!candidates.length) throw new Error('no prospective ledger snapshot is present')
+          selectProspectiveLedgerCandidateV5(candidates)
+          process.stdout.write(JSON.stringify({ verified_artifacts: true, ledger_snapshots: candidates.length }) + '\n')
+          NODE

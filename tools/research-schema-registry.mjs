@@ -5,20 +5,61 @@ import { readFileSync, readdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import Ajv2020 from 'ajv/dist/2020.js'
+import addFormats from 'ajv-formats'
 
 const schemaRoot = join(dirname(fileURLToPath(import.meta.url)), '..', 'schemas')
-const names = ['strategy-acceptance-contract-1.schema.json', 'strategy-data-manifest-2.schema.json', 'strategy-data-manifest-3.schema.json', 'research-feature-set-1.schema.json', 'research-label-set-1.schema.json', 'research-lake-catalog-1.schema.json', 'strategy-experiment-3.schema.json', 'strategy-evidence-bundle-2.schema.json', 'strategy-run-3.schema.json', 'strategy-attestation-1.schema.json', 'strategy-confirmation-reservation-1.schema.json', 'strategy-training-selection-policy-1.schema.json', 'strategy-research-stack-1.schema.json', 'strategy-execution-policy-1.schema.json', 'strategy-portfolio-policy-1.schema.json', 'strategy-source-receipt-1.schema.json', 'strategy-source-registry-1.schema.json', 'strategy-exposure-ledger-1.schema.json', 'strategy-exposure-ledger-2.schema.json', 'strategy-prospective-ledger-1.schema.json', 'strategy-prospective-attestation-1.schema.json', 'strategy-prospective-gate-1.schema.json', 'strategy-activation-1.schema.json', 'strategy-activation-revocation-1.schema.json', 'strategy-readiness-audit-1.schema.json', 'strategy-candidate-set-4.schema.json', 'strategy-candidate-set-5.schema.json', 'strategy-genetic-run-1.schema.json', 'strategy-execution-result-1.schema.json', 'strategy-portfolio-result-1.schema.json', 'strategy-portfolio-result-2.schema.json', 'strategy-wfo-result-1.schema.json', 'strategy-wfo-result-2.schema.json', 'strategy-stress-result-1.schema.json', 'strategy-stress-result-2.schema.json', 'prospective-monitoring-2.schema.json', 'strategy-research-index-4.schema.json', 'strategy-research-index-5.schema.json', 'strategy-research-run-4.schema.json', 'strategy-research-run-5.schema.json', 'strategy-research-evidence-4.schema.json', 'strategy-research-evidence-5.schema.json', 'strategy-opportunity-envelope-1.schema.json', 'strategy-prospective-runner-2.schema.json', 'strategy-overfit-audit-1.schema.json', 'strategy-gene-space-1.schema.json', 'strategy-deployment-audit-1.schema.json', 'strategy-prospective-publication-1.schema.json', 'github-deployment-settings-capture-1.schema.json']
+const names = readdirSync(schemaRoot).filter(name => name.endsWith('.schema.json')).sort()
 const ajv = new Ajv2020({ allErrors: true, strict: false })
+addFormats(ajv)
 const schemas = names.map(name => JSON.parse(readFileSync(join(schemaRoot, name), 'utf8')))
 for (const schema of schemas) ajv.addSchema(schema)
-const known = new Set(schemas.map(schema => schema.$id))
+function embeddedSchemas(value, output = []) {
+  if (Array.isArray(value)) value.forEach(child => embeddedSchemas(child, output))
+  else if (value && typeof value === 'object') {
+    if (typeof value.$id === 'string') output.push(value)
+    Object.values(value).forEach(child => embeddedSchemas(child, output))
+  }
+  return output
+}
+// Some v5 contracts are kept as `$defs` in one durable document so their
+// shared definitions remain content-addressed together.  AJV resolves those
+// definitions from the parent document but does not automatically expose
+// each embedded `$id` through `getSchema`; register each canonical embedded
+// root explicitly for strict CLI validation.
+for (const schema of schemas) for (const embedded of embeddedSchemas(schema)) if (embedded.$id !== schema.$id && !ajv.getSchema(embedded.$id)) ajv.addSchema(embedded)
+function collectSchemaIds(value, output = new Set()) {
+  if (Array.isArray(value)) value.forEach(child => collectSchemaIds(child, output))
+  else if (value && typeof value === 'object') {
+    if (typeof value.$id === 'string') output.add(value.$id)
+    Object.values(value).forEach(child => collectSchemaIds(child, output))
+  }
+  return output
+}
+const known = collectSchemaIds(schemas)
+
+export function hasContractSchema(schema) {
+  return typeof schema === 'string' && known.has(schema)
+}
 
 export function validateContractSchema(value) {
-  if (!value?.schema || !known.has(value.schema)) return true
+  if (!value?.schema || !hasContractSchema(value.schema)) return true
   const validator = ajv.getSchema(value.schema)
   if (!validator) throw new Error(`schema registry is missing ${value.schema}`)
   if (!validator(value)) throw new Error(`Ajv schema validation failed for ${value.schema}: ${ajv.errorsText(validator.errors)}`)
   return true
+}
+
+/* Canonical write/CLI boundaries must never interpret an unknown schema as a
+ * successful validation.  The permissive validator above remains for legacy
+ * callers whose domain validators intentionally own schemas outside this
+ * registry; new authoritative paths use this strict entry point. */
+export function validateKnownContractSchema(value) {
+  if (!value?.schema || !hasContractSchema(value.schema)) throw new Error(`schema registry does not recognize ${value?.schema || '?'}`)
+  return validateContractSchema(value)
+}
+
+export function listContractSchemas() {
+  return [...known].sort()
 }
 
 export function validateAllSchemas(values) { return values.map(validateContractSchema) }

@@ -1,0 +1,165 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-v5-evaluator-spec/1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "version",
+    "status",
+    "strategy_family",
+    "precommit_sha256",
+    "gene_space_sha256",
+    "predictor_registry_sha256",
+    "predicate",
+    "candidate_template",
+    "execution_contract",
+    "code_sha256",
+    "worker_code_sha256",
+    "content_sha256"
+  ],
+  "properties": {
+    "schema": { "const": "strategy-v5-evaluator-spec/1" },
+    "version": { "const": 1 },
+    "status": { "const": "FROZEN" },
+    "strategy_family": { "type": "string", "minLength": 1, "maxLength": 160 },
+    "precommit_sha256": { "$ref": "#/$defs/hash" },
+    "gene_space_sha256": { "$ref": "#/$defs/hash" },
+    "predictor_registry_sha256": { "$ref": "#/$defs/hash" },
+    "predicate": { "$ref": "#/$defs/predicate" },
+    "candidate_template": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["direction", "entry_policy", "lifecycle_timeframe", "max_lifecycle_ms", "exit_policy"],
+      "properties": {
+        "direction": { "$ref": "#/$defs/templateValue" },
+        "instrument_type": { "$ref": "#/$defs/templateValue" },
+        "entry_policy": { "$ref": "#/$defs/templateValue" },
+        "lifecycle_timeframe": { "$ref": "#/$defs/templateValue" },
+        "max_lifecycle_ms": { "$ref": "#/$defs/templateValue" },
+        "exit_policy": { "$ref": "#/$defs/templateValue" },
+        "lifecycle": { "$ref": "#/$defs/templateValue" },
+        "lifecycle_spec": { "$ref": "#/$defs/templateValue" },
+        "lifecycle_engine": { "$ref": "#/$defs/templateValue" },
+        "risk_amount_usd": { "$ref": "#/$defs/templateValue" }
+      }
+    },
+    "execution_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entry_policy", "completed_bar_only", "child_interval_ms", "collision_policy", "outage_policy", "gap_policy", "capacity_input_contract", "decision_timestamp_convention", "decision_timeframe"],
+      "properties": {
+        "entry_policy": { "const": "NEXT_BAR_OPEN" },
+        "completed_bar_only": { "const": true },
+        "child_interval_ms": { "const": 60000 },
+        "collision_policy": { "const": "ADVERSE_STOP_FIRST" },
+        "outage_policy": { "const": "FAIL" },
+        "gap_policy": { "enum": ["FAIL", "FILL_AT_OPEN"] },
+        "capacity_input_contract": { "const": "NOTIONAL_LE_AVAILABLE_LIQUIDITY_X_PARTICIPATION_CAP" },
+        "decision_timestamp_convention": { "const": "COMPLETED_4H_BOUNDARY" },
+        "decision_timeframe": { "const": "4h" },
+        "risk_convention": { "anyOf": [{ "$ref": "#/$defs/riskConvention" }, { "type": "null" }] },
+        "sizing_contract": { "anyOf": [{ "$ref": "#/$defs/sizingContract" }, { "type": "null" }] },
+        "derivative_policy": { "anyOf": [{ "$ref": "#/$defs/derivativePolicy" }, { "type": "null" }] }
+      }
+    },
+    "code_sha256": { "$ref": "#/$defs/hash" },
+    "worker_code_sha256": { "$ref": "#/$defs/hash" },
+    "content_sha256": { "$ref": "#/$defs/hash" }
+  },
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "riskConvention": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "budget_usd", "precommit_sha256"],
+      "properties": {
+        "mode": { "const": "FIXED_RISK_BUDGET_USD" },
+        "budget_usd": { "type": "number", "exclusiveMinimum": 0 },
+        "precommit_sha256": { "$ref": "#/$defs/hash" }
+      }
+    },
+    "sizingContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "precommit_sha256"],
+      "properties": {
+        "mode": { "enum": ["FIXED_NOTIONAL_USD", "TARGET_STOP_RISK"] },
+        "notional_usd": { "type": "number", "exclusiveMinimum": 0 },
+        "precommit_sha256": { "$ref": "#/$defs/hash" },
+        "quantity_step": { "type": "number", "exclusiveMinimum": 0 },
+        "min_quantity": { "type": "number", "exclusiveMinimum": 0 },
+        "max_quantity": { "type": "number", "exclusiveMinimum": 0 },
+        "min_notional_usd": { "type": "number", "exclusiveMinimum": 0 },
+        "max_notional_usd": { "type": "number", "exclusiveMinimum": 0 }
+      },
+      "allOf": [
+        { "if": { "properties": { "mode": { "const": "FIXED_NOTIONAL_USD" } } }, "then": { "required": ["notional_usd"] } },
+        { "if": { "properties": { "mode": { "const": "TARGET_STOP_RISK" } } }, "then": { "not": { "required": ["notional_usd"] } } }
+      ]
+    },
+    "derivativePolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["margin_mode", "leverage", "precommit_sha256"],
+      "properties": {
+        "margin_mode": { "const": "ISOLATED" },
+        "leverage": { "type": "number", "exclusiveMinimum": 0 },
+        "tier_id": { "type": "string", "minLength": 1 },
+        "collateral_buffer_fraction": { "type": "number", "minimum": 0 },
+        "precommit_sha256": { "$ref": "#/$defs/hash" }
+      }
+    },
+    "geneRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["$gene"],
+      "properties": { "$gene": { "type": "string", "minLength": 1, "maxLength": 128 } }
+    },
+    "templateValue": {
+      "oneOf": [
+        { "type": ["string", "number", "integer", "boolean", "null"] },
+        { "$ref": "#/$defs/geneRef" },
+        { "type": "array", "items": { "$ref": "#/$defs/templateValue" } },
+        {
+          "type": "object",
+          "propertyNames": { "not": { "const": "$gene" } },
+          "additionalProperties": { "$ref": "#/$defs/templateValue" }
+        }
+      ]
+    },
+    "comparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["predictor_id", "op", "value"],
+      "properties": {
+        "predictor_id": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,127}$" },
+        "op": { "enum": ["GT", "GTE", "LT", "LTE", "EQ", "NE", "IN"] },
+        "value": { "$ref": "#/$defs/templateValue" }
+      }
+    },
+    "predicate": {
+      "oneOf": [
+        { "$ref": "#/$defs/comparison" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["all"],
+          "properties": { "all": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/predicate" } } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["any"],
+          "properties": { "any": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/predicate" } } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["not"],
+          "properties": { "not": { "$ref": "#/$defs/predicate" } }
+        }
+      ]
+    }
+  }
+}

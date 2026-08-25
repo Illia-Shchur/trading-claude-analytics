@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-v5-separated-artifacts/1",
+  "type": "object",
+  "required": ["schema", "version", "status", "plan_sha256", "predictor_ids", "predictor_registry_sha256", "candidate_predicates", "source_manifest_sha256", "source_manifest_reference", "source_dataset_root_sha256", "transformation_code_sha256", "label_code_sha256", "execution_code_sha256", "config_sha256", "precommit_sha256", "envelope_sha256", "artifacts", "storage_role", "format", "authoritative", "dataset_root_sha256", "content_sha256"],
+  "properties": {
+    "schema": { "const": "strategy-v5-separated-artifacts/1" },
+    "version": { "const": 1 },
+    "status": { "enum": ["STAGING_ONLY", "AUTHORITATIVE_PARQUET"] },
+    "plan_sha256": { "$ref": "#/$defs/hash" },
+    "predictor_ids": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "predictor_registry_sha256": { "$ref": "#/$defs/hash" },
+    "candidate_predicates": { "type": "array", "items": { "oneOf": [{ "type": "string" }, { "type": "object", "required": ["predictor_id"], "properties": { "predictor_id": { "type": "string" }, "operator": { "enum": ["EQ", "NE", "GT", "GTE", "LT", "LTE", "IN", "BETWEEN"] }, "value": { "type": ["number", "string", "boolean", "null"] }, "values": { "type": "array", "items": { "type": ["number", "string", "boolean", "null"] } } }, "additionalProperties": false }] } },
+    "source_manifest_sha256": { "$ref": "#/$defs/hash" },
+    "source_manifest_reference": { "$ref": "#/$defs/physicalReference" },
+    "source_dataset_root_sha256": { "$ref": "#/$defs/hash" },
+    "transformation_code_sha256": { "$ref": "#/$defs/hash" },
+    "label_code_sha256": { "$ref": "#/$defs/hash" },
+    "execution_code_sha256": { "$ref": "#/$defs/hash" },
+    "config_sha256": { "$ref": "#/$defs/hash" },
+    "precommit_sha256": { "$ref": "#/$defs/hash" },
+    "envelope_sha256": { "$ref": "#/$defs/hash" },
+    "artifacts": { "type": "object", "required": ["feature", "label", "execution", "mark"], "properties": { "feature": { "$ref": "#/$defs/artifact" }, "label": { "$ref": "#/$defs/artifact" }, "execution": { "$ref": "#/$defs/artifact" }, "mark": { "$ref": "#/$defs/artifact" } }, "additionalProperties": false },
+    "storage_role": { "enum": ["STAGING", "AUTHORITATIVE"] },
+    "format": { "enum": ["JSONL", "PARQUET"] },
+    "authoritative": { "type": "boolean" },
+    "dataset_root_sha256": { "$ref": "#/$defs/hash" },
+    "conversion_required": { "const": "PARQUET" },
+    "conversion_status": { "type": "string" },
+    "conversion": { "type": "object", "required": ["source_artifact_manifest_sha256", "source_artifact_manifest_reference", "runtime", "dependency", "threads", "deterministic"], "properties": { "source_artifact_manifest_sha256": { "$ref": "#/$defs/hash" }, "source_artifact_manifest_reference": { "$ref": "#/$defs/physicalReference" }, "runtime": { "type": "string" }, "dependency": { "type": "string" }, "threads": { "const": 1 }, "deterministic": { "const": true } }, "additionalProperties": false },
+    "limitations": { "type": "array", "items": { "type": "string" } },
+    "content_sha256": { "$ref": "#/$defs/hash" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "physicalReference": { "type": "object", "additionalProperties": false, "required": ["path", "content_sha256", "byte_sha256"], "properties": { "path": { "type": "string", "minLength": 1 }, "content_sha256": { "$ref": "#/$defs/hash" }, "byte_sha256": { "$ref": "#/$defs/hash" } } },
+    "artifact": { "type": "object", "required": ["role", "path", "sha256", "bytes", "row_count", "format", "storage_role", "authoritative", "derivation_receipt_path", "derivation_receipt_sha256", "derivation_receipt_byte_sha256"], "properties": { "role": { "enum": ["FEATURE", "LABEL", "EXECUTION", "MARK"] }, "path": { "type": "string" }, "sha256": { "$ref": "#/$defs/hash" }, "bytes": { "type": "integer", "minimum": 0 }, "row_count": { "type": "integer", "minimum": 0 }, "format": { "enum": ["JSONL", "PARQUET"] }, "storage_role": { "enum": ["STAGING", "AUTHORITATIVE"] }, "authoritative": { "type": "boolean" }, "source_jsonl_sha256": { "$ref": "#/$defs/hash" }, "source_row_count": { "type": "integer", "minimum": 0 }, "schema_sha256": { "$ref": "#/$defs/hash" }, "field_names": { "type": "array", "items": { "type": "string" } }, "rows_sha256": { "$ref": "#/$defs/hash" }, "derivation_receipt_path": { "type": "string" }, "derivation_receipt_sha256": { "$ref": "#/$defs/hash" }, "derivation_receipt_byte_sha256": { "$ref": "#/$defs/hash" } }, "additionalProperties": false }
+  }
+}

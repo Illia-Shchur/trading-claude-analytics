@@ -1,5 +1,9 @@
 import assert from 'node:assert/strict'
 import { generateKeyPairSync } from 'node:crypto'
+import { spawnSync } from 'node:child_process'
+import { existsSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { tmpdir } from 'node:os'
 import { appendExposureLedger, appendProspectiveEvent, assignPitTier, freezeNextPrecommit, generateNextCandidates, makeActivationArtifact, makeExecutionPolicy, makePortfolioPolicy, makeProspectiveLedger, makeProspectiveReservation, makeStackContract, monitorProspective, readinessAudit, simulateResearchPortfolio, stationaryBlockMaxStatistic, validateExecutionPolicy, validatePortfolioPolicy, verifyActivationArtifact, validateProspectiveLedger, nestedWalkForward, withHash } from '../tools/strategy-research-next.mjs'
 
 const precommit = freezeNextPrecommit({
@@ -20,4 +24,13 @@ assert.equal(monitorProspective({ ledger, expected: { expectancy: 0 }, now: '202
 assert.throws(() => makeActivationArtifact({ strategySha256: 'a'.repeat(64), candidateSha256: candidates.content_sha256, riskPolicySha256: portfolio.content_sha256, evidenceArtifacts: {} }), /private key/)
 const audit = readinessAudit(); assert.equal(audit.active_strategy_count, 0); assert.equal(audit.dimensions.length, 7)
 const result = simulateResearchPortfolio({ trades: [{ trade_id: 't1', asset: 'btc', direction: 'long', entry_time: 1, exit_time: 2, notional: 100, risk_amount: 10, net_pnl: 2, instrument: { instrument_type: 'spot' } }], policy: portfolio, initialEquity: 1000, bootstrapIterations: 10 }); assert.equal(result.activation, 'RESEARCH_ONLY')
+const looseRoot = mkdtempSync(join(tmpdir(), 'strategy-next-search-genetic-'))
+const looseFeaturePath = join(looseRoot, 'features.json'); writeFileSync(looseFeaturePath, JSON.stringify([{ asset: 'btc', decision_time: '2026-01-01T00:00:00Z', signal_eligible: true }]))
+const looseOutputPath = join(looseRoot, 'out.json')
+const legacySearch = spawnSync(process.execPath, ['tools/strategy-research-next.mjs', 'search-genetic', '--features', looseFeaturePath, '--labels', looseFeaturePath, '--execution', looseFeaturePath, '--out', looseOutputPath], { encoding: 'utf8' })
+assert.notEqual(legacySearch.status, 0); assert.match(legacySearch.stderr, /legacy fixture-only|physical manifests/); assert.equal(existsSync(looseOutputPath), false)
+const deployment = spawnSync(process.execPath, ['tools/strategy-research-next.mjs', 'deployment-audit', '--out', join(looseRoot, 'deployment-audit.json')], { encoding: 'utf8' })
+assert.equal(deployment.status, 0, deployment.stderr); assert.match(deployment.stdout, /"schema":\s*"strategy-deployment-audit\/1"/)
+const readiness = spawnSync(process.execPath, ['tools/strategy-research-next.mjs', 'readiness-audit', '--record-root', looseRoot, '--out', join(looseRoot, 'readiness-audit.json'), '--markdown', join(looseRoot, 'readiness-audit.md'), '--receipt', join(looseRoot, 'readiness-receipt.json')], { encoding: 'utf8' })
+assert.equal(readiness.status, 0, readiness.stderr); assert.match(readiness.stdout, /"command":\s*"readiness-audit"/)
 console.log('strategy-research-next-test: ok')

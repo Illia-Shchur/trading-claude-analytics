@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-v5-authoritative-stress-contract/1",
+  "type": "object",
+  "required": ["schema", "version", "evaluator_sha256", "precommit_sha256", "experiment_sha256", "resampling", "scenarios", "content_sha256"],
+  "properties": {
+    "schema": { "const": "strategy-v5-authoritative-stress-contract/1" }, "version": { "const": 1 },
+    "evaluator_sha256": { "anyOf": [{ "$ref": "#/$defs/hash" }, { "type": "null" }] }, "precommit_sha256": { "anyOf": [{ "$ref": "#/$defs/hash" }, { "type": "null" }] }, "experiment_sha256": { "anyOf": [{ "$ref": "#/$defs/hash" }, { "type": "null" }] },
+    "resampling": { "type": "object", "additionalProperties": false, "required": ["iterations", "seed", "block_length"], "properties": { "iterations": { "type": "integer", "minimum": 1 }, "seed": { "type": "integer", "minimum": 0 }, "block_length": { "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }] } } },
+    "scenarios": { "type": "array", "minItems": 13, "maxItems": 13, "items": { "$ref": "#/$defs/scenario" } }, "content_sha256": { "$ref": "#/$defs/hash" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "scenario": {
+      "type": "object", "required": ["id", "required", "parameters", "source"], "additionalProperties": false,
+      "properties": { "id": { "type": "string", "minLength": 1 }, "required": { "type": "boolean" }, "source": { "type": "string", "minLength": 1 }, "parameters": { "$ref": "#/$defs/parameters" } }
+    },
+    "parameters": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "liquidity_model": { "type": "string" }, "liquidity_impact_bps": { "type": "number", "exclusiveMinimum": 0 },
+        "multiplier": { "type": "number" }, "fee_multiplier": { "type": "number" }, "slippage_multiplier": { "type": "number" }, "impact_multiplier": { "type": "number" }, "entry_delay_bars": { "type": "integer", "minimum": 1 }, "delay_bars": { "type": "integer", "minimum": 1 }, "bootstrap_iterations": { "type": "integer", "minimum": 1 }, "block_length": { "type": "integer", "minimum": 1 }, "seed": { "type": "integer", "minimum": 0 }, "minimum_observations": { "type": "number", "minimum": 1 }, "minimum_expectancy_r": { "type": "number" }, "minimum_p20_r": { "type": "number" }, "minimum_profit_factor": { "type": "number", "minimum": 0 }, "maximum_drawdown_r": { "type": "number", "minimum": 0 }, "maximum_cost_r": { "type": "number", "minimum": 0 }, "minimum_coverage_fraction": { "type": "number", "minimum": 0, "maximum": 1 }, "debit_r": { "type": "number", "minimum": 0 }, "gap_model": { "type": "string" }, "historical_gap_set": { "type": "array", "items": {} }, "gap_bars": { "type": "array", "items": {} }, "gap_fill_price": { "type": "number", "exclusiveMinimum": 0 }, "capacity_model": { "type": "string" }, "maximum_participation_rate": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 }, "outage_rule": { "type": "string" }, "blackout_windows": { "type": "array", "items": { "type": "object" } }, "funding_multiplier": { "type": "number" }, "expiry_policy": { "type": "string" }, "liquidation_rule": { "type": "string" }, "adverse_move_bps": { "type": "number", "exclusiveMinimum": 0 }, "stop_price": { "type": "number", "exclusiveMinimum": 0 }, "target_price": { "type": "number", "exclusiveMinimum": 0 }, "collision_policy": { "type": "string" }, "field": { "type": "string" }, "value": {}, "exclude_asset": { "type": "string" }, "asset": { "type": "string" }, "exclude_value": {}, "survival_condition": { "type": "string" }, "not_applicable": { "type": "boolean" }, "required_fields": { "type": "array", "items": { "type": "string" } }, "declared_field": { "type": "string" }, "declared_value": {}, "combined_scenarios": { "type": "boolean" }, "applies_to": { "type": "array", "items": { "type": "string" } }, "evidence_leg": { "type": "string" }
+      }
+    }
+  }
+}

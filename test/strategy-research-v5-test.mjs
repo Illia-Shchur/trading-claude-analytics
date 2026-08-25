@@ -4,11 +4,11 @@ import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, exist
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
-  acquireFiveYearPublic, buildAuthoritativeTrades, evaluateAuthoritativeV5, makeCandidateSetV5, makeDeploymentAuditV5, makeDeploymentSettingsCaptureV5, makeFiveYearBackfillPlan,
+  acquireFiveYearPublic, buildAuthoritativeTrades, evaluateAuthoritativeV5, evaluateAuthoritativeV5Fixture, makeCandidateSetV5, makeDeploymentAuditV5, makeDeploymentSettingsCaptureV5, makeFiveYearBackfillPlan,
   makeExposureLedgerV5, makeOpportunityEnvelope, makeProspectivePublicationV5, normalizeGeneSpace,
-  ownHash, runNullControlsV5, runOverfitAuditV5, selectBestV5, selectNsgaSurvivors, searchGenetic,
-  validateFiveYearPlan, validateExposureLedgerV5, validateGeneticRun, weightedP20, derivePortfolioV5,
-  deriveStressSuiteV5, indexV5Records, hash, stable, runWfoV5
+  ownHash, runNullControlsV5, runNullControlsV5Fixture, runOverfitAuditV5, runOverfitAuditV5Fixture, selectBestV5, selectNsgaSurvivors, searchGenetic,
+  validateFiveYearPlan, validateExposureLedgerV5, validateGeneticRun, weightedP20, derivePortfolioV5, derivePortfolioV5Fixture,
+  deriveStressSuiteV5, deriveStressSuiteV5Fixture, indexV5Records, hash, stable, runWfoV5, validateV5Artifact
 } from '../tools/strategy-research-v5.mjs'
 
 const lineage = { precommitSha256: '1'.repeat(64), experimentSha256: '2'.repeat(64), objectiveContractSha256: '3'.repeat(64), acceptanceSha256: '4'.repeat(64) }
@@ -90,28 +90,32 @@ const hydrationEarlyRows = hydrationContent.trim().split(/\r?\n/); const hydrati
 const envelope = makeOpportunityEnvelope({ manifest: acquired, candidateSet, featureRows: features, partitionArtifacts: hydration })
 assert.equal(envelope.windows.length, 1)
 assert.throws(() => makeOpportunityEnvelope({ manifest: acquired, candidateSet, featureRows: features, partitionArtifacts: hydration, finalistOnly: true }), /finalist-only/)
-const authoritative = evaluateAuthoritativeV5({ featureRows: features, labelRows: labels, executionRows: fills, candidateSet, manifest: acquired, envelope })
-assert.equal(authoritative.run.provenance, 'AUTHORITATIVE_RECOMPUTED')
+const authoritative = evaluateAuthoritativeV5Fixture({ featureRows: features, labelRows: labels, executionRows: fills, candidateSet, manifest: acquired, envelope })
+assert.equal(authoritative.run.provenance, 'FIXTURE/LEGACY_EXPOSED')
 assert.equal(authoritative.run.candidate_metrics[0].metrics.expectancy_r, 0.799)
 assert.equal(authoritative.run.decision, 'REJECTED')
+assert.throws(() => validateV5Artifact(authoritative.run), /fixture\/legacy artifact/)
+assert.throws(() => evaluateAuthoritativeV5({}), /FIXTURE\/LEGACY_EXPOSED/)
 const failClosedWfo = runWfoV5({ featureRows: [], labelRows: [], executionRows: [], geneSpace: space, datasetRootSha256: 'a'.repeat(64), ...lineage, genesis: true }); assert.equal(failClosedWfo.run.decision, 'REJECTED'); assert.equal(failClosedWfo.run.gate_status.all_required_stages, false); assert.ok(failClosedWfo.run.folds.every(fold => fold.status === 'REJECTED'))
-assert.throws(() => evaluateAuthoritativeV5({ featureRows: [{ ...features[0], outcome: 1 }], labelRows: labels, executionRows: fills, candidateSet, manifest: acquired }), /label\/outcome/)
-assert.throws(() => evaluateAuthoritativeV5({ featureRows: [{ ...features[0], availability_time: '2026-01-01T00:00:01Z' }], labelRows: labels, executionRows: fills, candidateSet, manifest: acquired }), /not PIT-available/)
-assert.throws(() => evaluateAuthoritativeV5({ featureRows: features, labelRows: [{ ...labels[0], availability_time: labels[0].decision_time }], executionRows: fills, candidateSet, manifest: acquired }), /precedes outcome resolution/)
-assert.throws(() => evaluateAuthoritativeV5({ featureRows: features, labelRows: labels, executionRows: [{ ...fills[0], child_bars: fills[0].child_bars.map((bar, index) => index ? bar : { ...bar, availability_time: bar.time }) }], candidateSet, manifest: acquired }), /available before its close/)
-assert.throws(() => evaluateAuthoritativeV5({ featureRows: features, labelRows: labels, executionRows: [{ ...fills[0], cost_r: 1 }], candidateSet, manifest: acquired }), /precomputed label return\/cost/)
-assert.throws(() => evaluateAuthoritativeV5({ featureRows: features, labelRows: [{ ...labels[0], net_r: 1 }], executionRows: fills, candidateSet, manifest: acquired }), /precomputed label return\/cost/)
+assert.throws(() => evaluateAuthoritativeV5Fixture({ featureRows: [{ ...features[0], outcome: 1 }], labelRows: labels, executionRows: fills, candidateSet, manifest: acquired }), /label\/outcome/)
+assert.throws(() => evaluateAuthoritativeV5Fixture({ featureRows: [{ ...features[0], availability_time: '2026-01-01T00:00:01Z' }], labelRows: labels, executionRows: fills, candidateSet, manifest: acquired }), /not PIT-available/)
+assert.throws(() => evaluateAuthoritativeV5Fixture({ featureRows: features, labelRows: [{ ...labels[0], availability_time: labels[0].decision_time }], executionRows: fills, candidateSet, manifest: acquired }), /precedes outcome resolution/)
+assert.throws(() => evaluateAuthoritativeV5Fixture({ featureRows: features, labelRows: labels, executionRows: [{ ...fills[0], child_bars: fills[0].child_bars.map((bar, index) => index ? bar : { ...bar, availability_time: bar.time }) }], candidateSet, manifest: acquired }), /available before its close/)
+assert.throws(() => evaluateAuthoritativeV5Fixture({ featureRows: features, labelRows: labels, executionRows: [{ ...fills[0], cost_r: 1 }], candidateSet, manifest: acquired }), /precomputed label return\/cost/)
+assert.throws(() => evaluateAuthoritativeV5Fixture({ featureRows: features, labelRows: [{ ...labels[0], net_r: 1 }], executionRows: fills, candidateSet, manifest: acquired }), /precomputed label return\/cost/)
 
-assert.equal(derivePortfolioV5([{ asset: 'btc', signal_id: 'x', direction: 'long', entry_time: labels[0].entry_time, exit_time: labels[0].exit_time, entry_price: 100, exit_price: 101, quantity: 1, instrument_type: 'spot' }]).marks_bound, false)
-assert.equal(deriveStressSuiteV5([{ net_r: 1 }]).pass, false)
+assert.equal(derivePortfolioV5Fixture([{ asset: 'btc', signal_id: 'x', direction: 'long', entry_time: labels[0].entry_time, exit_time: labels[0].exit_time, entry_price: 100, exit_price: 101, quantity: 1, instrument_type: 'spot' }]).marks_bound, false)
+assert.equal(deriveStressSuiteV5Fixture([{ net_r: 1 }]).pass, false)
+assert.throws(() => derivePortfolioV5([]), /FIXTURE\/LEGACY_EXPOSED/)
+assert.throws(() => deriveStressSuiteV5([]), /FIXTURE\/LEGACY_EXPOSED/)
 const stressNames = ['DOUBLED_COSTS', 'DELAYED_ENTRY', 'ADVERSE_OHLC_COLLISION', 'GAP', 'LIQUIDITY', 'CAPACITY', 'VENUE_OUTAGE', 'FUNDING', 'EXPIRY', 'LIQUIDATION']
 const stressInputs = Object.fromEntries(stressNames.map(name => [name, { applied: true, debit_r: 0.01, source_sha256: 's'.repeat(64) }]))
 const completeStressTrade = { net_r: 1, fee_r: 0.01, slippage_r: 0.01, funding_debit_r: 0.01, funding_settlements: [{ event_id: 'fund-1', source: 'fixture', venue: 'binance', instrument: 'BTCUSDT', amount: 0.01 }], notional: 100, execution_sha256: 'e'.repeat(64), instrument_type: 'spot', capacity_debit_r: 0.01, delayed_entry_debit_r: 0.01, collision_debit_r: 0.01, gap_debit_r: 0.01, outage_debit_r: 0.01, expiry_debit_r: 0.01, liquidation_debit_r: 0.01, scenario_inputs: stressInputs }
 completeStressTrade.scenario_inputs_sha256 = hash(stressInputs)
-assert.equal(deriveStressSuiteV5([completeStressTrade]).pass, true)
+assert.equal(deriveStressSuiteV5Fixture([completeStressTrade]).pass, true)
 const noopStressInputs = { ...stressInputs, GAP: { ...stressInputs.GAP, debit_r: 0 } }
 const noopStressTrade = { ...completeStressTrade, scenario_inputs: noopStressInputs, scenario_inputs_sha256: hash(noopStressInputs) }
-assert.equal(deriveStressSuiteV5([noopStressTrade]).pass, false)
+assert.equal(deriveStressSuiteV5Fixture([noopStressTrade]).pass, false)
 const crowd = [[0, 3, 0, 3], [1, 2, 1, 2], [2, 1, 2, 1], [3, 0, 3, 0]].map((objectives, index) => ({ behavior_sha256: String(index), fitness: { feasible: true, violations: [], objectives } }))
 const survivors = selectNsgaSurvivors(crowd, 2)
 assert.equal(survivors.length, 2)
@@ -119,22 +123,24 @@ assert.ok(survivors.some(row => row.behavior_sha256 === '0') && survivors.some(r
 const best = selectBestV5([{ behavior_sha256: 'a', fitness: { feasible: true, metrics: { bootstrap_p20: 1, weighted_p20: 1, max_drawdown_r: -10, complexity: 1 } } }, { behavior_sha256: 'b', fitness: { feasible: true, metrics: { bootstrap_p20: 1, weighted_p20: 1, max_drawdown_r: -1, complexity: 1 } } }])
 assert.equal(best.behavior_sha256, 'b')
 assert.ok(Number.isFinite(weightedP20([{ time: '2024-01-01T00:00:00Z', r: -1 }, { time: '2026-01-01T00:00:00Z', r: 1 }], { cutoff: '2026-01-01T00:00:00Z' })))
-const isoAudit = runOverfitAuditV5({ episodeReturns: Array.from({ length: 30 }, (_, i) => ({ time: new Date(Date.UTC(2025, i % 12, 1)).toISOString(), r: 1 })), searchK: 10, metrics: { positive_outer_folds: 3, positive_years: 2, earlier_blocks: [0.1] }, plateau: { pass: true, connected_profitable_plateau_size: 5, profitable_neighbour_fraction: 0.5 }, stability: { stable_across_at_least_two_seeds: true }, stresses: { pass: true, scenarios: [] }, required: { sample_size_insufficient: true, bootstrap_iterations: 20, max_stat_iterations: 20 } })
+const isoAudit = runOverfitAuditV5Fixture({ episodeReturns: Array.from({ length: 30 }, (_, i) => ({ time: new Date(Date.UTC(2025, i % 12, 1)).toISOString(), r: 1 })), searchK: 10, metrics: { positive_outer_folds: 3, positive_years: 2, earlier_blocks: [0.1] }, plateau: { pass: true, connected_profitable_plateau_size: 5, profitable_neighbour_fraction: 0.5 }, stability: { stable_across_at_least_two_seeds: true }, stresses: { pass: true, scenarios: [] }, required: { sample_size_insufficient: true, bootstrap_iterations: 20, max_stat_iterations: 20 } })
 assert.equal(isoAudit.recent_window.rows, 30)
-const candidateObjectAudit = runOverfitAuditV5({ episodeReturns: { weak: Array.from({ length: 30 }, (_, i) => ({ time: i, r: -0.1 })), edge: Array.from({ length: 30 }, (_, i) => ({ time: i, r: 0.2 })) }, required: { selected_candidate_id: 'edge', sample_size_insufficient: true, bootstrap_iterations: 10, max_stat_iterations: 10, null_iterations: 10 } })
+const candidateObjectAudit = runOverfitAuditV5Fixture({ episodeReturns: { weak: Array.from({ length: 30 }, (_, i) => ({ time: i, r: -0.1 })), edge: Array.from({ length: 30 }, (_, i) => ({ time: i, r: 0.2 })) }, required: { selected_candidate_id: 'edge', sample_size_insufficient: true, bootstrap_iterations: 10, max_stat_iterations: 10, null_iterations: 10 } })
+assert.throws(() => runOverfitAuditV5({}), /FIXTURE\/LEGACY_EXPOSED/)
 assert.equal(candidateObjectAudit.selected_candidate_id, 'edge')
 assert.equal(candidateObjectAudit.sample_count, 30)
 assert.equal(candidateObjectAudit.max_statistic.candidate_count, 2)
-const nullResult = runNullControlsV5({ a: Array.from({ length: 10 }, (_, i) => ({ time: i, r: i - 4 })), b: Array.from({ length: 10 }, (_, i) => ({ time: i, r: 4 - i })) }, { iterations: 10 })
+const nullResult = runNullControlsV5Fixture({ a: Array.from({ length: 10 }, (_, i) => ({ time: i, r: i - 4 })), b: Array.from({ length: 10 }, (_, i) => ({ time: i, r: 4 - i })) }, { iterations: 10 })
 assert.equal(nullResult.mean_invariant_under_label_shuffle, true)
 const invalidRoot = mkdtempSync(join(tmpdir(), 'strategy-v5-index-')); writeFileSync(join(invalidRoot, 'bad.json'), '{}\n')
 assert.throws(() => indexV5Records(invalidRoot), /unsupported v5 schema/)
 const audit = makeDeploymentAuditV5()
 assert.equal(audit.blocked, true)
-const protectedSettings = { status: 200, body: { evidence_branch: 'strategy-v5-evidence', branch_protection: { enforce_admins: { enabled: true }, required_pull_request_reviews: {}, required_status_checks: {} }, environment_protection: { protection_rules: [{}], deployment_branch_policy: { protected_branches: true } }, oidc: { use_default: false, include_claim_keys: ['repository_id', 'environment', 'job_workflow_ref'] } } }
-const verifiedSettingsCapture = makeDeploymentSettingsCaptureV5({ githubApiResponse: protectedSettings, oidcSubject: 'repo:owner/repo:environment:prospective-v5' }); assert.equal(verifiedSettingsCapture.verified, true)
-assert.equal(makeDeploymentSettingsCaptureV5({ githubApiResponse: { ...protectedSettings, body: { ...protectedSettings.body, evidence_branch: 'main' } }, oidcSubject: 'repo:owner/repo:environment:prospective-v5' }).verified, false)
-assert.equal(makeDeploymentSettingsCaptureV5({ githubApiResponse: { ...protectedSettings, body: { ...protectedSettings.body, oidc: { permissions: { 'id-token': 'write' }, subject_pattern: 'self-claimed' } } }, oidcSubject: 'self-claimed' }).verified, false)
+const protectedCapturedAt = new Date().toISOString(); const protectedIat = Math.floor(Date.parse(protectedCapturedAt) / 1000) - 30; const protectedClaims = { repository_id: '1', repository_owner_id: '2', environment: 'prospective-v5', workflow_ref: 'owner/repo/.github/workflows/strategy-v5-prospective.yml@refs/heads/main', workflow_sha: 'a'.repeat(64), run_id: '42', run_attempt: 1, sub: 'repo:owner@2/repo@1:environment:prospective-v5', aud: 'strategy-v5', iss: 'https://token.actions.githubusercontent.com', iat: protectedIat, exp: protectedIat + 600 }
+const protectedSettings = { status: 200, body: { repository: { full_name: 'owner/repo', id: 1, owner_id: 2, private: true }, repository_visibility: 'PRIVATE', repository_visibility_verified: true, evidence_branch: 'strategy-v5-evidence', evidence_branch_head_sha256: 'b'.repeat(64), branch_protection: { api_status: 200, enforce_admins: { enabled: true }, required_pull_request_reviews: {}, required_status_checks: {}, allow_force_pushes: false, allow_deletions: false, restrictions: { users: [], teams: [], apps: [{ id: 99, slug: 'github-actions' }], app_ids: [99], apps_verified: true, installed_app: { status: 200, id: 99, slug: 'github-actions', verified: true } } }, rulesets: { api_status: 200, status: 200, ids: [7], protected_branch_ids: [7], actions_bypass_app_ids: [15368], protected_ref_matches: true, bypass_verified: true, actions_only_bypass_verified: true, enforcement_verified: true, rules_verified: true, detail_statuses_ok: true, verified: true }, branch_head: { commit: { sha: 'b'.repeat(64) } }, environment_protection: { api_status: 200, can_admins_bypass: false, protection_rules: [{ type: 'required_reviewers', reviewers: ['reviewer'] }], deployment_branch_policy: { protected_branches: true, custom_branch_policies: false } }, actions_secret: { name: 'PROD_V5_ACTIONS_ATTESTATION_PRIVATE_KEY_B64', environment_status: 200, environment_body_sha256: '1'.repeat(64), repository_status: 404, repository_body_sha256: '2'.repeat(64), organization_status: 404, organization_body_sha256: '3'.repeat(64), verified: true }, settings_token_secret: { name: 'V5_GITHUB_SETTINGS_PAT', environment_status: 200, environment_body_sha256: '5'.repeat(64), repository_status: 404, repository_body_sha256: '6'.repeat(64), organization_status: 404, organization_body_sha256: '7'.repeat(64), verified: true }, settings_token_identity: { api_status: 200, app_id: null, user_id: 123, login: 'settings-bot', token_kind: 'PAT', expected_user_id: 123, expected_login: 'settings-bot', secret_name: 'V5_GITHUB_SETTINGS_PAT', secret_environment_status: 200, secret_environment_body_sha256: '5'.repeat(64), secret_repository_status: 404, secret_repository_body_sha256: '6'.repeat(64), secret_organization_status: 404, secret_organization_body_sha256: '7'.repeat(64), body_sha256: '4'.repeat(64), verified: true }, oidc: { api_status: 200, use_default: false, use_immutable_subject: true, include_claim_keys: ['repo', 'context'], signature_verified: true, claims: protectedClaims } } }
+const verifiedSettingsCapture = makeDeploymentSettingsCaptureV5({ githubApiResponse: protectedSettings, capturedAt: protectedCapturedAt, evidenceBranchHeadSha256: 'b'.repeat(64), oidcSubject: protectedClaims.sub, oidcClaims: protectedClaims }); assert.equal(verifiedSettingsCapture.verified, true)
+assert.equal(makeDeploymentSettingsCaptureV5({ githubApiResponse: { ...protectedSettings, body: { ...protectedSettings.body, evidence_branch: 'main' } }, capturedAt: protectedCapturedAt, oidcSubject: protectedClaims.sub, oidcClaims: protectedClaims }).verified, false)
+assert.equal(makeDeploymentSettingsCaptureV5({ githubApiResponse: { ...protectedSettings, body: { ...protectedSettings.body, oidc: { permissions: { 'id-token': 'write' }, subject_pattern: 'self-claimed' } } }, oidcSubject: 'self-claimed', oidcClaims: null }).verified, false)
 assert.equal(makeDeploymentAuditV5({ settingsCapture: verifiedSettingsCapture, settings: { repository_private: true, actions_only_secret: true, replay_protection: true, revocation_list: true, lease_enforced: true }, keys: { asset_public: true, portfolio_public: true, activation_root_verified: true }, approvals: [{ role: 'ASSET' }, { role: 'PORTFOLIO' }], trustRoot: { verified: true } }).blocked, true)
 assert.throws(() => makeProspectivePublicationV5({ completedBar: { completed_bar: false, content_sha256: 'a'.repeat(64) }, sequence: 1 }), /completed-bar/)
 assert.throws(() => makeProspectivePublicationV5({ completedBar: { completed_bar: true, content_sha256: 'a'.repeat(64) }, sequence: 1, assetApproval: { role: 'ASSET', key_id: 'a' }, portfolioApproval: { role: 'PORTFOLIO', key_id: 'b' }, replayNonce: 'short', leaseExpiresAt: '2999-01-01T00:00:00Z' }), /signature|replay/)

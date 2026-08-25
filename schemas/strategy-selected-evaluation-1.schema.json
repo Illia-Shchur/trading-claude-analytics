@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-selected-evaluation/1",
+  "type": "object",
+  "required": ["schema", "version", "status", "selected_trades_sha256", "outer_fold_sha256", "lineage_sha256", "content_sha256"],
+  "properties": {
+    "schema": {"const": "strategy-selected-evaluation/1"},
+    "version": {"const": 1},
+    "status": {"enum": ["AUTHORITATIVE", "FIXTURE"]},
+    "selected_trades_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "outer_fold_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "lineage_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": false
+}

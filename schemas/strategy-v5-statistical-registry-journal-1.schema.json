@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-v5-statistical-registry-journal/1",
+  "type": "object",
+  "required": ["schema", "version", "status", "exposure_head_path", "registry_path", "prior_head_sha256", "next_head_sha256", "prior_registry_sha256", "next_head", "definitions", "journal_path", "content_sha256"],
+  "properties": {
+    "schema": {"const": "strategy-v5-statistical-registry-journal/1"},
+    "version": {"const": 1},
+    "status": {"const": "PREPARED"},
+    "exposure_head_path": {"type": "string", "minLength": 1},
+    "registry_path": {"type": "string", "minLength": 1},
+    "prior_head_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "next_head_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "prior_registry_sha256": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+    "next_head": {"type": "object"},
+    "definitions": {"type": "array"},
+    "journal_path": {"type": ["string", "null"]},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": false
+}

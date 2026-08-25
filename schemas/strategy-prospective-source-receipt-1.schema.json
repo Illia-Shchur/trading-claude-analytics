@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-prospective-source-receipt/1",
+  "type": "object",
+  "required": ["schema", "version", "source_id", "source", "adapter_sha256", "code_sha256", "raw_byte_sha256", "payload_sha256", "venue", "symbol", "timeframe", "bar_start", "bar_end", "completed", "completed_bar_id", "asset", "availability_time", "lineage_sha256", "content_sha256"],
+  "properties": {
+    "schema": {"const": "strategy-prospective-source-receipt/1"},
+    "version": {"const": 1},
+    "source_id": {"type": "string", "minLength": 1},
+    "source": {"type": "string", "minLength": 1},
+    "adapter_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "code_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "raw_byte_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "payload_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "venue": {"type": "string", "minLength": 1},
+    "symbol": {"type": "string", "minLength": 1},
+    "timeframe": {"type": "string", "minLength": 1},
+    "bar_start": {"type": "string", "format": "date-time"},
+    "bar_end": {"type": "string", "format": "date-time"},
+    "completed": {"const": true},
+    "completed_bar_id": {"type": "string", "minLength": 1},
+    "asset": {"type": "string", "minLength": 1},
+    "availability_time": {"type": "string", "format": "date-time"},
+    "lineage_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": false
+}

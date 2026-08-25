@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-portfolio-policy/2",
+  "type": "object",
+  "required": [
+    "schema", "version", "status", "venue", "interval_ms", "current_equity",
+    "asOf", "consuming_cutoff", "account_currency", "max_concurrent",
+    "min_common_timestamps", "precommit_sha256", "experiment_sha256",
+    "acceptance_sha256", "lifecycle_sha256", "limits", "content_sha256"
+  ],
+  "properties": {
+    "schema": { "const": "strategy-portfolio-policy/2" },
+    "version": { "const": 2 },
+    "status": { "const": "FROZEN" },
+    "venue": { "type": "string", "minLength": 1 },
+    "interval_ms": { "type": "integer", "exclusiveMinimum": 0 },
+    "current_equity": { "type": "number", "exclusiveMinimum": 0 },
+    "initial_equity": { "type": "number", "exclusiveMinimum": 0 },
+    "asOf": { "type": "string", "format": "date-time" },
+    "consuming_cutoff": { "type": "string", "format": "date-time" },
+    "account_currency": { "type": "string", "minLength": 1 },
+    "max_concurrent": { "type": "integer", "minimum": 1 },
+    "min_common_timestamps": { "type": "integer", "minimum": 30 },
+    "precommit_sha256": { "$ref": "#/$defs/hash" },
+    "experiment_sha256": { "$ref": "#/$defs/hash" },
+    "acceptance_sha256": { "$ref": "#/$defs/hash" },
+    "lifecycle_sha256": { "$ref": "#/$defs/hash" },
+    "risk_reference_symbols": { "type": "object", "additionalProperties": { "type": "string", "minLength": 1 } },
+    "limits": { "$ref": "#/$defs/limits" },
+    "initial_risk_per_trade_pct": { "const": 1.5 },
+    "max_total_open_risk_pct": { "const": 6 },
+    "max_asset_open_risk_pct": { "const": 3 },
+    "max_cluster_open_risk_pct": { "const": 4.5 },
+    "max_gross_exposure_x": { "const": 3 },
+    "max_net_exposure_x": { "const": 2 },
+    "max_collateral_pct": { "const": 70 },
+    "max_positions": { "const": 6 },
+    "max_positions_per_asset": { "const": 2 },
+    "max_drawdown_pct": { "const": 18 },
+    "ruin_boundary_pct": { "const": 30 },
+    "max_ruin_probability": { "const": 0.05 },
+    "max_mark_gap_ms": { "type": "number", "exclusiveMinimum": 0 },
+    "full_risk_after_activation": { "const": true },
+    "probation_ramp": { "const": false },
+    "content_sha256": { "$ref": "#/$defs/hash" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "finiteOrNull": { "type": ["number", "null"] },
+    "limits": {
+      "type": "object",
+      "required": [
+        "max_drawdown_pct", "max_underwater_duration_ms", "equity_floor",
+        "ruin_equity_floor", "max_gross_exposure", "max_net_exposure",
+        "max_reserved_fraction", "max_collateral_fraction", "max_asset_share",
+        "max_hhi", "max_beta_gross", "max_beta_net", "max_maintenance_margin"
+      ],
+      "properties": {
+        "max_drawdown_amount": { "$ref": "#/$defs/finiteOrNull" },
+        "max_drawdown_pct": { "type": "number", "minimum": 0, "exclusiveMaximum": 100 },
+        "max_underwater_duration_ms": { "type": "number", "minimum": 0 },
+        "equity_floor": { "type": "number", "minimum": 0 },
+        "ruin_equity_floor": { "type": "number", "minimum": 0 },
+        "minimum_current_equity": { "$ref": "#/$defs/finiteOrNull" },
+        "max_gross_exposure": { "type": "number", "minimum": 0, "$comment": "account-currency notional" },
+        "max_net_exposure": { "type": "number", "minimum": 0, "$comment": "absolute account-currency notional" },
+        "max_reserved_fraction": { "type": "number", "minimum": 0, "maximum": 1 },
+        "max_collateral_fraction": { "type": "number", "minimum": 0, "maximum": 1 },
+        "max_asset_share": { "type": "number", "minimum": 0, "maximum": 1 },
+        "max_hhi": { "type": "number", "minimum": 0, "maximum": 1 },
+        "max_beta_gross": { "type": "number", "minimum": 0, "$comment": "absolute beta-weighted account-currency exposure" },
+        "max_beta_net": { "type": "number", "minimum": 0, "$comment": "absolute beta-weighted account-currency exposure" },
+        "max_maintenance_margin": { "type": "number", "minimum": 0, "$comment": "account-currency maintenance-margin amount" },
+        "cross_collateral_account": { "$ref": "#/$defs/finiteOrNull" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

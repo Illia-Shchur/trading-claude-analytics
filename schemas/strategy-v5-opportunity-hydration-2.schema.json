@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-v5-opportunity-hydration/2",
+  "type": "object",
+  "required": ["schema", "version", "status", "fixture_only", "provenance", "envelope_sha256", "max_lifecycle_ms", "execution_interval_ms", "partition_set_sha256", "partition_inventory", "windows", "content_sha256"],
+  "properties": {
+    "schema": { "const": "strategy-v5-opportunity-hydration/2" },
+    "version": { "const": 2 },
+    "status": { "const": "FROZEN" },
+    "fixture_only": { "type": "boolean" },
+    "provenance": { "type": "string", "minLength": 1 },
+    "envelope_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "max_lifecycle_ms": { "type": "integer", "exclusiveMinimum": 0 },
+    "execution_interval_ms": { "type": "integer", "exclusiveMinimum": 0 },
+    "partition_set_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "partition_bytes_root_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "physical_hydration_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+    "physical_root_reference": { "type": ["string", "null"] },
+    "physical_partition_count": { "type": "integer", "minimum": 1 },
+    "batch_size": { "type": "integer", "minimum": 1 },
+    "max_rows": { "type": "integer", "minimum": 1 },
+    "max_resident_bytes": { "type": "integer", "minimum": 1 },
+    "peak_resident_bytes": { "type": "integer", "minimum": 0 },
+    "max_indexed_partitions": { "type": "integer", "minimum": 1 },
+    "max_unique_rows": { "type": "integer", "minimum": 1 },
+    "max_audit_rows": { "type": "integer", "minimum": 1 },
+    "partition_inventory": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["partition_sha256", "partition_path", "bytes", "row_count", "min_event_time", "max_event_time", "format", "series_role"],
+        "properties": {
+          "partition_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+          "partition_path": { "type": ["string", "null"] },
+          "bytes": { "type": "integer", "minimum": 1 },
+          "row_count": { "type": "integer", "minimum": 1 },
+          "min_event_time": { "type": "string", "format": "date-time" },
+          "max_event_time": { "type": "string", "format": "date-time" },
+          "format": { "const": "JSONL_1M" },
+          "asset": { "type": ["string", "null"] },
+          "instrument": { "type": ["string", "null"] },
+          "symbol": { "type": ["string", "null"] },
+          "series_role": { "enum": ["PRICE", "MARK", "EXECUTION"] }
+        },
+        "additionalProperties": false
+      }
+    },
+    "windows": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["window_id", "execution_start", "hydration_start", "preentry_start", "preentry_warmup_bars", "preentry_partition_refs", "execution_end", "effective_end_exclusive", "terminal_time", "partition_refs", "row_count", "mark_partition_refs", "mark_row_count", "mark_complete", "lifecycle_status", "eligible"],
+        "properties": {
+          "window_id": { "type": "string", "minLength": 1 },
+          "execution_start": { "type": "string", "format": "date-time" },
+          "hydration_start": { "type": "string", "format": "date-time" },
+          "preentry_start": { "type": ["string", "null"], "format": "date-time" },
+          "preentry_warmup_bars": { "type": "integer", "minimum": 0 },
+          "preentry_partition_refs": { "type": "array", "items": { "$ref": "#/$defs/ref" } },
+          "execution_end": { "type": "string", "format": "date-time" },
+          "effective_end_exclusive": { "type": "string", "format": "date-time" },
+          "terminal_time": { "type": ["string", "null"], "format": "date-time" },
+          "partition_refs": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/ref" } },
+          "row_count": { "type": "integer", "minimum": 1 },
+          "mark_partition_refs": { "type": "array", "items": { "$ref": "#/$defs/ref" } },
+          "mark_row_count": { "type": "integer", "minimum": 0 },
+          "mark_complete": { "type": "boolean" },
+          "lifecycle_status": { "enum": ["COMPLETE", "UNRESOLVED_RIGHT_EDGE"] },
+          "eligible": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "materialized_rows": { "type": "integer", "minimum": 0 },
+    "logical_reference_rows": { "type": "integer", "minimum": 0 },
+    "duplicate_nested_child_arrays": { "const": false },
+    "content_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  },
+  "$defs": {
+    "ref": {
+      "type": "object",
+      "required": ["partition_sha256", "partition_path", "partition_bytes", "partition_row_count", "row_start", "row_end_exclusive", "row_count"],
+      "properties": {
+        "partition_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "partition_path": { "type": ["string", "null"] },
+        "partition_bytes": { "type": "integer", "minimum": 1 },
+        "partition_row_count": { "type": "integer", "minimum": 1 },
+        "row_start": { "type": "string", "format": "date-time" },
+        "row_end_exclusive": { "type": "string", "format": "date-time" },
+        "row_count": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

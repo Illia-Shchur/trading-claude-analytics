@@ -1,0 +1,171 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-github-prospective-attestation/1",
+  "type": "object",
+  "required": [
+    "schema",
+    "version",
+    "repository",
+    "repository_id",
+    "workflow_sha256",
+    "workflow_ref",
+    "run_id",
+    "run_attempt",
+    "environment",
+    "oidc_subject",
+    "oidc_audience",
+    "oidc_issuer",
+    "settings_capture_sha256",
+    "settings_capture_byte_sha256",
+    "api_receipt_sha256",
+    "cycle_receipt_sha256",
+    "ledger_prior_head_sha256",
+    "ledger_new_head_sha256",
+    "ledger_sequence",
+    "trusted_key_registry_sha256",
+    "trusted_key_registry_byte_sha256",
+    "evidence_branch",
+    "evidence_branch_head_sha256",
+    "issued_at",
+    "expires_at",
+    "nonce",
+    "key_id",
+    "public_key_pem",
+    "signature",
+    "attestation_payload_sha256",
+    "protected",
+    "content_sha256"
+  ],
+  "properties": {
+    "schema": {
+      "const": "strategy-github-prospective-attestation/1"
+    },
+    "version": {
+      "const": 1
+    },
+    "repository": {
+      "type": "string",
+      "minLength": 1
+    },
+    "repository_id": {
+      "type": [
+        "string",
+        "integer"
+      ]
+    },
+    "workflow_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "workflow_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "run_id": {
+      "type": [
+        "string",
+        "integer"
+      ]
+    },
+    "run_attempt": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "environment": {
+      "type": "string",
+      "minLength": 1
+    },
+    "oidc_subject": {
+      "type": "string",
+      "minLength": 1
+    },
+    "oidc_audience": {
+      "type": "string",
+      "minLength": 1
+    },
+    "oidc_issuer": {
+      "type": "string",
+      "const": "https://token.actions.githubusercontent.com"
+    },
+    "settings_capture_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "settings_capture_byte_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "api_receipt_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "cycle_receipt_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "ledger_prior_head_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "ledger_new_head_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "ledger_sequence": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "trusted_key_registry_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "trusted_key_registry_byte_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "evidence_branch": {
+      "type": "string",
+      "minLength": 1
+    },
+    "evidence_branch_head_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "issued_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "nonce": {
+      "type": "string",
+      "minLength": 16
+    },
+    "key_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "public_key_pem": {
+      "type": "string",
+      "minLength": 1
+    },
+    "signature": {
+      "type": "string",
+      "minLength": 1
+    },
+    "attestation_payload_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "protected": {
+      "const": true
+    },
+    "content_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+  },
+  "additionalProperties": false
+}

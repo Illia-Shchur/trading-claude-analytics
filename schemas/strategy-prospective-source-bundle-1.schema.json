@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-prospective-source-bundle/1",
+  "type": "object",
+  "required": [
+    "schema",
+    "version",
+    "status",
+    "decision",
+    "lineage_sha256",
+    "ledger_path",
+    "expected_head_sha256",
+    "reservation",
+    "source_receipt",
+    "bar",
+    "feature_input",
+    "candidate_set",
+    "evaluator_code",
+    "signal_decision",
+    "content_sha256"
+  ],
+  "properties": {
+    "schema": {"const": "strategy-prospective-source-bundle/1"},
+    "version": {"const": 1},
+    "status": {"const": "FROZEN"},
+    "decision": {"const": "SHADOW"},
+    "lineage_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "ledger_path": {"type": "string", "minLength": 1},
+    "expected_head_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "reservation": {"$ref": "#/$defs/artifact"},
+    "source_receipt": {"$ref": "#/$defs/artifact"},
+    "bar": {"$ref": "#/$defs/artifact"},
+    "feature_input": {"$ref": "#/$defs/artifact"},
+    "candidate_set": {"$ref": "#/$defs/artifact"},
+    "evaluator_code": {"$ref": "#/$defs/artifact"},
+    "signal_decision": {"$ref": "#/$defs/artifact"},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "$defs": {
+    "artifact": {
+      "type": "object",
+      "required": ["path", "byte_sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "byte_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,501 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.local/strategy-v5-statistical-contracts/1",
+  "title": "Strategy Research v5 authoritative statistical contracts",
+  "description": "Hash-bound interfaces for nested crypto WFO, cumulative search exposure, and statistical audit. Runtime validation additionally enforces SHA-256 content hashes and chronological order.",
+  "oneOf": [
+    { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/input" },
+    { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/exposureHead" },
+    { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/behaviorRegistry" },
+    { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/vectorInventory" },
+    { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/evaluation" },
+    { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/genetic" },
+    { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/fold" },
+    { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/wfo" },
+    { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/audit" },
+    { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/nullControls" },
+    { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/nullReplay" },
+    { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/stress" },
+    { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/portfolio" },
+    { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/checkpoint" },
+    { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/nullCalibration" }
+  ],
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "lineage": {
+      "type": "object",
+      "required": ["dataset_sha256", "candidate_set_sha256", "feature_set_sha256", "label_set_sha256", "execution_set_sha256"],
+      "properties": {
+        "dataset_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "candidate_set_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "feature_set_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "label_set_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "execution_set_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    },
+    "returnRecord": {
+      "type": "object",
+      "required": ["net_r", "traded"],
+      "properties": { "net_r": { "type": "number" }, "traded": { "type": "boolean" } },
+      "additionalProperties": false
+    },
+    "metrics": {
+      "type": "object",
+      "properties": {
+        "sample_count": { "type": "integer", "minimum": 0 }, "traded_count": { "type": "integer", "minimum": 0 }, "opportunity_count": { "type": "integer", "minimum": 0 }, "opportunity_expectancy_r": { "type": "number" }, "opportunity_bootstrap_p20": { "type": ["number", "null"] }, "expectancy_r": { "type": "number" }, "bootstrap_p20": { "type": ["number", "null"] }, "weighted_bootstrap_p20": { "type": ["number", "null"] }, "cost_r": { "type": "number" }, "coverage_fraction": { "type": "number" }, "capacity_pass": { "type": "boolean" }, "max_drawdown_r": { "type": "number" }, "profit_factor": { "type": "number" }, "drawdown_r": { "type": "number" }, "turnover": { "type": "number" }, "complexity": { "type": "number" }, "outer_weighting": { "type": "string" }, "training_weighting": { "type": "string" }, "behavior_alias_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "signal_behavior_alias_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "episode_returns_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "signal_intent_vector": { "type": "array", "items": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/signalIntent" } }, "episode_returns": { "type": "array", "items": { "type": "object", "required": ["episode_id", "decision_time", "asset", "net_r", "traded"], "properties": { "episode_id": { "type": "string" }, "decision_time": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/timestamp" }, "asset": { "type": "string" }, "net_r": { "type": "number" }, "traded": { "type": "boolean" } }, "additionalProperties": false } }
+      },
+      "additionalProperties": false
+    },
+    "vectorRow": {
+      "type": "object",
+      "required": ["episode_id", "net_r", "traded", "eligible"],
+      "properties": { "episode_id": { "type": "string", "minLength": 1 }, "net_r": { "type": "number" }, "traded": { "type": "boolean" }, "eligible": { "type": "boolean" } },
+      "additionalProperties": false
+    },
+    "signalIntent": {
+      "type": "object",
+      "required": ["episode_id", "intent"],
+      "properties": { "episode_id": { "type": "string", "minLength": 1 }, "intent": { "type": ["boolean", "number"] } },
+      "additionalProperties": false
+    },
+    "assetScope": {
+      "type": "object",
+      "required": ["schema", "version", "trade_assets", "replication_assets", "context_assets", "source_sha256", "content_sha256"],
+      "properties": {
+        "schema": { "const": "strategy-v5-statistical-asset-scope/1" },
+        "version": { "const": 1 },
+        "trade_assets": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "enum": ["btc", "eth", "sol", "bnb", "xrp", "ada", "link", "aave"] } },
+        "replication_assets": { "type": "array", "uniqueItems": true, "items": { "enum": ["btc", "eth", "sol", "bnb", "xrp", "ada", "link", "aave"] } },
+        "context_assets": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "source_sha256": { "anyOf": [{ "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, { "type": "null" }] },
+        "content_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    },
+    "gene": {
+      "type": "object",
+      "required": ["name", "type", "default", "usage"],
+      "properties": { "name": { "type": "string" }, "type": { "enum": ["continuous", "ordered-discrete", "categorical", "structural"] }, "min": { "type": "number" }, "max": { "type": "number" }, "step": { "anyOf": [{ "type": "number" }, { "type": "null" }] }, "values": { "type": "array" }, "default": {}, "usage": { "type": "string" } },
+      "additionalProperties": false
+    },
+    "geneSpace": { "type": "object", "required": ["schema", "genes", "content_sha256"], "properties": { "schema": { "const": "strategy-v5-statistical-gene-space/1" }, "genes": { "type": "array", "minItems": 1, "items": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/gene" } }, "content_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" } }, "additionalProperties": false },
+    "geneticConfig": { "type": "object", "required": ["population", "generations", "minGenerations", "plateauGenerations", "crossoverProbability", "mutationProbability", "seeds", "halfLifeMonths", "operator", "scheduler_ordering", "mode"], "properties": { "population": { "type": "integer" }, "generations": { "type": "integer" }, "minGenerations": { "type": "integer" }, "plateauGenerations": { "type": "integer" }, "crossoverProbability": { "type": "number" }, "mutationProbability": { "anyOf": [{ "type": "number" }, { "type": "null" }] }, "seeds": { "type": "array", "items": { "type": "integer" } }, "halfLifeMonths": { "type": "number" }, "operator": { "type": "string" }, "scheduler_ordering": { "type": "string" }, "mode": { "enum": ["FIXTURE", "AUTHORITATIVE"] } }, "additionalProperties": false },
+    "fitness": { "type": "object", "required": ["metrics", "objectives", "feasible", "violations", "violation_details", "total_violation", "tie_breaker"], "properties": { "metrics": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/metrics" }, "objectives": { "type": "array", "items": { "type": "number" } }, "feasible": { "type": "boolean" }, "violations": { "type": "array", "items": { "type": "string" } }, "violation_details": { "type": "object", "additionalProperties": { "type": "number", "minimum": 0 } }, "total_violation": { "type": "number", "minimum": 0 }, "tie_breaker": { "type": ["string", "null"] } }, "additionalProperties": false },
+    "historyRow": { "type": "object", "required": ["chromosome", "behavior_sha256", "behavior_alias_sha256", "generation", "seed", "operator", "parent_ids", "confirmation", "cache_hit", "evaluation_attempt_sha256", "evaluation_ordinal", "scheduler_order", "checkpoint_generation", "fitness"], "properties": { "chromosome": { "type": "object" }, "behavior_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "behavior_alias_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "generation": { "type": "integer" }, "seed": { "type": "integer" }, "operator": { "type": "string" }, "operator_details": { "anyOf": [{ "type": "object", "properties": { "selection_operator": { "type": "string" }, "crossover_operator": { "type": "string" }, "crossover_applied": { "type": "boolean" }, "selected_gene_sources": { "type": "object", "additionalProperties": { "type": "string" } }, "mutation_operator": { "type": "string" }, "mutation_probability": { "type": "number" }, "mutated_genes": { "type": "array", "items": { "type": "string" } } }, "additionalProperties": false }, { "type": "null" }] }, "confirmation_provenance": { "anyOf": [{ "enum": ["SIMPLE_BASELINE", "FROZEN_FINALIST_CONFIRMATION", "DIRECT_PARAMETER_NEIGHBOUR"] }, { "type": "null" }] }, "parent_ids": { "type": "array", "items": { "type": "string" } }, "confirmation": { "type": "boolean" }, "cache_hit": { "type": "boolean" }, "evaluation_attempt_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "evaluation_ordinal": { "type": "integer" }, "scheduler_order": { "type": "integer" }, "checkpoint_generation": { "type": "integer" }, "canonical_representative": { "type": "boolean" }, "duplicate_of": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "rank": { "type": "integer" }, "crowding_distance": { "type": "number" }, "fitness": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/fitness" } }, "additionalProperties": false },
+    "seedRun": { "type": "object", "required": ["seed", "generations_completed", "stopping", "evaluated_k", "finalists"], "properties": { "seed": { "type": "integer" }, "generations_completed": { "type": "integer" }, "stopping": { "type": "string" }, "evaluated_k": { "type": "integer" }, "finalists": { "type": "array", "items": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" } } }, "additionalProperties": false },
+    "neighbour": { "type": "object", "required": ["behavior_sha256", "chromosome", "behavior_alias_sha256", "feasible", "expectancy_r"], "properties": { "behavior_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "chromosome": { "type": "object" }, "behavior_alias_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "feasible": { "type": "boolean" }, "expectancy_r": { "type": "number" }, "violation_details": { "type": "object", "additionalProperties": { "type": "number", "minimum": 0 } }, "total_violation": { "type": "number", "minimum": 0 } }, "additionalProperties": false },
+    "selected": { "type": "object", "required": ["behavior_sha256", "behavior_alias_sha256", "chromosome", "fitness"], "properties": { "behavior_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "behavior_alias_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "chromosome": { "type": "object" }, "fitness": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/fitness" } }, "additionalProperties": false },
+    "assetDecision": { "type": "object", "required": ["asset", "pass"], "properties": { "asset": { "enum": ["btc", "eth", "sol", "bnb", "xrp", "ada", "link", "aave"] }, "pass": { "type": "boolean" }, "reason": { "type": "string" }, "decision_type": { "const": "ASSET" }, "provenance": { "const": "AUTHORITATIVE_RECOMPUTED" }, "content_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "selected_candidate_id": { "type": "string" }, "selected_behavior_alias_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "selected_seed_count": { "type": "integer" }, "selected_chromosome": { "type": ["object", "null"] }, "selected_return_vector": { "type": "array" }, "training_weighted_bootstrap_p20": { "type": ["number", "null"] }, "selection_procedure_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "procedure_validation": { "type": "object" }, "pbo": { "type": "object" }, "pbo_pass": { "type": "boolean" }, "inner_folds": { "type": "array" }, "genetic_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "genetic_run": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/genetic" }, "metrics": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/metrics" }, "refit_metrics": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/metrics" }, "hard_metric_violations": { "type": "array", "items": { "type": "string" } }, "asset_gates": { "type": "object", "additionalProperties": { "type": "boolean" } }, "stress": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/stress" }, "stress_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "lineage_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "fold_summary": { "type": "object" } }, "additionalProperties": false },
+    "portfolioAssetDecision": { "type": "object", "required": ["asset", "pass"], "properties": { "asset": { "type": "string" }, "pass": { "type": "boolean" }, "reason": { "type": "string" }, "decision_type": { "type": "string" }, "provenance": { "type": "string" }, "content_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "selected_candidate_id": { "type": "string" }, "selected_behavior_alias_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "selected_seed_count": { "type": "integer" }, "selected_chromosome": { "type": ["object", "null"] }, "selected_return_vector": { "type": "array" }, "training_weighted_bootstrap_p20": { "type": ["number", "null"] }, "selection_procedure_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "procedure_validation": { "type": "object" }, "pbo": { "type": "object" }, "pbo_pass": { "type": "boolean" }, "inner_folds": { "type": "array" }, "genetic_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "genetic_run": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/genetic" }, "metrics": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/metrics" }, "refit_metrics": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/metrics" }, "hard_metric_violations": { "type": "array", "items": { "type": "string" } }, "asset_gates": { "type": "object", "additionalProperties": { "type": "boolean" } }, "stress": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/stress" }, "stress_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "lineage_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "fold_summary": { "type": "object" } }, "additionalProperties": false },
+    "foldTrain": { "type": "object", "properties": { "inner_folds": { "type": "array" }, "selection_phase": { "type": "string" }, "recency_weighting": { "type": "string" }, "genetic_sha256": { "type": "array", "items": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" } } }, "additionalProperties": false },
+    "foldTest": { "type": "object", "properties": { "weighted_recency": { "type": "boolean" }, "vector_inventory_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "asset_decisions": { "type": "array" }, "portfolio": { "type": "object" } }, "additionalProperties": false },
+    "gates": { "type": "object", "required": ["hard_metrics", "baseline_comparison", "bootstrap_p20_positive", "weighted_bootstrap_p20_positive", "max_statistic", "search_adjusted_expectancy_positive", "dsr", "pbo", "minimum_independent_episodes", "recent_oos_positive", "earlier_blocks", "positive_years", "positive_outer_folds", "plateau", "neighbour_fraction", "seed_stability", "null_controls", "stress_ablation", "asset_decisions", "portfolio"], "properties": { "hard_metrics": { "type": "boolean" }, "baseline_comparison": { "type": "boolean" }, "bootstrap_p20_positive": { "type": "boolean" }, "weighted_bootstrap_p20_positive": { "type": "boolean" }, "max_statistic": { "type": "boolean" }, "search_adjusted_expectancy_positive": { "type": "boolean" }, "dsr": { "type": "boolean" }, "pbo": { "type": "boolean" }, "minimum_independent_episodes": { "type": "boolean" }, "recent_oos_positive": { "type": "boolean" }, "earlier_blocks": { "type": "boolean" }, "positive_years": { "type": "boolean" }, "positive_outer_folds": { "type": "boolean" }, "plateau": { "type": "boolean" }, "neighbour_fraction": { "type": "boolean" }, "seed_stability": { "type": "boolean" }, "null_controls": { "type": "boolean" }, "stress_ablation": { "type": "boolean" }, "asset_decisions": { "type": "boolean" }, "portfolio": { "type": "boolean" } }, "additionalProperties": false },
+    "nullTest": { "type": "object", "required": ["name", "p_value", "null_statistics_sha256", "pass", "method", "directional_hypothesis", "iterations"], "properties": { "name": { "type": "string" }, "p_value": { "type": "number" }, "p_value_lower_bound": { "type": "number", "minimum": 0, "maximum": 1 }, "p_value_upper_bound": { "type": "number", "minimum": 0, "maximum": 1 }, "null_statistics_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "selection_trace_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "unsupported_reason": { "type": "string" }, "pass": { "type": "boolean" }, "method": { "type": "string" }, "sampling_unit": { "type": "string" }, "directional_hypothesis": { "enum": ["positive", "negative"] }, "iterations": { "type": "integer" }, "iterations_planned": { "type": "integer", "minimum": 1 }, "sequential_batch_size": { "type": "integer", "minimum": 1 }, "sequential_stopping_rule": { "type": "string" }, "sequential_stopping_reason": { "type": "string" }, "evaluation_attempt_k": { "type": "integer", "minimum": 0 }, "worker_evaluation_count": { "type": "integer", "minimum": 0 }, "worker_count": { "type": "integer", "minimum": 0 }, "peak_in_flight": { "type": "integer", "minimum": 0 }, "batch_count": { "type": "integer", "minimum": 0 }, "cache_hit_count": { "type": "integer", "minimum": 0 }, "disk_cache_hit_count": { "type": "integer", "minimum": 0 }, "checkpointed_iterations": { "type": "integer", "minimum": 0 }, "checkpoint_policy": { "type": "string" }, "worker_slots_used": { "type": "array", "items": { "type": "integer", "minimum": 0 } } }, "additionalProperties": false },
+    "transformation": { "type": "object", "required": ["method"], "properties": { "method": { "type": "string" }, "block_length": { "type": "integer" }, "permutation_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "block_order_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "labels_source_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "shift_ms": { "type": "number" }, "shift_map_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "selected_candidate_id": { "type": ["string", "null"] }, "target_trade_count": { "type": "integer" }, "intent_vector_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "selection_budget_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "rerun_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "evaluations": { "type": "integer" }, "selection_replay": { "type": "string" } }, "additionalProperties": false },
+    "candidate": {
+      "type": "object",
+      "required": ["candidate_id", "behavior_sha256"],
+      "properties": { "candidate_id": { "type": "string", "minLength": 1 }, "behavior_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" } },
+      "additionalProperties": false
+    },
+    "episode": {
+      "type": "object",
+      "required": ["episode_id", "asset", "decision_time", "resolution_time", "eligible", "candidate_returns"],
+      "properties": {
+        "episode_id": { "type": "string", "minLength": 1 },
+        "asset": { "enum": ["btc", "eth", "sol", "bnb", "xrp", "ada", "link", "aave"] },
+        "decision_time": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/timestamp" },
+        "resolution_time": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/timestamp" },
+        "label_availability_time": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/timestamp" },
+        "execution_availability_time": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/timestamp" },
+        "eligible": { "type": "boolean" },
+        "candidate_returns": { "type": "object", "additionalProperties": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/returnRecord" } }
+      },
+      "additionalProperties": false
+    },
+    "input": {
+      "$id": "strategy-v5-statistical-input/1",
+      "type": "object",
+      "required": ["schema", "version", "lineage", "candidates", "episodes", "exposure_head_sha256", "metadata", "content_sha256"],
+      "properties": {
+        "schema": { "const": "strategy-v5-statistical-input/1" },
+        "version": { "const": 1 },
+        "lineage": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/lineage" },
+        "candidates": { "type": "array", "items": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/candidate" } },
+        "episodes": { "type": "array", "minItems": 1, "items": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/episode" } },
+        "exposure_head_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "metadata": { "type": "object", "properties": { "artifact_role": { "const": "GENESIS" }, "phase": { "type": "string" }, "fold_id": { "type": "string" }, "asset": { "type": "string" }, "inner_fold_id": { "type": "string" }, "selection_procedure_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "prospective_cutoff": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/timestamp" }, "source_artifact_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "null_method": { "type": "string" }, "calibration_fixture": { "type": "string" }, "evaluator_meta": { "type": "object" } }, "additionalProperties": false },
+        "content_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    },
+    "exposureEntry": {
+      "type": "object",
+      "required": ["behavior_sha256", "dataset_sha256", "observed_at", "source", "sequence", "previous_sha256"],
+      "properties": {
+        "behavior_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "dataset_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "observed_at": { "anyOf": [{ "type": "null" }, { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/timestamp" }] },
+        "source": { "type": "string", "minLength": 1 },
+        "sequence": { "type": "integer", "minimum": 1 },
+        "previous_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "definition_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "vector_commitment_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    },
+    "exposureHead": {
+      "$id": "strategy-v5-statistical-exposure-head/1",
+      "type": "object",
+      "required": ["schema", "version", "status", "hypothesis_family", "dataset_sha256", "entries", "cumulative_k", "head_pointer_sha256", "content_sha256"],
+      "properties": {
+        "schema": { "const": "strategy-v5-statistical-exposure-head/1" },
+        "version": { "const": 1 },
+        "status": { "const": "HEAD" },
+        "hypothesis_family": { "type": "string", "minLength": 1 },
+        "dataset_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "entries": { "type": "array", "items": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/exposureEntry" } },
+        "cumulative_k": { "type": "integer", "minimum": 0 },
+        "exposure_attempt_k": { "type": "integer", "minimum": 0 },
+        "head_pointer_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "content_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    },
+    "behaviorDefinitionEntry": {
+      "type": "object",
+      "required": ["behavior_sha256", "definition_sha256", "dataset_sha256", "observed_at", "source", "sequence", "previous_sha256", "chromosome", "evaluator_sha256", "precommit_sha256", "lifecycle_sha256"],
+      "properties": {
+        "behavior_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "definition_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "dataset_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "observed_at": { "anyOf": [{ "type": "null" }, { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/timestamp" }] },
+        "source": { "type": "string", "minLength": 1 }, "sequence": { "type": "integer", "minimum": 1 },
+        "previous_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "chromosome": { "type": "object" }, "evaluator_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "precommit_sha256": { "anyOf": [{ "type": "null" }, { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }] },
+        "lifecycle_sha256": { "anyOf": [{ "type": "null" }, { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }] }
+      },
+      "additionalProperties": false
+    },
+    "behaviorRegistry": {
+      "$id": "strategy-v5-statistical-behavior-definition-registry/1",
+      "type": "object",
+      "required": ["schema", "version", "status", "hypothesis_family", "exposure_head_sha256", "entries", "content_sha256"],
+      "properties": {
+        "schema": { "const": "strategy-v5-statistical-behavior-definition-registry/1" }, "version": { "const": 1 }, "status": { "const": "HEAD" },
+        "hypothesis_family": { "type": "string", "minLength": 1 }, "exposure_head_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "snapshot_path": { "type": "string", "minLength": 1 }, "snapshot_content_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "snapshot_byte_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "entries": { "type": "array", "items": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/behaviorDefinitionEntry" } },
+        "content_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    },
+    "vectorInventory": {
+      "$id": "strategy-v5-statistical-vector-inventory/1",
+      "type": "object",
+      "required": ["schema", "version", "exposure_head_sha256", "episode_ids", "vectors", "content_sha256"],
+      "properties": {
+        "schema": { "const": "strategy-v5-statistical-vector-inventory/1" },
+        "version": { "const": 1 },
+        "exposure_head_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "episode_ids": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "vectors": { "type": "object", "additionalProperties": { "type": "array", "items": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/vectorRow" } } },
+        "content_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    },
+    "evaluation": {
+      "$id": "strategy-v5-statistical-evaluation/1",
+      "type": "object",
+      "required": ["schema", "version", "source_artifact_sha256", "episode_ids", "phase", "fold_id", "cutoff", "fit_cutoff", "evaluation_cutoff", "weighting", "signal_intent_vector", "signal_intent_vector_sha256", "evaluation_vector_sha256", "behavior_contracts", "signal_behavior_alias_sha256", "behavior_alias_sha256", "candidate_returns", "metrics", "lineage_sha256", "content_sha256"],
+      "properties": {
+        "schema": { "const": "strategy-v5-statistical-evaluation/1" },
+        "version": { "const": 1 },
+        "source_artifact_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "episode_ids": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "phase": { "type": "string", "minLength": 1 },
+        "fold_id": { "type": ["string", "null"] },
+        "cutoff": { "anyOf": [{ "type": "null" }, { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/timestamp" }] },
+        "fit_cutoff": { "anyOf": [{ "type": "null" }, { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/timestamp" }] },
+        "evaluation_cutoff": { "anyOf": [{ "type": "null" }, { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/timestamp" }] },
+        "weighting": { "enum": ["TRAIN_HALF_LIFE", "UNWEIGHTED_VALIDATION", "UNWEIGHTED_OOS"] },
+        "signal_intent_vector": { "type": "array", "minItems": 1, "items": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/signalIntent" } },
+        "signal_intent_vector_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "evaluation_vector_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "behavior_contracts": { "type": "object", "required": ["signal_semantics_sha256", "evaluator_sha256", "predictor_sha256", "lifecycle_sha256", "precommit_sha256"], "properties": { "signal_semantics_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "evaluator_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "predictor_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "lifecycle_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "precommit_sha256": { "anyOf": [{ "type": "null" }, { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }] } }, "additionalProperties": false },
+        "candidate_definition": { "type": ["object", "null"] },
+        "signal_behavior_alias_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "behavior_alias_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "candidate_returns": { "type": "object", "additionalProperties": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/returnRecord" } },
+        "metrics": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/metrics" },
+        "lineage_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "content_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    },
+    "genetic": {
+      "$id": "strategy-v5-statistical-genetic-run/1",
+      "type": "object",
+      "required": ["schema", "version", "fold_id", "config", "population_history", "seed_runs", "evaluated_behavior_aliases", "evaluated_k", "evaluation_attempt_k", "chromosome_evaluated_k", "cumulative_k", "cumulative_exposure_k", "exposure_head_sha256", "selected_behavior_alias_sha256", "selected_seed_count", "seed_stability", "neighbours", "selected", "content_sha256"],
+      "properties": {
+        "schema": { "const": "strategy-v5-statistical-genetic-run/1" },
+        "version": { "const": 1 },
+        "fold_id": { "type": "string", "minLength": 1 },
+        "training_episode_ids": { "type": "array", "items": { "type": "string" } },
+        "gene_space": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/geneSpace" },
+        "config": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/geneticConfig" },
+        "population_history": { "type": "array", "minItems": 1, "items": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/historyRow" } },
+        "seed_runs": { "type": "array", "minItems": 3, "items": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/seedRun" } },
+        "evaluated_behavior_aliases": { "type": "array", "items": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" } },
+        "evaluated_k": { "type": "integer", "minimum": 1 },
+        "evaluation_attempt_k": { "type": "integer", "minimum": 1 },
+        "chromosome_evaluated_k": { "type": "integer", "minimum": 1 },
+        "cumulative_k": { "type": "integer", "minimum": 1 },
+        "cumulative_exposure_k": { "type": "integer", "minimum": 1 },
+        "exposure_head_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "selected_behavior_alias_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "selected_seed_count": { "type": "integer", "minimum": 0 },
+        "seed_stability": { "type": "object", "required": ["required", "stable_aliases"], "properties": { "required": { "type": "integer" }, "stable_aliases": { "type": "array", "items": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" } } }, "additionalProperties": false },
+        "baseline": { "anyOf": [{ "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/fitness" }, { "type": "null" }] },
+        "neighbours": { "type": "array", "items": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/neighbour" } },
+        "selected": { "anyOf": [{ "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/selected" }, { "type": "null" }] },
+        "content_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    },
+    "fold": {
+      "$id": "strategy-v5-statistical-fold/1",
+      "type": "object",
+      "required": ["schema", "version", "fold_id", "status", "train_episode_ids", "test_episode_ids", "purge_ms", "embargo_ms", "content_sha256"],
+      "properties": {
+        "schema": { "const": "strategy-v5-statistical-fold/1" },
+        "version": { "const": 1 },
+        "fold_id": { "type": "string" },
+        "status": { "enum": ["EVALUATED", "REJECTED"] },
+        "reason": { "type": "string" },
+        "train_episode_ids": { "type": "array", "items": { "type": "string" } },
+        "test_episode_ids": { "type": "array", "items": { "type": "string" } },
+        "test_start": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/timestamp" }, "test_end": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/timestamp" }, "censored_train_count": { "type": "integer", "minimum": 0 }, "censored_test_count": { "type": "integer", "minimum": 0 },
+        "purge_ms": { "type": "integer", "minimum": 0 },
+        "embargo_ms": { "type": "integer", "minimum": 0 },
+        "lineage_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "train": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/foldTrain" },
+        "test": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/foldTest" },
+        "content_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    },
+    "wfo": {
+      "$id": "strategy-v5-statistical-wfo/1",
+      "type": "object",
+      "required": ["schema", "version", "folds", "fold_count", "asset_scope", "validation_exposure_head_sha256", "exposure_head_sha256", "cumulative_k", "oos_episode_ids", "oos_weighting", "audit", "development_refit", "asset_decisions", "portfolio_decision", "decision", "gate_pass", "content_sha256"],
+      "properties": {
+        "schema": { "const": "strategy-v5-statistical-wfo/1" },
+        "version": { "const": 1 },
+        "folds": { "type": "array", "minItems": 8, "items": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/fold" } },
+        "fold_count": { "const": 8 },
+        "asset_scope": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/assetScope" },
+        "validation_exposure_head_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "exposure_head_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "cumulative_k": { "type": "integer", "minimum": 1 },
+        "oos_episode_ids": { "type": "array", "items": { "type": "string" } },
+        "oos_artifact_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "vector_inventory_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "oos_weighting": { "const": "UNWEIGHTED" },
+        "audit": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/audit" },
+        "development_refit": { "type": "object" },
+        "asset_decisions": { "type": "array", "items": { "type": "object" } },
+        "asset_decisions_final": { "type": "array", "items": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/assetDecision" } },
+        "portfolio_decision": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/portfolio" },
+        "decision": { "enum": ["REJECTED", "SHADOW"] },
+        "gate_pass": { "type": "boolean" },
+        "content_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    },
+    "audit": {
+      "$id": "strategy-v5-statistical-audit/1",
+      "type": "object",
+      "required": ["schema", "version", "selected_candidate_id", "exposure_head_sha256", "sample_count", "independent_opportunity_count", "independent_trade_count", "market_cluster_inventory_sha256", "gates", "pass", "decision", "fail_closed_missing_inputs", "content_sha256"],
+      "properties": {
+        "schema": { "const": "strategy-v5-statistical-audit/1" },
+        "version": { "const": 1 },
+        "selected_candidate_id": { "type": "string" },
+        "exposure_head_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "sample_count": { "type": "integer", "minimum": 0 },
+        "selected_behavior_alias_sha256": { "anyOf": [{ "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, { "type": "null" }] }, "vector_inventory_sha256": { "anyOf": [{ "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, { "type": "null" }] }, "opportunity_count": { "type": "integer", "minimum": 0 }, "trade_count": { "type": "integer", "minimum": 0 }, "independent_opportunity_count": { "type": "integer", "minimum": 0 }, "independent_trade_count": { "type": "integer", "minimum": 0 }, "market_cluster_inventory_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "completed_episode_count": { "type": "integer", "minimum": 0 }, "metrics": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/metrics" }, "selected_metrics": { "anyOf": [{ "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/metrics" }, { "type": "null" }] }, "search_adjusted_expectancy_r": { "type": "number" }, "max_statistic": { "type": "object" }, "dsr": { "anyOf": [{ "type": "object" }, { "type": "null" }] }, "pbo": { "anyOf": [{ "type": "object" }, { "type": "null" }] }, "year_means": { "type": "array" }, "recent_window": { "type": "object" }, "plateau": { "type": "object" },
+        "gates": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/gates" },
+        "pass": { "type": "boolean" },
+        "decision": { "enum": ["REJECTED", "SHADOW"] },
+        "fail_closed_missing_inputs": { "const": true },
+        "content_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    },
+    "physicalNullRunner": {
+      "$id": "strategy-v5-physical-null-runner/1",
+      "type": "object",
+      "required": ["schema", "version", "factory", "integration_status", "feature_artifact_sha256", "label_artifact_sha256", "execution_artifact_sha256", "code_sha256", "recomputes_label_execution", "reruns_nested_selection", "worker_backed", "physical_feature_label_execution", "methods"],
+      "properties": {
+        "schema": { "const": "strategy-v5-physical-null-runner/1" },
+        "version": { "const": 1 },
+        "factory": { "const": "INTERNAL_VERIFIED_PHYSICAL_FACTORY" },
+        "integration_status": { "const": "WIRED_PRODUCTION" },
+        "source_manifest_sha256": { "anyOf": [{ "type": "null" }, { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }] },
+        "feature_artifact_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "label_artifact_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "execution_artifact_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "code_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "recomputes_label_execution": { "const": true },
+        "reruns_nested_selection": { "const": true },
+        "worker_backed": { "const": true },
+        "physical_feature_label_execution": { "const": true },
+        "methods": { "type": "array", "const": ["block_permuted_labels", "timestamp_shifted_outcomes", "frequency_matched_random_intents", "winners_curse_selection"] }
+      },
+      "additionalProperties": false
+    },
+    "physicalArtifactRef": {
+      "type": "object",
+      "required": ["path", "byte_sha256", "content_sha256"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "byte_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "content_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "role": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "physicalNullSelection": {
+      "$id": "strategy-v5-physical-null-selection/1",
+      "type": "object",
+      "required": ["schema", "version", "method", "seed", "iteration", "source_artifact_sha256", "feature_artifact_sha256", "label_artifact_sha256", "execution_artifact_sha256", "selection_budget_sha256", "transformation_sha256", "transformed_label_artifact_sha256", "transformed_execution_artifact_sha256", "recomputed_outcome_artifact_sha256", "selected_outcome_vector_sha256", "trace_sha256", "transformed_label_ref", "transformed_execution_ref", "recomputed_outcome_ref", "selected_outcome_vector_ref", "trace_ref", "selected_statistic", "checkpoint_ref", "checkpoint_status", "content_sha256"],
+      "properties": {
+        "schema": { "const": "strategy-v5-physical-null-selection/1" },
+        "version": { "const": 1 },
+        "method": { "enum": ["block_permuted_labels", "timestamp_shifted_outcomes", "frequency_matched_random_intents", "winners_curse_selection"] },
+        "seed": { "type": "integer", "minimum": 0 },
+        "iteration": { "type": "integer", "minimum": 0 },
+        "source_artifact_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "source_manifest_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "feature_artifact_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "label_artifact_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "execution_artifact_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "selection_budget_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "transformation_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "transformed_label_artifact_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "transformed_execution_artifact_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "recomputed_outcome_artifact_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "selected_outcome_vector_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "trace_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "transformed_label_ref": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/physicalArtifactRef" },
+        "transformed_execution_ref": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/physicalArtifactRef" },
+        "recomputed_outcome_ref": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/physicalArtifactRef" },
+        "selected_outcome_vector_ref": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/physicalArtifactRef" },
+        "trace_ref": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/physicalArtifactRef" },
+        "selected_candidate_id": { "type": "string" },
+        "selected_statistic": { "type": "number" },
+        "checkpoint_ref": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/physicalArtifactRef" },
+        "checkpoint_status": { "enum": ["COMPLETED", "RESUMED"] },
+        "content_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    },
+    "nullControls": {
+      "$id": "strategy-v5-statistical-null-controls/1",
+      "type": "object",
+      "required": ["schema", "version", "selected_candidate_id", "directional_hypothesis", "alpha", "iterations", "tests", "pass", "artifact_sha256", "content_sha256"],
+      "properties": {
+        "schema": { "const": "strategy-v5-statistical-null-controls/1" },
+        "version": { "const": 1 },
+        "selected_candidate_id": { "type": "string" },
+        "directional_hypothesis": { "enum": ["positive", "negative"] },
+        "alpha": { "type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 1 },
+        "iterations": { "type": "integer", "minimum": 1 },
+        "observed_expectancy_r": { "type": "number" }, "selection_budget_sha256": { "anyOf": [{ "type": "null" }, { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }] }, "tests": { "type": "array", "minItems": 4, "items": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/nullTest" } },
+        "pass": { "type": "boolean" },
+        "artifact_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "content_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    },
+    "nullReplay": {
+      "$id": "strategy-v5-statistical-null-replay/1",
+      "type": "object",
+      "required": ["schema", "version", "method", "source_artifact_sha256", "frame_sha256", "artifact", "transformation", "proof_sha256", "selection_budget_sha256", "content_sha256"],
+      "properties": {
+        "schema": { "const": "strategy-v5-statistical-null-replay/1" },
+        "version": { "const": 1 },
+        "method": { "enum": ["block_permuted_labels", "timestamp_shifted_outcomes", "frequency_matched_random_intents", "winners_curse_selection"] },
+        "source_artifact_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "frame_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "artifact": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/input" },
+        "transformation": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/transformation" },
+        "proof_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "selection_budget_sha256": { "anyOf": [{ "type": "null" }, { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }] },
+        "content_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    },
+    "stress": {
+      "$id": "strategy-v5-statistical-stress-decision/1",
+      "type": "object",
+      "required": ["schema", "version", "pass", "provenance", "lineage_sha256", "scenarios", "scenario_inventory_sha256", "content_sha256"],
+      "properties": {
+        "schema": { "const": "strategy-v5-statistical-stress-decision/1" },
+        "version": { "const": 1 }, "pass": { "type": "boolean" }, "provenance": { "const": "AUTHORITATIVE_RECOMPUTED" },
+        "lineage_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "source_artifact_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "selected_candidate_id": { "type": "string" }, "scenarios": { "type": "array", "minItems": 13, "items": { "type": "object", "required": ["id", "pass", "digest"], "properties": { "id": { "type": "string" }, "pass": { "type": "boolean" }, "digest": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" } }, "additionalProperties": false } }, "scenario_inventory_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "content_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    },
+    "portfolio": {
+      "$id": "strategy-v5-statistical-portfolio-decision/1",
+      "type": "object",
+      "required": ["schema", "version", "pass", "provenance", "lineage_sha256", "source_artifact_sha256", "asset_decisions", "return_increments", "asset_decisions_sha256", "return_increments_sha256", "risk_digest_sha256", "content_sha256"],
+      "properties": {
+        "schema": { "const": "strategy-v5-statistical-portfolio-decision/1" },
+        "version": { "const": 1 }, "pass": { "type": "boolean" }, "provenance": { "const": "AUTHORITATIVE_RECOMPUTED" }, "lineage_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "source_artifact_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "asset_decisions": { "type": "array", "minItems": 1, "items": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/portfolioAssetDecision" } }, "return_increments": { "type": "array", "minItems": 1, "items": { "type": "object", "required": ["episode_id", "asset", "net_r"], "properties": { "episode_id": { "type": "string" }, "asset": { "type": "string" }, "net_r": { "type": "number" } }, "additionalProperties": false } }, "asset_decisions_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "return_increments_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "risk_digest_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "content_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    },
+    "nullCalibration": {
+      "$id": "strategy-v5-statistical-null-calibration/1",
+      "type": "object",
+      "required": ["schema", "version", "selection_budget_sha256", "seeds", "iterations", "alpha", "type_i_ceiling", "minimum_power", "no_edge_fixture_count", "planted_edge_fixture_count", "null_case_count", "planted_case_count", "null_rejections", "planted_passes", "null_rejection_rate", "power", "tolerance", "records", "pass", "mode", "content_sha256"],
+      "properties": {
+        "schema": { "const": "strategy-v5-statistical-null-calibration/1" },
+        "version": { "const": 1 },
+        "selection_budget_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "seeds": { "type": "array", "minItems": 3, "items": { "type": "integer" } },
+        "iterations": { "type": "integer", "minimum": 1 },
+        "alpha": { "type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 1 },
+        "type_i_ceiling": { "type": "number", "minimum": 0, "maximum": 1 },
+        "minimum_power": { "type": "number", "minimum": 0, "maximum": 1 },
+        "no_edge_fixture_count": { "type": "integer", "minimum": 1 },
+        "planted_edge_fixture_count": { "type": "integer", "minimum": 1 },
+        "null_case_count": { "type": "integer", "minimum": 1 },
+        "planted_case_count": { "type": "integer", "minimum": 1 },
+        "null_rejections": { "type": "integer", "minimum": 0 },
+        "planted_passes": { "type": "integer", "minimum": 0 },
+        "null_rejection_rate": { "type": "number", "minimum": 0, "maximum": 1 },
+        "power": { "type": "number", "minimum": 0, "maximum": 1 },
+        "tolerance": { "type": "object", "required": ["type_i_ceiling", "minimum_power"], "properties": { "type_i_ceiling": { "type": "number", "minimum": 0, "maximum": 1 }, "minimum_power": { "type": "number", "minimum": 0, "maximum": 1 } }, "additionalProperties": false },
+        "records": { "type": "array", "minItems": 1, "items": { "type": "object", "required": ["kind", "fixture_id", "seed", "pass", "content_sha256"], "properties": { "kind": { "enum": ["NO_EDGE", "PLANTED_EDGE"] }, "fixture_id": { "type": "string", "minLength": 1 }, "seed": { "type": "integer" }, "pass": { "type": "boolean" }, "content_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" } }, "additionalProperties": false } },
+        "pass": { "type": "boolean" },
+        "mode": { "const": "FIXTURE_CALIBRATION" },
+        "content_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    },
+    "checkpoint": {
+      "$id": "strategy-v5-statistical-genetic-checkpoint/1",
+      "type": "object",
+      "required": ["schema", "version", "artifact_lineage_sha256", "artifact_sha256", "exposure_head_sha256", "exposure_predecessor_sha256", "gene_space_sha256", "fold_id", "seed", "seed_index", "generation", "rng_state", "config", "population", "history", "history_sha256", "seed_finalists", "seed_membership", "plateau", "pareto_signature", "previous_checkpoint_sha256", "state_sha256", "checkpoint_status", "content_sha256"],
+      "properties": {
+        "schema": { "const": "strategy-v5-statistical-genetic-checkpoint/1" }, "version": { "const": 1 }, "artifact_lineage_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "artifact_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "exposure_head_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "exposure_predecessor_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "gene_space_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "fold_id": { "type": "string" }, "seed": { "type": "integer" }, "seed_index": { "type": "integer", "minimum": 0 }, "generation": { "type": "integer", "minimum": 0 }, "rng_state": { "anyOf": [{ "type": "null" }, { "type": "integer" }] }, "config": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/geneticConfig" }, "population": { "type": "array", "items": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/historyRow" } }, "history": { "type": "array", "items": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/historyRow" } }, "history_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "seed_finalists": { "type": "array" }, "seed_membership": { "type": "array" }, "plateau": { "type": "number", "minimum": 0 }, "pareto_signature": { "type": "string" }, "previous_checkpoint_sha256": { "anyOf": [{ "type": "null" }, { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }] }, "state_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, "checkpoint_status": { "enum": ["RUNNING", "SEED_COMPLETE", "COMPLETE"] }, "content_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

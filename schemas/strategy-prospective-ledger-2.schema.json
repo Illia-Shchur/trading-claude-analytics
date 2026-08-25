@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-prospective-ledger/2",
+  "type": "object",
+  "required": ["schema", "version", "lineage_sha256", "sequence", "head_sha256", "events", "content_sha256"],
+  "properties": {
+    "schema": {"const": "strategy-prospective-ledger/2"},
+    "version": {"const": 2},
+    "lineage_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "sequence": {"type": "integer", "minimum": 0},
+    "head_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "assets": {"type": "array", "items": {"type": "string"}},
+    "frozen_start": {"type": ["string", "null"], "format": "date-time"},
+    "frozen_end": {"type": ["string", "null"], "format": "date-time"},
+    "current_head_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "index_path": {"type": "string"},
+    "index_content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["event_id", "kind", "asset", "completed_bar_id", "decision_time", "availability_time", "source_receipt_sha256", "source_receipt_schema", "source_receipt_ref", "lineage_sha256", "sequence", "previous_head_sha256", "event_sha256", "payload"],
+        "properties": {
+          "event_id": {"type": "string", "minLength": 1},
+          "kind": {"enum": ["SIGNAL", "OUTCOME"]},
+          "asset": {"type": "string"},
+          "completed_bar_id": {"type": "string"},
+          "decision_time": {"type": "string", "format": "date-time"},
+          "availability_time": {"type": "string", "format": "date-time"},
+          "source_receipt_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "source_receipt_schema": {"type": "string"},
+          "source_receipt_ref": {"type": "string"},
+          "lineage_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "sequence": {"type": "integer", "minimum": 1},
+          "previous_head_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "event_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "payload": {
+            "type": "object",
+            "properties": {
+              "signal_state": {"const": "SHADOW"},
+              "signal_intent": {"type": "boolean"},
+              "signal_decision_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+              "reservation_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+              "candidate_set_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+              "evaluator_code_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+              "feature_input_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+              "feature_row_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+              "availability_cutoff_time": {"type": "string", "format": "date-time"},
+              "resolution": {"type": "string"},
+              "resolution_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+              "outcome_resolution_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+              "outcome_resolution_source_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+              "label_source_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+              "execution_source_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": false
+}

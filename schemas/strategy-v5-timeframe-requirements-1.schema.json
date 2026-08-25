@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-v5-timeframe-requirements/1",
+  "type": "object",
+  "required": ["schema", "version", "status", "required_intervals", "declarations", "content_sha256"],
+  "properties": {
+    "schema": { "const": "strategy-v5-timeframe-requirements/1" },
+    "version": { "const": 1 },
+    "status": { "const": "FROZEN" },
+    "precommit_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+    "predictor_registry_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+    "required_intervals": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "enum": ["5m", "1h", "4h", "1d"] } },
+    "declarations": { "type": "array", "minItems": 1, "items": { "type": "object", "required": ["predictor_id", "interval", "series_types", "context_only"], "properties": { "predictor_id": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,127}$" }, "interval": { "enum": ["5m", "1h", "4h", "1d", "event"] }, "series_types": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "enum": ["signal_bars", "mark_bars", "funding_events", "metrics_events"] } }, "context_only": { "type": "boolean" }, "required_fields": { "type": "array", "uniqueItems": true, "items": { "enum": ["open_interest", "open_interest_value", "top_trader_account_long_short_ratio", "top_trader_position_long_short_ratio", "global_long_short_ratio", "taker_buy_sell_volume_ratio"] } }, "minimum_field_coverage": { "type": "number", "minimum": 0, "maximum": 1 } }, "additionalProperties": false } },
+    "content_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  },
+  "additionalProperties": false
+}

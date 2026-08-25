@@ -1,0 +1,834 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-v5-authoritative-acquisition/1",
+  "type": "object",
+  "required": [
+    "schema",
+    "version",
+    "status",
+    "plan_sha256",
+    "root_reference",
+    "staging_format",
+    "storage_role",
+    "authoritative",
+    "captures",
+    "content_sha256"
+  ],
+  "properties": {
+    "schema": {
+      "const": "strategy-v5-authoritative-acquisition/1"
+    },
+    "version": {
+      "const": 1
+    },
+    "status": {
+      "enum": [
+        "STAGING_COMPLETE",
+        "STAGING_PARTIAL"
+      ]
+    },
+    "plan_sha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "root_reference": {
+      "type": "string"
+    },
+    "staging_format": {
+      "const": "JSONL"
+    },
+    "storage_role": {
+      "const": "STAGING"
+    },
+    "authoritative": {
+      "const": false
+    },
+    "captures": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/capture"
+      }
+    },
+    "checkpoint_path": {
+      "type": "string"
+    },
+    "checkpoint_sha256": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "base_complete": {
+      "type": "boolean"
+    },
+    "declared_complete": {
+      "type": "boolean"
+    },
+    "full_plan_complete": {
+      "type": "boolean"
+    },
+    "completion_scope": {
+      "enum": [
+        "NONE",
+        "BASE_ONLY",
+        "ALL_DECLARED"
+      ]
+    },
+    "required_series_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "required_complete_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "optional_series_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "optional_complete_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "optional_complete": {
+      "type": "boolean"
+    },
+    "unavailable_required": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "unavailable_optional": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "declared_requirements_sha256": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "source_receipts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "source_receipt_sha256": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/hash"
+      }
+    },
+    "source_receipt_byte_sha256": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/hash"
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "conversion": {
+      "$ref": "#/$defs/conversion"
+    },
+    "content_sha256": {
+      "$ref": "#/$defs/hash"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "partition": {
+      "type": "object",
+      "required": [
+        "path",
+        "sha256",
+        "bytes",
+        "row_count",
+        "format",
+        "storage_role",
+        "authoritative"
+      ],
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "sha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "row_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "format": {
+          "const": "JSONL"
+        },
+        "storage_role": {
+          "const": "STAGING"
+        },
+        "authoritative": {
+          "const": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "rawReceipt": {
+      "type": "object",
+      "required": [
+        "schema",
+        "version",
+        "content_sha256",
+        "path",
+        "byte_sha256",
+        "bytes",
+        "format",
+        "storage_role",
+        "authoritative"
+      ],
+      "properties": {
+        "schema": {
+          "const": "strategy-v5-source-receipt/1"
+        },
+        "version": {
+          "const": 1
+        },
+        "content_sha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "path": {
+          "type": "string"
+        },
+        "byte_sha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "format": {
+          "const": "RAW_BYTES"
+        },
+        "storage_role": {
+          "const": "RAW_IGNORED"
+        },
+        "authoritative": {
+          "const": false
+        },
+        "source": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "request": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "endpoint": {
+              "type": "string"
+            },
+            "symbol": {
+              "type": "string"
+            },
+            "interval": {
+              "type": "string"
+            },
+            "response_sha256": {
+              "$ref": "#/$defs/hash"
+            },
+            "listing_format": {
+              "type": "string"
+            },
+            "start_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "end_at": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "receiptSummary": {
+      "type": "object",
+      "required": [
+        "path",
+        "sha256",
+        "schema",
+        "status",
+        "raw_count"
+      ],
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "sha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "content_sha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "byte_sha256": {
+          "type": [
+            "string",
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/$defs/hash"
+          }
+        },
+        "raw_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "schema": {
+          "const": "strategy-v5-source-receipt/1"
+        },
+        "status": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "coverage": {
+      "type": "object",
+      "properties": {
+        "complete": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "expected_rows": {
+          "type": "integer"
+        },
+        "observed_rows": {
+          "type": "integer"
+        },
+        "observed_events": {
+          "type": "integer"
+        },
+        "min_event_time": {
+          "type": [
+            "string",
+            "number",
+            "null"
+          ]
+        },
+        "max_event_time": {
+          "type": [
+            "string",
+            "number",
+            "null"
+          ]
+        },
+        "min_availability_time": {
+          "type": [
+            "string",
+            "number",
+            "null"
+          ]
+        },
+        "max_availability_time": {
+          "type": [
+            "string",
+            "number",
+            "null"
+          ]
+        },
+        "coverage_mode": {
+          "enum": [
+            "EVENT_SEQUENCE"
+          ]
+        },
+        "expected_slots": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "missing_slots": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "missing_days": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "missing_months": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "missing_buckets": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "gap_starts": {
+          "type": "array",
+          "items": {
+            "type": [
+              "string",
+              "number"
+            ]
+          }
+        },
+        "duplicate_events": {
+          "type": "array",
+          "items": {
+            "type": [
+              "string",
+              "number"
+            ]
+          }
+        },
+        "irregular_bars": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "field_coverage": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "minimum_field_coverage": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "required_metric_fields": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "required_field_coverage": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "field",
+              "observed",
+              "expected",
+              "fraction"
+            ],
+            "properties": {
+              "field": {
+                "type": "string"
+              },
+              "observed": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "expected": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "fraction": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "irregular_bar_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "availability_cutoff_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "settlement_mark_source": {
+          "type": "string"
+        },
+        "settlement_mark_source_response_sha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "settlement_mark_events": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "slot_tolerance_ms": {
+          "type": "integer"
+        },
+        "cadence_segments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/cadenceSegment"
+          }
+        },
+        "source_pagination_complete": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "query_start_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "query_end_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "first_event_time": {
+          "type": [
+            "string",
+            "number",
+            "null"
+          ]
+        },
+        "last_event_time": {
+          "type": [
+            "string",
+            "number",
+            "null"
+          ]
+        },
+        "expected_first_event_time": {
+          "type": [
+            "string",
+            "number",
+            "null"
+          ]
+        },
+        "expected_last_event_time": {
+          "type": [
+            "string",
+            "number",
+            "null"
+          ]
+        },
+        "boundaries_covered": {
+          "type": "boolean"
+        },
+        "archive_files": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "bounded": {
+          "type": "boolean"
+        },
+        "concurrency": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "native_step_ms": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "aggregation": {
+          "type": "string"
+        },
+        "expected_step_ms": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "source": {
+          "type": "string"
+        },
+        "checkpoint_path": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "checkpoint_sha256": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "captured_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false
+    },
+    "capture": {
+      "type": "object",
+      "required": [
+        "asset",
+        "instrument",
+        "symbol",
+        "coverage"
+      ],
+      "properties": {
+        "asset": {
+          "type": "string"
+        },
+        "venue": {
+          "type": "string"
+        },
+        "instrument": {
+          "type": "string"
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "interval": {
+          "type": "string"
+        },
+        "series_type": {
+          "type": "string"
+        },
+        "series_role": {
+          "type": "string"
+        },
+        "start_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "end_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "availability_cutoff_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "completed_bars_only": {
+          "type": "boolean"
+        },
+        "require_availability_time": {
+          "type": "boolean"
+        },
+        "expected_step_ms": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "expected_event_count": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "slot_tolerance_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "event_driven": {
+          "type": "boolean"
+        },
+        "event_sequence_mode": {
+          "type": "boolean"
+        },
+        "cadence_segments": {
+          "type": "array"
+        },
+        "expiry": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "expiry_observed_date_utc": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "expiry_binding_status": {
+          "type": "string"
+        },
+        "tradeable": {
+          "type": "boolean"
+        },
+        "fee_schedule_status": {
+          "type": "string"
+        },
+        "contract_specification_status": {
+          "type": "string"
+        },
+        "funding_status": {
+          "type": "string"
+        },
+        "margin_status": {
+          "type": "string"
+        },
+        "liquidation_status": {
+          "type": "string"
+        },
+        "metric_required_fields": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "open_interest",
+              "open_interest_value",
+              "top_trader_account_long_short_ratio",
+              "top_trader_position_long_short_ratio",
+              "global_long_short_ratio",
+              "taker_buy_sell_volume_ratio"
+            ]
+          }
+        },
+        "metric_minimum_field_coverage": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "series_sha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "producer_code_sha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "adapter_code_sha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "partition": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/partition"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "coverage": {
+          "$ref": "#/$defs/coverage"
+        },
+        "unavailable": {
+          "type": "boolean"
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "source_receipts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/receiptSummary"
+          }
+        },
+        "source_receipt_sha256": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/hash"
+          }
+        },
+        "source_receipt_byte_sha256": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/hash"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "conversion": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "const": "AVAILABLE"
+        },
+        "required_format": {
+          "const": "PARQUET"
+        },
+        "dependency": {
+          "const": "@duckdb/node-api@1.5.5-r.4"
+        },
+        "threads": {
+          "const": 1
+        },
+        "promotion": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "cadenceSegment": {
+      "type": "object",
+      "required": [
+        "effective_from",
+        "effective_to",
+        "cadence_ms",
+        "origin_at",
+        "discovery"
+      ],
+      "properties": {
+        "effective_from": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "effective_to": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "cadence_ms": {
+          "type": "integer",
+          "enum": [
+            7200000,
+            14400000,
+            28800000
+          ]
+        },
+        "origin_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "discovery": {
+          "const": "OBSERVED_EVENT_GAPS"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

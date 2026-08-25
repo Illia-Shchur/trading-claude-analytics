@@ -20,6 +20,8 @@ import { candidateSignalIntent, evaluateCandidate } from './swing-engine.mjs'
 import { snapshot as buildLakeSnapshot } from './research-data.mjs'
 import { plateauDiagnostics as plateauDiagnosticsV2 } from './strategy-research-v2.mjs'
 import * as ResearchV5 from './strategy-research-v5.mjs'
+import { runAuthoritativeV5Cli } from './strategy-research-v5-authoritative.mjs'
+import { isV5ArtifactSchema, V5_INDEX_SCHEMA_ALLOWLIST, V5_VALIDATE_SCHEMA_ALLOWLIST } from './strategy-v5-routing.mjs'
 
 export const STACK_SCHEMA = 'strategy-research-stack/1'
 export const SOURCE_RECEIPT_SCHEMA = 'strategy-source-receipt/1'
@@ -659,9 +661,56 @@ export function runAuthoritativeWfo(input) {
   const lineage = { stack_sha256: input.stack.content_sha256, precommit_sha256: input.precommit.content_sha256, candidate_sha256: input.candidateSet.content_sha256, data_manifest_sha256: input.manifest.content_sha256, exposure_ledger_sha256: finalExposure.content_sha256 }; const authoritative = withHash({ ...output, lineage, exposure_ledger_sha256: finalExposure.content_sha256, statistic, plateau, ablations, execution, stress, portfolio, gate_pass: gatePass, decision: gatePass ? 'CANDIDATE_REVIEW' : 'REJECTED' }); validateWfoStructure(authoritative, { stackSha256: input.stack.content_sha256, precommitSha256: input.precommit.content_sha256, candidateSha256: input.candidateSet.content_sha256, manifestSha256: input.manifest.content_sha256, exposureLedgerSha256: finalExposure.content_sha256 }); return authoritative
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url))) {
-  const command = process.argv[2]; const options = parseFlagOptions(process.argv.slice(3))
+const AUTHORITATIVE_V5_COMMANDS = new Set(['data-backfill', 'opportunity-envelope', 'search-genetic', 'research-run', 'overfit-audit', 'prospective-runner', 'readiness-audit', 'deployment-audit', 'validate'])
+const command = process.argv[2]; const options = parseFlagOptions(process.argv.slice(3))
+function inputIsV5Artifact(path) {
+  if (!path) return false
   try {
+    const value = JSON.parse(readFileSync(resolve(String(path)), 'utf8'))
+    return isV5ArtifactSchema(value?.schema)
+  } catch { return false }
+}
+function rootHasV5Artifact(path) {
+  if (!path) return false
+  const root = resolve(String(path)); if (!existsSync(root)) return false
+  const pending = [root]
+  while (pending.length) {
+    const directory = pending.pop()
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      const child = resolve(directory, entry.name)
+      if (entry.isDirectory()) { if (entry.name !== 'receipts') pending.push(child); continue }
+      if (!entry.isFile() || !entry.name.endsWith('.json')) continue
+      try {
+        const schema = JSON.parse(readFileSync(child, 'utf8'))?.schema
+        if (isV5ArtifactSchema(schema, { allowlist: V5_INDEX_SCHEMA_ALLOWLIST })) return true
+      } catch {}
+    }
+  }
+  return false
+}
+const routeV5Index = command === 'index' && (options.v5 === true || options.v5 === 'true' || rootHasV5Artifact(options.root || 'strategy-research/next-records'))
+const routeV5 = (AUTHORITATIVE_V5_COMMANDS.has(command) && (command !== 'validate' || inputIsV5Artifact(options.input))) || routeV5Index
+if (process.argv[1] && resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url)) && routeV5) {
+  try {
+    const result = await runAuthoritativeV5Cli(command, options, { legacyValidate: null, legacyIndex: null })
+    if (result !== null) print(result)
+    else if (command === 'deployment-audit') {
+      const audit = ResearchV5.makeDeploymentAuditV5({ settings: options.settings ? readJson(options.settings) : {}, keys: options.keys ? readJson(options.keys) : {}, approvals: options.approvals ? readJson(options.approvals) : [], trustRoot: options.trust_root ? readJson(options.trust_root) : null })
+      print({ path: options.out ? writeImmutable(options.out, audit) : null, audit })
+    } else print(result)
+  } catch (error) { process.stderr.write(`${error.message}\n`); process.exitCode = 1 }
+}
+if (process.argv[1] && resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url)) && !routeV5) {
+  try {
+    if (command === 'generate' && String(options.method || '').toUpperCase() === 'GENETIC') throw new Error('static generate --method GENETIC is rejected; use the authoritative search-genetic command')
+    /*
+     * The /4 helper predates the physical v5 boundary.  Its old search branch
+     * accepted caller JSON rows and invoked the loose worker directly.  Keep
+     * the exported /4 mechanics for history/fixture tests, but never expose
+     * that path as a production command: v5 adaptive search must enter through
+     * strategy-research-v5-authoritative.mjs and its verified role manifests.
+     */
+    if (['data-backfill', 'opportunity-envelope', 'search-genetic', 'research-run', 'overfit-audit', 'prospective-runner'].includes(command)) throw new Error(`strategy-research-next ${command} is legacy fixture-only; use strategy-research-v5 ${command} with physical manifests`)
     if (['data-backfill', 'opportunity-envelope', 'search-genetic', 'research-run', 'overfit-audit', 'prospective-runner'].includes(command)) {
       if (command === 'data-backfill') { const plan = ResearchV5.makeFiveYearBackfillPlan({ asOf: options.as_of || new Date().toISOString(), years: 5 }); if (options.download === true || options.download === 'true') { const acquired = await ResearchV5.acquireFiveYearPublic({ plan, intervals: options.intervals ? String(options.intervals).split(',') : ['4h'], maxPages: Number(options.max_pages || 1000), maxRows: Number(options.max_rows || 10_000_000), outputRoot: options.raw_root || null, checkpointPath: options.checkpoint || null, contractMetadata: options.contract_metadata ? readJson(options.contract_metadata) : null }); print({ path: options.out ? writeImmutable(options.out, acquired.manifest) : null, ...acquired, downloaded: true }) } else print({ path: options.out ? writeImmutable(options.out, plan) : null, plan, downloaded: false, limitation: 'Public Binance download is explicit and never fabricated by the planner' }) }
       else if (command === 'opportunity-envelope') { const manifest = readJson(options.manifest); const candidateSet = readJson(options.candidates); const featureValue = readJson(options.features); const partitionValue = options.partitions ? readJson(options.partitions) : null; const envelope = ResearchV5.makeOpportunityEnvelope({ manifest, candidateSet, featureRows: Array.isArray(featureValue) ? featureValue : featureValue.rows, partitionArtifacts: partitionValue?.partitions || partitionValue, lifecycleDays: Number(options.lifecycle_days || 30) }); print({ path: options.out ? writeImmutable(options.out, envelope) : null, envelope }) }
@@ -687,10 +736,10 @@ if (process.argv[1] && resolve(process.argv[1]) === resolve(fileURLToPath(import
     else if (command === 'verify-activation') { const artifact = readJson(options.input); const publicKeyPem = readFileSync(resolve(options.public_key || ''), 'utf8'); print(verifyActivationArtifact(artifact, { publicKeyPem, trustRootKeyId: options.trust_root_key_id, evidenceArtifacts: options.evidence ? readJson(options.evidence) : {}, expected: options.strategy_sha256 || options.candidate_sha256 || options.risk_policy_sha256 ? { strategy_sha256: options.strategy_sha256, candidate_sha256: options.candidate_sha256, risk_policy_sha256: options.risk_policy_sha256 } : {} })) }
     else if (command === 'record') { const value = readJson(options.input); validateNextArtifact(value, { publicKeyPem: options.public_key ? readFileSync(resolve(options.public_key), 'utf8') : null, trustRootKeyId: options.trust_root_key_id, evidenceArtifacts: options.evidence ? readJson(options.evidence) : {} }); const out = options.out || `strategy-research/next-records/${value.schema.replaceAll('/', '-')}/${value.content_sha256}.json`; print({ path: writeImmutable(out, value), schema: value.schema, content_sha256: value.content_sha256 }) }
     else if (command === 'index') { const recordRoot = resolve(options.root || 'strategy-research/next-records'); const records = []; if (existsSync(recordRoot)) for (const schemaDir of readdirSync(recordRoot, { withFileTypes: true }).filter(row => row.isDirectory()).sort((a, b) => a.name.localeCompare(b.name))) for (const file of readdirSync(resolve(recordRoot, schemaDir.name)).filter(name => name.endsWith('.json')).sort()) { const value = readJson(resolve(recordRoot, schemaDir.name, file)); validateNextArtifact(value, { publicKeyPem: options.public_key ? readFileSync(resolve(options.public_key), 'utf8') : null, trustRootKeyId: options.trust_root_key_id }); records.push({ schema: value.schema, content_sha256: value.content_sha256, path: `${schemaDir.name}/${file}`, decision: value.decision || value.status || null }) } const index = withHash({ schema: 'strategy-research-index/4', records }); validateContractSchema(index); const out = options.out || 'strategy-research/index-v4.json'; print({ path: writeMutableAtomic(out, index), index }) }
-    else if (command === 'validate') { const value = readJson(options.input); if (String(value.schema || '').endsWith('/5') || ['strategy-data-manifest/3', 'strategy-genetic-run/1', 'strategy-exposure-ledger/2', 'strategy-opportunity-envelope/1', 'strategy-prospective-runner/2', 'strategy-overfit-audit/1', 'strategy-gene-space/1'].includes(value.schema)) ResearchV5.validateV5Artifact(value); else validateNextArtifact(value, { publicKeyPem: options.public_key ? readFileSync(resolve(options.public_key), 'utf8') : null, trustRootKeyId: options.trust_root_key_id }); print({ valid: true, schema: value.schema }) }
+    else if (command === 'validate') { const value = readJson(options.input); if (isV5ArtifactSchema(value.schema, { allowPrefix: false, allowlist: V5_VALIDATE_SCHEMA_ALLOWLIST })) ResearchV5.validateV5Artifact(value); else validateNextArtifact(value, { publicKeyPem: options.public_key ? readFileSync(resolve(options.public_key), 'utf8') : null, trustRootKeyId: options.trust_root_key_id }); print({ valid: true, schema: value.schema }) }
     else if (command === 'prospective-freeze') { const reservation = makeProspectiveReservation({ startAt: options.start_at, frozenAt: options.frozen_at || nowIso(), lineage: options.lineage ? readJson(options.lineage) : {}, monitoringContract: options.monitoring ? readJson(options.monitoring) : {}, proposedAssets: options.assets ? String(options.assets).split(',') : UNIVERSE }); const ledger = makeProspectiveLedger(reservation); print({ path: options.out ? writeImmutable(options.out, ledger) : null, reservation, ledger }) }
     else if (command === 'prospective-append') { const ledger = readJson(options.ledger); const next = appendProspectiveEvent(ledger, { kind: options.kind, decisionTime: options.decision_time, outcomeTime: options.outcome_time || null, payload: options.payload ? readJson(options.payload) : {} }); print({ path: options.out ? writeImmutable(options.out, next) : null, ledger: next }) }
     else if (command === 'readiness-markdown') print({ markdown: readinessMarkdown(readJson(options.input)) })
-    else process.stdout.write('usage: strategy-research-next.mjs precommit|generate|stack|evaluate|source-receipt|data-validate|snapshot-next|execution-policy|portfolio-policy|exposure|stats|wfo|readiness|activate|verify-activation|record|index|validate|prospective-freeze|prospective-append\n')
+    else process.stdout.write('usage: strategy-research-next.mjs precommit|generate|stack|evaluate|source-receipt|data-validate|snapshot-next|execution-policy|portfolio-policy|exposure|stats|wfo|readiness|readiness-audit|deployment-audit|activate|verify-activation|record|index|validate|prospective-freeze|prospective-append|data-backfill|opportunity-envelope|search-genetic|research-run|overfit-audit|prospective-runner\n')
   } catch (error) { process.stderr.write(`${error.message}\n`); process.exitCode = 1 }
 }

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-execution-fill-artifact/1",
+  "type": "object",
+  "required": ["schema", "version", "venue", "rows", "content_sha256"],
+  "properties": {
+    "schema": {"const": "strategy-execution-fill-artifact/1"},
+    "version": {"const": 1},
+    "venue": {"type": "string", "minLength": 1},
+    "lineage": {"oneOf": [{"type": "null"}, {"type": "object", "required": ["provenance", "execution_source_sha256", "execution_source_path", "selected_trades_sha256", "evaluation_sha256", "evaluator_code_sha256", "evaluator_code_path", "metadata_sha256", "metadata_path", "scenario_policy_sha256", "scenario_policy_path", "child_input_sha256", "child_input_path", "price_model_sha256", "price_model_path"], "properties": {"provenance": {"const": "AUTHORITATIVE"}, "execution_source_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "execution_source_path": {"type": "string", "minLength": 1}, "selected_trades_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "evaluation_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "evaluator_code_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "evaluator_code_path": {"type": "string", "minLength": 1}, "metadata_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "metadata_path": {"type": "string", "minLength": 1}, "scenario_policy_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "scenario_policy_path": {"type": "string", "minLength": 1}, "child_input_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "child_input_path": {"type": "string", "minLength": 1}, "price_model_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "price_model_path": {"type": "string", "minLength": 1}}, "additionalProperties": false}]},
+    "rows": {"type": "array", "minItems": 1, "items": {"type": "object", "required": ["signal_id", "asset", "symbol", "direction", "quantity", "entry_time", "exit_time", "entry_price", "exit_price"], "properties": {"signal_id": {"type": "string", "minLength": 1}, "asset": {"type": "string"}, "symbol": {"type": "string"}, "instrument_type": {"type": "string"}, "direction": {"enum": ["long", "short"]}, "quantity": {"type": "number", "exclusiveMinimum": 0}, "entry_time": {"type": "string", "format": "date-time"}, "exit_time": {"type": "string", "format": "date-time"}, "entry_price": {"type": "number", "exclusiveMinimum": 0}, "exit_price": {"type": "number", "exclusiveMinimum": 0}, "collateral_used": {"type": "number", "exclusiveMinimum": 0}, "leverage": {"type": "number", "exclusiveMinimum": 0}, "margin_mode": {"type": "string"}, "margin_tier_id": {"type": "string"}}, "additionalProperties": false}},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": false
+}

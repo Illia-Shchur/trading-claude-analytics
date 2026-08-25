@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-v5-feature-dag/1",
+  "type": "object",
+  "required": ["schema", "version", "status", "fixture_only", "provenance", "nodes", "outputs", "code_sha256", "content_sha256"],
+  "properties": {
+    "schema": { "const": "strategy-v5-feature-dag/1" },
+    "version": { "const": 1 },
+    "status": { "const": "FROZEN" },
+    "fixture_only": { "type": "boolean" },
+    "provenance": { "type": "string", "minLength": 1 },
+    "graph_id": { "type": "string" },
+    "precommit_sha256": { "type": ["string", "null"] },
+    "predictor_registry_sha256": { "type": ["string", "null"] },
+    "config_sha256": { "type": ["string", "null"] },
+    "code_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "nodes": { "type": "array", "minItems": 1, "items": { "type": "object", "required": ["id", "op", "inputs", "scalar_type", "unit", "evidence_family", "trade_scope"], "properties": { "id": { "type": "string" }, "op": { "type": "string" }, "inputs": { "type": "array" }, "scalar_type": { "enum": ["number", "integer", "boolean"] }, "unit": { "type": "string" }, "evidence_family": { "type": "string" }, "trade_scope": { "enum": ["TRADEABLE_CRYPTO", "CONTEXT_ONLY"] } }, "additionalProperties": true } },
+    "outputs": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "content_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  },
+  "additionalProperties": true
+}

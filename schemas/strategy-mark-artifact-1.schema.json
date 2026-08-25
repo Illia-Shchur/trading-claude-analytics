@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-mark-artifact/1",
+  "type": "object",
+  "required": ["schema", "version", "provenance", "source_manifest_sha256", "source_manifest_path", "source_receipt_sha256", "source_receipt_path", "lineage_sha256", "venue", "interval_ms", "rows", "content_sha256"],
+  "properties": {
+    "schema": {"const": "strategy-mark-artifact/1"},
+    "version": {"const": 1},
+    "provenance": {"enum": ["FIXTURE", "AUTHORITATIVE_RECOMPUTED"]},
+    "source_manifest_sha256": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+    "source_manifest_path": {"type": ["string", "null"]},
+    "source_receipt_sha256": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+    "source_receipt_path": {"type": ["string", "null"]},
+    "source_command_receipt_sha256": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+    "source_command_receipt_path": {"type": ["string", "null"]},
+    "source_code_sha256": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+    "source_code_path": {"type": ["string", "null"]},
+    "lineage_sha256": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+    "venue": {"type": "string", "minLength": 1},
+    "interval_ms": {"type": "integer", "minimum": 1},
+    "rows": {"type": "array", "minItems": 1, "items": {"type": "object", "required": ["asset", "symbol", "event_time", "availability_time", "price"], "properties": {"asset": {"type": "string"}, "symbol": {"type": "string"}, "series_type": {"enum": ["TRADE_MARK", "RISK_REFERENCE", "COLLATERAL_FX", "LIQUIDATION_MARK", "FUNDING_MARK"]}, "event_time": {"type": "string", "format": "date-time"}, "availability_time": {"type": "string", "format": "date-time"}, "price": {"type": "number", "exclusiveMinimum": 0}, "open": {"type": "number", "exclusiveMinimum": 0}, "high": {"type": "number", "exclusiveMinimum": 0}, "low": {"type": "number", "exclusiveMinimum": 0}, "close": {"type": "number", "exclusiveMinimum": 0}}, "additionalProperties": false}},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": false,
+  "allOf": [{"if": {"properties": {"provenance": {"const": "AUTHORITATIVE_RECOMPUTED"}}}, "then": {"required": ["source_command_receipt_sha256", "source_command_receipt_path", "source_code_sha256", "source_code_path"]}}]
+}

@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-v5-trade-lifecycle/1",
+  "type": "object",
+  "required": ["schema", "version", "status", "fixture_only", "provenance", "decision_time", "entry_time", "direction", "instrument_type", "quantity", "max_lifecycle_ms", "exits", "content_sha256"],
+  "properties": {
+    "schema": { "const": "strategy-v5-trade-lifecycle/1" }, "version": { "const": 1 }, "status": { "const": "COMPLETE" }, "fixture_only": { "type": "boolean" }, "provenance": { "type": "string", "minLength": 1 },
+    "decision_time": { "type": "string", "format": "date-time" }, "entry_time": { "type": "string", "format": "date-time" },
+    "direction": { "enum": ["long", "short"] }, "instrument_type": { "enum": ["SPOT", "BINANCE_SPOT", "PERPETUAL", "BINANCE_USDM_PERPETUAL", "DATED_FUTURE", "BINANCE_USDM_DATED_FUTURE"] },
+    "quantity": { "type": "number", "exclusiveMinimum": 0 }, "max_lifecycle_ms": { "type": "integer", "exclusiveMinimum": 0 },
+    "exits": { "type": "array" }, "content_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  },
+  "allOf": [{
+    "if": { "properties": { "provenance": { "const": "AUTHORITATIVE" } }, "required": ["provenance"] },
+    "then": {
+      "required": ["physical_execution_lineage"],
+      "properties": {
+        "physical_execution_lineage": {
+          "type": "object",
+          "required": ["trust_schema", "lifecycle_trust_sha256", "trust_bundle_sha256", "physical_root_reference", "receipt_refs", "bars_content_sha256", "lifecycle_spec_sha256"],
+          "properties": {
+            "trust_schema": { "const": "strategy-v5-lifecycle-trust/1" },
+            "lifecycle_trust_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+            "trust_bundle_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+            "physical_root_reference": { "type": ["string", "null"], "minLength": 1 },
+            "lifecycle_spec_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+            "evaluator_spec_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+            "precommit_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+            "bars_content_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+            "bars_rows_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+            "funding_content_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+            "marks_content_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+            "hydration_content_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+            "receipt_refs": { "type": "object", "required": ["contract_spec", "execution_model", "capacity", "bars"], "additionalProperties": true }
+          },
+          "additionalProperties": true
+        }
+      }
+    }
+  }],
+  "additionalProperties": true
+}
