@@ -83,7 +83,7 @@ function api(path, options = {}) {
   try { body = JSON.parse(bodyText); bodyParsed = true } catch {}
   // A status sentinel without a JSON body is not an authenticated API
   // response.  Do not let a malformed/empty 200 authorize downstream checks.
-  if (authMode === 'bearer' && !bodyParsed) status = 0
+  if (!bodyParsed) status = 0
   return { status, body }
 }
 

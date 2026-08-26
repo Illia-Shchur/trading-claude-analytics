@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawnSync } from 'node:child_process'
 import canonicalize from 'canonicalize'
 import { existsSync, mkdtempSync, mkdirSync, readdirSync, readFileSync, symlinkSync, linkSync, writeFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
@@ -425,6 +425,47 @@ test('prospective workflow supports a frozen bundle and uses a run-scoped protec
     const source = raw.split(/\r?\n/).map(line => line.replace(/^ {10}/, '')).join('\n')
     execFileSync(process.execPath, ['--check', '--input-type=module'], { input: source, encoding: 'utf8' })
   }
+
+  // Execute the exact early-audit heredoc in an isolated worktree.  This
+  // catches a quoted-heredoc `\\n` regression: the artifact must be JSON,
+  // end in one LF byte, and retain its own content hash.  The fallback shell
+  // command is exercised separately because its double-quoted shell context
+  // intentionally performs one level of backslash reduction.
+  const ownHash = value => {
+    const copy = structuredClone(value); delete copy.content_sha256
+    return createHash('sha256').update(canonicalize(copy)).digest('hex')
+  }
+  const auditBytesCheck = (directory, label) => {
+    const path = join(directory, 'v5-deployment-audit-early.json')
+    const bytes = readFileSync(path)
+    assert.equal(bytes.at(-1), 0x0a, `${label} must end in a real LF byte`)
+    const value = JSON.parse(bytes.toString('utf8'))
+    assert.equal(value.content_sha256, ownHash(value), `${label} must retain its own content hash`)
+    return value
+  }
+  const earlyHeredoc = heredocs.find(([, raw]) => raw.includes('v5-deployment-audit-early.json'))
+  assert.ok(earlyHeredoc, 'early deployment audit heredoc must be present')
+  const earlyDirectory = mkdtempSync(join(tmpdir(), 'v5-early-audit-heredoc-'))
+  symlinkSync(join(process.cwd(), 'tools'), join(earlyDirectory, 'tools'), 'dir')
+  // The real job normally has a capture file from the preceding step.  A
+  // minimal JSON object is enough for this audit-emission regression and
+  // avoids exercising that step's unrelated acquisition contract.
+  writeFileSync(join(earlyDirectory, 'github-deployment-settings-capture.json'), '{}\n')
+  const earlySource = earlyHeredoc[1].split(/\r?\n/).map(line => line.replace(/^ {10}/, '')).join('\n')
+  const earlyRun = spawnSync(process.execPath, ['--input-type=module'], { cwd: earlyDirectory, env: { ...process.env, GITHUB_WORKSPACE: earlyDirectory }, input: `${earlySource}\n`, encoding: 'utf8' })
+  assert.equal(earlyRun.status, 1, 'blocked early audit must preserve the heredoc gate status')
+  const earlyAudit = auditBytesCheck(earlyDirectory, 'early deployment audit')
+  assert.equal(earlyAudit.blocked, true)
+  rmSync(earlyDirectory, { recursive: true, force: true })
+
+  const fallbackLine = workflow.split(/\r?\n/).find(line => line.includes("node --input-type=module -e \"import {writeFileSync} from 'node:fs';"))
+  assert.ok(fallbackLine, 'blocked-audit fallback command must be present')
+  const fallbackDirectory = mkdtempSync(join(tmpdir(), 'v5-early-audit-fallback-'))
+  symlinkSync(join(process.cwd(), 'tools'), join(fallbackDirectory, 'tools'), 'dir')
+  execFileSync('bash', ['-c', fallbackLine.trim()], { cwd: fallbackDirectory, env: { ...process.env, GITHUB_WORKSPACE: fallbackDirectory }, encoding: 'utf8' })
+  const fallbackAudit = auditBytesCheck(fallbackDirectory, 'fallback early deployment audit')
+  assert.equal(fallbackAudit.blocked, true)
+  rmSync(fallbackDirectory, { recursive: true, force: true })
 
   // Every shell block is syntax-checked here.  This catches an unmatched
   // `fi`/`done` in the workflow before GitHub gets a chance to run it.
