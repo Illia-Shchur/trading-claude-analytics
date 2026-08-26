@@ -510,7 +510,7 @@ function validateAuthoritativeRunStageInventory(value, label = 'authoritative re
   if (value.wfo.artifact !== value.lineage.wfo_sha256) fail(`${label} WFO artifact is not bound through lineage`)
   return true
 }
-function assertWfoRetainedOosBinding(wfo, artifact, vector, label = 'retained OOS evidence') {
+export function assertWfoRetainedOosBinding(wfo, artifact, vector, label = 'retained OOS evidence') {
   if (!wfo) fail(`${label} lacks its WFO artifact`)
   validateNestedWfoArtifact(wfo)
   validateStatisticalArtifactSet(artifact, { exposureHead: wfo.validation_exposure_head, allowSubset: true })
@@ -548,6 +548,37 @@ function assertWfoRetainedOosBinding(wfo, artifact, vector, label = 'retained OO
   }
   return true
 }
+function assertRetainedOosPhysicalFills(wfo, vector, executionFills, label = 'retained OOS physical fills') {
+  const rows = executionFills?.rows
+  if (!Array.isArray(rows)) fail(`${label} artifact lacks physical fill rows`)
+  const fills = new Map()
+  for (const row of rows) {
+    const episodeId = String(row?.episode_id || '')
+    if (!episodeId || fills.has(episodeId)) fail(`${label} has a duplicate episode identity: ${episodeId || '?'}`)
+    fills.set(episodeId, row)
+  }
+  const episodes = new Map((wfo.oos_episode_ids || []).map(id => [String(id), id]))
+  const referencedFills = new Set()
+  for (const outer of wfo.asset_decisions || []) for (const [asset, decision] of Object.entries(outer.asset_decisions || {})) {
+    const alias = decision?.selected_behavior_alias_sha256
+    if (!alias || !Array.isArray(decision.selected_return_vector)) continue
+    const finalRows = vector.vectors?.[alias]
+    if (!Array.isArray(finalRows)) fail(`${label} is missing selected alias ${alias}`)
+    const finalByEpisode = new Map(finalRows.map(row => [String(row.episode_id), row]))
+    for (const selected of decision.selected_return_vector) {
+      const episodeId = String(selected.episode_id)
+      if (!episodes.has(episodeId)) fail(`${label} selected episode is outside retained OOS scope: ${episodeId}`)
+      const row = finalByEpisode.get(episodeId); const fill = fills.get(episodeId)
+      if (!row || Number(row.net_r) !== Number(selected.net_r) || row.traded !== selected.traded) fail(`${label} vector ${alias}/${episodeId} disagrees with the retained fold value`)
+      if (selected.traded === true) {
+        referencedFills.add(episodeId)
+        if (!fill || Number(fill.net_r) !== Number(row.net_r) || String(fill.asset || '').toLowerCase() !== String(asset).toLowerCase()) fail(`${label} traded vector ${alias}/${episodeId} disagrees with the physical fill`)
+      } else if (fill) fail(`${label} untraded vector ${alias}/${episodeId} has a physical fill`)
+    }
+  }
+  for (const episodeId of fills.keys()) if (!referencedFills.has(episodeId)) fail(`${label} contains an unreferenced physical fill: ${episodeId}`)
+  return true
+}
 function verifyPhysicalStageArtifactRefs(run, recordRoot, label = 'authoritative research run', wfo = null) {
   if (run?.decision === 'REJECTED' && !HASH_RE.test(String(run.oos_artifact_sha256 || '')) && run.stage_artifact_refs === undefined) return true
   validateAuthoritativeRunStageInventory(run, label)
@@ -577,7 +608,10 @@ function verifyPhysicalStageArtifactRefs(run, recordRoot, label = 'authoritative
       if (!value.vectors || Object.values(value.vectors).some(rows => !Array.isArray(rows) || rows.length !== value.episode_ids.length)) fail(`${label}.stage_artifact_refs.${field} is incomplete`)
     }
   }
-  if (wfo) assertWfoRetainedOosBinding(wfo, reopened.final_oos_artifact, reopened.final_oos_vector_inventory, `${label} retained OOS evidence`)
+  if (wfo) {
+    assertWfoRetainedOosBinding(wfo, reopened.final_oos_artifact, reopened.final_oos_vector_inventory, `${label} retained OOS evidence`)
+    assertRetainedOosPhysicalFills(wfo, reopened.final_oos_vector_inventory, reopened.execution_fills, `${label} retained OOS physical fills`)
+  }
   return true
 }
 function requirePublicationArtifact(value, label, role) {
@@ -892,6 +926,11 @@ export function recoverStatisticalPublicationTransaction({ transactionPath, reco
     // transaction whose own snapshots are a byte-checked prefix.
     const reopened = {}
     for (const ref of transaction.artifact_refs) { const path = promotePublicationArtifact(ref, transaction.stage_root, root); reopened[ref.role] = reopenPublicationArtifact(ref, path) }
+    // Revalidate the complete, reopened artifact inventory before changing a
+    // PREPARED journal to COMMITTED (or trusting an existing COMMITTED one).
+    // The journal is itself hash-bound, so a self-rehashed forged journal must
+    // still be checked against the physical artifacts it names.
+    assertPublicationArtifactRefs({ transactionPath: transaction.transaction_path, exposureHeadPath: transaction.exposure_head_path, registryPath: transaction.registry_path, stageRoot: transaction.stage_root, refs: transaction.artifact_refs, run: reopened.research_run, wfo: reopened.wfo, recordRoot: root })
     assertPublicationLineage({ wfo: reopened.wfo, run: reopened.research_run, boundHead: transaction.bound_head })
     if (transaction.status === 'COMMITTED') return { status: 'COMMITTED', transaction_path: target, run_sha256: transaction.run_sha256, wfo_sha256: transaction.wfo_sha256, head_sha256: transaction.next_head_sha256 }
     const committed = withHash({ ...transaction, status: 'COMMITTED', committed_at: transaction.committed_at || new Date().toISOString() }); writeAtomicJson(target, committed); return { status: 'COMMITTED', transaction_path: target, run_sha256: committed.run_sha256, wfo_sha256: committed.wfo_sha256, head_sha256: committed.next_head_sha256 }
