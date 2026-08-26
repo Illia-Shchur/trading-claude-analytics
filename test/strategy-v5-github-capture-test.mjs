@@ -114,7 +114,7 @@ assert.equal(noReviewerCapture.environment_protection.prevent_self_review, false
 assert.equal(noReviewerCapture.environment_protection.verified, true, 'protected-branch-only prospective environment can be SHADOW-safe without a reviewer')
 assert.equal(noReviewerCapture.writer_environment_protection.reviewer_count, 0)
 assert.equal(noReviewerCapture.writer_environment_protection.verified, true, 'writer environment can be SHADOW-safe without a reviewer')
-const oidcKeys = generateKeyPairSync('rsa', { modulusLength: 2048 }); const oidcClaims = { repository_id: '1', repository_owner_id: '2', environment: 'prospective-v5', workflow_ref: 'owner/repo/.github/workflows/strategy-v5-prospective.yml@refs/heads/main', workflow_sha: 'a'.repeat(64), run_id: '42', run_attempt: 1, sub: 'repo:owner@2/repo@1:environment:prospective-v5', aud: 'strategy-v5', iss: 'https://token.actions.githubusercontent.com', iat: Math.floor(Date.now() / 1000) - 30, exp: Math.floor(Date.now() / 1000) + 570 }
+const oidcKeys = generateKeyPairSync('rsa', { modulusLength: 2048 }); const oidcClaims = { repository_id: '1', repository_owner_id: '2', environment: 'prospective-v5', workflow_ref: 'owner/repo/.github/workflows/strategy-v5-prospective.yml@refs/heads/main', workflow_sha: 'a'.repeat(64), run_id: '42', run_attempt: '1', sub: 'repo:owner@2/repo@1:environment:prospective-v5', aud: 'strategy-v5', iss: 'https://token.actions.githubusercontent.com', iat: Math.floor(Date.now() / 1000) - 30, exp: Math.floor(Date.now() / 1000) + 570 }
 // GitHub-hosted runners inject the real job identity into every child.  Pin
 // the synthetic OIDC fixture to its own declared identity so the test proves
 // the receipt contract instead of accidentally comparing it with CI's run.
