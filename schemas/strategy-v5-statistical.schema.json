@@ -290,7 +290,7 @@
     "wfo": {
       "$id": "strategy-v5-statistical-wfo/1",
       "type": "object",
-      "required": ["schema", "version", "folds", "fold_count", "asset_scope", "validation_exposure_head_sha256", "exposure_head_sha256", "cumulative_k", "oos_episode_ids", "oos_weighting", "audit", "development_refit", "asset_decisions", "portfolio_decision", "decision", "gate_pass", "content_sha256"],
+      "required": ["schema", "version", "folds", "fold_count", "asset_scope", "validation_exposure_head_sha256", "validation_exposure_head_cumulative_k", "validation_exposure_head", "exposure_head_sha256", "cumulative_k", "oos_episode_ids", "oos_weighting", "audit", "development_refit", "asset_decisions", "portfolio_decision", "decision", "gate_pass", "content_sha256"],
       "properties": {
         "schema": { "const": "strategy-v5-statistical-wfo/1" },
         "version": { "const": 1 },
@@ -298,6 +298,8 @@
         "fold_count": { "const": 8 },
         "asset_scope": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/assetScope" },
         "validation_exposure_head_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "validation_exposure_head_cumulative_k": { "type": "integer", "minimum": 1 },
+        "validation_exposure_head": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/exposureHead" },
         "exposure_head_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
         "cumulative_k": { "type": "integer", "minimum": 1 },
         "oos_episode_ids": { "type": "array", "items": { "type": "string" } },

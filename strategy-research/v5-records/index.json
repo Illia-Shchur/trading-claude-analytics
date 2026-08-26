@@ -1,0 +1,255 @@
+{
+  "schema": "strategy-research-index/5",
+  "version": 1,
+  "records": [
+    {
+      "schema": "strategy-v5-authoritative-acquisition/1",
+      "content_sha256": "2e68e3324e45dbecbb71b151264ea641081ed15048379d9b3cc73937c6d0fd53",
+      "byte_sha256": "920153d083163e72b146c030b249308aeec01955097b0b08ad5f340f2705ad4f",
+      "path": "data-raw-replay/acquisition-2e68e3324e45dbecbb71b151264ea641081ed15048379d9b3cc73937c6d0fd53.json",
+      "strategy_family_id": null,
+      "strategy_version": null,
+      "experiment_id": null,
+      "run_id": null,
+      "asset": null,
+      "asset_set": [],
+      "evidence_phase": null,
+      "status": "STAGING_COMPLETE",
+      "decision": null,
+      "candidate_count": null,
+      "metric_count": null,
+      "trade_count": null,
+      "per_asset": [],
+      "source_run_sha256": null
+    },
+    {
+      "schema": "strategy-v5-authoritative-coverage/1",
+      "content_sha256": "734260a0195ab38e6f0f94d0d18effb4ed4ffdbc722ba4e9b9805469dbff8c43",
+      "byte_sha256": "5d5ea34443c4e725ca7f72033d3c2a33eae0f075c79c1811c93c2b8322ff9fd7",
+      "path": "data-raw-replay/coverage-734260a0195ab38e6f0f94d0d18effb4ed4ffdbc722ba4e9b9805469dbff8c43.json",
+      "strategy_family_id": null,
+      "strategy_version": null,
+      "experiment_id": null,
+      "run_id": null,
+      "asset": null,
+      "asset_set": [
+        "aave",
+        "ada",
+        "bnb",
+        "btc",
+        "eth",
+        "link",
+        "sol",
+        "xrp"
+      ],
+      "evidence_phase": null,
+      "status": "OBSERVED_COMPLETE",
+      "decision": null,
+      "candidate_count": null,
+      "metric_count": null,
+      "trade_count": null,
+      "per_asset": [
+        {
+          "asset": "aave",
+          "status": null,
+          "decision": null,
+          "candidate_count": 0,
+          "metric_count": 0,
+          "trade_count": 0
+        },
+        {
+          "asset": "ada",
+          "status": null,
+          "decision": null,
+          "candidate_count": 0,
+          "metric_count": 0,
+          "trade_count": 0
+        },
+        {
+          "asset": "bnb",
+          "status": null,
+          "decision": null,
+          "candidate_count": 0,
+          "metric_count": 0,
+          "trade_count": 0
+        },
+        {
+          "asset": "btc",
+          "status": null,
+          "decision": null,
+          "candidate_count": 0,
+          "metric_count": 0,
+          "trade_count": 0
+        },
+        {
+          "asset": "eth",
+          "status": null,
+          "decision": null,
+          "candidate_count": 0,
+          "metric_count": 0,
+          "trade_count": 0
+        },
+        {
+          "asset": "link",
+          "status": null,
+          "decision": null,
+          "candidate_count": 0,
+          "metric_count": 0,
+          "trade_count": 0
+        },
+        {
+          "asset": "sol",
+          "status": null,
+          "decision": null,
+          "candidate_count": 0,
+          "metric_count": 0,
+          "trade_count": 0
+        },
+        {
+          "asset": "xrp",
+          "status": null,
+          "decision": null,
+          "candidate_count": 0,
+          "metric_count": 0,
+          "trade_count": 0
+        }
+      ],
+      "source_run_sha256": null
+    },
+    {
+      "schema": "strategy-v5-authoritative-data-plan/1",
+      "content_sha256": "966c7ba212dc620fe0fd90ef38ab98cf113d96cad308d3697275b582f1cb5f51",
+      "byte_sha256": "e5242b93c25d2e9a5742bed196e500a2a60367fed8763a05ee630cd59bc1f01f",
+      "path": "data-backfill/plan-966c7ba212dc620fe0fd90ef38ab98cf113d96cad308d3697275b582f1cb5f51.json",
+      "strategy_family_id": null,
+      "strategy_version": null,
+      "experiment_id": null,
+      "run_id": null,
+      "asset": null,
+      "asset_set": [
+        "aave",
+        "ada",
+        "bnb",
+        "btc",
+        "eth",
+        "link",
+        "sol",
+        "xrp"
+      ],
+      "evidence_phase": null,
+      "status": "PLAN_ONLY",
+      "decision": null,
+      "candidate_count": null,
+      "metric_count": null,
+      "trade_count": null,
+      "per_asset": [
+        {
+          "asset": "aave",
+          "status": null,
+          "decision": null,
+          "candidate_count": 0,
+          "metric_count": 0,
+          "trade_count": 0
+        },
+        {
+          "asset": "ada",
+          "status": null,
+          "decision": null,
+          "candidate_count": 0,
+          "metric_count": 0,
+          "trade_count": 0
+        },
+        {
+          "asset": "bnb",
+          "status": null,
+          "decision": null,
+          "candidate_count": 0,
+          "metric_count": 0,
+          "trade_count": 0
+        },
+        {
+          "asset": "btc",
+          "status": null,
+          "decision": null,
+          "candidate_count": 0,
+          "metric_count": 0,
+          "trade_count": 0
+        },
+        {
+          "asset": "eth",
+          "status": null,
+          "decision": null,
+          "candidate_count": 0,
+          "metric_count": 0,
+          "trade_count": 0
+        },
+        {
+          "asset": "link",
+          "status": null,
+          "decision": null,
+          "candidate_count": 0,
+          "metric_count": 0,
+          "trade_count": 0
+        },
+        {
+          "asset": "sol",
+          "status": null,
+          "decision": null,
+          "candidate_count": 0,
+          "metric_count": 0,
+          "trade_count": 0
+        },
+        {
+          "asset": "xrp",
+          "status": null,
+          "decision": null,
+          "candidate_count": 0,
+          "metric_count": 0,
+          "trade_count": 0
+        }
+      ],
+      "source_run_sha256": null
+    },
+    {
+      "schema": "strategy-v5-dated-futures-catalog/2",
+      "content_sha256": "7836a8f11277ef9bb47680385637cafee71c12d8db36097f008240f8e5f5832c",
+      "byte_sha256": "7494021794235dfe86e915b7e9611d67d4bf6b912bcba087fd39c097ebdb22be",
+      "path": "data-backfill/dated_futures_catalog-7836a8f11277ef9bb47680385637cafee71c12d8db36097f008240f8e5f5832c.json",
+      "strategy_family_id": null,
+      "strategy_version": null,
+      "experiment_id": null,
+      "run_id": null,
+      "asset": null,
+      "asset_set": [],
+      "evidence_phase": null,
+      "status": "PUBLIC_OBSERVED_PARTIAL",
+      "decision": null,
+      "candidate_count": null,
+      "metric_count": null,
+      "trade_count": null,
+      "per_asset": [],
+      "source_run_sha256": null
+    },
+    {
+      "schema": "strategy-v5-parquet-conversion/1",
+      "content_sha256": "31f85e351861f05edc66794ec57369c0a7fafe67e236676aab5c6cc7bec4cfc6",
+      "byte_sha256": "bad6500388b0e6342a54e195a66885bc6c8a763e655056cfe42870da860f68d4",
+      "path": "data-raw-replay/parquet-31f85e351861f05edc66794ec57369c0a7fafe67e236676aab5c6cc7bec4cfc6.json",
+      "strategy_family_id": null,
+      "strategy_version": null,
+      "experiment_id": null,
+      "run_id": null,
+      "asset": null,
+      "asset_set": [],
+      "evidence_phase": null,
+      "status": "AUTHORITATIVE_PARQUET",
+      "decision": null,
+      "candidate_count": null,
+      "metric_count": null,
+      "trade_count": null,
+      "per_asset": [],
+      "source_run_sha256": null
+    }
+  ],
+  "content_sha256": "aaa359e7584631a88058ae94f73125a40842d98a78c95987d8744ea69f578965"
+}

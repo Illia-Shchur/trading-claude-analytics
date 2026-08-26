@@ -48,6 +48,34 @@
     "threads": {
       "const": 1
     },
+    "source_completion_scope": {
+      "enum": ["NONE", "BASE_ONLY", "ALL_DECLARED"]
+    },
+    "source_base_complete": {
+      "type": "boolean"
+    },
+    "source_declared_complete": {
+      "type": "boolean"
+    },
+    "source_required_series_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "source_required_complete_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "source_optional_series_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "source_optional_complete_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "source_optional_complete": {
+      "type": "boolean"
+    },
     "captures": {
       "type": "array",
       "items": {
@@ -216,6 +244,10 @@
             "additionalProperties": true
           }
         },
+        "irregular_bar_count": {
+          "type": "integer",
+          "minimum": 0
+        },
         "field_coverage": {
           "type": "object",
           "additionalProperties": {
@@ -227,6 +259,55 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1
+        },
+        "metrics_pit_vintage_status": {
+          "enum": [
+            "HISTORICAL_PIT_VINTAGE",
+            "LATEST_RETRIEVAL_NOT_HISTORICAL_VINTAGE"
+          ]
+        },
+        "pit_vintage_status": {
+          "enum": [
+            "HISTORICAL_PIT_VINTAGE",
+            "LATEST_RETRIEVAL_NOT_HISTORICAL_VINTAGE"
+          ]
+        },
+        "required_metric_fields": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "required_field_coverage": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "field",
+              "observed",
+              "expected",
+              "fraction"
+            ],
+            "properties": {
+              "field": {
+                "type": "string"
+              },
+              "observed": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "expected": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "fraction": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            },
+            "additionalProperties": false
+          }
         },
         "settlement_mark_source": {
           "type": "string"
@@ -602,7 +683,19 @@
           "minimum": 0,
           "maximum": 1
         },
+        "metrics_pit_vintage_status": {
+          "enum": [
+            "HISTORICAL_PIT_VINTAGE",
+            "LATEST_RETRIEVAL_NOT_HISTORICAL_VINTAGE"
+          ]
+        },
         "series_sha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "producer_code_sha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "adapter_code_sha256": {
           "$ref": "#/$defs/hash"
         },
         "partition": {
@@ -627,6 +720,12 @@
           "type": "array",
           "items": {
             "$ref": "#/$defs/hash"
+          }
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string"
           }
         }
       },

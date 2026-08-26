@@ -11,7 +11,7 @@
     "repository_id": {"type": ["string", "integer"]},
     "environment": {"type": "string", "minLength": 1},
     "generation": {"type": "integer", "minimum": 1},
-    "keys": {"type": "array", "minItems": 1, "items": {"type": "object", "required": ["key_id", "role", "public_key_pem", "fingerprint", "valid_from", "valid_until"], "properties": {"key_id": {"type": "string", "minLength": 1}, "role": {"const": "ACTIONS_ATTESTATION"}, "public_key_pem": {"type": "string", "minLength": 1}, "fingerprint": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "valid_from": {"type": "string", "format": "date-time"}, "valid_until": {"type": "string", "format": "date-time"}}, "additionalProperties": false}},
+    "keys": {"type": "array", "minItems": 1, "items": {"type": "object", "required": ["key_id", "role", "public_key_pem", "fingerprint", "valid_from", "valid_until"], "properties": {"key_id": {"type": "string", "minLength": 1}, "role": {"const": "ACTIONS_ATTESTATION"}, "public_key_pem": {"type": "string", "pattern": "^-----BEGIN PUBLIC KEY-----\\n(?:[A-Za-z0-9+/=]{1,64}\\n)+-----END PUBLIC KEY-----\\n?$"}, "fingerprint": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "valid_from": {"type": "string", "format": "date-time"}, "valid_until": {"type": "string", "format": "date-time"}}, "additionalProperties": false}},
     "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
   },
   "additionalProperties": false

@@ -1,5 +1,72 @@
 # Strategy Research v5 performance bounds
 
+## Opt-in production data-plane benchmark
+
+The benchmark entry point is `tools/strategy-research-v5-performance-benchmark.mjs`.
+It accepts only an explicitly supplied frozen five-year plan, acquisition
+manifest, authoritative Parquet manifest/root, and optionally a coverage
+manifest. Every supplied JSON document is reopened, checked against its
+registered schema and canonical `content_sha256`, and checked for plan,
+acquisition, source-byte, dataset-root, and role linkage. Each declared
+Parquet partition is then hashed through a bounded stream and reopened with
+the pinned one-thread DuckDB runtime. Reopening validates physical identity and
+role columns, event/PIT bounds, completed-bar close boundaries, OHLC/funding
+values, cadence, duplicates, and complete count/bounds—not just a footer or a
+self-reported hash. Funding is additionally required to be a non-empty,
+pagination/boundary-proven event sequence with discovered cadence and an exact
+per-row settlement-mark source/hash/event/availability identity; missing or
+shifted provenance blocks readiness pending reconversion. Promoted coverage can describe a generic scan, but a
+canonical v5-ready result requires a file-backed
+`strategy-v5-authoritative-coverage/1` manifest with `OBSERVED_COMPLETE` and
+exact acquisition/Parquet/dataset hashes.
+
+Run a non-production sample while developing:
+
+```sh
+node tools/strategy-research-v5-performance-benchmark.mjs \
+  --plan=strategy-research/v5-records/data-backfill/plan-<hash>.json \
+  --acquisition-manifest=strategy-research/v5-records/data-backfill/staging_manifest-<hash>.json \
+  --acquisition-root=strategy-research/v5-data/<run>/network-resume/staging \
+  --parquet-manifest=strategy-research/v5-records/data-backfill/parquet_manifest-<hash>.json \
+  --parquet-root=strategy-research/v5-data/<run>/network-resume/parquet \
+  --coverage=strategy-research/v5-records/data-backfill/coverage-<hash>.json \
+  --sample-partitions=2
+```
+
+Only `--full` proves every partition declared by the Parquet manifest:
+
+```sh
+node tools/strategy-research-v5-performance-benchmark.mjs \
+  --plan=<frozen-plan.json> --acquisition-manifest=<acquisition.json> \
+  --acquisition-root=<staging-root> --parquet-manifest=<parquet.json> \
+  --parquet-root=<parquet-root> --coverage=<coverage.json> --full
+```
+
+Sampled output is always `production_data: false` and `NON_PRODUCTION_SAMPLED_SCAN`.
+Full output separates deterministic `semantic` results (including partition,
+asset, required-series, byte, and row counts plus `semantic_sha256`) from
+variable `runtime` observations (wall time, total throughput, separate
+acquisition-source and Parquet bytes/rows/partitions/chunks, RSS, and stream
+chunk bound; the bounded-memory assertion applies to the hash-stream buffer while
+DuckDB RSS is observed, not falsely claimed as globally capped). A scan can set
+`readiness.data_plane.ready` only after a complete full scan of the canonical
+exact UTC-calendar five-year window through the latest completed 4-hour
+boundary, and the eight-asset v5 universe (BTC, ETH, SOL, BNB, XRP, ADA, LINK,
+AAVE) with four exact required series per asset: spot 4-hour signal bars,
+USD-M perpetual 4-hour signal bars, USD-M perpetual mark 4-hour mark bars, and
+USD-M perpetual funding events (32 required series);
+a smaller fixture may report `generic_data_plane_complete` while remaining
+blocked by `BLOCKED_V5_CANONICAL_PLAN_CONTRACT`. The canonical claim additionally
+requires every plan-declared available dated-future capture to be physically
+acquired, reconciled to Parquet, and covered; a missing optional metric is only
+ignored when the coverage contract explicitly proves it unavailable. Omission of
+the authoritative coverage manifest leaves only the generic result. Every JSONL
+source is streamed with bounded line/partition limits; roots and every component
+are lstat/realpath checked, and symlink or multi-link files are rejected. A scan never changes
+`readiness.statistical`, `readiness.physical_null`, or
+`readiness.global`, which remain blocked until an authoritative WFO and
+physical-null benchmark actually runs.
+
 The performance helpers in `tools/strategy-research-v5-performance.mjs` are
 opt-in building blocks for the authoritative evaluator. They do not change the
 GA population, generation count, three-seed requirement, cumulative `K`, null
@@ -145,11 +212,14 @@ production runtime or memory claim is made until that benchmark runs against
 the corrected v2 artifact, conventional artifact content hash, separate
 partition-root digest, exact role bytes, and actual partition byte inventory.
 
-The benchmark's wall-clock number is intentionally not a production latency
-claim: its synthetic callback is trivial while the cache performs binding and
-clone work. In the real evaluator the saved path includes execution bars,
-fees, funding, and lifecycle checks; callback count, source partition reads,
-and peak bytes are the portable measurements.
+The synthetic benchmark emits `cache_wall_clock` with direct/cached wall times,
+delta, cached/direct ratio, speedup factor, and an explicit faster/slower
+result. It is intentionally not a production latency or speedup claim: the
+fixture callback is trivial while the cache performs binding and clone work, so
+the cached path may regress wall time even while reducing callback work. In the
+real evaluator the saved path includes execution bars, fees, funding, and
+lifecycle checks; only a representative heavy-evaluator run can support a
+speedup claim.
 
 ## Resident worker memory
 

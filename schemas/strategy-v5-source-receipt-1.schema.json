@@ -439,6 +439,9 @@
           "minimum": 0,
           "maximum": 1
         },
+        "metrics_pit_vintage_status": {
+          "enum": ["HISTORICAL_PIT_VINTAGE", "LATEST_RETRIEVAL_NOT_HISTORICAL_VINTAGE"]
+        },
         "settlement_mark_source": {
           "type": "string"
         },

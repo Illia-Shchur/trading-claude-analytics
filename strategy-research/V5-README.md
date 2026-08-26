@@ -10,9 +10,11 @@ node tools/strategy-research-v5.mjs data-backfill --as-of <ISO-UTC> --record-roo
 node tools/strategy-research-v5.mjs data-backfill --catalog-only --as-of <ISO-UTC> --raw-root <ignored/raw> --record-root strategy-research/v5-records --plan-out <plan.json> --catalog-out <catalog.json> --coverage-out <coverage.json>
 node tools/strategy-research-v5.mjs data-backfill --download --as-of <ISO-UTC> --raw-root <ignored/raw> --staging-root <ignored/staging> --parquet-root <ignored/parquet> --record-root strategy-research/v5-records --plan-out <plan.json> --catalog-out <catalog.json> --coverage-out <coverage.json> --acquisition-out <staging-manifest.json> --parquet-out <parquet-manifest.json> --checkpoint checkpoint.json --rate-limit-ms 250
 node tools/strategy-research-v5.mjs data-backfill --download --plan <plan.json> --catalog <catalog.json> --raw-root <ignored/raw> --staging-root <ignored/staging> --parquet-root <ignored/parquet> --record-root strategy-research/v5-records --acquisition-out <staging-manifest.json> --parquet-out <parquet-manifest.json> --checkpoint checkpoint.json --rate-limit-ms 250
-node tools/strategy-research-v5.mjs opportunity-envelope --plan <plan.json> --acquisition <staging-manifest.json> --staging-root <ignored/staging> --candidates <frozen-candidate-set.json> --precommit <precommit.json> --gene-space <gene-space.json> --predictor-registry <predictors.json> --evaluator-spec <evaluator-spec.json> --features <physical-features.json> --hydrate --hydration-root <ignored/one-minute-root> --out <envelope.json> --hydration-out <hydration.json>
-node tools/strategy-research-v5.mjs search-genetic --artifact <statistical-input.json> --plan <plan.json> --parquet-manifest <parquet-manifest.json> --parquet-root <ignored/parquet> --predictor-registry <predictors.json> --evaluator-spec <evaluator-spec.json> --gene-space <gene-space.json> --metadata <metadata-receipts.json> --exposure-head <canonical-head.json> --checkpoint <ignored/checkpoint.json> --cache-root <ignored/cache>
-node tools/strategy-research-v5.mjs research-run --plan <plan.json> --parquet-manifest <parquet-manifest.json> --parquet-root <ignored/parquet> --artifact <statistical-input.json> --envelope <envelope.json> --precommit <precommit.json> --experiment <experiment.json> --predictor-registry <predictors.json> --evaluator-spec <evaluator-spec.json> --gene-space <gene-space.json> --metadata <metadata-receipts.json> --exposure-head <canonical-head.json> --checkpoint <ignored/checkpoint.json> --cache-root <ignored/cache> --portfolio-mark-artifact <physical-mark-artifact.json> --portfolio-policy <frozen-portfolio-policy.json>
+node tools/strategy-research-v5.mjs data-raw-replay --plan <plan.json> --source-checkpoint <checkpoint.json> --source-root <prior-staging-root> --target-root <ignored/staging>
+node tools/strategy-research-v5.mjs data-raw-replay --plan <plan.json> --source-checkpoint <checkpoint.json> --source-root <prior-staging-root> --target-root <ignored/staging> --parquet-root <ignored/parquet> --catalog <catalog.json> --catalog-root <catalog-raw-root> --record-root strategy-research/v5-records
+node tools/strategy-research-v5.mjs opportunity-envelope --plan <plan.json> --acquisition <staging-manifest.json> --staging-root <ignored/staging> --candidates <frozen-candidate-set.json> --precommit <precommit.json> --gene-space <gene-space.json> --predictor-registry <predictors.json> --evaluator-spec <evaluator-spec.json> --features <physical-features.json> --hydrate --hydration-root <ignored/one-minute-root> --domain-out <opportunity-domain.json> --out <envelope.json> --hydration-out <hydration.json>
+node tools/strategy-research-v5.mjs search-genetic --artifact <statistical-input.json> --plan <plan.json> --parquet-manifest <parquet-manifest.json> --parquet-root <ignored/parquet> --predictor-registry <predictors.json> --evaluator-spec <evaluator-spec.json> --gene-space <gene-space.json> --metadata <metadata-receipts.json> --exposure-head <canonical-head.json> --checkpoint <ignored/checkpoint.json> --cache-root <ignored/cache> --opportunity-domain <opportunity-domain.json> --opportunity-envelope <envelope.json> --opportunity-hydration <hydration.json> --hydration-root <ignored/one-minute-root>
+node tools/strategy-research-v5.mjs research-run --plan <plan.json> --parquet-manifest <parquet-manifest.json> --parquet-root <ignored/parquet> --artifact <statistical-input.json> --opportunity-domain <opportunity-domain.json> --opportunity-envelope <envelope.json> --opportunity-hydration <hydration.json> --hydration-root <ignored/one-minute-root> --precommit <precommit.json> --experiment <experiment.json> --predictor-registry <predictors.json> --evaluator-spec <evaluator-spec.json> --gene-space <gene-space.json> --metadata <metadata-receipts.json> --exposure-head <canonical-head.json> --checkpoint <ignored/checkpoint.json> --cache-root <ignored/cache> --portfolio-mark-artifact <physical-mark-artifact.json> --portfolio-policy <frozen-portfolio-policy.json>
 node tools/strategy-research-v5.mjs overfit-audit --artifact <statistical-input.json> --exposure-head-artifact <exposure-head.json> --vector <vector-inventory.json> --folds <wfo-folds.json> --genetic <genetic-run.json>
 node tools/strategy-research-v5.mjs prospective-runner --ledger <shadow-ledger-dir> --expected-head-sha256 <cas-head-hash> --reservation <frozen-reservation.json> --source-receipt <source-receipt.json> --bar <completed-bar.json> --feature-input <feature.json> --candidate-set <candidate-set.json> --evaluator-code <evaluator-code.json> --signal-decision <signal.json>
 node tools/strategy-research-v5.mjs deployment-audit --out <deployment-audit.json>
@@ -20,6 +22,14 @@ node tools/strategy-research-v5.mjs readiness-audit --evidence-manifest <frozen-
 node tools/strategy-research-v5.mjs validate --input <v5-record.json>
 node tools/strategy-research-v5.mjs index --root strategy-research/v5-records
 ```
+
+The optional replay promotion requires all three of `--parquet-root`,
+`--catalog`, and `--catalog-root`; it refuses a partial acquisition, verifies
+the local Parquet reopen and frozen coverage, and writes content-addressed
+artifacts under `--record-root`. A `STAGING_PARTIAL`/base-incomplete replay is
+refused; BASE_ONLY remains explicit when optional metrics are absent. It never
+upgrades non-PIT metric captures or an incompletely bound dated-futures series
+into authoritative/tradeable data.
 
 When resuming into a fresh staging root, pass the prior immutable partial
 manifest with `--resume-acquisition <manifest.json>` and its original root
@@ -172,26 +182,35 @@ must receive externally managed `V5_TRUST_ROOT_FINGERPRINT`,
 `V5_TRUST_ROOT_GENESIS_FINGERPRINT`, and `V5_ATTESTATION_KEY_FINGERPRINT`.
 
 GitHub settings custody is fail-closed until the protected environment supplies
-`V5_GITHUB_SETTINGS_PAT`, a least-privilege settings PAT, plus the expected
-`V5_SETTINGS_TOKEN_USER_ID`, `V5_SETTINGS_TOKEN_LOGIN`, and token kind (`PAT`).
-The capture calls `GET /user` and pins that identity; it never falls back to
-`GITHUB_TOKEN` or silently changes to an App token. The PAT secret itself must
-return 200 only from
-`/repos/{owner}/{repo}/environments/prospective-v5/secrets/V5_GITHUB_SETTINGS_PAT`
-and 404 from the same-name repository and organization secret endpoints. The
-attestation private key has the same environment-only requirement.
+the separate read-only `strategy-v5-settings-auditor` App (App ID `4716635`,
+installation ID `156531963`) and its PEM under
+`V5_GITHUB_SETTINGS_AUDITOR_APP_PRIVATE_KEY_PEM`. The auditor must be pinned to
+the exact repository with only `actions`, `administration`, `environments`,
+`metadata`, and `secrets` read permissions; it has no code, pull-request, write,
+or event permissions. The capture must verify the App and installation through
+JWT-authenticated metadata plus the installation-token repository list. A PAT
+compatibility path may call `/user` with an explicitly pinned identity, but it
+does not prove App installation identity and cannot satisfy activation without
+the runtime receipts. It never falls back to `GITHUB_TOKEN`. The auditor PEM
+itself must be environment-only and is not configured until its physical secret
+is independently captured. The attestation and writer-App private keys have
+the same environment-only requirement.
 
-The protected ruleset must use exactly the built-in GitHub Actions Integration
-actor ID `15368`, bypass mode `always`, and no additional bypass actors. It
-must enforce deletion, non-fast-forward rejection, pull-request review, and
-the required status context `strategy-v5-evidence-custody`. That context is
+The exact writer App is `strategy-v5-evidence` (App ID `4716299`, installation
+ID `156524819`) with metadata read, contents write, and pull-requests write,
+no events, and access to only this repository. Both evidence rulesets must have
+zero bypass actors: the immutable core enforces deletion and non-fast-forward,
+while the writer gate enforces pull-request review and the required status
+context `strategy-v5-evidence-custody`. That context is
 emitted by the pinned, read-only `.github/workflows/strategy-v5-evidence-custody.yml`
 workflow, which permits only additive evidence and verifies the complete
 ledger prefix chain. `can_admins_bypass` must be false; configure this in the
-GitHub environment/ruleset UI and verify it from the API. A real concrete
-environment reviewer is required (an empty `required_reviewers` rule does not
-count); a single-collaborator repository therefore remains externally blocked
-until its protection policy is actually configured.
+GitHub environment/ruleset UI and verify it from the API. For an unattended
+hourly SHADOW append, the environment may use protected-branches-only with no
+reviewer; if a `required_reviewers` rule exists, it must contain a concrete
+reviewer and `prevent_self_review: true` (an empty rule never counts). This
+does not authorize activation: the separate cryptographic trust-root, asset,
+portfolio, replay/revocation, and lease gates remain fail-closed.
 
 `V5_REPOSITORY_VISIBILITY` must also be explicitly set to the observed frozen
 mode (`PUBLIC` or `PRIVATE`); either mode is admissible, but a visibility change

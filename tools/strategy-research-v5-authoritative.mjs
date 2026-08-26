@@ -27,8 +27,12 @@ import {
   verifySeparatedArtifactManifest,
   verifyParquetArtifactManifest,
   verifyAuthoritativeStaging,
+  verifyAuthoritativeSourceChain,
   rebaseAcquisitionCheckpoint,
+  replayAuthoritativeStagingFromRaw,
   validateDatedFuturesCatalog,
+  derivePredicatePredictorIds,
+  METRICS_PIT_VINTAGE_BLOCK_REASON,
   deriveBoundExecutionOutcome,
   stable,
   hash,
@@ -57,6 +61,11 @@ import {
   makePhysicalNullRunnerV5,
   runNullControlsV5,
   runStatisticalAuditV5,
+  validateContractSchema as validateStatisticalContractSchema,
+  verifyCommittedStatisticalPublication,
+  recoverExposureRegistryTransaction,
+  writeStatisticalPublicationTransaction,
+  recoverStatisticalPublicationTransaction,
 } from './strategy-research-v5-statistical.mjs'
 import { loadAuthoritativeEvaluatorV5, validateEvaluatorSpecV5, evaluateSignalPredicateV5 } from './strategy-evaluator-v5.mjs'
 import { resolveLifecyclePhysicalPathV5 } from './strategy-v5-lifecycle-trust.mjs'
@@ -65,7 +74,7 @@ import {
   evaluatePortfolioRiskV5,
 } from './strategy-portfolio-risk-v5.mjs'
 import { buildReadinessAuditV5, renderReadinessMarkdown } from './strategy-readiness-v5.mjs'
-import { appendCompletedBarCycle, readProspectiveLedger } from './strategy-prospective-v5.mjs'
+import { appendCompletedBarCycle, readProspectiveLedger, verifyCompletedBarNoOp } from './strategy-prospective-v5.mjs'
 import { confinedPath, verifyProspectiveSourceBundle, verifySafeTree } from './strategy-v5-workflow-security.mjs'
 import {
   makeOpportunityDomainV5,
@@ -86,6 +95,71 @@ const fail = message => { throw new Error(message) }
 const requireSha = (value, label) => HASH.test(String(value || '')) ? String(value) : fail(`${label} must be a SHA-256 hash`)
 const asArray = value => Array.isArray(value) ? value : value?.rows
 const bool = value => value === true || value === 'true'
+
+const MARKET_FLOW_FIELDS = new Set(['open_interest', 'open_interest_value', 'top_trader_account_long_short_ratio', 'top_trader_position_long_short_ratio', 'global_long_short_ratio', 'taker_buy_sell_volume_ratio', 'sum_open_interest', 'sum_open_interest_value', 'count_toptrader_long_short_ratio', 'sum_toptrader_long_short_ratio', 'count_long_short_ratio', 'sum_taker_long_short_vol_ratio'])
+const MARKET_FLOW_FAMILIES = new Set(['metrics', 'metrics_events', 'market_flow', 'open_interest_metrics', 'funding_metrics'])
+
+function metricPredictorIds(predicate, predictorRegistry) {
+  const leaves = new Set(derivePredicatePredictorIds(predicate)); const rows = predictorRegistry?.predictors || []
+  return [...leaves].filter(id => {
+    const predictor = rows.find(row => String(row.id) === id)
+    if (!predictor) return false
+    const field = String(predictor.source_field || predictor.recipe?.source_field || '').toLowerCase()
+    const family = String(predictor.source_family || '').toLowerCase()
+    const recipeTypes = predictor.recipe?.required_series_types || []
+    return recipeTypes.includes('metrics_events') || MARKET_FLOW_FIELDS.has(field) || MARKET_FLOW_FAMILIES.has(family) || family.includes('metric') || field.includes('open_interest') || field.includes('long_short')
+  }).sort()
+}
+
+function seriesIdentity(value) {
+  return [value?.asset, value?.venue, value?.instrument, value?.symbol, value?.interval, value?.series_type].map(part => String(part || '').toLowerCase()).join('|')
+}
+
+/* Bind every metric-dependent authoritative consumer to the exact frozen
+ * requirement artifact and to physically reopened acquisition/Parquet
+ * custody.  The current Binance metrics adapter is deliberately rejected as
+ * a latest-retrieval/revised proxy; this gate is the single place that may be
+ * relaxed when an historical publication-vintage adapter is introduced. */
+function verifyMetricPITBoundary({ options, plan, manifest, predictorRegistry, evaluatorSpec, precommit, root, label }) {
+  const metricIds = metricPredictorIds(evaluatorSpec.predicate, predictorRegistry)
+  if (!metricIds.length) return null
+  const prefix = `AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: ${label}`
+  const requirementsPath = options.timeframe_requirements || options.timeframeRequirements
+  if (!requirementsPath) fail(`${prefix} requires the exact frozen timeframe requirements artifact for metric predictors`)
+  const requirementsPhysical = physicalJson(requirementsPath, { label: `${label} frozen timeframe requirements`, schemas: ['strategy-v5-timeframe-requirements/1'] })
+  const requirements = requirementsPhysical.value
+  if (plan.timeframe_requirements_sha256 !== requirements.content_sha256) fail(`${prefix} timeframe requirements are not bound to the exact plan`)
+  if (requirements.predictor_registry_sha256 !== predictorRegistry.content_sha256) fail(`${prefix} timeframe requirements are not bound to the exact predictor registry`)
+  if (requirements.precommit_sha256 !== precommit.content_sha256) fail(`${prefix} timeframe requirements are not bound to the exact precommit`)
+  const declarations = requirements.declarations || []
+  for (const id of metricIds) if (!declarations.some(row => row.predictor_id === id && row.series_types?.includes('metrics_events'))) fail(`${prefix} timeframe requirements omit metric predictor ${id}`)
+
+  const acquisitionPath = options.acquisition || options.acquisition_manifest || options.source_acquisition
+  if (!acquisitionPath) fail(`${prefix} requires a physical acquisition manifest and root for metric coverage`)
+  const acquisitionPhysical = physicalJson(acquisitionPath, { label: `${label} physical acquisition manifest`, schemas: [DATA_V5.acquisition] })
+  const acquisition = acquisitionPhysical.value
+  if (acquisition.plan_sha256 !== plan.content_sha256) fail(`${prefix} acquisition is bound to a different plan`)
+  const acquisitionRoot = options.acquisition_root || options.source_root || root
+  verifyAuthoritativeStaging({ manifest: acquisition, root: acquisitionRoot, planSha256: plan.content_sha256, requireComplete: false })
+  const sourceContext = verifyAuthoritativeSourceChain(root, manifest.source_manifest_reference, manifest.source_manifest_sha256, plan.content_sha256, `${label} Parquet source chain`)
+  if (sourceContext.acquisition?.content_sha256 !== acquisition.content_sha256) fail(`${prefix} acquisition and Parquet source-chain lineage are not exact`)
+  const captures = new Map((acquisition.captures || []).map(capture => [seriesIdentity(capture), capture]))
+  const metricSeries = plan.series.filter(series => series.series_type === 'metrics_events' && declarations.some(row => row.interval === series.interval && row.series_types?.includes('metrics_events')))
+  if (!metricSeries.length) fail(`${prefix} plan has no exact metric series for the frozen requirements`)
+  for (const series of metricSeries) {
+    const capture = captures.get(seriesIdentity(series))
+    if (!capture || capture.series_sha256 !== hash(series) || capture.unavailable === true || capture.coverage?.complete !== true || capture.partition?.storage_role !== 'STAGING') fail(`${prefix} physical acquisition coverage is incomplete for ${seriesIdentity(series)}`)
+    const pitStatus = capture.metrics_pit_vintage_status || capture.coverage?.metrics_pit_vintage_status || capture.coverage?.pit_vintage_status || capture.coverage?.source_pit_vintage_status
+    if (pitStatus !== 'HISTORICAL_PIT_VINTAGE') fail(`${prefix} ${METRICS_PIT_VINTAGE_BLOCK_REASON}`)
+    const requiredFields = [...new Set((capture.coverage?.required_metric_fields || series.metric_required_fields || []).map(String))]
+    const minimum = Number(capture.coverage?.minimum_field_coverage ?? series.metric_minimum_field_coverage ?? 0.95)
+    const requiredCoverage = capture.coverage?.required_field_coverage || requiredFields.map(field => ({ field, fraction: Number(capture.coverage?.field_coverage?.[field]?.fraction ?? 0) }))
+    if (!Number.isFinite(minimum) || requiredFields.some(field => { const row = requiredCoverage.find(value => String(value?.field) === field); return !row || Number(row.fraction) < minimum })) fail(`${prefix} metric coverage is below the frozen per-series minimum for ${seriesIdentity(series)}`)
+  }
+  const featureFields = new Set(manifest.artifacts?.feature?.field_names || [])
+  for (const id of metricIds) if (!featureFields.has(id)) fail(`${prefix} Parquet feature coverage omits metric predictor ${id}`)
+  return { requirementsPhysical, acquisitionPhysical, metricIds }
+}
 
 function readJson(path, label = 'JSON artifact') {
   if (!path) fail(`${label} path is required`)
@@ -137,12 +211,20 @@ function physicalMetadataBundle(path, { sourceRoot = null } = {}) {
   if (!value || Array.isArray(value) || value.schema === DATA_V5.metadata) fail('metadata receipt bundle must be a keyed physical bundle, not a generic receipt or array')
   const allowedKinds = new Map([
     ['contract_spec', 'CONTRACT_SPEC'], ['fee_schedule', 'FEE_SCHEDULE'], ['execution_model', 'EXECUTION_MODEL'],
-    ['funding_identity', 'FUNDING_IDENTITY'], ['expiry', 'EXPIRY'], ['margin', 'MARGIN'], ['liquidation', 'LIQUIDATION']
+    ['funding_identity', 'FUNDING_IDENTITY'], ['expiry', 'EXPIRY'], ['settlement', 'SETTLEMENT'], ['margin', 'MARGIN'], ['liquidation', 'LIQUIDATION']
   ])
   const keys = Object.keys(value)
   if (keys.some(key => !allowedKinds.has(key)) || !['contract_spec', 'fee_schedule', 'execution_model'].every(key => keys.includes(key))) fail('metadata receipt bundle has unknown keys or lacks contract_spec, fee_schedule, and execution_model')
   const receipts = keys.map(key => value[key])
   if (receipts.some((row, index) => !row || row.schema !== DATA_V5.metadata || row.kind !== allowedKinds.get(keys[index]))) fail('metadata receipt bundle contains a receipt under the wrong kind key')
+  if (value.expiry && value.settlement) {
+    if (value.expiry.content_sha256 === value.settlement.content_sha256) fail('expiry and settlement metadata must be separate physical receipts')
+    const expirySources = new Set((value.expiry.source_receipts || []).map(row => row.path))
+    if ((value.settlement.source_receipts || []).some(row => expirySources.has(row.path))) fail('expiry and settlement metadata may not reuse the same physical source receipt')
+    const sourceBytes = receipt => new Set((receipt.source_receipts || []).flatMap(row => Array.isArray(row.byte_sha256) ? row.byte_sha256 : [row.byte_sha256]).filter(Boolean).map(String))
+    const expiryBytes = sourceBytes(value.expiry); const settlementBytes = sourceBytes(value.settlement)
+    if ([...settlementBytes].some(byteSha => expiryBytes.has(byteSha))) fail('expiry and settlement metadata may not reuse the same underlying source bytes')
+  }
   for (const receipt of receipts) {
     if (receipt.content_sha256 !== ownHash(receipt)) fail('metadata receipt bundle contains a tampered receipt')
     validateKnownContractSchema(receipt)
@@ -153,6 +235,7 @@ function physicalMetadataBundle(path, { sourceRoot = null } = {}) {
     // conservative model has no public source to reopen, but remains bound by
     // its model and precommit hashes through the metadata schema.
     if (['PUBLIC_OBSERVED', 'USER_BOUND'].includes(receipt.status)) {
+      const verifiedSourceBytes = new Set()
       if (!receipt.source_root_reference || !Array.isArray(receipt.source_receipts) || !receipt.source_receipts.length) fail(`${receipt.kind} metadata lacks physical source receipt custody`)
       const declaredRoot = String(receipt.source_root_reference)
       if (declaredRoot.startsWith('/') || declaredRoot.includes('\\')) fail(`${receipt.kind} metadata source root reference is not portable`)
@@ -182,8 +265,25 @@ function physicalMetadataBundle(path, { sourceRoot = null } = {}) {
             let rawPath
             try { rawPath = resolveLifecyclePhysicalPathV5(receiptRoot, String(raw.path), `${receipt.kind} raw source receipt`) } catch (error) { fail(error.message) }
             if (hash(readFileSync(rawPath)) !== raw.byte_sha256) fail(`${receipt.kind} raw source receipt bytes are tampered`)
+            verifiedSourceBytes.add(raw.byte_sha256)
           }
-        } else if (!byteHashes.includes(sourceByteHash)) fail(`${receipt.kind} metadata source receipt bytes are tampered`)
+        } else {
+          if (!byteHashes.includes(sourceByteHash)) fail(`${receipt.kind} metadata source receipt bytes are tampered`)
+          verifiedSourceBytes.add(sourceByteHash)
+        }
+      }
+      if (receipt.kind === 'SETTLEMENT') {
+        const capturedAt = Date.parse(String(receipt.captured_at || ''))
+        for (const row of receipt.records || []) {
+          const expiryAt = Date.parse(String(row.expiry || row.delivery_date || ''))
+          const eventAt = Date.parse(String(row.event_time || ''))
+          const settlementAt = Date.parse(String(row.settlement_time || ''))
+          const availableAt = Date.parse(String(row.availability_time || ''))
+          const sourceHash = String(row.settlement_mark_source_sha256 || '')
+          if (String(row.venue || '').toUpperCase() !== 'BINANCE' || String(row.instrument || '').toUpperCase() !== 'BINANCE_USDM_DATED_FUTURE' || !row.symbol) fail('SETTLEMENT metadata lacks exact dated-futures identity')
+          if (![expiryAt, eventAt, settlementAt, availableAt, capturedAt].every(Number.isFinite) || eventAt !== settlementAt || eventAt < expiryAt || availableAt < eventAt || availableAt > capturedAt) fail('SETTLEMENT metadata chronology is invalid')
+          if (!(Number(row.settlement_price) > 0) || !row.settlement_mark_event_id || !HASH.test(sourceHash) || !verifiedSourceBytes.has(sourceHash) || row.source_byte_sha256 !== sourceHash || row.source_receipt_sha256 !== receipt.source_receipt_sha256) fail('SETTLEMENT metadata source/mark identity is not physically bound')
+        }
       }
     }
   }
@@ -298,8 +398,8 @@ function rejectLoose(value, path = 'input') {
   }
 }
 
-function rejectLooseOptions(options, { allowPhysicalPaths = [] } = {}) {
-  const allowed = new Set(allowPhysicalPaths.map(value => String(value).toLowerCase()))
+function rejectLooseOptions(options, { allowPhysicalPaths = [], allowKeys = [] } = {}) {
+  const allowed = new Set([...allowPhysicalPaths, ...allowKeys].map(value => String(value).toLowerCase()))
   for (const key of Object.keys(options || {})) {
     const lowered = String(key).toLowerCase()
     if (lowered.endsWith('_out') || lowered.endsWith('-out')) continue
@@ -419,27 +519,85 @@ function coveragePartition(partition) {
   }
 }
 
-function coverageReport({ plan, catalog = null, acquisition = null, parquet = null, capturedAt, mode } = {}) {
-  if (!plan?.content_sha256 || plan.content_sha256 !== ownHash(plan)) fail('coverage report requires a hash-valid authoritative plan')
+export async function coverageReport({ plan, catalog = null, catalogRoot = null, acquisition = null, parquet = null, acquisitionRoot = null, parquetRoot = null, capturedAt, mode } = {}) {
+  const requireBoundContract = (value, schema, label) => {
+    if (!value || value.schema !== schema || !value.content_sha256 || value.content_sha256 !== ownHash(value)) fail(`coverage report requires a hash-valid ${label}`)
+    validateKnownContractSchema(value)
+  }
+  requireBoundContract(plan, DATA_V5.plan, 'authoritative plan')
+  if (catalog) requireBoundContract(catalog, DATA_V5.datedCatalog, 'dated-futures catalog')
+  if (catalog && (plan.dated_futures_catalog_sha256 !== catalog.content_sha256 || plan.dated_futures_catalog_status !== catalog.status)) fail('coverage report plan/catalog hash or status binding is invalid')
+  const catalogClaimsTradeability = Boolean(catalog?.contracts?.some(contract => contract?.tradeable === true))
+  let catalogPhysicalValidated = false
+  if (catalogRoot) {
+    validateDatedFuturesCatalog(catalog, { root: catalogRoot })
+    catalogPhysicalValidated = true
+  } else if (catalogClaimsTradeability) {
+    fail('coverage report cannot project dated tradeability without a physical catalog/metadata root')
+  }
+  if (acquisition) {
+    requireBoundContract(acquisition, DATA_V5.acquisition, 'acquisition manifest')
+    if (acquisition.plan_sha256 !== plan.content_sha256) fail('coverage report acquisition manifest is bound to a different plan')
+  }
+  if (parquet) {
+    if (!acquisition) fail('coverage report cannot accept Parquet without its acquisition manifest')
+    requireBoundContract(parquet, 'strategy-v5-parquet-conversion/1', 'Parquet conversion manifest')
+    if (parquet.plan_sha256 !== plan.content_sha256) fail('coverage report Parquet manifest is bound to a different plan')
+    if (parquet.source_manifest_sha256 !== acquisition.content_sha256) fail('coverage report Parquet manifest is not bound to the acquisition manifest')
+  }
+  const captureKey = capture => [capture?.asset, capture?.instrument, capture?.symbol, capture?.interval, capture?.series_type, capture?.series_role]
+    .map(part => String(part || '').toLowerCase()).join('|')
+  const planByCaptureKey = new Map((plan.series || []).map(series => [captureKey(series), series]))
+  const validateManifestPlanBindings = (manifest, label) => {
+    const seen = new Set()
+    for (const capture of manifest?.captures || []) {
+      const key = captureKey(capture); const series = planByCaptureKey.get(key)
+      if (!series) fail(`${label} capture is not declared by the frozen plan: ${key}`)
+      if (seen.has(key)) fail(`${label} contains duplicate capture identity: ${key}`)
+      seen.add(key)
+      if (capture.series_sha256 !== hash(series)) fail(`${label} capture series binding is stale: ${key}`)
+      for (const field of ['asset', 'venue', 'instrument', 'symbol', 'interval', 'series_type', 'series_role', 'start_at', 'end_at', 'availability_cutoff_at', 'expected_step_ms', 'expected_event_count', 'event_driven', 'event_sequence_mode']) {
+        if (series[field] !== undefined && String(capture[field]) !== String(series[field])) fail(`${label} capture ${key} does not match frozen plan field ${field}`)
+      }
+      if (Number.isInteger(series.expected_event_count) && capture.unavailable !== true && capture.coverage?.complete === true) {
+        if (capture.coverage && (Number(capture.coverage.expected_rows) !== series.expected_event_count || Number(capture.coverage.observed_rows) !== series.expected_event_count)) fail(`${label} capture ${key} row count is not bound to the frozen plan`)
+        const first = capture.coverage?.min_event_time ?? capture.coverage?.first_event_time; const last = capture.coverage?.max_event_time ?? capture.coverage?.last_event_time
+        if (first === undefined || last === undefined || Date.parse(String(first)) !== Date.parse(String(series.start_at)) || Date.parse(String(last)) !== Date.parse(String(series.end_at))) fail(`${label} capture ${key} bounds are not bound to the frozen plan`)
+        if (capture.partition && Number(capture.partition.row_count) !== series.expected_event_count) fail(`${label} capture ${key} partition row count is not bound to the frozen plan`)
+      }
+    }
+    return seen
+  }
+  const acquisitionCaptureKeys = acquisition ? validateManifestPlanBindings(acquisition, 'acquisition') : new Set()
+  const parquetCaptureKeys = parquet ? validateManifestPlanBindings(parquet, 'Parquet') : new Set()
+  for (const key of parquetCaptureKeys) if (!acquisitionCaptureKeys.has(key)) fail(`Parquet capture is not bound to an acquisition capture: ${key}`)
   const acquisitionByIdentity = new Map((acquisition?.captures || []).map(capture => [coverageIdentity(capture), capture]))
   const parquetByIdentity = new Map((parquet?.captures || []).map(capture => [coverageIdentity(capture), capture]))
   const catalogByAsset = new Map(DATA_V5_ASSETS.map(asset => [asset, []]))
   for (const contract of catalog?.contracts || []) {
     const asset = String(contract.asset || '').toLowerCase()
-    if (catalogByAsset.has(asset)) catalogByAsset.get(asset).push({
-      asset,
-      symbol: contract.symbol || null,
-      history_status: contract.history_status || 'UNAVAILABLE',
-      archive_ingestion_status: contract.archive_ingestion_status || 'NOT_APPLICABLE',
-      archive_coverage_complete: contract.archive_coverage_complete === true,
-      tradeable: contract.tradeable === true,
-      first_bar_at: coverageTime(contract.first_bar_at),
-      last_bar_at: coverageTime(contract.last_bar_at),
-      expiry_observed_date_utc: contract.expiry_observed_date_utc || null,
-      expiry_binding_status: contract.expiry_binding_status || 'UNAVAILABLE',
-      source_listing_response_byte_sha256: [...(contract.source_listing_response_byte_sha256 || [])].sort(),
-      source_receipt_sha256: [...(contract.source_receipt_sha256 || [])].sort()
-    })
+    if (catalogByAsset.has(asset)) {
+      // Keep the complete frozen contract object.  The compact projection is
+      // useful for consumers, but dropping contract/spec/expiry/source fields
+      // would make a later ARCHIVE_INGESTED status look more tradeable than
+      // the catalog actually proved.
+      const raw = structuredClone(contract)
+      catalogByAsset.get(asset).push({
+        ...raw,
+        asset,
+        symbol: raw.symbol || null,
+        history_status: raw.history_status || 'UNAVAILABLE',
+        archive_ingestion_status: raw.archive_ingestion_status || 'NOT_APPLICABLE',
+        archive_coverage_complete: raw.archive_coverage_complete === true,
+        tradeable: raw.tradeable === true,
+        first_bar_at: coverageTime(raw.first_bar_at),
+        last_bar_at: coverageTime(raw.last_bar_at),
+        expiry_observed_date_utc: raw.expiry_observed_date_utc || null,
+        expiry_binding_status: raw.expiry_binding_status || 'UNAVAILABLE',
+        source_listing_response_byte_sha256: [...(raw.source_listing_response_byte_sha256 || [])].sort(),
+        source_receipt_sha256: [...(raw.source_receipt_sha256 || [])].sort()
+      })
+    }
   }
   const sourceContent = new Set()
   const sourceBytes = new Set()
@@ -457,6 +615,21 @@ function coverageReport({ plan, catalog = null, acquisition = null, parquet = nu
     for (const receipt of capture.raw_receipts || []) addReceipt(receipt, true)
   }
   for (const receipt of catalog?.source?.raw_receipts || []) addReceipt(receipt, true)
+  const normalizedCoverageLimitations = (values = [], captures = []) => {
+    const clean = []
+    for (const value of values) {
+      const text = String(value)
+      // Older acquisition manifests were hash-valid but rendered nested
+      // outage objects with String(object).  Preserve the immutable manifest
+      // bytes while making the final coverage projection auditable.
+      if (!text.includes('[object Object]')) clean.push(text)
+    }
+    for (const capture of captures) {
+      const identity = coverageIdentity(capture)
+      for (const irregular of capture?.coverage?.irregular_bars || []) clean.push(`${identity}:irregular_bars=${stable(irregular)}`)
+    }
+    return [...new Set(clean)].sort()
+  }
   const rows = []
   for (const series of plan.series || []) {
     const acquisitionCapture = acquisitionByIdentity.get(coverageIdentity(series)) || null
@@ -479,29 +652,108 @@ function coverageReport({ plan, catalog = null, acquisition = null, parquet = nu
       raw_receipt_sha256: [...new Set(rawReceipts)].sort(), raw_receipt_byte_sha256: [...new Set(rawReceiptBytes)].sort(),
       source_receipt_sha256: [...new Set(sourceReceipts)].sort(), source_receipt_byte_sha256: [...new Set(sourceReceiptBytes)].sort(),
       jsonl_partition: coveragePartition(acquisitionCapture?.partition), parquet_partition: coveragePartition(parquetCapture?.partition),
-      limitations: [...new Set([...(acquisitionCapture?.limitations || []), ...(parquetCapture?.limitations || []), ...gaps])].map(String).sort()
+      limitations: normalizedCoverageLimitations([...(acquisitionCapture?.limitations || []), ...(parquetCapture?.limitations || []), ...gaps], [acquisitionCapture, parquetCapture])
     })
   }
+  // The frozen catalog records discovery metadata and its historical
+  // limitations; it is not itself proof that archive bytes were ingested.
+  // Project physical ingestion from the matching, complete JSONL acquisition
+  // capture and its authoritative Parquet counterpart.  This keeps the
+  // catalog immutable while preventing completed dated captures from being
+  // reported as DISCOVERED_NOT_INGESTED.
+  const validPartition = (partition, format, authoritative) => Boolean(partition && HASH.test(String(partition.sha256 || '')) && Number.isInteger(Number(partition.bytes)) && Number(partition.bytes) > 0 && Number.isInteger(Number(partition.row_count)) && Number(partition.row_count) >= 0 && String(partition.format).toUpperCase() === format && partition.authoritative === authoritative)
+  let verifiedAcquisition = new Map(); let verifiedParquet = new Map()
+  // Catalog/schema hashes are discovery metadata, not physical custody.  A
+  // dated contract is projected to ARCHIVE_INGESTED only after both roots
+  // are explicitly supplied and the trusted data verifiers reopen their
+  // bytes, rows, schema, source binding, and recomputed dataset root.
+  if (acquisition && parquet && acquisitionRoot && parquetRoot) {
+    verifyAuthoritativeStaging({ manifest: acquisition, root: acquisitionRoot, planSha256: plan.content_sha256, requireComplete: false })
+    await verifyParquetConversionManifestAuthoritative(parquet, { root: parquetRoot, stagingRoot: acquisitionRoot, planSha256: plan.content_sha256 })
+    const acquired = (acquisition.captures || []).filter(capture => capture?.unavailable !== true && capture.coverage?.complete === true && validPartition(capture.partition, 'JSONL', false) && Number(capture.partition.row_count) > 0)
+    const promoted = (parquet.captures || []).filter(capture => capture?.unavailable !== true && capture.coverage?.complete === true && validPartition(capture.partition, 'PARQUET', true) && Number(capture.partition.row_count) > 0)
+    const promotedByKey = new Map(promoted.map(capture => [captureKey(capture), capture]))
+    const bound = acquired.filter(capture => {
+      const parquetCapture = promotedByKey.get(captureKey(capture)); const source = parquetCapture?.partition?.source_jsonl_sha256
+      return Boolean(parquetCapture && source === capture.partition.sha256 && Number(parquetCapture.partition.row_count) === Number(capture.partition.row_count))
+    })
+    verifiedAcquisition = new Map(bound.map(capture => [captureKey(capture), capture]))
+    verifiedParquet = new Map(bound.map(capture => [captureKey(capture), promotedByKey.get(captureKey(capture))]))
+  }
+  const physicalReopenVerified = Boolean(acquisition && parquet && acquisitionRoot && parquetRoot)
+  for (const row of rows) {
+    const key = [row.asset, row.instrument, row.symbol, row.interval, row.series_type, row.series_role].map(part => String(part || '').toLowerCase()).join('|')
+    // Manifest declarations alone are not complete coverage.  A row becomes
+    // complete only when both trusted verifiers reopened its exact JSONL and
+    // Parquet partitions and their source/count bindings matched.
+    row.complete = row.complete === true && verifiedAcquisition.has(key) && verifiedParquet.has(key)
+  }
+  const physicallyIngestedDatedSymbols = new Set()
+  for (const capture of verifiedAcquisition.values()) if (String(capture.instrument).toUpperCase() === 'BINANCE_USDM_DATED_FUTURE' && verifiedParquet.has(captureKey(capture))) physicallyIngestedDatedSymbols.add(`${String(capture.asset).toLowerCase()}|${String(capture.symbol).toUpperCase()}`)
+  const datedTradeabilityBound = contract => Boolean(catalogPhysicalValidated && contract?.tradeable === true && contract?.expiry_at && contract?.expiry_binding_status === 'BOUND' && ['BOUND', 'PUBLIC_OBSERVED'].includes(contract?.contract_spec_status) && contract?.margin_status === 'BOUND' && contract?.liquidation_status === 'BOUND' && contract?.settlement_status === 'BOUND' && contract?.tradeability_metadata_refs && ['expiry', 'contract_spec', 'margin', 'liquidation', 'settlement'].every(kind => HASH.test(String(contract.tradeability_metadata_refs?.[kind]?.content_sha256 || '')) && HASH.test(String(contract.tradeability_metadata_refs?.[kind]?.byte_sha256 || '')) && typeof contract.tradeability_metadata_refs?.[kind]?.path === 'string') && contract?.archive_ingestion_status === 'ARCHIVE_INGESTED' && contract?.archive_coverage_complete === true && contract?.archive_physical_capture_refs && HASH.test(String(contract.archive_physical_capture_refs.jsonl_partition_sha256 || '')) && HASH.test(String(contract.archive_physical_capture_refs.parquet_partition_sha256 || '')) && HASH.test(String(contract.archive_physical_capture_refs.dataset_root_sha256 || '')))
+  const resolvedDatedAssets = new Set()
   const datedFutures = DATA_V5_ASSETS.map(asset => {
     const contracts = catalogByAsset.get(asset) || []
-    const ingested = contracts.some(contract => contract.history_status === 'SIGNAL_HISTORY_AVAILABLE' && contract.archive_ingestion_status === 'ARCHIVE_INGESTED')
+    const projectedContracts = contracts.map(contract => {
+      const physical = physicallyIngestedDatedSymbols.has(`${asset}|${String(contract.symbol || '').toUpperCase()}`)
+      if (physical) {
+        const acquisitionCapture = [...verifiedAcquisition.values()].find(capture => String(capture.asset).toLowerCase() === asset && String(capture.symbol).toUpperCase() === String(contract.symbol || '').toUpperCase())
+        const parquetCapture = acquisitionCapture ? verifiedParquet.get(captureKey(acquisitionCapture)) : null
+        return {
+          ...contract,
+          catalog_original: structuredClone(contract),
+          archive_ingestion_status: 'ARCHIVE_INGESTED',
+          archive_coverage_complete: true,
+          tradeable: datedTradeabilityBound({ ...contract, archive_ingestion_status: 'ARCHIVE_INGESTED', archive_coverage_complete: true, archive_physical_capture_refs: { jsonl_partition_sha256: acquisitionCapture.partition.sha256, parquet_partition_sha256: parquetCapture.partition.sha256, dataset_root_sha256: parquet.dataset_root_sha256 } }),
+          archive_physical_capture_refs: {
+            jsonl_partition_sha256: acquisitionCapture.partition.sha256,
+            parquet_partition_sha256: parquetCapture.partition.sha256,
+            dataset_root_sha256: parquet.dataset_root_sha256
+          }
+        }
+      }
+      // A frozen catalog is discovery evidence only.  Never inherit an
+      // ARCHIVE_INGESTED label without the matching, reopened JSONL+Parquet
+      // capture pair above.
+      return contract.archive_ingestion_status === 'ARCHIVE_INGESTED'
+        ? { ...contract, archive_ingestion_status: 'ARCHIVE_DISCOVERED_NOT_INGESTED', archive_coverage_complete: false, tradeable: false, history_status: 'UNAVAILABLE' }
+        : { ...contract, archive_coverage_complete: false, tradeable: false }
+    })
+    const ingested = projectedContracts.some(contract => contract.history_status === 'SIGNAL_HISTORY_AVAILABLE' && contract.archive_ingestion_status === 'ARCHIVE_INGESTED')
     const discovered = contracts.some(contract => contract.history_status === 'SIGNAL_HISTORY_AVAILABLE')
-    const limitations = ingested ? [] : discovered ? [`${asset}:DATED_FUTURES_DISCOVERED_NOT_INGESTED`] : [`${asset}:HISTORICAL_DATED_FUTURES_UNAVAILABLE_OR_NOT_LISTED`]
-    return { asset, instrument: 'BINANCE_USDM_DATED_FUTURE', symbol: contracts.length === 1 ? contracts[0].symbol : null, history_status: ingested ? 'SIGNAL_HISTORY_AVAILABLE' : 'UNAVAILABLE', tradeable: contracts.some(contract => contract.tradeable === true), contracts, limitations }
+    const discoveredContracts = contracts.filter(contract => contract.history_status === 'SIGNAL_HISTORY_AVAILABLE')
+    if (discoveredContracts.length > 0 && discoveredContracts.every(contract => physicallyIngestedDatedSymbols.has(`${asset}|${String(contract.symbol || '').toUpperCase()}`))) resolvedDatedAssets.add(asset)
+    const catalogAssetLimitations = (catalog?.limitations || []).filter(lim => String(lim).toLowerCase().startsWith(`${asset}:`) && !/ARCHIVE_DISCOVERED_NOT_INGESTED|DATED_FUTURES_DISCOVERED_NOT_INGESTED/i.test(String(lim)))
+    const limitations = [...new Set([...(ingested ? [] : discovered ? [`${asset}:DATED_FUTURES_DISCOVERED_NOT_INGESTED`] : [`${asset}:HISTORICAL_DATED_FUTURES_UNAVAILABLE_OR_NOT_LISTED`]), ...catalogAssetLimitations])].sort()
+    return { asset, instrument: 'BINANCE_USDM_DATED_FUTURE', symbol: contracts.length === 1 ? contracts[0].symbol : null, history_status: ingested ? 'SIGNAL_HISTORY_AVAILABLE' : 'UNAVAILABLE', tradeable: projectedContracts.some(contract => contract.tradeable === true), contracts: projectedContracts, limitations }
+  })
+  const catalogLimitations = (catalog?.limitations || []).filter(lim => {
+    const match = String(lim).match(/^([^:]+):(ARCHIVE_DISCOVERED_NOT_INGESTED|DATED_FUTURES_DISCOVERED_NOT_INGESTED)$/)
+    if (!match) return true
+    const asset = String(match[1]).toLowerCase()
+    const discovered = (catalogByAsset.get(asset) || []).filter(contract => contract.history_status === 'SIGNAL_HISTORY_AVAILABLE')
+    const physicallyComplete = discovered.length > 0 && discovered.every(contract => physicallyIngestedDatedSymbols.has(`${asset}|${String(contract.symbol || '').toUpperCase()}`))
+    return !(resolvedDatedAssets.has(asset) || physicallyComplete)
+  })
+  const planLimitations = (plan.limitations || []).filter(lim => {
+    const match = String(lim).match(/^([^:]+):(ARCHIVE_DISCOVERED_NOT_INGESTED|DATED_FUTURES_DISCOVERED_NOT_INGESTED)$/)
+    if (!match) return true
+    const asset = String(match[1]).toLowerCase()
+    return !resolvedDatedAssets.has(asset)
   })
   const requiredRows = rows.filter(row => row.required)
-  const allComplete = Boolean(acquisition && parquet && requiredRows.length && requiredRows.every(row => row.complete))
+  const allComplete = Boolean(physicalReopenVerified && requiredRows.length && requiredRows.every(row => row.complete))
   const observedAny = Boolean(acquisition || catalog)
   const value = withHash({
     schema: 'strategy-v5-authoritative-coverage/1', version: 1,
     status: allComplete ? 'OBSERVED_COMPLETE' : observedAny ? 'OBSERVED_PARTIAL' : 'PLANNED',
     mode, captured_at: String(capturedAt), plan_sha256: plan.content_sha256,
     catalog_sha256: catalog?.content_sha256 || null, acquisition_sha256: acquisition?.content_sha256 || null,
-    parquet_sha256: parquet?.content_sha256 || null, dataset_root_sha256: parquet?.dataset_root_sha256 || null,
+    parquet_sha256: parquet?.content_sha256 || null, dataset_root_sha256: physicalReopenVerified ? parquet?.dataset_root_sha256 || null : null,
     window: { years: plan.window.years, start_at: plan.window.start_at, end_at: plan.window.end_at, completed_through_at: plan.window.completed_through_at },
     assets: [...plan.assets], series: rows, dated_futures: datedFutures,
     source_receipt_sha256: [...sourceContent].sort(), source_receipt_byte_sha256: [...sourceBytes].sort(), raw_receipt_sha256: [...rawContent].sort(), raw_receipt_byte_sha256: [...rawBytes].sort(),
-    limitations: [...new Set([...(plan.limitations || []), ...(catalog?.limitations || []), ...(acquisition?.limitations || []), ...(parquet?.limitations || []), ...(mode === 'PLAN_ONLY' || mode === 'CATALOG_ONLY_PLAN' ? ['NO_DATA_ROWS_ACQUIRED'] : [])])].map(String).sort()
+    limitations: normalizedCoverageLimitations([...planLimitations, ...catalogLimitations, ...(acquisition?.limitations || []), ...(parquet?.limitations || []), ...(acquisition && parquet && !physicalReopenVerified ? ['PHYSICAL_REOPEN_REQUIRED_FOR_COMPLETE_COVERAGE'] : []), ...(mode === 'PLAN_ONLY' || mode === 'CATALOG_ONLY_PLAN' ? ['NO_DATA_ROWS_ACQUIRED'] : [])], [...(acquisition?.captures || []), ...(parquet?.captures || [])])
   })
   validateKnownContractSchema(value)
   return value
@@ -828,7 +1080,7 @@ export async function authoritativeDataBackfill(options = {}, { fetchImpl = glob
     // bundle before returning BLOCKED; otherwise the most useful evidence of
     // the gap would be lost precisely when a requested asset is unavailable.
     if (acquisition.status !== 'STAGING_COMPLETE') {
-      const coverage = coverageReport({ plan, catalog, acquisition, capturedAt: catalog.captured_at || now(), mode: 'DOWNLOAD_AND_AUTHORITATIVE_REOPEN' })
+      const coverage = await coverageReport({ plan, catalog, catalogRoot: rawRoot, acquisition, acquisitionRoot: stagingRoot, capturedAt: catalog.captured_at || now(), mode: 'DOWNLOAD_AND_AUTHORITATIVE_REOPEN' })
       const outputs = foundation.map(row => reference(row.path, row.role, row.value))
       for (const [path, value, role] of [[options.acquisition_out, acquisition, 'staging_manifest'], [options.coverage_out, coverage, 'coverage']]) {
         const written = writeImmutable(bundlePath(path, value, role), value)
@@ -854,8 +1106,8 @@ export async function authoritativeDataBackfill(options = {}, { fetchImpl = glob
       return outputReceipt('data-backfill', receipt, { plan, acquisition, catalog, coverage, parquet: null }, { receipt: options.receipt || options.receipt_out, record_root: recordRoot })
     }
     const parquet = await convertToParquet({ stagingManifest: acquisition, stagingRoot, outputRoot: parquetRoot, outputRootReference: options.parquet_root_reference || null })
-    await verifyParquetConversionManifestAuthoritative(parquet, { root: parquetRoot, planSha256: plan.content_sha256 })
-    const coverage = coverageReport({ plan, catalog, acquisition, parquet, capturedAt: catalog.captured_at || now(), mode: 'DOWNLOAD_AND_AUTHORITATIVE_REOPEN' })
+    await verifyParquetConversionManifestAuthoritative(parquet, { root: parquetRoot, stagingRoot, planSha256: plan.content_sha256 })
+    const coverage = await coverageReport({ plan, catalog, catalogRoot: rawRoot, acquisition, parquet, acquisitionRoot: stagingRoot, parquetRoot, capturedAt: catalog.captured_at || now(), mode: 'DOWNLOAD_AND_AUTHORITATIVE_REOPEN' })
     const outputs = foundation.map(row => reference(row.path, row.role, row.value))
     // A plan/download invocation always leaves a compact, content-addressed
     // foundation bundle in the durable record root.  Explicit paths remain
@@ -873,10 +1125,53 @@ export async function authoritativeDataBackfill(options = {}, { fetchImpl = glob
   }
   const plan = makeFiveYearAuthoritativePlan({ asOf, years: 5, assets: DATA_V5_ASSETS, datedFuturesCatalog: catalog, rootReference: options.root_reference || 'strategy-research/v5-data' })
   const mode = bool(options.catalog_only) ? 'CATALOG_ONLY_PLAN' : 'PLAN_ONLY'
-  const coverage = coverageReport({ plan, catalog, capturedAt: catalog?.captured_at || now(), mode })
+  const coverage = await coverageReport({ plan, catalog, capturedAt: catalog?.captured_at || now(), mode })
   const outputs = []; for (const [path, value, role] of [[options.out || options.plan_out, plan, 'plan'], [options.catalog_out, catalog, 'dated_futures_catalog'], [options.coverage_out, coverage, 'coverage']]) if (value) { const written = writeImmutable(bundlePath(path, value, role), value); outputs.push(reference(written, role, value)) }
   const receipt = makeCommandReceipt({ command: 'data-backfill', status: 'PLANNED', inputs: catalog ? [outputs.find(row => row.role === 'dated_futures_catalog') || reference(null, 'dated_futures_catalog', catalog)] : [], outputs, limitations: [...(plan.limitations || []), ...(coverage.limitations || []), 'PLAN_ONLY: no public rows were downloaded', 'JSONL_STAGING_ONLY: no Parquet is authoritative until explicit --download'], details: { mode, plan_sha256: plan.content_sha256, catalog_sha256: catalog?.content_sha256 || null, coverage_sha256: coverage.content_sha256 } })
   return outputReceipt('data-backfill', receipt, { plan, catalog, coverage }, { receipt: options.receipt || options.receipt_out, record_root: recordRoot })
+}
+
+/** Explicit no-network lineage refresh for stale acquisition captures. */
+export async function authoritativeDataRawReplay(options = {}) {
+  rejectLooseOptions(options, { allowKeys: ['recover_auxiliary_metrics', 'recover-auxiliary-metrics', 'recoverAuxiliaryMetrics'] })
+  const planPhysical = physicalJson(options.plan || options.data_plan, { label: 'frozen authoritative plan', schemas: [DATA_V5.plan] })
+  const checkpointPhysical = physicalJson(options.source_checkpoint || options.checkpoint, { label: 'source acquisition checkpoint', schemas: [DATA_V5.checkpoint] })
+  const sourceRoot = options.source_root || options.resume_staging_root || options.resume_root
+  if (!sourceRoot) fail('data-raw-replay requires --source-root containing the prior physical raw/staging chain')
+  const parquetRootOption = options.parquet_root || options.parquetRoot || null
+  const catalogOption = options.catalog || options.dated_futures_catalog || options.datedFuturesCatalog || null
+  const catalogRootOption = options.catalog_root || options.catalogRoot || null
+  const promotionInputs = [parquetRootOption, catalogOption, catalogRootOption].filter(Boolean)
+  if (promotionInputs.length > 0 && promotionInputs.length !== 3) fail('data-raw-replay promotion requires --parquet-root, --catalog, and --catalog-root together')
+  const targetRoot = ignoredRoot(options.target_root || options.staging_root || options.output_root, 'local replay target root')
+  const targetRootReference = options.target_root_reference || options.staging_root_reference || null
+  const recoverAuxiliaryMetricsOption = options.recover_auxiliary_metrics ?? options.recoverAuxiliaryMetrics ?? options['recover-auxiliary-metrics']
+  const recoverAuxiliaryMetrics = recoverAuxiliaryMetricsOption === undefined ? true : bool(recoverAuxiliaryMetricsOption)
+  const result = await replayAuthoritativeStagingFromRaw({ plan: planPhysical.value, sourceCheckpoint: checkpointPhysical.value, sourceRoot, targetRoot, sourceRootReference: options.source_root_reference || checkpointPhysical.value.root_reference || null, targetRootReference, checkpointPath: options.target_checkpoint || options.checkpoint_path || 'checkpoint.json', manifestPath: options.manifest_path || 'acquisition-replay.json', expectedSourceCheckpointSha256: options.expected_source_checkpoint_sha256 || null, recoverAuxiliaryMetrics })
+  const checkpointPath = resolve(targetRoot, options.target_checkpoint || options.checkpoint_path || 'checkpoint.json'); const manifestPath = resolve(targetRoot, options.manifest_path || 'acquisition-replay.json'); const outputs = [reference(planPhysical.path, 'plan'), reference(checkpointPhysical.path, 'source_checkpoint'), reference(checkpointPath, 'replayed_checkpoint', result.checkpoint), reference(manifestPath, 'replayed_staging_manifest', result.acquisition)]
+  let catalog = null; let parquet = null; let coverage = null
+  if (promotionInputs.length === 3) {
+    if (result.acquisition.status !== 'STAGING_COMPLETE' || result.acquisition.base_complete !== true) fail('data-raw-replay refuses Parquet promotion of a partial acquisition; replay every required physical series first')
+    const catalogPhysical = physicalJson(catalogOption, { label: 'frozen dated-futures catalog', schemas: [DATA_V5.datedCatalog] }); catalog = catalogPhysical.value
+    validateDatedFuturesCatalog(catalog, { root: catalogRootOption })
+    const parquetRoot = ignoredRoot(parquetRootOption, 'local replay Parquet root')
+    parquet = await convertToParquet({ stagingManifest: result.acquisition, stagingRoot: targetRoot, outputRoot: parquetRoot, outputRootReference: options.parquet_root_reference || options.parquetRootReference || null })
+    await verifyParquetConversionManifestAuthoritative(parquet, { root: parquetRoot, stagingRoot: targetRoot, planSha256: planPhysical.value.content_sha256 })
+    coverage = await coverageReport({ plan: planPhysical.value, catalog, catalogRoot: catalogRootOption, acquisition: result.acquisition, parquet, acquisitionRoot: targetRoot, parquetRoot, capturedAt: catalog.captured_at, mode: 'LOCAL_RAW_REPLAY_AND_AUTHORITATIVE_REOPEN' })
+    const recordRoot = resolve(String(options.record_root || options.recordRoot || 'strategy-research/v5-records'))
+    const durable = [
+      [durableArtifactPath({ record_root: recordRoot }, result.acquisition, 'acquisition', 'data-raw-replay'), result.acquisition, 'replayed_staging_manifest'],
+      [durableArtifactPath({ record_root: recordRoot }, parquet, 'parquet', 'data-raw-replay'), parquet, 'parquet_manifest'],
+      [durableArtifactPath({ record_root: recordRoot }, coverage, 'coverage', 'data-raw-replay'), coverage, 'coverage'],
+    ]
+    for (const [path, value, role] of durable) { const written = writeImmutable(path, value); outputs.push(reference(written, role, value)) }
+    outputs.push(reference(catalogPhysical.path, 'dated_futures_catalog'))
+  }
+  const receiptInputs = [reference(planPhysical.path, 'plan'), reference(checkpointPhysical.path, 'source_checkpoint')]
+  if (catalog) receiptInputs.push(reference(catalogOption, 'dated_futures_catalog'))
+  const receiptLimitations = [...new Set([...(result.acquisition.limitations || []), ...(coverage?.limitations || []), ...(parquet?.limitations || [])].map(String))].sort()
+  const receipt = makeCommandReceipt({ command: 'data-raw-replay', status: 'COMPLETE', inputs: receiptInputs, outputs, limitations: receiptLimitations, details: { mode: parquet ? 'LOCAL_RAW_REPLAY_AND_AUTHORITATIVE_REOPEN' : 'LOCAL_RAW_REPLAY_NO_NETWORK', source_checkpoint_sha256: checkpointPhysical.value.content_sha256, source_root: portablePath(resolve(String(sourceRoot))), target_root: portablePath(targetRoot), replayed_count: result.replayed_count, retained_count: result.retained_count, auxiliary_metrics: result.auxiliary_metrics || [], acquisition_status: result.acquisition.status, base_complete: result.acquisition.base_complete, declared_complete: result.acquisition.declared_complete, acquisition_sha256: result.acquisition.content_sha256, catalog_sha256: catalog?.content_sha256 || null, parquet_sha256: parquet?.content_sha256 || null, coverage_sha256: coverage?.content_sha256 || null, dataset_root_sha256: parquet?.dataset_root_sha256 || null, active: false } })
+  return outputReceipt('data-raw-replay', receipt, { checkpoint: result.checkpoint, acquisition: result.acquisition, ...(catalog ? { catalog } : {}), ...(parquet ? { parquet } : {}), ...(coverage ? { coverage } : {}), replayed_count: result.replayed_count, retained_count: result.retained_count, auxiliary_metrics: result.auxiliary_metrics || [], target_root: targetRoot }, { receipt: options.receipt || options.receipt_out, record_root: options.record_root || options.recordRoot, result: { checkpoint_path: checkpointPath, manifest_path: manifestPath } })
 }
 
 export async function authoritativeOpportunityEnvelope(options = {}, { fetchImpl = globalThis.fetch } = {}) {
@@ -1024,9 +1319,11 @@ export async function authoritativeSearchGenetic(options = {}, { loadEvaluator =
   if (envelopePhysical && envelopePhysical.value.candidate_set_sha256 && artifact.lineage?.candidate_set_sha256 && envelopePhysical.value.candidate_set_sha256 !== artifact.lineage.candidate_set_sha256) fail('v2 opportunity envelope candidate-set lineage differs from the statistical artifact')
   if (envelopePhysical && (envelopePhysical.value.plan_sha256 !== plan.content_sha256 || envelopePhysical.value.precommit_sha256 !== precommitPhysical.value.content_sha256 || envelopePhysical.value.evaluator_spec_sha256 !== specPhysical.value.content_sha256 || envelopePhysical.value.predictor_registry_sha256 !== predictorPhysical.value.content_sha256 || envelopePhysical.value.gene_space_sha256 !== genePhysical.value.content_sha256)) fail('v2 opportunity envelope lineage differs from search inputs')
   if (domainPhysical && envelopePhysical && (domainPhysical.value.content_sha256 !== envelopePhysical.value.opportunity_domain_sha256 || domainPhysical.value.candidate_set_sha256 !== envelopePhysical.value.candidate_set_sha256 || domainPhysical.value.gene_space_sha256 !== envelopePhysical.value.gene_space_sha256 || domainPhysical.value.evaluator_spec_sha256 !== envelopePhysical.value.evaluator_spec_sha256 || domainPhysical.value.predictor_registry_sha256 !== envelopePhysical.value.predictor_registry_sha256 || domainPhysical.value.precommit_sha256 !== envelopePhysical.value.precommit_sha256)) fail('v2 opportunity domain lineage differs from search inputs')
-  verifySeparatedArtifactManifest(manifest, { root, plan, requireParquet: true, predictorRegistry: predictorPhysical.value, candidatePredicates: [] })
-  await verifyParquetArtifactManifest({ manifest, root, plan, predictorRegistry: predictorPhysical.value, candidatePredicates: manifest.candidate_predicates || [] })
   validateEvaluatorSpecV5(specPhysical.value, { geneSpace, predictorRegistry: predictorPhysical.value })
+  const evaluatorPredicateInventory = derivePredicatePredictorIds(specPhysical.value.predicate).map(predictor_id => ({ predictor_id }))
+  verifyMetricPITBoundary({ options, plan, manifest, predictorRegistry: predictorPhysical.value, evaluatorSpec: specPhysical.value, precommit: precommitPhysical.value, root, label: 'authoritative search' })
+  verifySeparatedArtifactManifest(manifest, { root, plan, requireParquet: true, predictorRegistry: predictorPhysical.value, candidatePredicates: evaluatorPredicateInventory })
+  await verifyParquetArtifactManifest({ manifest, root, plan, predictorRegistry: predictorPhysical.value, candidatePredicates: evaluatorPredicateInventory })
   validateMetadataLineage(metadata, specPhysical.value)
   if (precommitPhysical.value.content_sha256 !== specPhysical.value.precommit_sha256) fail('evaluator spec and physical precommit lineage differs')
   if (experimentPhysical.value.precommit_sha256 && experimentPhysical.value.precommit_sha256 !== precommitPhysical.value.content_sha256) fail('experiment and physical precommit lineage differs')
@@ -1332,6 +1629,16 @@ async function derivePhysicalStageArtifacts({ manifest, root, metadata, evaluato
   const stressRows = stresses.map(value => ({ ...structuredClone(value), selected_fills: selected.map(compactPhysicalFill), selected_fills_sha256: fills.content_sha256, physical_fill_digest: hash(selected.map(compactPhysicalFill)), stress_execution_artifacts: stressRefs })); const stressArtifact = makeStageArtifact('STRESSES', stressRows, { manifestSha256: manifest.content_sha256, wfoSha256: wfo.run.content_sha256, marksBound, fundingStatus }); const portfolio = wfo.run.portfolio_decision; if (!portfolio || portfolio.content_sha256 !== ownHash(portfolio)) fail('AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: physical portfolio output is incomplete'); const finalRisk = portfolioRiskArtifacts.get('FINAL_OOS') || [...portfolioRiskArtifacts.values()].at(-1) || null; const portfolioRow = { ...structuredClone(portfolio), selected_fills: selected.map(compactPhysicalFill), selected_trades: trades.rows, selected_fills_sha256: fills.content_sha256, selected_trades_sha256: trades.content_sha256, physical_fill_digest: hash(selected.map(compactPhysicalFill)), marks_bound: marksBound, funding_status: fundingStatus, portfolio_engine_schema: finalRisk?.value?.schema || null, portfolio_engine_sha256: finalRisk?.value?.content_sha256 || null, portfolio_engine_byte_sha256: finalRisk?.byte_sha256 || null, portfolio_engine_path: finalRisk?.path ? portablePath(finalRisk.path) : null }; const portfolioArtifact = makeStageArtifact('PORTFOLIO', [portfolioRow], { manifestSha256: manifest.content_sha256, wfoSha256: wfo.run.content_sha256, marksBound, fundingStatus })
   const outputs = {}
   for (const [key, value] of [['genetic', geneticArtifact], ['execution_fills', fills], ['selected_trades', trades], ['stresses', stressArtifact], ['portfolio', portfolioArtifact]]) { const requested = source[`${key}_out`] || source[`${key.replaceAll('_', '-')}_out`]; const path = requested ? writeImmutable(requested, value) : writeImmutable(join(stageRoot, `${key}-${value.content_sha256}.json`), value); outputs[key] = { value, path } }
+  const retainedOos = [
+    ['final_oos_artifact', wfo.artifact],
+    ['final_oos_vector_inventory', wfo.vectorInventory],
+  ]
+  for (const [key, value] of retainedOos) {
+    if (!value || value.content_sha256 !== ownHash(value)) fail(`AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: ${key} is missing or not hash-bound`)
+    const requested = source[`${key}_out`] || source[`${key.replaceAll('_', '-')}_out`]
+    const path = requested ? writeImmutable(requested, value) : writeImmutable(join(stageRoot, `${key}-${value.content_sha256}.json`), value)
+    outputs[key] = { value, path }
+  }
   return { outputs, selected, marksBound, fundingStatus }
 }
 
@@ -2185,6 +2492,28 @@ function blackoutContains(parameters, execution) {
   })
 }
 
+export function resolveDatedSettlementForStress({ metadata, execution, label } = {}) {
+  if (String(execution?.instrument || '').toUpperCase() !== 'BINANCE_USDM_DATED_FUTURE') fail('AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: settlement resolver requires a dated USD-M future')
+  if (!metadata?.expiry || !metadata?.settlement || metadata.expiry.content_sha256 === metadata.settlement.content_sha256) fail('AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: dated expiry stress requires separate physical EXPIRY and SETTLEMENT receipts')
+  const exactIdentity = row => String(row.asset || '').toLowerCase() === String(execution.asset || '').toLowerCase() && String(row.venue || '').toUpperCase() === String(execution.venue || '').toUpperCase() && String(row.symbol || '').toUpperCase() === String(execution.symbol || '').toUpperCase() && String(row.instrument || '').toUpperCase() === String(execution.instrument || '').toUpperCase()
+  const expiryRows = (metadata.expiry.records || []).filter(exactIdentity)
+  if (expiryRows.length !== 1) fail('AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: expiry stress lacks one exact physical expiry record')
+  const expiryRecord = expiryRows[0]
+  const expiryAt = Date.parse(String(expiryRecord.expiry || expiryRecord.delivery_date || ''))
+  const settlementRows = (metadata.settlement.records || []).filter(row => exactIdentity(row) && Date.parse(String(row.expiry || row.delivery_date || '')) === expiryAt)
+  if (settlementRows.length !== 1) fail('AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: expiry stress lacks one exact physical settlement record')
+  const settlementRecord = settlementRows[0]
+  const settlementEventAt = Date.parse(String(settlementRecord.event_time || ''))
+  const settlementAt = Date.parse(String(settlementRecord.settlement_time || ''))
+  const settlementAvailableAt = Date.parse(String(settlementRecord.availability_time || ''))
+  const settlementPrice = Number(settlementRecord.settlement_price ?? settlementRecord.settlement_mark ?? settlementRecord.mark_price)
+  const settlementSource = settlementRecord.settlement_mark_source_sha256 || settlementRecord.source_byte_sha256 || settlementRecord.settlement_mark_sha256
+  const originalResolution = Date.parse(String(label?.resolution_time ?? label?.resolution_ceiling_time ?? ''))
+  if (![expiryAt, settlementEventAt, settlementAt, settlementAvailableAt, originalResolution].every(Number.isFinite) || settlementEventAt !== settlementAt || settlementAt < expiryAt || settlementAvailableAt < settlementAt || settlementAvailableAt > originalResolution) fail('AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: expiry stress lacks a PIT-bound settlement event/availability within the frozen resolution')
+  if (!(settlementPrice > 0) || !HASH.test(String(settlementSource || '')) || !settlementRecord.settlement_mark_event_id || settlementRecord.source_byte_sha256 !== settlementSource || settlementRecord.source_receipt_sha256 !== metadata.settlement.source_receipt_sha256) fail('AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: expiry stress lacks a physically bound settlement price/mark identity')
+  return { expiryRecord, settlementRecord, expiryAt, settlementAt, settlementAvailableAt, settlementPrice, settlementSource, originalResolution }
+}
+
 function makeAuthoritativeStressExecutor({ manifest, root, physicalRows, physicalByEpisode, physicalMarks, metadata, evaluatorSpec, envelopeByEpisode, artifact, behaviorDefinitionRegistry, frozenConstraints, stressContract, stageRoot, verifiedEvaluator, resolveExecution = null } = {}) {
   if (!manifest?.content_sha256 || !stressContract?.content_sha256) fail('AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: physical stress executor lacks verified manifest or frozen contract')
   if (!isVerifiedPhysicalEvaluator(verifiedEvaluator)) fail('AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: physical stress executor requires the loader-owned evaluator custody marker')
@@ -2333,13 +2662,7 @@ function makeAuthoritativeStressExecutor({ manifest, root, physicalRows, physica
         if (id === 'ADVERSE_COLLISION' || id === 'GAP') { scenarioCandidate = targetStopCandidate(candidate, parameters); if (candidate.lifecycle || candidate.lifecycle_spec) { const life = structuredClone(candidate.lifecycle || candidate.lifecycle_spec); const stopPrice = Number(parameters.stop_price); if (!(stopPrice > 0)) fail('AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: adverse collision stop is invalid'); const entryOpen = Number(execution.child_bars?.[0]?.open); if (!(entryOpen > stopPrice)) fail('AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: adverse collision stop is not below the physical entry'); scenarioCandidate.lifecycle = { ...life, stop: { type: 'PERCENT', value: 1 - stopPrice / entryOpen }, target: { type: 'R_MULTIPLE', multiple: 1 }, partial_exits: [], trailing: null } } if (id === 'GAP') { scenarioMetadata = structuredClone(metadata); if (!scenarioMetadata.execution_model) fail('AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: gap stress lacks execution model'); scenarioMetadata.execution_model.records = scenarioMetadata.execution_model.records.map(row => ({ ...row, gap_policy: 'FILL_AT_OPEN' })); scenarioMetadata.execution_model.content_sha256 = ownHash(scenarioMetadata.execution_model) } }
         if (id === 'LIQUIDATION' && appliesToEpisode(idString)) scenarioExecution = adverseMarkExecution(execution, parameters)
         if (id === 'EXPIRY' && appliesToEpisode(idString)) {
-          const expiryRecord = (metadata.expiry?.records || []).find(row => String(row.asset).toLowerCase() === String(execution.asset).toLowerCase() && String(row.symbol || '').toUpperCase() === String(execution.symbol || '').toUpperCase() && String(row.instrument || '').toUpperCase() === String(execution.instrument || '').toUpperCase())
-          const expiryAt = Date.parse(String(expiryRecord?.expiry || expiryRecord?.delivery_date || ''))
-          const settlementAt = Date.parse(String(expiryRecord?.settlement_time || ''))
-          const settlementPrice = Number(expiryRecord?.settlement_price ?? expiryRecord?.settlement_mark ?? expiryRecord?.mark_price)
-          const settlementSource = expiryRecord?.settlement_mark_source_sha256 || expiryRecord?.source_byte_sha256 || expiryRecord?.settlement_mark_sha256
-          if (!Number.isFinite(expiryAt) || !Number.isFinite(settlementAt) || !(settlementAt >= expiryAt)) fail('AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: expiry stress lacks a physically bound settlement timestamp at/after expiry')
-          if (!(settlementPrice > 0) || !HASH.test(String(settlementSource || '')) || !expiryRecord?.settlement_mark_event_id) fail('AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: expiry stress lacks a physically bound settlement price/mark identity')
+          const { settlementRecord, expiryAt, settlementAt, settlementAvailableAt, settlementPrice, settlementSource, originalResolution } = resolveDatedSettlementForStress({ metadata, execution, label })
           const rawBars = (execution.child_bars || []).map(row => ({ ...row, __stress_t: Date.parse(String(row.event_time ?? row.time ?? row.open_time)) })).filter(row => Number.isFinite(row.__stress_t) && row.__stress_t <= expiryAt).sort((left, right) => left.__stress_t - right.__stress_t)
           if (!rawBars.length || rawBars.at(-1).__stress_t >= settlementAt) fail('AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: expiry stress lacks a completed pre-settlement child bar')
           const lastBarAt = rawBars.at(-1).__stress_t
@@ -2348,14 +2671,13 @@ function makeAuthoritativeStressExecutor({ manifest, root, physicalRows, physica
           // it is the exact official settlement record bound above and is
           // appended only when it is the next lifecycle observation.
           if (settlementAt !== lastBarAt + ONE_MINUTE) fail('AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: official settlement is not the next contiguous lifecycle observation; no synthetic bars may be inserted')
-          const settlementRow = { event_time: new Date(settlementAt).toISOString(), open: settlementPrice, high: settlementPrice, low: settlementPrice, close: settlementPrice, availability_time: expiryRecord.availability_time || new Date(settlementAt + ONE_MINUTE).toISOString(), settlement_event_id: expiryRecord.settlement_mark_event_id, settlement_source_sha256: settlementSource, physical_settlement: true }
+          const settlementRow = { event_time: new Date(settlementAt).toISOString(), open: settlementPrice, high: settlementPrice, low: settlementPrice, close: settlementPrice, availability_time: new Date(settlementAvailableAt).toISOString(), settlement_event_id: settlementRecord.settlement_mark_event_id, settlement_source_sha256: settlementSource, physical_settlement: true }
           const bars = rawBars.map(({ __stress_t, ...row }) => row).concat(settlementRow)
-          const originalResolution = Date.parse(String(label.resolution_time ?? label.resolution_ceiling_time));
           if (!Number.isFinite(originalResolution) || originalResolution < settlementAt) fail('AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: frozen label resolution ends before official settlement')
           expiryChanged = true
           scenarioExecution = { ...structuredClone(execution), child_bars: bars }
           if (Array.isArray(execution.mark_bars)) {
-            const markRow = { event_time: new Date(settlementAt).toISOString(), mark_open: settlementPrice, mark_high: settlementPrice, mark_low: settlementPrice, mark_close: settlementPrice, availability_time: settlementRow.availability_time, settlement_event_id: expiryRecord.settlement_mark_event_id, settlement_source_sha256: settlementSource, physical_settlement: true }
+            const markRow = { event_time: new Date(settlementAt).toISOString(), mark_open: settlementPrice, mark_high: settlementPrice, mark_low: settlementPrice, mark_close: settlementPrice, availability_time: settlementRow.availability_time, settlement_event_id: settlementRecord.settlement_mark_event_id, settlement_source_sha256: settlementSource, physical_settlement: true }
             const rawMarks = execution.mark_bars.map(row => ({ ...row, __stress_t: Date.parse(String(row.event_time ?? row.time ?? row.open_time)) })).filter(row => Number.isFinite(row.__stress_t) && row.__stress_t < settlementAt).map(({ __stress_t, ...row }) => row)
             if (!rawMarks.length || rawMarks.at(-1).event_time === undefined && rawMarks.at(-1).time === undefined && rawMarks.at(-1).open_time === undefined) fail('AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: expiry stress mark path is not physically aligned')
             scenarioExecution.mark_bars = rawMarks.concat(markRow)
@@ -2516,8 +2838,21 @@ export async function authoritativeResearchRun(options = {}, { loadEvaluator = l
   const behaviorRegistryDirectory = behaviorRegistryPaths.directory
   const behaviorRegistryPath = behaviorRegistryPaths.statePath
   const durableRegistrySeed = ensureBehaviorRegistryState(behaviorRegistryPaths)
+  const exposureRegistryJournalPath = `${behaviorRegistryPath}.journal.json`
+  // The GA journal must be recovered before final-publication journals are
+  // inspected: a SIGKILL after the physical HEAD CAS but before the registry
+  // append leaves a valid historical publication alongside a temporarily
+  // inconsistent mutable registry.
+  if (existsSync(exposureRegistryJournalPath)) recoverExposureRegistryTransaction({ journalPath: exposureRegistryJournalPath })
+  // Complete any final-publication transaction left by a killed process
+  // before reopening the mutable registry.  Recovery is content/CAS bound and
+  // never rewinds the physical exposure HEAD.
+  const publicationTransactionRoot = join(recordRoot, '.transactions')
+  if (existsSync(publicationTransactionRoot)) {
+    for (const name of readdirSync(publicationTransactionRoot).filter(value => value.endsWith('.json')).sort()) recoverStatisticalPublicationTransaction({ transactionPath: join(publicationTransactionRoot, name) })
+  }
   const boundHashes = { evaluator_sha256: evaluatorPhysical?.value.content_sha256 || null, data_sha256: manifest.content_sha256, plan_sha256: plan.content_sha256, opportunity_domain_sha256: opportunityDomainPhysical?.value.content_sha256 || null, opportunity_envelope_sha256: envelopePhysical?.value.content_sha256 || null, opportunity_hydration_sha256: hydrationPhysical?.value.content_sha256 || null, opportunity_partition_root_sha256: null, genetic_sha256: null, wfo_sha256: null, selected_fills_sha256: null, stress_sha256: null, portfolio_sha256: null, behavior_registry_sha256: null }
-  let result; let recomputed = false; let blocked = false; let loaded = null; let stageArtifacts = null; let behaviorRegistryPhysical = null
+  let result; let recomputed = false; let blocked = false; let loaded = null; let stageArtifacts = null; let behaviorRegistryPhysical = null; let durableWfoPath = null
   try {
     const missing = []
     for (const [name, value] of [['statistical artifact', artifact], ['evaluator spec', evaluatorPhysical], ['physical precommit', precommitPhysical], ['physical experiment', experimentPhysical], ['gene space', genePhysical], ['predictor registry', predictorPhysical], ['metadata receipt bundle', metadataPhysical], ['opportunity envelope', envelopePhysical], ['exposure head', headPath], ['checkpoint', source.checkpoint || source.checkpoint_dir], ['cache root', source.cache_root || source.cache || source.cache_dir]]) if (!value) missing.push(name)
@@ -2528,7 +2863,7 @@ export async function authoritativeResearchRun(options = {}, { loadEvaluator = l
     if (missing.length) throw new Error(`AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: missing physical prerequisites: ${missing.join(', ')}`)
     const dirs = requireIgnoredSearchDirs(source)
     const head = readExposureHeadFile(resolve(String(headPath))); validateExposureHead(head); assertLegacyFamilyMigrationBoundary({ recordRoot, family: evaluatorPhysical.value.strategy_family, exposureHead: head }); validateStatisticalArtifactSet(artifact, { exposureHead: head, allowSubset: true })
-    verifySeparatedArtifactManifest(manifest, { root, plan, predictorRegistry: predictorPhysical.value, requireParquet: true }); await verifyParquetArtifactManifest({ manifest, root, plan, predictorRegistry: predictorPhysical.value, candidatePredicates: manifest.candidate_predicates || [] }); validateEvaluatorSpecV5(evaluatorPhysical.value, { geneSpace: genePhysical.value, predictorRegistry: predictorPhysical.value }); validateMetadataLineage(metadataPhysical.value, evaluatorPhysical.value)
+    validateEvaluatorSpecV5(evaluatorPhysical.value, { geneSpace: genePhysical.value, predictorRegistry: predictorPhysical.value }); const evaluatorPredicateInventory = derivePredicatePredictorIds(evaluatorPhysical.value.predicate).map(predictor_id => ({ predictor_id })); verifyMetricPITBoundary({ options: source, plan, manifest, predictorRegistry: predictorPhysical.value, evaluatorSpec: evaluatorPhysical.value, precommit: precommitPhysical.value, root, label: 'authoritative research-run' }); verifySeparatedArtifactManifest(manifest, { root, plan, predictorRegistry: predictorPhysical.value, requireParquet: true, candidatePredicates: evaluatorPredicateInventory }); await verifyParquetArtifactManifest({ manifest, root, plan, predictorRegistry: predictorPhysical.value, candidatePredicates: evaluatorPredicateInventory }); validateMetadataLineage(metadataPhysical.value, evaluatorPhysical.value)
     if (!precommitPhysical || precommitPhysical.value.content_sha256 !== evaluatorPhysical.value.precommit_sha256 || (experimentPhysical && experimentPhysical.value.precommit_sha256 && experimentPhysical.value.precommit_sha256 !== evaluatorPhysical.value.precommit_sha256)) fail('AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: research-run requires a physical precommit and exact experiment lineage bound to the evaluator')
     const lifecycleSha256 = hash(evaluatorPhysical.value.execution_contract)
     const registryContext = { evaluatorSha256: evaluatorPhysical.value.content_sha256, precommitSha256: precommitPhysical.value.content_sha256, lifecycleSha256 }
@@ -2670,7 +3005,7 @@ export async function authoritativeResearchRun(options = {}, { loadEvaluator = l
       const selectedBytes = jsonBytes(selectedValue); const selectedPath = persistBytes(`selected-${selectedValue.content_sha256}.json`, selectedBytes)
       const evaluationBytes = jsonBytes(evaluationValue); const evaluationPath = persistBytes(`evaluation-${evaluationValue.content_sha256}.json`, evaluationBytes)
       const metadataPaths = {}; const metadataByteHashes = {}
-      const metadataNames = { fee: 'fee_schedule', contract: 'contract_spec', margin: 'margin', liquidation: 'liquidation', expiry: 'expiry', funding: 'funding_identity', execution_model: 'execution_model' }
+      const metadataNames = { fee: 'fee_schedule', contract: 'contract_spec', margin: 'margin', liquidation: 'liquidation', expiry: 'expiry', ...(metadataPhysical.value.settlement ? { settlement: 'settlement' } : {}), funding: 'funding_identity', execution_model: 'execution_model' }
       for (const [key, sourceKey] of Object.entries(metadataNames)) { const value = metadataPhysical.value[sourceKey]; if (!value) fail(`AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: metadata bundle lacks ${sourceKey}`); const bytes = jsonBytes(value); metadataPaths[key] = persistBytes(`${sourceKey}-${value.content_sha256}.json`, bytes); metadataByteHashes[key] = hash(bytes) }
       const metadataPath = resolve(metadataPhysical.path); const metadataByteSha = metadataPhysical.byte_sha256
       const executionSource = resolve(root, manifest.artifacts.execution.path); if (!existsSync(executionSource)) fail('authoritative execution Parquet source is missing or tampered'); const executionSourceBytes = readFileSync(executionSource); if (hash(executionSourceBytes) !== manifest.artifacts.execution.sha256) fail('authoritative execution Parquet source is missing or tampered')
@@ -2764,6 +3099,13 @@ export async function authoritativeResearchRun(options = {}, { loadEvaluator = l
     boundHashes.behavior_registry_sha256 = finalBehaviorRegistry.content_sha256
     stageArtifacts = await derivePhysicalStageArtifacts({ manifest, root, metadata: metadataPhysical.value, evaluatorSpec: evaluatorPhysical.value, envelopeByEpisode, wfo, artifact, source, stageRoot, portfolioRiskArtifacts, stressExecutionArtifacts, resolveExecution, verifiedEvaluator: loaded.evaluator || loaded })
     boundHashes.genetic_sha256 = stageArtifacts.outputs.genetic.value.content_sha256; boundHashes.selected_fills_sha256 = stageArtifacts.outputs.execution_fills.value.content_sha256; boundHashes.stress_sha256 = stageArtifacts.outputs.stresses.value.content_sha256; boundHashes.portfolio_sha256 = stageArtifacts.outputs.portfolio.value.content_sha256
+    const stageArtifactRefs = Object.fromEntries(Object.entries(stageArtifacts.outputs).map(([key, row]) => {
+      const absolute = resolve(String(row.path)); const rel = relative(recordRoot, absolute).replaceAll('\\', '/')
+      if (!rel || rel === '..' || rel.startsWith('../')) fail('AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: physical stage artifact is outside the publication record root')
+      const bytes = readFileSync(absolute); const expectedBytes = Buffer.from(`${JSON.stringify(row.value, null, 2)}\n`)
+      if (hash(bytes) !== hash(expectedBytes) || row.value.content_sha256 !== ownHash(row.value)) fail(`AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: physical stage artifact bytes are not bound: ${key}`)
+      return [key, { schema: row.value.schema, version: row.value.version, path: rel, content_sha256: row.value.content_sha256, byte_sha256: hash(bytes), bytes: bytes.byteLength }]
+    }))
     const candidateMetrics = researchCandidateMetrics(wfo, stageArtifacts, { observedVectors, observedEvaluations, observedEvaluationAttempts, physicalByEpisode, evaluatorSpec: evaluatorPhysical.value, metadata: metadataPhysical.value, envelopeByEpisode, verifiedEvaluator: loaded.evaluator || loaded }); const stressPass = stageArtifacts.outputs.stresses.value.rows.every(row => row.pass === true); const portfolioPass = stageArtifacts.outputs.portfolio.value.rows[0]?.pass === true && stageArtifacts.marksBound === true; const decision = wfo.run.decision === 'SHADOW' && stressPass && portfolioPass ? 'SHADOW' : 'REJECTED'; const identity = researchIdentity({ source, evaluatorPhysical, artifact, precommitPhysical, experimentPhysical }); if (!identity.strategy_family_id || !identity.strategy_version || !identity.experiment_id) fail('AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: physical evaluator/precommit/experiment contract lacks exact strategy_family_id, strategy_version, or experiment_id')
     const metricInventory = candidateMetrics.map(row => ({ candidate_id: row.candidate_id, behavior_sha256: row.behavior_sha256, asset: row.asset, fold_id: row.fold_id, evidence_phase: row.evidence_phase, scope_episode_ids_sha256: row.scope_episode_ids_sha256 })).sort((left, right) => `${left.candidate_id}|${left.scope_episode_ids_sha256}`.localeCompare(`${right.candidate_id}|${right.scope_episode_ids_sha256}`))
     const currentBehaviorKeys = new Set(candidateMetrics.map(row => row.behavior_sha256).filter(value => HASH.test(String(value || ''))))
@@ -2774,8 +3116,13 @@ export async function authoritativeResearchRun(options = {}, { loadEvaluator = l
         for (const geneticRun of runs) for (const attempt of geneticRun?.population_history || []) if (HASH.test(String(attempt.evaluation_attempt_sha256 || ''))) geneticAttemptHashes.add(attempt.evaluation_attempt_sha256)
       }
     }
-    const run = withHash({ schema: 'strategy-research-run/5', version: 1, provenance: 'AUTHORITATIVE_RECOMPUTED', strategy_family_id: identity.strategy_family_id, strategy_version: identity.strategy_version, experiment_id: identity.experiment_id, evidence_phase: identity.evidence_phase, asset_set: identity.asset_set, pipeline: [...PIPELINE_V5], lineage: { manifest_sha256: manifest.content_sha256, envelope_sha256: envelopePhysical?.value.content_sha256 || null, opportunity_domain_sha256: opportunityDomainPhysical?.value.content_sha256 || null, opportunity_hydration_sha256: hydrationPhysical?.value.content_sha256 || null, opportunity_partition_root_sha256: v2Physical?.partition_bytes_root_sha256 || null, candidate_set_sha256: artifact.lineage.candidate_set_sha256, feature_rows_sha256: manifest.artifacts.feature.sha256, label_rows_sha256: manifest.artifacts.label.sha256, execution_rows_sha256: manifest.artifacts.execution.sha256, mark_rows_sha256: manifest.artifacts.mark.sha256, wfo_sha256: wfo.run.content_sha256 }, manifest_sha256: manifest.content_sha256, envelope_sha256: envelopePhysical?.value.content_sha256 || null, opportunity_domain_sha256: opportunityDomainPhysical?.value.content_sha256 || null, opportunity_hydration_sha256: hydrationPhysical?.value.content_sha256 || null, opportunity_partition_root_sha256: v2Physical?.partition_bytes_root_sha256 || null, cutoff: latestCutoff || null, feature_rows_sha256: manifest.artifacts.feature.sha256, label_rows_sha256: manifest.artifacts.label.sha256, execution_rows_sha256: manifest.artifacts.execution.sha256, mark_rows_sha256: manifest.artifacts.mark.sha256, candidate_metrics: candidateMetrics, accounting: { declared_k: artifact.candidates.length, evaluated_k: currentBehaviorKeys.size, current_evaluation_attempt_k: geneticAttemptHashes.size, current_evaluation_attempt_inventory_sha256: hash([...geneticAttemptHashes].sort()), cumulative_family_k: Number(wfo.run.cumulative_k || 0), candidate_metric_count: candidateMetrics.length, candidate_metric_inventory_sha256: hash(metricInventory), market_episode_count: artifact.episodes.length, zero_episode_binding: true }, wfo: { pass: wfo.run.gate_pass === true, status: wfo.run.decision, artifact: wfo.run.content_sha256 }, execution_fills_sha256: stageArtifacts.outputs.execution_fills.value.content_sha256, selected_trades_sha256: stageArtifacts.outputs.selected_trades.value.content_sha256, stresses_sha256: stageArtifacts.outputs.stresses.value.content_sha256, portfolio_sha256: stageArtifacts.outputs.portfolio.value.content_sha256, stage_artifacts: Object.fromEntries(Object.entries(stageArtifacts.outputs).map(([key, row]) => [key, row.value.content_sha256])), decision, gate_status: { wfo: wfo.run.gate_pass === true, stress: stressPass, portfolio: portfolioPass, all_required_stages: decision === 'SHADOW' && stressPass && portfolioPass } })
-    validateKnownContractSchema(run); result = { run, lineage: run.lineage, limitation: decision === 'SHADOW' ? 'SHADOW_ONLY: authoritative recomputation completed; activation is unavailable at this command boundary' : 'AUTHORITATIVE_RECOMPUTATION_COMPLETED_BUT_GATES_REJECTED', bound_hashes: boundHashes, wfo, stage_artifacts: stageArtifacts.outputs }; recomputed = true
+    const run = withHash({ schema: 'strategy-research-run/5', version: 1, provenance: 'AUTHORITATIVE_RECOMPUTED', strategy_family_id: identity.strategy_family_id, strategy_version: identity.strategy_version, experiment_id: identity.experiment_id, evidence_phase: identity.evidence_phase, asset_set: identity.asset_set, pipeline: [...PIPELINE_V5], lineage: { manifest_sha256: manifest.content_sha256, envelope_sha256: envelopePhysical?.value.content_sha256 || null, opportunity_domain_sha256: opportunityDomainPhysical?.value.content_sha256 || null, opportunity_hydration_sha256: hydrationPhysical?.value.content_sha256 || null, opportunity_partition_root_sha256: v2Physical?.partition_bytes_root_sha256 || null, candidate_set_sha256: artifact.lineage.candidate_set_sha256, feature_rows_sha256: manifest.artifacts.feature.sha256, label_rows_sha256: manifest.artifacts.label.sha256, execution_rows_sha256: manifest.artifacts.execution.sha256, mark_rows_sha256: manifest.artifacts.mark.sha256, wfo_sha256: wfo.run.content_sha256 }, manifest_sha256: manifest.content_sha256, envelope_sha256: envelopePhysical?.value.content_sha256 || null, opportunity_domain_sha256: opportunityDomainPhysical?.value.content_sha256 || null, opportunity_hydration_sha256: hydrationPhysical?.value.content_sha256 || null, opportunity_partition_root_sha256: v2Physical?.partition_bytes_root_sha256 || null, cutoff: latestCutoff || null, feature_rows_sha256: manifest.artifacts.feature.sha256, label_rows_sha256: manifest.artifacts.label.sha256, execution_rows_sha256: manifest.artifacts.execution.sha256, mark_rows_sha256: manifest.artifacts.mark.sha256, candidate_metrics: candidateMetrics, accounting: { declared_k: artifact.candidates.length, evaluated_k: currentBehaviorKeys.size, current_evaluation_attempt_k: geneticAttemptHashes.size, current_evaluation_attempt_inventory_sha256: hash([...geneticAttemptHashes].sort()), candidate_metric_count: candidateMetrics.length, candidate_metric_inventory_sha256: hash(metricInventory), market_episode_count: artifact.episodes.length, zero_episode_binding: true, cumulative_family_k: Number(wfo.run.cumulative_k || 0) }, wfo: { pass: wfo.run.gate_pass === true, status: wfo.run.decision, artifact: wfo.run.content_sha256 }, oos_artifact_sha256: stageArtifacts.outputs.final_oos_artifact.value.content_sha256, vector_inventory_sha256: stageArtifacts.outputs.final_oos_vector_inventory.value.content_sha256, oos_validation_exposure_head_sha256: wfo.run.validation_exposure_head_sha256, oos_episode_ids: [...wfo.run.oos_episode_ids], execution_fills_sha256: stageArtifacts.outputs.execution_fills.value.content_sha256, selected_trades_sha256: stageArtifacts.outputs.selected_trades.value.content_sha256, stresses_sha256: stageArtifacts.outputs.stresses.value.content_sha256, portfolio_sha256: stageArtifacts.outputs.portfolio.value.content_sha256, stage_artifacts: Object.fromEntries(Object.entries(stageArtifacts.outputs).map(([key, row]) => [key, row.value.content_sha256])), stage_artifact_refs: stageArtifactRefs, decision, gate_status: { wfo: wfo.run.gate_pass === true, stress: stressPass, portfolio: portfolioPass, all_required_stages: decision === 'SHADOW' && stressPass && portfolioPass } })
+    validateKnownContractSchema(run)
+    durableWfoPath = resolve(String(source.wfo_out || source.wfo || durableArtifactPath(source, wfo.run, 'wfo')))
+    const durableRunPath = resolve(String(source.out || durableArtifactPath(source, run, 'research-run')))
+    const publicationPath = resolve(String(source.publication_transaction || join(publicationTransactionRoot, `wfo-${run.content_sha256}.json`)))
+    writeStatisticalPublicationTransaction({ transactionPath: publicationPath, exposureHeadPath: resolve(String(headPath)), registryPath: behaviorRegistryPath, expectedHeadSha256: wfo.exposureHead.content_sha256, expectedRegistrySha256: behaviorRegistryState.content_sha256, nextHead: wfo.exposureHead, wfo: wfo.run, run, artifacts: [{ role: 'wfo', path: durableWfoPath, value: wfo.run }, { role: 'research_run', path: durableRunPath, value: run }, { role: 'final_oos_artifact', path: stageArtifacts.outputs.final_oos_artifact.path, value: stageArtifacts.outputs.final_oos_artifact.value }, { role: 'final_oos_vector_inventory', path: stageArtifacts.outputs.final_oos_vector_inventory.path, value: stageArtifacts.outputs.final_oos_vector_inventory.value }] })
+    result = { run, lineage: run.lineage, limitation: decision === 'SHADOW' ? 'SHADOW_ONLY: authoritative recomputation completed; activation is unavailable at this command boundary' : 'AUTHORITATIVE_RECOMPUTATION_COMPLETED_BUT_GATES_REJECTED', bound_hashes: boundHashes, wfo, wfo_path: durableWfoPath, publication_transaction_path: publicationPath, stage_artifacts: stageArtifacts.outputs }; recomputed = true
   } catch (error) {
     if (!String(error.message).startsWith('AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE')) throw error
     blocked = true
@@ -2783,7 +3130,14 @@ export async function authoritativeResearchRun(options = {}, { loadEvaluator = l
   } finally {
     if (loaded && typeof loaded.close === 'function') loaded.close(); else if (loaded?.evaluator && typeof loaded.evaluator.close === 'function') loaded.evaluator.close()
   }
-  const outputs = []; { const path = writeImmutable(source.out || durableArtifactPath(source, result.run, 'research-run'), result.run); outputs.push(reference(path, 'research_run', result.run)) }
+  const outputs = []; if (durableWfoPath && result.wfo?.run) outputs.push(reference(durableWfoPath, 'wfo', result.wfo.run)); { const path = writeImmutable(source.out || durableArtifactPath(source, result.run, 'research-run'), result.run); outputs.push(reference(path, 'research_run', result.run)) }
+  if (recomputed) {
+    for (const role of ['final_oos_artifact', 'final_oos_vector_inventory']) {
+      const artifact = result.stage_artifacts?.[role]
+      if (!artifact?.path || !artifact?.value) fail(`AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: published ${role} is missing its physical stage artifact`)
+      outputs.push(reference(artifact.path, role, artifact.value))
+    }
+  }
   if (behaviorRegistryPhysical) outputs.push(reference(behaviorRegistryPhysical.path, 'behavior_definition_registry'))
   if (source.evidence) {
     const stressArtifacts = result.stage_artifacts?.stresses?.value ? [result.stage_artifacts.stresses.value.content_sha256] : []; const portfolioArtifact = result.stage_artifacts?.portfolio?.value?.content_sha256 || null
@@ -2792,7 +3146,7 @@ export async function authoritativeResearchRun(options = {}, { loadEvaluator = l
   }
   const checkpointReceiptPath = source.checkpoint || (source.checkpoint_dir ? `${String(source.checkpoint_dir).replace(/\/$/, '')}/genetic-checkpoint.json` : null)
   const inputs = [reference(planPhysical.path, 'plan'), reference(manifestPhysical.path, 'parquet_manifest'), ...(evaluatorPhysical ? [reference(evaluatorPhysical.path, 'evaluator_spec')] : []), ...(precommitPhysical ? [reference(precommitPhysical.path, 'precommit')] : []), ...(experimentPhysical ? [reference(experimentPhysical.path, 'experiment')] : []), ...(genePhysical ? [reference(genePhysical.path, 'gene_space')] : []), ...(predictorPhysical ? [reference(predictorPhysical.path, 'predictor_registry')] : []), ...(metadataPhysical ? [reference(metadataPhysical.path, 'metadata')] : []), ...(headPath ? [reference(headPath, 'exposure_head')] : []), ...(checkpointReceiptPath && existsSync(resolve(String(checkpointReceiptPath))) ? [reference(checkpointReceiptPath, 'checkpoint')] : []), ...(envelopePhysical ? [reference(envelopePhysical.path, 'opportunity_envelope')] : []), ...(hydrationPhysical ? [reference(hydrationPhysical.path, 'opportunity_hydration')] : []), ...(artifactPhysical ? [reference(artifactPhysical.path, 'statistical_artifact')] : []), ...(existsSync(behaviorRegistryPath) ? [reference(behaviorRegistryPath, 'behavior_definition_registry_prior')] : [])]
-  const status = blocked ? 'BLOCKED' : result.run.decision === 'SHADOW' ? 'COMPLETE' : 'REJECTED'; const receipt = makeCommandReceipt({ command: 'research-run', status, inputs, outputs, limitations: [result.limitation], details: { mode: recomputed ? 'AUTHORITATIVE_PHYSICAL_RECOMPUTATION' : 'FAIL_CLOSED_RECOMPUTATION', pipeline: PIPELINE_V5, bound_hashes: result.bound_hashes, active: false } })
+  const status = blocked ? 'BLOCKED' : result.run.decision === 'SHADOW' ? 'COMPLETE' : 'REJECTED'; const receipt = makeCommandReceipt({ command: 'research-run', status, inputs, outputs, limitations: [result.limitation], details: { mode: recomputed ? 'AUTHORITATIVE_PHYSICAL_RECOMPUTATION' : 'FAIL_CLOSED_RECOMPUTATION', pipeline: PIPELINE_V5, bound_hashes: result.bound_hashes, publication_artifacts: recomputed ? ['wfo', 'research_run', 'final_oos_artifact', 'final_oos_vector_inventory'] : [], publication_transaction_path: recomputed ? portablePath(result.publication_transaction_path) : null, active: false } })
   return outputReceipt('research-run', receipt, result, { receipt: source.receipt || source.receipt_out, record_root: source.record_root || source.recordRoot })
 }
 
@@ -2944,6 +3298,13 @@ export function authoritativeProspectiveRunner(options = {}) {
   const ledgerHead = physicalJson(join(resolve(String(effectiveOptions.ledger)), 'HEAD.json'), { label: 'prospective ledger CAS head' }); if (ledgerHead.value.head_sha256 !== effectiveOptions.expected_head_sha256) fail('prospective ledger CAS head differs from --expected-head-sha256')
   const inputs = [effectiveOptions.source_bundle ? reference(effectiveOptions.source_bundle, 'source_bundle') : null, reference(reservation.path, 'reservation'), reference(source.path, 'source_receipt'), reference(bar.path, 'completed_bar'), reference(feature.path, 'feature_input'), reference(candidateSet.path, 'candidate_set'), reference(evaluatorCode.path, 'evaluator_code'), reference(signal.path, 'signal_decision')].filter(Boolean)
   try {
+    const ledgerBefore = readProspectiveLedger(effectiveOptions.ledger, { nowAt: effectiveOptions.now_at ? Date.parse(effectiveOptions.now_at) : Date.now(), allowFuture: true })
+    // A repeated hourly invocation over the same completed 4h bar produces a
+    // durable receipt but never mutates the append-only ledger or opens a PR.
+    if (verifyCompletedBarNoOp({ ledger: ledgerBefore, bar: bar.value, sourceReceiptSha256: source.byte_sha256, signalDecisionSha256: signal.byte_sha256, reservationSha256: reservation.byte_sha256, candidateSetSha256: candidateSet.byte_sha256, evaluatorCodeSha256: evaluatorCode.byte_sha256, featureInputSha256: feature.byte_sha256 })) {
+      const receipt = makeCommandReceipt({ command: 'prospective-runner', status: 'COMPLETE', inputs, outputs: [], limitations: ['NO_NEW_COMPLETED_BAR: exact latest completed 4h bar and all source/decision bindings already exist; no append or PR created'], details: { mode: 'NO_NEW_COMPLETED_BAR', no_new_completed_bar: true, ledger_head_sha256: ledgerBefore.current_head_sha256, ledger_sequence: ledgerBefore.sequence, active: false } })
+      return { result: null, receipt, status: 'NO_NEW_COMPLETED_BAR', no_op: true, receipt_path: writeImmutable(durableReceiptPath(receipt, effectiveOptions), receipt) }
+    }
     const result = appendCompletedBarCycle({ path: effectiveOptions.ledger, reservationPath: reservation.path, reservationSha256: reservation.byte_sha256, sourceReceiptPath: source.path, sourceReceiptSha256: source.byte_sha256, featureInputPath: feature.path, featureInputSha256: feature.byte_sha256, candidateSetPath: candidateSet.path, candidateSetSha256: candidateSet.byte_sha256, evaluatorCodePath: evaluatorCode.path, evaluatorCodeSha256: evaluatorCode.byte_sha256, signalDecisionPath: signal.path, signalDecisionSha256: signal.byte_sha256, bar: bar.value, expectedHeadSha256: effectiveOptions.expected_head_sha256, nowAt: effectiveOptions.now_at ? Date.parse(effectiveOptions.now_at) : Date.now() })
     const ledgerHeadPath = join(resolve(String(effectiveOptions.ledger)), 'HEAD.json')
     const ledgerAfter = readProspectiveLedger(effectiveOptions.ledger, { nowAt: effectiveOptions.now_at ? Date.parse(effectiveOptions.now_at) : Date.now(), allowFuture: true })
@@ -3011,6 +3372,13 @@ function isAuthoritativeV5Schema(schema) {
 
 function strictValidate(value, legacyValidate = null) {
   if (!value?.schema) fail('schema registry does not recognize ?')
+  // The first research index predates the schema registry and is retained as
+  // an immutable historical view.  It is read-only compatibility evidence,
+  // never a v5 record or a source of new exposure state.
+  if (value.schema === 'strategy-research-index/1') {
+    if (!Array.isArray(value.definitions) || !Array.isArray(value.experiments) || !Array.isArray(value.runs)) fail('legacy strategy-research-index/1 records are invalid')
+    return true
+  }
   if (!isAuthoritativeV5Schema(value.schema)) {
     if (!LEGACY_V1_V4_ALLOWLIST.has(value.schema)) fail(`legacy schema is not allowed at the v5 boundary: ${value.schema}`)
     if (legacyValidate) {
@@ -3106,36 +3474,65 @@ function indexMetadata(value) {
   }
 }
 
+function publicationIndexControlPath(path, root) { const rel = relative(resolve(root), resolve(path)).replaceAll('\\', '/'); return rel.split('/').some(part => part === 'transactions' || part === '.transactions' || part === 'stage' || part.endsWith('.stage') || part.endsWith('.lock')) }
+function publicationIndexJournalControlPath(path, root) { const rel = relative(resolve(root), resolve(path)).replaceAll('\\', '/'); return rel.split('/').some(part => part === 'stage' || part.endsWith('.stage') || part.endsWith('.lock')) }
+function publicationIndexInside(root, path) { const base = resolve(root); const target = resolve(path); return target === base || target.startsWith(`${base}${sep}`) }
+function publicationIndexInventory(root) {
+  const owned = new Set(); const committed = new Set(); const journals = []
+  const walk = directory => { if (!existsSync(directory)) return; for (const entry of readdirSync(directory, { withFileTypes: true })) { const path = resolve(directory, entry.name); if (entry.isDirectory()) { if (!publicationIndexJournalControlPath(path, root)) walk(path); continue }; if (!entry.isFile() || !entry.name.endsWith('.json')) continue; const rel = relative(resolve(root), path).replaceAll('\\', '/'); const inTransactionDir = rel.split('/').includes('transactions') || rel.split('/').includes('.transactions'); let value; try { value = JSON.parse(readFileSync(path, 'utf8')) } catch (error) { if (inTransactionDir) throw new Error(`publication transaction journal is unreadable: ${path}: ${error.message}`); continue }; if (inTransactionDir && value?.schema !== 'strategy-v5-statistical-publication-transaction/1') throw new Error(`unexpected JSON control file under publication transaction directory: ${path}`); if (value?.schema !== 'strategy-v5-statistical-publication-transaction/1') continue; try { validateStatisticalContractSchema(value); if (value.transaction_path !== rel) throw new Error(`transaction_path does not match the physical record-root-relative journal path (${rel})`); journals.push({ value, path }) } catch (error) { throw new Error(`publication transaction journal is not verifiable: ${path}: ${error.message}`) } } }
+  walk(resolve(root))
+  for (const { value: journal, path: journalPath } of journals) {
+    let verified = null
+    if (journal.status === 'COMMITTED') {
+      try { verified = verifyCommittedStatisticalPublication({ journal, journalPath, recordRoot: root }) } catch (error) { throw new Error(`publication committed inventory is not verifiable: ${journal.transaction_path}: ${error.message}`) }
+    }
+    for (const ref of journal.artifact_refs) { const target = resolve(root, ref.path); if (!publicationIndexInside(root, target)) throw new Error(`publication artifact path escapes the record root: ${ref.path}`); owned.add(target); if (verified?.artifactPaths?.[ref.role] === target) committed.add(target) }
+  }
+  return { owned, committed }
+}
+function publicationIndexArtifactPath(path, value, root) { return publicationIndexInside(root, path) && (value?.schema === 'strategy-v5-statistical-wfo/1' || value?.schema === 'strategy-research-run/5') }
 function deterministicIndex(root, legacyValidate = null, legacyIndex = null, outputPath = null) {
   const base = resolve(root); const output = outputPath ? resolve(String(outputPath)) : null; const rows = []; const contentBytes = new Map()
+  const publication = publicationIndexInventory(base)
   const walk = directory => {
     if (!existsSync(directory)) return
     for (const entry of readdirSync(directory, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
       const path = resolve(directory, entry.name)
       if (entry.isDirectory()) {
-        if (entry.name === 'receipts') continue
+        if (entry.name === 'receipts' || publicationIndexControlPath(path, base)) continue
         walk(path)
         continue
       }
-      if (!entry.isFile() || !entry.name.endsWith('.json') || (output && path === output)) continue
+      if (!entry.isFile() || !entry.name.endsWith('.json') || (output && path === output) || publication.owned.has(path) && !publication.committed.has(path) || publicationIndexArtifactPath(path, null, base) && !publication.committed.has(path)) continue
       const bytes = readFileSync(path)
       const value = readJson(path, 'indexed artifact')
+      // Production statistical WFO/run bytes are visible only through their
+      // verified COMMITTED publication inventory, regardless of which
+      // subdirectory a caller chooses.  A loose copy at the record root (or
+      // outside the conventional artifacts/ directory) is not evidence.
+      if (publicationIndexArtifactPath(path, value, base) && !publication.committed.has(path)) continue
       strictValidate(value, legacyValidate)
-      if (!HASH.test(String(value.content_sha256 || ''))) fail(`indexed artifact has no content hash: ${relative(base, path)}`)
       // Index artifacts are registry views, not evidence records.  Validate
       // them for retained-hash integrity, but never index one (including an
       // older v1-v4 view when a custom --out path is used), otherwise a
       // rebuild can become self-referential or accumulate stale index rows.
       if (String(value.schema || '').startsWith('strategy-research-index/')) {
-        const canonicalBytes = Buffer.from(`${JSON.stringify(value, null, 2)}\n`)
-        if (hash(bytes) !== hash(canonicalBytes)) fail(`index physical bytes are tampered: ${relative(base, path)}`)
+        if (value.content_sha256) {
+          const canonicalBytes = Buffer.from(`${JSON.stringify(value, null, 2)}\n`)
+          if (hash(bytes) !== hash(canonicalBytes)) fail(`index physical bytes are tampered: ${relative(base, path)}`)
+        }
         continue
       }
       const byteSha = hash(bytes)
-      const prior = contentBytes.get(value.content_sha256)
+      // Historical v1-v4 definitions/experiments/candidate sets predate the
+      // v5 content-addressed field.  Their immutable physical byte hash is
+      // the only safe index identity; do not rewrite or inject a hash into
+      // the legacy source file itself.
+      const contentSha = HASH.test(String(value.content_sha256 || '')) ? value.content_sha256 : byteSha
+      const prior = contentBytes.get(contentSha)
       if (prior && prior !== byteSha) fail(`content collision: ${value.content_sha256} has different physical bytes`)
-      contentBytes.set(value.content_sha256, byteSha)
-      rows.push({ schema: value.schema, content_sha256: value.content_sha256, byte_sha256: byteSha, path: relative(base, path).replaceAll('\\', '/'), ...indexMetadata(value) })
+      contentBytes.set(contentSha, byteSha)
+      rows.push({ schema: value.schema, content_sha256: contentSha, byte_sha256: byteSha, path: relative(base, path).replaceAll('\\', '/'), ...indexMetadata(value) })
     }
   }
   walk(base)
@@ -3182,6 +3579,7 @@ function authoritativeReadinessAudit(options = {}) {
 
 export async function runAuthoritativeV5Cli(command, options = {}, { legacyValidate = null, legacyIndex = null } = {}) {
   if (command === 'data-backfill') return authoritativeDataBackfill(options)
+  if (command === 'data-raw-replay' || command === 'data-local-raw-replay') return authoritativeDataRawReplay(options)
   if (command === 'opportunity-envelope') return authoritativeOpportunityEnvelope(options)
   if (command === 'search-genetic') return authoritativeSearchGenetic(options)
   if (command === 'research-run') return authoritativeResearchRun(options)
@@ -3212,6 +3610,7 @@ export async function runAuthoritativeV5Cli(command, options = {}, { legacyValid
 // sibling strategy-research-next entry point without exposing the old loose
 // CLI helpers.
 export const runDataBackfillV5 = authoritativeDataBackfill
+export const runDataRawReplayV5 = authoritativeDataRawReplay
 export const runOpportunityEnvelopeV5 = authoritativeOpportunityEnvelope
 export const runSearchGeneticV5 = authoritativeSearchGenetic
 export const runResearchRunV5 = authoritativeResearchRun

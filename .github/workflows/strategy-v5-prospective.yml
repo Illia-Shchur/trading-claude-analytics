@@ -19,9 +19,12 @@ permissions: {}
 env:
   V5_EVIDENCE_BRANCH: strategy-v5-evidence
   V5_ATTESTATION_KEY_REGISTRY_PATH: strategy-research/config/v5-attestation-key-registry.json
+  V5_EVIDENCE_BOOTSTRAP: ${{ vars.V5_EVIDENCE_BOOTSTRAP }}
 
 jobs:
   preflight:
+    outputs:
+      no_new_completed_bar: ${{ steps.cycle-noop.outputs.no_new_completed_bar }}
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -34,19 +37,30 @@ jobs:
           fetch-depth: 1
       - name: Install pinned dependencies
         if: always()
-        run: npm ci
+        run: npm ci --ignore-scripts
+      - name: Mint protected settings-auditor App token
+        id: settings-auditor-token
+        uses: actions/create-github-app-token@df432ceedc7162793a195dd1713ff69aefc7379e
+        with:
+          app-id: 4716635
+          private-key: ${{ secrets.V5_GITHUB_SETTINGS_AUDITOR_APP_PRIVATE_KEY_PEM }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
       - name: Capture GitHub settings and OIDC evidence
         if: always()
         continue-on-error: true
         env:
-          GH_TOKEN: ${{ secrets.V5_GITHUB_SETTINGS_PAT }}
+          GH_TOKEN: ${{ steps.settings-auditor-token.outputs.token }}
           V5_REQUIRE_SETTINGS_TOKEN: 'true'
-          V5_SETTINGS_TOKEN_KIND: PAT
-          V5_SETTINGS_TOKEN_USER_ID: ${{ vars.V5_SETTINGS_TOKEN_USER_ID }}
-          V5_SETTINGS_TOKEN_LOGIN: ${{ vars.V5_SETTINGS_TOKEN_LOGIN }}
-          V5_SETTINGS_TOKEN_SECRET_NAME: ${{ vars.V5_SETTINGS_TOKEN_SECRET_NAME }}
+          V5_REQUIRE_SETTINGS_AUDITOR: 'true'
+          V5_SETTINGS_TOKEN_KIND: 'APP'
+          V5_SETTINGS_AUDITOR_APP_ID: '4716635'
+          V5_SETTINGS_AUDITOR_INSTALLATION_ID: '156531963'
+          V5_GITHUB_SETTINGS_AUDITOR_APP_PRIVATE_KEY_PEM: ${{ secrets.V5_GITHUB_SETTINGS_AUDITOR_APP_PRIVATE_KEY_PEM }}
+          V5_GITHUB_SETTINGS_APP_ID: '4716635'
           V5_REPOSITORY_OWNER_ID: ${{ vars.V5_REPOSITORY_OWNER_ID }}
           V5_REPOSITORY_VISIBILITY: ${{ vars.V5_REPOSITORY_VISIBILITY }}
+          V5_EVIDENCE_WRITER_APP_ID: '4716299'
           V5_ACTIONS_ATTESTATION_SECRET_NAME: ${{ vars.V5_ACTIONS_ATTESTATION_SECRET_NAME }}
         run: |
           node tools/capture-github-settings.mjs
@@ -71,10 +85,11 @@ jobs:
             const relativePath = repositoryRelativePath(path, label)
             return existsSync(resolve(root, relativePath)) ? readConfinedJson(root, relativePath, label).value : {}
           }
+          const loadList = (path, label) => { const value = load(path, label); return Array.isArray(value) ? value : (Array.isArray(value?.approvals) ? value.approvals : []) }
           const capture = existsSync('github-deployment-settings-capture.json') ? JSON.parse(readFileSync('github-deployment-settings-capture.json', 'utf8')) : makeDeploymentSettingsCaptureV5({ githubApiResponse: { status: 0, body: {} }, oidcSubject: null })
-          const audit = makeDeploymentAuditV5({ settings: {}, settingsCapture: capture, keys: load(process.env.V5_PUBLIC_KEYS_PATH, 'v5 public-key registry'), approvals: load(process.env.V5_APPROVALS_PATH, 'v5 approvals'), trustRoot: load(process.env.V5_TRUST_ROOT_PATH, 'v5 trust root') })
+          const audit = makeDeploymentAuditV5({ settings: {}, settingsCapture: capture, keys: load(process.env.V5_PUBLIC_KEYS_PATH, 'v5 public-key registry'), approvals: loadList(process.env.V5_APPROVALS_PATH, 'v5 approvals'), trustRoot: load(process.env.V5_TRUST_ROOT_PATH, 'v5 trust root') })
           writeFileSync('v5-deployment-audit-early.json', JSON.stringify(audit, null, 2) + '\\n')
-          if (audit.blocked) process.exitCode = 1
+          if (audit.blocked && audit.shadow_append_eligible !== true) process.exitCode = 1
           NODE
       - name: Emit blocked diagnostic when custody audit is unavailable
         if: always()
@@ -90,21 +105,29 @@ jobs:
         run: |
           rm -rf .v5-evidence-state .v5-ledger
           mkdir -p .v5-evidence-state
-          if git fetch --no-tags --depth=1 origin strategy-v5-evidence; then
+          bundle="${V5_SOURCE_BUNDLE_INPUT:-}"
+          if [ -z "$bundle" ]; then bundle="${V5_PROSPECTIVE_SOURCE_BUNDLE:-}"; fi
+          remote_ref="$(git ls-remote origin "refs/heads/strategy-v5-evidence")" || { echo 'Unable to fetch the protected strategy-v5-evidence branch; refusing to reset custody to genesis.' >&2; exit 1; }
+          if [ -n "$remote_ref" ]; then
+            git fetch --no-tags --depth=1 origin strategy-v5-evidence
             git archive --format=tar origin/strategy-v5-evidence > .v5-evidence-state.tar
             node --input-type=module <<'NODE'
           import { verifyTarArchive } from './tools/strategy-v5-workflow-security.mjs'
-          verifyTarArchive('.v5-evidence-state.tar', 'strategy-v5 evidence archive')
+          // The historical branch is a full repository archive.  Apply
+          // JSON/byte custody ceilings only to the proposed evidence subtree;
+          // retain archive metadata/path/symlink checks for the repository.
+          verifyTarArchive('.v5-evidence-state.tar', 'strategy-v5 evidence archive', { evidenceOnly: false })
           NODE
             tar -x --no-same-owner --no-same-permissions -f .v5-evidence-state.tar -C .v5-evidence-state
             node --input-type=module <<'NODE'
-          import { copyFileSync, existsSync, readFileSync, readdirSync } from 'node:fs'
+          import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
           import { basename, join, resolve } from 'node:path'
           import { readProspectiveLedger } from './tools/strategy-prospective-v5.mjs'
-          import { ownHash } from './tools/strategy-readiness-v5.mjs'
+          import { hash, ownHash } from './tools/strategy-readiness-v5.mjs'
           import { validateContractSchema } from './tools/research-schema-registry.mjs'
+          import { verifyWriterInstallationReceipt } from './tools/verify-evidence-writer-installation.mjs'
           import { copyConfinedDirectory, selectProspectiveLedgerCandidateV5, verifySafeTree } from './tools/strategy-v5-workflow-security.mjs'
-          verifySafeTree('.v5-evidence-state', 'strategy-v5 evidence checkout')
+          verifySafeTree('.v5-evidence-state', 'strategy-v5 evidence checkout', { evidenceOnly: false })
           const settingsCandidates = []
           const settingsWalk = directory => {
             if (!existsSync(directory)) return
@@ -118,7 +141,8 @@ jobs:
                   const capture = JSON.parse(readFileSync(path, 'utf8')); const api = JSON.parse(readFileSync(apiPath, 'utf8'))
                   if (capture.schema !== 'github-deployment-settings-capture/1' || capture.content_sha256 !== ownHash(capture) || api.schema !== 'github-settings-api-receipt/1' || api.content_sha256 !== ownHash(api)) throw new Error('settings/API baseline hash or schema is invalid')
                   validateContractSchema(capture); validateContractSchema(api)
-                  settingsCandidates.push({ path, apiPath, capturedAt: Date.parse(capture.captured_at), captureSha: capture.content_sha256, apiSha: api.content_sha256 })
+                  const writerPath = join(directory, 'github-writer-installation-receipt.json'); if (existsSync(writerPath)) { const writer = JSON.parse(readFileSync(writerPath, 'utf8')); if (!verifyWriterInstallationReceipt(writer, { repository: capture.repository, repositoryId: capture.repository_id, appId: capture.rulesets?.evidence_writer_app_id })) throw new Error('historical writer-App installation receipt is invalid or not capture-bound') }
+                  settingsCandidates.push({ path, apiPath, writerPath: existsSync(writerPath) ? writerPath : null, capturedAt: Date.parse(capture.captured_at), captureSha: capture.content_sha256, apiSha: api.content_sha256 })
                 } catch (error) { throw new Error(`invalid historical GitHub settings baseline ${path}: ${error.message}`) }
               }
             }
@@ -130,6 +154,7 @@ jobs:
             if (settingsCandidates.filter(row => row.capturedAt === selected.capturedAt && row.captureSha !== selected.captureSha).length) throw new Error('competing GitHub settings baselines share a capture timestamp')
             copyFileSync(selected.path, resolve('.v5-previous-settings-capture.json'))
             copyFileSync(selected.apiPath, resolve('.v5-previous-settings-api-receipt.json'))
+            if (selected.writerPath) copyFileSync(selected.writerPath, resolve('.v5-previous-writer-installation-receipt.json'))
           }
           const roots = []
           const walk = directory => {
@@ -149,16 +174,27 @@ jobs:
             } catch (error) { throw new Error(`invalid historical ledger ${path}: ${error.message}`) }
           }
           const selected = selectProspectiveLedgerCandidateV5(candidates)
-          if (selected) copyConfinedDirectory(selected.path, resolve('.v5-ledger'), 'prospective ledger')
+          if (selected) {
+            // Hydrate the selected delta chain into the private working ledger
+            // before the next append.  Published roots remain O(delta): each
+            // root carries only its new event files, while this ephemeral
+            // ledger has the complete immutable prefix required by append CAS.
+            const ledger = readProspectiveLedger(selected.path, { nowAt: Date.now(), allowFuture: true })
+            mkdirSync(resolve('.v5-ledger/events'), { recursive: true })
+            const eventRefs = ledger.events.map(event => { const bytes = Buffer.from(`${JSON.stringify(event, null, 2)}\n`); const name = `events/${String(event.sequence).padStart(12, '0')}-${event.event_sha256}.json`; writeFileSync(resolve('.v5-ledger', name), bytes, { flag: 'wx' }); return { sequence: event.sequence, event_sha256: event.event_sha256, byte_sha256: hash(bytes), path: name } })
+            const sourceHead = JSON.parse(readFileSync(join(selected.path, 'HEAD.json'), 'utf8')); const hydratedHead = { ...sourceHead, prior_snapshot_root: null, prior_head_sha256: null, sequence: ledger.sequence, head_sha256: ledger.current_head_sha256, event_refs: eventRefs, content_sha256: null }; hydratedHead.content_sha256 = ownHash(hydratedHead); writeFileSync(resolve('.v5-ledger/HEAD.json'), `${JSON.stringify(hydratedHead, null, 2)}\n`, { flag: 'wx' })
+          }
           process.stdout.write(JSON.stringify({ candidates: candidates.length, selected }) + '\n')
           NODE
             rm -f .v5-evidence-state.tar
           else
-            echo 'Unable to fetch the protected strategy-v5-evidence branch; refusing to reset custody to genesis.' >&2
+            if [ "$V5_EVIDENCE_BOOTSTRAP" != 'true' ] || [ -z "$bundle" ]; then
+              echo 'Unable to fetch the protected strategy-v5-evidence branch; refusing to reset custody to genesis without explicit bootstrap and source bundle.' >&2
+              exit 1
+            fi
+            echo 'No protected evidence branch exists; an operator must create the protected base branch before this workflow can append evidence.' >&2
             exit 1
           fi
-          bundle="${V5_SOURCE_BUNDLE_INPUT:-}"
-          if [ -z "$bundle" ]; then bundle="${V5_PROSPECTIVE_SOURCE_BUNDLE:-}"; fi
           if [ -n "$bundle" ]; then
             V5_BUNDLE_PATH="$bundle" node --input-type=module <<'NODE'
           import { existsSync } from 'node:fs'
@@ -223,8 +259,14 @@ jobs:
         if: always()
         run: |
           node --input-type=module -e "import {existsSync,readFileSync} from 'node:fs'; if(!existsSync('v5-shadow-cycle-receipt.json')){console.error('Missing SHADOW cycle receipt');process.exit(1)}; const receipt=JSON.parse(readFileSync('v5-shadow-cycle-receipt.json','utf8')); if(receipt.schema!=='strategy-v5-authoritative-command-receipt/1'){console.error('Cycle receipt schema is invalid');process.exit(1)}; if(receipt.status==='COMPLETE'&&receipt.details?.active===false)process.exit(0); if(receipt.status==='BLOCKED'&&receipt.limitations?.includes('PROSPECTIVE_LIVE_SOURCE_UNCONFIGURED')){console.error('PROSPECTIVE_LIVE_SOURCE_UNCONFIGURED: no verified frozen Binance adapter is configured');process.exit(1)}; console.error('Completed-bar SHADOW cycle is blocked: '+(receipt.limitations||[]).join('; '));process.exit(1)"
-      - name: Require cryptographic Actions attestation
+      - name: Detect an exact no-new completed-bar cycle
+        id: cycle-noop
         if: always()
+        run: |
+          no_new="$(node --input-type=module -e "import {readFileSync} from 'node:fs'; const r=JSON.parse(readFileSync('v5-shadow-cycle-receipt.json','utf8')); process.stdout.write(r.details?.mode==='NO_NEW_COMPLETED_BAR' && r.details?.no_new_completed_bar===true ? 'true' : 'false')")"
+          echo "no_new_completed_bar=$no_new" >> "$GITHUB_OUTPUT"
+      - name: Require cryptographic Actions attestation
+        if: always() && steps.cycle-noop.outputs.no_new_completed_bar != 'true'
         env:
           ACTIONS_ATTESTATION_PRIVATE_KEY_B64: ${{ secrets.PROD_V5_ACTIONS_ATTESTATION_PRIVATE_KEY_B64 }}
           V5_ATTESTATION_KEY_REGISTRY_PATH: ${{ env.V5_ATTESTATION_KEY_REGISTRY_PATH }}
@@ -245,8 +287,19 @@ jobs:
           else
             echo 'SHADOW cycle is blocked; no attestation can unlock publication.'
           fi
+      - name: Record verified no-transition cycle
+        if: always() && steps.cycle-noop.outputs.no_new_completed_bar == 'true'
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync } from 'node:fs'
+          import { ownHash, withHash } from './tools/strategy-research-v5.mjs'
+          const early = JSON.parse(readFileSync('v5-deployment-audit-early.json', 'utf8'))
+          if (early.content_sha256 !== ownHash(early)) throw new Error('early deployment audit is tampered')
+          const audit = withHash({ ...early, checks: { ...early.checks, no_new_completed_bar: true }, shadow_append_eligible: false, activation_eligible: false, blocked: false, reason: 'NO_NEW_COMPLETED_BAR: no append, attestation, publication, or deployment transition was requested', blocked_until_external_prerequisites: false })
+          writeFileSync('v5-deployment-audit.json', JSON.stringify(audit, null, 2) + '\n', { flag: 'wx' })
+          NODE
       - name: Recompute final deployment audit from post-cycle evidence
-        if: always()
+        if: always() && steps.cycle-noop.outputs.no_new_completed_bar != 'true'
         env:
           V5_PUBLIC_KEYS_PATH: ${{ vars.V5_PUBLIC_KEYS_PATH }}
           V5_APPROVALS_PATH: ${{ vars.V5_APPROVALS_PATH }}
@@ -270,6 +323,7 @@ jobs:
             const relativePath = repositoryRelativePath(path, label)
             return existsSync(resolve(root, relativePath)) ? readConfinedJson(root, relativePath, label).value : {}
           }
+          const loadList = (path, label) => { const value = load(path, label); return Array.isArray(value) ? value : (Array.isArray(value?.approvals) ? value.approvals : []) }
           const ref = (path, label) => {
             if (!path) return undefined
             const relativePath = repositoryRelativePath(path, label)
@@ -291,13 +345,13 @@ jobs:
           const audit = makeDeploymentAuditV5({
             settings,
             keys: load(process.env.V5_PUBLIC_KEYS_PATH, 'v5 public-key registry'),
-            approvals: load(process.env.V5_APPROVALS_PATH, 'v5 approvals'),
+            approvals: loadList(process.env.V5_APPROVALS_PATH, 'v5 approvals'),
             trustRoot: load(process.env.V5_TRUST_ROOT_PATH, 'v5 trust root'),
             pinnedTrustRootFingerprint: process.env.V5_TRUST_ROOT_FINGERPRINT || null,
             pinnedTrustRootGenesisFingerprint: process.env.V5_TRUST_ROOT_GENESIS_FINGERPRINT || null,
           })
           writeFileSync('v5-deployment-audit.json', JSON.stringify(audit, null, 2) + '\n')
-          if (audit.blocked) process.exitCode = 1
+          if (audit.blocked && audit.shadow_append_eligible !== true) process.exitCode = 1
           NODE
       - name: Upload blocked deployment audit and SHADOW cycle
         if: always()
@@ -321,41 +375,68 @@ jobs:
       - name: Keep activation fail-closed
         if: always()
         run: |
-          node --input-type=module -e "import {existsSync,readFileSync} from 'node:fs'; if (!existsSync('v5-deployment-audit.json')) { console.error('Missing deployment audit; blocked.'); process.exit(1) }; const audit=JSON.parse(readFileSync('v5-deployment-audit.json','utf8')); if (audit.blocked !== false) { console.error('Deployment custody is not proven; remain blocked.'); process.exit(1) }"
+          node --input-type=module -e "import {existsSync,readFileSync} from 'node:fs'; if (!existsSync('v5-deployment-audit.json')) { console.error('Missing deployment audit; blocked.'); process.exit(1) }; const audit=JSON.parse(readFileSync('v5-deployment-audit.json','utf8')); if (audit.blocked !== false && audit.shadow_append_eligible !== true) { console.error('Deployment custody is not append-eligible; remain blocked.'); process.exit(1) }; if (audit.blocked === true) console.log('Activation remains blocked; appending verified SHADOW evidence is permitted.');"
       # The workflow deliberately stops until the deployment audit is backed
       # by real protected settings, OIDC identity, approval keys and offline
       # activation-root verification. It never prints or commits secrets.
 
   append-protected-evidence:
     needs: preflight
-    if: needs.preflight.result == 'success'
+    if: needs.preflight.result == 'success' && needs.preflight.outputs.no_new_completed_bar != 'true'
     runs-on: ubuntu-24.04
+    # This is a separate protected environment because the append job must
+    # mint a dedicated writer-App token.  It must never receive the preflight
+    # attestation/settings secrets or push with GITHUB_TOKEN.
+    environment: evidence-writer-v5
     concurrency:
       group: strategy-v5-evidence-append
       cancel-in-progress: false
     permissions:
-      contents: write
+      contents: read
     steps:
+      - name: Mint protected evidence-writer App token
+        id: evidence-writer-token
+        uses: actions/create-github-app-token@df432ceedc7162793a195dd1713ff69aefc7379e
+        with:
+          app-id: 4716299
+          private-key: ${{ secrets.V5_EVIDENCE_WRITER_APP_PRIVATE_KEY_PEM }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 0
           ref: strategy-v5-evidence
           path: evidence-worktree
+          token: ${{ steps.evidence-writer-token.outputs.token }}
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 1
           ref: ${{ github.sha }}
           path: verifier-worktree
+          token: ${{ github.token }}
+          persist-credentials: false
       - name: Install pinned verifier dependencies
         working-directory: verifier-worktree
-        run: npm ci
+        run: npm ci --ignore-scripts
+      - name: Prove the freshly minted writer-App installation
+        env:
+          GH_TOKEN: ${{ steps.evidence-writer-token.outputs.token }}
+          GITHUB_REPOSITORY_ID: ${{ github.event.repository.id }}
+          V5_EVIDENCE_WRITER_APP_ID: '4716299'
+          V5_EVIDENCE_WRITER_APP_SLUG: ${{ steps.evidence-writer-token.outputs.app-slug }}
+          V5_EVIDENCE_WRITER_INSTALLATION_ID: '156524819'
+          V5_EVIDENCE_WRITER_APP_PRIVATE_KEY_PEM: ${{ secrets.V5_EVIDENCE_WRITER_APP_PRIVATE_KEY_PEM }}
+          V5_WRITER_INSTALLATION_OUT: ${{ github.workspace }}/verifier-worktree/github-writer-installation-receipt.json
+        working-directory: verifier-worktree
+        run: node tools/verify-evidence-writer-installation.mjs
       - name: Download verified preflight artifacts
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: strategy-v5-deployment-audit
           path: evidence-worktree/.v5-preflight
-      - name: Append immutable SHADOW evidence by normal CAS push
+      - name: Append immutable SHADOW evidence through a protected PR
         env:
+          GH_TOKEN: ${{ steps.evidence-writer-token.outputs.token }}
           EVIDENCE_BRANCH: strategy-v5-evidence
           TRUSTED_SOURCE_SHA: ${{ github.sha }}
           V5_ATTESTATION_KEY_FINGERPRINT: ${{ vars.V5_ATTESTATION_KEY_FINGERPRINT }}
@@ -372,36 +453,90 @@ jobs:
           test -s .v5-preflight/v5-deployment-audit.json
           test -s .v5-preflight/github-deployment-settings-capture.json
           test -s .v5-preflight/.v5-ledger/HEAD.json
+          test -s ../verifier-worktree/github-writer-installation-receipt.json
+          cp --no-clobber ../verifier-worktree/github-writer-installation-receipt.json .v5-preflight/github-writer-installation-receipt.json
           node --input-type=module <<'NODE'
           import { readFileSync } from 'node:fs'
           import { hash, verifyActionsAttestation } from '../verifier-worktree/tools/strategy-readiness-v5.mjs'
+          import { verifyWriterInstallationReceipt } from '../verifier-worktree/tools/verify-evidence-writer-installation.mjs'
           import { verifyGitHubSettingsDriftEvidenceV5 } from '../verifier-worktree/tools/strategy-research-v5.mjs'
           import { validateContractSchema } from '../verifier-worktree/tools/research-schema-registry.mjs'
           import { verifySafeTree } from '../verifier-worktree/tools/strategy-v5-workflow-security.mjs'
           verifySafeTree('.v5-preflight', 'downloaded v5 preflight artifact tree')
           const load = path => JSON.parse(readFileSync(path, 'utf8'))
-          const audit = load('.v5-preflight/v5-deployment-audit.json'); const receipt = load('.v5-preflight/v5-shadow-cycle-receipt.json'); const capture = load('.v5-preflight/github-deployment-settings-capture.json'); const api = load('.v5-preflight/github-settings-api-receipt.json'); const drift = load('.v5-preflight/github-settings-drift-evidence.json')
+          const audit = load('.v5-preflight/v5-deployment-audit.json'); const receipt = load('.v5-preflight/v5-shadow-cycle-receipt.json'); const capture = load('.v5-preflight/github-deployment-settings-capture.json'); const api = load('.v5-preflight/github-settings-api-receipt.json'); const drift = load('.v5-preflight/github-settings-drift-evidence.json'); const writer = load('.v5-preflight/github-writer-installation-receipt.json')
           const cycleBytes = readFileSync('.v5-preflight/v5-shadow-cycle-receipt.json'); const captureBytes = readFileSync('.v5-preflight/github-deployment-settings-capture.json'); const apiBytes = readFileSync('.v5-preflight/github-settings-api-receipt.json'); const a = load('.v5-preflight/v5-actions-attestation.json'); const k = load('.v5-preflight/v5-attestation-key-registry.json')
           validateContractSchema(a); validateContractSchema(k)
-          if (audit.blocked !== false || receipt.status !== 'COMPLETE' || receipt.details?.active !== false || api.verified !== true || api.blockers?.length || !verifyGitHubSettingsDriftEvidenceV5(drift, capture, api)) process.exit(1)
+          if ((audit.blocked !== false && audit.shadow_append_eligible !== true) || receipt.status !== 'COMPLETE' || receipt.details?.active !== false || api.verified !== true || api.blockers?.length || !verifyGitHubSettingsDriftEvidenceV5(drift, capture, api) || !verifyWriterInstallationReceipt(writer, { repository: capture.repository, repositoryId: capture.repository_id, appId: capture.rulesets?.evidence_writer_app_id })) process.exit(1)
           verifyActionsAttestation({ attestation: a, capture, publication: null, bytesSha256: hash(captureBytes), nowMs: Date.now(), pinnedFingerprint: process.env.V5_ATTESTATION_KEY_FINGERPRINT, apiReceiptSha256: hash(apiBytes), cycleReceiptSha256: hash(cycleBytes), trustedKeyRegistry: k, trustedKeyRegistrySha256: k.content_sha256, trustedKeyRegistryByteSha256: hash(readFileSync('.v5-preflight/v5-attestation-key-registry.json')) })
           NODE
           digest="$(sha256sum .v5-preflight/v5-shadow-cycle.json | cut -d' ' -f1)"
           target="evidence/prospective-v5/$digest"
           test ! -e "$target"
           mkdir "$target"
-          for file in v5-shadow-cycle.json v5-shadow-cycle-receipt.json github-settings-api-receipt.json github-deployment-settings-capture.json github-settings-drift-evidence.json v5-deployment-audit.json v5-actions-attestation.json v5-attestation-key-registry.json; do
+          for file in v5-shadow-cycle.json v5-shadow-cycle-receipt.json github-settings-api-receipt.json github-deployment-settings-capture.json github-settings-drift-evidence.json v5-deployment-audit.json v5-actions-attestation.json v5-attestation-key-registry.json github-writer-installation-receipt.json; do
             test ! -e "$target/$file"
             cp --no-clobber ".v5-preflight/$file" "$target/$file"
           done
-          mkdir "$target/ledger"
-          cp -a --no-clobber .v5-preflight/.v5-ledger/. "$target/ledger/"
+          TARGET_ROOT="$target" node --input-type=module <<'NODE'
+          import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
+          import { join, resolve } from 'node:path'
+          import { readProspectiveLedger } from '../verifier-worktree/tools/strategy-prospective-v5.mjs'
+          import { hash, ownHash } from '../verifier-worktree/tools/strategy-readiness-v5.mjs'
+          import { selectProspectiveLedgerCandidateV5 } from '../verifier-worktree/tools/strategy-v5-workflow-security.mjs'
+          const target = process.env.TARGET_ROOT; const baseRoot = resolve('evidence/prospective-v5'); const candidates = []
+          if (existsSync(baseRoot)) for (const entry of readdirSync(baseRoot, { withFileTypes: true })) { if (!entry.isDirectory() || !/^[a-f0-9]{64}$/.test(entry.name)) continue; const ledgerPath = join(baseRoot, entry.name, 'ledger'); try { const ledger = readProspectiveLedger(ledgerPath, { nowAt: Date.now(), allowFuture: true, snapshotRootBase: baseRoot }); candidates.push({ path: ledgerPath, root: entry.name, sequence: ledger.sequence, head: ledger.current_head_sha256, lineage: ledger.lineage_sha256, eventHeads: ledger.events.map(event => event.event_sha256) }) } catch (error) { throw new Error(`trusted evidence snapshot is invalid: ${entry.name}: ${error.message}`) } }
+          const prior = selectProspectiveLedgerCandidateV5(candidates); const sourceHead = JSON.parse(readFileSync('.v5-preflight/.v5-ledger/HEAD.json', 'utf8')); const priorSequence = prior?.sequence || 0
+          if (sourceHead.sequence <= priorSequence || (prior && sourceHead.event_refs.length <= priorSequence)) throw new Error('preflight ledger is not a strict successor of the trusted evidence snapshot')
+          const refs = sourceHead.event_refs.filter(ref => ref.sequence > priorSequence); if (refs.length !== sourceHead.sequence - priorSequence) throw new Error('preflight ledger delta inventory is incomplete')
+          mkdirSync(join(target, 'ledger/events'), { recursive: true }); const deltaHead = { ...sourceHead, prior_snapshot_root: prior?.root || null, prior_head_sha256: prior?.head || null, event_refs: refs, content_sha256: null }; deltaHead.content_sha256 = ownHash(deltaHead); writeFileSync(join(target, 'ledger/HEAD.json'), `${JSON.stringify(deltaHead, null, 2)}\n`, { flag: 'wx' })
+          for (const ref of refs) { const source = resolve('.v5-preflight/.v5-ledger', ref.path); const destination = join(target, 'ledger', ref.path); if (!existsSync(source)) throw new Error(`preflight delta event is missing: ${ref.path}`); copyFileSync(source, destination, { errorOnExist: true }) }
+          NODE
+          test ! -e "$target/ledger/.transactions" && test ! -e "$target/ledger/.lock"
+          TARGET_ROOT="$target" node --input-type=module <<'NODE'
+          import { execFileSync } from 'node:child_process'
+          import { readFileSync, readdirSync } from 'node:fs'
+          import { basename, join } from 'node:path'
+          import { hash, ownHash } from '../verifier-worktree/tools/strategy-research-v5-authoritative.mjs'
+          import { readProspectiveLedger } from '../verifier-worktree/tools/strategy-prospective-v5.mjs'
+          const target = process.env.TARGET_ROOT
+          const expectedFiles = new Set(['v5-shadow-cycle.json', 'v5-shadow-cycle-receipt.json', 'github-settings-api-receipt.json', 'github-deployment-settings-capture.json', 'github-settings-drift-evidence.json', 'v5-deployment-audit.json', 'v5-actions-attestation.json', 'v5-attestation-key-registry.json', 'github-writer-installation-receipt.json', 'ledger'])
+          if (basename(target) !== hash(readFileSync(join(target, 'v5-shadow-cycle.json')))) throw new Error('prospective snapshot root is not the exact completed-cycle byte hash')
+          const actual = new Set(readdirSync(target)); if (actual.size !== expectedFiles.size || [...expectedFiles].some(name => !actual.has(name))) throw new Error('prospective snapshot root inventory is not exact')
+          const cycle = JSON.parse(readFileSync(join(target, 'v5-shadow-cycle-receipt.json'))); if (cycle.status !== 'COMPLETE' || cycle.details?.active !== false) throw new Error('prospective cycle receipt is not a completed inactive SHADOW receipt')
+          const registryBytes = readFileSync(join(target, 'v5-attestation-key-registry.json')); const trustedBytes = execFileSync('git', ['show', `HEAD:${process.env.V5_ATTESTATION_KEY_REGISTRY_PATH}`]); if (hash(registryBytes) !== hash(trustedBytes)) throw new Error('proposed attestation registry differs from the trusted-base committed registry bytes')
+          const registry = JSON.parse(registryBytes); if (registry.content_sha256 !== ownHash(registry)) throw new Error('proposed attestation registry content hash is invalid')
+          const ledger = readProspectiveLedger(join(target, 'ledger'), { nowAt: Date.now(), allowFuture: true, snapshotRootBase: join(process.cwd(), 'evidence/prospective-v5') }); if (ledger.current_head_sha256 !== JSON.parse(readFileSync(join(target, 'ledger/HEAD.json'), 'utf8')).head_sha256) throw new Error('proposed delta ledger cannot be reopened against its trusted predecessor')
+          NODE
           test -z "$(git diff --cached --name-only)"
           git add "$target"
           git diff --cached --name-status -- "$target" | awk -v prefix="$target/" 'BEGIN { ok=1 } { if ($1 != "A" || index($2, prefix) != 1) ok=0 } END { if (!ok || NR == 0) exit 1 }'
           test "$(git diff --cached --name-only | sed -n 's#^##p' | grep -v "^$target/" | wc -l | tr -d ' ')" = 0
           prior="$(git rev-parse HEAD)"
+          TEMP_BRANCH="strategy-v5-append-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          git checkout -b "$TEMP_BRANCH"
           git -c user.name=strategy-v5-bot -c user.email=strategy-v5-bot@users.noreply.github.com commit -m "strategy-v5: append completed-bar shadow evidence"
           git fetch --no-tags origin "$EVIDENCE_BRANCH"
           test "$(git rev-parse "origin/$EVIDENCE_BRANCH")" = "$prior"
-          git push origin "HEAD:$EVIDENCE_BRANCH"
+          git push origin "HEAD:$TEMP_BRANCH"
+          export GH_TOKEN="${GH_TOKEN:?protected writer App token is required}"
+          pr_number="$(gh api --method POST "repos/$GITHUB_REPOSITORY/pulls" -f title='strategy-v5: append completed-bar shadow evidence' -f head="$TEMP_BRANCH" -f base="$EVIDENCE_BRANCH" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>process.stdout.write(String(JSON.parse(s).number||'')))")"
+          test -n "$pr_number"
+          head_sha="$(git rev-parse HEAD)"
+          required_status_context='strategy-v5-evidence-custody'
+          merged=false
+          for attempt in $(seq 1 30); do
+            pr_state="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$pr_number" || true)"
+            test "$(printf '%s' "$pr_state" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{const r=JSON.parse(s);process.stdout.write(String(r.head?.sha||''))}catch{}})")" = "$head_sha" || { test "$attempt" -lt 30 || { echo 'protected PR head changed or could not be read' >&2; exit 1; }; sleep 2; continue; }
+            merge_response="$(gh api --method PUT "repos/$GITHUB_REPOSITORY/pulls/$pr_number/merge" -f sha="$head_sha" -f merge_method=merge || true)"
+            merged="$(printf '%s' "$merge_response" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{const r=JSON.parse(s);process.stdout.write(r.merged===true?'true':'false')}catch{process.stdout.write('false')}})")"
+            test "$merged" = true && break
+            test "$attempt" -lt 30 || { echo "$required_status_context did not authorize the exact PR head; protected rules remain enforced" >&2; exit 1; }
+            sleep 2
+          done
+          test "$merged" = true
+          git fetch --no-tags origin "$EVIDENCE_BRANCH"
+          git merge-base --is-ancestor "$head_sha" "origin/$EVIDENCE_BRANCH"
+          git diff-tree --check "origin/$EVIDENCE_BRANCH"
+          gh api --method DELETE "repos/$GITHUB_REPOSITORY/git/refs/heads/$TEMP_BRANCH"
+          test -z "$(git ls-remote --heads origin "$TEMP_BRANCH")"

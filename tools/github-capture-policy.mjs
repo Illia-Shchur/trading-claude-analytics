@@ -3,12 +3,17 @@ export const REQUIRED_GITHUB_ENDPOINTS = Object.freeze([
   'branch_protection',
   'branch_head',
   'environment_protection',
+  'writer_environment_protection',
   'rulesets',
   'ruleset_details',
   'installation',
   'settings_token_identity',
   'settings_token_secret',
+  'evidence_writer_secret',
   'oidc_subject_restriction',
+  'actions_permissions',
+  'actions_selected_permissions',
+  'actions_workflow_permissions',
 ])
 
 export function firstNon200Endpoint(endpointStatuses, order = REQUIRED_GITHUB_ENDPOINTS) {

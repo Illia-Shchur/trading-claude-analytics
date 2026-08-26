@@ -77,7 +77,7 @@ const writeLineage = (root, references, values = {}) => {
   const normalized = withHash({ schema: 'strategy-v5-source-receipt/1', version: 1, status: 'PUBLIC_OBSERVED', captured_at: CAPTURED, request: { endpoint: 'fixture://acquisition' }, response_sha256: [rawByteSha], source_byte_sha256: [rawByteSha], raw_receipts: [raw], coverage: { complete: true } }); const normalizedPath = `lineage/receipts/${normalized.content_sha256}.json`; mkdirSync(join(root, 'lineage/receipts'), { recursive: true }); writeFileSync(join(root, normalizedPath), `${JSON.stringify(normalized, null, 2)}\n`)
   const sourceReceipt = { path: normalizedPath, sha256: normalized.content_sha256, content_sha256: normalized.content_sha256, byte_sha256: rawByteSha, raw_count: 1, schema: normalized.schema, status: normalized.status }
   const captureFor = (roleName, reference, seriesType) => ({ asset: 'btc', venue: 'BINANCE', instrument: 'BINANCE_SPOT', symbol: 'BTCUSDT', interval: roleName === 'features' ? '4h' : roleName === 'marks' ? '1m' : roleName, series_type: seriesType, required: true, partition: { path: reference.path, sha256: reference.sha256, bytes: readFileSync(join(root, reference.path)).byteLength, row_count: 1, format: 'JSONL', storage_role: 'STAGING', authoritative: false }, source_receipts: [sourceReceipt], coverage: { complete: true, expected_rows: 1, observed_rows: 1 } })
-  const source = { schema: 'strategy-v5-authoritative-acquisition/1', version: 1, status: 'STAGING_COMPLETE', plan_sha256: PLAN.content_sha256, root_reference: 'fixture', staging_format: 'JSONL', storage_role: 'STAGING', authoritative: false, captures: [captureFor('features', rawReferences.features, 'raw_signal_bars'), captureFor('labels', rawReferences.labels, 'raw_opportunity_bars'), captureFor('execution', rawReferences.execution, 'raw_execution_bars'), captureFor('marks', rawReferences.marks, 'raw_mark_bars')], source_receipts: [normalizedPath], source_receipt_sha256: [normalized.content_sha256], source_receipt_byte_sha256: [rawByteSha], limitations: [] }
+  const source = { schema: 'strategy-v5-authoritative-acquisition/1', version: 1, status: 'STAGING_COMPLETE', plan_sha256: PLAN.content_sha256, root_reference: 'fixture', staging_format: 'JSONL', storage_role: 'STAGING', authoritative: false, captures: [captureFor('features', rawReferences.features, 'raw_signal_bars'), captureFor('labels', rawReferences.labels, 'raw_opportunity_bars'), captureFor('execution', rawReferences.execution, 'raw_execution_bars'), captureFor('marks', rawReferences.marks, 'raw_mark_bars')], base_complete: true, declared_complete: true, full_plan_complete: true, completion_scope: 'ALL_DECLARED', required_series_count: 4, required_complete_count: 4, optional_series_count: 0, optional_complete_count: 0, optional_complete: true, unavailable_required: [], unavailable_optional: [], source_receipts: [normalizedPath], source_receipt_sha256: [normalized.content_sha256], source_receipt_byte_sha256: [rawByteSha], limitations: [] }
   source.content_sha256 = ownHash(source); const sourceBytes = Buffer.from(`${JSON.stringify(source, null, 2)}\n`); const sourcePath = 'lineage/source-manifest.json'; writeFileSync(join(root, sourcePath), sourceBytes)
   const sourceRef = { path: sourcePath, content_sha256: source.content_sha256, byte_sha256: hash(sourceBytes) }
   const makeInput = (schema, name) => { const value = { schema, version: 1, name, content_sha256: null }; value.content_sha256 = ownHash(value); return value }
@@ -118,22 +118,27 @@ test('funding canonicalization preserves event identity and accepts real timesta
 test('funding marks require an exact separately bound positive settlement observation', () => {
   const event = Date.parse('2026-01-01T08:00:00.000Z')
   const fundingRows = [{ event_id: 'fund-1', raw_event_time: event, funding_rate: 0.001 }]
-  const markRows = [{ event_time: event, mark_open: 42 }]
-  const bound = bindFundingSettlementMarks({ fundingRows, markRows, markResponseSha256: ['a'.repeat(64)] })
+  const markResponseSha = 'a'.repeat(64)
+  const markRows = [{ event_time: event, availability_time: event, mark_open: 42, response_sha256: markResponseSha }]
+  const bound = bindFundingSettlementMarks({ fundingRows, markRows, markResponseSha256: [markResponseSha] })
   assert.equal(bound[0].settlement_mark, 42)
   assert.equal(bound[0].settlement_mark_event_time, '2026-01-01T08:00:00.000Z')
   assert.equal(bound[0].settlement_mark_availability_time, '2026-01-01T08:00:00.000Z')
-  assert.throws(() => bindFundingSettlementMarks({ fundingRows, markRows: [], markResponseSha256: ['a'.repeat(64)] }), /missing exact event/)
-  assert.throws(() => bindFundingSettlementMarks({ fundingRows, markRows: [{ event_time: event + 60_000, mark_open: 42 }], markResponseSha256: ['a'.repeat(64)] }), /missing exact event/)
-  assert.throws(() => bindFundingSettlementMarks({ fundingRows, markRows: [{ event_time: event, mark_open: 0 }], markResponseSha256: ['a'.repeat(64)] }), /positive mark/)
-  const mutated = bindFundingSettlementMarks({ fundingRows, markRows: [{ event_time: event, mark_open: 43 }], markResponseSha256: ['a'.repeat(64)] })
+  assert.throws(() => bindFundingSettlementMarks({ fundingRows, markRows: [], markResponseSha256: [markResponseSha] }), /missing exact event/)
+  assert.throws(() => bindFundingSettlementMarks({ fundingRows, markRows: [{ event_time: event + 60_000, availability_time: event + 60_000, mark_open: 42, response_sha256: markResponseSha }], markResponseSha256: [markResponseSha] }), /missing exact event/)
+  assert.throws(() => bindFundingSettlementMarks({ fundingRows, markRows: [{ event_time: event, availability_time: event, mark_open: 0, response_sha256: markResponseSha }], markResponseSha256: [markResponseSha] }), /positive mark/)
+  assert.throws(() => bindFundingSettlementMarks({ fundingRows, markRows: [{ event_time: event, availability_time: event, mark_open: 42, response_sha256: markResponseSha }, { event_time: event, availability_time: event, mark_open: 43, response_sha256: markResponseSha }], markResponseSha256: [markResponseSha] }), /duplicate event identity/)
+  assert.throws(() => bindFundingSettlementMarks({ fundingRows: [{ ...fundingRows[0], mark_price: 999 }], markRows: [{ event_time: event, availability_time: event + 1, mark_open: 43, response_sha256: markResponseSha }], markResponseSha256: [markResponseSha] }), /availability is not exact/)
+  assert.throws(() => bindFundingSettlementMarks({ fundingRows: [{ ...fundingRows[0], mark_price: 999 }], markRows: [{ event_time: event, availability_time: event, mark_open: 43, response_sha256: 'b'.repeat(64) }], markResponseSha256: [markResponseSha] }), /not physically retained/)
+  const mutated = bindFundingSettlementMarks({ fundingRows: [{ ...fundingRows[0], mark_price: 999 }], markRows: [{ event_time: event, availability_time: event, mark_open: 43, response_sha256: markResponseSha }], markResponseSha256: [markResponseSha] })
   assert.notEqual(mutated[0].settlement_mark, bound[0].settlement_mark)
 })
 
 test('authoritative acquisition repairs blank funding marks from an exact paginated 1h mark series and resumes byte-identically', async () => {
   const eventAt = Date.parse('2026-01-01T00:00:00.000Z'); const eventAtNext = eventAt + 1_008 * 3_600_000; const fundingTemplate = PLAN.series.find(series => series.series_type === 'funding_events'); const fundingSeries = { ...fundingTemplate, start_at: new Date(eventAt).toISOString(), end_at: new Date(eventAtNext).toISOString(), availability_cutoff_at: new Date(eventAtNext + 60_000).toISOString(), cadence_segments: [], event_sequence_mode: true, event_driven: true, expected_step_ms: null, expected_event_count: null }; const markSeries = PLAN.series.filter(series => series.series_type === 'mark_bars').map(series => ({ ...series, start_at: new Date(eventAt).toISOString(), end_at: new Date(eventAtNext).toISOString(), expected_event_count: 253 })); const miniPlan = withHash({ ...PLAN, series: [fundingSeries, ...markSeries] }); const capturedAt = '2026-08-24T12:00:00.000Z'; let markMode = 'MULTI_PAGE'; let calls = 0
-  const fetchImpl = async requestUrl => { calls++; const url = new URL(requestUrl); const start = Number(url.searchParams.get('startTime') || eventAt); const path = url.pathname; let payload = []; if (path.endsWith('/fundingRate')) payload = start > eventAtNext ? [] : Array.from({ length: 127 }, (_, index) => ({ symbol: url.searchParams.get('symbol'), fundingTime: eventAt + index * 8 * 3_600_000, fundingRate: '0.001', markPrice: '' })); else if (path.endsWith('/markPriceKlines')) { if (markMode === 'MISSING') payload = []; else { const interval = url.searchParams.get('interval'); const step = interval === '1h' ? 3_600_000 : 4 * 3_600_000; const first = interval === '1h' ? (start <= eventAt ? eventAt : start) : start; const count = interval === '1h' ? 1000 : 253; payload = Array.from({ length: count }, (_, index) => { const time = first + index * step; const price = markMode === 'MUTATED' && index === 0 ? 999 : 123; return [time, String(price), String(price + 1), String(price - 1), String(price), '1', time + step - 1] }) } } const body = Buffer.from(JSON.stringify(payload)); return { ok: true, status: 200, headers: { get: name => String(name).toLowerCase() === 'date' ? capturedAt : null }, arrayBuffer: async () => body } }
-  const root = mkdtempSync(join(tmpdir(), 'v5-funding-fallback-e2e-')); const first = await acquireAuthoritativeStaging({ plan: miniPlan, outputRoot: root, outputRootReference: 'portable-funding-e2e', fetchImpl, maxPages: 4, maxRows: 10_000, capturedAt, fixtureOnly: true }); assert.equal(first.status, 'STAGING_COMPLETE', JSON.stringify(first.captures.map(capture => ({ type: capture.series_type, asset: capture.asset, complete: capture.coverage?.complete, reason: capture.coverage?.reason, limitations: capture.limitations })))); const fundingCapture = first.captures.find(capture => capture.series_type === 'funding_events'); assert.equal(fundingCapture.coverage.settlement_mark_source, 'BINANCE_MARK_PRICE_KLINE_OPEN_AT_SETTLEMENT'); assert.equal(fundingCapture.partition.storage_role, 'STAGING'); const fundingRows = JSON.parse(`[${readFileSync(join(root, fundingCapture.partition.path), 'utf8').trim().replaceAll('\n', ',')}]`); assert.equal(fundingRows.length, 127); assert.equal(fundingRows[0].settlement_mark, 123); assert.ok(fundingCapture.coverage.settlement_mark_source_response_sha256); const fundingReceipt = JSON.parse(readFileSync(join(root, fundingCapture.source_receipts[0].path), 'utf8')); const markPages = fundingReceipt.pagination.filter(page => page.interval === '1h' && page.response_sha256); assert.ok(markPages.length >= 2); const pageFor = row => markPages.find(page => Number(page.cursor) <= Date.parse(row.settlement_mark_event_time) && Date.parse(row.settlement_mark_event_time) < Number(page.cursor) + Number(page.row_count) * 3_600_000); assert.equal(fundingRows.every(row => row.settlement_mark_source_response_sha256 === pageFor(row)?.response_sha256), true); const firstHash = first.content_sha256; const callsAfterFirst = calls; const resumed = await acquireAuthoritativeStaging({ plan: miniPlan, outputRoot: root, outputRootReference: 'portable-funding-e2e', fetchImpl: async () => { throw new Error('resumed acquisition must reopen custody before refetch') }, maxPages: 4, maxRows: 10_000, capturedAt, fixtureOnly: true }); assert.equal(resumed.content_sha256, firstHash); assert.equal(calls, callsAfterFirst)
+  const fetchImpl = async requestUrl => { calls++; const url = new URL(requestUrl); const start = Number(url.searchParams.get('startTime') || eventAt); const path = url.pathname; let payload = []; if (path.endsWith('/fundingRate')) payload = start > eventAtNext ? [] : Array.from({ length: 127 }, (_, index) => ({ symbol: url.searchParams.get('symbol'), fundingTime: eventAt + 1 + index * 8 * 3_600_000, fundingRate: '0.001', markPrice: '' })); else if (path.endsWith('/markPriceKlines')) { if (markMode === 'MISSING') payload = []; else { const interval = url.searchParams.get('interval'); const step = interval === '1h' ? 3_600_000 : 4 * 3_600_000; const first = interval === '1h' ? (start <= eventAt ? eventAt : start) : start; const count = interval === '1h' ? 1000 : 253; payload = Array.from({ length: count }, (_, index) => { const time = first + index * step; const price = markMode === 'MUTATED' && index === 0 ? 999 : 123; return [time, String(price), String(price + 1), String(price - 1), String(price), '1', time + step - 1] }) } } const body = Buffer.from(JSON.stringify(payload)); return { ok: true, status: 200, headers: { get: name => String(name).toLowerCase() === 'date' ? capturedAt : null }, arrayBuffer: async () => body } }
+  const root = mkdtempSync(join(tmpdir(), 'v5-funding-fallback-e2e-')); const first = await acquireAuthoritativeStaging({ plan: miniPlan, outputRoot: root, outputRootReference: 'portable-funding-e2e', fetchImpl, maxPages: 4, maxRows: 10_000, capturedAt, fixtureOnly: true }); assert.equal(first.status, 'STAGING_COMPLETE', JSON.stringify(first.captures.map(capture => ({ type: capture.series_type, asset: capture.asset, complete: capture.coverage?.complete, reason: capture.coverage?.reason, limitations: capture.limitations })))); const fundingCapture = first.captures.find(capture => capture.series_type === 'funding_events'); assert.equal(fundingCapture.coverage.settlement_mark_source, 'BINANCE_MARK_PRICE_KLINE_OPEN_AT_SETTLEMENT'); assert.equal(fundingCapture.partition.storage_role, 'STAGING'); const fundingRows = JSON.parse(`[${readFileSync(join(root, fundingCapture.partition.path), 'utf8').trim().replaceAll('\n', ',')}]`); assert.equal(fundingRows.length, 127); assert.equal(fundingRows[0].settlement_mark, 123); assert.ok(fundingCapture.coverage.settlement_mark_source_response_sha256); const fundingReceipt = JSON.parse(readFileSync(join(root, fundingCapture.source_receipts[0].path), 'utf8')); const markPages = fundingReceipt.pagination.filter(page => page.interval === '1h' && page.response_sha256); assert.ok(markPages.length >= 2); const pageFor = row => markPages.find(page => Number(page.cursor) <= Date.parse(row.settlement_mark_event_time) && Date.parse(row.settlement_mark_event_time) < Number(page.cursor) + Number(page.row_count) * 3_600_000); assert.equal(fundingRows.every(row => row.settlement_mark_source_response_sha256 === pageFor(row)?.response_sha256), true); const parquetRoot = mkdtempSync(join(tmpdir(), 'v5-funding-fallback-parquet-')); const converted = await convertToParquet({ stagingManifest: first, stagingRoot: root, outputRoot: parquetRoot, outputRootReference: 'portable-funding-parquet' }); assert.equal(await verifyParquetConversionManifestAuthoritative(converted, { root: parquetRoot, stagingRoot: root, planSha256: miniPlan.content_sha256 }), true); await assert.rejects(() => verifyParquetConversionManifestAuthoritative(converted, { root: parquetRoot, planSha256: miniPlan.content_sha256 }), /requires the physical acquisition\/staging root/); await assert.rejects(() => verifyParquetConversionManifestAuthoritative(converted, { root: parquetRoot, stagingRoot: mkdtempSync(join(tmpdir(), 'v5-funding-fallback-wrong-staging-')), planSha256: miniPlan.content_sha256 }), /source receipt is missing|reopened funding source receipt/); const firstHash = first.content_sha256; const callsAfterFirst = calls; const resumed = await acquireAuthoritativeStaging({ plan: miniPlan, outputRoot: root, outputRootReference: 'portable-funding-e2e', fetchImpl: async () => { throw new Error('resumed acquisition must reopen custody before refetch') }, maxPages: 4, maxRows: 10_000, capturedAt, fixtureOnly: true }); assert.equal(resumed.content_sha256, firstHash); assert.equal(calls, callsAfterFirst)
+  assert.equal(fundingRows[0].raw_event_time, eventAt + 1); assert.equal(fundingRows[0].settlement_slot, new Date(eventAt).toISOString()); assert.equal(fundingRows[0].settlement_mark_event_time, new Date(eventAt).toISOString())
   markMode = 'MISSING'; const missing = await acquireAuthoritativeStaging({ plan: miniPlan, outputRoot: mkdtempSync(join(tmpdir(), 'v5-funding-fallback-missing-')), outputRootReference: 'portable-funding-missing', fetchImpl, maxPages: 4, maxRows: 10_000, capturedAt, fixtureOnly: true }); assert.equal(missing.status, 'STAGING_PARTIAL'); assert.match(missing.captures.find(capture => capture.series_type === 'funding_events').coverage.reason, /missing exact event|positive settlement mark/i)
   markMode = 'MUTATED'; const mutated = await acquireAuthoritativeStaging({ plan: miniPlan, outputRoot: mkdtempSync(join(tmpdir(), 'v5-funding-fallback-mutated-')), outputRootReference: 'portable-funding-mutated', fetchImpl, maxPages: 4, maxRows: 10_000, capturedAt, fixtureOnly: true }); assert.equal(mutated.status, 'STAGING_COMPLETE'); assert.equal(mutated.captures.find(capture => capture.series_type === 'funding_events').coverage.settlement_mark_source_response_sha256 !== fundingCapture.coverage.settlement_mark_source_response_sha256, true)
 })
@@ -222,6 +227,93 @@ test('historical dated-futures catalog records Data Vision bytes and leaves unav
   assert.equal(observedCatalog.captured_at, observedAt)
 })
 
+test('dated-futures tradeability requires separate physical expiry and PIT-bound settlement receipts', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'v5-dated-tradeable-'))
+  const xml = '<ListBucketResult><CommonPrefixes><Prefix>data/futures/um/monthly/klines/BTCUSDT_230929/</Prefix></CommonPrefixes></ListBucketResult>'
+  const fetchImpl = async url => {
+    if (String(url).includes('data.binance.vision')) return { ok: true, status: 200, async arrayBuffer () { return Buffer.from(xml) } }
+    const parsed = new URL(url); const event = Number(parsed.searchParams.get('startTime')); const row = [event, '100', '101', '99', '100', '1', event + 14_399_999, '1', 1, '1', '1', '0']
+    return { ok: true, status: 200, async arrayBuffer () { return Buffer.from(JSON.stringify([row])) } }
+  }
+  const discovered = await discoverBinanceHistoricalDatedFutures({ fetchImpl, rawOutputRoot: root, rawOutputRootReference: 'dated-tradeable-fixture', capturedAt: CAPTURED, fixtureOnly: true, startAt: '2023-01-01T00:00:00.000Z', endAt: '2023-09-29T08:00:00.000Z', assets: ['btc'] })
+  const base = discovered.contracts[0]
+  const expiry = '2023-09-29T08:00:00.000Z'
+  const lifecycleStart = '2023-01-01T00:00:00.000Z'
+  const preUseAvailability = '2022-12-31T00:00:00.000Z'
+  const settlementAvailability = '2023-09-29T08:01:00.000Z'
+
+  const makePhysicalMetadata = (kind, fields, { capturedAt = '2023-09-29T08:02:00.000Z' } = {}) => {
+    const rawBody = Buffer.from(`dated-${kind}-${JSON.stringify(fields)}`)
+    const rawHash = hash(rawBody)
+    const rawPath = `metadata/raw/${kind.toLowerCase()}-${rawHash}.bin`
+    mkdirSync(join(root, 'metadata/raw'), { recursive: true })
+    writeFileSync(join(root, rawPath), rawBody)
+    const raw = withHash({ schema: 'strategy-v5-source-receipt/1', version: 1, path: rawPath, source: 'FIXTURE_BINANCE', request: { endpoint: `fixture://dated/${kind}`, response_sha256: rawHash }, byte_sha256: rawHash, bytes: rawBody.byteLength, format: 'RAW_BYTES', storage_role: 'RAW_IGNORED', authoritative: false })
+    const normalized = withHash({ schema: 'strategy-v5-source-receipt/1', version: 1, status: 'PUBLIC_OBSERVED', captured_at: capturedAt, request: { endpoint: `fixture://dated/${kind}` }, response_sha256: [rawHash], source_byte_sha256: [rawHash], raw_receipts: [raw], coverage: { complete: true } })
+    const sourcePath = `metadata/sources/${kind.toLowerCase()}-${normalized.content_sha256}.json`
+    mkdirSync(join(root, 'metadata/sources'), { recursive: true })
+    writeFileSync(join(root, sourcePath), `${JSON.stringify(normalized, null, 2)}\n`)
+    const receipt = makeMetadataReceipt({ kind, status: 'PUBLIC_OBSERVED', source: { content_sha256: normalized.content_sha256, byte_sha256: rawHash, path: sourcePath }, sourceReceiptSha256: normalized.content_sha256, sourceByteSha256: rawHash, sourceRoot: root, sourceReceiptPath: sourcePath, capturedAt, records: [{ asset: 'btc', venue: 'BINANCE', instrument: 'BINANCE_USDM_DATED_FUTURE', symbol: base.symbol, effective_from: lifecycleStart, effective_to: '2023-09-29T08:05:00.000Z', availability_time: preUseAvailability, ...fields, ...(kind === 'SETTLEMENT' ? { settlement_mark_source_sha256: rawHash } : {}) }] })
+    const receiptPath = `metadata/receipts/${kind.toLowerCase()}-${receipt.content_sha256}.json`
+    mkdirSync(join(root, 'metadata/receipts'), { recursive: true })
+    const receiptBody = Buffer.from(`${JSON.stringify(receipt, null, 2)}\n`)
+    writeFileSync(join(root, receiptPath), receiptBody)
+    return { receipt, rawHash, reference: { path: receiptPath, content_sha256: receipt.content_sha256, byte_sha256: hash(receiptBody), bytes: receiptBody.byteLength } }
+  }
+
+  const expiryMeta = makePhysicalMetadata('EXPIRY', { expiry })
+  const specMeta = makePhysicalMetadata('CONTRACT_SPEC', { contract_multiplier: 1, expiry })
+  const marginMeta = makePhysicalMetadata('MARGIN', { maintenance_margin_ratio: 0.01, margin_mode: 'ISOLATED', tier_id: 'tier-1', expiry })
+  const liquidationMeta = makePhysicalMetadata('LIQUIDATION', { liquidation_price: 50, expiry })
+  const settlementMeta = makePhysicalMetadata('SETTLEMENT', { expiry, event_time: expiry, settlement_time: expiry, availability_time: settlementAvailability, settlement_price: 101, settlement_mark_event_id: 'BTCUSDT_230929-official-settlement' })
+
+  const archiveReference = (kind, name, body) => {
+    const path = `archive/${name}`; const bytes = Buffer.from(body); mkdirSync(join(root, 'archive'), { recursive: true }); writeFileSync(join(root, path), bytes)
+    return { kind, path, sha256: hash(bytes), bytes: bytes.byteLength }
+  }
+  const archiveRefs = [archiveReference('ARCHIVE_ZIP', `${base.symbol}.zip`, 'archive-bytes'), archiveReference('ARCHIVE_CHECKSUM', `${base.symbol}.CHECKSUM`, 'checksum-bytes')]
+  const metadataRefs = { expiry: expiryMeta.reference, contract_spec: specMeta.reference, margin: marginMeta.reference, liquidation: liquidationMeta.reference, settlement: settlementMeta.reference }
+  const tradeableContract = { ...base, venue: 'BINANCE', first_bar_at: lifecycleStart, last_bar_at: '2023-09-29T07:59:00.000Z', expiry_at: expiry, expiry_binding_status: 'BOUND', contract_spec_status: 'PUBLIC_OBSERVED', history_status: 'SIGNAL_HISTORY_AVAILABLE', archive_ingestion_status: 'ARCHIVE_INGESTED', archive_coverage_complete: true, archive_raw_references: archiveRefs, archive_physical_capture_refs: { jsonl_partition_sha256: '1'.repeat(64), parquet_partition_sha256: '2'.repeat(64), dataset_root_sha256: '3'.repeat(64) }, margin_status: 'BOUND', liquidation_status: 'BOUND', settlement_status: 'BOUND', tradeability_metadata_refs: metadataRefs, tradeable: true }
+  const catalog = withHash({ ...discovered, contracts: [tradeableContract], limitations: discovered.limitations.filter(value => !value.startsWith('btc:')) })
+  validateContractSchema(catalog)
+  assert.equal(validateDatedFuturesCatalog(catalog, { root }), true)
+
+  const duplicateReceipt = withHash({ ...catalog, contracts: [{ ...tradeableContract, tradeability_metadata_refs: { ...metadataRefs, settlement: expiryMeta.reference } }] })
+  assert.throws(() => validateDatedFuturesCatalog(duplicateReceipt, { root }), /reuses a metadata receipt/)
+
+  const forgedSettlement = structuredClone(settlementMeta.receipt)
+  forgedSettlement.records[0].settlement_mark_source_sha256 = expiryMeta.rawHash
+  forgedSettlement.records[0].source_byte_sha256 = expiryMeta.rawHash
+  forgedSettlement.content_sha256 = ownHash(forgedSettlement)
+  const forgedBody = Buffer.from(`${JSON.stringify(forgedSettlement, null, 2)}\n`)
+  const forgedPath = `metadata/receipts/settlement-forged-${forgedSettlement.content_sha256}.json`
+  writeFileSync(join(root, forgedPath), forgedBody)
+  const forgedReference = { path: forgedPath, content_sha256: forgedSettlement.content_sha256, byte_sha256: hash(forgedBody), bytes: forgedBody.byteLength }
+  const wrongSource = withHash({ ...catalog, contracts: [{ ...tradeableContract, tradeability_metadata_refs: { ...metadataRefs, settlement: forgedReference } }] })
+  assert.throws(() => validateDatedFuturesCatalog(wrongSource, { root }), /uniquely cover|source/i)
+
+  // A catalog-only splice must not make the same physical source appear to
+  // independently establish both expiry and settlement authority.  Rebind a
+  // fresh settlement receipt to the expiry receipt/raw bytes, then prove that
+  // the catalog validator rejects the shared underlying identity.
+  const splicedSettlement = structuredClone(settlementMeta.receipt)
+  splicedSettlement.source_receipt_sha256 = expiryMeta.receipt.source_receipt_sha256
+  splicedSettlement.source_byte_sha256 = expiryMeta.receipt.source_byte_sha256
+  splicedSettlement.source_receipts = structuredClone(expiryMeta.receipt.source_receipts)
+  splicedSettlement.records[0].settlement_mark_source_sha256 = expiryMeta.rawHash
+  splicedSettlement.records[0].source_byte_sha256 = expiryMeta.rawHash
+  splicedSettlement.records[0].source_receipt_sha256 = expiryMeta.receipt.source_receipt_sha256
+  splicedSettlement.content_sha256 = ownHash(splicedSettlement)
+  const splicedBody = Buffer.from(`${JSON.stringify(splicedSettlement, null, 2)}\n`)
+  const splicedPath = `metadata/receipts/settlement-spliced-${splicedSettlement.content_sha256}.json`
+  writeFileSync(join(root, splicedPath), splicedBody)
+  const splicedReference = { path: splicedPath, content_sha256: splicedSettlement.content_sha256, byte_sha256: hash(splicedBody), bytes: splicedBody.byteLength }
+  const splicedCatalog = withHash({ ...catalog, contracts: [{ ...tradeableContract, tradeability_metadata_refs: { ...metadataRefs, settlement: splicedReference } }] })
+  assert.throws(() => validateDatedFuturesCatalog(splicedCatalog, { root }), /same physical source receipt|underlying raw source/)
+
+  assert.throws(() => makePhysicalMetadata('SETTLEMENT', { expiry, event_time: expiry, settlement_time: expiry, availability_time: '2023-09-29T07:59:59.000Z', settlement_price: 101, settlement_mark_event_id: 'too-early' }), /chronology/)
+})
+
 test('overlapping one-minute hydration is merged and portable checkpoint resume is tamper-evident', async () => {
   const root = mkdtempSync(join(tmpdir(), 'v5-hydration-'))
   const calls = []
@@ -276,6 +368,8 @@ test('separated artifacts reject future aliases, duplicate IDs, and promote only
   assert.equal(staging.status, 'STAGING_ONLY')
   validateContractSchema(staging)
   assert.equal(verifySeparatedArtifactManifest(staging, { root, plan: PLAN, predictorRegistry, candidatePredicates: ['momentum_1'] }), true)
+  assert.throws(() => verifySeparatedArtifactManifest(staging, { root, plan: PLAN, predictorRegistry, candidatePredicates: [] }), /predicate inventory.*exactly match/i)
+  assert.throws(() => verifySeparatedArtifactManifest(staging, { root, plan: PLAN, predictorRegistry, candidatePredicates: ['volatility_1'] }), /predicate inventory.*exactly match|unregistered predictor/i)
   const converted = await convertSeparatedArtifactsToParquet({ stagingManifest: staging, stagingRoot: root, outputRoot: output, outputRootReference: 'portable-v5', plan: PLAN, predictorRegistry, candidatePredicates: ['momentum_1'] })
   assert.equal(converted.status, 'AUTHORITATIVE_PARQUET')
   assert.equal(verifyParquetConversion(converted, { root: output, plan: PLAN, predictorRegistry, candidatePredicates: ['momentum_1'] }), true)
@@ -413,18 +507,28 @@ test('metadata receipts and hashes fail closed when altered', () => {
   assert.throws(() => canonicalizeFundingRows({ rows: [{ event_id: 'x', raw_event_time: Date.parse('2026-01-01T00:00:00.000Z'), funding_rate: 0.1 }], series: { series_type: 'funding_events', start_at: '2026-01-01T00:00:00.000Z', end_at: '2026-01-01T00:00:00.000Z', cadence_segments: [] } }), /at least one cadence segment/)
 })
 
-test('acquisition staging converts to deterministic authoritative Parquet and verifies its partition root', async () => {
-  const stagingRoot = mkdtempSync(join(tmpdir(), 'v5-acquisition-')); const outputRoot = mkdtempSync(join(tmpdir(), 'v5-acquisition-parquet-')); const path = 'staging/bars/btc.jsonl'; mkdirSync(join(stagingRoot, 'staging/bars'), { recursive: true }); const body = jsonl([{ asset: 'btc', instrument: 'BINANCE_SPOT', symbol: 'BTCUSDT', event_time: T0, availability_time: t(1), close: 100 }]); writeFileSync(join(stagingRoot, path), body)
+test('acquisition staging converts a live-shaped capture with bound lineage diagnostics', async () => {
+  const stagingRoot = mkdtempSync(join(tmpdir(), 'v5-acquisition-')); const outputRoot = mkdtempSync(join(tmpdir(), 'v5-acquisition-parquet-')); const path = 'staging/bars/btc.jsonl'; mkdirSync(join(stagingRoot, 'staging/bars'), { recursive: true }); const closeTime = new Date(Date.parse(T0) + FOUR_HOURS - 1).toISOString(); const body = jsonl([{ asset: 'btc', instrument: 'BINANCE_SPOT', symbol: 'BTCUSDT', event_time: T0, close_time: closeTime, availability_time: closeTime, close: 100, adapter_code_sha256: DATA_V5_ADAPTER_CODE_SHA256, producer_code_sha256: DATA_V5_PRODUCER_CODE_SHA256 }]); writeFileSync(join(stagingRoot, path), body)
   const partition = { path, sha256: hash(Buffer.from(body)), bytes: Buffer.byteLength(body), row_count: 1, format: 'JSONL', storage_role: 'STAGING', authoritative: false }
-  const rawBody = Buffer.from('acquisition-conversion-raw'); const rawByteSha = hash(rawBody); const rawPath = `raw/${rawByteSha}.bin`; mkdirSync(join(stagingRoot, 'raw'), { recursive: true }); writeFileSync(join(stagingRoot, rawPath), rawBody); const raw = withHash({ schema: 'strategy-v5-source-receipt/1', version: 1, path: rawPath, source: 'FIXTURE_BINANCE', request: { endpoint: 'fixture://acquisition-conversion', response_sha256: rawByteSha }, byte_sha256: rawByteSha, bytes: rawBody.byteLength, format: 'RAW_BYTES', storage_role: 'RAW_IGNORED', authoritative: false }); const normalized = withHash({ schema: 'strategy-v5-source-receipt/1', version: 1, status: 'PUBLIC_OBSERVED', captured_at: CAPTURED, request: { endpoint: 'fixture://acquisition-conversion' }, response_sha256: [rawByteSha], source_byte_sha256: [rawByteSha], raw_receipts: [raw], coverage: { complete: true } }); const receiptPath = `receipts/${normalized.content_sha256}.json`; mkdirSync(join(stagingRoot, 'receipts'), { recursive: true }); writeFileSync(join(stagingRoot, receiptPath), `${JSON.stringify(normalized, null, 2)}\n`); const receiptSummary = { path: receiptPath, sha256: normalized.content_sha256, content_sha256: normalized.content_sha256, byte_sha256: rawByteSha, raw_count: 1, schema: normalized.schema, status: normalized.status }
-  const manifest = withHash({ schema: DATA_V5.acquisition, version: 1, status: 'STAGING_COMPLETE', plan_sha256: PLAN.content_sha256, root_reference: 'portable-v5', staging_format: 'JSONL', storage_role: 'STAGING', authoritative: false, captures: [{ asset: 'btc', venue: 'BINANCE', instrument: 'BINANCE_SPOT', symbol: 'BTCUSDT', interval: '4h', series_type: 'signal_bars', partition, source_receipts: [receiptSummary], coverage: { complete: true } }], source_receipts: [receiptPath], source_receipt_sha256: [normalized.content_sha256], source_receipt_byte_sha256: [rawByteSha], limitations: [] })
+  const rawBody = Buffer.from('acquisition-conversion-raw'); const rawByteSha = hash(rawBody); const rawPath = `raw/${rawByteSha}.bin`; mkdirSync(join(stagingRoot, 'raw'), { recursive: true }); writeFileSync(join(stagingRoot, rawPath), rawBody); const raw = withHash({ schema: 'strategy-v5-source-receipt/1', version: 1, path: rawPath, source: 'FIXTURE_BINANCE', request: { endpoint: 'fixture://acquisition-conversion', response_sha256: rawByteSha }, byte_sha256: rawByteSha, bytes: rawBody.byteLength, format: 'RAW_BYTES', storage_role: 'RAW_IGNORED', authoritative: false }); const normalized = withHash({ schema: 'strategy-v5-source-receipt/1', version: 1, status: 'PUBLIC_OBSERVED', captured_at: CAPTURED, producer_code_sha256: DATA_V5_PRODUCER_CODE_SHA256, adapter_code_sha256: DATA_V5_ADAPTER_CODE_SHA256, request: { endpoint: 'fixture://acquisition-conversion' }, response_sha256: [rawByteSha], source_byte_sha256: [rawByteSha], raw_receipts: [raw], coverage: { complete: true } }); const receiptPath = `receipts/${normalized.content_sha256}.json`; mkdirSync(join(stagingRoot, 'receipts'), { recursive: true }); writeFileSync(join(stagingRoot, receiptPath), `${JSON.stringify(normalized, null, 2)}\n`); const receiptSummary = { path: receiptPath, sha256: normalized.content_sha256, content_sha256: normalized.content_sha256, byte_sha256: rawByteSha, raw_count: 1, schema: normalized.schema, status: normalized.status }
+  const manifest = withHash({ schema: DATA_V5.acquisition, version: 1, status: 'STAGING_COMPLETE', plan_sha256: PLAN.content_sha256, root_reference: 'portable-v5', staging_format: 'JSONL', storage_role: 'STAGING', authoritative: false, captures: [{ asset: 'btc', venue: 'BINANCE', instrument: 'BINANCE_SPOT', symbol: 'BTCUSDT', interval: '4h', series_type: 'signal_bars', start_at: T0, end_at: T0, availability_cutoff_at: closeTime, required: true, completed_bars_only: true, require_availability_time: true, expected_step_ms: FOUR_HOURS, expected_event_count: 1, producer_code_sha256: DATA_V5_PRODUCER_CODE_SHA256, adapter_code_sha256: DATA_V5_ADAPTER_CODE_SHA256, partition, source_receipts: [receiptSummary], coverage: { complete: true, expected_rows: 1, observed_rows: 1, min_event_time: T0, max_event_time: T0, min_availability_time: closeTime, max_availability_time: closeTime, irregular_bar_count: 0 }, limitations: ['FIXTURE_LIVE_SHAPED_CAPTURE'] }], source_receipts: [receiptPath], source_receipt_sha256: [normalized.content_sha256], source_receipt_byte_sha256: [rawByteSha], limitations: [] })
   validateContractSchema(manifest)
   const converted = await convertToParquet({ stagingManifest: manifest, stagingRoot, outputRoot, outputRootReference: 'portable-v5' })
   assert.equal(verifyParquetConversionManifest(converted, { root: outputRoot, planSha256: PLAN.content_sha256 }), true)
   validateContractSchema(converted)
-  assert.equal(await verifyParquetConversionManifestAuthoritative(converted, { root: outputRoot, planSha256: PLAN.content_sha256 }), true)
+  const metricsDiagnostics = withHash({ ...converted, captures: converted.captures.map(capture => ({ ...capture, coverage: { ...capture.coverage, required_metric_fields: ['open_interest'], required_field_coverage: [{ field: 'open_interest', observed: 1, expected: 1, fraction: 1 }] } })) })
+  validateContractSchema(metricsDiagnostics)
+  assert.equal(await verifyParquetConversionManifestAuthoritative(converted, { root: outputRoot, stagingRoot, planSha256: PLAN.content_sha256 }), true)
+  // Hashes do not make indirections authoritative: source receipts,
+  // acquisition partitions, and promoted Parquet must all reopen as regular
+  // single-link files beneath their declared root.
+  const sourcePartitionLinkRoot = mkdtempSync(join(tmpdir(), 'v5-custody-source-partition-link-')); cpSync(stagingRoot, sourcePartitionLinkRoot, { recursive: true }); const sourcePartition = join(sourcePartitionLinkRoot, path); renameSync(sourcePartition, `${sourcePartition}.real`); symlinkSync(`${path.split('/').at(-1)}.real`, sourcePartition); assert.throws(() => verifyAuthoritativeStaging({ manifest, root: sourcePartitionLinkRoot, planSha256: PLAN.content_sha256 }), /regular single-link|symlink/i)
+  const sourceReceiptLinkRoot = mkdtempSync(join(tmpdir(), 'v5-custody-source-receipt-link-')); cpSync(stagingRoot, sourceReceiptLinkRoot, { recursive: true }); const sourceReceipt = join(sourceReceiptLinkRoot, receiptPath); renameSync(sourceReceipt, `${sourceReceipt}.real`); symlinkSync(`${receiptPath.split('/').at(-1)}.real`, sourceReceipt); assert.throws(() => verifyAuthoritativeStaging({ manifest, root: sourceReceiptLinkRoot, planSha256: PLAN.content_sha256 }), /regular single-link|symlink/i)
+  const sourcePartitionHardlinkRoot = mkdtempSync(join(tmpdir(), 'v5-custody-source-partition-hardlink-')); cpSync(stagingRoot, sourcePartitionHardlinkRoot, { recursive: true }); const sourcePartitionHardlink = join(sourcePartitionHardlinkRoot, path); renameSync(sourcePartitionHardlink, `${sourcePartitionHardlink}.copy`); linkSync(`${sourcePartitionHardlink}.copy`, sourcePartitionHardlink); assert.throws(() => verifyAuthoritativeStaging({ manifest, root: sourcePartitionHardlinkRoot, planSha256: PLAN.content_sha256 }), /single-link|indirection/i)
+  const parquetLinkRoot = mkdtempSync(join(tmpdir(), 'v5-custody-parquet-link-')); cpSync(outputRoot, parquetLinkRoot, { recursive: true }); const parquetRelative = converted.captures[0].partition.path; const parquetLink = join(parquetLinkRoot, parquetRelative); renameSync(parquetLink, `${parquetLink}.real`); symlinkSync(`${parquetRelative.split('/').at(-1)}.real`, parquetLink); assert.throws(() => verifyParquetConversionManifest(converted, { root: parquetLinkRoot, planSha256: PLAN.content_sha256 }), /regular single-link|symlink/i)
+  const parquetHardlinkRoot = mkdtempSync(join(tmpdir(), 'v5-custody-parquet-hardlink-')); cpSync(outputRoot, parquetHardlinkRoot, { recursive: true }); const parquetHardlink = join(parquetHardlinkRoot, parquetRelative); renameSync(parquetHardlink, `${parquetHardlink}.copy`); linkSync(`${parquetHardlink}.copy`, parquetHardlink); assert.throws(() => verifyParquetConversionManifest(converted, { root: parquetHardlinkRoot, planSha256: PLAN.content_sha256 }), /single-link|indirection/i)
   const tamperedSchema = withHash({ ...converted, captures: converted.captures.map(capture => ({ ...capture, partition: { ...capture.partition, schema_sha256: H } })) })
-  await assert.rejects(() => verifyParquetConversionManifestAuthoritative(tamperedSchema, { root: outputRoot, planSha256: PLAN.content_sha256 }), /dataset root|schema differs/)
+  await assert.rejects(() => verifyParquetConversionManifestAuthoritative(tamperedSchema, { root: outputRoot, stagingRoot, planSha256: PLAN.content_sha256 }), /dataset root|schema differs/)
   const repeated = await convertToParquet({ stagingManifest: manifest, stagingRoot, outputRoot, outputRootReference: 'portable-v5' })
   assert.equal(repeated.dataset_root_sha256, converted.dataset_root_sha256)
 })
@@ -680,6 +784,24 @@ test('promoted coverage separates optional market-flow gaps from exact frozen st
   altered.captures = altered.captures.map(capture => capture.asset === 'btc' && capture.series_type === 'metrics_events' ? { ...capture, coverage: { ...capture.coverage, reason: 'DIFFERENT_MISSING_PREFIX' } } : capture)
   altered.content_sha256 = ownHash(altered)
   assert.notEqual(altered.content_sha256, readyAcquisition.content_sha256)
+
+  // Funding/event completion is never inferred from complete:true alone.
+  // Rehashing a five-year capture cannot manufacture exact boundaries or
+  // source pagination continuity, so both omitted and false proofs remain
+  // BLOCKED and cannot set base_complete/READY.
+  for (const boundaryPatch of [{ missing: true }, { boundaries_covered: false }, { source_pagination_complete: false }]) {
+    const forged = withHash({ ...readyAcquisition, captures: readyAcquisition.captures.map(capture => {
+      if (capture.series_type !== 'funding_events') return capture
+      const coverage = { ...capture.coverage }
+      if (boundaryPatch.missing) { delete coverage.boundaries_covered; delete coverage.source_pagination_complete } else Object.assign(coverage, boundaryPatch)
+      return { ...capture, coverage }
+    }) })
+    const resolved = resolvePromotedCoverage({ plan: basePlan, acquisition: forged, timeframeRequirements: baseRequirements, requireParquet: false })
+    const funding = resolved.series.find(row => row.series_type === 'funding_events' && row.asset === 'btc')
+    assert.equal(funding.complete, false)
+    assert.equal(resolved.base_complete, false)
+    assert.equal(resolved.status, 'BLOCKED')
+  }
 })
 
 function seriesKeyForTest(series) {

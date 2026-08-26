@@ -13,7 +13,7 @@
     "schema": { "const": "strategy-v5-authoritative-coverage/1" },
     "version": { "const": 1 },
     "status": { "enum": ["PLANNED", "OBSERVED_PARTIAL", "OBSERVED_COMPLETE"] },
-    "mode": { "enum": ["PLAN_ONLY", "CATALOG_ONLY_PLAN", "DOWNLOAD_AND_AUTHORITATIVE_REOPEN"] },
+    "mode": { "enum": ["PLAN_ONLY", "CATALOG_ONLY_PLAN", "DOWNLOAD_AND_AUTHORITATIVE_REOPEN", "LOCAL_RAW_REPLAY_AND_AUTHORITATIVE_REOPEN"] },
     "captured_at": { "type": "string", "format": "date-time" },
     "plan_sha256": { "$ref": "#/$defs/hash" },
     "catalog_sha256": { "$ref": "#/$defs/nullableHash" },
@@ -41,6 +41,32 @@
     "limitations": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
     "content_sha256": { "$ref": "#/$defs/hash" }
   },
+  "allOf": [{
+    "if": { "properties": { "status": { "const": "OBSERVED_COMPLETE" } } },
+    "then": {
+      "required": ["acquisition_sha256", "parquet_sha256", "dataset_root_sha256"],
+      "properties": {
+        "mode": { "enum": ["DOWNLOAD_AND_AUTHORITATIVE_REOPEN", "LOCAL_RAW_REPLAY_AND_AUTHORITATIVE_REOPEN"] },
+        "acquisition_sha256": { "$ref": "#/$defs/hash" },
+        "parquet_sha256": { "$ref": "#/$defs/hash" },
+        "dataset_root_sha256": { "$ref": "#/$defs/hash" },
+        "series": {
+          "minItems": 1,
+          "items": {
+            "if": { "properties": { "required": { "const": true } } },
+            "then": {
+              "required": ["complete", "jsonl_partition", "parquet_partition"],
+              "properties": {
+                "complete": { "const": true },
+                "jsonl_partition": { "$ref": "#/$defs/partition" },
+                "parquet_partition": { "$ref": "#/$defs/partition" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }],
   "additionalProperties": false,
   "$defs": {
     "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
@@ -110,8 +136,116 @@
         "symbol": { "type": ["string", "null"] },
         "history_status": { "enum": ["SIGNAL_HISTORY_AVAILABLE", "UNAVAILABLE"] },
         "tradeable": { "type": "boolean" },
-        "contracts": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+        "contracts": { "type": "array", "items": { "$ref": "#/$defs/datedContract" } },
         "limitations": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
+      },
+      "allOf": [{
+        "if": { "properties": { "tradeable": { "const": true } } },
+        "then": {
+          "properties": {
+            "history_status": { "const": "SIGNAL_HISTORY_AVAILABLE" },
+            "contracts": { "contains": { "properties": { "tradeable": { "const": true } } } }
+          }
+        }
+      }, {
+        "if": { "properties": { "tradeable": { "const": false } } },
+        "then": {
+          "properties": {
+            "contracts": { "not": { "contains": { "properties": { "tradeable": { "const": true } } } } }
+          }
+        }
+      }],
+      "additionalProperties": false
+    },
+    "datedContract": {
+      "type": "object",
+      "required": [
+        "asset", "symbol", "contract_type", "venue", "instrument", "first_bar_at", "last_bar_at",
+        "expiry_observed_date_utc", "expiry_at", "expiry_binding_status", "contract_spec_status",
+        "history_status", "archive_ingestion_status", "archive_coverage_complete", "tradeable",
+        "source_prefix", "source_raw_byte_sha256", "source_listing_response_byte_sha256", "source_receipt_sha256"
+      ],
+      "properties": {
+        "asset": { "type": "string", "minLength": 1 },
+        "symbol": { "type": "string", "minLength": 1 },
+        "contract_type": { "type": "string", "minLength": 1 },
+        "venue": { "const": "BINANCE" },
+        "instrument": { "const": "BINANCE_USDM_DATED_FUTURE" },
+        "first_bar_at": { "$ref": "#/$defs/nullableTime" },
+        "last_bar_at": { "$ref": "#/$defs/nullableTime" },
+        "expiry_observed_date_utc": { "type": ["string", "null"] },
+        "expiry_at": { "$ref": "#/$defs/nullableTime" },
+        "expiry_binding_status": { "type": "string", "minLength": 1 },
+        "contract_spec_status": { "type": "string", "minLength": 1 },
+        "history_status": { "enum": ["SIGNAL_HISTORY_AVAILABLE", "UNAVAILABLE"] },
+        "archive_ingestion_status": { "enum": ["ARCHIVE_INGESTED", "ARCHIVE_DISCOVERED_NOT_INGESTED", "NOT_APPLICABLE", "UNAVAILABLE"] },
+        "archive_coverage_complete": { "type": "boolean" },
+        "tradeable": { "type": "boolean" },
+        "margin_status": { "type": "string", "minLength": 1 },
+        "liquidation_status": { "type": "string", "minLength": 1 },
+        "settlement_status": { "type": "string", "minLength": 1 },
+        "tradeability_metadata_refs": {
+          "type": "object",
+          "required": ["expiry", "contract_spec", "margin", "liquidation", "settlement"],
+          "properties": {
+            "expiry": { "$ref": "#/$defs/metadataReference" },
+            "contract_spec": { "$ref": "#/$defs/metadataReference" },
+            "margin": { "$ref": "#/$defs/metadataReference" },
+            "liquidation": { "$ref": "#/$defs/metadataReference" },
+            "settlement": { "$ref": "#/$defs/metadataReference" }
+          },
+          "additionalProperties": false
+        },
+        "source_prefix": { "type": "string", "minLength": 1 },
+        "source_raw_byte_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+        "source_listing_response_byte_sha256": { "type": "array", "items": { "$ref": "#/$defs/hash" }, "uniqueItems": true },
+        "source_receipt_sha256": { "type": "array", "items": { "$ref": "#/$defs/hash" }, "uniqueItems": true },
+        "catalog_original": { "type": "object" },
+        "archive_physical_capture_refs": {
+          "type": "object",
+          "required": ["jsonl_partition_sha256", "parquet_partition_sha256", "dataset_root_sha256"],
+          "properties": {
+            "jsonl_partition_sha256": { "$ref": "#/$defs/hash" },
+            "parquet_partition_sha256": { "$ref": "#/$defs/hash" },
+            "dataset_root_sha256": { "$ref": "#/$defs/hash" }
+          },
+          "additionalProperties": false
+        },
+        "archive_raw_references": { "type": "array", "items": { "type": "object" } }
+      },
+      "allOf": [{
+        "if": { "properties": { "archive_ingestion_status": { "const": "ARCHIVE_INGESTED" } } },
+        "then": {
+          "required": ["archive_physical_capture_refs"],
+          "properties": { "history_status": { "const": "SIGNAL_HISTORY_AVAILABLE" }, "archive_coverage_complete": { "const": true } }
+        }
+      }, {
+        "if": { "properties": { "tradeable": { "const": true } } },
+        "then": {
+          "required": ["expiry_at", "margin_status", "liquidation_status", "settlement_status", "archive_physical_capture_refs", "tradeability_metadata_refs"],
+          "properties": {
+            "expiry_at": { "type": "string", "format": "date-time" },
+            "expiry_binding_status": { "const": "BOUND" },
+            "contract_spec_status": { "enum": ["BOUND", "PUBLIC_OBSERVED"] },
+            "history_status": { "const": "SIGNAL_HISTORY_AVAILABLE" },
+            "archive_ingestion_status": { "const": "ARCHIVE_INGESTED" },
+            "archive_coverage_complete": { "const": true },
+            "margin_status": { "const": "BOUND" },
+            "liquidation_status": { "const": "BOUND" },
+            "settlement_status": { "const": "BOUND" }
+          }
+        }
+      }],
+      "additionalProperties": false
+    },
+    "metadataReference": {
+      "type": "object",
+      "required": ["path", "content_sha256", "byte_sha256", "bytes"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "content_sha256": { "$ref": "#/$defs/hash" },
+        "byte_sha256": { "$ref": "#/$defs/hash" },
+        "bytes": { "type": "integer", "minimum": 1 }
       },
       "additionalProperties": false
     }

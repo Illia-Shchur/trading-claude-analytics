@@ -53,7 +53,12 @@
     "selected_trades_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
     "stresses_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
     "portfolio_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
-    "stage_artifacts": { "type": "object", "additionalProperties": false, "properties": { "genetic": { "$ref": "#/$defs/hash" }, "execution_fills": { "$ref": "#/$defs/hash" }, "selected_trades": { "$ref": "#/$defs/hash" }, "stresses": { "$ref": "#/$defs/hash" }, "portfolio": { "$ref": "#/$defs/hash" } } },
+    "oos_artifact_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+    "vector_inventory_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+    "oos_validation_exposure_head_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+    "oos_episode_ids": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+    "stage_artifacts": { "type": "object", "additionalProperties": false, "properties": { "genetic": { "$ref": "#/$defs/hash" }, "execution_fills": { "$ref": "#/$defs/hash" }, "selected_trades": { "$ref": "#/$defs/hash" }, "stresses": { "$ref": "#/$defs/hash" }, "portfolio": { "$ref": "#/$defs/hash" }, "final_oos_artifact": { "$ref": "#/$defs/hash" }, "final_oos_vector_inventory": { "$ref": "#/$defs/hash" } } },
+    "stage_artifact_refs": { "type": "object", "additionalProperties": false, "properties": { "genetic": { "$ref": "#/$defs/stageArtifactRef" }, "execution_fills": { "$ref": "#/$defs/stageArtifactRef" }, "selected_trades": { "$ref": "#/$defs/stageArtifactRef" }, "stresses": { "$ref": "#/$defs/stageArtifactRef" }, "portfolio": { "$ref": "#/$defs/stageArtifactRef" }, "final_oos_artifact": { "$ref": "#/$defs/oosArtifactRef" }, "final_oos_vector_inventory": { "$ref": "#/$defs/oosVectorRef" } } },
     "decision": { "enum": ["REJECTED", "SHADOW", "CANDIDATE_REVIEW"] },
     "gate_status": {
       "type": "object",
@@ -63,9 +68,59 @@
     },
     "content_sha256": { "$ref": "#/$defs/hash" }
   },
-  "allOf": [{ "if": { "properties": { "decision": { "enum": ["SHADOW", "CANDIDATE_REVIEW"] } } }, "then": { "properties": { "gate_status": { "properties": { "all_required_stages": { "const": true } } } } } }],
+  "allOf": [
+    { "if": { "properties": { "decision": { "enum": ["SHADOW", "CANDIDATE_REVIEW"] } } }, "then": { "properties": { "gate_status": { "properties": { "all_required_stages": { "const": true } } } } } },
+    {
+      "if": { "properties": { "provenance": { "const": "AUTHORITATIVE_RECOMPUTED" }, "decision": { "enum": ["SHADOW", "CANDIDATE_REVIEW"] } } },
+      "then": {
+        "required": ["execution_fills_sha256", "selected_trades_sha256", "stresses_sha256", "portfolio_sha256", "oos_artifact_sha256", "vector_inventory_sha256", "oos_validation_exposure_head_sha256", "oos_episode_ids", "stage_artifacts", "stage_artifact_refs"],
+        "properties": {
+          "stage_artifacts": { "required": ["genetic", "execution_fills", "selected_trades", "stresses", "portfolio", "final_oos_artifact", "final_oos_vector_inventory"] },
+          "stage_artifact_refs": { "required": ["genetic", "execution_fills", "selected_trades", "stresses", "portfolio", "final_oos_artifact", "final_oos_vector_inventory"] }
+        }
+      }
+    }
+  ],
   "$defs": {
     "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "stageArtifactRef": {
+      "type": "object",
+      "required": ["schema", "version", "path", "content_sha256", "byte_sha256", "bytes"],
+      "properties": {
+        "schema": { "const": "strategy-v5-authoritative-stage-artifact/1" },
+        "version": { "const": 1 },
+        "path": { "type": "string", "minLength": 1 },
+        "content_sha256": { "$ref": "#/$defs/hash" },
+        "byte_sha256": { "$ref": "#/$defs/hash" },
+        "bytes": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "stageArtifactRefBase": {
+      "type": "object",
+      "required": ["schema", "version", "path", "content_sha256", "byte_sha256", "bytes"],
+      "properties": {
+        "schema": { "type": "string", "minLength": 1 },
+        "version": { "const": 1 },
+        "path": { "type": "string", "minLength": 1 },
+        "content_sha256": { "$ref": "#/$defs/hash" },
+        "byte_sha256": { "$ref": "#/$defs/hash" },
+        "bytes": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "oosArtifactRef": {
+      "allOf": [
+        { "$ref": "#/$defs/stageArtifactRefBase" },
+        { "properties": { "schema": { "const": "strategy-v5-statistical-input/1" } } }
+      ]
+    },
+    "oosVectorRef": {
+      "allOf": [
+        { "$ref": "#/$defs/stageArtifactRefBase" },
+        { "properties": { "schema": { "const": "strategy-v5-statistical-vector-inventory/1" } } }
+      ]
+    },
     "candidateMetric": {
       "type": "object",
       "required": ["candidate_id", "behavior_sha256", "signal_intent", "trades", "metrics", "stresses", "portfolio"],

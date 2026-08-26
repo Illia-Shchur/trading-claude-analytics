@@ -149,7 +149,7 @@
     },
     "public_key_pem": {
       "type": "string",
-      "minLength": 1
+      "pattern": "^-----BEGIN PUBLIC KEY-----\\n(?:[A-Za-z0-9+/=]{1,64}\\n)+-----END PUBLIC KEY-----\\n?$"
     },
     "signature": {
       "type": "string",

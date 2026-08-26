@@ -81,7 +81,7 @@ test('v5 tamper diagnostics precede semantic gate errors', async () => {
   }
 })
 
-test('index excludes registry views even when output moves', async () => {
+test('index excludes registry views and loose statistical runs even when output moves', async () => {
   const root = mkdtempSync(join(tmpdir(), 'strategy-research-v5-index-'))
   try {
     const run = {
@@ -105,7 +105,7 @@ test('index excludes registry views even when output moves', async () => {
     await assert.rejects(() => runAuthoritativeV5Cli('index', { root, record_root: join(root, 'receipts') }), /physical bytes|tamper/i)
     writeFileSync(first.path, indexBytes)
     const second = await runAuthoritativeV5Cli('index', { root, out: join(root, 'custom-index.json'), record_root: join(root, 'receipts') })
-    assert.equal(first.index.records.length, 1)
+    assert.equal(first.index.records.length, 0, 'a blocked statistical run is not visible without a COMMITTED publication inventory')
     assert.deepEqual(second.index.records, first.index.records)
   } finally {
     rmSync(root, { recursive: true, force: true })
