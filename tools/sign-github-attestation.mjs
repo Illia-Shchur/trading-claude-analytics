@@ -5,12 +5,11 @@
 import { createPrivateKey, createPublicKey, randomBytes } from 'node:crypto'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { hash, ownHash, signActionsAttestationV5 } from './strategy-readiness-v5.mjs'
+import { environmentReviewSafe, hash, ownHash, signActionsAttestationV5 } from './strategy-readiness-v5.mjs'
 import { validateContractSchema } from './research-schema-registry.mjs'
 
 const HASH = /^[a-f0-9]{64}$/
 const required = (name, value) => { if (!value) throw new Error(`${name} is required`); return value }
-const environmentReviewSafe = value => Boolean(value && Number.isInteger(value.reviewer_count) && value.reviewer_count >= 0 && (value.reviewer_count === 0 ? value.protection_rule_count === 0 : value.prevent_self_review === true))
 const SETTINGS_AUDITOR_APP_ID = 4716635
 const SETTINGS_AUDITOR_APP_SLUG = 'strategy-v5-settings-auditor'
 const SETTINGS_AUDITOR_PERMISSIONS = { actions: 'read', administration: 'read', environments: 'read', metadata: 'read', secrets: 'read' }

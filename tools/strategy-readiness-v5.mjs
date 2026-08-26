@@ -49,7 +49,22 @@ const SUPPORTED = new Set([
   'github-deployment-settings-capture/1', 'github-settings-api-receipt/1', 'github-writer-installation-receipt/1', 'strategy-readiness-evidence-manifest/1'
 ])
 const stable = value => canonicalize(value); export const hash = value => createHash('sha256').update(typeof value === 'string' || Buffer.isBuffer(value) ? value : stable(value)).digest('hex'); export const ownHash = (value, field = 'content_sha256') => { const copy = structuredClone(value); delete copy[field]; return hash(copy) }; export const withHash = (value, field = 'content_sha256') => { const copy = structuredClone(value); copy[field] = ownHash(copy, field); return copy }
-const environmentReviewSafe = value => Boolean(value && Number.isInteger(value.reviewer_count) && value.reviewer_count >= 0 && (value.reviewer_count === 0 ? value.protection_rule_count === 0 : value.prevent_self_review === true))
+function nonNegativeSafeInteger(value) {
+  return Number.isSafeInteger(value) && value >= 0
+}
+
+// protection_rule_count includes non-reviewer rules.  The reviewer gate must
+// therefore use the explicit required-reviewer count when available.  Older
+// receipts predate that field: infer it only where the old shape is
+// unambiguous, and reject an ambiguous zero-reviewer/nonzero-rule shape.
+export const environmentReviewSafe = value => {
+  if (!value || !nonNegativeSafeInteger(value.reviewer_count) || !nonNegativeSafeInteger(value.protection_rule_count)) return false
+  const requiredReviewerRuleCount = value.required_reviewer_rule_count === undefined
+    ? (value.reviewer_count > 0 ? 1 : value.protection_rule_count === 0 ? 0 : null)
+    : value.required_reviewer_rule_count
+  if (!nonNegativeSafeInteger(requiredReviewerRuleCount) || requiredReviewerRuleCount > value.protection_rule_count || requiredReviewerRuleCount !== value.reviewer_count) return false
+  return requiredReviewerRuleCount === 0 || value.prevent_self_review === true
+}
 const validHash = value => HASH.test(String(value || '')); const finite = value => Number.isFinite(Number(value)); const iso = value => new Date(value).toISOString(); const supported = schema => SUPPORTED.has(schema)
 
 // Readiness may inspect multi-year Parquet evidence.  Keep the physical-byte
