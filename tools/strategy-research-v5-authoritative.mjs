@@ -44,6 +44,7 @@ import {
   readExposureHeadFile,
   validateStatisticalArtifactSet,
   validateVectorInventory,
+  assertWfoRetainedOosBinding,
   runGeneticSearchV5,
   runNestedWfoV5,
   validateNestedWfoArtifact,
@@ -3161,7 +3162,7 @@ export function authoritativeOverfitAudit(options = {}) {
   const artifactPhysical = physicalJson(options.artifact || options.statistical_artifact, { label: 'statistical artifact', schemas: [STAT_SCHEMA.input] }); const headPhysical = physicalJson(options.exposure_head_artifact || options.head, { label: 'exposure head artifact', schemas: [STAT_SCHEMA.exposure] }); const head = headPhysical.value
   const vectorPhysical = physicalJson(options.vector || options.vector_inventory, { label: 'vector inventory', schemas: [STAT_SCHEMA.vectors] }); const vector = vectorPhysical.value
   validateExposureHead(head); validateStatisticalArtifactSet(artifactPhysical.value, { exposureHead: head, allowSubset: true }); validateVectorInventory(vector, head, artifactPhysical.value.episodes.map(row => row.episode_id))
-  const foldPhysical = physicalJson(options.folds || options.wfo, { label: 'WFO artifact', schemas: [STAT_SCHEMA.wfo] }); const wfo = foldPhysical.value; validateNestedWfoArtifact(wfo); const folds = wfo.folds; if (wfo.exposure_head_sha256 !== head.content_sha256 || wfo.vector_inventory_sha256 !== vector.content_sha256 || stable(wfo.oos_episode_ids) !== stable(vector.episode_ids)) fail('overfit WFO/exposure/vector lineage is not exact')
+  const foldPhysical = physicalJson(options.folds || options.wfo, { label: 'WFO artifact', schemas: [STAT_SCHEMA.wfo] }); const wfo = foldPhysical.value; validateNestedWfoArtifact(wfo); assertWfoRetainedOosBinding(wfo, artifactPhysical.value, vector, 'overfit-audit retained OOS evidence'); const folds = wfo.folds; if (wfo.validation_exposure_head_sha256 !== head.content_sha256 || wfo.vector_inventory_sha256 !== vector.content_sha256 || stable(wfo.oos_episode_ids) !== stable(vector.episode_ids)) fail('overfit WFO/exposure/vector lineage is not exact')
   const geneticPhysical = physicalJson(options.genetic || options.ga, { label: 'genetic artifact', schemas: [STAT_SCHEMA.genetic] }); const genetic = geneticPhysical.value
   const selected = genetic.selected_behavior_alias_sha256 || genetic.selected?.behavior_alias_sha256
   if (!HASH.test(String(selected || '')) || !head.entries.some(row => row.behavior_sha256 === selected) || !vector.vectors?.[selected]) fail('overfit-audit requires a selected behavior alias present in the physical exposure head and vector inventory')

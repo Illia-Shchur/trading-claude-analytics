@@ -10,12 +10,58 @@ import { WRITER_APP_ID } from './verify-evidence-writer-installation.mjs'
 import canonicalize from 'canonicalize'
 
 const digest = value => createHash('sha256').update(typeof value === 'string' ? value : canonicalize(value)).digest('hex')
+const redact = (value, secrets = []) => secrets.filter(secret => typeof secret === 'string' && secret.length > 0).reduce((text, secret) => text.split(secret).join('[REDACTED]'), String(value))
 
-function api(path, token = process.env.GH_TOKEN) {
+// Keep credentials out of argv (and therefore process listings).  `gh` reads
+// GH_TOKEN from its environment for PAT/installation-token calls.  Short-lived
+// App JWTs use curl's stdin header channel instead, because GitHub requires the
+// real `Authorization: Bearer` scheme and `gh` does not honor a scheme hint.
+// Every child gets a scrubbed environment so a helper cannot read the private
+// key (or unrelated secret material) from its inherited environment.
+const isChildSecretEnv = key => {
+  const upper = String(key).toUpperCase()
+  // Test/provider control knobs are not credentials; retain them so a clean
+  // runner can faithfully emulate HTTP responses without exposing secrets.
+  if (upper.startsWith('FAKE_')) return false
+  if (upper === 'GH_TOKEN') return false
+  return /PRIVATE_KEY|PEM|PASSWORD|SECRET|(?:^|_)(?:TOKEN|JWT)(?:_|$)/.test(upper)
+}
+const childEnvironment = token => {
+  const env = { ...process.env }
+  for (const key of Object.keys(env)) if (isChildSecretEnv(key)) delete env[key]
+  if (token) env.GH_TOKEN = token
+  else delete env.GH_TOKEN
+  return env
+}
+
+// Keep all command failures opaque and redact any credential echoed by a
+// provider or wrapper.
+function api(path, options = {}) {
+  const auth = typeof options === 'string' ? { token: options, authMode: 'gh-token' } : options
+  const token = auth.token ?? process.env.GH_TOKEN
+  const authMode = auth.authMode || 'gh-token'
+  if (!['gh-token', 'bearer'].includes(authMode)) throw new Error('unsupported GitHub API authentication mode')
+  if (authMode === 'bearer' && !token) throw new Error('Bearer GitHub API authentication requires a token')
+  const bootstrapToken = process.env.GH_TOKEN
   let output = ''
-  try { output = execFileSync('gh', ['api', '--include', path], { encoding: 'utf8', env: { ...process.env, GH_TOKEN: token }, stdio: ['ignore', 'pipe', 'pipe'] }) } catch (error) { output = String(error.stdout || error.stderr || '') }
-  const match = output.match(/HTTP\/\d(?:\.\d)?\s+(\d{3})/i); const bodyText = output.split(/\r?\n\r?\n/).at(-1) || '{}'; let body = {}; try { body = JSON.parse(bodyText) } catch {}
-  return { status: Number(match?.[1] || 0), body }
+  try {
+    if (authMode === 'bearer') {
+      // curl's @- header source consumes the header from stdin.  This keeps
+      // the App JWT out of argv and the child environment while preserving
+      // GitHub's required Bearer authentication scheme.
+      const apiRoot = String(process.env.GITHUB_API_URL || 'https://api.github.com').replace(/\/$/, '')
+      const url = `${apiRoot}/${String(path).replace(/^\//, '')}`
+      output = execFileSync('curl', ['--silent', '--show-error', '--include', '--header', '@-', url], { encoding: 'utf8', input: `Authorization: Bearer ${token}\nAccept: application/vnd.github+json\n`, env: childEnvironment(), stdio: ['pipe', 'pipe', 'pipe'] })
+    } else {
+      const args = ['api', '--include', path]
+      const env = childEnvironment(token)
+      env.GH_AUTH_SCHEME = token ? 'GH_TOKEN' : 'NONE'
+      output = execFileSync('gh', args, { encoding: 'utf8', env, stdio: ['ignore', 'pipe', 'pipe'] })
+    }
+  } catch (error) { output = `${error.stdout || ''}\n${error.stderr || ''}` }
+  output = redact(output, [token, bootstrapToken])
+  const statusLines = [...output.matchAll(/HTTP\/\d(?:\.\d)?\s+(\d{3})/gi)]; const bodyText = output.split(/\r?\n\r?\n/).at(-1) || '{}'; let body = {}; try { body = JSON.parse(bodyText) } catch {}
+  return { status: Number(statusLines.at(-1)?.[1] || 0), body }
 }
 
 const repository = process.env.GITHUB_REPOSITORY
@@ -50,11 +96,18 @@ const branchHead = api(`repos/${repository}/branches/${encodeURIComponent(eviden
 const environment = api(`repos/${repository}/environments/prospective-v5`)
 const writerEnvironment = api(`repos/${repository}/environments/evidence-writer-v5`)
 const rulesets = api(`repos/${repository}/rulesets?includes_parents=true`)
-// A PAT cannot authenticate the App-installation endpoint.  Keep this
-// explicitly unproven; the protected writer job supplies the separate
-// freshly-minted-App installation receipt.
-const installation = settingsTokenKind === 'PAT' ? { status: 0, body: { skipped_for: 'PAT', installation_proof: 'UNPROVEN' } } : api(`repos/${repository}/installation`)
-const settingsTokenIdentity = settingsTokenKind === 'PAT' ? api('user') : api('installation')
+// PAT cannot authenticate the App-installation endpoint, so it remains
+// explicitly unproven.  APP mode authenticates the repository installation
+// endpoint with the auditor JWT; the generic /installation endpoint is never
+// used because it is not a valid App identity endpoint.
+let installation = { status: 0, body: { skipped_for: 'PAT', installation_proof: 'UNPROVEN' } }
+const parseInstalledApp = response => {
+  const body = response.body || {}; const nested = body.app || {}
+  const id = Number.isInteger(body.app_id) ? body.app_id : (Number.isInteger(nested.id) ? nested.id : null)
+  const slug = typeof body.app_slug === 'string' ? body.app_slug : (typeof nested.slug === 'string' ? nested.slug : null)
+  return { status: response.status, id, slug, verified: settingsTokenKind === 'APP' && response.status === 200 && id === SETTINGS_AUDITOR_APP_ID && slug === SETTINGS_AUDITOR_APP_SLUG }
+}
+let installedApp = parseInstalledApp(installation)
 const rawRulesetRows = Array.isArray(rulesets.body) ? rulesets.body : (Array.isArray(rulesets.body?.rulesets) ? rulesets.body.rulesets : [])
 const rulesetDetails = rawRulesetRows.map(row => ({ id: Number(row.id), ...api(`repos/${repository}/rulesets/${encodeURIComponent(String(row.id))}`) }))
 const oidc = api(`repos/${repository}/actions/oidc/customization/sub`)
@@ -79,25 +132,29 @@ const evidenceWriterOrganizationSecret = api(`orgs/${encodeURIComponent(organiza
 const auditorAccountId = repositoryApi.body?.owner?.id ?? repositoryApi.body?.owner_id ?? null
 const auditorAccountLogin = repository.split('/')[0]
 const auditorAccountType = repositoryApi.body?.owner?.type || null
+const auditorRepositoryName = String(repositoryApi.body?.name || repository.split('/')[1] || '')
 const auditorProofBase = { token_kind: settingsTokenKind, expected_app_id: auditorIdentityConfigured ? SETTINGS_AUDITOR_APP_ID : null, expected_installation_id: auditorIdentityConfigured ? SETTINGS_AUDITOR_INSTALLATION_ID : null, expected_app_slug: auditorAppSlug, app_endpoint_status: 0, app_endpoint_body_sha256: digest({}), installation_endpoint_status: 0, installation_endpoint_body_sha256: digest({}), repositories_endpoint_status: 0, repositories_endpoint_body_sha256: digest({}), app_id: null, app_slug: null, installation_id: null, repository_selection: null, account: null, permissions: null, installation_permissions: null, events: null, installation_events: null, accessible_repository_count: 0, accessible_repository: null, verified: false }
 let settingsAuditorInstallation = auditorProofBase
 if (settingsTokenKind === 'APP' && auditorIdentityConfigured && process.env.V5_GITHUB_SETTINGS_AUDITOR_APP_PRIVATE_KEY_PEM) {
   const auditorJwt = auditorAppJwt(auditorAppId, process.env.V5_GITHUB_SETTINGS_AUDITOR_APP_PRIVATE_KEY_PEM)
-  const appMetadata = api('app', auditorJwt)
-  const installationMetadata = api(`app/installations/${auditorInstallationId}`, auditorJwt)
+  installation = api(`repos/${repository}/installation`, { token: auditorJwt, authMode: 'bearer' })
+  installedApp = parseInstalledApp(installation)
+  const appMetadata = api('app', { token: auditorJwt, authMode: 'bearer' })
+  const installationMetadata = api(`app/installations/${auditorInstallationId}`, { token: auditorJwt, authMode: 'bearer' })
   const accessibleRepositories = api('installation/repositories')
   const appBody = appMetadata.body || {}; const installationBody = installationMetadata.body || {}; const repositoriesBody = accessibleRepositories.body || {}; const rows = Array.isArray(repositoriesBody.repositories) ? repositoriesBody.repositories : []; const row = rows[0] || {}; const account = installationBody.account || {}
   const exactAccount = Number(account.id) === Number(auditorAccountId) && String(account.login || '') === auditorAccountLogin && (!auditorAccountType || String(account.type || '') === String(auditorAccountType))
-  const exactRepo = Number(row.id) === Number(repositoryApi.body?.id) && String(row.full_name || '') === repository
-  settingsAuditorInstallation = { ...auditorProofBase, app_endpoint_status: appMetadata.status, app_endpoint_body_sha256: digest(appMetadata.body), installation_endpoint_status: installationMetadata.status, installation_endpoint_body_sha256: digest(installationMetadata.body), repositories_endpoint_status: accessibleRepositories.status, repositories_endpoint_body_sha256: digest(accessibleRepositories.body), app_id: Number(appBody.id) || null, app_slug: typeof appBody.slug === 'string' ? appBody.slug : null, installation_id: Number(installationBody.id) || null, repository_selection: installationBody.repository_selection || null, account: account.id ? { id: Number(account.id), login: String(account.login || ''), type: String(account.type || '') } : null, permissions: appBody.permissions || null, installation_permissions: installationBody.permissions || null, events: Array.isArray(appBody.events) ? appBody.events : null, installation_events: Array.isArray(installationBody.events) ? installationBody.events : null, accessible_repository_count: Number(repositoriesBody.total_count) || rows.length, accessible_repository: exactRepo ? { id: Number(row.id), full_name: String(row.full_name) } : (row.id || row.full_name ? { id: Number(row.id) || null, full_name: String(row.full_name || '') } : null), verified: appMetadata.status === 200 && installationMetadata.status === 200 && accessibleRepositories.status === 200 && Number(appBody.id) === auditorAppId && String(appBody.slug || '') === auditorAppSlug && exactAuditorPermissions(appBody.permissions) && exactEvents(appBody.events) && Number(installationBody.id) === auditorInstallationId && Number(installationBody.app_id) === auditorAppId && String(installationBody.app_slug || '') === auditorAppSlug && installationBody.repository_selection === 'selected' && exactAuditorPermissions(installationBody.permissions) && exactEvents(installationBody.events) && exactAccount && Number(repositoriesBody.total_count) === 1 && rows.length === 1 && exactRepo }
+  const exactRepo = Number(row.id) === Number(repositoryApi.body?.id) && String(row.full_name || '') === repository && String(row.name || '') === auditorRepositoryName && Number(row.owner?.id) === Number(auditorAccountId) && String(row.owner?.login || '') === auditorAccountLogin
+  settingsAuditorInstallation = { ...auditorProofBase, app_endpoint_status: appMetadata.status, app_endpoint_body_sha256: digest(appMetadata.body), installation_endpoint_status: installationMetadata.status, installation_endpoint_body_sha256: digest(installationMetadata.body), repositories_endpoint_status: accessibleRepositories.status, repositories_endpoint_body_sha256: digest(accessibleRepositories.body), app_id: Number(appBody.id) || null, app_slug: typeof appBody.slug === 'string' ? appBody.slug : null, installation_id: Number(installationBody.id) || null, repository_selection: installationBody.repository_selection || null, account: account.id ? { id: Number(account.id), login: String(account.login || ''), type: String(account.type || '') } : null, permissions: appBody.permissions || null, installation_permissions: installationBody.permissions || null, events: Array.isArray(appBody.events) ? appBody.events : null, installation_events: Array.isArray(installationBody.events) ? installationBody.events : null, accessible_repository_count: Number(repositoriesBody.total_count) || rows.length, accessible_repository: exactRepo ? { id: Number(row.id), full_name: String(row.full_name) } : (row.id || row.full_name ? { id: Number(row.id) || null, full_name: String(row.full_name || '') } : null), verified: installedApp.verified && appMetadata.status === 200 && installationMetadata.status === 200 && accessibleRepositories.status === 200 && Number(appBody.id) === auditorAppId && String(appBody.slug || '') === auditorAppSlug && exactAuditorPermissions(appBody.permissions) && exactEvents(appBody.events) && Number(installationBody.id) === auditorInstallationId && Number(installationBody.app_id) === auditorAppId && String(installationBody.app_slug || '') === auditorAppSlug && installationBody.repository_selection === 'selected' && exactAuditorPermissions(installationBody.permissions) && exactEvents(installationBody.events) && exactAccount && Number(repositoriesBody.total_count) === 1 && rows.length === 1 && exactRepo }
 }
+const settingsTokenIdentity = settingsTokenKind === 'PAT' ? api('user') : installation
 function verifyOidcJwt(jwt) {
   try {
     const [encodedHeader, encodedPayload, encodedSignature] = String(jwt).split('.')
     if (!encodedHeader || !encodedPayload || !encodedSignature) return false
     const header = JSON.parse(Buffer.from(encodedHeader, 'base64url').toString('utf8'))
     if (header.alg !== 'RS256' || typeof header.kid !== 'string') return false
-    const jwksRaw = execFileSync('curl', ['--fail', '--silent', '--show-error', 'https://token.actions.githubusercontent.com/.well-known/jwks'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
+    const jwksRaw = execFileSync('curl', ['--fail', '--silent', '--show-error', 'https://token.actions.githubusercontent.com/.well-known/jwks'], { encoding: 'utf8', env: childEnvironment(), stdio: ['ignore', 'pipe', 'ignore'] })
     const jwks = JSON.parse(jwksRaw); const jwk = Array.isArray(jwks.keys) ? jwks.keys.find(key => key.kid === header.kid && key.kty === 'RSA') : null
     if (!jwk) return false
     const key = createPublicKey({ key: jwk, format: 'jwk' })
@@ -108,7 +165,7 @@ function requestOidcIdentity() {
   const requestUrl = process.env.ACTIONS_ID_TOKEN_REQUEST_URL; const requestToken = process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN
   if (!requestUrl || !requestToken) return null
   try {
-    const separator = requestUrl.includes('?') ? '&' : '?'; const raw = execFileSync('curl', ['--fail', '--silent', '--show-error', '-H', `Authorization: bearer ${requestToken}`, `${requestUrl}${separator}audience=strategy-v5`], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }); const value = JSON.parse(raw).value
+    const separator = requestUrl.includes('?') ? '&' : '?'; const raw = execFileSync('curl', ['--fail', '--silent', '--show-error', '--header', '@-', `${requestUrl}${separator}audience=strategy-v5`], { encoding: 'utf8', input: `Authorization: bearer ${requestToken}\n`, env: childEnvironment(), stdio: ['pipe', 'pipe', 'pipe'] }); const value = JSON.parse(raw).value
     if (typeof value !== 'string') return null
     const parts = value.split('.'); if (parts.length !== 3) return null
     const claims = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'))
@@ -124,12 +181,12 @@ const oidcClaimPolicyVerified = Array.isArray(oidc.body?.include_claim_keys) && 
 // installed evidence-writer App explicitly; never silently substitute 15368.
 const configuredEvidenceWriterAppId = Number(process.env.V5_EVIDENCE_WRITER_APP_ID || '')
 const evidenceWriterAppIdValid = configuredEvidenceWriterAppId === WRITER_APP_ID
-const branchBody = branch.body || {}; const rawApps = Array.isArray(branchBody.restrictions?.apps) ? branchBody.restrictions.apps : []; const installed = installation.body?.app || {}; const installedApp = { status: installation.status, id: Number.isInteger(installation.body?.app_id) ? installation.body.app_id : (Number.isInteger(installed.id) ? installed.id : null), slug: typeof installed.slug === 'string' ? installed.slug : null, verified: installation.status === 200 && Number.isInteger(installation.body?.app_id || installed.id) && typeof installed.slug === 'string' }
+const branchBody = branch.body || {}; const rawApps = Array.isArray(branchBody.restrictions?.apps) ? branchBody.restrictions.apps : []
 const expectedSettingsAppId = process.env.V5_GITHUB_SETTINGS_APP_ID ? Number(process.env.V5_GITHUB_SETTINGS_APP_ID) : null; const expectedSettingsUserId = process.env.V5_SETTINGS_TOKEN_USER_ID ? String(process.env.V5_SETTINGS_TOKEN_USER_ID) : null; const expectedSettingsLogin = process.env.V5_SETTINGS_TOKEN_LOGIN ? String(process.env.V5_SETTINGS_TOKEN_LOGIN) : null
 const settingsTokenIdentityPinned = settingsTokenKind === 'PAT' ? /^\d+$/.test(String(expectedSettingsUserId || '')) && Boolean(expectedSettingsLogin) : Number.isInteger(expectedSettingsAppId)
 const settingsTokenIdentityVerified = settingsTokenKind === 'PAT'
   ? settingsTokenIdentityPinned && settingsTokenIdentity.status === 200 && Number.isInteger(Number(settingsTokenIdentity.body?.id)) && String(settingsTokenIdentity.body.id) === expectedSettingsUserId && typeof settingsTokenIdentity.body?.login === 'string' && settingsTokenIdentity.body.login === expectedSettingsLogin
-  : settingsAuditorInstallation.verified === true && settingsTokenIdentity.status === 200 && Number.isInteger(Number(settingsTokenIdentity.body?.app_id)) && Number(settingsTokenIdentity.body.app_id) === auditorAppId && Number(settingsAuditorInstallation.app_id) === auditorAppId && (process.env.V5_REQUIRE_SETTINGS_TOKEN !== 'true' || Number.isInteger(expectedSettingsAppId) && Number(settingsTokenIdentity.body.app_id) === expectedSettingsAppId)
+  : installedApp.verified && settingsAuditorInstallation.verified === true && settingsTokenIdentity.status === 200 && Number.isInteger(Number(settingsTokenIdentity.body?.app_id)) && Number(settingsTokenIdentity.body.app_id) === auditorAppId && Number(settingsAuditorInstallation.app_id) === auditorAppId && (process.env.V5_REQUIRE_SETTINGS_TOKEN !== 'true' || Number.isInteger(expectedSettingsAppId) && Number(settingsTokenIdentity.body.app_id) === expectedSettingsAppId)
 const repositoryVisibility = declaredVisibility || (repositoryApi.body?.private === true ? 'PRIVATE' : 'PUBLIC')
 const repositoryVisibilityVerified = repositoryApi.status === 200 && ['PUBLIC', 'PRIVATE'].includes(repositoryVisibility) && ((repositoryVisibility === 'PRIVATE') === (repositoryApi.body?.private === true))
 const normalizedRestrictions = { users: (Array.isArray(branchBody.restrictions?.users) ? branchBody.restrictions.users : []).map(row => String(row.login || row)).sort(), teams: (Array.isArray(branchBody.restrictions?.teams) ? branchBody.restrictions.teams : []).map(row => String(row.slug || row)).sort(), apps: rawApps.map(row => String(row.slug || row.name || row.id)).sort(), app_ids: rawApps.map(row => Number(row.id)).filter(Number.isInteger).sort((a, b) => a - b), apps_verified: installedApp.verified && rawApps.length > 0 && rawApps.every(row => Number(row.id) === installedApp.id || row.slug === installedApp.slug), installed_app: installedApp }

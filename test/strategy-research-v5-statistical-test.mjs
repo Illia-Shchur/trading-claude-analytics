@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import {
   appendExposureHead,
+  assertWfoRetainedOosBinding,
   connectedPlateau,
   hash,
   makePortfolioDecision,
@@ -227,6 +228,7 @@ function auditFixture({ value = 0.05 } = {}) {
   assert.ok(foldDecisions.every(row => row.pbo.source_phase === 'OUTER_TRAIN_ONLY' && row.pbo.outer_oos_bound === false && row.pbo.candidate_count >= 2 && row.pbo.valid_combinations >= 2), 'PBO is a comparable fixed panel inside each outer train')
   assert.equal(out.audit.pbo.source_phase, 'OUTER_TRAIN_ONLY'); assert.equal(out.audit.pbo.outer_oos_bound, false)
   assert.equal(out.developmentRefit.selected_from_outer_fold_winners, false); assert.equal(out.developmentRefit.excluded_from_retrospective_oos_audit, true); assert.notEqual(out.developmentRefit.content_sha256, out.audit.content_sha256)
+  const forgedRetainedVector = structuredClone(out.vectorInventory); const forgedAlias = Object.keys(forgedRetainedVector.vectors)[0]; forgedRetainedVector.vectors[forgedAlias][0].net_r = 999; const forgedRetainedVectorBound = withHash(forgedRetainedVector); assert.throws(() => assertWfoRetainedOosBinding(out.run, out.artifact, forgedRetainedVectorBound), /hashes disagree with the WFO|vector .*disagrees with the OOS artifact|not the retained physical OOS value/i, 'a self-rehashed 999 OOS vector cannot replace the physically retained OOS value')
   assert.ok(out.developmentRefit.asset_refits.every(row => row.status !== 'SELECTED_FOR_SHADOW' || (row.source_phase === 'FRESH_FULL_DEVELOPMENT_GA' && row.selected_from_outer_fold_winners === false && !foldDecisions.some(fold => fold.genetic_sha256 === row.genetic_sha256))), 'deployable SHADOW definitions come from a distinct full-development GA, not an outer winner')
   const forged = structuredClone(out.run)
   const forgedOuter = forged.asset_decisions.find(row => Object.values(row.asset_decisions || {}).some(decision => decision.selected_behavior_alias_sha256))
