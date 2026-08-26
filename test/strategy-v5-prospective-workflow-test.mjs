@@ -342,6 +342,9 @@ test('source-bundle replay binds an explicit non-genesis head to the reopened le
 
 test('prospective workflow supports a frozen bundle and uses a run-scoped protected attestation', () => {
   const workflow = readFileSync('.github/workflows/strategy-v5-prospective.yml', 'utf8')
+  assert.match(workflow, /Detect scheduled SHADOW deployment configuration/)
+  assert.match(workflow, /github\.event_name == 'workflow_dispatch' \|\| needs\.configuration\.outputs\.configured == 'true'/)
+  assert.match(workflow, /Manual dispatches still exercise every fail-closed custody and activation gate/)
   assert.match(workflow, /source_bundle:/)
   assert.match(workflow, /--source-bundle/)
   assert.match(workflow, /--live-source-unconfigured/)
@@ -484,6 +487,14 @@ test('prospective workflow supports a frozen bundle and uses a run-scoped protec
     checked += 1
   }
   assert.ok(checked >= 9, `expected all workflow shell blocks to be checked, got ${checked}`)
+})
+
+test('legacy prospective schedule is dormant until configured and installs dependencies', () => {
+  const workflow = readFileSync('.github/workflows/strategy-prospective.yml', 'utf8')
+  assert.match(workflow, /Detect scheduled publisher configuration/)
+  assert.match(workflow, /github\.event_name == 'workflow_dispatch' \|\| needs\.configuration\.outputs\.configured == 'true'/)
+  assert.match(workflow, /Install pinned dependencies[\s\S]*?npm ci --ignore-scripts/)
+  assert.match(workflow, /Fail closed until committed custody publisher is deployed/)
 })
 
 test('evidence branch has a pinned read-only additive custody verifier', () => {
