@@ -88,7 +88,7 @@ jobs:
           const loadList = (path, label) => { const value = load(path, label); return Array.isArray(value) ? value : (Array.isArray(value?.approvals) ? value.approvals : []) }
           const capture = existsSync('github-deployment-settings-capture.json') ? JSON.parse(readFileSync('github-deployment-settings-capture.json', 'utf8')) : makeDeploymentSettingsCaptureV5({ githubApiResponse: { status: 0, body: {} }, oidcSubject: null })
           const audit = makeDeploymentAuditV5({ settings: {}, settingsCapture: capture, keys: load(process.env.V5_PUBLIC_KEYS_PATH, 'v5 public-key registry'), approvals: loadList(process.env.V5_APPROVALS_PATH, 'v5 approvals'), trustRoot: load(process.env.V5_TRUST_ROOT_PATH, 'v5 trust root') })
-          writeFileSync('v5-deployment-audit-early.json', JSON.stringify(audit, null, 2) + '\\n')
+          writeFileSync('v5-deployment-audit-early.json', JSON.stringify(audit, null, 2) + '\n')
           if (audit.blocked && audit.shadow_append_eligible !== true) process.exitCode = 1
           NODE
       - name: Emit blocked diagnostic when custody audit is unavailable
