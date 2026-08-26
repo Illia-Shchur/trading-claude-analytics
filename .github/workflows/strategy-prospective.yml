@@ -14,13 +14,35 @@ permissions:
   contents: read
 
 jobs:
+  configuration:
+    runs-on: ubuntu-24.04
+    outputs:
+      configured: ${{ steps.readiness.outputs.configured }}
+    steps:
+      - name: Detect scheduled publisher configuration
+        id: readiness
+        env:
+          PROD_PROSPECTIVE_LEDGER: ${{ vars.PROD_PROSPECTIVE_LEDGER }}
+        run: |
+          if [ -n "${PROD_PROSPECTIVE_LEDGER:-}" ]; then
+            echo 'configured=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'configured=false' >> "$GITHUB_OUTPUT"
+            echo '### Prospective time-seal is dormant' >> "$GITHUB_STEP_SUMMARY"
+            echo 'Set PROD_PROSPECTIVE_LEDGER after the committed custody publisher is deployed. Manual dispatches still exercise the fail-closed preflight.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
   prospective:
+    needs: configuration
+    if: github.event_name == 'workflow_dispatch' || needs.configuration.outputs.configured == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 1
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts
       # The reservation and append-only ledger are committed artifacts.  A
       # committed, pinned publisher is a deployment prerequisite; this local
       # workflow intentionally fails closed until one is present.

@@ -22,7 +22,42 @@ env:
   V5_EVIDENCE_BOOTSTRAP: ${{ vars.V5_EVIDENCE_BOOTSTRAP }}
 
 jobs:
+  configuration:
+    runs-on: ubuntu-24.04
+    environment: prospective-v5
+    outputs:
+      configured: ${{ steps.readiness.outputs.configured }}
+    steps:
+      - name: Detect scheduled SHADOW deployment configuration
+        id: readiness
+        env:
+          V5_PROSPECTIVE_SOURCE_BUNDLE: ${{ vars.V5_PROSPECTIVE_SOURCE_BUNDLE }}
+          V5_PUBLIC_KEYS_PATH: ${{ vars.V5_PUBLIC_KEYS_PATH }}
+          V5_APPROVALS_PATH: ${{ vars.V5_APPROVALS_PATH }}
+          V5_TRUST_ROOT_PATH: ${{ vars.V5_TRUST_ROOT_PATH }}
+          V5_TRUST_ROOT_FINGERPRINT: ${{ vars.V5_TRUST_ROOT_FINGERPRINT }}
+          V5_TRUST_ROOT_GENESIS_FINGERPRINT: ${{ vars.V5_TRUST_ROOT_GENESIS_FINGERPRINT }}
+          V5_ACTIONS_SECRET_EVIDENCE_PATH: ${{ vars.V5_ACTIONS_SECRET_EVIDENCE_PATH }}
+          V5_REPLAY_EVIDENCE_PATH: ${{ vars.V5_REPLAY_EVIDENCE_PATH }}
+          V5_REVOCATION_EVIDENCE_PATH: ${{ vars.V5_REVOCATION_EVIDENCE_PATH }}
+          V5_LEASE_EVIDENCE_PATH: ${{ vars.V5_LEASE_EVIDENCE_PATH }}
+        run: |
+          missing=()
+          for name in V5_PROSPECTIVE_SOURCE_BUNDLE V5_PUBLIC_KEYS_PATH V5_APPROVALS_PATH V5_TRUST_ROOT_PATH V5_TRUST_ROOT_FINGERPRINT V5_TRUST_ROOT_GENESIS_FINGERPRINT V5_ACTIONS_SECRET_EVIDENCE_PATH V5_REPLAY_EVIDENCE_PATH V5_REVOCATION_EVIDENCE_PATH V5_LEASE_EVIDENCE_PATH; do
+            if [ -z "${!name:-}" ]; then missing+=("$name"); fi
+          done
+          if [ "${#missing[@]}" -eq 0 ]; then
+            echo 'configured=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'configured=false' >> "$GITHUB_OUTPUT"
+            echo '### Strategy v5 scheduled preflight is dormant' >> "$GITHUB_STEP_SUMMARY"
+            echo "Missing deployment variables: ${missing[*]}" >> "$GITHUB_STEP_SUMMARY"
+            echo 'Manual dispatches still exercise every fail-closed custody and activation gate.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
   preflight:
+    needs: configuration
+    if: github.event_name == 'workflow_dispatch' || needs.configuration.outputs.configured == 'true'
     outputs:
       no_new_completed_bar: ${{ steps.cycle-noop.outputs.no_new_completed_bar }}
     runs-on: ubuntu-24.04
