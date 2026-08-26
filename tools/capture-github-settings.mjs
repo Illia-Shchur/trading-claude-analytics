@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /* Capture real GitHub API responses for the v5 deployment audit.  The exit
- * status of `gh` is not an HTTP status; --include is parsed explicitly. */
+ * status of `gh` is not an HTTP status, so its --include response is parsed
+ * separately from curl's explicit Bearer-response status sentinel. */
 import { execFileSync } from 'node:child_process'
 import { writeFileSync } from 'node:fs'
 import { createHash, createPrivateKey, createPublicKey, createSign, verify as verifySignature } from 'node:crypto'
@@ -11,6 +12,7 @@ import canonicalize from 'canonicalize'
 
 const digest = value => createHash('sha256').update(typeof value === 'string' ? value : canonicalize(value)).digest('hex')
 const redact = (value, secrets = []) => secrets.filter(secret => typeof secret === 'string' && secret.length > 0).reduce((text, secret) => text.split(secret).join('[REDACTED]'), String(value))
+const CURL_STATUS_SENTINEL = '\n__V5_HTTP_STATUS__:%{http_code}\n'
 
 // Keep credentials out of argv (and therefore process listings).  `gh` reads
 // GH_TOKEN from its environment for PAT/installation-token calls.  Short-lived
@@ -51,17 +53,38 @@ function api(path, options = {}) {
       // GitHub's required Bearer authentication scheme.
       const apiRoot = String(process.env.GITHUB_API_URL || 'https://api.github.com').replace(/\/$/, '')
       const url = `${apiRoot}/${String(path).replace(/^\//, '')}`
-      output = execFileSync('curl', ['--silent', '--show-error', '--include', '--header', '@-', url], { encoding: 'utf8', input: `Authorization: Bearer ${token}\nAccept: application/vnd.github+json\n`, env: childEnvironment(), stdio: ['pipe', 'pipe', 'pipe'] })
+      output = execFileSync('curl', ['--silent', '--show-error', '--header', '@-', '--write-out', CURL_STATUS_SENTINEL, url], { encoding: 'utf8', input: `Authorization: Bearer ${token}\nAccept: application/vnd.github+json\n`, env: childEnvironment(), stdio: ['pipe', 'pipe', 'pipe'] })
     } else {
       const args = ['api', '--include', path]
       const env = childEnvironment(token)
       env.GH_AUTH_SCHEME = token ? 'GH_TOKEN' : 'NONE'
       output = execFileSync('gh', args, { encoding: 'utf8', env, stdio: ['ignore', 'pipe', 'pipe'] })
     }
-  } catch (error) { output = `${error.stdout || ''}\n${error.stderr || ''}` }
+  } catch (error) {
+    // stdout is the only response channel.  A failing CLI may put a valid
+    // HTTP response there while writing diagnostics to stderr; mixing stderr
+    // into the body corrupts otherwise parseable non-2xx JSON.
+    output = String(error.stdout || '')
+  }
   output = redact(output, [token, bootstrapToken])
-  const statusLines = [...output.matchAll(/HTTP\/\d(?:\.\d)?\s+(\d{3})/gi)]; const bodyText = output.split(/\r?\n\r?\n/).at(-1) || '{}'; let body = {}; try { body = JSON.parse(bodyText) } catch {}
-  return { status: Number(statusLines.at(-1)?.[1] || 0), body }
+  let status = 0; let bodyText = output
+  if (authMode === 'bearer') {
+    // Do not infer the body from HTTP header blocks: proxies and redirects can
+    // add multiple blocks, and a trailing blank block otherwise turns a valid
+    // 200 response into `{}`.  Curl writes one status sentinel after the
+    // response body, which is unambiguous even when the body contains blanks.
+    const sentinel = output.match(/\n__V5_HTTP_STATUS__:(\d{3})\s*$/)
+    if (sentinel) { status = Number(sentinel[1]); bodyText = output.slice(0, sentinel.index).trim() }
+  } else {
+    const statusLines = [...output.matchAll(/HTTP\/\d(?:\.\d)?\s+(\d{3})/gi)]
+    status = Number(statusLines.at(-1)?.[1] || 0); bodyText = output.split(/\r?\n\r?\n/).at(-1)?.trim() || '{}'
+  }
+  let body = {}; let bodyParsed = false
+  try { body = JSON.parse(bodyText); bodyParsed = true } catch {}
+  // A status sentinel without a JSON body is not an authenticated API
+  // response.  Do not let a malformed/empty 200 authorize downstream checks.
+  if (authMode === 'bearer' && !bodyParsed) status = 0
+  return { status, body }
 }
 
 const repository = process.env.GITHUB_REPOSITORY
