@@ -24,6 +24,15 @@ const oldCode = 'f'.repeat(64)
 const basePlan = makeFiveYearAuthoritativePlan({ asOf: capturedAt })
 const firstEvent = Date.parse('2026-08-23T00:00:00.000Z')
 const secondEvent = firstEvent + 4 * 60 * 60 * 1000
+const ignoredFixtureRoot = join(process.cwd(), 'strategy-research/v5-data')
+
+// The authoritative CLI deliberately requires replay/promotion roots to be
+// git-ignored. Create only the disposable parent needed by clean checkouts;
+// every child returned here is removed by its test's existing cleanup.
+function makeIgnoredTemp(prefix) {
+  mkdirSync(ignoredFixtureRoot, { recursive: true })
+  return mkdtempSync(join(ignoredFixtureRoot, prefix))
+}
 
 function crc32(bytes) {
   let value = 0xffffffff
@@ -235,7 +244,7 @@ async function makeDatedCliFixture() {
 async function runDatedCli(fixture) {
   const planPath = join(fixture.sourceRoot, 'plan.json')
   writeFileSync(planPath, `${JSON.stringify(fixture.plan, null, 2)}\n`)
-  const targetRoot = mkdtempSync(join(process.cwd(), 'strategy-research/v5-data/local-raw-dated-cli-test-'))
+  const targetRoot = makeIgnoredTemp('local-raw-dated-cli-test-')
   const options = { plan: planPath, source_checkpoint: fixture.checkpointPath, source_root: fixture.sourceRoot, source_root_reference: 'dated-source', target_root: targetRoot, target_root_reference: 'dated-target', receipt: join(targetRoot, 'command-receipt.json') }
   const result = await runAuthoritativeV5Cli('data-raw-replay', options)
   return { ...result, targetRoot, options }
@@ -263,10 +272,9 @@ test('authoritative data-raw-replay CLI validates its receipt and permits an equ
   const fixture = await makeFixture({ stale: true })
   const planPath = join(fixture.sourceRoot, 'plan.json')
   writeFileSync(planPath, `${JSON.stringify(fixture.plan, null, 2)}\n`)
-  // The authoritative CLI intentionally refuses a non-ignored target. Keep
-  // this fixture under the repository's ignored v5-data namespace, while
-  // making the exact directory disposable and unique to this test.
-  const targetRoot = mkdtempSync(join(process.cwd(), 'strategy-research/v5-data/local-raw-cli-test-'))
+  // Keep CLI outputs under the explicitly ignored namespace so a clean
+  // checkout can create the parent on demand without tracked-file leakage.
+  const targetRoot = makeIgnoredTemp('local-raw-cli-test-')
   const receiptPath = join(targetRoot, 'command-receipt.json')
   const options = {
     plan: planPath,
@@ -304,7 +312,7 @@ test('complete local replay optionally promotes verified Parquet and persists a 
   const planPath = join(fixture.sourceRoot, 'plan.json'); const catalogPath = join(fixture.sourceRoot, 'catalog.json')
   writeFileSync(planPath, `${JSON.stringify(plan, null, 2)}\n`); writeFileSync(catalogPath, `${JSON.stringify(catalog, null, 2)}\n`)
   const catalogRoot = mkdtempSync(join(tmpdir(), 'v5-local-raw-promotion-catalog-')); const recordRoot = mkdtempSync(join(tmpdir(), 'v5-local-raw-promotion-records-'))
-  const targetRoot = mkdtempSync(join(process.cwd(), 'strategy-research/v5-data/local-raw-promotion-target-')); const parquetRoot = mkdtempSync(join(process.cwd(), 'strategy-research/v5-data/local-raw-promotion-parquet-'))
+  const targetRoot = makeIgnoredTemp('local-raw-promotion-target-'); const parquetRoot = makeIgnoredTemp('local-raw-promotion-parquet-')
   const options = { plan: planPath, source_checkpoint: fixture.checkpointPath, source_root: fixture.sourceRoot, source_root_reference: 'local-source', target_root: targetRoot, target_root_reference: 'local-target', parquet_root: parquetRoot, catalog: catalogPath, catalog_root: catalogRoot, record_root: recordRoot, receipt: join(recordRoot, 'command-receipt.json') }
   try {
     const promoted = await runAuthoritativeV5Cli('data-raw-replay', options)
@@ -322,7 +330,7 @@ test('complete local replay optionally promotes verified Parquet and persists a 
 
     const partialFixture = await makeFixture({ fixturePlan: plan })
     const partialCheckpointPath = partialFixture.checkpointPath; const partialCheckpoint = JSON.parse(readFileSync(partialCheckpointPath, 'utf8')); const missingIdentity = Object.keys(partialCheckpoint.completed)[0]; delete partialCheckpoint.completed[missingIdentity]; delete partialCheckpoint.capture_lineage[missingIdentity]; partialCheckpoint.content_sha256 = ownHash(partialCheckpoint); writeFileSync(partialCheckpointPath, `${JSON.stringify(partialCheckpoint, null, 2)}\n`)
-    const partialTarget = mkdtempSync(join(process.cwd(), 'strategy-research/v5-data/local-raw-promotion-partial-target-')); const partialParquet = mkdtempSync(join(process.cwd(), 'strategy-research/v5-data/local-raw-promotion-partial-parquet-'))
+    const partialTarget = makeIgnoredTemp('local-raw-promotion-partial-target-'); const partialParquet = makeIgnoredTemp('local-raw-promotion-partial-parquet-')
     await assert.rejects(() => runAuthoritativeV5Cli('data-raw-replay', { ...options, source_checkpoint: partialCheckpointPath, source_root: partialFixture.sourceRoot, target_root: partialTarget, parquet_root: partialParquet, record_root: mkdtempSync(join(tmpdir(), 'v5-local-raw-promotion-partial-records-')), receipt: join(partialTarget, 'command-receipt.json') }), /partial acquisition|partial.*promotion|incomplete.*Parquet/i)
     rmSync(partialTarget, { recursive: true, force: true }); rmSync(partialParquet, { recursive: true, force: true }); rmSync(partialFixture.sourceRoot, { recursive: true, force: true })
   } finally {
@@ -339,7 +347,7 @@ test('CLI string false disables optional metrics recovery and still promotes BAS
   const planPath = join(fixture.sourceRoot, 'plan.json'); const catalogPath = join(fixture.sourceRoot, 'catalog.json')
   writeFileSync(planPath, `${JSON.stringify(plan, null, 2)}\n`); writeFileSync(catalogPath, `${JSON.stringify(catalog, null, 2)}\n`)
   const catalogRoot = mkdtempSync(join(tmpdir(), 'v5-local-raw-cli-metrics-catalog-')); const recordRoot = mkdtempSync(join(tmpdir(), 'v5-local-raw-cli-metrics-records-'))
-  const targetRoot = mkdtempSync(join(process.cwd(), 'strategy-research/v5-data/local-raw-cli-metrics-target-')); const parquetRoot = mkdtempSync(join(process.cwd(), 'strategy-research/v5-data/local-raw-cli-metrics-parquet-'))
+  const targetRoot = makeIgnoredTemp('local-raw-cli-metrics-target-'); const parquetRoot = makeIgnoredTemp('local-raw-cli-metrics-parquet-')
   try {
     const child = spawnSync(process.execPath, [join(process.cwd(), 'tools/strategy-research-v5.mjs'), 'data-raw-replay', '--plan', planPath, '--source-checkpoint', fixture.checkpointPath, '--source-root', fixture.sourceRoot, '--source-root-reference', 'local-source', '--target-root', targetRoot, '--target-root-reference', 'metrics-target', '--parquet-root', parquetRoot, '--catalog', catalogPath, '--catalog-root', catalogRoot, '--record-root', recordRoot, '--recover-auxiliary-metrics', 'false'], { cwd: process.cwd(), encoding: 'utf8' })
     assert.equal(child.status, 0, child.stderr)
