@@ -1,0 +1,144 @@
+{
+  "schema": "strategy-v5-authoritative-command-receipt/1",
+  "version": 1,
+  "command": "data-raw-replay",
+  "status": "COMPLETE",
+  "inputs": [
+    {
+      "role": "plan",
+      "storage": "PHYSICAL",
+      "path": "strategy-research/v5-records/data-backfill/plan-966c7ba212dc620fe0fd90ef38ab98cf113d96cad308d3697275b582f1cb5f51.json",
+      "byte_sha256": "e5242b93c25d2e9a5742bed196e500a2a60367fed8763a05ee630cd59bc1f01f",
+      "content_sha256": "966c7ba212dc620fe0fd90ef38ab98cf113d96cad308d3697275b582f1cb5f51",
+      "bytes": 79765
+    },
+    {
+      "role": "source_checkpoint",
+      "storage": "PHYSICAL",
+      "path": "strategy-research/v5-data/backfill-20260825-v4-final/network-resume/staging/checkpoint.json",
+      "byte_sha256": "2c8f0946e620eba42e1c0fe3d2ac9b7bce020a123f05531398b4dccd914cf0c7",
+      "content_sha256": "4e552f8ae4bcb2f61c83742f6ea0c3e4041661100df8e29ce1e5e7565548fd96",
+      "bytes": 3997435
+    },
+    {
+      "role": "dated_futures_catalog",
+      "storage": "PHYSICAL",
+      "path": "strategy-research/v5-records/data-backfill/dated_futures_catalog-7836a8f11277ef9bb47680385637cafee71c12d8db36097f008240f8e5f5832c.json",
+      "byte_sha256": "7494021794235dfe86e915b7e9611d67d4bf6b912bcba087fd39c097ebdb22be",
+      "content_sha256": "7836a8f11277ef9bb47680385637cafee71c12d8db36097f008240f8e5f5832c",
+      "bytes": 69769
+    }
+  ],
+  "outputs": [
+    {
+      "role": "plan",
+      "storage": "PHYSICAL",
+      "path": "strategy-research/v5-records/data-backfill/plan-966c7ba212dc620fe0fd90ef38ab98cf113d96cad308d3697275b582f1cb5f51.json",
+      "byte_sha256": "e5242b93c25d2e9a5742bed196e500a2a60367fed8763a05ee630cd59bc1f01f",
+      "content_sha256": "966c7ba212dc620fe0fd90ef38ab98cf113d96cad308d3697275b582f1cb5f51",
+      "bytes": 79765
+    },
+    {
+      "role": "source_checkpoint",
+      "storage": "PHYSICAL",
+      "path": "strategy-research/v5-data/backfill-20260825-v4-final/network-resume/staging/checkpoint.json",
+      "byte_sha256": "2c8f0946e620eba42e1c0fe3d2ac9b7bce020a123f05531398b4dccd914cf0c7",
+      "content_sha256": "4e552f8ae4bcb2f61c83742f6ea0c3e4041661100df8e29ce1e5e7565548fd96",
+      "bytes": 3997435
+    },
+    {
+      "role": "replayed_checkpoint",
+      "storage": "PHYSICAL",
+      "path": "strategy-research/v5-data/backfill-20260825-v7-final-local/staging/checkpoint.json",
+      "byte_sha256": "a0359e1affc0d4bd8e25267cf76f4e74b51b577c857ee5b385d173a2993d3b12",
+      "content_sha256": "4d339fb6c00cc73373334830e4461da68c975c4088d28028a8ef1cd0307927c6",
+      "bytes": 1995695
+    },
+    {
+      "role": "replayed_staging_manifest",
+      "storage": "PHYSICAL",
+      "path": "strategy-research/v5-data/backfill-20260825-v7-final-local/staging/acquisition-replay.json",
+      "byte_sha256": "920153d083163e72b146c030b249308aeec01955097b0b08ad5f340f2705ad4f",
+      "content_sha256": "2e68e3324e45dbecbb71b151264ea641081ed15048379d9b3cc73937c6d0fd53",
+      "bytes": 2069348
+    },
+    {
+      "role": "replayed_staging_manifest",
+      "storage": "PHYSICAL",
+      "path": "strategy-research/v5-records/data-raw-replay/acquisition-2e68e3324e45dbecbb71b151264ea641081ed15048379d9b3cc73937c6d0fd53.json",
+      "byte_sha256": "920153d083163e72b146c030b249308aeec01955097b0b08ad5f340f2705ad4f",
+      "content_sha256": "2e68e3324e45dbecbb71b151264ea641081ed15048379d9b3cc73937c6d0fd53",
+      "bytes": 2069348
+    },
+    {
+      "role": "parquet_manifest",
+      "storage": "PHYSICAL",
+      "path": "strategy-research/v5-records/data-raw-replay/parquet-31f85e351861f05edc66794ec57369c0a7fafe67e236676aab5c6cc7bec4cfc6.json",
+      "byte_sha256": "bad6500388b0e6342a54e195a66885bc6c8a763e655056cfe42870da860f68d4",
+      "content_sha256": "31f85e351861f05edc66794ec57369c0a7fafe67e236676aab5c6cc7bec4cfc6",
+      "bytes": 1981920
+    },
+    {
+      "role": "coverage",
+      "storage": "PHYSICAL",
+      "path": "strategy-research/v5-records/data-raw-replay/coverage-734260a0195ab38e6f0f94d0d18effb4ed4ffdbc722ba4e9b9805469dbff8c43.json",
+      "byte_sha256": "5d5ea34443c4e725ca7f72033d3c2a33eae0f075c79c1811c93c2b8322ff9fd7",
+      "content_sha256": "734260a0195ab38e6f0f94d0d18effb4ed4ffdbc722ba4e9b9805469dbff8c43",
+      "bytes": 448712
+    },
+    {
+      "role": "dated_futures_catalog",
+      "storage": "PHYSICAL",
+      "path": "strategy-research/v5-records/data-backfill/dated_futures_catalog-7836a8f11277ef9bb47680385637cafee71c12d8db36097f008240f8e5f5832c.json",
+      "byte_sha256": "7494021794235dfe86e915b7e9611d67d4bf6b912bcba087fd39c097ebdb22be",
+      "content_sha256": "7836a8f11277ef9bb47680385637cafee71c12d8db36097f008240f8e5f5832c",
+      "bytes": 69769
+    }
+  ],
+  "limitations": [
+    "DATED_FUTURES_HISTORY_COVERAGE_BOUND_TO_SUPPLIED_CATALOG",
+    "LOCAL_RAW_REPLAY_NO_NETWORK",
+    "METRICS_CONTEXT_OPTIONAL_UNTIL_FROZEN_REQUIREMENT",
+    "OPTIONAL_SERIES_UNAVAILABLE:aave|BINANCE_USDM_PERPETUAL|AAVEUSDT|4h|metrics_events",
+    "OPTIONAL_SERIES_UNAVAILABLE:ada|BINANCE_USDM_PERPETUAL|ADAUSDT|4h|metrics_events",
+    "OPTIONAL_SERIES_UNAVAILABLE:bnb|BINANCE_USDM_PERPETUAL|BNBUSDT|4h|metrics_events",
+    "OPTIONAL_SERIES_UNAVAILABLE:btc|BINANCE_USDM_PERPETUAL|BTCUSDT|4h|metrics_events",
+    "OPTIONAL_SERIES_UNAVAILABLE:eth|BINANCE_USDM_PERPETUAL|ETHUSDT|4h|metrics_events",
+    "OPTIONAL_SERIES_UNAVAILABLE:link|BINANCE_USDM_PERPETUAL|LINKUSDT|4h|metrics_events",
+    "OPTIONAL_SERIES_UNAVAILABLE:sol|BINANCE_USDM_PERPETUAL|SOLUSDT|4h|metrics_events",
+    "OPTIONAL_SERIES_UNAVAILABLE:xrp|BINANCE_USDM_PERPETUAL|XRPUSDT|4h|metrics_events",
+    "aave:HISTORICAL_DATED_FUTURES_UNAVAILABLE_OR_NOT_LISTED",
+    "aave|binance_spot|aaveusdt|signal_bars|4h:irregular_bars={\"availability_time\":\"2021-09-29T06:59:59.999Z\",\"classification\":\"EARLY_CLOSE_OUTAGE\",\"close_time\":\"2021-09-29T06:59:59.999Z\",\"event_time\":\"2021-09-29T04:00:00.000Z\",\"expected_boundary_time\":\"2021-09-29T08:00:00.000Z\",\"expected_duration_ms\":14400000,\"observed_duration_ms\":10800000}",
+    "ada:HISTORICAL_DATED_FUTURES_UNAVAILABLE_OR_NOT_LISTED",
+    "ada|binance_spot|adausdt|signal_bars|4h:irregular_bars={\"availability_time\":\"2021-09-29T06:59:59.999Z\",\"classification\":\"EARLY_CLOSE_OUTAGE\",\"close_time\":\"2021-09-29T06:59:59.999Z\",\"event_time\":\"2021-09-29T04:00:00.000Z\",\"expected_boundary_time\":\"2021-09-29T08:00:00.000Z\",\"expected_duration_ms\":14400000,\"observed_duration_ms\":10800000}",
+    "bnb:HISTORICAL_DATED_FUTURES_UNAVAILABLE_OR_NOT_LISTED",
+    "bnb|binance_spot|bnbusdt|signal_bars|4h:irregular_bars={\"availability_time\":\"2021-09-29T06:59:59.999Z\",\"classification\":\"EARLY_CLOSE_OUTAGE\",\"close_time\":\"2021-09-29T06:59:59.999Z\",\"event_time\":\"2021-09-29T04:00:00.000Z\",\"expected_boundary_time\":\"2021-09-29T08:00:00.000Z\",\"expected_duration_ms\":14400000,\"observed_duration_ms\":10800000}",
+    "btc|binance_spot|btcusdt|signal_bars|4h:irregular_bars={\"availability_time\":\"2021-09-29T06:59:59.999Z\",\"classification\":\"EARLY_CLOSE_OUTAGE\",\"close_time\":\"2021-09-29T06:59:59.999Z\",\"event_time\":\"2021-09-29T04:00:00.000Z\",\"expected_boundary_time\":\"2021-09-29T08:00:00.000Z\",\"expected_duration_ms\":14400000,\"observed_duration_ms\":10800000}",
+    "eth|binance_spot|ethusdt|signal_bars|4h:irregular_bars={\"availability_time\":\"2021-09-29T06:59:59.999Z\",\"classification\":\"EARLY_CLOSE_OUTAGE\",\"close_time\":\"2021-09-29T06:59:59.999Z\",\"event_time\":\"2021-09-29T04:00:00.000Z\",\"expected_boundary_time\":\"2021-09-29T08:00:00.000Z\",\"expected_duration_ms\":14400000,\"observed_duration_ms\":10800000}",
+    "link:HISTORICAL_DATED_FUTURES_UNAVAILABLE_OR_NOT_LISTED",
+    "link|binance_spot|linkusdt|signal_bars|4h:irregular_bars={\"availability_time\":\"2021-09-29T06:59:59.999Z\",\"classification\":\"EARLY_CLOSE_OUTAGE\",\"close_time\":\"2021-09-29T06:59:59.999Z\",\"event_time\":\"2021-09-29T04:00:00.000Z\",\"expected_boundary_time\":\"2021-09-29T08:00:00.000Z\",\"expected_duration_ms\":14400000,\"observed_duration_ms\":10800000}",
+    "sol:HISTORICAL_DATED_FUTURES_UNAVAILABLE_OR_NOT_LISTED",
+    "sol|binance_spot|solusdt|signal_bars|4h:irregular_bars={\"availability_time\":\"2021-09-29T06:59:59.999Z\",\"classification\":\"EARLY_CLOSE_OUTAGE\",\"close_time\":\"2021-09-29T06:59:59.999Z\",\"event_time\":\"2021-09-29T04:00:00.000Z\",\"expected_boundary_time\":\"2021-09-29T08:00:00.000Z\",\"expected_duration_ms\":14400000,\"observed_duration_ms\":10800000}",
+    "xrp:HISTORICAL_DATED_FUTURES_UNAVAILABLE_OR_NOT_LISTED",
+    "xrp|binance_spot|xrpusdt|signal_bars|4h:irregular_bars={\"availability_time\":\"2021-09-29T06:59:59.999Z\",\"classification\":\"EARLY_CLOSE_OUTAGE\",\"close_time\":\"2021-09-29T06:59:59.999Z\",\"event_time\":\"2021-09-29T04:00:00.000Z\",\"expected_boundary_time\":\"2021-09-29T08:00:00.000Z\",\"expected_duration_ms\":14400000,\"observed_duration_ms\":10800000}"
+  ],
+  "details": {
+    "mode": "LOCAL_RAW_REPLAY_AND_AUTHORITATIVE_REOPEN",
+    "source_checkpoint_sha256": "4e552f8ae4bcb2f61c83742f6ea0c3e4041661100df8e29ce1e5e7565548fd96",
+    "source_root": "strategy-research/v5-data/backfill-20260825-v4-final/network-resume/staging",
+    "target_root": "strategy-research/v5-data/backfill-20260825-v7-final-local/staging",
+    "replayed_count": 72,
+    "retained_count": 78,
+    "auxiliary_metrics": [],
+    "acquisition_status": "STAGING_COMPLETE",
+    "base_complete": true,
+    "declared_complete": false,
+    "acquisition_sha256": "2e68e3324e45dbecbb71b151264ea641081ed15048379d9b3cc73937c6d0fd53",
+    "catalog_sha256": "7836a8f11277ef9bb47680385637cafee71c12d8db36097f008240f8e5f5832c",
+    "parquet_sha256": "31f85e351861f05edc66794ec57369c0a7fafe67e236676aab5c6cc7bec4cfc6",
+    "coverage_sha256": "734260a0195ab38e6f0f94d0d18effb4ed4ffdbc722ba4e9b9805469dbff8c43",
+    "dataset_root_sha256": "e5f420b473777e31527ca1d3e310f8b5982e08f46744669331fc70b7f9b41548",
+    "active": false
+  },
+  "content_sha256": "78e3378444af7edbb539769bd68bf070a8d4e32f7864b37acdd543bef80f49ca"
+}

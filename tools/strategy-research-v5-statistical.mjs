@@ -21,7 +21,7 @@
  */
 import { createHash } from 'node:crypto'
 import fs from 'node:fs'
-import { dirname, join, relative, resolve, sep } from 'node:path'
+import { dirname, isAbsolute, join, posix, relative, resolve, sep } from 'node:path'
 import canonicalize from 'canonicalize'
 import { isVerifiedPhysicalEvaluator } from './strategy-v5-physical-trust.mjs'
 import { validateContractSchema as validateRegisteredContractSchema } from './research-schema-registry.mjs'
@@ -44,7 +44,8 @@ export const STAT_SCHEMA = Object.freeze({
   behaviorRegistry: 'strategy-v5-statistical-behavior-definition-registry/1',
   physicalNullRunner: 'strategy-v5-physical-null-runner/1',
   physicalNullSelection: 'strategy-v5-physical-null-selection/1'
-  ,registryJournal: 'strategy-v5-statistical-registry-journal/1'
+  ,registryJournal: 'strategy-v5-statistical-registry-journal/1',
+  publicationTransaction: 'strategy-v5-statistical-publication-transaction/1'
 })
 
 export const STAT_DEFAULTS = Object.freeze({
@@ -194,8 +195,38 @@ export function readExposureHeadFile(filePath) {
 }
 
 function writeExclusive(filePath, value) {
-  const fd = fs.openSync(filePath, 'wx')
-  try { fs.writeFileSync(fd, `${JSON.stringify(value)}\n`, 'utf8') } finally { fs.closeSync(fd) }
+  return writeExclusiveBytes(filePath, Buffer.from(`${JSON.stringify(value)}\n`))
+}
+
+/* Build the complete file in the destination directory, fsync it, and claim
+ * the final name with a same-filesystem hard-link.  Unlike rename, link is
+ * exclusive and never replaces a competing target; unlike copyFileSync, a
+ * crash cannot leave a partially written final name. */
+function writeExclusiveBytes(filePath, bytes) {
+  const target = resolve(String(filePath)); fs.mkdirSync(dirname(target), { recursive: true })
+  const temporary = `${target}.tmp-${process.pid}-${Date.now()}-${Math.random().toString(16).slice(2)}`
+  let fd
+  try {
+    fd = fs.openSync(temporary, 'wx'); fs.writeFileSync(fd, bytes); try { fs.fsyncSync(fd) } catch {}
+  } finally { if (fd !== undefined) fs.closeSync(fd) }
+  try { fs.linkSync(temporary, target) } catch (error) { try { fs.unlinkSync(temporary) } catch {}; throw error }
+  try { fs.unlinkSync(temporary) } catch (error) { if (error.code !== 'ENOENT') throw error }
+  fsyncDirectory(target)
+  return target
+}
+
+function writeAtomicJson(filePath, value, { exclusive = false } = {}) {
+  const target = resolve(String(filePath)); fs.mkdirSync(dirname(target), { recursive: true })
+  const temporary = `${target}.tmp-${process.pid}-${Date.now()}-${Math.random().toString(16).slice(2)}`
+  const bytes = Buffer.from(`${JSON.stringify(value)}\n`)
+  let fd
+  try {
+    fd = fs.openSync(temporary, 'wx'); fs.writeFileSync(fd, bytes); try { fs.fsyncSync(fd) } catch {}
+  } finally { if (fd !== undefined) fs.closeSync(fd) }
+  if (exclusive && fs.existsSync(target)) { try { fs.unlinkSync(temporary) } catch {}; fail(`content-addressed transaction already exists: ${target}`) }
+  try { fs.renameSync(temporary, target) } catch (error) { try { fs.unlinkSync(temporary) } catch {}; throw error }
+  try { const directoryFd = fs.openSync(dirname(target), 'r'); try { fs.fsyncSync(directoryFd) } catch {}; fs.closeSync(directoryFd) } catch {}
+  return target
 }
 
 export function initializeExposureHeadFile({ filePath, head } = {}) {
@@ -256,6 +287,13 @@ function assertRegistryPathConfined(pathValue, label, { requireFile = false, roo
     if (cursor === target && requireFile && (!entry.isFile() || entry.nlink !== 1)) fail(`${label} must be a regular single-link file`)
   }
   return target
+}
+
+function assertGeneticCheckpointPath(filePath, config = null) {
+  if (!filePath) return null
+  const target = resolve(filePath); const boundary = config?.checkpointDirectory ? resolve(config.checkpointDirectory) : dirname(target)
+  if (!pathWithin(boundary, target)) fail('genetic checkpoint path escapes its declared checkpoint directory')
+  return assertRegistryPathConfined(target, 'genetic checkpoint path', { rootBoundary: boundary })
 }
 
 export function validateBehaviorDefinitionRegistry(registry, { exposureHead = null } = {}) {
@@ -388,7 +426,19 @@ function registryJournalValue({ journalPath, exposureHeadPath, registryPath, pri
 
 export function writeExposureRegistryJournal({ journalPath, exposureHeadPath, registryPath, priorHead, nextHead, priorRegistrySha256 = null, definitions = [] } = {}) {
   if (!journalPath) fail('registry journal path is required'); const value = registryJournalValue({ journalPath, exposureHeadPath, registryPath, priorHead, nextHead, priorRegistrySha256, definitions }); fs.mkdirSync(dirname(resolve(String(journalPath))), { recursive: true })
-  try { writeExclusive(resolve(String(journalPath)), value) } catch (error) { fail(`registry journal already exists or cannot be prepared: ${error.message}`) }
+  const target = resolve(String(journalPath))
+  try { writeExclusive(target, value) } catch (error) {
+    if (error.code === 'EEXIST') {
+      // A retry after a process interruption is idempotent when the exact
+      // same transaction is already prepared.  A different transaction at
+      // the same path is a competing writer and must fail closed.
+      try {
+        const existing = JSON.parse(fs.readFileSync(target, 'utf8')); assertOwnHash(existing, STAT_SCHEMA.registryJournal, 'registry journal')
+        if (existing.content_sha256 === value.content_sha256) return existing
+      } catch {}
+    }
+    fail(`registry journal already exists or cannot be prepared: ${error.message}`)
+  }
   return value
 }
 
@@ -403,10 +453,451 @@ export function recoverExposureRegistryTransaction({ journalPath } = {}) {
     fs.unlinkSync(resolve(String(journalPath))); return { status: 'ABORTED_BEFORE_HEAD_COMMIT', journal_path: journalPath, head_sha256: head.content_sha256 }
   }
   const registry = existing && existing.exposure_head_sha256 === journal.next_head_sha256
-    ? existing
+    ? (validateBehaviorDefinitionRegistry(existing, { exposureHead: head }), existing)
     : appendBehaviorDefinitionRegistryFile({ filePath: journal.registry_path, expectedRegistrySha256: existing?.content_sha256 || null, priorExposureHeadSha256: journal.prior_head_sha256, exposureHead: head, definitions: journal.definitions })
   if (registry.exposure_head_sha256 !== journal.next_head_sha256) fail('recovered behavior registry does not bind the committed exposure head')
+  validateBehaviorDefinitionRegistry(registry, { exposureHead: head })
   fs.unlinkSync(resolve(String(journalPath))); return { status: 'RECOVERED_REGISTRY', journal_path: journalPath, head_sha256: head.content_sha256, registry_sha256: registry.content_sha256 }
+}
+
+/*
+ * Final WFO publication is a second, deliberately smaller transaction.  The
+ * GA registry journal above protects the physical cumulative HEAD while a
+ * search is running; this transaction protects the hand-off from the final
+ * WFO result to its durable run artifact.  It never appends or rewinds K.
+ * The HEAD and registry are compare-and-swap inputs, and every output is
+ * promoted from a staged, byte-hash-bound file with no-overwrite semantics.
+ * A journal is retained in COMMITTED state so a restart can return the exact
+ * same transaction instead of beginning a new exposure sequence.
+ */
+function publicationBytes(value) { return Buffer.from(`${JSON.stringify(value, null, 2)}\n`) }
+function requireContentArtifact(value, label) {
+  if (!value || typeof value !== 'object' || !HASH_RE.test(String(value.content_sha256 || '')) || value.content_sha256 !== ownHash(value)) fail(`${label} is not a hash-bound artifact`)
+  return value
+}
+const PUBLICATION_ARTIFACT_SCHEMAS = Object.freeze({
+  wfo: 'strategy-v5-statistical-wfo/1',
+  research_run: 'strategy-research-run/5',
+  final_oos_artifact: STAT_SCHEMA.input,
+  final_oos_vector_inventory: STAT_SCHEMA.vectors,
+})
+function validateAuthoritativeRunStageInventory(value, label = 'authoritative research run') {
+  if (value?.schema !== PUBLICATION_ARTIFACT_SCHEMAS.research_run || value.provenance !== 'AUTHORITATIVE_RECOMPUTED') return true
+  const retainsOos = HASH_RE.test(String(value.oos_artifact_sha256 || '')) || HASH_RE.test(String(value.vector_inventory_sha256 || '')) || value.stage_artifacts !== undefined || value.stage_artifact_refs !== undefined
+  if (value.decision === 'REJECTED' && !retainsOos) return true
+  if (!['REJECTED', 'SHADOW', 'CANDIDATE_REVIEW'].includes(value.decision)) fail(`${label} has a non-terminal decision`)
+  if (value.decision !== 'REJECTED' && value.gate_status?.all_required_stages !== true) fail(`${label} claims a non-rejected decision without all required stages passing`)
+  for (const field of ['execution_fills_sha256', 'selected_trades_sha256', 'stresses_sha256', 'portfolio_sha256']) requireHash(value[field], `${label}.${field}`)
+  for (const field of ['feature_rows_sha256', 'label_rows_sha256', 'execution_rows_sha256', 'mark_rows_sha256', 'wfo_sha256']) requireHash(value.lineage?.[field], `${label}.lineage.${field}`)
+  requireHash(value.wfo?.artifact, `${label}.wfo.artifact`)
+  const inventory = value.stage_artifacts
+  const required = ['genetic', 'execution_fills', 'selected_trades', 'stresses', 'portfolio', 'final_oos_artifact', 'final_oos_vector_inventory']
+  if (!inventory || typeof inventory !== 'object' || Array.isArray(inventory) || stable(Object.keys(inventory).sort()) !== stable(required.slice().sort())) fail(`${label} is missing the complete physical stage artifact inventory`)
+  for (const field of required) requireHash(inventory[field], `${label}.stage_artifacts.${field}`)
+  for (const field of ['execution_fills', 'selected_trades', 'stresses', 'portfolio']) if (inventory[field] !== value[`${field}_sha256`]) fail(`${label} stage artifact inventory disagrees with ${field}_sha256`)
+  for (const [field, hashField] of [['final_oos_artifact', 'oos_artifact_sha256'], ['final_oos_vector_inventory', 'vector_inventory_sha256']]) {
+    requireHash(value[hashField], `${label}.${hashField}`)
+    if (inventory[field] !== value[hashField]) fail(`${label} stage artifact inventory disagrees with ${hashField}`)
+  }
+  const refs = value.stage_artifact_refs
+  if (!refs || typeof refs !== 'object' || Array.isArray(refs) || stable(Object.keys(refs).sort()) !== stable(required.slice().sort())) fail(`${label} is missing the complete physical stage artifact reference inventory`)
+  const expectedSchemas = { genetic: 'strategy-v5-authoritative-stage-artifact/1', execution_fills: 'strategy-v5-authoritative-stage-artifact/1', selected_trades: 'strategy-v5-authoritative-stage-artifact/1', stresses: 'strategy-v5-authoritative-stage-artifact/1', portfolio: 'strategy-v5-authoritative-stage-artifact/1', final_oos_artifact: STAT_SCHEMA.input, final_oos_vector_inventory: STAT_SCHEMA.vectors }
+  for (const field of required) {
+    const ref = refs[field]
+    if (!ref || ref.schema !== expectedSchemas[field] || ref.version !== 1 || typeof ref.path !== 'string' || !ref.path || !HASH_RE.test(String(ref.content_sha256)) || !HASH_RE.test(String(ref.byte_sha256)) || !Number.isInteger(ref.bytes) || ref.bytes < 1) fail(`${label}.stage_artifact_refs.${field} is incomplete`)
+    if (ref.content_sha256 !== inventory[field]) fail(`${label}.stage_artifact_refs.${field} disagrees with stage inventory`)
+  }
+  if (value.wfo.artifact !== value.lineage.wfo_sha256) fail(`${label} WFO artifact is not bound through lineage`)
+  return true
+}
+function assertWfoRetainedOosBinding(wfo, artifact, vector, label = 'retained OOS evidence') {
+  if (!wfo) fail(`${label} lacks its WFO artifact`)
+  validateNestedWfoArtifact(wfo)
+  validateStatisticalArtifactSet(artifact, { exposureHead: wfo.validation_exposure_head, allowSubset: true })
+  validateVectorInventory(vector, wfo.validation_exposure_head, wfo.oos_episode_ids)
+  if (artifact.content_sha256 !== wfo.oos_artifact_sha256 || vector.content_sha256 !== wfo.vector_inventory_sha256) fail(`${label} hashes disagree with the WFO`)
+  const episodes = new Map(artifact.episodes.map(row => [String(row.episode_id), row]))
+  if (stable([...episodes.keys()]) !== stable(wfo.oos_episode_ids)) fail(`${label} episode inventory disagrees with the WFO`)
+  for (const [alias, rows] of Object.entries(vector.vectors)) {
+    for (const row of rows) {
+      const episode = episodes.get(String(row.episode_id)); const retained = episode?.candidate_returns?.[`behavior:${alias}`]
+      if (!retained || Number(retained.net_r) !== Number(row.net_r) || retained.traded !== row.traded) fail(`${label} vector ${alias}/${row.episode_id} disagrees with the OOS artifact`)
+    }
+  }
+  for (const fold of wfo.folds) {
+    if (fold.status !== 'EVALUATED') continue
+    const outer = wfo.asset_decisions.find(row => row?.fold_id === fold.fold_id)
+    if (!outer?.vector?.vectors) fail(`${label} fold ${fold.fold_id} lacks its retained vector`)
+    for (const [alias, rows] of Object.entries(outer.vector.vectors)) {
+      const finalRows = new Map((vector.vectors[alias] || []).map(row => [String(row.episode_id), row]))
+      for (const row of rows) {
+        const retained = finalRows.get(String(row.episode_id))
+        if (!retained || stable(retained) !== stable(row)) fail(`${label} fold ${fold.fold_id} vector ${alias}/${row.episode_id} is not the retained physical OOS value`)
+      }
+    }
+    for (const [asset, decision] of Object.entries(outer.asset_decisions || {})) {
+      if (!decision?.selected_behavior_alias_sha256 || !Array.isArray(decision.selected_return_vector)) continue
+      const aliasRows = new Map((vector.vectors[decision.selected_behavior_alias_sha256] || []).map(row => [String(row.episode_id), row]))
+      const expectedIds = (fold.test_episode_ids || []).filter(id => episodes.get(String(id))?.asset === asset).map(String).sort()
+      if (stable(decision.selected_return_vector.map(row => String(row.episode_id)).sort()) !== stable(expectedIds)) fail(`${label} fold ${fold.fold_id}/${asset} decision does not cover its exact physical OOS asset inventory`)
+      for (const row of decision.selected_return_vector) {
+        const retained = aliasRows.get(String(row.episode_id)); const episode = episodes.get(String(row.episode_id))
+        if (!retained || episode?.asset !== asset || Number(retained.net_r) !== Number(row.net_r) || retained.traded !== row.traded) fail(`${label} fold ${fold.fold_id}/${asset}/${row.episode_id} decision disagrees with the retained physical vector`)
+      }
+    }
+  }
+  return true
+}
+function verifyPhysicalStageArtifactRefs(run, recordRoot, label = 'authoritative research run', wfo = null) {
+  if (run?.decision === 'REJECTED' && !HASH_RE.test(String(run.oos_artifact_sha256 || '')) && run.stage_artifact_refs === undefined) return true
+  validateAuthoritativeRunStageInventory(run, label)
+  const expectedStages = { genetic: ['GENETIC', 'strategy-v5-authoritative-stage-artifact/1'], execution_fills: ['EXECUTION_FILLS', 'strategy-v5-authoritative-stage-artifact/1'], selected_trades: ['SELECTED_TRADES', 'strategy-v5-authoritative-stage-artifact/1'], stresses: ['STRESSES', 'strategy-v5-authoritative-stage-artifact/1'], portfolio: ['PORTFOLIO', 'strategy-v5-authoritative-stage-artifact/1'], final_oos_artifact: [null, STAT_SCHEMA.input], final_oos_vector_inventory: [null, STAT_SCHEMA.vectors] }
+  const reopened = {}
+  for (const [field, [expectedStage, expectedSchema]] of Object.entries(expectedStages)) {
+    const ref = run.stage_artifact_refs[field]
+    const path = resolve(recordRoot, assertRecordRelativePath(ref.path, `${label}.stage_artifact_refs.${field}.path`))
+    if (!pathWithin(recordRoot, path)) fail(`${label}.stage_artifact_refs.${field} escapes the record root`)
+    assertNoSymlinkPath(path, `${label}.stage_artifact_refs.${field}`)
+    const stat = fs.lstatSync(path)
+    if (!stat.isFile() || stat.nlink !== 1) fail(`${label}.stage_artifact_refs.${field} is not a regular single-link file`)
+    const bytes = fs.readFileSync(path)
+    if (bytes.byteLength !== ref.bytes || hash(bytes) !== ref.byte_sha256) fail(`${label}.stage_artifact_refs.${field} bytes are tampered`)
+    let value
+    try { value = JSON.parse(bytes.toString('utf8')) } catch (error) { fail(`${label}.stage_artifact_refs.${field} is not JSON: ${error.message}`) }
+    requireContentArtifact(value, `${label}.stage_artifact_refs.${field}`)
+    if (value.schema !== ref.schema || ref.schema !== expectedSchema || value.version !== ref.version || value.content_sha256 !== ref.content_sha256 || (expectedStage && value.stage !== expectedStage)) fail(`${label}.stage_artifact_refs.${field} semantic binding is invalid`)
+    try { validateRegisteredContractSchema(value) } catch (error) { fail(`${label}.stage_artifact_refs.${field} schema validation failed: ${error.message}`) }
+    reopened[field] = value
+    if (field === 'final_oos_artifact') {
+      validateStatisticalArtifactSet(value, { allowSubset: true })
+      if (value.content_sha256 !== run.oos_artifact_sha256 || value.exposure_head_sha256 !== run.oos_validation_exposure_head_sha256 || stable(value.episodes.map(row => row.episode_id)) !== stable(run.oos_episode_ids)) fail(`${label}.stage_artifact_refs.${field} is not bound to the retained OOS artifact`)
+    }
+    if (field === 'final_oos_vector_inventory') {
+      if (!Array.isArray(value.episode_ids) || stable(value.episode_ids) !== stable(run.oos_episode_ids) || value.content_sha256 !== run.vector_inventory_sha256 || value.exposure_head_sha256 !== run.oos_validation_exposure_head_sha256) fail(`${label}.stage_artifact_refs.${field} is not bound to the retained OOS vector inventory`)
+      if (!value.vectors || Object.values(value.vectors).some(rows => !Array.isArray(rows) || rows.length !== value.episode_ids.length)) fail(`${label}.stage_artifact_refs.${field} is incomplete`)
+    }
+  }
+  if (wfo) assertWfoRetainedOosBinding(wfo, reopened.final_oos_artifact, reopened.final_oos_vector_inventory, `${label} retained OOS evidence`)
+  return true
+}
+function requirePublicationArtifact(value, label, role) {
+  requireContentArtifact(value, label)
+  const expectedSchema = PUBLICATION_ARTIFACT_SCHEMAS[String(role)]
+  if (!expectedSchema || value.schema !== expectedSchema || value.version !== 1) fail(`${label} must use the registered ${expectedSchema || 'publication'} schema/version`)
+  try { validateRegisteredContractSchema(value) } catch (error) { fail(`${label} registered schema validation failed: ${error.message}`) }
+  if (role === 'research_run') validateAuthoritativeRunStageInventory(value, label)
+  return value
+}
+function assertExposurePrefix(prior, next, label = 'publication exposure') {
+  validateExposureHead(prior); validateExposureHead(next)
+  if (next.hypothesis_family !== prior.hypothesis_family) fail(`${label} family changed`)
+  if (next.cumulative_k < prior.cumulative_k || next.exposure_attempt_k < prior.exposure_attempt_k) fail(`${label} rolls back cumulative K`)
+  for (const [index, row] of prior.entries.entries()) if (stable(row) !== stable(next.entries[index] || {})) fail(`${label} does not preserve predecessor entry ${index + 1}`)
+  return true
+}
+function assertRegistryPrefix(prior, next, label = 'publication registry') {
+  validateBehaviorDefinitionRegistry(prior); validateBehaviorDefinitionRegistry(next)
+  if (next.hypothesis_family !== prior.hypothesis_family) fail(`${label} family changed`)
+  if (next.entries.length < prior.entries.length) fail(`${label} rolls back durable behavior definitions`)
+  for (const [index, row] of prior.entries.entries()) if (stable(row) !== stable(next.entries[index] || {})) fail(`${label} does not preserve predecessor entry ${index + 1}`)
+  return true
+}
+function publicationTransactionId({ transactionPath, exposureHeadPath, registryPath, stageRoot, expectedHeadSha256, expectedRegistrySha256, wfoSha256, runSha256, artifactRefs }) {
+  return hash({ schema: STAT_SCHEMA.publicationTransaction, transaction_path: String(transactionPath), exposure_head_path: String(exposureHeadPath), registry_path: String(registryPath), stage_root: String(stageRoot), expected_head_sha256: expectedHeadSha256, expected_registry_sha256: expectedRegistrySha256, wfo_sha256: wfoSha256, run_sha256: runSha256, artifacts: artifactRefs.map(row => ({ role: row.role, schema: row.schema, version: row.version, path: row.path, content_sha256: row.content_sha256, byte_sha256: row.byte_sha256, bytes: row.bytes })) })
+}
+function publicationImmutableSemantics(value) {
+  const copy = clone(value); delete copy.status; delete copy.committed_at; delete copy.content_sha256; return copy
+}
+function samePublicationTransaction(left, right) {
+  return left.transaction_id === right.transaction_id && stable(publicationImmutableSemantics(left)) === stable(publicationImmutableSemantics(right))
+}
+function pathWithin(parent, child) {
+  const root = resolve(String(parent)); const target = resolve(String(child)); return target === root || target.startsWith(`${root}${sep}`)
+}
+// Paths embedded in a portable publication journal are a wire-format, not
+// caller filesystem paths.  Validate them independently of a record root so
+// a self-rehashed journal cannot smuggle an absolute path or traversal into
+// either indexer.
+function assertRecordRelativePath(value, label) {
+  const text = String(value ?? '')
+  const parts = text.split('/')
+  if (!text || text.startsWith('/') || /^[A-Za-z]:/.test(text) || text.includes('\\') || /[\u0000-\u001f\u007f-\u009f]/u.test(text) || parts.some(part => !part || part === '.' || part === '..') || posix.normalize(text) !== text) fail(`${label} must be a non-empty normalized record-root-relative path`)
+  return text
+}
+function publicationRecordRoot(transactionPath, explicit = null) {
+  if (explicit) return resolve(String(explicit))
+  const target = resolve(String(transactionPath)); const parent = dirname(target); const name = parent.split(sep).at(-1)
+  return name === 'transactions' || name === '.transactions' ? dirname(parent) : parent
+}
+function recordRelativePath(recordRoot, value, label) {
+  const absolute = resolve(String(value)); const root = resolve(recordRoot)
+  if (!pathWithin(root, absolute)) fail(`${label} must be inside the publication record root`)
+  const rel = relative(root, absolute).replaceAll('\\', '/')
+  if (!rel || rel === '..' || rel.startsWith('../') || rel.includes('\0') || rel.startsWith('/')) fail(`${label} must be a non-empty record-root-relative path`)
+  return assertRecordRelativePath(rel, label)
+}
+function assertPublicationArtifactRefs({ transactionPath, exposureHeadPath, registryPath, stageRoot, refs, run, wfo, recordRoot = null }) {
+  assertRecordRelativePath(transactionPath, 'publication transaction path'); assertRecordRelativePath(exposureHeadPath, 'publication exposure HEAD path'); assertRecordRelativePath(registryPath, 'publication registry path'); assertRecordRelativePath(stageRoot, 'publication stage root')
+  const roles = new Set(); const paths = new Set(); const forbidden = [transactionPath, `${transactionPath}.lock`, exposureHeadPath, registryPath, stageRoot]
+  for (const [index, ref] of refs.entries()) {
+    assertRecordRelativePath(ref?.path, `publication artifact ${index} path`)
+    const target = recordRoot ? resolve(recordRoot, String(ref.path)) : resolve(String(ref.path)); if (roles.has(ref.role)) fail(`publication artifact role is duplicated: ${ref.role}`); roles.add(ref.role); if (paths.has(target)) fail(`publication artifact path is duplicated: ${target}`); paths.add(target)
+    if (forbidden.some(path => target === (recordRoot ? resolve(recordRoot, String(path)) : resolve(String(path))) || pathWithin(recordRoot ? resolve(recordRoot, String(path)) : path, target))) fail(`publication artifact path collides with a transaction/control path: ${target}`)
+    if (recordRoot) assertNoSymlinkPath(target, `publication artifact path ${target}`)
+    const expectedSchema = PUBLICATION_ARTIFACT_SCHEMAS[String(ref.role)]
+    if (!expectedSchema || ref.schema !== expectedSchema || ref.version !== 1) fail(`publication artifact ${index} schema/version binding is invalid`)
+    if (!Number.isInteger(ref.bytes) || ref.bytes < 1 || !HASH_RE.test(String(ref.content_sha256)) || !HASH_RE.test(String(ref.byte_sha256))) fail(`publication artifact ${index} hash/size binding is invalid`)
+  }
+  if (recordRoot) assertNoSymlinkPath(resolve(recordRoot, stageRoot), `publication stage root ${stageRoot}`)
+  const researchRefs = refs.filter(ref => ref.role === 'research_run'); const wfoRefs = refs.filter(ref => ref.role === 'wfo')
+  if (researchRefs.length !== 1) fail('publication transaction must include exactly one research_run artifact')
+  if (wfoRefs.length !== 1) fail('publication transaction must include exactly one wfo artifact')
+  const finalRefs = refs.filter(ref => ref.role === 'final_oos_artifact' || ref.role === 'final_oos_vector_inventory')
+  const hydratedRun = ['REJECTED', 'SHADOW', 'CANDIDATE_REVIEW'].includes(run.decision)
+  const requiresFinalOos = hydratedRun ? (run.decision !== 'REJECTED' || HASH_RE.test(String(run.oos_artifact_sha256 || '')) || HASH_RE.test(String(run.vector_inventory_sha256 || ''))) : finalRefs.length > 0
+  if (requiresFinalOos && (finalRefs.length !== 2 || !roles.has('final_oos_artifact') || !roles.has('final_oos_vector_inventory'))) fail('publication transaction must include the final OOS artifact and vector inventory')
+  if (!requiresFinalOos && finalRefs.length) fail('rejected publication may not carry a partial final OOS inventory')
+  if (requiresFinalOos ? roles.size !== 4 : roles.size !== 2) fail('publication transaction artifact inventory has an unexpected role set')
+  if (researchRefs[0].content_sha256 !== run.content_sha256) fail('publication research_run artifact is not bound to the exact research run')
+  if (wfoRefs[0].content_sha256 !== wfo.content_sha256) fail('publication WFO artifact is not bound to the exact final WFO')
+  if (run.wfo?.artifact !== wfo.content_sha256 || run.lineage?.wfo_sha256 !== wfo.content_sha256) fail('publication research run is not bound to the final WFO artifact')
+  if (hydratedRun && requiresFinalOos && (refs.find(ref => ref.role === 'final_oos_artifact')?.content_sha256 !== run.oos_artifact_sha256 || refs.find(ref => ref.role === 'final_oos_vector_inventory')?.content_sha256 !== run.vector_inventory_sha256)) fail('publication final OOS artifacts are not bound to the research run')
+  if (hydratedRun && requiresFinalOos && (run.oos_artifact_sha256 !== wfo.oos_artifact_sha256 || run.vector_inventory_sha256 !== wfo.vector_inventory_sha256 || run.oos_validation_exposure_head_sha256 !== wfo.validation_exposure_head_sha256 || stable(run.oos_episode_ids) !== stable(wfo.oos_episode_ids))) fail('publication final OOS lineage is inconsistent across the research run and WFO')
+  if (recordRoot) verifyPhysicalStageArtifactRefs(run, recordRoot, 'publication research run', wfo)
+  return true
+}
+
+function assertPublicationLineage({ wfo, run, boundHead }) {
+  validateNestedWfoArtifact(wfo)
+  if (!boundHead || !HASH_RE.test(String(boundHead.content_sha256 || ''))) fail('publication bound exposure HEAD is missing')
+  validateExposureHead(wfo.validation_exposure_head)
+  if (wfo.validation_exposure_head.content_sha256 !== wfo.validation_exposure_head_sha256 || wfo.validation_exposure_head.cumulative_k !== wfo.validation_exposure_head_cumulative_k) fail('publication WFO validation exposure HEAD snapshot does not match its lineage fields')
+  assertExposurePrefix(wfo.validation_exposure_head, boundHead, 'publication validation exposure')
+  if (wfo.exposure_head_sha256 !== boundHead.content_sha256) fail('publication WFO exposure HEAD is not bound to the transaction CAS HEAD')
+  if (wfo.cumulative_k !== boundHead.cumulative_k) fail('publication WFO cumulative K is not bound to the transaction CAS HEAD')
+  // The validation head may be an earlier immutable prefix when the final
+  // development refit appends exposure entries.  It still must be a declared
+  // hash-bound head; a caller may not erase or forge that lineage field.
+  if (!HASH_RE.test(String(wfo.validation_exposure_head_sha256 || ''))) fail('publication WFO validation exposure HEAD lineage is invalid')
+  requirePublicationArtifact(run, 'publication research run', 'research_run')
+  if (run.provenance !== 'AUTHORITATIVE_RECOMPUTED') fail('publication research run provenance is not authoritative recomputation')
+  if (!['REJECTED', 'SHADOW', 'CANDIDATE_REVIEW'].includes(run.decision)) fail('publication research run decision is not a publishable terminal decision')
+  if (run.accounting?.cumulative_family_k !== boundHead.cumulative_k) fail('publication research run accounting cumulative family K is not bound to the transaction CAS HEAD')
+  if (run.wfo?.pass !== wfo.gate_pass || run.wfo?.status !== wfo.decision) fail('publication research run WFO status/pass does not match the final WFO')
+  if (run.gate_status?.wfo !== wfo.gate_pass) fail('publication research run gate_status.wfo does not match the final WFO gate')
+  if (wfo.decision === 'REJECTED' && run.decision !== 'REJECTED') fail('a rejected final WFO cannot publish a non-rejected research run')
+  if (run.decision === 'SHADOW' || run.decision === 'CANDIDATE_REVIEW') {
+    if (wfo.audit?.pass !== true || wfo.audit?.decision !== 'SHADOW' || !wfo.audit?.gates || Object.values(wfo.audit.gates).some(value => value !== true)) fail('a publishable non-rejected research run requires a passing WFO audit with every required gate true')
+    if (!Array.isArray(wfo.asset_decisions_final) || wfo.asset_decisions_final.some(value => value?.pass !== true) || wfo.portfolio_decision?.pass !== true) fail('a publishable non-rejected research run requires passing WFO asset and portfolio decisions')
+    if (wfo.decision !== 'SHADOW' || wfo.gate_pass !== true || run.gate_status?.wfo !== true || run.gate_status?.stress !== true || run.gate_status?.portfolio !== true || run.gate_status?.all_required_stages !== true) fail('a publishable non-rejected research run requires a fully passing WFO, stress, portfolio, and stage gate set')
+  } else if (run.decision === 'REJECTED' && (run.gate_status?.all_required_stages === true || [run.gate_status?.wfo, run.gate_status?.stress, run.gate_status?.portfolio].every(value => value === true))) {
+    fail('a rejected research run must retain a failed required stage gate')
+  }
+  return true
+}
+
+function publicationArtifactRows(artifacts, recordRoot = null) {
+  return artifacts.map((row, index) => {
+    if (!row || typeof row !== 'object' || !row.path || !row.value || !row.role) fail(`publication artifact ${index} is incomplete`)
+    const role = String(row.role); const value = requirePublicationArtifact(row.value, `publication artifact ${row.role}`, role); const bytes = publicationBytes(value)
+    const rawPath = String(row.path); if (!recordRoot) assertRecordRelativePath(rawPath, `publication artifact ${row.role} path`); const absolute = recordRoot && !isAbsolute(rawPath) ? resolve(recordRoot, rawPath) : resolve(rawPath); if (recordRoot && !pathWithin(resolve(recordRoot), absolute)) fail(`publication artifact path is outside record root: ${absolute}`)
+    return { role, schema: value.schema, version: value.version, path: recordRoot ? relative(resolve(recordRoot), absolute).replaceAll('\\', '/') : absolute, content_sha256: value.content_sha256, byte_sha256: hash(bytes), bytes: bytes.byteLength }
+  })
+}
+
+function assertPublicationRetryMatchesExisting(existing, { transactionPath, exposureHeadPath, registryPath, recordRoot, expectedHeadSha256, expectedRegistrySha256, priorHead = null, nextHead = null, wfo, run, artifacts = [] } = {}) {
+  requireHash(expectedHeadSha256, 'publication expected_head_sha256'); requireHash(expectedRegistrySha256, 'publication expected_registry_sha256'); requirePublicationArtifact(wfo, 'publication WFO artifact', 'wfo'); requirePublicationArtifact(run, 'publication research run', 'research_run')
+  const next = nextHead || existing.bound_head; validateExposureHead(next); if (priorHead) assertExposurePrefix(priorHead, next); const rows = publicationArtifactRows(artifacts, recordRoot)
+  if (recordRelativePath(recordRoot, transactionPath, 'transaction path') !== existing.transaction_path || recordRelativePath(recordRoot, exposureHeadPath, 'exposure HEAD path') !== existing.exposure_head_path || recordRelativePath(recordRoot, registryPath, 'registry path') !== existing.registry_path || expectedHeadSha256 !== existing.expected_head_sha256 || expectedRegistrySha256 !== existing.expected_registry_sha256 || next.content_sha256 !== existing.next_head_sha256 || stable(next) !== stable(existing.bound_head) || wfo.content_sha256 !== existing.wfo_sha256 || run.content_sha256 !== existing.run_sha256 || stable(rows) !== stable(existing.artifact_refs)) fail('competing publication transaction at the same path')
+  assertPublicationArtifactRefs({ transactionPath: existing.transaction_path, exposureHeadPath: existing.exposure_head_path, registryPath: existing.registry_path, stageRoot: existing.stage_root, refs: rows, run, wfo, recordRoot })
+  assertPublicationLineage({ wfo, run, boundHead: existing.bound_head })
+  const expectedId = publicationTransactionId({ transactionPath: existing.transaction_path, exposureHeadPath: existing.exposure_head_path, registryPath: existing.registry_path, stageRoot: existing.stage_root, expectedHeadSha256: existing.expected_head_sha256, expectedRegistrySha256: existing.expected_registry_sha256, wfoSha256: existing.wfo_sha256, runSha256: existing.run_sha256, artifactRefs: rows })
+  if (expectedId !== existing.transaction_id) fail('competing publication transaction at the same path')
+  return true
+}
+
+function assertNoSymlinkPath(target, label) {
+  const absolute = resolve(String(target)); const components = absolute.split(sep).filter(Boolean); let cursor = absolute.startsWith(sep) ? sep : ''
+  for (const component of components) { cursor = cursor ? join(cursor, component) : component; if (!fs.existsSync(cursor)) break; const stat = fs.lstatSync(cursor); if (stat.isSymbolicLink()) {
+      // macOS exposes the ordinary temporary-directory root as /var ->
+      // /private/var.  It is an OS alias, not a caller-controlled artifact
+      // parent; continue walking so symlinks introduced below the temp root
+      // are still rejected.
+      if (!(process.platform === 'darwin' && cursor === '/var')) fail(`${label} contains a symlink path component: ${cursor}`)
+    }
+    if (cursor !== absolute && !stat.isDirectory() && !stat.isSymbolicLink()) fail(`${label} parent is not a directory: ${cursor}`) }
+}
+
+function assertRegularSingleLinkFile(target, label) {
+  const absolute = resolve(String(target)); assertNoSymlinkPath(absolute, label)
+  let stat
+  try { stat = fs.lstatSync(absolute) } catch (error) { fail(`${label} is missing: ${absolute}`) }
+  if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1) fail(`${label} must be a regular single-link non-symlink file`)
+  return absolute
+}
+
+export function makeStatisticalPublicationTransaction({ transactionPath, exposureHeadPath, registryPath, recordRoot = null, expectedHeadSha256, expectedRegistrySha256, priorHead = null, nextHead = null, wfo, run, artifacts = [] } = {}) {
+  if (!transactionPath || !exposureHeadPath || !registryPath) fail('publication transaction requires transaction, exposure-head, and registry paths')
+  const publicationRoot = publicationRecordRoot(transactionPath, recordRoot); const transactionRelative = recordRelativePath(publicationRoot, transactionPath, 'transaction path'); const exposureHeadRelative = recordRelativePath(publicationRoot, exposureHeadPath, 'exposure HEAD path'); const registryRelative = recordRelativePath(publicationRoot, registryPath, 'registry path')
+  requireHash(expectedHeadSha256, 'publication expected_head_sha256'); requireHash(expectedRegistrySha256, 'publication expected_registry_sha256')
+  const next = nextHead || readExposureHeadFile(String(exposureHeadPath)); validateExposureHead(next); if (priorHead) assertExposurePrefix(priorHead, next); if (next.content_sha256 !== expectedHeadSha256) fail('publication next HEAD differs from its compare-and-swap expected hash')
+  requirePublicationArtifact(wfo, 'publication WFO artifact', 'wfo'); requirePublicationArtifact(run, 'publication research run', 'research_run')
+  const rows = publicationArtifactRows(artifacts, publicationRoot)
+  const boundRegistry = readBehaviorDefinitionRegistryFile(String(registryPath)); if (boundRegistry.content_sha256 !== expectedRegistrySha256 || boundRegistry.exposure_head_sha256 !== expectedHeadSha256) fail('publication registry binding does not match its compare-and-swap predecessor')
+  const stageRootAbsolute = resolve(`${String(transactionPath)}.stage`); const stageRoot = recordRelativePath(publicationRoot, stageRootAbsolute, 'publication stage root'); const transactionId = publicationTransactionId({ transactionPath: transactionRelative, exposureHeadPath: exposureHeadRelative, registryPath: registryRelative, stageRoot, expectedHeadSha256, expectedRegistrySha256, wfoSha256: wfo.content_sha256, runSha256: run.content_sha256, artifactRefs: rows }); assertPublicationArtifactRefs({ transactionPath: transactionRelative, exposureHeadPath: exposureHeadRelative, registryPath: registryRelative, stageRoot, refs: rows, run, wfo, recordRoot: publicationRoot })
+  assertPublicationLineage({ wfo, run, boundHead: next })
+  const result = withHash({ schema: STAT_SCHEMA.publicationTransaction, version: 1, status: 'PREPARED', transaction_id: transactionId, transaction_path: transactionRelative, exposure_head_path: exposureHeadRelative, registry_path: registryRelative, expected_head_sha256: expectedHeadSha256, next_head_sha256: next.content_sha256, expected_registry_sha256: expectedRegistrySha256, bound_head: clone(next), bound_registry: clone(boundRegistry), wfo_sha256: wfo.content_sha256, run_sha256: run.content_sha256, artifact_refs: rows, no_k_mutation: true, no_rollback: true, stage_root: stageRoot })
+  validateContractSchema(result); return result
+}
+
+function readPublicationTransaction(transactionPath, recordRoot = null) {
+  const target = assertRegularSingleLinkFile(transactionPath, 'publication transaction journal path'); const root = publicationRecordRoot(target, recordRoot); const value = JSON.parse(fs.readFileSync(target, 'utf8')); assertOwnHash(value, STAT_SCHEMA.publicationTransaction, 'publication transaction'); validateContractSchema(value)
+  if (!['PREPARED', 'COMMITTED'].includes(value.status) || value.transaction_path !== recordRelativePath(root, target, 'transaction path') || value.no_k_mutation !== true || value.no_rollback !== true) fail('publication transaction state is invalid')
+  requireHash(value.expected_head_sha256, 'publication expected head'); requireHash(value.next_head_sha256, 'publication next head'); requireHash(value.expected_registry_sha256, 'publication expected registry'); requireHash(value.wfo_sha256, 'publication WFO'); requireHash(value.run_sha256, 'publication run')
+  if (value.expected_head_sha256 !== value.next_head_sha256 || !Array.isArray(value.artifact_refs) || !value.artifact_refs.length) fail('publication transaction lineage is incomplete')
+  if (!value.bound_head || !value.bound_registry) fail('publication transaction immutable control snapshots are missing')
+  validateExposureHead(value.bound_head); if (value.bound_head.content_sha256 !== value.expected_head_sha256) fail('publication bound HEAD does not match its CAS hash')
+  validateBehaviorDefinitionRegistry(value.bound_registry, { exposureHead: value.bound_head }); if (value.bound_registry.content_sha256 !== value.expected_registry_sha256) fail('publication bound registry does not match its CAS hash')
+  const expectedId = publicationTransactionId({ transactionPath: value.transaction_path, exposureHeadPath: value.exposure_head_path, registryPath: value.registry_path, stageRoot: value.stage_root, expectedHeadSha256: value.expected_head_sha256, expectedRegistrySha256: value.expected_registry_sha256, wfoSha256: value.wfo_sha256, runSha256: value.run_sha256, artifactRefs: value.artifact_refs }); if (value.transaction_id !== expectedId) fail('publication transaction ID does not match its content-addressed semantics')
+  assertPublicationArtifactRefs({ transactionPath: value.transaction_path, exposureHeadPath: value.exposure_head_path, registryPath: value.registry_path, stageRoot: value.stage_root, refs: value.artifact_refs, run: { content_sha256: value.run_sha256, wfo: { artifact: value.wfo_sha256 }, lineage: { wfo_sha256: value.wfo_sha256 } }, wfo: { content_sha256: value.wfo_sha256 } })
+  return value
+}
+
+// Read-only verifier shared by both v5 index implementations.  Indexing is
+// an evidence boundary: a COMMITTED bit and individually valid artifact
+// hashes are insufficient unless the journal itself is confined to its
+// physical path, both outputs reopen exactly, their schemas/hashes agree,
+// lineage binds to the journal's immutable CAS HEAD, and current controls
+// are the exact recorded controls or immutable append-only successors.
+export function verifyCommittedStatisticalPublication({ journal, journalPath, recordRoot = null } = {}) {
+  if (!journal || journal.status !== 'COMMITTED') fail('publication inventory requires a COMMITTED journal')
+  if (!journalPath) fail('publication inventory journal path is missing')
+  const targetJournal = assertRegularSingleLinkFile(journalPath, 'publication transaction journal path'); const root = resolve(recordRoot || publicationRecordRoot(targetJournal))
+  const expectedJournalPath = resolve(root, assertRecordRelativePath(journal.transaction_path, 'publication transaction path'))
+  if (expectedJournalPath !== targetJournal) fail(`publication transaction path does not match its physical journal path: ${journal.transaction_path}`)
+  validateContractSchema(journal)
+  const controlPath = (value, label) => {
+    const rel = assertRecordRelativePath(value, label); const path = resolve(root, rel)
+    if (!pathWithin(root, path)) fail(`${label} escapes the publication record root`)
+    assertNoSymlinkPath(path, label)
+    return path
+  }
+  const headPath = controlPath(journal.exposure_head_path, 'publication exposure HEAD path')
+  const registryPath = controlPath(journal.registry_path, 'publication registry path')
+  const head = readExposureHeadFile(headPath); const registry = readBehaviorDefinitionRegistryFile(registryPath)
+  validateBehaviorDefinitionRegistry(registry, { exposureHead: head })
+  const currentHeadExact = head.content_sha256 === journal.expected_head_sha256 || head.content_sha256 === journal.next_head_sha256
+  if (!currentHeadExact) assertExposurePrefix(journal.bound_head, head, 'committed publication exposure successor')
+  const currentRegistryExact = registry.content_sha256 === journal.expected_registry_sha256
+  if (!currentRegistryExact) assertRegistryPrefix(journal.bound_registry, registry, 'committed publication registry successor')
+  if (registry.exposure_head_sha256 !== head.content_sha256) fail('publication registry is not bound to physical HEAD')
+  const artifacts = {}; const artifactPaths = {}
+  for (const ref of journal.artifact_refs) {
+    const path = controlPath(ref.path, `publication artifact ${ref.role} path`)
+    if (!fs.existsSync(path)) fail(`publication artifact is missing: ${ref.path}`)
+    const bytes = fs.readFileSync(path); if (bytes.byteLength !== Number(ref.bytes) || hash(bytes) !== ref.byte_sha256) fail(`publication artifact bytes are tampered: ${ref.path}`)
+    let value; try { value = JSON.parse(bytes.toString('utf8')) } catch (error) { fail(`publication artifact is not JSON: ${ref.path}: ${error.message}`) }
+    requirePublicationArtifact(value, `publication artifact ${ref.role}`, ref.role)
+    if (value.content_sha256 !== ref.content_sha256) fail(`publication artifact semantic hash is not bound: ${ref.path}`)
+    artifacts[ref.role] = value; artifactPaths[ref.role] = path
+  }
+  assertPublicationArtifactRefs({ transactionPath: journal.transaction_path, exposureHeadPath: journal.exposure_head_path, registryPath: journal.registry_path, stageRoot: journal.stage_root, refs: journal.artifact_refs, run: artifacts.research_run, wfo: artifacts.wfo, recordRoot: root })
+  assertPublicationLineage({ wfo: artifacts.wfo, run: artifacts.research_run, boundHead: journal.bound_head })
+  return { journal, root, journalPath: targetJournal, head, registry, artifacts, artifactPaths }
+}
+function fsyncDirectory(path) {
+  try { const fd = fs.openSync(dirname(resolve(String(path))), 'r'); try { fs.fsyncSync(fd) } finally { fs.closeSync(fd) } } catch {}
+}
+function reopenPublicationArtifact(ref, path) {
+  const bytes = fs.readFileSync(path); let value
+  try { value = JSON.parse(bytes.toString('utf8')) } catch { fail(`publication artifact is not JSON after reopen: ${path}`) }
+  if (!value || value.content_sha256 !== ref.content_sha256 || value.content_sha256 !== ownHash(value)) fail(`publication artifact semantic hash is tampered after reopen: ${path}`)
+  requirePublicationArtifact(value, `publication artifact ${ref.role}`, ref.role)
+  return value
+}
+function promotePublicationArtifact(ref, stageRoot, recordRoot) {
+  const target = resolve(recordRoot, ref.path); const staged = resolve(recordRoot, stageRoot, `${ref.role}-${ref.content_sha256}.json`); assertNoSymlinkPath(target, `publication artifact path ${target}`); assertNoSymlinkPath(staged, `publication staged artifact path ${staged}`); const inspect = path => { if (!fs.existsSync(path)) return null; if (fs.lstatSync(path).isSymbolicLink()) fail(`publication artifact path is a symlink: ${path}`); const bytes = fs.readFileSync(path); if (bytes.byteLength !== Number(ref.bytes)) fail(`publication artifact bytes are tampered or dishonest in length: ${path}`); if (hash(bytes) !== ref.byte_sha256) fail(`publication artifact bytes are tampered: ${path}`); reopenPublicationArtifact(ref, path); return bytes }
+  const targetBytes = inspect(target); if (targetBytes) { if (fs.existsSync(staged)) { inspect(staged); fs.unlinkSync(staged) }; return target }
+  const stagedBytes = inspect(staged); if (!stagedBytes) fail(`publication staged artifact is missing: ${staged}`); fs.mkdirSync(dirname(target), { recursive: true }); assertNoSymlinkPath(target, `publication artifact path ${target}`)
+  // Never rename over an absent target: another transaction path may create
+  // the same physical artifact after the initial inspect.  Build a complete
+  // temporary in the target directory, fsync it, and use an exclusive link;
+  // on EEXIST, reopen and byte-verify the winner before discarding our stage.
+  try {
+    writeExclusiveBytes(target, stagedBytes)
+    inspect(target)
+    try { fs.unlinkSync(staged); fsyncDirectory(staged) } catch (error) { if (error.code !== 'ENOENT') throw error }
+  } catch (error) {
+    if (error.code !== 'EEXIST') throw error
+    inspect(target)
+    if (fs.existsSync(staged)) { inspect(staged); fs.unlinkSync(staged); fsyncDirectory(staged) }
+  }
+  inspect(target)
+  return target
+}
+
+export function writeStatisticalPublicationTransaction({ transactionPath, exposureHeadPath, registryPath, recordRoot = null, expectedHeadSha256, expectedRegistrySha256, priorHead = null, nextHead = null, wfo, run, artifacts = [] } = {}) {
+  const target = resolve(String(transactionPath)); const publicationRoot = publicationRecordRoot(target, recordRoot); fs.mkdirSync(dirname(target), { recursive: true })
+  // Reopen the immutable historical transaction before reading mutable CAS
+  // controls.  A valid committed A must remain idempotent after successor B
+  // advances HEAD/registry; constructing today's CAS candidate first would
+  // incorrectly reject that exact retry as stale.
+  if (fs.existsSync(target)) { const existing = readPublicationTransaction(target); assertPublicationRetryMatchesExisting(existing, { transactionPath, exposureHeadPath, registryPath, recordRoot: publicationRoot, expectedHeadSha256, expectedRegistrySha256, priorHead, nextHead, wfo, run, artifacts }); return recoverStatisticalPublicationTransaction({ transactionPath: target, recordRoot: publicationRoot }) }
+  const transaction = makeStatisticalPublicationTransaction({ transactionPath, exposureHeadPath, registryPath, recordRoot: publicationRoot, expectedHeadSha256, expectedRegistrySha256, priorHead, nextHead, wfo, run, artifacts })
+  const stageRoot = resolve(publicationRoot, transaction.stage_root); fs.mkdirSync(stageRoot, { recursive: true })
+  for (const row of artifacts) { const value = requirePublicationArtifact(row.value, `publication artifact ${row.role}`, String(row.role)); const bytes = publicationBytes(value); const ref = transaction.artifact_refs.find(candidate => candidate.role === String(row.role)); if (!ref || hash(bytes) !== ref.byte_sha256) fail(`publication artifact ${row.role} changed while preparing transaction`); const staged = resolve(stageRoot, `${ref.role}-${ref.content_sha256}.json`); if (fs.existsSync(staged)) { if (hash(fs.readFileSync(staged)) !== ref.byte_sha256) fail(`publication staged artifact collision: ${staged}`) } else writeExclusiveBytes(staged, bytes) }
+  try { writeExclusive(target, transaction) } catch (error) { if (error.code === 'EEXIST') { const existing = readPublicationTransaction(target); if (samePublicationTransaction(existing, transaction)) return recoverStatisticalPublicationTransaction({ transactionPath: target, recordRoot: publicationRoot }) }; fail(`publication transaction cannot be prepared: ${error.message}`) }
+  return recoverStatisticalPublicationTransaction({ transactionPath: target, recordRoot: publicationRoot })
+}
+
+function publicationLockOwner(lockPath) {
+  try {
+    const raw = fs.readFileSync(lockPath, 'utf8'); const value = JSON.parse(raw); const pid = Number(value.pid)
+    if (!Number.isInteger(pid) || pid < 1 || typeof value.token !== 'string' || !value.token) return { raw, alive: null }
+    try { process.kill(pid, 0); return { raw, alive: true } } catch (error) { return { raw, alive: error?.code === 'EPERM' } }
+  } catch { return { raw: null, alive: null } }
+}
+function acquirePublicationLock(lockPath) {
+  const token = hash({ pid: process.pid, started_at: Date.now(), path: resolve(String(lockPath)) }); const body = JSON.stringify({ schema: 'strategy-v5-statistical-publication-lock/1', pid: process.pid, token }) + '\n'
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try { const fd = fs.openSync(lockPath, 'wx'); try { fs.writeFileSync(fd, body); try { fs.fsyncSync(fd) } catch {} } finally { fs.closeSync(fd) }; return token } catch (error) {
+      if (error.code !== 'EEXIST') throw error
+      const owner = publicationLockOwner(lockPath); if (owner.alive !== false) fail(owner.alive === true ? 'competing publication transaction writer is active' : 'publication transaction lock is malformed; refusing unsafe recovery')
+      // Remove only the exact dead-owner bytes we observed.  If another
+      // process replaced the lock between read and unlink, the retry sees
+      // its live owner and fails closed rather than stealing the lock.
+      try { if (fs.readFileSync(lockPath, 'utf8') !== owner.raw) fail('publication transaction lock owner changed during stale-lock recovery'); fs.unlinkSync(lockPath) } catch (removeError) { if (removeError.code === 'ENOENT') continue; throw removeError }
+    }
+  }
+  fail('publication transaction lock could not be acquired')
+}
+
+export function recoverStatisticalPublicationTransaction({ transactionPath, recordRoot = null } = {}) {
+  if (!transactionPath) return { status: 'NONE', transaction_path: null }
+  const targetCandidate = resolve(String(transactionPath)); if (!fs.existsSync(targetCandidate)) {
+    try { if (fs.lstatSync(targetCandidate).isSymbolicLink()) fail('publication transaction journal path is a symlink') } catch (error) { if (error.code !== 'ENOENT') throw error }
+    return { status: 'NONE', transaction_path: transactionPath }
+  }
+  const target = assertRegularSingleLinkFile(targetCandidate, 'publication transaction journal path'); const root = publicationRecordRoot(target, recordRoot); const lockPath = `${target}.lock`; const token = acquirePublicationLock(lockPath)
+  try {
+    const transaction = readPublicationTransaction(target, root); const head = readExposureHeadFile(resolve(root, transaction.exposure_head_path)); const registry = readBehaviorDefinitionRegistryFile(resolve(root, transaction.registry_path)); validateBehaviorDefinitionRegistry(registry, { exposureHead: head })
+    const exactControls = head.content_sha256 === transaction.expected_head_sha256 && registry.content_sha256 === transaction.expected_registry_sha256
+    if (transaction.status === 'PREPARED' && !exactControls) fail('prepared publication transaction HEAD/registry compare-and-swap failed; refusing rollback or K reuse')
+    if (transaction.status === 'COMMITTED' && !exactControls) {
+      try { assertExposurePrefix(transaction.bound_head, head, 'committed publication exposure successor'); assertRegistryPrefix(transaction.bound_registry, registry, 'committed publication registry successor') } catch (error) { fail(`committed publication registry compare-and-swap failed; not a proven immutable successor: ${error.message}`) }
+    }
+    // COMMITTED is not a trust shortcut: verify the current control state and
+    // every promoted output on every restart before returning.  A later
+    // append-only head/registry is accepted only for an immutable COMMITTED
+    // transaction whose own snapshots are a byte-checked prefix.
+    const reopened = {}
+    for (const ref of transaction.artifact_refs) { const path = promotePublicationArtifact(ref, transaction.stage_root, root); reopened[ref.role] = reopenPublicationArtifact(ref, path) }
+    assertPublicationLineage({ wfo: reopened.wfo, run: reopened.research_run, boundHead: transaction.bound_head })
+    if (transaction.status === 'COMMITTED') return { status: 'COMMITTED', transaction_path: target, run_sha256: transaction.run_sha256, wfo_sha256: transaction.wfo_sha256, head_sha256: transaction.next_head_sha256 }
+    const committed = withHash({ ...transaction, status: 'COMMITTED', committed_at: transaction.committed_at || new Date().toISOString() }); writeAtomicJson(target, committed); return { status: 'COMMITTED', transaction_path: target, run_sha256: committed.run_sha256, wfo_sha256: committed.wfo_sha256, head_sha256: committed.next_head_sha256 }
+  } catch (error) { fail(error.message) } finally {
+    try { const owner = publicationLockOwner(lockPath); if (owner.raw && owner.raw.includes(`"token":"${token}"`)) fs.unlinkSync(lockPath) } catch {}
+  }
 }
 
 export function makeGeneticCheckpoint({ artifact, exposureHead, geneSpace, foldId, seed, generation, config, population, history = [], seedIndex = 0, rngState = null, seedFinalists = [], seedMembership = [], plateau = 0, paretoSignature = '', previousCheckpointSha256 = null, checkpointStatus = 'RUNNING' } = {}) {
@@ -428,18 +919,19 @@ export function validateGeneticCheckpoint(checkpoint, { artifact, exposureHead, 
 
 export function recoverStaleCheckpointLock({ filePath, force = false, maxAgeMs = 86_400_000 } = {}) {
   if (force !== true) fail('stale checkpoint lock recovery requires explicit force=true')
-  const lockPath = `${filePath}.lock`; if (!fs.existsSync(lockPath)) return false
+  const target = assertGeneticCheckpointPath(filePath); const lockPath = `${target}.lock`; if (!fs.existsSync(lockPath)) return false
+  assertRegistryPathConfined(lockPath, 'genetic checkpoint lock path', { requireFile: true, rootBoundary: dirname(target) })
   const age = Date.now() - fs.statSync(lockPath).mtimeMs; if (age < Number(maxAgeMs)) fail('checkpoint lock is not old enough for explicit recovery')
   fs.unlinkSync(lockPath); return true
 }
 
 export function writeGeneticCheckpointFile({ filePath, checkpoint, expectedExposureHeadSha256, expectedCheckpointSha256 = null } = {}) {
   assertOwnHash(checkpoint, STAT_SCHEMA.checkpoint, 'genetic checkpoint'); if (expectedExposureHeadSha256 && checkpoint.exposure_predecessor_sha256 !== expectedExposureHeadSha256) fail('checkpoint expected exposure predecessor mismatch')
-  const lockPath = `${filePath}.lock`; let fd
-  try { fd = fs.openSync(lockPath, 'wx'); let existing = null; if (fs.existsSync(filePath)) { existing = JSON.parse(fs.readFileSync(filePath, 'utf8')); validateContractSchema(existing); if (existing.content_sha256 === checkpoint.content_sha256) return existing; if (expectedCheckpointSha256 && existing.content_sha256 !== expectedCheckpointSha256) fail('stale or competing checkpoint predecessor'); if (!expectedCheckpointSha256 && (existing.exposure_head_sha256 !== checkpoint.exposure_head_sha256 || existing.generation >= checkpoint.generation)) fail('checkpoint append is stale or competing'); if (checkpoint.previous_checkpoint_sha256 !== existing.content_sha256) fail('stale checkpoint chain predecessor') } else if (checkpoint.previous_checkpoint_sha256 !== null) fail('checkpoint cannot start from a non-null predecessor'); const temporary = `${filePath}.tmp-${process.pid}-${Date.now()}`; fs.writeFileSync(temporary, `${JSON.stringify(checkpoint)}\n`, 'utf8'); fs.renameSync(temporary, filePath); const receipt = { schema: 'strategy-v5-statistical-genetic-checkpoint-receipt/1', checkpoint_sha256: checkpoint.content_sha256, previous_checkpoint_sha256: checkpoint.previous_checkpoint_sha256, state_sha256: checkpoint.state_sha256, exposure_head_sha256: checkpoint.exposure_head_sha256, fold_id: checkpoint.fold_id, seed: checkpoint.seed, seed_index: checkpoint.seed_index, generation: checkpoint.generation, checkpoint_status: checkpoint.checkpoint_status }; fs.appendFileSync(`${filePath}.jsonl`, `${JSON.stringify(receipt)}\n`, 'utf8'); return checkpoint } catch (error) { if (error.code === 'EEXIST') fail('competing checkpoint writer is active'); fail(error.message) } finally { if (fd !== undefined) { fs.closeSync(fd); try { fs.unlinkSync(lockPath) } catch {} } }
+  const target = assertGeneticCheckpointPath(filePath); const directory = dirname(target); const lockPath = `${target}.lock`; assertRegistryPathConfined(lockPath, 'genetic checkpoint lock path', { rootBoundary: directory }); const journalPath = `${target}.jsonl`; assertRegistryPathConfined(journalPath, 'genetic checkpoint journal path', { rootBoundary: directory }); if (fs.existsSync(journalPath)) assertRegistryPathConfined(journalPath, 'genetic checkpoint journal path', { requireFile: true, rootBoundary: directory }); let fd
+  try { fd = fs.openSync(lockPath, 'wx'); let existing = null; if (fs.existsSync(target)) { assertRegistryPathConfined(target, 'genetic checkpoint path', { requireFile: true, rootBoundary: directory }); existing = JSON.parse(fs.readFileSync(target, 'utf8')); validateContractSchema(existing); if (existing.content_sha256 === checkpoint.content_sha256) return existing; if (expectedCheckpointSha256 && existing.content_sha256 !== expectedCheckpointSha256) fail('stale or competing checkpoint predecessor'); if (!expectedCheckpointSha256 && (existing.exposure_head_sha256 !== checkpoint.exposure_head_sha256 || existing.generation >= checkpoint.generation)) fail('checkpoint append is stale or competing'); if (checkpoint.previous_checkpoint_sha256 !== existing.content_sha256) fail('stale checkpoint chain predecessor') } else if (checkpoint.previous_checkpoint_sha256 !== null) fail('checkpoint cannot start from a non-null predecessor'); const temporary = `${target}.tmp-${process.pid}-${Date.now()}`; assertRegistryPathConfined(temporary, 'genetic checkpoint temporary path', { rootBoundary: directory }); fs.writeFileSync(temporary, `${JSON.stringify(checkpoint)}\n`, 'utf8'); fs.renameSync(temporary, target); const receipt = { schema: 'strategy-v5-statistical-genetic-checkpoint-receipt/1', checkpoint_sha256: checkpoint.content_sha256, previous_checkpoint_sha256: checkpoint.previous_checkpoint_sha256, state_sha256: checkpoint.state_sha256, exposure_head_sha256: checkpoint.exposure_head_sha256, fold_id: checkpoint.fold_id, seed: checkpoint.seed, seed_index: checkpoint.seed_index, generation: checkpoint.generation, checkpoint_status: checkpoint.checkpoint_status }; if (fs.existsSync(journalPath)) assertRegistryPathConfined(journalPath, 'genetic checkpoint journal path', { requireFile: true, rootBoundary: directory }); fs.appendFileSync(journalPath, `${JSON.stringify(receipt)}\n`, 'utf8'); return checkpoint } catch (error) { if (error.code === 'EEXIST') fail('competing checkpoint writer is active'); fail(error.message) } finally { if (fd !== undefined) { fs.closeSync(fd); try { fs.unlinkSync(lockPath) } catch {} } }
 }
 
-export function readGeneticCheckpointFile(filePath) { const checkpoint = JSON.parse(fs.readFileSync(filePath, 'utf8')); validateContractSchema(checkpoint); return checkpoint }
+export function readGeneticCheckpointFile(filePath) { const target = assertRegistryPathConfined(filePath, 'genetic checkpoint path', { requireFile: true }); const checkpoint = JSON.parse(fs.readFileSync(target, 'utf8')); validateContractSchema(checkpoint); return checkpoint }
 
 export function resumeGeneticSearchV5({ checkpoint, ...args } = {}) {
   validateGeneticCheckpoint(checkpoint, { artifact: args.artifact, exposureHead: args.exposureHead, geneSpace: args.geneSpace, foldId: args.foldId, config: args.config ? geneticConfig(args.config, args.mode) : null })
@@ -921,6 +1413,7 @@ function makeGeneticEvaluationFactoryV5({ artifact, ids, evaluator, exposureHead
 }
 
 function runGeneticSearchV5Legacy({ artifact, geneSpace, trainingEpisodeIds, evaluator, exposureHead, baseline = null, constraints = {}, config = {}, mode = 'AUTHORITATIVE', foldId = 'training', checkpointPath = null } = {}) {
+  assertGeneticCheckpointPath(checkpointPath, config)
   if (Array.isArray(artifact) || (trainingEpisodeIds !== undefined && (!Array.isArray(trainingEpisodeIds) || trainingEpisodeIds.some(id => typeof id !== 'string')))) fail('genetic search requires a verified artifact and string episode scope')
   validateExposureHead(exposureHead); validateStatisticalArtifactSet(artifact, { exposureHead, allowSubset: true }); const space = normalizeGenes(geneSpace); const ids = new Set(trainingEpisodeIds || artifact.episodes.filter(row => row.eligible).map(row => row.episode_id)); if (!ids.size) fail('genetic training scope is empty'); for (const id of ids) if (!artifact.episodes.some(row => row.episode_id === id)) fail(`training episode ${id} is absent from artifact`)
   if (typeof evaluator !== 'function') fail('genetic search requires a deterministic evaluator function'); requireVerifiedWorkerEvaluator(evaluator, mode); if (String(mode).toUpperCase() !== 'FIXTURE' && typeof evaluator.evaluateBatch !== 'function') fail('evaluation artifact requires deterministic batch evaluation')
@@ -941,6 +1434,7 @@ function runGeneticSearchV5Legacy({ artifact, geneSpace, trainingEpisodeIds, eva
 }
 
 function checkpointedGeneticSearch({ artifact, geneSpace, trainingEpisodeIds, evaluator, exposureHead, baseline = null, constraints = {}, config = {}, mode = 'AUTHORITATIVE', foldId = 'training', checkpointPath, resumeCheckpoint = null } = {}) {
+  assertGeneticCheckpointPath(checkpointPath, config)
   validateExposureHead(exposureHead); validateStatisticalArtifactSet(artifact, { exposureHead, allowSubset: true }); const space = normalizeGenes(geneSpace); const ids = new Set(trainingEpisodeIds || artifact.episodes.filter(row => row.eligible).map(row => row.episode_id)); if (!ids.size) fail('genetic training scope is empty'); if (typeof evaluator !== 'function') fail('genetic search requires a deterministic evaluator function'); requireVerifiedWorkerEvaluator(evaluator, mode); if (String(mode).toUpperCase() !== 'FIXTURE' && typeof evaluator.evaluateBatch !== 'function') fail('evaluation artifact requires deterministic batch evaluation')
   const frozen = geneticConfig(config, mode); if (resumeCheckpoint) validateGeneticCheckpoint(resumeCheckpoint, { artifact, exposureHead, geneSpace: space, foldId, config: frozen })
   const allHistory = resumeCheckpoint ? clone(resumeCheckpoint.history) : []; const seedFinalists = resumeCheckpoint ? clone(resumeCheckpoint.seed_finalists) : []; const seedMembership = new Map(resumeCheckpoint ? resumeCheckpoint.seed_membership : []); let checkpointPrevious = resumeCheckpoint?.content_sha256 || null; let startSeedIndex = resumeCheckpoint?.seed_index || 0; let evaluationOrdinal = allHistory.reduce((maximum, row) => Math.max(maximum, Number(row.evaluation_ordinal || 0)), 0)
@@ -1619,7 +2113,7 @@ export function runNestedWfoV5({ artifact, geneSpace, evaluator, exposureHead, s
         const validationIds = new Set(assetTrain.filter(row => strictTime(row.decision_time) >= strictTime(inner.validation_start) && strictTime(row.decision_time) < strictTime(inner.validation_end) && strictTime(row.resolution_time) <= strictTime(inner.validation_end) && availableBy(row, inner.validation_end)).map(row => row.episode_id))
         if (!fitIds.size || !validationIds.size || [...fitIds].some(id => validationIds.has(id))) continue
         const innerArtifact = makeStatisticalArtifactSet({ lineage: artifact.lineage, candidates: artifact.candidates, episodes: artifact.episodes.filter(row => fitIds.has(row.episode_id) || validationIds.has(row.episode_id)), exposureHead: foldHead, metadata: { phase: 'INNER_TRAIN_ONLY', fold_id: fold.fold_id, asset: a, inner_fold_id: inner.inner_fold_id }, allowSubset: true })
-        const pathArgs = { fold_id: fold.fold_id, asset: a, inner_fold_id: inner.inner_fold_id, stage: 'INNER' }; const checkpointPath = typeof config.checkpointPathFactory === 'function' ? config.checkpointPathFactory(pathArgs) : (config.checkpointDirectory ? join(config.checkpointDirectory, `${fold.fold_id}-${a}-${inner.inner_fold_id}.json`) : undefined); if (String(mode).toUpperCase() !== 'FIXTURE' && typeof checkpointPath !== 'string') fail('nested authoritative inner GA checkpoint is missing'); const resumeCheckpoint = checkpointPath && fs.existsSync(checkpointPath) ? readGeneticCheckpointFile(checkpointPath) : null; const selectedInner = runGeneticSearchV5({ artifact: innerArtifact, geneSpace, trainingEpisodeIds: [...fitIds], evaluator: scopedInnerEvaluator(evaluator, { fitIds, validationIds, inner }), exposureHead: foldHead, exposureHeadPath: config.exposureHeadPath, exposureHeadPredecessorSha256: foldHead.content_sha256, checkpointPath, resumeCheckpoint, constraints: config.constraints, config: { ...config, trainingCutoff: inner.train_end }, mode, foldId: inner.inner_fold_id }); foldHead = selectedInner.exposureHead
+        const pathArgs = { fold_id: fold.fold_id, asset: a, inner_fold_id: inner.inner_fold_id, stage: 'INNER' }; const checkpointPath = typeof config.checkpointPathFactory === 'function' ? config.checkpointPathFactory(pathArgs) : (config.checkpointDirectory ? join(config.checkpointDirectory, `${fold.fold_id}-${a}-${inner.inner_fold_id}.json`) : undefined); if (String(mode).toUpperCase() !== 'FIXTURE' && typeof checkpointPath !== 'string') fail('nested authoritative inner GA checkpoint is missing'); if (checkpointPath) assertGeneticCheckpointPath(checkpointPath, config); const resumeCheckpoint = checkpointPath && fs.existsSync(checkpointPath) ? readGeneticCheckpointFile(checkpointPath) : null; const selectedInner = runGeneticSearchV5({ artifact: innerArtifact, geneSpace, trainingEpisodeIds: [...fitIds], evaluator: scopedInnerEvaluator(evaluator, { fitIds, validationIds, inner }), exposureHead: foldHead, exposureHeadPath: config.exposureHeadPath, exposureHeadPredecessorSha256: foldHead.content_sha256, checkpointPath, resumeCheckpoint, constraints: config.constraints, config: { ...config, trainingCutoff: inner.train_end }, mode, foldId: inner.inner_fold_id }); foldHead = selectedInner.exposureHead
         const validationRows = artifact.episodes.filter(row => validationIds.has(row.episode_id)); const selectedChromosome = selectedInner.run.selected?.chromosome; if (!selectedChromosome) continue
         // Forward-only inner evidence: the candidate produced by this fold's
         // prior fit is evaluated only on this fold's later validation.  No
@@ -1638,7 +2132,7 @@ export function runNestedWfoV5({ artifact, geneSpace, evaluator, exposureHead, s
       // complete purged outer-train scope.  Inner finalists are procedure
       // evidence only and are never fixed-refit or selected by backward scores.
       const assetTrainArtifact = makeStatisticalArtifactSet({ lineage: artifact.lineage, candidates: artifact.candidates, episodes: assetTrain, exposureHead: foldHead, metadata: { phase: 'OUTER_TRAIN_FRESH_GA_REFIT', fold_id: fold.fold_id, asset: a, selection_procedure_sha256: procedureId }, allowSubset: true })
-      const refitFoldId = `${fold.fold_id}-${a}-FULL-OUTER-TRAIN`; const refitPathArgs = { fold_id: fold.fold_id, asset: a, inner_fold_id: null, stage: 'FULL_OUTER_TRAIN_REFIT' }; const refitCheckpointPath = typeof config.checkpointPathFactory === 'function' ? config.checkpointPathFactory(refitPathArgs) : (config.checkpointDirectory ? join(config.checkpointDirectory, `${refitFoldId}.json`) : undefined); if (String(mode).toUpperCase() !== 'FIXTURE' && typeof refitCheckpointPath !== 'string') fail('fresh full-outer-train GA checkpoint is missing'); const refitResume = refitCheckpointPath && fs.existsSync(refitCheckpointPath) ? readGeneticCheckpointFile(refitCheckpointPath) : null
+      const refitFoldId = `${fold.fold_id}-${a}-FULL-OUTER-TRAIN`; const refitPathArgs = { fold_id: fold.fold_id, asset: a, inner_fold_id: null, stage: 'FULL_OUTER_TRAIN_REFIT' }; const refitCheckpointPath = typeof config.checkpointPathFactory === 'function' ? config.checkpointPathFactory(refitPathArgs) : (config.checkpointDirectory ? join(config.checkpointDirectory, `${refitFoldId}.json`) : undefined); if (String(mode).toUpperCase() !== 'FIXTURE' && typeof refitCheckpointPath !== 'string') fail('fresh full-outer-train GA checkpoint is missing'); if (refitCheckpointPath) assertGeneticCheckpointPath(refitCheckpointPath, config); const refitResume = refitCheckpointPath && fs.existsSync(refitCheckpointPath) ? readGeneticCheckpointFile(refitCheckpointPath) : null
       const refit = runGeneticSearchV5({ artifact: assetTrainArtifact, geneSpace, trainingEpisodeIds: assetTrain.map(row => row.episode_id), evaluator, exposureHead: foldHead, exposureHeadPath: config.exposureHeadPath, exposureHeadPredecessorSha256: foldHead.content_sha256, checkpointPath: refitCheckpointPath, resumeCheckpoint: refitResume, constraints: config.constraints, config: { ...config, trainingCutoff: fold.train_end }, mode, foldId: refitFoldId }); foldHead = refit.exposureHead
       const selectedDefinition = refit.run.selected?.chromosome; const selectedAlias = refit.run.selected_behavior_alias_sha256; const selectedSeedCount = refit.run.selected_seed_count; const refitMetrics = refit.run.selected?.fitness?.metrics || null; const testAsset = test.filter(row => row.asset === a)
       if (!testAsset.length || !selectedAlias || !selectedDefinition) { assetResults.push(makeAssetDecision({ asset: a, pass: false, reason: 'MISSING_FRESH_OUTER_TRAIN_SELECTION', inner_folds: innerRuns, procedure_validation: procedureValidation })); continue }
@@ -1678,29 +2172,88 @@ export function runNestedWfoV5({ artifact, geneSpace, evaluator, exposureHead, s
     const rows = artifact.episodes.filter(row => row.asset === a && row.eligible && strictTime(row.decision_time) < strictTime(prospectiveCutoff) && strictTime(row.resolution_time) <= strictTime(prospectiveCutoff) && availableBy(row, prospectiveCutoff))
     if (!rows.length) { developmentAssets.push({ asset: a, status: 'REJECTED', reason: 'NO_COMPLETE_DEVELOPMENT_EPISODES' }); continue }
     const scoped = makeStatisticalArtifactSet({ lineage: artifact.lineage, candidates: artifact.candidates, episodes: rows, exposureHead: head, metadata: { phase: 'POST_WFO_FULL_DEVELOPMENT_REFIT', asset: a, prospective_cutoff: prospectiveCutoff, selection_procedure_sha256: procedureId }, allowSubset: true })
-    const refitFoldId = `prospective-${a}-FULL-DEVELOPMENT`; const pathArgs = { fold_id: 'POST_WFO', asset: a, inner_fold_id: null, stage: 'FULL_DEVELOPMENT_REFIT' }; const checkpointPath = typeof config.checkpointPathFactory === 'function' ? config.checkpointPathFactory(pathArgs) : (config.checkpointDirectory ? join(config.checkpointDirectory, `${refitFoldId}.json`) : undefined); const resumeCheckpoint = checkpointPath && fs.existsSync(checkpointPath) ? readGeneticCheckpointFile(checkpointPath) : null
+    const refitFoldId = `prospective-${a}-FULL-DEVELOPMENT`; const pathArgs = { fold_id: 'POST_WFO', asset: a, inner_fold_id: null, stage: 'FULL_DEVELOPMENT_REFIT' }; const checkpointPath = typeof config.checkpointPathFactory === 'function' ? config.checkpointPathFactory(pathArgs) : (config.checkpointDirectory ? join(config.checkpointDirectory, `${refitFoldId}.json`) : undefined); if (checkpointPath) assertGeneticCheckpointPath(checkpointPath, config); const resumeCheckpoint = checkpointPath && fs.existsSync(checkpointPath) ? readGeneticCheckpointFile(checkpointPath) : null
     const refit = runGeneticSearchV5({ artifact: scoped, geneSpace, trainingEpisodeIds: rows.map(row => row.episode_id), evaluator, exposureHead: head, exposureHeadPath: config.exposureHeadPath, exposureHeadPredecessorSha256: head.content_sha256, checkpointPath, resumeCheckpoint, constraints: config.constraints, config: { ...config, trainingCutoff: prospectiveCutoff }, mode, foldId: refitFoldId }); head = refit.exposureHead
     developmentAssets.push({ asset: a, status: refit.run.selected ? 'SELECTED_FOR_SHADOW' : 'REJECTED', source_phase: 'FRESH_FULL_DEVELOPMENT_GA', selected_from_outer_fold_winners: false, outer_fold_winner_inventory_used: false, historical_wfo_rows_reclassified_as_development_at_cutoff: true, historical_labels_available_by_cutoff: true, prospective_cutoff: prospectiveCutoff, training_episode_ids: rows.map(row => row.episode_id), training_inventory_sha256: hash(rows.map(row => ({ episode_id: row.episode_id, decision_time: row.decision_time, resolution_time: row.resolution_time }))), selection_procedure_sha256: procedureId, gene_space_sha256: refit.run.gene_space.content_sha256, seeds: [...refit.run.config.seeds], selected_behavior_alias_sha256: refit.run.selected_behavior_alias_sha256, selected_chromosome: refit.run.selected?.chromosome || null, genetic_sha256: refit.run.content_sha256, exposure_head_sha256: head.content_sha256 })
   }
   const developmentRefit = withHash({ schema: 'strategy-v5-statistical-development-refit/1', version: 1, status: audit.pass && developmentAssets.every(row => row.status === 'SELECTED_FOR_SHADOW') ? 'SHADOW_PENDING_PROSPECTIVE' : 'REJECTED', activation_status: 'SHADOW_ONLY', prospective_cutoff: prospectiveCutoff, source_artifact_sha256: artifact.content_sha256, validation_audit_sha256: audit.content_sha256, validation_exposure_head_sha256: validationHead.content_sha256, exposure_head_sha256: head.content_sha256, selection_procedure_sha256: procedureId, selected_from_outer_fold_winners: false, excluded_from_retrospective_oos_audit: true, asset_refits: developmentAssets })
   const decision = audit.pass && developmentRefit.status === 'SHADOW_PENDING_PROSPECTIVE' ? 'SHADOW' : 'REJECTED'
-  const result = withHash({ schema: STAT_SCHEMA.wfo, version: 1, folds: foldArtifacts, fold_count: 8, asset_scope: assetScope, validation_exposure_head_sha256: validationHead.content_sha256, exposure_head_sha256: head.content_sha256, cumulative_k: head.cumulative_k, oos_episode_ids: oosEpisodes, oos_artifact_sha256: finalArtifact.content_sha256, vector_inventory_sha256: finalVector.content_sha256, oos_weighting: 'UNWEIGHTED', audit, development_refit: developmentRefit, asset_decisions: outerSelected, asset_decisions_final: finalAssetDecisions, portfolio_decision: finalPortfolio, decision, gate_pass: decision === 'SHADOW' }); validateNestedWfoArtifact(result); validateContractSchema(result); return { run: result, exposureHead: head, audit, artifact: finalArtifact, vectorInventory: finalVector, developmentRefit, assetScope }
+  const result = withHash({ schema: STAT_SCHEMA.wfo, version: 1, folds: foldArtifacts, fold_count: 8, asset_scope: assetScope, validation_exposure_head_sha256: validationHead.content_sha256, validation_exposure_head_cumulative_k: validationHead.cumulative_k, validation_exposure_head: validationHead, exposure_head_sha256: head.content_sha256, cumulative_k: head.cumulative_k, oos_episode_ids: oosEpisodes, oos_artifact_sha256: finalArtifact.content_sha256, vector_inventory_sha256: finalVector.content_sha256, oos_weighting: 'UNWEIGHTED', audit, development_refit: developmentRefit, asset_decisions: outerSelected, asset_decisions_final: finalAssetDecisions, portfolio_decision: finalPortfolio, decision, gate_pass: decision === 'SHADOW' }); validateNestedWfoArtifact(result); validateContractSchema(result); return { run: result, exposureHead: head, audit, artifact: finalArtifact, vectorInventory: finalVector, developmentRefit, assetScope }
 }
 
 function innerFoldsForAssets(assetResults) { return assetResults.flatMap(row => row.inner_folds || []) }
 
 export function validateNestedWfoArtifact(value) {
-  assertKnownKeys(value, ['schema', 'version', 'folds', 'fold_count', 'asset_scope', 'validation_exposure_head_sha256', 'exposure_head_sha256', 'cumulative_k', 'oos_episode_ids', 'oos_artifact_sha256', 'vector_inventory_sha256', 'oos_weighting', 'audit', 'development_refit', 'asset_decisions', 'asset_decisions_final', 'portfolio_decision', 'decision', 'gate_pass', 'content_sha256'], 'nested WFO artifact')
+  assertKnownKeys(value, ['schema', 'version', 'folds', 'fold_count', 'asset_scope', 'validation_exposure_head_sha256', 'validation_exposure_head_cumulative_k', 'validation_exposure_head', 'exposure_head_sha256', 'cumulative_k', 'oos_episode_ids', 'oos_artifact_sha256', 'vector_inventory_sha256', 'oos_weighting', 'audit', 'development_refit', 'asset_decisions', 'asset_decisions_final', 'portfolio_decision', 'decision', 'gate_pass', 'content_sha256'], 'nested WFO artifact')
   assertOwnHash(value, STAT_SCHEMA.wfo, 'nested WFO artifact')
   if (value.fold_count !== 8 || !Array.isArray(value.folds) || value.folds.length !== 8) fail('nested WFO must contain exactly eight outer folds')
   if (!['REJECTED', 'SHADOW'].includes(value.decision) || value.decision === 'ACTIVE' || value.gate_pass !== (value.decision === 'SHADOW')) fail('nested WFO decision is not fail-closed')
   if (!value.asset_scope) fail('nested WFO is missing immutable asset scope')
   normalizeAssetScope(value.asset_scope, value.asset_scope.trade_assets || [], 'FIXTURE')
   requireHash(value.exposure_head_sha256, 'nested WFO exposure head'); requireHash(value.validation_exposure_head_sha256, 'nested WFO validation exposure head')
-  if (!Number.isInteger(value.cumulative_k) || value.cumulative_k < 1 || value.oos_weighting !== 'UNWEIGHTED') fail('nested WFO cumulative/search weighting contract is invalid')
+  if (!Number.isInteger(value.cumulative_k) || value.cumulative_k < 1 || !Number.isInteger(value.validation_exposure_head_cumulative_k) || value.validation_exposure_head_cumulative_k < 1 || value.validation_exposure_head_cumulative_k > value.cumulative_k || value.oos_weighting !== 'UNWEIGHTED') fail('nested WFO cumulative/search weighting contract is invalid')
+  try { validateExposureHead(value.validation_exposure_head) } catch (error) { fail(`nested WFO validation exposure HEAD snapshot is invalid: ${error.message}`) }
+  if (value.validation_exposure_head.content_sha256 !== value.validation_exposure_head_sha256 || value.validation_exposure_head.cumulative_k !== value.validation_exposure_head_cumulative_k) fail('nested WFO validation exposure HEAD snapshot does not match its lineage fields')
   for (const fold of value.folds) assertOwnHash(fold, STAT_SCHEMA.fold, `fold ${fold.fold_id}`)
   validateStatisticalAudit(value.audit)
+  if (value.audit.exposure_head_sha256 !== value.validation_exposure_head_sha256) fail('nested WFO audit is not bound to the validation exposure head')
+  if (!value.audit.max_statistic || !Number.isInteger(value.audit.max_statistic.cumulative_k) || value.audit.max_statistic.cumulative_k !== value.validation_exposure_head_cumulative_k) fail('nested WFO max-statistic cumulative K is not bound to the validation exposure head')
   if (!value.development_refit || value.development_refit.schema !== 'strategy-v5-statistical-development-refit/1' || value.development_refit.content_sha256 !== ownHash(value.development_refit) || value.development_refit.validation_audit_sha256 !== value.audit.content_sha256 || value.development_refit.validation_exposure_head_sha256 !== value.validation_exposure_head_sha256 || value.development_refit.exposure_head_sha256 !== value.exposure_head_sha256 || value.development_refit.selected_from_outer_fold_winners !== false || value.development_refit.excluded_from_retrospective_oos_audit !== true || !Array.isArray(value.development_refit.asset_refits) || value.development_refit.asset_refits.some(row => row.status === 'SELECTED_FOR_SHADOW' && (row.source_phase !== 'FRESH_FULL_DEVELOPMENT_GA' || row.selected_from_outer_fold_winners !== false || row.outer_fold_winner_inventory_used !== false || row.historical_wfo_rows_reclassified_as_development_at_cutoff !== true || stable(row.seeds) !== stable(STAT_DEFAULTS.seeds)))) fail('nested WFO development refit is missing or may reuse an outer winner')
+  if (value.decision === 'SHADOW') {
+    requireHash(value.oos_artifact_sha256, 'nested WFO OOS artifact'); requireHash(value.vector_inventory_sha256, 'nested WFO vector inventory'); if (!Array.isArray(value.oos_episode_ids) || !value.oos_episode_ids.length || new Set(value.oos_episode_ids).size !== value.oos_episode_ids.length) fail('nested WFO SHADOW OOS episode inventory is empty or duplicated')
+    const outerTestIds = []
+    for (const fold of value.folds) {
+      if (fold.status !== 'EVALUATED' || !Array.isArray(fold.train_episode_ids) || !fold.train_episode_ids.length || !Array.isArray(fold.test_episode_ids) || !fold.test_episode_ids.length || new Set(fold.train_episode_ids).size !== fold.train_episode_ids.length || new Set(fold.test_episode_ids).size !== fold.test_episode_ids.length || fold.train_episode_ids.some(id => fold.test_episode_ids.includes(id)) || fold.purge_ms !== STAT_DEFAULTS.purgeDays * 86_400_000 || fold.embargo_ms !== STAT_DEFAULTS.embargoDays * 86_400_000) fail('nested WFO SHADOW fold inventory is incomplete, overlapping, or not purged/embargoed')
+      if (!fold.test || fold.test.weighted_recency !== false || !HASH_RE.test(String(fold.test.vector_inventory_sha256 || ''))) fail('nested WFO SHADOW fold test is weighted or lacks its OOS vector binding')
+      outerTestIds.push(...fold.test_episode_ids)
+    }
+    if (stable([...new Set(outerTestIds)].sort()) !== stable([...value.oos_episode_ids].sort())) fail('nested WFO SHADOW OOS episode inventory does not equal the retained outer test inventory')
+    const tradeAssets = [...new Set(value.asset_scope.trade_assets || [])].sort()
+    const finalRows = value.asset_decisions_final
+    if (!Array.isArray(finalRows) || !finalRows.length || stable(finalRows.map(row => row?.asset).sort()) !== stable(tradeAssets) || finalRows.some(row => !validateAssetDecision(row) || row.pass !== true)) fail('nested WFO SHADOW asset decision inventory is empty, incomplete, or not authoritative')
+    const portfolio = value.portfolio_decision
+    // The portfolio provider is untrusted at this boundary.  Reconstruct the
+    // FINAL_OOS lineage from the immutable WFO fields instead of passing the
+    // portfolio's self-declared lineage back into its validator.  This binds
+    // the decision to the exact OOS artifact, validation HEAD, and complete
+    // outer asset-decision inventory.
+    const expectedOuterAssetDecisions = value.asset_decisions.flatMap(row => Object.values(row?.asset_decisions || {}))
+    if (!expectedOuterAssetDecisions.length || expectedOuterAssetDecisions.some(row => !validateAssetDecision(row))) fail('nested WFO SHADOW outer asset-decision inventory is missing or tampered')
+    if (!Array.isArray(value.asset_decisions) || value.asset_decisions.length !== value.folds.length || new Set(value.asset_decisions.map(row => row?.fold_id)).size !== value.folds.length) fail('nested WFO SHADOW outer fold decision inventory is incomplete or duplicated')
+    for (const fold of value.folds) {
+      const outer = value.asset_decisions.find(row => row?.fold_id === fold.fold_id)
+      if (!outer || !outer.asset_decisions || typeof outer.asset_decisions !== 'object' || Array.isArray(outer.asset_decisions) || stable(Object.keys(outer.asset_decisions).sort()) !== stable(tradeAssets)) fail(`nested WFO SHADOW fold ${fold.fold_id} asset inventory is incomplete`)
+      if (!outer.vector || outer.vector.content_sha256 !== fold.test?.vector_inventory_sha256) fail(`nested WFO SHADOW fold ${fold.fold_id} vector inventory is not exactly bound`)
+      if (!outer.portfolio || !fold.test?.portfolio || outer.portfolio.content_sha256 !== fold.test.portfolio.content_sha256 || outer.portfolio.pass !== fold.test.portfolio.pass || outer.portfolio.provenance !== fold.test.portfolio.provenance || outer.portfolio.lineage_sha256 !== fold.test.portfolio.lineage_sha256) fail(`nested WFO SHADOW fold ${fold.fold_id} portfolio is not exactly bound`)
+      const testIds = new Set(fold.test_episode_ids || [])
+      for (const [assetName, decision] of Object.entries(outer.asset_decisions)) {
+        if (!validateAssetDecision(decision) || decision.asset !== assetName || !Array.isArray(decision.selected_return_vector) || new Set(decision.selected_return_vector.map(row => row?.episode_id)).size !== decision.selected_return_vector.length || decision.selected_return_vector.some(row => !row || row.asset !== assetName || !testIds.has(row.episode_id))) fail(`nested WFO SHADOW fold ${fold.fold_id}/${assetName} return inventory is incomplete or cross-boundary`)
+        const expectedIds = [...testIds].filter(id => decision.selected_return_vector.some(row => row.episode_id === id && row.asset === assetName)).sort()
+        if (stable(decision.selected_return_vector.map(row => row.episode_id).sort()) !== stable(expectedIds)) fail(`nested WFO SHADOW fold ${fold.fold_id}/${assetName} return inventory is not exact`)
+        const retainedRows = outer.vector.vectors?.[decision.selected_behavior_alias_sha256]
+        if (!Array.isArray(retainedRows)) fail(`nested WFO SHADOW fold ${fold.fold_id}/${assetName} selected behavior is absent from its vector inventory`)
+        const retainedById = new Map(retainedRows.map(row => [row.episode_id, row]))
+        if (decision.selected_return_vector.some(row => { const retained = retainedById.get(row.episode_id); return !retained || Number(retained.net_r) !== Number(row.net_r) || retained.traded !== row.traded })) fail(`nested WFO SHADOW fold ${fold.fold_id}/${assetName} selected returns disagree with its vector inventory`)
+        if (!decision.stress || decision.stress.content_sha256 !== ownHash(decision.stress) || decision.stress.schema !== STAT_SCHEMA.stress || decision.stress.lineage_sha256 !== decision.lineage_sha256 || decision.stress.selected_candidate_id !== (decision.selected_candidate_id || decision.selected_behavior_alias_sha256)) fail(`nested WFO SHADOW fold ${fold.fold_id}/${assetName} stress is not bound to its selected decision`)
+        try { validateBoundDecision(decision.stress, 'stress', decision.lineage_sha256, { selectedCandidateId: decision.selected_candidate_id || decision.selected_behavior_alias_sha256 }) } catch (error) { fail(`nested WFO SHADOW fold ${fold.fold_id}/${assetName} stress is not authoritative: ${error.message}`) }
+      }
+      const foldReturnIds = Object.values(outer.asset_decisions).flatMap(decision => decision.selected_return_vector.map(row => row.episode_id))
+      if (new Set(foldReturnIds).size !== foldReturnIds.length || stable([...new Set(foldReturnIds)].sort()) !== stable([...testIds].sort())) fail(`nested WFO SHADOW fold ${fold.fold_id} return inventory does not cover its exact test episode set`)
+    }
+    const expectedFinalPortfolioLineage = hash({ phase: 'FINAL_OOS', artifact: value.oos_artifact_sha256, head: value.validation_exposure_head_sha256, asset_decisions: hash(expectedOuterAssetDecisions) })
+    try { validateBoundDecision(portfolio, 'portfolio', expectedFinalPortfolioLineage, { sourceArtifactSha256: value.oos_artifact_sha256 }) } catch (error) { fail(`nested WFO SHADOW portfolio decision is not authoritative: ${error.message}`) }
+    const portfolioAssets = [...new Set((portfolio.asset_decisions || []).map(row => row?.asset))].sort()
+    if (stable(portfolioAssets) !== stable(tradeAssets) || portfolio.asset_decisions.some(row => !row || typeof row.asset !== 'string' || typeof row.pass !== 'boolean' || !tradeAssets.includes(row.asset)) || portfolio.asset_decisions.some(row => row.pass !== true) || portfolio.pass !== true) fail('nested WFO SHADOW portfolio asset inventory is incomplete or contradictory')
+    const expectedReturns = new Map(expectedOuterAssetDecisions.flatMap(row => (row.selected_return_vector || []).map(value => [`${value.asset}|${value.episode_id}`, value])))
+    const expectedTraded = new Set([...expectedReturns.entries()].filter(([, row]) => row.traded === true).map(([key]) => key))
+    const actualReturns = portfolio.return_increments || []
+    if (!actualReturns.length || new Set(actualReturns.map(row => `${row?.asset}|${row?.episode_id}`)).size !== actualReturns.length || actualReturns.some(row => {
+      const key = `${row?.asset}|${row?.episode_id}`; const expected = expectedReturns.get(key)
+      return !expected || expected.traded !== true || Number(row.net_r) !== Number(expected.net_r) || typeof row.asset !== 'string' || typeof row.episode_id !== 'string' || !Number.isFinite(Number(row.net_r))
+    }) || stable([...new Set(actualReturns.map(row => `${row.asset}|${row.episode_id}`))].sort()) !== stable([...expectedTraded].sort())) fail('nested WFO SHADOW portfolio return-increment inventory is not exactly bound to the retained OOS fills')
+    if (value.audit.pass !== true || value.audit.decision !== 'SHADOW' || !value.audit.gates || Object.values(value.audit.gates).some(flag => flag !== true)) fail('nested WFO SHADOW audit is not semantically passing')
+    if (value.development_refit.status !== 'SHADOW_PENDING_PROSPECTIVE' || !Array.isArray(value.development_refit.asset_refits) || stable(value.development_refit.asset_refits.map(row => row?.asset).sort()) !== stable(tradeAssets) || value.development_refit.asset_refits.some(row => row.status !== 'SELECTED_FOR_SHADOW')) fail('nested WFO SHADOW development refit inventory is incomplete or not selected for prospective shadow')
+  }
   return true
 }
 
@@ -1839,11 +2392,22 @@ export function validateStatisticalAudit(value) { assertOwnHash(value, STAT_SCHE
 export function validateContractSchema(value, { exposureHead = null } = {}) {
   if (!value || typeof value !== 'object' || typeof value.schema !== 'string') fail('statistical contract schema is missing')
   validateRegisteredContractSchema(value)
+  if (value.schema === PUBLICATION_ARTIFACT_SCHEMAS.research_run) return requirePublicationArtifact(value, 'research run', 'research_run')
   switch (value.schema) {
     case STAT_SCHEMA.input: return validateStatisticalArtifactSet(value, { exposureHead, allowSubset: true })
     case STAT_SCHEMA.exposure: return validateExposureHead(value)
     case STAT_SCHEMA.behaviorRegistry: return validateBehaviorDefinitionRegistry(value, { exposureHead })
     case STAT_SCHEMA.registryJournal: assertOwnHash(value, STAT_SCHEMA.registryJournal, 'registry journal'); if (value.status !== 'PREPARED' || !value.next_head || value.next_head_sha256 !== value.next_head.content_sha256) fail('registry journal contract is invalid'); return true
+    case STAT_SCHEMA.publicationTransaction: {
+      assertOwnHash(value, STAT_SCHEMA.publicationTransaction, 'publication transaction')
+      if (!['PREPARED', 'COMMITTED'].includes(value.status) || value.no_k_mutation !== true || value.no_rollback !== true || value.expected_head_sha256 !== value.next_head_sha256 || !Array.isArray(value.artifact_refs) || !value.artifact_refs.length) fail('publication transaction contract is invalid')
+      if (!value.bound_head || !value.bound_registry) fail('publication transaction immutable control snapshots are missing')
+      validateExposureHead(value.bound_head); if (value.bound_head.content_sha256 !== value.expected_head_sha256) fail('publication bound HEAD does not match its CAS hash')
+      validateBehaviorDefinitionRegistry(value.bound_registry, { exposureHead: value.bound_head }); if (value.bound_registry.content_sha256 !== value.expected_registry_sha256) fail('publication bound registry does not match its CAS hash')
+      const expectedId = publicationTransactionId({ transactionPath: value.transaction_path, exposureHeadPath: value.exposure_head_path, registryPath: value.registry_path, stageRoot: value.stage_root, expectedHeadSha256: value.expected_head_sha256, expectedRegistrySha256: value.expected_registry_sha256, wfoSha256: value.wfo_sha256, runSha256: value.run_sha256, artifactRefs: value.artifact_refs }); if (value.transaction_id !== expectedId) fail('publication transaction ID does not match its content-addressed semantics')
+      assertPublicationArtifactRefs({ transactionPath: value.transaction_path, exposureHeadPath: value.exposure_head_path, registryPath: value.registry_path, stageRoot: value.stage_root, refs: value.artifact_refs, run: { content_sha256: value.run_sha256, wfo: { artifact: value.wfo_sha256 }, lineage: { wfo_sha256: value.wfo_sha256 } }, wfo: { content_sha256: value.wfo_sha256 } })
+      return true
+    }
     case STAT_SCHEMA.genetic: return validateGeneticArtifact(value)
     case STAT_SCHEMA.vectors: return validateVectorInventory(value, exposureHead, value.episode_ids)
     case STAT_SCHEMA.audit: return validateStatisticalAudit(value)

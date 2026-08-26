@@ -6,7 +6,7 @@
   "properties": {
     "schema": { "const": "strategy-v5-metadata-receipt/1" },
     "version": { "const": 1 },
-    "kind": { "enum": ["FEE_SCHEDULE", "FUNDING_IDENTITY", "CONTRACT_SPEC", "EXPIRY", "MARGIN", "LIQUIDATION", "EXECUTION_MODEL"] },
+    "kind": { "enum": ["FEE_SCHEDULE", "FUNDING_IDENTITY", "CONTRACT_SPEC", "EXPIRY", "MARGIN", "LIQUIDATION", "SETTLEMENT", "EXECUTION_MODEL"] },
     "status": { "enum": ["PUBLIC_OBSERVED", "USER_BOUND", "CONSERVATIVE_MODEL", "UNAVAILABLE"] },
     "plan_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
     "captured_at": { "type": "string", "format": "date-time" },
@@ -30,6 +30,44 @@
     "authoritative": { "type": "boolean" },
     "content_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
   },
+  "allOf": [
+    {
+      "if": { "properties": { "kind": { "const": "SETTLEMENT" } }, "required": ["kind"] },
+      "then": {
+        "properties": {
+          "status": { "enum": ["PUBLIC_OBSERVED", "USER_BOUND", "UNAVAILABLE"] }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": { "const": "SETTLEMENT" },
+          "status": { "enum": ["PUBLIC_OBSERVED", "USER_BOUND"] }
+        },
+        "required": ["kind", "status"]
+      },
+      "then": {
+        "properties": {
+          "authoritative": { "const": true },
+          "records": {
+            "minItems": 1,
+            "items": {
+              "required": ["venue", "symbol", "expiry", "event_time", "settlement_time", "settlement_price", "settlement_mark_event_id", "settlement_mark_source_sha256", "source_receipt_sha256", "source_byte_sha256"],
+              "properties": {
+                "venue": { "const": "BINANCE" },
+                "instrument": { "const": "BINANCE_USDM_DATED_FUTURE" },
+                "symbol": { "type": "string", "minLength": 1 },
+                "expiry": { "type": "string", "format": "date-time" },
+                "event_time": { "type": "string", "format": "date-time" },
+                "settlement_time": { "type": "string", "format": "date-time" }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
   "additionalProperties": false,
   "$defs": {
     "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },

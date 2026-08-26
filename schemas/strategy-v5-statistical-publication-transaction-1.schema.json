@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-v5-statistical-publication-transaction/1",
+  "type": "object",
+  "required": [
+    "schema", "version", "status", "transaction_id", "transaction_path",
+    "exposure_head_path", "registry_path", "expected_head_sha256",
+    "next_head_sha256", "expected_registry_sha256", "wfo_sha256",
+    "bound_head", "bound_registry", "run_sha256", "artifact_refs", "no_k_mutation", "no_rollback",
+    "stage_root", "content_sha256"
+  ],
+  "properties": {
+    "schema": {"const": "strategy-v5-statistical-publication-transaction/1"},
+    "version": {"const": 1},
+    "status": {"enum": ["PREPARED", "COMMITTED"]},
+    "transaction_id": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "transaction_path": {"type": "string", "minLength": 1},
+    "exposure_head_path": {"type": "string", "minLength": 1},
+    "registry_path": {"type": "string", "minLength": 1},
+    "expected_head_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "next_head_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "expected_registry_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "bound_head": {"type": "object", "required": ["schema", "version", "status", "hypothesis_family", "dataset_sha256", "entries", "cumulative_k", "exposure_attempt_k", "head_pointer_sha256", "content_sha256"]},
+    "bound_registry": {"type": "object", "required": ["schema", "version", "status", "hypothesis_family", "exposure_head_sha256", "entries", "content_sha256"]},
+    "wfo_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "run_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "artifact_refs": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "required": ["role", "schema", "version", "path", "content_sha256", "byte_sha256", "bytes"],
+        "properties": {
+          "role": {"enum": ["wfo", "research_run", "final_oos_artifact", "final_oos_vector_inventory"]},
+          "schema": {"enum": ["strategy-v5-statistical-wfo/1", "strategy-research-run/5", "strategy-v5-statistical-input/1", "strategy-v5-statistical-vector-inventory/1"]},
+          "version": {"const": 1},
+          "path": {"type": "string", "minLength": 1},
+          "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "byte_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "bytes": {"type": "integer", "minimum": 1}
+        },
+        "additionalProperties": false
+      }
+    },
+    "no_k_mutation": {"const": true},
+    "no_rollback": {"const": true},
+    "stage_root": {"type": "string", "minLength": 1},
+    "committed_at": {"type": "string", "format": "date-time"},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": false
+}

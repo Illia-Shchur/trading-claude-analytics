@@ -1,0 +1,1698 @@
+{
+  "schema": "strategy-v5-dated-futures-catalog/2",
+  "version": 2,
+  "captured_at": "2026-08-25T12:11:02.000Z",
+  "source": {
+    "endpoint": "https://s3-ap-northeast-1.amazonaws.com/data.binance.vision",
+    "listing_response_set_sha256": "38d9018c5e1637f783a42065a77f5c7bebe82d620b6b8617a94401f76e40ff65",
+    "listing_format": "S3_XML_DELIMITER",
+    "persistence_status": "RAW_RECEIPTS_BOUND",
+    "raw_output_root_reference": "strategy-research/v5-raw/backfill-20260825",
+    "raw_receipts": [
+      {
+        "schema": "strategy-v5-source-receipt/1",
+        "version": 1,
+        "path": "raw/3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff.bin",
+        "source": "BINANCE_DATA_VISION_S3",
+        "request": {
+          "endpoint": "https://s3-ap-northeast-1.amazonaws.com/data.binance.vision?delimiter=%2F&prefix=data%2Ffutures%2Fum%2Fmonthly%2Fklines%2FBTCUSDT_",
+          "listing_format": "S3_XML_DELIMITER"
+        },
+        "byte_sha256": "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff",
+        "bytes": 2612,
+        "format": "RAW_BYTES",
+        "storage_role": "RAW_IGNORED",
+        "authoritative": false,
+        "content_sha256": "d8464389273192417463fe5dbdef74a6338ca0dbddc40e19e33cb99a1f8db745"
+      },
+      {
+        "schema": "strategy-v5-source-receipt/1",
+        "version": 1,
+        "path": "raw/1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5.bin",
+        "source": "BINANCE_DATA_VISION_S3",
+        "request": {
+          "endpoint": "https://s3-ap-northeast-1.amazonaws.com/data.binance.vision?delimiter=%2F&prefix=data%2Ffutures%2Fum%2Fmonthly%2Fklines%2FETHUSDT_",
+          "listing_format": "S3_XML_DELIMITER"
+        },
+        "byte_sha256": "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5",
+        "bytes": 2612,
+        "format": "RAW_BYTES",
+        "storage_role": "RAW_IGNORED",
+        "authoritative": false,
+        "content_sha256": "e9c55a62bd12479376b6a1df4db094736dca536a66c43f9d182a9a8c51699489"
+      }
+    ],
+    "raw_receipt_sha256": [
+      "d8464389273192417463fe5dbdef74a6338ca0dbddc40e19e33cb99a1f8db745",
+      "e9c55a62bd12479376b6a1df4db094736dca536a66c43f9d182a9a8c51699489"
+    ],
+    "raw_receipt_byte_sha256": [
+      "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5",
+      "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff"
+    ]
+  },
+  "requested_assets": [
+    "aave",
+    "ada",
+    "bnb",
+    "btc",
+    "eth",
+    "link",
+    "sol",
+    "xrp"
+  ],
+  "contracts": [
+    {
+      "asset": "btc",
+      "symbol": "BTCUSDT_210924",
+      "contract_type": "QUARTERLY_EXPIRED_OR_HISTORICAL",
+      "venue": "BINANCE",
+      "instrument": "BINANCE_USDM_DATED_FUTURE",
+      "first_bar_at": "2021-08-25T04:00:00.000Z",
+      "last_bar_at": "2021-09-24T08:00:00.000Z",
+      "expiry_observed_date_utc": "2021-09-24",
+      "expiry_at": null,
+      "expiry_binding_status": "UNAVAILABLE",
+      "contract_spec_status": "UNAVAILABLE",
+      "history_status": "SIGNAL_HISTORY_AVAILABLE",
+      "tradeable": false,
+      "source_prefix": "data/futures/um/monthly/klines/BTCUSDT_210924/",
+      "source_raw_byte_sha256": "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff",
+      "archive_ingestion_status": "ARCHIVE_DISCOVERED_NOT_INGESTED",
+      "source_listing_response_byte_sha256": [
+        "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff"
+      ],
+      "source_receipt_sha256": [
+        "d8464389273192417463fe5dbdef74a6338ca0dbddc40e19e33cb99a1f8db745"
+      ]
+    },
+    {
+      "asset": "btc",
+      "symbol": "BTCUSDT_211231",
+      "contract_type": "QUARTERLY_EXPIRED_OR_HISTORICAL",
+      "venue": "BINANCE",
+      "instrument": "BINANCE_USDM_DATED_FUTURE",
+      "first_bar_at": "2021-09-22T00:00:00.000Z",
+      "last_bar_at": "2021-12-31T08:00:00.000Z",
+      "expiry_observed_date_utc": "2021-12-31",
+      "expiry_at": null,
+      "expiry_binding_status": "UNAVAILABLE",
+      "contract_spec_status": "UNAVAILABLE",
+      "history_status": "SIGNAL_HISTORY_AVAILABLE",
+      "tradeable": false,
+      "source_prefix": "data/futures/um/monthly/klines/BTCUSDT_211231/",
+      "source_raw_byte_sha256": "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff",
+      "archive_ingestion_status": "ARCHIVE_DISCOVERED_NOT_INGESTED",
+      "source_listing_response_byte_sha256": [
+        "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff"
+      ],
+      "source_receipt_sha256": [
+        "d8464389273192417463fe5dbdef74a6338ca0dbddc40e19e33cb99a1f8db745"
+      ]
+    },
+    {
+      "asset": "btc",
+      "symbol": "BTCUSDT_220325",
+      "contract_type": "QUARTERLY_EXPIRED_OR_HISTORICAL",
+      "venue": "BINANCE",
+      "instrument": "BINANCE_USDM_DATED_FUTURE",
+      "first_bar_at": "2021-12-24T00:00:00.000Z",
+      "last_bar_at": "2022-03-25T08:00:00.000Z",
+      "expiry_observed_date_utc": "2022-03-25",
+      "expiry_at": null,
+      "expiry_binding_status": "UNAVAILABLE",
+      "contract_spec_status": "UNAVAILABLE",
+      "history_status": "SIGNAL_HISTORY_AVAILABLE",
+      "tradeable": false,
+      "source_prefix": "data/futures/um/monthly/klines/BTCUSDT_220325/",
+      "source_raw_byte_sha256": "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff",
+      "archive_ingestion_status": "ARCHIVE_DISCOVERED_NOT_INGESTED",
+      "source_listing_response_byte_sha256": [
+        "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff"
+      ],
+      "source_receipt_sha256": [
+        "d8464389273192417463fe5dbdef74a6338ca0dbddc40e19e33cb99a1f8db745"
+      ]
+    },
+    {
+      "asset": "btc",
+      "symbol": "BTCUSDT_220624",
+      "contract_type": "QUARTERLY_EXPIRED_OR_HISTORICAL",
+      "venue": "BINANCE",
+      "instrument": "BINANCE_USDM_DATED_FUTURE",
+      "first_bar_at": "2022-03-22T00:00:00.000Z",
+      "last_bar_at": "2022-06-24T08:00:00.000Z",
+      "expiry_observed_date_utc": "2022-06-24",
+      "expiry_at": null,
+      "expiry_binding_status": "UNAVAILABLE",
+      "contract_spec_status": "UNAVAILABLE",
+      "history_status": "SIGNAL_HISTORY_AVAILABLE",
+      "tradeable": false,
+      "source_prefix": "data/futures/um/monthly/klines/BTCUSDT_220624/",
+      "source_raw_byte_sha256": "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff",
+      "archive_ingestion_status": "ARCHIVE_DISCOVERED_NOT_INGESTED",
+      "source_listing_response_byte_sha256": [
+        "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff"
+      ],
+      "source_receipt_sha256": [
+        "d8464389273192417463fe5dbdef74a6338ca0dbddc40e19e33cb99a1f8db745"
+      ]
+    },
+    {
+      "asset": "btc",
+      "symbol": "BTCUSDT_220930",
+      "contract_type": "QUARTERLY_EXPIRED_OR_HISTORICAL",
+      "venue": "BINANCE",
+      "instrument": "BINANCE_USDM_DATED_FUTURE",
+      "first_bar_at": "2022-06-20T00:00:00.000Z",
+      "last_bar_at": "2022-09-30T08:00:00.000Z",
+      "expiry_observed_date_utc": "2022-09-30",
+      "expiry_at": null,
+      "expiry_binding_status": "UNAVAILABLE",
+      "contract_spec_status": "UNAVAILABLE",
+      "history_status": "SIGNAL_HISTORY_AVAILABLE",
+      "tradeable": false,
+      "source_prefix": "data/futures/um/monthly/klines/BTCUSDT_220930/",
+      "source_raw_byte_sha256": "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff",
+      "archive_ingestion_status": "ARCHIVE_DISCOVERED_NOT_INGESTED",
+      "source_listing_response_byte_sha256": [
+        "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff"
+      ],
+      "source_receipt_sha256": [
+        "d8464389273192417463fe5dbdef74a6338ca0dbddc40e19e33cb99a1f8db745"
+      ]
+    },
+    {
+      "asset": "btc",
+      "symbol": "BTCUSDT_221230",
+      "contract_type": "QUARTERLY_EXPIRED_OR_HISTORICAL",
+      "venue": "BINANCE",
+      "instrument": "BINANCE_USDM_DATED_FUTURE",
+      "first_bar_at": "2022-09-23T00:00:00.000Z",
+      "last_bar_at": "2022-12-30T08:00:00.000Z",
+      "expiry_observed_date_utc": "2022-12-30",
+      "expiry_at": null,
+      "expiry_binding_status": "UNAVAILABLE",
+      "contract_spec_status": "UNAVAILABLE",
+      "history_status": "SIGNAL_HISTORY_AVAILABLE",
+      "tradeable": false,
+      "source_prefix": "data/futures/um/monthly/klines/BTCUSDT_221230/",
+      "source_raw_byte_sha256": "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff",
+      "archive_ingestion_status": "ARCHIVE_DISCOVERED_NOT_INGESTED",
+      "source_listing_response_byte_sha256": [
+        "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff"
+      ],
+      "source_receipt_sha256": [
+        "d8464389273192417463fe5dbdef74a6338ca0dbddc40e19e33cb99a1f8db745"
+      ]
+    },
+    {
+      "asset": "btc",
+      "symbol": "BTCUSDT_230331",
+      "contract_type": "QUARTERLY_EXPIRED_OR_HISTORICAL",
+      "venue": "BINANCE",
+      "instrument": "BINANCE_USDM_DATED_FUTURE",
+      "first_bar_at": "2022-12-23T00:00:00.000Z",
+      "last_bar_at": "2023-03-31T08:00:00.000Z",
+      "expiry_observed_date_utc": "2023-03-31",
+      "expiry_at": null,
+      "expiry_binding_status": "UNAVAILABLE",
+      "contract_spec_status": "UNAVAILABLE",
+      "history_status": "SIGNAL_HISTORY_AVAILABLE",
+      "tradeable": false,
+      "source_prefix": "data/futures/um/monthly/klines/BTCUSDT_230331/",
+      "source_raw_byte_sha256": "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff",
+      "archive_ingestion_status": "ARCHIVE_DISCOVERED_NOT_INGESTED",
+      "source_listing_response_byte_sha256": [
+        "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff"
+      ],
+      "source_receipt_sha256": [
+        "d8464389273192417463fe5dbdef74a6338ca0dbddc40e19e33cb99a1f8db745"
+      ]
+    },
+    {
+      "asset": "btc",
+      "symbol": "BTCUSDT_230630",
+      "contract_type": "QUARTERLY_EXPIRED_OR_HISTORICAL",
+      "venue": "BINANCE",
+      "instrument": "BINANCE_USDM_DATED_FUTURE",
+      "first_bar_at": "2023-03-27T00:00:00.000Z",
+      "last_bar_at": "2023-06-30T08:00:00.000Z",
+      "expiry_observed_date_utc": "2023-06-30",
+      "expiry_at": null,
+      "expiry_binding_status": "UNAVAILABLE",
+      "contract_spec_status": "UNAVAILABLE",
+      "history_status": "SIGNAL_HISTORY_AVAILABLE",
+      "tradeable": false,
+      "source_prefix": "data/futures/um/monthly/klines/BTCUSDT_230630/",
+      "source_raw_byte_sha256": "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff",
+      "archive_ingestion_status": "ARCHIVE_DISCOVERED_NOT_INGESTED",
+      "source_listing_response_byte_sha256": [
+        "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff"
+      ],
+      "source_receipt_sha256": [
+        "d8464389273192417463fe5dbdef74a6338ca0dbddc40e19e33cb99a1f8db745"
+      ]
+    },
+    {
+      "asset": "btc",
+      "symbol": "BTCUSDT_230929",
+      "contract_type": "QUARTERLY_EXPIRED_OR_HISTORICAL",
+      "venue": "BINANCE",
+      "instrument": "BINANCE_USDM_DATED_FUTURE",
+      "first_bar_at": "2023-06-25T00:00:00.000Z",
+      "last_bar_at": "2023-09-29T08:00:00.000Z",
+      "expiry_observed_date_utc": "2023-09-29",
+      "expiry_at": null,
+      "expiry_binding_status": "UNAVAILABLE",
+      "contract_spec_status": "UNAVAILABLE",
+      "history_status": "SIGNAL_HISTORY_AVAILABLE",
+      "tradeable": false,
+      "source_prefix": "data/futures/um/monthly/klines/BTCUSDT_230929/",
+      "source_raw_byte_sha256": "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff",
+      "archive_ingestion_status": "ARCHIVE_DISCOVERED_NOT_INGESTED",
+      "source_listing_response_byte_sha256": [
+        "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff"
+      ],
+      "source_receipt_sha256": [
+        "d8464389273192417463fe5dbdef74a6338ca0dbddc40e19e33cb99a1f8db745"
+      ]
+    },
+    {
+      "asset": "btc",
+      "symbol": "BTCUSDT_231229",
+      "contract_type": "QUARTERLY_EXPIRED_OR_HISTORICAL",
+      "venue": "BINANCE",
+      "instrument": "BINANCE_USDM_DATED_FUTURE",
+      "first_bar_at": "2023-08-18T12:00:00.000Z",
+      "last_bar_at": "2023-12-29T08:00:00.000Z",
+      "expiry_observed_date_utc": "2023-12-29",
+      "expiry_at": null,
+      "expiry_binding_status": "UNAVAILABLE",
+      "contract_spec_status": "UNAVAILABLE",
+      "history_status": "SIGNAL_HISTORY_AVAILABLE",
+      "tradeable": false,
+      "source_prefix": "data/futures/um/monthly/klines/BTCUSDT_231229/",
+      "source_raw_byte_sha256": "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff",
+      "archive_ingestion_status": "ARCHIVE_DISCOVERED_NOT_INGESTED",
+      "source_listing_response_byte_sha256": [
+        "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff"
+      ],
+      "source_receipt_sha256": [
+        "d8464389273192417463fe5dbdef74a6338ca0dbddc40e19e33cb99a1f8db745"
+      ]
+    },
+    {
+      "asset": "btc",
+      "symbol": "BTCUSDT_240329",
+      "contract_type": "QUARTERLY_EXPIRED_OR_HISTORICAL",
+      "venue": "BINANCE",
+      "instrument": "BINANCE_USDM_DATED_FUTURE",
+      "first_bar_at": "2023-09-29T08:00:00.000Z",
+      "last_bar_at": "2024-03-29T08:00:00.000Z",
+      "expiry_observed_date_utc": "2024-03-29",
+      "expiry_at": null,
+      "expiry_binding_status": "UNAVAILABLE",
+      "contract_spec_status": "UNAVAILABLE",
+      "history_status": "SIGNAL_HISTORY_AVAILABLE",
+      "tradeable": false,
+      "source_prefix": "data/futures/um/monthly/klines/BTCUSDT_240329/",
+      "source_raw_byte_sha256": "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff",
+      "archive_ingestion_status": "ARCHIVE_DISCOVERED_NOT_INGESTED",
+      "source_listing_response_byte_sha256": [
+        "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff"
+      ],
+      "source_receipt_sha256": [
+        "d8464389273192417463fe5dbdef74a6338ca0dbddc40e19e33cb99a1f8db745"
+      ]
+    },
+    {
+      "asset": "btc",
+      "symbol": "BTCUSDT_240628",
+      "contract_type": "QUARTERLY_EXPIRED_OR_HISTORICAL",
+      "venue": "BINANCE",
+      "instrument": "BINANCE_USDM_DATED_FUTURE",
+      "first_bar_at": "2023-12-29T08:00:00.000Z",
+      "last_bar_at": "2024-06-28T08:00:00.000Z",
+      "expiry_observed_date_utc": "2024-06-28",
+      "expiry_at": null,
+      "expiry_binding_status": "UNAVAILABLE",
+      "contract_spec_status": "UNAVAILABLE",
+      "history_status": "SIGNAL_HISTORY_AVAILABLE",
+      "tradeable": false,
+      "source_prefix": "data/futures/um/monthly/klines/BTCUSDT_240628/",
+      "source_raw_byte_sha256": "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff",
+      "archive_ingestion_status": "ARCHIVE_DISCOVERED_NOT_INGESTED",
+      "source_listing_response_byte_sha256": [
+        "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff"
+      ],
+      "source_receipt_sha256": [
+        "d8464389273192417463fe5dbdef74a6338ca0dbddc40e19e33cb99a1f8db745"
+      ]
+    },
+    {
+      "asset": "btc",
+      "symbol": "BTCUSDT_240927",
+      "contract_type": "QUARTERLY_EXPIRED_OR_HISTORICAL",
+      "venue": "BINANCE",
+      "instrument": "BINANCE_USDM_DATED_FUTURE",
+      "first_bar_at": "2024-03-29T08:00:00.000Z",
+      "last_bar_at": "2024-09-27T08:00:00.000Z",
+      "expiry_observed_date_utc": "2024-09-27",
+      "expiry_at": null,
+      "expiry_binding_status": "UNAVAILABLE",
+      "contract_spec_status": "UNAVAILABLE",
+      "history_status": "SIGNAL_HISTORY_AVAILABLE",
+      "tradeable": false,
+      "source_prefix": "data/futures/um/monthly/klines/BTCUSDT_240927/",
+      "source_raw_byte_sha256": "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff",
+      "archive_ingestion_status": "ARCHIVE_DISCOVERED_NOT_INGESTED",
+      "source_listing_response_byte_sha256": [
+        "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff"
+      ],
+      "source_receipt_sha256": [
+        "d8464389273192417463fe5dbdef74a6338ca0dbddc40e19e33cb99a1f8db745"
+      ]
+    },
+    {
+      "asset": "btc",
+      "symbol": "BTCUSDT_241227",
+      "contract_type": "QUARTERLY_EXPIRED_OR_HISTORICAL",
+      "venue": "BINANCE",
+      "instrument": "BINANCE_USDM_DATED_FUTURE",
+      "first_bar_at": "2024-06-28T08:00:00.000Z",
+      "last_bar_at": "2024-12-27T08:00:00.000Z",
+      "expiry_observed_date_utc": "2024-12-27",
+      "expiry_at": null,
+      "expiry_binding_status": "UNAVAILABLE",
+      "contract_spec_status": "UNAVAILABLE",
+      "history_status": "SIGNAL_HISTORY_AVAILABLE",
+      "tradeable": false,
+      "source_prefix": "data/futures/um/monthly/klines/BTCUSDT_241227/",
+      "source_raw_byte_sha256": "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff",
+      "archive_ingestion_status": "ARCHIVE_DISCOVERED_NOT_INGESTED",
+      "source_listing_response_byte_sha256": [
+        "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff"
+      ],
+      "source_receipt_sha256": [
+        "d8464389273192417463fe5dbdef74a6338ca0dbddc40e19e33cb99a1f8db745"
+      ]
+    },
+    {
+      "asset": "btc",
+      "symbol": "BTCUSDT_250328",
+      "contract_type": "QUARTERLY_EXPIRED_OR_HISTORICAL",
+      "venue": "BINANCE",
+      "instrument": "BINANCE_USDM_DATED_FUTURE",
+      "first_bar_at": "2024-09-27T08:00:00.000Z",
+      "last_bar_at": "2025-03-28T08:00:00.000Z",
+      "expiry_observed_date_utc": "2025-03-28",
+      "expiry_at": null,
+      "expiry_binding_status": "UNAVAILABLE",
+      "contract_spec_status": "UNAVAILABLE",
+      "history_status": "SIGNAL_HISTORY_AVAILABLE",
+      "tradeable": false,
+      "source_prefix": "data/futures/um/monthly/klines/BTCUSDT_250328/",
+      "source_raw_byte_sha256": "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff",
+      "archive_ingestion_status": "ARCHIVE_DISCOVERED_NOT_INGESTED",
+      "source_listing_response_byte_sha256": [
+        "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff"
+      ],
+      "source_receipt_sha256": [
+        "d8464389273192417463fe5dbdef74a6338ca0dbddc40e19e33cb99a1f8db745"
+      ]
+    },
+    {
+      "asset": "btc",
+      "symbol": "BTCUSDT_250627",
+      "contract_type": "QUARTERLY_EXPIRED_OR_HISTORICAL",
+      "venue": "BINANCE",
+      "instrument": "BINANCE_USDM_DATED_FUTURE",
+      "first_bar_at": "2024-12-27T08:00:00.000Z",
+      "last_bar_at": "2025-06-27T08:00:00.000Z",
+      "expiry_observed_date_utc": "2025-06-27",
+      "expiry_at": null,
+      "expiry_binding_status": "UNAVAILABLE",
+      "contract_spec_status": "UNAVAILABLE",
+      "history_status": "SIGNAL_HISTORY_AVAILABLE",
+      "tradeable": false,
+      "source_prefix": "data/futures/um/monthly/klines/BTCUSDT_250627/",
+      "source_raw_byte_sha256": "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff",
+      "archive_ingestion_status": "ARCHIVE_DISCOVERED_NOT_INGESTED",
+      "source_listing_response_byte_sha256": [
+        "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff"
+      ],
+      "source_receipt_sha256": [
+        "d8464389273192417463fe5dbdef74a6338ca0dbddc40e19e33cb99a1f8db745"
+      ]
+    },
+    {
+      "asset": "btc",
+      "symbol": "BTCUSDT_250926",
+      "contract_type": "QUARTERLY_EXPIRED_OR_HISTORICAL",
+      "venue": "BINANCE",
+      "instrument": "BINANCE_USDM_DATED_FUTURE",
+      "first_bar_at": "2025-03-28T08:00:00.000Z",
+      "last_bar_at": "2025-09-26T08:00:00.000Z",
+      "expiry_observed_date_utc": "2025-09-26",
+      "expiry_at": null,
+      "expiry_binding_status": "UNAVAILABLE",
+      "contract_spec_status": "UNAVAILABLE",
+      "history_status": "SIGNAL_HISTORY_AVAILABLE",
+      "tradeable": false,
+      "source_prefix": "data/futures/um/monthly/klines/BTCUSDT_250926/",
+      "source_raw_byte_sha256": "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff",
+      "archive_ingestion_status": "ARCHIVE_DISCOVERED_NOT_INGESTED",
+      "source_listing_response_byte_sha256": [
+        "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff"
+      ],
+      "source_receipt_sha256": [
+        "d8464389273192417463fe5dbdef74a6338ca0dbddc40e19e33cb99a1f8db745"
+      ]
+    },
+    {
+      "asset": "btc",
+      "symbol": "BTCUSDT_251226",
+      "contract_type": "QUARTERLY_EXPIRED_OR_HISTORICAL",
+      "venue": "BINANCE",
+      "instrument": "BINANCE_USDM_DATED_FUTURE",
+      "first_bar_at": "2025-06-27T08:00:00.000Z",
+      "last_bar_at": "2025-12-26T08:00:00.000Z",
+      "expiry_observed_date_utc": "2025-12-26",
+      "expiry_at": null,
+      "expiry_binding_status": "UNAVAILABLE",
+      "contract_spec_status": "UNAVAILABLE",
+      "history_status": "SIGNAL_HISTORY_AVAILABLE",
+      "tradeable": false,
+      "source_prefix": "data/futures/um/monthly/klines/BTCUSDT_251226/",
+      "source_raw_byte_sha256": "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff",
+      "archive_ingestion_status": "ARCHIVE_DISCOVERED_NOT_INGESTED",
+      "source_listing_response_byte_sha256": [
+        "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff"
+      ],
+      "source_receipt_sha256": [
+        "d8464389273192417463fe5dbdef74a6338ca0dbddc40e19e33cb99a1f8db745"
+      ]
+    },
+    {
+      "asset": "btc",
+      "symbol": "BTCUSDT_260327",
+      "contract_type": "QUARTERLY_EXPIRED_OR_HISTORICAL",
+      "venue": "BINANCE",
+      "instrument": "BINANCE_USDM_DATED_FUTURE",
+      "first_bar_at": "2025-09-26T08:00:00.000Z",
+      "last_bar_at": "2026-03-27T08:00:00.000Z",
+      "expiry_observed_date_utc": "2026-03-27",
+      "expiry_at": null,
+      "expiry_binding_status": "UNAVAILABLE",
+      "contract_spec_status": "UNAVAILABLE",
+      "history_status": "SIGNAL_HISTORY_AVAILABLE",
+      "tradeable": false,
+      "source_prefix": "data/futures/um/monthly/klines/BTCUSDT_260327/",
+      "source_raw_byte_sha256": "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff",
+      "archive_ingestion_status": "ARCHIVE_DISCOVERED_NOT_INGESTED",
+      "source_listing_response_byte_sha256": [
+        "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff"
+      ],
+      "source_receipt_sha256": [
+        "d8464389273192417463fe5dbdef74a6338ca0dbddc40e19e33cb99a1f8db745"
+      ]
+    },
+    {
+      "asset": "btc",
+      "symbol": "BTCUSDT_260626",
+      "contract_type": "QUARTERLY_EXPIRED_OR_HISTORICAL",
+      "venue": "BINANCE",
+      "instrument": "BINANCE_USDM_DATED_FUTURE",
+      "first_bar_at": "2025-12-26T08:00:00.000Z",
+      "last_bar_at": "2026-06-26T08:00:00.000Z",
+      "expiry_observed_date_utc": "2026-06-26",
+      "expiry_at": null,
+      "expiry_binding_status": "UNAVAILABLE",
+      "contract_spec_status": "UNAVAILABLE",
+      "history_status": "SIGNAL_HISTORY_AVAILABLE",
+      "tradeable": false,
+      "source_prefix": "data/futures/um/monthly/klines/BTCUSDT_260626/",
+      "source_raw_byte_sha256": "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff",
+      "archive_ingestion_status": "ARCHIVE_DISCOVERED_NOT_INGESTED",
+      "source_listing_response_byte_sha256": [
+        "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff"
+      ],
+      "source_receipt_sha256": [
+        "d8464389273192417463fe5dbdef74a6338ca0dbddc40e19e33cb99a1f8db745"
+      ]
+    },
+    {
+      "asset": "eth",
+      "symbol": "ETHUSDT_210924",
+      "contract_type": "QUARTERLY_EXPIRED_OR_HISTORICAL",
+      "venue": "BINANCE",
+      "instrument": "BINANCE_USDM_DATED_FUTURE",
+      "first_bar_at": "2021-08-25T04:00:00.000Z",
+      "last_bar_at": "2021-09-24T08:00:00.000Z",
+      "expiry_observed_date_utc": "2021-09-24",
+      "expiry_at": null,
+      "expiry_binding_status": "UNAVAILABLE",
+      "contract_spec_status": "UNAVAILABLE",
+      "history_status": "SIGNAL_HISTORY_AVAILABLE",
+      "tradeable": false,
+      "source_prefix": "data/futures/um/monthly/klines/ETHUSDT_210924/",
+      "source_raw_byte_sha256": "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5",
+      "archive_ingestion_status": "ARCHIVE_DISCOVERED_NOT_INGESTED",
+      "source_listing_response_byte_sha256": [
+        "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5"
+      ],
+      "source_receipt_sha256": [
+        "e9c55a62bd12479376b6a1df4db094736dca536a66c43f9d182a9a8c51699489"
+      ]
+    },
+    {
+      "asset": "eth",
+      "symbol": "ETHUSDT_211231",
+      "contract_type": "QUARTERLY_EXPIRED_OR_HISTORICAL",
+      "venue": "BINANCE",
+      "instrument": "BINANCE_USDM_DATED_FUTURE",
+      "first_bar_at": "2021-09-22T00:00:00.000Z",
+      "last_bar_at": "2021-12-31T08:00:00.000Z",
+      "expiry_observed_date_utc": "2021-12-31",
+      "expiry_at": null,
+      "expiry_binding_status": "UNAVAILABLE",
+      "contract_spec_status": "UNAVAILABLE",
+      "history_status": "SIGNAL_HISTORY_AVAILABLE",
+      "tradeable": false,
+      "source_prefix": "data/futures/um/monthly/klines/ETHUSDT_211231/",
+      "source_raw_byte_sha256": "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5",
+      "archive_ingestion_status": "ARCHIVE_DISCOVERED_NOT_INGESTED",
+      "source_listing_response_byte_sha256": [
+        "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5"
+      ],
+      "source_receipt_sha256": [
+        "e9c55a62bd12479376b6a1df4db094736dca536a66c43f9d182a9a8c51699489"
+      ]
+    },
+    {
+      "asset": "eth",
+      "symbol": "ETHUSDT_220325",
+      "contract_type": "QUARTERLY_EXPIRED_OR_HISTORICAL",
+      "venue": "BINANCE",
+      "instrument": "BINANCE_USDM_DATED_FUTURE",
+      "first_bar_at": "2021-12-24T00:00:00.000Z",
+      "last_bar_at": "2022-03-25T08:00:00.000Z",
+      "expiry_observed_date_utc": "2022-03-25",
+      "expiry_at": null,
+      "expiry_binding_status": "UNAVAILABLE",
+      "contract_spec_status": "UNAVAILABLE",
+      "history_status": "SIGNAL_HISTORY_AVAILABLE",
+      "tradeable": false,
+      "source_prefix": "data/futures/um/monthly/klines/ETHUSDT_220325/",
+      "source_raw_byte_sha256": "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5",
+      "archive_ingestion_status": "ARCHIVE_DISCOVERED_NOT_INGESTED",
+      "source_listing_response_byte_sha256": [
+        "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5"
+      ],
+      "source_receipt_sha256": [
+        "e9c55a62bd12479376b6a1df4db094736dca536a66c43f9d182a9a8c51699489"
+      ]
+    },
+    {
+      "asset": "eth",
+      "symbol": "ETHUSDT_220624",
+      "contract_type": "QUARTERLY_EXPIRED_OR_HISTORICAL",
+      "venue": "BINANCE",
+      "instrument": "BINANCE_USDM_DATED_FUTURE",
+      "first_bar_at": "2022-03-22T00:00:00.000Z",
+      "last_bar_at": "2022-06-24T08:00:00.000Z",
+      "expiry_observed_date_utc": "2022-06-24",
+      "expiry_at": null,
+      "expiry_binding_status": "UNAVAILABLE",
+      "contract_spec_status": "UNAVAILABLE",
+      "history_status": "SIGNAL_HISTORY_AVAILABLE",
+      "tradeable": false,
+      "source_prefix": "data/futures/um/monthly/klines/ETHUSDT_220624/",
+      "source_raw_byte_sha256": "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5",
+      "archive_ingestion_status": "ARCHIVE_DISCOVERED_NOT_INGESTED",
+      "source_listing_response_byte_sha256": [
+        "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5"
+      ],
+      "source_receipt_sha256": [
+        "e9c55a62bd12479376b6a1df4db094736dca536a66c43f9d182a9a8c51699489"
+      ]
+    },
+    {
+      "asset": "eth",
+      "symbol": "ETHUSDT_220930",
+      "contract_type": "QUARTERLY_EXPIRED_OR_HISTORICAL",
+      "venue": "BINANCE",
+      "instrument": "BINANCE_USDM_DATED_FUTURE",
+      "first_bar_at": "2022-06-20T00:00:00.000Z",
+      "last_bar_at": "2022-09-30T08:00:00.000Z",
+      "expiry_observed_date_utc": "2022-09-30",
+      "expiry_at": null,
+      "expiry_binding_status": "UNAVAILABLE",
+      "contract_spec_status": "UNAVAILABLE",
+      "history_status": "SIGNAL_HISTORY_AVAILABLE",
+      "tradeable": false,
+      "source_prefix": "data/futures/um/monthly/klines/ETHUSDT_220930/",
+      "source_raw_byte_sha256": "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5",
+      "archive_ingestion_status": "ARCHIVE_DISCOVERED_NOT_INGESTED",
+      "source_listing_response_byte_sha256": [
+        "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5"
+      ],
+      "source_receipt_sha256": [
+        "e9c55a62bd12479376b6a1df4db094736dca536a66c43f9d182a9a8c51699489"
+      ]
+    },
+    {
+      "asset": "eth",
+      "symbol": "ETHUSDT_221230",
+      "contract_type": "QUARTERLY_EXPIRED_OR_HISTORICAL",
+      "venue": "BINANCE",
+      "instrument": "BINANCE_USDM_DATED_FUTURE",
+      "first_bar_at": "2022-09-23T00:00:00.000Z",
+      "last_bar_at": "2022-12-30T08:00:00.000Z",
+      "expiry_observed_date_utc": "2022-12-30",
+      "expiry_at": null,
+      "expiry_binding_status": "UNAVAILABLE",
+      "contract_spec_status": "UNAVAILABLE",
+      "history_status": "SIGNAL_HISTORY_AVAILABLE",
+      "tradeable": false,
+      "source_prefix": "data/futures/um/monthly/klines/ETHUSDT_221230/",
+      "source_raw_byte_sha256": "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5",
+      "archive_ingestion_status": "ARCHIVE_DISCOVERED_NOT_INGESTED",
+      "source_listing_response_byte_sha256": [
+        "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5"
+      ],
+      "source_receipt_sha256": [
+        "e9c55a62bd12479376b6a1df4db094736dca536a66c43f9d182a9a8c51699489"
+      ]
+    },
+    {
+      "asset": "eth",
+      "symbol": "ETHUSDT_230331",
+      "contract_type": "QUARTERLY_EXPIRED_OR_HISTORICAL",
+      "venue": "BINANCE",
+      "instrument": "BINANCE_USDM_DATED_FUTURE",
+      "first_bar_at": "2022-12-23T00:00:00.000Z",
+      "last_bar_at": "2023-03-31T08:00:00.000Z",
+      "expiry_observed_date_utc": "2023-03-31",
+      "expiry_at": null,
+      "expiry_binding_status": "UNAVAILABLE",
+      "contract_spec_status": "UNAVAILABLE",
+      "history_status": "SIGNAL_HISTORY_AVAILABLE",
+      "tradeable": false,
+      "source_prefix": "data/futures/um/monthly/klines/ETHUSDT_230331/",
+      "source_raw_byte_sha256": "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5",
+      "archive_ingestion_status": "ARCHIVE_DISCOVERED_NOT_INGESTED",
+      "source_listing_response_byte_sha256": [
+        "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5"
+      ],
+      "source_receipt_sha256": [
+        "e9c55a62bd12479376b6a1df4db094736dca536a66c43f9d182a9a8c51699489"
+      ]
+    },
+    {
+      "asset": "eth",
+      "symbol": "ETHUSDT_230630",
+      "contract_type": "QUARTERLY_EXPIRED_OR_HISTORICAL",
+      "venue": "BINANCE",
+      "instrument": "BINANCE_USDM_DATED_FUTURE",
+      "first_bar_at": "2023-03-27T00:00:00.000Z",
+      "last_bar_at": "2023-06-30T08:00:00.000Z",
+      "expiry_observed_date_utc": "2023-06-30",
+      "expiry_at": null,
+      "expiry_binding_status": "UNAVAILABLE",
+      "contract_spec_status": "UNAVAILABLE",
+      "history_status": "SIGNAL_HISTORY_AVAILABLE",
+      "tradeable": false,
+      "source_prefix": "data/futures/um/monthly/klines/ETHUSDT_230630/",
+      "source_raw_byte_sha256": "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5",
+      "archive_ingestion_status": "ARCHIVE_DISCOVERED_NOT_INGESTED",
+      "source_listing_response_byte_sha256": [
+        "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5"
+      ],
+      "source_receipt_sha256": [
+        "e9c55a62bd12479376b6a1df4db094736dca536a66c43f9d182a9a8c51699489"
+      ]
+    },
+    {
+      "asset": "eth",
+      "symbol": "ETHUSDT_230929",
+      "contract_type": "QUARTERLY_EXPIRED_OR_HISTORICAL",
+      "venue": "BINANCE",
+      "instrument": "BINANCE_USDM_DATED_FUTURE",
+      "first_bar_at": "2023-06-25T00:00:00.000Z",
+      "last_bar_at": "2023-09-29T08:00:00.000Z",
+      "expiry_observed_date_utc": "2023-09-29",
+      "expiry_at": null,
+      "expiry_binding_status": "UNAVAILABLE",
+      "contract_spec_status": "UNAVAILABLE",
+      "history_status": "SIGNAL_HISTORY_AVAILABLE",
+      "tradeable": false,
+      "source_prefix": "data/futures/um/monthly/klines/ETHUSDT_230929/",
+      "source_raw_byte_sha256": "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5",
+      "archive_ingestion_status": "ARCHIVE_DISCOVERED_NOT_INGESTED",
+      "source_listing_response_byte_sha256": [
+        "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5"
+      ],
+      "source_receipt_sha256": [
+        "e9c55a62bd12479376b6a1df4db094736dca536a66c43f9d182a9a8c51699489"
+      ]
+    },
+    {
+      "asset": "eth",
+      "symbol": "ETHUSDT_231229",
+      "contract_type": "QUARTERLY_EXPIRED_OR_HISTORICAL",
+      "venue": "BINANCE",
+      "instrument": "BINANCE_USDM_DATED_FUTURE",
+      "first_bar_at": "2023-08-18T12:00:00.000Z",
+      "last_bar_at": "2023-12-29T08:00:00.000Z",
+      "expiry_observed_date_utc": "2023-12-29",
+      "expiry_at": null,
+      "expiry_binding_status": "UNAVAILABLE",
+      "contract_spec_status": "UNAVAILABLE",
+      "history_status": "SIGNAL_HISTORY_AVAILABLE",
+      "tradeable": false,
+      "source_prefix": "data/futures/um/monthly/klines/ETHUSDT_231229/",
+      "source_raw_byte_sha256": "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5",
+      "archive_ingestion_status": "ARCHIVE_DISCOVERED_NOT_INGESTED",
+      "source_listing_response_byte_sha256": [
+        "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5"
+      ],
+      "source_receipt_sha256": [
+        "e9c55a62bd12479376b6a1df4db094736dca536a66c43f9d182a9a8c51699489"
+      ]
+    },
+    {
+      "asset": "eth",
+      "symbol": "ETHUSDT_240329",
+      "contract_type": "QUARTERLY_EXPIRED_OR_HISTORICAL",
+      "venue": "BINANCE",
+      "instrument": "BINANCE_USDM_DATED_FUTURE",
+      "first_bar_at": "2023-09-29T08:00:00.000Z",
+      "last_bar_at": "2024-03-29T08:00:00.000Z",
+      "expiry_observed_date_utc": "2024-03-29",
+      "expiry_at": null,
+      "expiry_binding_status": "UNAVAILABLE",
+      "contract_spec_status": "UNAVAILABLE",
+      "history_status": "SIGNAL_HISTORY_AVAILABLE",
+      "tradeable": false,
+      "source_prefix": "data/futures/um/monthly/klines/ETHUSDT_240329/",
+      "source_raw_byte_sha256": "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5",
+      "archive_ingestion_status": "ARCHIVE_DISCOVERED_NOT_INGESTED",
+      "source_listing_response_byte_sha256": [
+        "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5"
+      ],
+      "source_receipt_sha256": [
+        "e9c55a62bd12479376b6a1df4db094736dca536a66c43f9d182a9a8c51699489"
+      ]
+    },
+    {
+      "asset": "eth",
+      "symbol": "ETHUSDT_240628",
+      "contract_type": "QUARTERLY_EXPIRED_OR_HISTORICAL",
+      "venue": "BINANCE",
+      "instrument": "BINANCE_USDM_DATED_FUTURE",
+      "first_bar_at": "2023-12-29T08:00:00.000Z",
+      "last_bar_at": "2024-06-28T08:00:00.000Z",
+      "expiry_observed_date_utc": "2024-06-28",
+      "expiry_at": null,
+      "expiry_binding_status": "UNAVAILABLE",
+      "contract_spec_status": "UNAVAILABLE",
+      "history_status": "SIGNAL_HISTORY_AVAILABLE",
+      "tradeable": false,
+      "source_prefix": "data/futures/um/monthly/klines/ETHUSDT_240628/",
+      "source_raw_byte_sha256": "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5",
+      "archive_ingestion_status": "ARCHIVE_DISCOVERED_NOT_INGESTED",
+      "source_listing_response_byte_sha256": [
+        "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5"
+      ],
+      "source_receipt_sha256": [
+        "e9c55a62bd12479376b6a1df4db094736dca536a66c43f9d182a9a8c51699489"
+      ]
+    },
+    {
+      "asset": "eth",
+      "symbol": "ETHUSDT_240927",
+      "contract_type": "QUARTERLY_EXPIRED_OR_HISTORICAL",
+      "venue": "BINANCE",
+      "instrument": "BINANCE_USDM_DATED_FUTURE",
+      "first_bar_at": "2024-03-29T08:00:00.000Z",
+      "last_bar_at": "2024-09-27T08:00:00.000Z",
+      "expiry_observed_date_utc": "2024-09-27",
+      "expiry_at": null,
+      "expiry_binding_status": "UNAVAILABLE",
+      "contract_spec_status": "UNAVAILABLE",
+      "history_status": "SIGNAL_HISTORY_AVAILABLE",
+      "tradeable": false,
+      "source_prefix": "data/futures/um/monthly/klines/ETHUSDT_240927/",
+      "source_raw_byte_sha256": "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5",
+      "archive_ingestion_status": "ARCHIVE_DISCOVERED_NOT_INGESTED",
+      "source_listing_response_byte_sha256": [
+        "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5"
+      ],
+      "source_receipt_sha256": [
+        "e9c55a62bd12479376b6a1df4db094736dca536a66c43f9d182a9a8c51699489"
+      ]
+    },
+    {
+      "asset": "eth",
+      "symbol": "ETHUSDT_241227",
+      "contract_type": "QUARTERLY_EXPIRED_OR_HISTORICAL",
+      "venue": "BINANCE",
+      "instrument": "BINANCE_USDM_DATED_FUTURE",
+      "first_bar_at": "2024-06-28T08:00:00.000Z",
+      "last_bar_at": "2024-12-27T08:00:00.000Z",
+      "expiry_observed_date_utc": "2024-12-27",
+      "expiry_at": null,
+      "expiry_binding_status": "UNAVAILABLE",
+      "contract_spec_status": "UNAVAILABLE",
+      "history_status": "SIGNAL_HISTORY_AVAILABLE",
+      "tradeable": false,
+      "source_prefix": "data/futures/um/monthly/klines/ETHUSDT_241227/",
+      "source_raw_byte_sha256": "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5",
+      "archive_ingestion_status": "ARCHIVE_DISCOVERED_NOT_INGESTED",
+      "source_listing_response_byte_sha256": [
+        "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5"
+      ],
+      "source_receipt_sha256": [
+        "e9c55a62bd12479376b6a1df4db094736dca536a66c43f9d182a9a8c51699489"
+      ]
+    },
+    {
+      "asset": "eth",
+      "symbol": "ETHUSDT_250328",
+      "contract_type": "QUARTERLY_EXPIRED_OR_HISTORICAL",
+      "venue": "BINANCE",
+      "instrument": "BINANCE_USDM_DATED_FUTURE",
+      "first_bar_at": "2024-09-27T08:00:00.000Z",
+      "last_bar_at": "2025-03-28T08:00:00.000Z",
+      "expiry_observed_date_utc": "2025-03-28",
+      "expiry_at": null,
+      "expiry_binding_status": "UNAVAILABLE",
+      "contract_spec_status": "UNAVAILABLE",
+      "history_status": "SIGNAL_HISTORY_AVAILABLE",
+      "tradeable": false,
+      "source_prefix": "data/futures/um/monthly/klines/ETHUSDT_250328/",
+      "source_raw_byte_sha256": "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5",
+      "archive_ingestion_status": "ARCHIVE_DISCOVERED_NOT_INGESTED",
+      "source_listing_response_byte_sha256": [
+        "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5"
+      ],
+      "source_receipt_sha256": [
+        "e9c55a62bd12479376b6a1df4db094736dca536a66c43f9d182a9a8c51699489"
+      ]
+    },
+    {
+      "asset": "eth",
+      "symbol": "ETHUSDT_250627",
+      "contract_type": "QUARTERLY_EXPIRED_OR_HISTORICAL",
+      "venue": "BINANCE",
+      "instrument": "BINANCE_USDM_DATED_FUTURE",
+      "first_bar_at": "2024-12-27T08:00:00.000Z",
+      "last_bar_at": "2025-06-27T08:00:00.000Z",
+      "expiry_observed_date_utc": "2025-06-27",
+      "expiry_at": null,
+      "expiry_binding_status": "UNAVAILABLE",
+      "contract_spec_status": "UNAVAILABLE",
+      "history_status": "SIGNAL_HISTORY_AVAILABLE",
+      "tradeable": false,
+      "source_prefix": "data/futures/um/monthly/klines/ETHUSDT_250627/",
+      "source_raw_byte_sha256": "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5",
+      "archive_ingestion_status": "ARCHIVE_DISCOVERED_NOT_INGESTED",
+      "source_listing_response_byte_sha256": [
+        "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5"
+      ],
+      "source_receipt_sha256": [
+        "e9c55a62bd12479376b6a1df4db094736dca536a66c43f9d182a9a8c51699489"
+      ]
+    },
+    {
+      "asset": "eth",
+      "symbol": "ETHUSDT_250926",
+      "contract_type": "QUARTERLY_EXPIRED_OR_HISTORICAL",
+      "venue": "BINANCE",
+      "instrument": "BINANCE_USDM_DATED_FUTURE",
+      "first_bar_at": "2025-03-28T08:00:00.000Z",
+      "last_bar_at": "2025-09-26T08:00:00.000Z",
+      "expiry_observed_date_utc": "2025-09-26",
+      "expiry_at": null,
+      "expiry_binding_status": "UNAVAILABLE",
+      "contract_spec_status": "UNAVAILABLE",
+      "history_status": "SIGNAL_HISTORY_AVAILABLE",
+      "tradeable": false,
+      "source_prefix": "data/futures/um/monthly/klines/ETHUSDT_250926/",
+      "source_raw_byte_sha256": "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5",
+      "archive_ingestion_status": "ARCHIVE_DISCOVERED_NOT_INGESTED",
+      "source_listing_response_byte_sha256": [
+        "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5"
+      ],
+      "source_receipt_sha256": [
+        "e9c55a62bd12479376b6a1df4db094736dca536a66c43f9d182a9a8c51699489"
+      ]
+    },
+    {
+      "asset": "eth",
+      "symbol": "ETHUSDT_251226",
+      "contract_type": "QUARTERLY_EXPIRED_OR_HISTORICAL",
+      "venue": "BINANCE",
+      "instrument": "BINANCE_USDM_DATED_FUTURE",
+      "first_bar_at": "2025-06-27T08:00:00.000Z",
+      "last_bar_at": "2025-12-26T08:00:00.000Z",
+      "expiry_observed_date_utc": "2025-12-26",
+      "expiry_at": null,
+      "expiry_binding_status": "UNAVAILABLE",
+      "contract_spec_status": "UNAVAILABLE",
+      "history_status": "SIGNAL_HISTORY_AVAILABLE",
+      "tradeable": false,
+      "source_prefix": "data/futures/um/monthly/klines/ETHUSDT_251226/",
+      "source_raw_byte_sha256": "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5",
+      "archive_ingestion_status": "ARCHIVE_DISCOVERED_NOT_INGESTED",
+      "source_listing_response_byte_sha256": [
+        "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5"
+      ],
+      "source_receipt_sha256": [
+        "e9c55a62bd12479376b6a1df4db094736dca536a66c43f9d182a9a8c51699489"
+      ]
+    },
+    {
+      "asset": "eth",
+      "symbol": "ETHUSDT_260327",
+      "contract_type": "QUARTERLY_EXPIRED_OR_HISTORICAL",
+      "venue": "BINANCE",
+      "instrument": "BINANCE_USDM_DATED_FUTURE",
+      "first_bar_at": "2025-09-26T08:00:00.000Z",
+      "last_bar_at": "2026-03-27T08:00:00.000Z",
+      "expiry_observed_date_utc": "2026-03-27",
+      "expiry_at": null,
+      "expiry_binding_status": "UNAVAILABLE",
+      "contract_spec_status": "UNAVAILABLE",
+      "history_status": "SIGNAL_HISTORY_AVAILABLE",
+      "tradeable": false,
+      "source_prefix": "data/futures/um/monthly/klines/ETHUSDT_260327/",
+      "source_raw_byte_sha256": "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5",
+      "archive_ingestion_status": "ARCHIVE_DISCOVERED_NOT_INGESTED",
+      "source_listing_response_byte_sha256": [
+        "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5"
+      ],
+      "source_receipt_sha256": [
+        "e9c55a62bd12479376b6a1df4db094736dca536a66c43f9d182a9a8c51699489"
+      ]
+    },
+    {
+      "asset": "eth",
+      "symbol": "ETHUSDT_260626",
+      "contract_type": "QUARTERLY_EXPIRED_OR_HISTORICAL",
+      "venue": "BINANCE",
+      "instrument": "BINANCE_USDM_DATED_FUTURE",
+      "first_bar_at": "2025-12-26T08:00:00.000Z",
+      "last_bar_at": "2026-06-26T08:00:00.000Z",
+      "expiry_observed_date_utc": "2026-06-26",
+      "expiry_at": null,
+      "expiry_binding_status": "UNAVAILABLE",
+      "contract_spec_status": "UNAVAILABLE",
+      "history_status": "SIGNAL_HISTORY_AVAILABLE",
+      "tradeable": false,
+      "source_prefix": "data/futures/um/monthly/klines/ETHUSDT_260626/",
+      "source_raw_byte_sha256": "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5",
+      "archive_ingestion_status": "ARCHIVE_DISCOVERED_NOT_INGESTED",
+      "source_listing_response_byte_sha256": [
+        "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5"
+      ],
+      "source_receipt_sha256": [
+        "e9c55a62bd12479376b6a1df4db094736dca536a66c43f9d182a9a8c51699489"
+      ]
+    }
+  ],
+  "responses": [
+    {
+      "endpoint": "https://s3-ap-northeast-1.amazonaws.com/data.binance.vision?delimiter=%2F&prefix=data%2Ffutures%2Fum%2Fmonthly%2Fklines%2FBTCUSDT_",
+      "kind": "LISTING",
+      "raw_byte_sha256": "3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff",
+      "bytes": 2612,
+      "captured_at": "2026-08-25T12:10:34.000Z",
+      "raw_receipt_path": "raw/3ab6d7fb1fe6ca3fb558c4873fa1dae4ae816768570e33af59e7722744e9afff.bin",
+      "raw_receipt_sha256": "d8464389273192417463fe5dbdef74a6338ca0dbddc40e19e33cb99a1f8db745"
+    },
+    {
+      "endpoint": "https://s3-ap-northeast-1.amazonaws.com/data.binance.vision?delimiter=%2F&prefix=data%2Ffutures%2Fum%2Fmonthly%2Fklines%2FETHUSDT_",
+      "kind": "LISTING",
+      "raw_byte_sha256": "1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5",
+      "bytes": 2612,
+      "captured_at": "2026-08-25T12:10:38.000Z",
+      "raw_receipt_path": "raw/1acf7f5240743db936d7ec6acc3afc346dbaecda02ef0c3db265678f594217a5.bin",
+      "raw_receipt_sha256": "e9c55a62bd12479376b6a1df4db094736dca536a66c43f9d182a9a8c51699489"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "BTCUSDT_210924",
+      "side": "FIRST",
+      "response_sha256": "efadb6d4537059a35979be70da728dc441a827277078f5979eb7d8b18fee4696",
+      "captured_at": "2026-08-25T12:10:38.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "BTCUSDT_210924",
+      "side": "LAST",
+      "response_sha256": "298081e832a5fdd89a6ecae98104afb765b93bfe3963f2f6fcd5742cb0062159",
+      "captured_at": "2026-08-25T12:10:39.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "BTCUSDT_211231",
+      "side": "FIRST",
+      "response_sha256": "77ae385a28a2d8e50300d9a55c660f76c2a61a69288c363a0d6355b12d48e3bd",
+      "captured_at": "2026-08-25T12:10:39.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "BTCUSDT_211231",
+      "side": "LAST",
+      "response_sha256": "c99646eb37e7cb42ef195f8ce864ceb45998b5c2a25ef078b8072536a47d2a79",
+      "captured_at": "2026-08-25T12:10:39.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "BTCUSDT_220325",
+      "side": "FIRST",
+      "response_sha256": "7114dcd86d9f5e03fd137b78b282569722a4656fa658d08f40fa8d13ef5db333",
+      "captured_at": "2026-08-25T12:10:39.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "BTCUSDT_220325",
+      "side": "LAST",
+      "response_sha256": "ccc933ee65380056c871d89167c81346602f6fc09aa50be5f0b281d781b67811",
+      "captured_at": "2026-08-25T12:10:40.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "BTCUSDT_220624",
+      "side": "FIRST",
+      "response_sha256": "819f9e7a59fbb193534defef108fc5c428a149048d2924bd8c8f9c123d92c3bf",
+      "captured_at": "2026-08-25T12:10:40.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "BTCUSDT_220624",
+      "side": "LAST",
+      "response_sha256": "b13e46a7269844f33d619d1c837da18b928ec6fcc4902e3a04e8ac6ba8045bb1",
+      "captured_at": "2026-08-25T12:10:40.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "BTCUSDT_220930",
+      "side": "FIRST",
+      "response_sha256": "24f736876ef4f3820990863591d688861a4ed4aeb29226a50743f28c4db833ae",
+      "captured_at": "2026-08-25T12:10:41.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "BTCUSDT_220930",
+      "side": "LAST",
+      "response_sha256": "89306f5a5f487e5365fbf22a1e3d6830073072645c2bac1c5b045a81e191b095",
+      "captured_at": "2026-08-25T12:10:41.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "BTCUSDT_221230",
+      "side": "FIRST",
+      "response_sha256": "536852344b2e5a917795e956faf9a0ccfa2d380c8967f00567297401e87d0c9c",
+      "captured_at": "2026-08-25T12:10:41.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "BTCUSDT_221230",
+      "side": "LAST",
+      "response_sha256": "73813068a4f4996ce53cb2ea85741cb763b6dacced10891dd2a23e8342a59446",
+      "captured_at": "2026-08-25T12:10:41.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "BTCUSDT_230331",
+      "side": "FIRST",
+      "response_sha256": "8e8427c4dd742a31aceaddc3b97509fd65db2961df19741e14826594745a54ef",
+      "captured_at": "2026-08-25T12:10:42.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "BTCUSDT_230331",
+      "side": "LAST",
+      "response_sha256": "274150df2edf9a6105c140993b47bd4dcb4b4c868f05f56609751fb3809d4e2b",
+      "captured_at": "2026-08-25T12:10:42.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "BTCUSDT_230630",
+      "side": "FIRST",
+      "response_sha256": "1551deaf767efbcb5652d5a3716fc28a44cf8000c5ef1f10518a27cfda50fd1a",
+      "captured_at": "2026-08-25T12:10:42.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "BTCUSDT_230630",
+      "side": "LAST",
+      "response_sha256": "aca28e16968a4dda99d62055ad06db9c234f8d8508478d4fad99fe22203bc423",
+      "captured_at": "2026-08-25T12:10:43.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "BTCUSDT_230929",
+      "side": "FIRST",
+      "response_sha256": "f06e3e07dd209494fe0aaea0f7f9eda07f8d7bbc5f0fc3a9063c67689755cd67",
+      "captured_at": "2026-08-25T12:10:43.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "BTCUSDT_230929",
+      "side": "LAST",
+      "response_sha256": "1efc74ae739f6c8840625e13dcb8d4877a2a42d28e8196ad9cf13e674dd47420",
+      "captured_at": "2026-08-25T12:10:43.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "BTCUSDT_231229",
+      "side": "FIRST",
+      "response_sha256": "866756e40efe5a2f8caa03566a5409e8351828c70f933b037c6566ef26067e86",
+      "captured_at": "2026-08-25T12:10:43.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "BTCUSDT_231229",
+      "side": "LAST",
+      "response_sha256": "4d0e99e492c4e48e41402d7aba8b0a6f8183649d8b06731157c4c76a59826fa8",
+      "captured_at": "2026-08-25T12:10:44.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "BTCUSDT_240329",
+      "side": "FIRST",
+      "response_sha256": "ef969323bbcb4ec51f72c6a5c31d81421e343ea9cf18b8ddb7058243a2adc98e",
+      "captured_at": "2026-08-25T12:10:44.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "BTCUSDT_240329",
+      "side": "LAST",
+      "response_sha256": "62162e5f4d6d804fc6f9d53eaf3fe7e175db1ab964f24a928cd206427160fc70",
+      "captured_at": "2026-08-25T12:10:44.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "BTCUSDT_240628",
+      "side": "FIRST",
+      "response_sha256": "3aa16061a21a2870dc0c6a590d70588d0b84b6513e9d3cabdc61ae77cd50c28f",
+      "captured_at": "2026-08-25T12:10:45.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "BTCUSDT_240628",
+      "side": "LAST",
+      "response_sha256": "f207559473f693f3e6262f2f51c3d4bae49ce9feecae70074f9a10f1d56e9204",
+      "captured_at": "2026-08-25T12:10:45.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "BTCUSDT_240927",
+      "side": "FIRST",
+      "response_sha256": "6c0aa0da1dcc50b0bac31f38b97d10ddf9fa0175395be54b0279285e27084bed",
+      "captured_at": "2026-08-25T12:10:45.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "BTCUSDT_240927",
+      "side": "LAST",
+      "response_sha256": "ff2a6b98682c6cc6424482d98d050dc42141240bbb3265a33f6e0728348a60c0",
+      "captured_at": "2026-08-25T12:10:46.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "BTCUSDT_241227",
+      "side": "FIRST",
+      "response_sha256": "90e58b227c21dc4115b67953ae88782802cfc50bea01afd0b80fce0cae14e57c",
+      "captured_at": "2026-08-25T12:10:46.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "BTCUSDT_241227",
+      "side": "LAST",
+      "response_sha256": "f0f238e8c164d7a7daaa3a4c21c4e014e8981cd098d03d15a52a6ca7c58547fa",
+      "captured_at": "2026-08-25T12:10:46.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "BTCUSDT_250328",
+      "side": "FIRST",
+      "response_sha256": "4e624d2097e23e6fa73d88c332c7b45645d4e5a27f59ddc5bb8d106c531aa163",
+      "captured_at": "2026-08-25T12:10:46.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "BTCUSDT_250328",
+      "side": "LAST",
+      "response_sha256": "1aeaadf90b63b7b3ebf1a3fe79b60761b92d48a434318f9dab7783d525f1f0fb",
+      "captured_at": "2026-08-25T12:10:47.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "BTCUSDT_250627",
+      "side": "FIRST",
+      "response_sha256": "1096e15ded2a8cbab46709e66ef5677bf1bd94c15139e3115d3de60fa421edc2",
+      "captured_at": "2026-08-25T12:10:47.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "BTCUSDT_250627",
+      "side": "LAST",
+      "response_sha256": "4989324fa97de7d86895904d3d264de49ad37957c86b6c99dafab20d098494e1",
+      "captured_at": "2026-08-25T12:10:47.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "BTCUSDT_250926",
+      "side": "FIRST",
+      "response_sha256": "8668cc41ac8b2f938853be0486cd904cd0dc21d4c496915ee3aa61a97a4e130c",
+      "captured_at": "2026-08-25T12:10:48.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "BTCUSDT_250926",
+      "side": "LAST",
+      "response_sha256": "e1c3803a44ee8c2f6b2924146b6ac527e0252319369e63b05ed77ebbbb5c8cf1",
+      "captured_at": "2026-08-25T12:10:48.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "BTCUSDT_251226",
+      "side": "FIRST",
+      "response_sha256": "54b0b326866f7f169e8075ec0cb1d27bc7eb83956de69efc18c9ee9e254ac3cd",
+      "captured_at": "2026-08-25T12:10:48.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "BTCUSDT_251226",
+      "side": "LAST",
+      "response_sha256": "1ec952640959134ffddc6bbb0aae4a3109600e847c1d440b1c06fa4e9fc40f98",
+      "captured_at": "2026-08-25T12:10:49.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "BTCUSDT_260327",
+      "side": "FIRST",
+      "response_sha256": "f1b31943e27125fd791b1a59408fa00b2c7b8b5a9d73c667c0a36e1643000dd3",
+      "captured_at": "2026-08-25T12:10:49.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "BTCUSDT_260327",
+      "side": "LAST",
+      "response_sha256": "e77f112059f137f774757c04c3bccab1568432dc11861f2636bcda8b57af1e07",
+      "captured_at": "2026-08-25T12:10:49.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "BTCUSDT_260626",
+      "side": "FIRST",
+      "response_sha256": "8f1eef5a7d85d426239bb344784feef7981abce50af6ed4d8babb9a7965a09fa",
+      "captured_at": "2026-08-25T12:10:49.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "BTCUSDT_260626",
+      "side": "LAST",
+      "response_sha256": "26d80234312a35cb2c4afb8ed0bd5b5fda028e36b8e467878b0d440330fea958",
+      "captured_at": "2026-08-25T12:10:50.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "ETHUSDT_210924",
+      "side": "FIRST",
+      "response_sha256": "c8ba7e53db227f4ae499b76b96535b9f4c5ebaa15763e018185ce0ea1fe3afdb",
+      "captured_at": "2026-08-25T12:10:50.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "ETHUSDT_210924",
+      "side": "LAST",
+      "response_sha256": "739fba5cba3f100c79f6713bc502dfb6e75d72d2ec7599667af371f8e9e72e1f",
+      "captured_at": "2026-08-25T12:10:50.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "ETHUSDT_211231",
+      "side": "FIRST",
+      "response_sha256": "135cca0843cec9c533cfd062defccd113877336ecb5e82133dd3c4835cc2a2c2",
+      "captured_at": "2026-08-25T12:10:51.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "ETHUSDT_211231",
+      "side": "LAST",
+      "response_sha256": "f3ed1991ba9618cf51af01704f2cd8842c2c43a30aa3968bff34ee1c39f47e50",
+      "captured_at": "2026-08-25T12:10:51.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "ETHUSDT_220325",
+      "side": "FIRST",
+      "response_sha256": "9336ccce208da53fae4493adc7fb81130bd3c975d395a3b51ed8b7ee55ebe508",
+      "captured_at": "2026-08-25T12:10:51.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "ETHUSDT_220325",
+      "side": "LAST",
+      "response_sha256": "995ef6eab1eff48e3437b4bf18993c263b2dab0ee04aad157abd49b1e5b3a5d7",
+      "captured_at": "2026-08-25T12:10:51.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "ETHUSDT_220624",
+      "side": "FIRST",
+      "response_sha256": "c83f46f6a82fe8ba53fbe878d071e493f493059764e6335b7919a5c336c33c58",
+      "captured_at": "2026-08-25T12:10:52.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "ETHUSDT_220624",
+      "side": "LAST",
+      "response_sha256": "d31c1abd27396ba38e52c4dde086a263a475eb5a7cf9e0f24c00d6387c918774",
+      "captured_at": "2026-08-25T12:10:52.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "ETHUSDT_220930",
+      "side": "FIRST",
+      "response_sha256": "a78c9ae8149a3325beaa69cf2c3b89c46baddc0ef3903c82862ced007a19e8c5",
+      "captured_at": "2026-08-25T12:10:52.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "ETHUSDT_220930",
+      "side": "LAST",
+      "response_sha256": "234c2b527595770fd90d63b0d3c97f9584ebf20d496afc3fa8993287bd3d93ca",
+      "captured_at": "2026-08-25T12:10:53.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "ETHUSDT_221230",
+      "side": "FIRST",
+      "response_sha256": "91c9780e62d09b43eaae5853c6806528370d827c125259c991bee39a047f79ab",
+      "captured_at": "2026-08-25T12:10:53.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "ETHUSDT_221230",
+      "side": "LAST",
+      "response_sha256": "fe172cace5f6a9f89f1e777637e8a4ea6c4b968c0dc607cb0078afb68ad27a90",
+      "captured_at": "2026-08-25T12:10:53.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "ETHUSDT_230331",
+      "side": "FIRST",
+      "response_sha256": "94f8a5cc5dc40e800b6b4d0d059e1e57bf93d5266e331108e27e2cec1352d98d",
+      "captured_at": "2026-08-25T12:10:54.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "ETHUSDT_230331",
+      "side": "LAST",
+      "response_sha256": "a4ef84b78bcf29de829a91c373b94c77022a5b3d7e308477efd3cbf9abb08b7f",
+      "captured_at": "2026-08-25T12:10:54.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "ETHUSDT_230630",
+      "side": "FIRST",
+      "response_sha256": "769aa292e7815a9f7e4e6f30bc16af8acbbff1ec45201696cb08908ba5d16ab1",
+      "captured_at": "2026-08-25T12:10:54.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "ETHUSDT_230630",
+      "side": "LAST",
+      "response_sha256": "b3aa58b0bf855e90cc0997e52a69640e699c1b0b584a790ed6fe525896e3c825",
+      "captured_at": "2026-08-25T12:10:55.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "ETHUSDT_230929",
+      "side": "FIRST",
+      "response_sha256": "f3e8574b00b69be853f4b61c614603a4c227779a5ab6f7f4445d47893dffc57f",
+      "captured_at": "2026-08-25T12:10:55.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "ETHUSDT_230929",
+      "side": "LAST",
+      "response_sha256": "66c41377844d27e649a384fd1ba2334f98806e11167a03ec16fc6ccb6ff4fa62",
+      "captured_at": "2026-08-25T12:10:55.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "ETHUSDT_231229",
+      "side": "FIRST",
+      "response_sha256": "c879da0d8eaef568d910f76ca02527577e3ae346064cd72153797353d8d125a8",
+      "captured_at": "2026-08-25T12:10:55.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "ETHUSDT_231229",
+      "side": "LAST",
+      "response_sha256": "37c0317ab55b468dfa0722d8ef820206ae609845b5d3969a0c9375b30b97499f",
+      "captured_at": "2026-08-25T12:10:56.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "ETHUSDT_240329",
+      "side": "FIRST",
+      "response_sha256": "4e8fe66297c9a7f74268d2da90bf10e3ef2374a97dc40de4d9153c740d7aa264",
+      "captured_at": "2026-08-25T12:10:56.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "ETHUSDT_240329",
+      "side": "LAST",
+      "response_sha256": "292b54ffc5fa5805cc1a92d44b4d363ee68933cebe71574773db99592700464d",
+      "captured_at": "2026-08-25T12:10:56.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "ETHUSDT_240628",
+      "side": "FIRST",
+      "response_sha256": "4f370df123ac91fccdd206ecb9880e10445ca45c9602765246f0878df51543f8",
+      "captured_at": "2026-08-25T12:10:57.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "ETHUSDT_240628",
+      "side": "LAST",
+      "response_sha256": "eccce15a771a782c974181babed0e5213b52493fc375d357840316d3ca55cc76",
+      "captured_at": "2026-08-25T12:10:57.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "ETHUSDT_240927",
+      "side": "FIRST",
+      "response_sha256": "04873212ec179af0370243a26010ee59fc58ad2b77dff69fbf13165cae69cd3a",
+      "captured_at": "2026-08-25T12:10:57.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "ETHUSDT_240927",
+      "side": "LAST",
+      "response_sha256": "d4fd68c0d95a2f313cec66bdd993b9aeb11857859e82154da104210c2fbc56d1",
+      "captured_at": "2026-08-25T12:10:57.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "ETHUSDT_241227",
+      "side": "FIRST",
+      "response_sha256": "3a1cee4ed41e5907724d7a15ba461e2f3a0fa596aadd8d1878ccd9931fefac1b",
+      "captured_at": "2026-08-25T12:10:58.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "ETHUSDT_241227",
+      "side": "LAST",
+      "response_sha256": "9477763c04ca20a29d5e283e3c0d49fb63f0467a2c990a7bf5b25b2b18ec31b1",
+      "captured_at": "2026-08-25T12:10:58.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "ETHUSDT_250328",
+      "side": "FIRST",
+      "response_sha256": "d595f45c7205f9579ca83fabfd642a1f87a1a34bea604ca41130be7a0ba7f938",
+      "captured_at": "2026-08-25T12:10:58.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "ETHUSDT_250328",
+      "side": "LAST",
+      "response_sha256": "a889eb68412de723f1a846ca98c1c943c1562066ec2afb026de6936a9f2234e4",
+      "captured_at": "2026-08-25T12:10:59.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "ETHUSDT_250627",
+      "side": "FIRST",
+      "response_sha256": "cd8c614a826d8e276c83e6a450bde0c4d9af8794f7919e9a5ed6bf1cc4f3471a",
+      "captured_at": "2026-08-25T12:10:59.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "ETHUSDT_250627",
+      "side": "LAST",
+      "response_sha256": "211d54d2082c7016ab4fe0fc750ae9c44a7b8719d78a6d1c36b0657ac0e8192f",
+      "captured_at": "2026-08-25T12:11:00.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "ETHUSDT_250926",
+      "side": "FIRST",
+      "response_sha256": "7b82dd6cc77805bb62e8df8fd82505ad8ebe3accaca4c74b8044ebf38fd65171",
+      "captured_at": "2026-08-25T12:11:00.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "ETHUSDT_250926",
+      "side": "LAST",
+      "response_sha256": "6d37f4db02e510223de6a6ba5ffd49f4b401c3c2c2432bfb48bd04e08fb6f1cb",
+      "captured_at": "2026-08-25T12:11:00.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "ETHUSDT_251226",
+      "side": "FIRST",
+      "response_sha256": "97a351df13d5340d189b10d19274ed9f9548a1ca612126af25718c360e21e298",
+      "captured_at": "2026-08-25T12:11:01.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "ETHUSDT_251226",
+      "side": "LAST",
+      "response_sha256": "919bfe54b59d7fb5b49709814d6eb05cbdc606e971dc8a1df3a422fe32390893",
+      "captured_at": "2026-08-25T12:11:01.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "ETHUSDT_260327",
+      "side": "FIRST",
+      "response_sha256": "af8e519b7ff4873df0d618c492fde0052599200cdad97a39e934f27bb9e73b9b",
+      "captured_at": "2026-08-25T12:11:01.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "ETHUSDT_260327",
+      "side": "LAST",
+      "response_sha256": "d62f1a54d262aa77fdda296722fb99daf33e9b5a96127c3448c01716571c9cfa",
+      "captured_at": "2026-08-25T12:11:01.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "ETHUSDT_260626",
+      "side": "FIRST",
+      "response_sha256": "303cd70a6e87c743da6657a844a68edea0cfb84bd17fb06987d14b34da629da4",
+      "captured_at": "2026-08-25T12:11:02.000Z",
+      "kind": "HISTORY_PROBE"
+    },
+    {
+      "endpoint": "https://fapi.binance.com/fapi/v1/klines",
+      "symbol": "ETHUSDT_260626",
+      "side": "LAST",
+      "response_sha256": "39d663576801fa7db0528ad47afca2da89af12e5e4ee2b768aaaf9426206fbf5",
+      "captured_at": "2026-08-25T12:11:02.000Z",
+      "kind": "HISTORY_PROBE"
+    }
+  ],
+  "status": "PUBLIC_OBSERVED_PARTIAL",
+  "limitations": [
+    "aave:HISTORICAL_DATED_FUTURES_UNAVAILABLE_OR_NOT_LISTED",
+    "ada:HISTORICAL_DATED_FUTURES_UNAVAILABLE_OR_NOT_LISTED",
+    "bnb:HISTORICAL_DATED_FUTURES_UNAVAILABLE_OR_NOT_LISTED",
+    "btc:ARCHIVE_DISCOVERED_NOT_INGESTED",
+    "eth:ARCHIVE_DISCOVERED_NOT_INGESTED",
+    "link:HISTORICAL_DATED_FUTURES_UNAVAILABLE_OR_NOT_LISTED",
+    "sol:HISTORICAL_DATED_FUTURES_UNAVAILABLE_OR_NOT_LISTED",
+    "xrp:HISTORICAL_DATED_FUTURES_UNAVAILABLE_OR_NOT_LISTED"
+  ],
+  "content_sha256": "7836a8f11277ef9bb47680385637cafee71c12d8db36097f008240f8e5f5832c"
+}

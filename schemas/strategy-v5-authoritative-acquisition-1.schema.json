@@ -12,6 +12,17 @@
     "storage_role",
     "authoritative",
     "captures",
+    "base_complete",
+    "declared_complete",
+    "full_plan_complete",
+    "completion_scope",
+    "required_series_count",
+    "required_complete_count",
+    "optional_series_count",
+    "optional_complete_count",
+    "optional_complete",
+    "unavailable_required",
+    "unavailable_optional",
     "content_sha256"
   ],
   "properties": {
@@ -128,6 +139,59 @@
       "type": "array",
       "items": {
         "$ref": "#/$defs/hash"
+      }
+    },
+    "auxiliary_metrics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "series",
+          "checkpoint_path",
+          "raw_verified_count",
+          "status"
+        ],
+        "properties": {
+          "series": {
+            "type": "string"
+          },
+          "checkpoint_path": {
+            "type": "string"
+          },
+          "source_checkpoint_sha256": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "raw_verified_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "saved_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "remaining_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "status": {
+            "enum": [
+              "REPLAYED",
+              "UNAVAILABLE",
+              "PARTIAL_CHECKPOINT_REPLAYED_FOR_NETWORK_RESUME"
+            ]
+          },
+          "limitation": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "additionalProperties": false
       }
     },
     "limitations": {
@@ -433,6 +497,18 @@
           "minimum": 0,
           "maximum": 1
         },
+        "metrics_pit_vintage_status": {
+          "enum": [
+            "HISTORICAL_PIT_VINTAGE",
+            "LATEST_RETRIEVAL_NOT_HISTORICAL_VINTAGE"
+          ]
+        },
+        "pit_vintage_status": {
+          "enum": [
+            "HISTORICAL_PIT_VINTAGE",
+            "LATEST_RETRIEVAL_NOT_HISTORICAL_VINTAGE"
+          ]
+        },
         "required_metric_fields": {
           "type": "array",
           "items": {
@@ -720,6 +796,12 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1
+        },
+        "metrics_pit_vintage_status": {
+          "enum": [
+            "HISTORICAL_PIT_VINTAGE",
+            "LATEST_RETRIEVAL_NOT_HISTORICAL_VINTAGE"
+          ]
         },
         "series_sha256": {
           "$ref": "#/$defs/hash"

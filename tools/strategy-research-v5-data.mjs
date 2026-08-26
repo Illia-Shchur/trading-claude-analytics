@@ -9,7 +9,7 @@
  * if that dependency is absent, conversion remains explicitly fail-closed.
  */
 import { createHash } from 'node:crypto'
-import { existsSync, mkdirSync, readFileSync, writeFileSync, renameSync, unlinkSync, lstatSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync, renameSync, unlinkSync, lstatSync, realpathSync } from 'node:fs'
 import { dirname, resolve, relative, basename, join, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import canonicalize from 'canonicalize'
@@ -20,6 +20,7 @@ import {
   backfillBinanceDatedKlineArchives,
   backfillBinanceMetricsArchives,
   aggregateBinanceMetricsRows,
+  parseBinanceMetricsArchive,
   fetchBinanceOhlc,
   fetchBinanceExchangeInfo,
   ADAPTER_CODE_SHA256,
@@ -52,6 +53,12 @@ const HASH_RE = /^[a-f0-9]{64}$/
 // legitimate predictor input when its registry derivation is PIT-bound.
 const FORBIDDEN_PREDICTOR = /(^|_)(future|forward|fwd|target|outcome|label|pnl|profit|exit|resolution|realized|unrealized)(_|$)/i
 const PRECOMPUTED_EXECUTION = new Set(['net_r', 'gross_r', 'fee_r', 'slippage_r', 'funding_debit_r', 'net_pnl', 'gross_pnl', 'net_pnl_usd', 'gross_pnl_usd', 'cost_r'])
+// Binance Data Vision metrics are a latest retrieval of historical rows.  The
+// event timestamp is useful for reconstruction, but it is not a publication
+// vintage and therefore cannot satisfy an authoritative historical PIT input.
+// Keep the reason stable: it is emitted into acquisition/coverage artifacts and
+// is consumed by the authoritative search/research gate.
+export const METRICS_PIT_VINTAGE_BLOCK_REASON = 'METRICS_PIT_VINTAGE_UNAVAILABLE:LATEST_RETRIEVAL_NOT_HISTORICAL_VINTAGE'
 const now = () => new Date().toISOString()
 const latestObservedAt = values => { const times = values.map(value => Date.parse(String(value || ''))).filter(Number.isFinite); return times.length ? new Date(Math.max(...times)).toISOString() : now() }
 const clone = value => structuredClone(value)
@@ -70,7 +77,7 @@ export const DATA_V5_PRODUCER_COMMANDS = Object.freeze({
 export const stable = value => canonicalize(value)
 export const hash = value => createHash('sha256').update(typeof value === 'string' || Buffer.isBuffer(value) ? value : stable(value)).digest('hex')
 export const ownHash = (value, field = 'content_sha256') => { const copy = clone(value); delete copy[field]; return hash(copy) }
-export const withHash = (value, field = 'content_sha256') => { const copy = clone(value); copy[field] = ownHash(copy, field); validateContractSchema(copy); return copy }
+export const withHash = (value, field = 'content_sha256') => { const copy = clone(value); if (copy.schema === DATA_V5.acquisition && Array.isArray(copy.captures)) { const required = copy.captures.filter(capture => capture.required !== false); const optional = copy.captures.filter(capture => capture.required === false); const complete = capture => capture.unavailable !== true && capture.coverage?.complete === true && capture.partition?.storage_role === 'STAGING'; const identity = capture => [capture.asset, capture.instrument, capture.symbol, capture.interval, capture.series_type].map(part => String(part || '').toLowerCase()).join('|'); const baseComplete = required.length > 0 && required.every(complete); const declaredComplete = copy.captures.length > 0 && copy.captures.every(complete); const setDefault = (name, value) => { if (copy[name] === undefined) copy[name] = value }; setDefault('base_complete', baseComplete); setDefault('declared_complete', declaredComplete); setDefault('full_plan_complete', declaredComplete); setDefault('completion_scope', declaredComplete ? 'ALL_DECLARED' : baseComplete ? 'BASE_ONLY' : 'NONE'); setDefault('required_series_count', required.length); setDefault('required_complete_count', required.filter(complete).length); setDefault('optional_series_count', optional.length); setDefault('optional_complete_count', optional.filter(complete).length); setDefault('optional_complete', optional.every(complete)); setDefault('unavailable_required', required.filter(capture => !complete(capture)).map(identity).sort()); setDefault('unavailable_optional', optional.filter(capture => !complete(capture)).map(identity).sort()) } delete copy[field]; copy[field] = ownHash(copy, field); validateContractSchema(copy); return copy }
 const PREDICTOR_RECIPE_KINDS = new Set(['FIELD', 'RETURN', 'SMA', 'STDDEV_ZSCORE', 'RSI'])
 const PREDICTOR_RECIPE_MODULE = 'builtin-pit-transform/1'
 function normalizePredictorRecipe(predictor, id) {
@@ -91,6 +98,8 @@ function normalizePredictorRecipe(predictor, id) {
   if (!Number.isInteger(excludedWindowBars) || excludedWindowBars < 0 || excludedWindowBars > lookbackBars + 1) throw new Error(`predictor ${id} recipe excluded window is invalid`)
   const rsiMethod = String(recipe.rsi_method || 'WILDER_RSI').toUpperCase()
   if (kind === 'RSI' && rsiMethod !== 'WILDER_RSI') throw new Error(`predictor ${id} RSI method is not the registered Wilder implementation`)
+  const requiredSeriesTypes = recipe.required_series_types === undefined ? null : [...new Set(ensureArray(recipe.required_series_types, `${id} recipe required_series_types`).map(value => String(value).toLowerCase()))].sort()
+  if (requiredSeriesTypes && (!requiredSeriesTypes.length || requiredSeriesTypes.some(value => !['signal_bars', 'mark_bars', 'funding_events', 'metrics_events'].includes(value)) || (requiredSeriesTypes.includes('funding_events') && requiredSeriesTypes.some(value => !['funding_events', 'metrics_events'].includes(value))))) throw new Error(`predictor ${id} recipe required_series_types are invalid`)
   const explicitReference = recipe.series_scope === 'EXPLICIT_REFERENCE_SERIES'
   const reference = explicitReference ? clone(recipe.reference_series) : null
   const referenceAsset = explicitReference && reference ? String(reference.asset).toLowerCase() : null
@@ -103,7 +112,7 @@ function normalizePredictorRecipe(predictor, id) {
     if (!Number.isInteger(maxStaleness) || maxStaleness < 1 || !Number.isInteger(lagBars) || lagBars < 0 || !['EXACT_EVENT', 'LAST_AVAILABLE', 'BAR_CLOSE'].includes(recipe.resample_policy)) throw new Error(`predictor ${id} explicit reference timing contract is invalid`)
   }
   if (recipe.module_code_sha256 !== predictor.code_sha256 || recipe.module_config_sha256 !== predictor.config_sha256) throw new Error(`predictor ${id} recipe module hashes are not bound to code/config hashes`)
-  return { module: PREDICTOR_RECIPE_MODULE, kind, source_field: recipe.source_field, source_series: recipe.source_series.trim(), lookback_bars: lookbackBars, min_history: minHistory, window_policy: recipe.window_policy, availability_policy: recipe.availability_policy, series_scope: recipe.series_scope, ...(explicitReference ? { reference_series: { asset: referenceAsset, venue: String(reference.venue).toUpperCase(), instrument: String(reference.instrument).toUpperCase(), symbol: String(reference.symbol).toUpperCase(), ...(reference.series_id ? { series_id: String(reference.series_id) } : {}), ...(reference.series_type ? { series_type: String(reference.series_type) } : {}) }, asof_policy: 'LATEST_AVAILABLE_NOT_AFTER_DECISION', max_staleness_ms: Number(recipe.max_staleness_ms), lag_bars: Number(recipe.lag_bars ?? 0), resample_policy: String(recipe.resample_policy).toUpperCase(), context_only: recipe.context_only === true } : {}), ...(kind === 'RSI' ? { rsi_method: rsiMethod } : {}), current_observation_policy: currentObservationPolicy, excluded_window_bars: excludedWindowBars, module_code_sha256: recipe.module_code_sha256, module_config_sha256: recipe.module_config_sha256 }
+  return { module: PREDICTOR_RECIPE_MODULE, kind, source_field: recipe.source_field, source_series: recipe.source_series.trim(), lookback_bars: lookbackBars, min_history: minHistory, window_policy: recipe.window_policy, availability_policy: recipe.availability_policy, series_scope: recipe.series_scope, ...(explicitReference ? { reference_series: { asset: referenceAsset, venue: String(reference.venue).toUpperCase(), instrument: String(reference.instrument).toUpperCase(), symbol: String(reference.symbol).toUpperCase(), ...(reference.series_id ? { series_id: String(reference.series_id) } : {}), ...(reference.series_type ? { series_type: String(reference.series_type) } : {}) }, asof_policy: 'LATEST_AVAILABLE_NOT_AFTER_DECISION', max_staleness_ms: Number(recipe.max_staleness_ms), lag_bars: Number(recipe.lag_bars ?? 0), resample_policy: String(recipe.resample_policy).toUpperCase(), context_only: recipe.context_only === true } : {}), ...(requiredSeriesTypes ? { required_series_types: requiredSeriesTypes } : {}), ...(kind === 'RSI' ? { rsi_method: rsiMethod } : {}), current_observation_policy: currentObservationPolicy, excluded_window_bars: excludedWindowBars, module_code_sha256: recipe.module_code_sha256, module_config_sha256: recipe.module_config_sha256 }
 }
 export function makePredictorRegistry({ predictors } = {}) {
   const rows = ensureArray(predictors, 'predictor registry').map(predictor => { const id = String(predictor.id || ''); if (!/^[a-z][a-z0-9_]{0,127}$/.test(id) || FORBIDDEN_PREDICTOR.test(id)) throw new Error(`predictor ID is not a permitted registry identifier: ${id}`); if (!['number', 'integer', 'boolean'].includes(predictor.scalar_type)) throw new Error(`predictor ${id} scalar_type is invalid`); if (!predictor.source_field || !predictor.source_family || !predictor.availability_derivation || !['PREDICTOR'].includes(predictor.pit_role)) throw new Error(`predictor ${id} registry provenance is incomplete`); if (/(^|[_-])(label|outcome|pnl|profit|realized|unrealized)([_-]|$)/i.test(`${predictor.source_field} ${predictor.source_family}`)) throw new Error(`predictor ${id} has label/outcome provenance`); if (!Number.isInteger(Number(predictor.lookback_ms)) || Number(predictor.lookback_ms) < 0) throw new Error(`predictor ${id} lookback is invalid`); if (predictor.source_timeframe !== undefined && !['1h', '4h', '1d', 'event'].includes(String(predictor.source_timeframe))) throw new Error(`predictor ${id} source timeframe is invalid`); sha(predictor.code_sha256, `${id}.code_sha256`); sha(predictor.config_sha256, `${id}.config_sha256`); const normalized = { ...clone(predictor), id, lookback_ms: Number(predictor.lookback_ms) }; const recipe = normalizePredictorRecipe(normalized, id); if (recipe) normalized.recipe = recipe; return normalized }).sort((a, b) => a.id.localeCompare(b.id)); if (!rows.length || new Set(rows.map(row => row.id)).size !== rows.length) throw new Error('predictor registry must contain unique predictors'); return withHash({ schema: 'strategy-v5-predictor-registry/1', version: 1, status: 'FROZEN', predictors: rows })
@@ -161,6 +170,36 @@ function safePath(root, reference, label = 'data path') {
   if (!value || value.startsWith('/') || value.includes('\\')) throw new Error(`${label} must be a repository-relative path`)
   const base = resolve(root); const path = resolve(base, value); const rel = relative(base, path).replaceAll('\\', '/')
   if (!rel || rel.startsWith('..') || rel.split('/').includes('..')) throw new Error(`${label} escapes its portable root`)
+  return path
+}
+
+/* A hash-valid path is not physical custody.  Every verifier that reopens a
+ * retained source/partition must walk the path with lstat (so symlink
+ * components cannot redirect the read), require a regular single-link file
+ * (so a hardlink cannot alias mutable bytes), and finally compare realpaths
+ * against the real root (so aliases cannot escape through a race or platform
+ * path spelling).  Writers intentionally continue using safePath: this gate
+ * is for evidence that is being trusted, not for creating a new output. */
+function verifiedRegularPath(root, reference, label = 'data path') {
+  const path = safePath(root, reference, label)
+  const rootPath = resolve(root)
+  let rootStat
+  try { rootStat = lstatSync(rootPath) } catch (error) { throw new Error(`${label} root is missing: ${rootPath}`) }
+  if (rootStat.isSymbolicLink() || !rootStat.isDirectory()) throw new Error(`${label} root is not a regular directory: ${rootPath}`)
+  const components = relative(rootPath, path).split(sep).filter(Boolean)
+  let cursor = rootPath
+  for (const component of components) {
+    cursor = join(cursor, component)
+    let stat
+    try { stat = lstatSync(cursor) } catch (error) { throw new Error(`${label} is missing: ${reference}`) }
+    if (stat.isSymbolicLink()) throw new Error(`${label} contains a symlink path component: ${reference}`)
+    if (cursor !== path && !stat.isDirectory()) throw new Error(`${label} parent is not a directory: ${reference}`)
+    if (cursor === path && (!stat.isFile() || stat.nlink !== 1)) throw new Error(`${label} is not a regular single-link path: ${reference}`)
+  }
+  let physicalRoot; let physicalPath
+  try { physicalRoot = realpathSync(rootPath); physicalPath = realpathSync(path) } catch (error) { throw new Error(`${label} cannot be physically reopened: ${reference}`) }
+  const physicalRelative = relative(physicalRoot, physicalPath)
+  if (!physicalRelative || physicalRelative.startsWith('..') || physicalRelative.split(sep).includes('..')) throw new Error(`${label} physical path escapes its root: ${reference}`)
   return path
 }
 
@@ -308,7 +347,7 @@ function sourceReceipt(root, payload) {
   // retained bytes; otherwise a caller could rehash a replacement JSON file.
   for (const raw of value.raw_receipts || []) {
     if (!raw || raw.schema !== 'strategy-v5-source-receipt/1' || !raw.path || !HASH_RE.test(String(raw.byte_sha256 || ''))) throw new Error('source receipt contains an invalid raw-byte receipt')
-    const rawPath = safePath(root, raw.path, 'raw source response')
+    const rawPath = verifiedRegularPath(root, raw.path, 'raw source response')
     if (!existsSync(rawPath) || hash(readFileSync(rawPath)) !== raw.byte_sha256) throw new Error(`raw source response bytes are missing or tampered: ${raw.path}`)
     assertOwnHash(raw, 'strategy-v5-source-receipt/1', 'raw source receipt')
   }
@@ -325,7 +364,7 @@ function sourceReceipt(root, payload) {
 function verifyRawReceipt(root, raw, label = 'raw source receipt') {
   assertOwnHash(raw, 'strategy-v5-source-receipt/1', label)
   if (raw.format !== 'RAW_BYTES' || raw.storage_role !== 'RAW_IGNORED' || raw.authoritative !== false) throw new Error(`${label} storage metadata is invalid`)
-  const path = safePath(root, raw.path, label)
+  const path = verifiedRegularPath(root, raw.path, label)
   if (!existsSync(path)) throw new Error(`${label} bytes are missing: ${raw.path}`)
   const bytes = readFileSync(path)
   if (bytes.byteLength !== raw.bytes || hash(bytes) !== raw.byte_sha256) throw new Error(`${label} bytes are missing or tampered: ${raw.path}`)
@@ -335,7 +374,7 @@ function verifyRawReceipt(root, raw, label = 'raw source receipt') {
 
 export function verifyNormalizedReceipt(root, summary, label = 'normalized source receipt') {
   if (!summary || summary.schema !== 'strategy-v5-source-receipt/1' || !summary.path || !HASH_RE.test(String(summary.sha256 || summary.content_sha256 || ''))) throw new Error(`${label} reference is incomplete`)
-  const path = safePath(root, summary.path, label)
+  const path = verifiedRegularPath(root, summary.path, label)
   if (!existsSync(path)) throw new Error(`${label} file is missing: ${summary.path}`)
   let receipt
   try { receipt = JSON.parse(readFileSync(path, 'utf8')) } catch (error) { throw new Error(`${label} JSON is invalid: ${error.message}`) }
@@ -374,7 +413,7 @@ export function verifyNormalizedReceipt(root, summary, label = 'normalized sourc
  * random digest in memory. */
 function verifyPhysicalJsonReference(root, reference, expectedContentSha256, label = 'physical lineage reference') {
   if (!reference || !reference.path || !HASH_RE.test(String(reference.content_sha256 || '')) || !HASH_RE.test(String(reference.byte_sha256 || ''))) throw new Error(`${label} must include a path, content hash, and byte hash`)
-  const path = safePath(root, reference.path, label)
+  const path = verifiedRegularPath(root, reference.path, label)
   if (!existsSync(path)) throw new Error(`${label} file is missing: ${reference.path}`)
   const bytes = readFileSync(path)
   if (hash(bytes) !== reference.byte_sha256) throw new Error(`${label} bytes are missing or tampered: ${reference.path}`)
@@ -389,7 +428,7 @@ function verifyPhysicalJsonReference(root, reference, expectedContentSha256, lab
 function verifyPhysicalByteReference(root, reference, expectedByteSha256, label = 'physical byte reference') {
   if (!reference || !reference.path || !HASH_RE.test(String(reference.byte_sha256 || '')) || !Number.isInteger(Number(reference.bytes)) || Number(reference.bytes) < 1) throw new Error(`${label} must include a path, byte hash, and byte count`)
   if (expectedByteSha256 && reference.byte_sha256 !== expectedByteSha256) throw new Error(`${label} is not bound to the registered producer bytes`)
-  const path = safePath(root, reference.path, label)
+  const path = verifiedRegularPath(root, reference.path, label)
   if (!existsSync(path)) throw new Error(`${label} file is missing: ${reference.path}`)
   const bytes = readFileSync(path)
   if (bytes.byteLength !== Number(reference.bytes) || hash(bytes) !== reference.byte_sha256) throw new Error(`${label} bytes are missing or tampered: ${reference.path}`)
@@ -414,7 +453,7 @@ function registeredProducer(role, command = null) {
   return { command: producerCommand, code_sha256: DATA_V5_PRODUCER_CODE_SHA256 }
 }
 
-function verifySourceChain(root, reference, expectedContentSha256, planSha256, label = 'source bundle', seen = new Set()) {
+export function verifyAuthoritativeSourceChain(root, reference, expectedContentSha256, planSha256, label = 'source bundle', seen = new Set()) {
   const value = verifyPhysicalJsonReference(root, reference, expectedContentSha256, label)
   if (seen.has(value.content_sha256)) throw new Error(`${label} contains a cyclic upstream source chain`)
   seen.add(value.content_sha256)
@@ -441,10 +480,10 @@ function verifySourceChain(root, reference, expectedContentSha256, planSha256, l
 
 /* Compatibility façade for the older acquisition-only manifest callers.  New
  * authoritative callers receive the same physical custody checks through
- * verifySourceChain; the returned value is the manifest itself so existing
+ * verifyAuthoritativeSourceChain; the returned value is the manifest itself so existing
  * conversion code can still inspect its schema. */
 function verifySeparatedSourceManifest(root, reference, expectedContentSha256, planSha256, label = 'separated source manifest', seen = new Set()) {
-  const context = verifySourceChain(root, reference, expectedContentSha256, planSha256, label, seen)
+  const context = verifyAuthoritativeSourceChain(root, reference, expectedContentSha256, planSha256, label, seen)
   return context.bundle || context.acquisition
 }
 
@@ -905,7 +944,7 @@ export function produceAuthoritativeRoleArtifacts({ root, plan, predictorRegistr
   if (!root || !plan || !predictorRegistry || !sourceManifestReference) throw new Error('authoritative role production requires a physical root, plan, registry, and source manifest')
   validatePlan(plan); validatePredictorRegistry(predictorRegistry)
   const rootPath = resolve(root)
-  const sourceContext = verifySourceChain(rootPath, sourceManifestReference, sourceManifestSha256, plan.content_sha256, 'authoritative role source bundle')
+  const sourceContext = verifyAuthoritativeSourceChain(rootPath, sourceManifestReference, sourceManifestSha256, plan.content_sha256, 'authoritative role source bundle')
   const source = sourceContext.acquisition
   const sourceParts = [{ manifest: sourceContext.acquisition, kind: 'ACQUISITION' }]
   if (sourceContext.hydration) sourceParts.push({ manifest: sourceContext.hydration, kind: 'HYDRATION' })
@@ -1080,7 +1119,7 @@ function copyRoleDerivationChainFiles(sourceRoot, targetRoot, receipt, label = '
 function verifyCaptureCustody(capture, root) {
   if (!capture || capture.unavailable === true) return true
   if (!capture.partition?.path) throw new Error(`capture ${capture.asset}/${capture.instrument} has no staging partition`)
-  const partitionPath = safePath(root, capture.partition.path, 'staging partition')
+  const partitionPath = verifiedRegularPath(root, capture.partition.path, 'staging partition')
   if (!existsSync(partitionPath)) throw new Error(`staging partition is missing or tampered: ${capture.partition.path}`)
   const partitionBytes = readFileSync(partitionPath); if (hash(partitionBytes) !== capture.partition.sha256 || partitionBytes.byteLength !== capture.partition.bytes) throw new Error(`staging partition is missing or tampered: ${capture.partition.path}`)
   if (capture.adapter_code_sha256 || capture.producer_code_sha256) {
@@ -1093,7 +1132,7 @@ function verifyCaptureCustody(capture, root) {
   const normalizedReceipts = []
   for (const summary of capture.source_receipts || []) { const normalized = verifyNormalizedReceipt(root, summary); if (capture.adapter_code_sha256 && normalized.adapter_code_sha256 !== capture.adapter_code_sha256) throw new Error(`capture adapter code hash is not bound to its normalized receipt: ${capture.asset}/${capture.instrument}`); if (capture.producer_code_sha256 && normalized.producer_code_sha256 !== capture.producer_code_sha256) throw new Error(`capture producer code hash is not bound to its normalized receipt: ${capture.asset}/${capture.instrument}`); normalizedReceipts.push(normalized) }
   if (capture.mark_partition) {
-    const markPath = safePath(root, capture.mark_partition.path, 'mark staging partition')
+    const markPath = verifiedRegularPath(root, capture.mark_partition.path, 'mark staging partition')
     if (!existsSync(markPath)) throw new Error(`mark staging partition is missing or tampered: ${capture.mark_partition.path}`)
     const markBytes = readFileSync(markPath); if (hash(markBytes) !== capture.mark_partition.sha256 || markBytes.byteLength !== capture.mark_partition.bytes) throw new Error(`mark staging partition is missing or tampered: ${capture.mark_partition.path}`)
     for (const summary of capture.mark_source_receipts || []) normalizedReceipts.push(verifyNormalizedReceipt(root, summary, 'mark normalized source receipt'))
@@ -1115,7 +1154,7 @@ function verifyCaptureCustody(capture, root) {
 export function inspectCaptureLineage(capture, root) {
   if (!capture || capture.unavailable === true) return { producer_code_sha256: capture?.producer_code_sha256 || null, producer_binding_status: 'UNBOUND_LEGACY', adapter_code_sha256: capture?.adapter_code_sha256 || null, adapter_binding_status: 'UNBOUND_LEGACY' }
   if (!capture.partition?.path) throw new Error('capture lineage requires a partition')
-  const partitionPath = safePath(root, capture.partition.path, 'capture lineage partition')
+  const partitionPath = verifiedRegularPath(root, capture.partition.path, 'capture lineage partition')
   const rows = readJsonl(partitionPath); const rowHashes = [...new Set(rows.map(row => row.adapter_code_sha256).filter(Boolean))]; const producerRowHashes = [...new Set(rows.map(row => row.producer_code_sha256).filter(Boolean))]
   if (rowHashes.length > 1) throw new Error(`capture lineage has mixed adapter code hashes: ${capture.asset}/${capture.instrument}`)
   if (producerRowHashes.length > 1) throw new Error(`capture lineage has mixed producer code hashes: ${capture.asset}/${capture.instrument}`)
@@ -1154,11 +1193,45 @@ export function verifyAuthoritativeStaging({ manifest, root, planSha256 = null, 
   if (planSha256 && manifest.plan_sha256 !== planSha256) throw new Error('staging manifest is bound to a different plan')
   if (envelopeSha256 && manifest.envelope_sha256 !== envelopeSha256) throw new Error('staging manifest is bound to a different opportunity envelope')
   if (candidateSetSha256 && manifest.candidate_set_sha256 !== candidateSetSha256) throw new Error('staging manifest is bound to a different candidate set')
+  if (manifest.schema === DATA_V5.acquisition) {
+    // Funding/event captures need a physical/recomputed proof at every
+    // authoritative boundary (resume, staging verification, and conversion),
+    // not merely a complete:true bit in a caller-owned manifest.
+    for (const capture of manifest.captures || []) {
+      if (capture.series_type !== 'funding_events' || capture.coverage?.complete !== true) continue
+      if (capture.coverage?.boundaries_covered !== true || capture.coverage?.source_pagination_complete !== true) throw new Error('completed funding acquisition lacks exact source boundaries or complete source pagination')
+      revalidateCompletedAcquisitionCapture(capture, capture, root)
+    }
+  }
   if (requireComplete) {
     if (![DATA_V5.acquisition, DATA_V5.hydration].includes(manifest.schema) || manifest.status !== 'STAGING_COMPLETE' || manifest.storage_role !== 'STAGING' || manifest.staging_format !== 'JSONL' || manifest.authoritative !== false) throw new Error('authoritative source chains require a complete non-authoritative JSONL acquisition or hydration manifest')
     const captures = ensureArray(manifest.captures, 'completed source captures'); const required = captures.filter(capture => capture.required !== false)
     if (!captures.length || !required.length || required.some(capture => capture.unavailable === true || capture.coverage?.complete !== true || !capture.partition || !capture.source_receipts?.length)) throw new Error(`completed ${manifest.schema === DATA_V5.hydration ? 'opportunity hydration' : 'acquisition'} chain contains an empty, unavailable, or incomplete required capture`)
-    if (manifest.schema === DATA_V5.acquisition && manifest.base_complete === false) throw new Error('completed acquisition chain does not declare base coverage complete')
+    if (manifest.schema === DATA_V5.acquisition) {
+      // Completion is a derived custody fact, not a caller assertion.  Every
+      // authoritative consumer uses this verifier, so recompute the complete
+      // tuple from the physical capture inventory before accepting a resume,
+      // conversion, or promotion.  In particular, undefined fields and a
+      // self-rehashed contradictory manifest must fail closed.
+      const complete = capture => capture.unavailable !== true && capture.coverage?.complete === true && capture.partition?.storage_role === 'STAGING' && (capture.series_type !== 'funding_events' || (capture.coverage?.boundaries_covered === true && capture.coverage?.source_pagination_complete === true))
+      const optional = captures.filter(capture => capture.required === false)
+      const expectedCompletion = {
+        base_complete: required.length > 0 && required.every(complete),
+        declared_complete: captures.length > 0 && captures.every(complete),
+        full_plan_complete: captures.length > 0 && captures.every(complete),
+        completion_scope: captures.length > 0 && captures.every(complete) ? 'ALL_DECLARED' : required.length > 0 && required.every(complete) ? 'BASE_ONLY' : 'NONE',
+        required_series_count: required.length,
+        required_complete_count: required.filter(complete).length,
+        optional_series_count: optional.length,
+        optional_complete_count: optional.filter(complete).length,
+        optional_complete: optional.every(complete),
+        unavailable_required: required.filter(capture => !complete(capture)).map(seriesKey).sort(),
+        unavailable_optional: optional.filter(capture => !complete(capture)).map(seriesKey).sort(),
+      }
+      for (const [field, expected] of Object.entries(expectedCompletion)) {
+        if (stable(manifest[field]) !== stable(expected)) throw new Error(`acquisition completion contract field ${field} is missing or inconsistent with its physical captures`)
+      }
+    }
     if (manifest.schema === DATA_V5.hydration && manifest.hydrated_before_outcomes !== true) throw new Error('opportunity hydration is not frozen before outcomes')
     if (manifest.schema === DATA_V5.hydration && captures.some(capture => capture.instrument !== 'BINANCE_SPOT' && (capture.mark_coverage?.complete !== true || !capture.mark_partition || !capture.mark_source_receipts?.length))) throw new Error('completed derivative opportunity hydration lacks a complete bound mark capture')
     const identities = captures.map(capture => manifest.schema === DATA_V5.hydration ? `${capture.asset}|${capture.instrument}|${capture.symbol}|${capture.execution_start}|${capture.execution_end}` : seriesKey(capture)); if (new Set(identities).size !== identities.length) throw new Error('completed source chain contains duplicate capture identities')
@@ -1241,7 +1314,7 @@ export function verifySourceBundleManifest({ root, reference, expectedContentSha
   if (!root || !reference) throw new Error('source bundle verification requires a portable root and physical reference')
   const bundle = verifyPhysicalJsonReference(resolve(root), reference, expectedContentSha256 || reference.content_sha256, 'source bundle manifest')
   if (bundle.schema !== DATA_V5.sourceBundle) throw new Error('source bundle verification received a non-bundle manifest')
-  const context = verifySourceChain(resolve(root), reference, expectedContentSha256 || reference.content_sha256, planSha256 || bundle.plan_sha256, 'source bundle manifest')
+  const context = verifyAuthoritativeSourceChain(resolve(root), reference, expectedContentSha256 || reference.content_sha256, planSha256 || bundle.plan_sha256, 'source bundle manifest')
   return context
 }
 
@@ -1283,6 +1356,7 @@ function expectedFundingSlots(series) {
 
 const FUNDING_CADENCES = Object.freeze([2 * 60 * 60 * 1000, 4 * 60 * 60 * 1000, 8 * 60 * 60 * 1000])
 const FUNDING_GAP_TOLERANCE = 60_000
+const canonicalFundingOrigin = (time, cadence) => Math.round(Number(time) / cadence) * cadence
 
 /* Binance has changed funding cadence over time (SOL is a known example).
  * Infer only the cadence actually observed in the bounded event sequence; a
@@ -1297,7 +1371,12 @@ export function discoverFundingCadenceSegments({ rows, startAt, endAt } = {}) {
   for (let index = 1; index <= ordered.length; index++) {
     if (index < ordered.length && cadences[index] === cadences[groupStart]) continue
     const effectiveFrom = groupStart === 0 ? start : ordered[groupStart]; const effectiveTo = index < ordered.length ? ordered[index] : end; const cadence = cadences[groupStart]; if (!(effectiveTo > effectiveFrom) || !Number.isInteger(cadence) || cadence <= 0) throw new Error('funding cadence discovery produced an invalid segment')
-    segments.push({ effective_from: iso(effectiveFrom), effective_to: iso(effectiveTo), cadence_ms: cadence, origin_at: iso(ordered[groupStart]), discovery: 'OBSERVED_EVENT_GAPS' }); groupStart = index
+    // Funding API timestamps can carry a small publication jitter (for
+    // example 00:00:00.001Z).  A discovered segment's origin is therefore
+    // bound to the deterministic UTC cadence grid, while raw_event_time stays
+    // untouched for source identity and audit.  The frozen 60s tolerance is
+    // checked by canonicalizeFundingRows after this mapping.
+    segments.push({ effective_from: iso(effectiveFrom), effective_to: iso(effectiveTo), cadence_ms: cadence, origin_at: iso(canonicalFundingOrigin(ordered[groupStart], cadence)), discovery: 'OBSERVED_EVENT_GAPS' }); groupStart = index
   }
   return segments
 }
@@ -1380,7 +1459,15 @@ export function makeTimeframeRequirements({ declarations = [], precommitSha256 =
 export function makeTimeframeRequirementsFromPredictorRegistry({ predictorRegistry, precommitSha256 = null } = {}) {
   const registry = validatePredictorRegistry(predictorRegistry)
   const declarations = [...registry.values()].map(predictor => {
-    const family = `${predictor.source_family} ${predictor.recipe?.source_series || ''}`.toLowerCase(); const isFunding = family.includes('fund'); const isMetrics = family.includes('metric') || family.includes('open_interest') || family.includes('oi'); const interval = predictor.source_timeframe || (isFunding || isMetrics ? 'event' : '4h'); const seriesTypes = isFunding ? ['funding_events'] : isMetrics ? ['metrics_events'] : family.includes('mark') ? ['mark_bars'] : ['signal_bars']; const sourceField = String(predictor.source_field || predictor.recipe?.source_field || '').toLowerCase(); const metricFieldAliases = { sum_open_interest: 'open_interest', sum_open_interest_value: 'open_interest_value', count_toptrader_long_short_ratio: 'top_trader_account_long_short_ratio', sum_toptrader_long_short_ratio: 'top_trader_position_long_short_ratio', count_long_short_ratio: 'global_long_short_ratio', sum_taker_long_short_vol_ratio: 'taker_buy_sell_volume_ratio' }; const canonicalField = metricFieldAliases[sourceField] || sourceField; const metricFields = new Set(['open_interest', 'open_interest_value', 'top_trader_account_long_short_ratio', 'top_trader_position_long_short_ratio', 'global_long_short_ratio', 'taker_buy_sell_volume_ratio']); return { predictor_id: predictor.id, interval, series_types: seriesTypes, context_only: predictor.trade_scope === 'CONTEXT_ONLY' || predictor.recipe?.context_only === true, ...(isMetrics ? { required_fields: metricFields.has(canonicalField) ? [canonicalField] : [], minimum_field_coverage: 0.95 } : {}) }
+    const family = String(predictor.source_family || '').trim().toLowerCase(); const sourceField = String(predictor.source_field || predictor.recipe?.source_field || '').trim().toLowerCase(); const metricFieldAliases = { sum_open_interest: 'open_interest', sum_open_interest_value: 'open_interest_value', count_toptrader_long_short_ratio: 'top_trader_account_long_short_ratio', sum_toptrader_long_short_ratio: 'top_trader_position_long_short_ratio', count_long_short_ratio: 'global_long_short_ratio', sum_taker_long_short_vol_ratio: 'taker_buy_sell_volume_ratio' }; const canonicalField = metricFieldAliases[sourceField] || sourceField; const metricFields = new Set(['open_interest', 'open_interest_value', 'top_trader_account_long_short_ratio', 'top_trader_position_long_short_ratio', 'global_long_short_ratio', 'taker_buy_sell_volume_ratio']); const explicitSeriesTypes = predictor.recipe?.required_series_types || null; let seriesTypes
+    if (explicitSeriesTypes) seriesTypes = explicitSeriesTypes
+    else if (sourceField === 'oi_weighted_funding') throw new Error(`predictor ${predictor.id} composite market-flow field requires explicit recipe.required_series_types`)
+    else if (metricFields.has(canonicalField) || ['metrics', 'metrics_events', 'open_interest_metrics', 'market_flow_metrics'].includes(family)) seriesTypes = ['metrics_events']
+    else if (sourceField === 'funding_rate' || sourceField === 'funding' || ['funding', 'funding_events'].includes(family)) seriesTypes = ['funding_events']
+    else if (['mark', 'mark_bars', 'mark_price'].includes(family) || sourceField.startsWith('mark_')) seriesTypes = ['mark_bars']
+    else if (family === 'market_flow') throw new Error(`predictor ${predictor.id} market-flow field lacks an explicit series mapping`)
+    else seriesTypes = ['signal_bars']
+    const eventSeries = seriesTypes.some(value => value === 'funding_events' || value === 'metrics_events'); const interval = predictor.source_timeframe || (eventSeries ? 'event' : '4h'); if (interval === 'event' && seriesTypes.some(value => !['funding_events', 'metrics_events'].includes(value))) throw new Error(`predictor ${predictor.id} mixes event and bar series without a valid timeframe`); return { predictor_id: predictor.id, interval, series_types: seriesTypes, context_only: predictor.trade_scope === 'CONTEXT_ONLY' || predictor.recipe?.context_only === true, ...(seriesTypes.includes('metrics_events') ? { required_fields: metricFields.has(canonicalField) ? [canonicalField] : [], minimum_field_coverage: 0.95 } : {}) }
   })
   return makeTimeframeRequirements({ declarations, precommitSha256, predictorRegistrySha256: predictorRegistry.content_sha256 })
 }
@@ -1476,22 +1563,88 @@ export function validateDatedFuturesCatalog(catalog, { root = null } = {}) {
     if (stable(receipts.map(receipt => receipt.content_sha256).sort()) !== stable([...source.raw_receipt_sha256].sort()) || stable(receipts.map(receipt => receipt.byte_sha256).sort()) !== stable([...source.raw_receipt_byte_sha256].sort())) throw new Error('dated catalog raw receipt hashes are not bound')
   } else throw new Error('dated-futures catalog persistence status is invalid')
   const responseBytes = new Set(listingResponses.map(response => response.raw_byte_sha256)); const responseByByte = new Map(listingResponses.map(response => [response.raw_byte_sha256, response])); const receiptByContent = new Map((source.raw_receipts || []).map(receipt => [receipt.content_sha256, receipt])); const receiptByByte = new Map((source.raw_receipts || []).map(receipt => [receipt.byte_sha256, receipt])); const verifyArchiveRefs = contract => { if (contract.archive_ingestion_status !== 'ARCHIVE_INGESTED') return true; if (contract.archive_coverage_complete !== true || !Array.isArray(contract.archive_raw_references) || contract.archive_raw_references.length < 2 || !root) throw new Error(`dated contract ${contract.symbol} claims archive ingestion without complete physical archive custody`); const kinds = new Set(); const paths = new Set(); for (const reference of contract.archive_raw_references) { if (paths.has(reference.path)) throw new Error(`dated contract ${contract.symbol} has duplicate archive raw path`); paths.add(reference.path); kinds.add(reference.kind); const path = safePath(root, reference.path, 'dated archive raw reference'); if (!existsSync(path) || readFileSync(path).byteLength !== reference.bytes || hash(readFileSync(path)) !== reference.sha256) throw new Error(`dated contract ${contract.symbol} archive bytes are missing or tampered: ${reference.path}`) } if (!kinds.has('ARCHIVE_ZIP') || !kinds.has('ARCHIVE_CHECKSUM')) throw new Error(`dated contract ${contract.symbol} archive custody lacks ZIP and CHECKSUM bytes`); return true }
-  if (source.persistence_status === 'RAW_RECEIPTS_BOUND') {
-    for (const contract of catalog.contracts || []) {
-      const byteRefs = contract.source_listing_response_byte_sha256 || []; const receiptRefs = contract.source_receipt_sha256 || []
-      if (!byteRefs.length || receiptRefs.length !== byteRefs.length || new Set(receiptRefs).size !== receiptRefs.length) throw new Error(`dated contract ${contract.symbol} is not bound to an exact listing receipt set`)
-      const matchedBytes = []
-      for (const receiptRef of receiptRefs) { const receipt = receiptByContent.get(receiptRef); const matches = listingResponses.filter(response => response.raw_receipt_sha256 === receiptRef && response.raw_byte_sha256 === receipt?.byte_sha256 && response.raw_receipt_path === receipt?.path); if (!receipt || matches.length !== 1 || !byteRefs.includes(receipt.byte_sha256)) throw new Error(`dated contract ${contract.symbol} listing response receipt mapping is invalid`); matchedBytes.push(receipt.byte_sha256) }
-      if (stable([...matchedBytes].sort()) !== stable([...byteRefs].sort())) throw new Error(`dated contract ${contract.symbol} listing response byte/receipt sets do not match`); verifyArchiveRefs(contract)
+  const verifyTradeabilityMetadata = contract => {
+    if (contract.tradeable !== true) return true
+    if (!root) throw new Error(`dated contract ${contract.symbol} tradeability metadata requires a physical root`)
+    const refs = contract.tradeability_metadata_refs
+    const required = ['expiry', 'contract_spec', 'margin', 'liquidation', 'settlement']
+    if (!refs || required.some(kind => !refs[kind])) throw new Error(`dated contract ${contract.symbol} tradeability metadata receipts are incomplete`)
+    const metadataPaths = new Set()
+    const sourceIdentities = new Map()
+    for (const kind of required) {
+      const reference = refs[kind]
+      if (metadataPaths.has(reference.path)) throw new Error(`dated contract ${contract.symbol} reuses a metadata receipt across tradeability kinds`)
+      metadataPaths.add(reference.path)
+      const path = verifiedRegularPath(root, reference.path, `dated ${kind} metadata receipt`)
+      const bytes = readFileSync(path)
+      if (bytes.byteLength !== reference.bytes || hash(bytes) !== reference.byte_sha256) throw new Error(`dated contract ${contract.symbol} ${kind} metadata receipt bytes are missing or tampered`)
+      let value
+      try { value = JSON.parse(bytes.toString('utf8')) } catch { throw new Error(`dated contract ${contract.symbol} ${kind} metadata receipt is not JSON`) }
+      if (value.schema !== DATA_V5.metadata || value.content_sha256 !== reference.content_sha256 || value.content_sha256 !== ownHash(value)) throw new Error(`dated contract ${contract.symbol} ${kind} metadata receipt content is not hash-bound`)
+      if (String(value.kind || '').toUpperCase() !== kind.toUpperCase() && !(kind === 'contract_spec' && String(value.kind || '').toUpperCase() === 'CONTRACT_SPEC')) throw new Error(`dated contract ${contract.symbol} ${kind} metadata receipt kind is not bound`)
+      if (!['PUBLIC_OBSERVED', 'USER_BOUND'].includes(value.status) || !Array.isArray(value.records) || !value.records.length) throw new Error(`dated contract ${contract.symbol} ${kind} metadata receipt is not authoritative`)
+      try { validateContractSchema(value) } catch (error) { throw new Error(`dated contract ${contract.symbol} ${kind} metadata receipt schema is invalid: ${error.message}`) }
+      const matching = value.records.filter(row => String(row.asset || '').toLowerCase() === String(contract.asset).toLowerCase() && String(row.venue || '').toUpperCase() === 'BINANCE' && String(row.instrument || '').toUpperCase() === 'BINANCE_USDM_DATED_FUTURE' && String(row.symbol || '').toUpperCase() === String(contract.symbol).toUpperCase())
+      if (!matching.length) throw new Error(`dated contract ${contract.symbol} ${kind} metadata receipt is not bound to the exact contract identity`)
+      const sourceReceipts = Array.isArray(value.source_receipts) ? value.source_receipts : []
+      if (!sourceReceipts.length) throw new Error(`dated contract ${contract.symbol} ${kind} metadata receipt lacks physical source custody`)
+      const physicalSourceBytes = new Set()
+      const physicalSourcePaths = new Set()
+      const physicalRawPaths = new Set()
+      for (const sourceReceipt of sourceReceipts) {
+        const normalizedSource = verifyNormalizedReceipt(root, sourceReceipt, `dated ${kind} metadata source receipt`)
+        physicalSourcePaths.add(String(sourceReceipt.path))
+        for (const raw of normalizedSource.raw_receipts || []) { physicalSourceBytes.add(raw.byte_sha256); physicalRawPaths.add(String(raw.path)) }
+      }
+      sourceIdentities.set(kind, { receiptPaths: physicalSourcePaths, rawPaths: physicalRawPaths, rawBytes: physicalSourceBytes })
+      const lifecycleStart = timestamp(contract.first_bar_at || contract.onboard_at || contract.expiry_at)
+      const lifecycleEnd = timestamp(contract.expiry_at || contract.last_bar_at || contract.first_bar_at)
+      const lifecycleRows = matching.filter(row => {
+        const from = timestamp(row.effective_from); const to = timestamp(row.effective_to); const available = timestamp(row.availability_time)
+        if (!(Number.isFinite(from) && Number.isFinite(to) && Number.isFinite(available))) return false
+        if (kind !== 'settlement') return from <= lifecycleStart && to >= lifecycleEnd && available <= lifecycleStart
+        // Settlement is an outcome observation. The official event must be at
+        // or after expiry, and it can become available only at/after that
+        // event. The receipt capture is the catalog-level upper bound; the
+        // execution label supplies the stricter per-trade resolution bound.
+        const expiryAt = timestamp(row.expiry || row.delivery_date)
+        const eventAt = timestamp(row.event_time)
+        const settlementAt = timestamp(row.settlement_time)
+        const capturedAt = timestamp(value.captured_at)
+        const sourceHash = String(row.settlement_mark_source_sha256 || '')
+        return from <= eventAt && to >= eventAt && expiryAt === lifecycleEnd && eventAt === settlementAt && eventAt >= lifecycleEnd && available >= eventAt && available <= capturedAt && Number(row.settlement_price) > 0 && Boolean(row.settlement_mark_event_id) && physicalSourceBytes.has(sourceHash) && row.source_byte_sha256 === sourceHash && row.source_receipt_sha256 === value.source_receipt_sha256
+      })
+      if (lifecycleRows.length !== 1) throw new Error(`dated contract ${contract.symbol} ${kind} metadata does not uniquely cover the bound contract lifecycle`)
+      if (kind === 'expiry' && !lifecycleRows.some(row => timestamp(row.expiry || row.delivery_date) === timestamp(contract.expiry_at))) throw new Error(`dated contract ${contract.symbol} expiry metadata does not bind the catalog expiry`)
+      if (kind === 'settlement' && timestamp(lifecycleRows[0].expiry || lifecycleRows[0].delivery_date) !== timestamp(contract.expiry_at)) throw new Error(`dated contract ${contract.symbol} settlement metadata does not bind the catalog expiry/price`)
+    }
+    const expiryIdentity = sourceIdentities.get('expiry'); const settlementIdentity = sourceIdentities.get('settlement')
+    if (expiryIdentity && settlementIdentity) {
+      if ([...settlementIdentity.receiptPaths].some(path => expiryIdentity.receiptPaths.has(path))) throw new Error(`dated contract ${contract.symbol} expiry and settlement metadata may not reuse the same physical source receipt`)
+      if ([...settlementIdentity.rawPaths].some(path => expiryIdentity.rawPaths.has(path))) throw new Error(`dated contract ${contract.symbol} expiry and settlement metadata may not reuse the same underlying raw source path`)
+      if ([...settlementIdentity.rawBytes].some(byteSha => expiryIdentity.rawBytes.has(byteSha))) throw new Error(`dated contract ${contract.symbol} expiry and settlement metadata may not reuse the same underlying raw source bytes`)
     }
     return true
   }
   for (const contract of catalog.contracts || []) {
-    if (contract.expiry_binding_status === 'UNAVAILABLE' || contract.contract_spec_status === 'UNAVAILABLE') { if (contract.tradeable !== false) throw new Error(`dated contract ${contract.symbol} is tradeable without expiry/spec binding`) }; verifyArchiveRefs(contract)
+    if (source.persistence_status === 'RAW_RECEIPTS_BOUND') {
+      const byteRefs = contract.source_listing_response_byte_sha256 || []; const receiptRefs = contract.source_receipt_sha256 || []
+      if (!byteRefs.length || receiptRefs.length !== byteRefs.length || new Set(receiptRefs).size !== receiptRefs.length) throw new Error(`dated contract ${contract.symbol} is not bound to an exact listing receipt set`)
+      const matchedBytes = []
+      for (const receiptRef of receiptRefs) { const receipt = receiptByContent.get(receiptRef); const matches = listingResponses.filter(response => response.raw_receipt_sha256 === receiptRef && response.raw_byte_sha256 === receipt?.byte_sha256 && response.raw_receipt_path === receipt?.path); if (!receipt || matches.length !== 1 || !byteRefs.includes(receipt.byte_sha256)) throw new Error(`dated contract ${contract.symbol} listing response receipt mapping is invalid`); matchedBytes.push(receipt.byte_sha256) }
+      if (stable([...matchedBytes].sort()) !== stable([...byteRefs].sort())) throw new Error(`dated contract ${contract.symbol} listing response byte/receipt sets do not match`)
+    }
+    if (contract.tradeable === true) {
+      const refs = contract.archive_physical_capture_refs
+      if (!contract.expiry_at || contract.expiry_binding_status !== 'BOUND' || !['BOUND', 'PUBLIC_OBSERVED'].includes(contract.contract_spec_status) || contract.margin_status !== 'BOUND' || contract.liquidation_status !== 'BOUND' || contract.settlement_status !== 'BOUND' || contract.archive_ingestion_status !== 'ARCHIVE_INGESTED' || contract.archive_coverage_complete !== true || !refs || !HASH_RE.test(String(refs.jsonl_partition_sha256 || '')) || !HASH_RE.test(String(refs.parquet_partition_sha256 || '')) || !HASH_RE.test(String(refs.dataset_root_sha256 || ''))) throw new Error(`dated contract ${contract.symbol} is tradeable without exact expiry/spec/margin/liquidation/settlement/archive binding`)
+      verifyTradeabilityMetadata(contract)
+    } else if (contract.expiry_binding_status === 'UNAVAILABLE' || contract.contract_spec_status === 'UNAVAILABLE') {
+      if (contract.tradeable !== false) throw new Error(`dated contract ${contract.symbol} is tradeable without expiry/spec binding`)
+    }
+    verifyArchiveRefs(contract)
     const byteRefs = contract.source_listing_response_byte_sha256 || []; if (!byteRefs.length || byteRefs.some(value => !responseBytes.has(value))) throw new Error(`dated contract ${contract.symbol} is not bound to a listing response byte hash`)
     if (source.persistence_status === 'RAW_RECEIPTS_BOUND') {
-      const receiptRefs = contract.source_receipt_sha256 || []; if (receiptRefs.length !== byteRefs.length || !receiptRefs.length) throw new Error(`dated contract ${contract.symbol} is not bound to an exact listing receipt set`)
-      for (const byteRef of byteRefs) { const response = responseByByte.get(byteRef); const receiptRef = response?.raw_receipt_sha256; const receipt = receiptByContent.get(receiptRef); if (!receipt || receipt.byte_sha256 !== byteRef || receiptByByte.get(byteRef)?.content_sha256 !== receiptRef || !receiptRefs.includes(receiptRef) || response.raw_receipt_path !== receipt.path) throw new Error(`dated contract ${contract.symbol} listing response receipt mapping is invalid`) }
+      const receiptRefs = contract.source_receipt_sha256 || []; if (receiptRefs.length !== byteRefs.length || !receiptRefs.length || receiptRefs.some(receiptRef => !receiptByContent.has(receiptRef))) throw new Error(`dated contract ${contract.symbol} is not bound to an exact listing receipt set`)
     }
   }
   return true
@@ -1523,7 +1676,7 @@ export function makeFiveYearAuthoritativePlan({ asOf = now(), years = 5, assets 
   const rawEnd = timestamp(asOf); const topBounds = completedBounds(rawEnd, '4h', years); const completedThrough = topBounds.cutoff; const end = topBounds.end; const start = topBounds.start
   const frozenRequirements = timeframeRequirements ? (validateContractSchema(timeframeRequirements), assertOwnHash(timeframeRequirements, 'strategy-v5-timeframe-requirements/1', 'timeframe requirements'), timeframeRequirements) : predictorRegistry ? makeTimeframeRequirementsFromPredictorRegistry({ predictorRegistry, precommitSha256 }) : null
   if (frozenRequirements && frozenRequirements.status !== 'FROZEN') throw new Error('timeframe requirements must be frozen')
-  const hasFrozenRequirements = Boolean(frozenRequirements); const intervals = frozenRequirements?.required_intervals || ['4h']; const declarations = frozenRequirements?.declarations || [{ interval: '4h', series_types: ['signal_bars', 'mark_bars', 'funding_events', 'metrics_events'], required_fields: [], minimum_field_coverage: 0.95 }]; const metricsDeclarationsFor = interval => declarations.filter(declaration => declaration.interval === interval && declaration.series_types.includes('metrics_events')); const metricFieldsFor = interval => [...new Set(metricsDeclarationsFor(interval).flatMap(declaration => declaration.required_fields || []))].sort(); const metricMinimumFor = interval => { const values = metricsDeclarationsFor(interval).map(declaration => Number(declaration.minimum_field_coverage ?? 0.95)); return values.length ? Math.min(...values) : 0.95 }; const metricsRequired = hasFrozenRequirements && declarations.some(declaration => declaration.series_types.includes('metrics_events')); const seriesTypesFor = interval => new Set(declarations.filter(declaration => declaration.interval === interval).flatMap(declaration => declaration.series_types)); const scopeFor = (interval, seriesType) => { const matches = declarations.filter(declaration => declaration.interval === interval && declaration.series_types.includes(seriesType)); return matches.length && matches.every(declaration => declaration.context_only === true) ? 'CONTEXT_ONLY' : null }
+  const hasFrozenRequirements = Boolean(frozenRequirements); const intervals = frozenRequirements?.required_intervals || ['4h']; const declarations = frozenRequirements?.declarations || [{ interval: '4h', series_types: ['signal_bars', 'mark_bars', 'funding_events', 'metrics_events'], required_fields: [], minimum_field_coverage: 0.95 }]; const metricsDeclarationsFor = interval => declarations.filter(declaration => declaration.interval === interval && declaration.series_types.includes('metrics_events')); const metricFieldsFor = interval => [...new Set(metricsDeclarationsFor(interval).flatMap(declaration => declaration.required_fields || []))].sort(); const metricMinimumFor = interval => { const values = metricsDeclarationsFor(interval).map(declaration => Number(declaration.minimum_field_coverage ?? 0.95)); return values.length ? Math.max(...values) : 0.95 }; const metricsRequired = hasFrozenRequirements && declarations.some(declaration => declaration.series_types.includes('metrics_events')); const seriesTypesFor = interval => new Set(declarations.filter(declaration => declaration.interval === interval).flatMap(declaration => declaration.series_types)); const scopeFor = (interval, seriesType) => { const matches = declarations.filter(declaration => declaration.interval === interval && declaration.series_types.includes(seriesType)); return matches.length && matches.every(declaration => declaration.context_only === true) ? 'CONTEXT_ONLY' : null }
   const eventTypes = new Set(declarations.filter(declaration => declaration.interval === 'event').flatMap(declaration => declaration.series_types)); const series = []; const catalogContracts = datedFuturesCatalog?.contracts || []; const suppliedContracts = [...datedContracts, ...catalogContracts]
   for (const value of selected) {
     for (const interval of intervals) {
@@ -1560,8 +1713,9 @@ function validatePlan(plan) {
 
 function readCheckpoint(path, plan, rootReference, expectedPriorSha256 = undefined, binding = null, { requireCaptureLineage = false, lineageRoot = null } = {}) {
   if (!existsSync(path)) return { schema: DATA_V5.checkpoint, version: 1, plan_sha256: plan.content_sha256, root_reference: rootReference, completed: {}, content_sha256: null }
+  const checkpointPath = verifiedRegularPath(dirname(resolve(path)), basename(resolve(path)), 'data checkpoint')
   let value
-  try { value = JSON.parse(readFileSync(path, 'utf8')) } catch (error) { throw new Error(`checkpoint JSON is invalid: ${error.message}`) }
+  try { value = JSON.parse(readFileSync(checkpointPath, 'utf8')) } catch (error) { throw new Error(`checkpoint JSON is invalid: ${error.message}`) }
   assertOwnHash(value, DATA_V5.checkpoint, 'data checkpoint'); validateContractSchema(value); if (value.producer_code_sha256 !== DATA_V5_PRODUCER_CODE_SHA256 || value.coverage_rules_sha256 !== DATA_V5_COVERAGE_RULES_SHA256) throw new Error('checkpoint producer or coverage-rules hash is stale')
   if (value.plan_sha256 !== plan.content_sha256 || value.root_reference !== rootReference) throw new Error('checkpoint is bound to a different plan or portable root')
   if (expectedPriorSha256 !== undefined && (value.content_sha256 || null) !== expectedPriorSha256) throw new Error('checkpoint compare-and-swap predecessor hash mismatch')
@@ -1635,6 +1789,426 @@ export function rebaseAcquisitionCheckpoint({ manifest, sourceRoot, targetRoot, 
   return saveCheckpoint(checkpointFile, { plan_sha256: manifest.plan_sha256, root_reference: rootReference, completed, capture_lineage: captureLineage })
 }
 
+/*
+ * Local raw replay is deliberately separate from rebaseAcquisitionCheckpoint.
+ * Rebase only preserves old normalized rows and therefore must never make a
+ * legacy producer/adapter lineage look current.  Replay reopens every
+ * retained response, runs the current public adapter through a no-network
+ * response shim, and then runs the current producer/coverage boundary.  The
+ * source root/checkpoint is read-only; all output is content addressed below
+ * a distinct target root.
+ */
+function replayEndpointForSeries(series) {
+  if (series.series_type === 'funding_events') return 'https://fapi.binance.com/fapi/v1/fundingRate'
+  if (series.series_type === 'mark_bars' || series.instrument === 'BINANCE_USDM_PERPETUAL_MARK') return 'https://fapi.binance.com/fapi/v1/markPriceKlines'
+  if (series.instrument === 'BINANCE_USDM_PERPETUAL') return 'https://fapi.binance.com/fapi/v1/klines'
+  if (series.instrument === 'BINANCE_SPOT') return 'https://api.binance.com/api/v3/klines'
+  throw new Error(`local raw replay does not support REST series ${series.instrument}/${series.series_type}`)
+}
+
+function replayArchiveMonthKeys(startAt, endAt) {
+  const start = timestamp(startAt); const end = timestamp(endAt); const cursor = new Date(Date.UTC(new Date(start).getUTCFullYear(), new Date(start).getUTCMonth(), 1)); const finish = new Date(Date.UTC(new Date(end).getUTCFullYear(), new Date(end).getUTCMonth(), 1)); const result = []
+  for (; cursor <= finish; cursor.setUTCMonth(cursor.getUTCMonth() + 1)) result.push(`${cursor.getUTCFullYear()}-${String(cursor.getUTCMonth() + 1).padStart(2, '0')}`)
+  return result
+}
+
+function replayArchiveDayKeys(startAt, endAt) {
+  const start = timestamp(startAt); const end = timestamp(endAt); const cursor = new Date(Date.UTC(new Date(start).getUTCFullYear(), new Date(start).getUTCMonth(), new Date(start).getUTCDate())); const finish = new Date(Date.UTC(new Date(end).getUTCFullYear(), new Date(end).getUTCMonth(), new Date(end).getUTCDate())); const result = []
+  for (; cursor <= finish; cursor.setUTCDate(cursor.getUTCDate() + 1)) result.push(`${cursor.getUTCFullYear()}-${String(cursor.getUTCMonth() + 1).padStart(2, '0')}-${String(cursor.getUTCDate()).padStart(2, '0')}`)
+  return result
+}
+
+function replayChecksum(bytes) {
+  const match = Buffer.from(bytes).toString('utf8').match(/\b([a-f0-9]{64})\b/i)
+  if (!match) throw new Error('local raw replay checksum response has no SHA-256 digest')
+  return match[1].toLowerCase()
+}
+
+function replayRegularPath(root, reference, label) {
+  return verifiedRegularPath(root, reference, label)
+}
+
+function replaySourceReceipts(capture, series, sourceRoot, planSha256) {
+  const summaries = [...(capture.source_receipts || []), ...(capture.mark_source_receipts || [])]
+  if (!summaries.length) throw new Error(`local raw replay capture has no normalized receipt: ${seriesKey(series)}`)
+  const seenReceiptPaths = new Set()
+  const normalized = summaries.map(summary => {
+    if (seenReceiptPaths.has(summary.path)) throw new Error(`local raw replay normalized receipt path is duplicated: ${seriesKey(series)} ${summary.path}`)
+    seenReceiptPaths.add(summary.path)
+    replayRegularPath(sourceRoot, summary.path, 'local raw replay normalized receipt')
+    const value = verifyNormalizedReceipt(sourceRoot, summary, 'local raw replay normalized receipt')
+    if (value.plan_sha256 && value.plan_sha256 !== planSha256) throw new Error(`local raw replay receipt plan binding differs: ${seriesKey(series)}`)
+    if (value.series_sha256 && value.series_sha256 !== hash(series)) throw new Error(`local raw replay receipt series binding differs: ${seriesKey(series)}`)
+    if (value.series && stable({ asset: value.series.asset, instrument: value.series.instrument, symbol: value.series.symbol, interval: value.series.interval, series_type: value.series.series_type }) !== stable({ asset: series.asset, instrument: series.instrument, symbol: series.symbol, interval: series.interval, series_type: series.series_type })) throw new Error(`local raw replay receipt identity differs: ${seriesKey(series)}`)
+    return value
+  })
+  // A content-addressed raw response may legitimately be referenced by more
+  // than one distinct normalized receipt.  Reject duplicate receipt/path
+  // identities within a receipt, but leave cross-receipt reuse to the
+  // endpoint/page binding checks below.
+  const raws = normalized.flatMap(value => value.raw_receipts || [])
+  if (!raws.length) throw new Error(`local raw replay capture has no retained raw responses: ${seriesKey(series)}`)
+  for (const [summaryIndex, value] of normalized.entries()) {
+    const seenRawIdentities = new Set()
+    for (const raw of value.raw_receipts || []) {
+      const identity = `${raw.path}|${raw.byte_sha256}`
+      if (seenRawIdentities.has(identity)) throw new Error(`local raw replay raw receipt/path identity is duplicated: ${seriesKey(series)} summary ${summaryIndex}`)
+      seenRawIdentities.add(identity); replayRegularPath(sourceRoot, raw.path, 'local raw replay raw response'); verifyRawReceipt(sourceRoot, raw, 'local raw replay raw response')
+    }
+  }
+  return { normalized, raws }
+}
+
+function replayPageRows(body, series, capturedAt, { mark = false } = {}) {
+  let values
+  try { values = JSON.parse(Buffer.from(body).toString('utf8')) } catch (error) { throw new Error(`local raw replay REST response is not valid JSON: ${error.message}`) }
+  if (!Array.isArray(values)) throw new Error('local raw replay REST response is not an array')
+  const isFunding = series.series_type === 'funding_events' && !mark
+  const eventValues = values.map((value, index) => {
+    if (!value || typeof value !== 'object') throw new Error(`local raw replay REST response row ${index} is not an object/array`)
+    const event = isFunding ? Number(value.fundingTime) : Number(value?.[0]); const close = isFunding ? event : Number(value?.[6])
+    if (!Number.isFinite(event) || !Number.isFinite(close)) throw new Error(`local raw replay REST response row ${index} has an invalid timestamp`)
+    return { event, close }
+  })
+  if (eventValues.some((row, index) => index > 0 && row.event <= eventValues[index - 1].event)) throw new Error('local raw replay REST response page is unordered, duplicated, or ambiguous')
+  const captureMs = Date.parse(String(capturedAt || ''))
+  const retainedCount = isFunding || !Number.isFinite(captureMs) ? values.length : eventValues.filter(row => row.close <= captureMs).length
+  return { values, eventValues, retainedCount }
+}
+
+function replayRestPages({ series, normalized, raws, sourceRoot, capturedAt }) {
+  const pages = normalized.flatMap(value => Array.isArray(value.pagination) ? value.pagination : [])
+  if (!pages.length) throw new Error(`local raw replay REST capture has no pagination receipt: ${seriesKey(series)}`)
+  const primaryEndpoint = replayEndpointForSeries(series); const markEndpoint = 'https://fapi.binance.com/fapi/v1/markPriceKlines'; const start = series.series_type === 'funding_events' ? fundingRequestBounds(series).startTime : timestamp(series.start_at); const end = series.series_type === 'funding_events' ? fundingRequestBounds(series).endTime : timestamp(series.end_at); const step = series.series_type === 'funding_events' ? 1 : Number(series.expected_step_ms)
+  if (!Number.isInteger(step) || step <= 0) throw new Error(`local raw replay series cadence is invalid: ${seriesKey(series)}`)
+  const rawByHash = new Map(); for (const raw of raws) { if (!rawByHash.has(raw.byte_sha256)) rawByHash.set(raw.byte_sha256, []); rawByHash.get(raw.byte_sha256).push(raw) }
+  const entries = []; const keys = new Set(); const usedRawIdentities = new Set(); const groups = new Map()
+  for (const page of pages) {
+    const endpoint = String(page?.endpoint || ''); if (endpoint !== primaryEndpoint && !(series.series_type === 'funding_events' && endpoint === markEndpoint)) throw new Error(`local raw replay pagination endpoint differs from the frozen series: ${seriesKey(series)}`)
+    if (!groups.has(endpoint)) groups.set(endpoint, []); groups.get(endpoint).push(page)
+  }
+  for (const [endpoint, endpointPages] of groups.entries()) {
+    const expectedInterval = endpoint === markEndpoint && series.series_type === 'funding_events' ? '1h' : (series.series_type === 'funding_events' ? null : String(series.interval)); let expectedCursor = start; let sawEmpty = false
+    for (const [index, page] of endpointPages.entries()) {
+    if (!page || Number(page.page) !== index || !Number.isInteger(Number(page.cursor)) || page.response_sha256 === undefined || page.response_sha256 === null) throw new Error(`local raw replay pagination order/index is invalid: ${seriesKey(series)}`)
+    if (Number(page.cursor) !== expectedCursor) throw new Error(`local raw replay pagination cursor/order mismatch: ${seriesKey(series)}`)
+    if (String(page.symbol || '').toUpperCase() !== String(series.symbol).toUpperCase() || (expectedInterval === null ? page.interval !== null && page.interval !== undefined : String(page.interval) !== expectedInterval)) throw new Error(`local raw replay pagination request differs from the frozen series: ${seriesKey(series)}`)
+    const candidates = rawByHash.get(String(page.response_sha256)) || []; const raw = candidates.find(candidate => candidate.request?.endpoint === endpoint && String(candidate.request?.symbol || '').toUpperCase() === String(series.symbol).toUpperCase() && (expectedInterval === null ? candidate.request?.interval !== undefined && candidate.request?.interval !== null : String(candidate.request?.interval) === expectedInterval)); if (!raw) throw new Error(`local raw replay pagination response has no retained raw bytes: ${seriesKey(series)}`)
+    const rawIntervalMatches = expectedInterval === null ? (raw.request?.interval === undefined || raw.request?.interval === null || String(raw.request?.interval) === 'event') : String(raw.request?.interval) === expectedInterval
+    if (raw.request?.endpoint !== endpoint || String(raw.request?.symbol || '').toUpperCase() !== String(series.symbol).toUpperCase() || !rawIntervalMatches || raw.request?.response_sha256 !== raw.byte_sha256) throw new Error(`local raw replay raw request differs from the frozen page request: ${seriesKey(series)}`)
+    const keyValue = `${endpoint}|${Number(page.cursor)}`; if (keys.has(keyValue)) throw new Error(`local raw replay pagination cursor is duplicated: ${seriesKey(series)}`); keys.add(keyValue)
+    const rawIdentity = `${raw.path}|${raw.byte_sha256}`; if (usedRawIdentities.has(rawIdentity)) throw new Error(`local raw replay pagination response bytes are reused for ambiguous pages: ${seriesKey(series)}`); usedRawIdentities.add(rawIdentity)
+    const parsed = replayPageRows(readFileSync(replayRegularPath(sourceRoot, raw.path, 'local raw replay raw response')), series, capturedAt, { mark: endpoint === markEndpoint })
+    if (Number(page.row_count) !== parsed.retainedCount) throw new Error(`local raw replay page row count differs from retained response bytes: ${seriesKey(series)}`)
+    const pageStep = endpoint === markEndpoint && series.series_type === 'funding_events' ? 60 * 60 * 1000 : step
+    // Mark-price klines are UTC-grid aligned and the exchange may include
+    // extra aligned candles around the funding query bounds. Their exact
+    // settlement rows are rebound and checked below; funding pages themselves
+    // remain strictly bounded by the frozen request.
+    const lowerBound = endpoint === markEndpoint && series.series_type === 'funding_events' ? -Infinity : start
+    const upperBound = endpoint === markEndpoint && series.series_type === 'funding_events' ? Infinity : end
+    if (parsed.eventValues.some(row => row.event < lowerBound || row.event > upperBound)) throw new Error(`local raw replay page event is outside the frozen series bounds: ${seriesKey(series)}`)
+    if (parsed.eventValues.length) expectedCursor = parsed.eventValues.at(-1).event + (endpoint === markEndpoint && series.series_type === 'funding_events' ? 60 * 60 * 1000 : step)
+    else { if (sawEmpty || index !== endpointPages.length - 1) throw new Error(`local raw replay empty page is not the final ordered page: ${seriesKey(series)}`); sawEmpty = true }
+    entries.push({ page, raw, key: keyValue, endpoint, parsed })
+    }
+  }
+  const responseHashes = [...new Set(raws.map(raw => `${raw.path}|${raw.byte_sha256}`))].sort(); const pageHashes = [...new Set(entries.map(entry => `${entry.raw.path}|${entry.raw.byte_sha256}`))].sort()
+  if (stable(responseHashes) !== stable(pageHashes)) throw new Error(`local raw replay REST raw/page inventory mismatch: ${seriesKey(series)}`)
+  return { entries, start, end, endpoints: [...groups.keys()].sort() }
+}
+
+function verifyFundingSettlementMarkPageBindings(rows, entries) {
+  const markEndpoint = 'https://fapi.binance.com/fapi/v1/markPriceKlines'; const marks = new Map()
+  for (const entry of entries.filter(value => value.endpoint === markEndpoint)) {
+    for (const value of entry.parsed.values || []) {
+      const event = Number(value?.[0]); if (!Number.isFinite(event)) continue
+      const key = `${entry.raw.byte_sha256}|${event}`
+      if (marks.has(key)) throw new Error(`funding settlement mark source has duplicate physical event identity ${iso(event)}`)
+      marks.set(key, Number(value?.[1]))
+    }
+  }
+  for (const row of rows) {
+    const slot = timestamp(row.settlement_slot); const sourceHash = String(row.settlement_mark_source_response_sha256 || '')
+    const mark = marks.get(`${sourceHash}|${slot}`)
+    if (!Number.isFinite(mark) || mark <= 0 || mark !== Number(row.settlement_mark)) throw new Error(`funding settlement mark source response does not bind exact mark event ${iso(slot)}`)
+  }
+}
+
+function replayArchiveResponses({ series, normalized, raws, sourceRoot }) {
+  const isMetrics = series.series_type === 'metrics_events'; const files = isMetrics ? replayArchiveDayKeys(series.start_at, series.end_at) : replayArchiveMonthKeys(series.start_at, series.end_at); const requestedSymbol = String(series.symbol).toUpperCase(); const interval = String(series.interval); const expected = new Map()
+  for (const file of files) {
+    const token = isMetrics ? `${requestedSymbol}-metrics-${file}` : `${requestedSymbol}-${interval}-${file}`
+    const base = isMetrics ? `https://data.binance.vision/data/futures/um/daily/metrics/${requestedSymbol}/${token}` : `https://data.binance.vision/data/futures/um/monthly/klines/${requestedSymbol}/${interval}/${token}`
+    expected.set(`${base}.zip`, { file, kind: 'ARCHIVE_ZIP', endpoint: `${base}.zip` }); expected.set(`${base}.zip.CHECKSUM`, { file, kind: 'ARCHIVE_CHECKSUM', endpoint: `${base}.zip.CHECKSUM` })
+  }
+  const actual = new Map()
+  const uniqueRaws = []; const seenRawPaths = new Set()
+  for (const raw of raws) { const rawIdentity = `${raw.path}|${raw.byte_sha256}`; if (seenRawPaths.has(rawIdentity)) continue; seenRawPaths.add(rawIdentity); uniqueRaws.push(raw) }
+  for (const raw of uniqueRaws) {
+    const request = raw.request || {}; const endpoint = String(request.endpoint || ''); const expectedRequest = expected.get(endpoint)
+    if (!expectedRequest || request.kind !== expectedRequest.kind || String(request.symbol || '').toUpperCase() !== requestedSymbol || String(request[isMetrics ? 'day' : 'month'] || '') !== expectedRequest.file || request.response_sha256 !== raw.byte_sha256) throw new Error(`local raw replay archive request differs from the frozen series: ${seriesKey(series)}`)
+    if (actual.has(endpoint)) throw new Error(`local raw replay archive request is duplicated or ambiguous: ${seriesKey(series)}`)
+    const path = replayRegularPath(sourceRoot, raw.path, 'local raw replay archive response'); const body = readFileSync(path); actual.set(endpoint, { raw, body, expected: expectedRequest })
+  }
+  if (actual.size !== expected.size) throw new Error(`local raw replay archive file inventory is incomplete or has extra responses: ${seriesKey(series)}`)
+  for (const file of files) {
+    const token = isMetrics ? `${requestedSymbol}-metrics-${file}` : `${requestedSymbol}-${interval}-${file}`; const base = isMetrics ? `https://data.binance.vision/data/futures/um/daily/metrics/${requestedSymbol}/${token}` : `https://data.binance.vision/data/futures/um/monthly/klines/${requestedSymbol}/${interval}/${token}`; const zip = actual.get(`${base}.zip`); const checksum = actual.get(`${base}.zip.CHECKSUM`)
+    if (!zip || !checksum || replayChecksum(checksum.body) !== hash(zip.body)) throw new Error(`local raw replay archive CHECKSUM binding differs: ${seriesKey(series)} ${file}`)
+  }
+  return { expected, actual }
+}
+
+/* The archive runner keeps its resumable metrics checkpoint outside the
+ * normalized v5 capture.  A prior producer can therefore have a perfectly
+ * usable ZIP/CHECKSUM prefix even when `checkpoint.completed` has no metrics
+ * entry.  Reopen those files only when the frozen plan itself declares the
+ * exact metrics series; never discover a symbol from an unbound filename.
+ * Prefixes remain resume evidence, never normalized coverage. */
+function replayAuxiliaryMetricsCheckpoint({ series, sourceRoot }) {
+  if (series.series_type !== 'metrics_events') throw new Error(`auxiliary metrics replay requires a metrics series: ${seriesKey(series)}`)
+  const checkpointRelative = `checkpoints/metrics-${String(series.asset).toLowerCase()}-${String(series.symbol).toLowerCase()}.json`
+  const checkpointPath = replayRegularPath(sourceRoot, checkpointRelative, 'local raw replay metrics checkpoint')
+  const checkpoint = JSON.parse(readFileSync(checkpointPath, 'utf8'))
+  if (!checkpoint || checkpoint.content_sha256 !== ownHash(checkpoint)) throw new Error(`local raw replay metrics checkpoint hash is invalid: ${seriesKey(series)}`)
+  const files = replayArchiveDayKeys(series.start_at, series.end_at)
+  const requested = String(series.symbol).toUpperCase()
+  const expectedKey = hash({ kind: `METRICS-${String(series.asset).toLowerCase()}-${requested}`, asset: String(series.asset).toLowerCase(), symbol: requested, start: timestamp(series.start_at), end: timestamp(series.end_at), files })
+  if (checkpoint.key !== expectedKey) throw new Error(`local raw replay metrics checkpoint request/bounds differ from the frozen series: ${seriesKey(series)}`)
+  const savedFiles = checkpoint.files || {}
+  const savedKeys = Object.keys(savedFiles)
+  if (savedKeys.length > files.length || stable(savedKeys) !== stable(files.slice(0, savedKeys.length))) throw new Error(`local raw replay metrics checkpoint is not an exact chronological prefix of the frozen series: ${seriesKey(series)}`)
+  const actual = new Map(); const missing = []; let verifiedRawCount = 0
+  for (const file of savedKeys) {
+    const saved = savedFiles[file]
+    if (!saved || saved.file !== file || ![200, 404].includes(Number(saved.status))) throw new Error(`local raw replay metrics checkpoint status is invalid: ${seriesKey(series)} ${file}`)
+    const token = `${requested}-metrics-${file}`; const base = `https://data.binance.vision/data/futures/um/daily/metrics/${requested}/${token}`
+    const expected = new Map([[`${base}.zip`, 'ARCHIVE_ZIP'], [`${base}.zip.CHECKSUM`, 'ARCHIVE_CHECKSUM']])
+    if (Number(saved.status) === 404) {
+      missing.push(file)
+      const refs = Array.isArray(saved.raw) ? saved.raw : []
+      if (refs.length !== 1 || refs[0].kind !== 'HTTP_ERROR' || Number(saved.status_code) !== 404 || !Number.isFinite(Date.parse(String(saved.checked_at || ''))) || !Number.isInteger(Number(saved.recheck_after_ms)) || Number(saved.recheck_after_ms) < 0) throw new Error(`local raw replay metrics missing-day receipt is ambiguous: ${seriesKey(series)} ${file}`)
+      const reference = refs[0]; const endpoint = String(reference.request?.endpoint || '')
+      if (endpoint !== `${base}.zip` || reference.request?.kind !== 'HTTP_ERROR' || Number(reference.request?.status) !== 404 || reference.sha256 === undefined) throw new Error(`local raw replay metrics missing-day request differs from the frozen series: ${seriesKey(series)} ${file}`)
+      const path = replayRegularPath(sourceRoot, reference.path, 'local raw replay metrics missing-day response'); const body = readFileSync(path)
+      if (hash(body) !== reference.sha256 || body.byteLength !== Number(reference.bytes)) throw new Error(`local raw replay metrics missing-day bytes changed: ${seriesKey(series)} ${file}`)
+      verifiedRawCount += 1
+      continue
+    }
+    const refs = Array.isArray(saved.raw) ? saved.raw : []
+    if (refs.length !== 2 || saved.archive_sha256 === undefined || saved.checksum_sha256 === undefined) throw new Error(`local raw replay metrics archive receipt is incomplete: ${seriesKey(series)} ${file}`)
+    const bodies = new Map()
+    for (const reference of refs) {
+      const endpoint = String(reference.request?.endpoint || ''); const kind = expected.get(endpoint)
+      if (!kind || reference.kind !== kind || reference.request?.kind !== kind || String(reference.request?.symbol || '').toUpperCase() !== requested || String(reference.request?.day || '') !== file || reference.sha256 === undefined) throw new Error(`local raw replay metrics archive request differs from the frozen series: ${seriesKey(series)} ${file}`)
+      const path = replayRegularPath(sourceRoot, reference.path, 'local raw replay metrics archive response'); const body = readFileSync(path)
+      if (hash(body) !== reference.sha256 || body.byteLength !== Number(reference.bytes)) throw new Error(`local raw replay metrics archive bytes changed: ${seriesKey(series)} ${file}`)
+      if (bodies.has(endpoint)) throw new Error(`local raw replay metrics archive response is duplicated: ${seriesKey(series)} ${file}`)
+      bodies.set(endpoint, body); verifiedRawCount += 1
+    }
+    const zip = bodies.get(`${base}.zip`); const checksum = bodies.get(`${base}.zip.CHECKSUM`)
+    if (!zip || !checksum || hash(zip) !== saved.archive_sha256 || hash(checksum) !== saved.checksum_sha256 || replayChecksum(checksum) !== hash(zip)) throw new Error(`local raw replay metrics CHECKSUM binding differs from retained bytes: ${seriesKey(series)} ${file}`)
+    try { parseBinanceMetricsArchive(zip, { asset: series.asset, symbol: requested, startTime: timestamp(series.start_at), endTime: timestamp(series.end_at) }) } catch (error) { throw new Error(`local raw replay metrics archive parser rejected retained bytes for ${seriesKey(series)} ${file}: ${error.message}`) }
+    actual.set(`${base}.zip`, { body: zip }); actual.set(`${base}.zip.CHECKSUM`, { body: checksum })
+  }
+  return { checkpointRelative, checkpoint, actual, missing, verifiedRawCount, files, savedKeys, savedCount: savedKeys.length, remainingCount: files.length - savedKeys.length, complete: savedKeys.length === files.length }
+}
+
+async function replayAuxiliaryMetricsFromRaw({ series, plan, sourceRoot, targetRoot, existingTargetCapture = null }) {
+  if (existingTargetCapture) verifyCaptureCustody(existingTargetCapture, targetRoot)
+  const verified = replayAuxiliaryMetricsCheckpoint({ series, sourceRoot })
+  if (!verified.complete) {
+    for (const file of verified.savedKeys) {
+      for (const reference of verified.checkpoint.files[file].raw || []) {
+        const sourcePath = replayRegularPath(sourceRoot, reference.path, 'local raw replay metrics prefix response')
+        replayWriteRaw(targetRoot, reference.path, readFileSync(sourcePath), reference.sha256, 'local raw replay metrics prefix response')
+      }
+    }
+    const targetCheckpoint = { key: verified.checkpoint.key, files: Object.fromEntries(verified.savedKeys.map(file => [file, verified.checkpoint.files[file]])) }
+    targetCheckpoint.content_sha256 = ownHash(targetCheckpoint)
+    replayWriteJson(targetRoot, verified.checkpointRelative, targetCheckpoint, 'local raw replay metrics prefix checkpoint')
+    return { partial: true, auxiliary_checkpoint_path: verified.checkpointRelative, source_checkpoint_sha256: verified.checkpoint.content_sha256, auxiliary_raw_verified_count: verified.verifiedRawCount, saved_count: verified.savedCount, remaining_count: verified.remainingCount }
+  }
+  if (verified.missing.length) return { capture: { ...replayUnavailableCapture(series), coverage: { complete: false, reason: `AUXILIARY_METRICS_MISSING_DAYS:${verified.missing.join(',')}` }, limitations: [`${seriesKey(series)}:AUXILIARY_METRICS_MISSING_DAYS:${verified.missing.join(',')}`], auxiliary_raw_verified_count: verified.verifiedRawCount, auxiliary_checkpoint_path: verified.checkpointRelative } }
+  const capturedAt = new Date(Math.max(...Object.values(verified.checkpoint.files).map(value => Date.parse(String(value.captured_at || ''))).filter(Number.isFinite))).toISOString()
+  const shim = replayResponseShim({ series, sourceRoot, archiveResponses: verified, capturedAt })
+  const capture = await acquireSeries({ series, plan, root: targetRoot, fetchImpl: shim.fetchImpl, capturedAt, fixtureOnly: true, forceArchiveReopen: true })
+  if (shim.archiveUsed.size !== verified.actual.size) throw new Error(`local raw replay did not reopen every retained auxiliary metrics archive: ${seriesKey(series)}`)
+  const receipts = (capture.source_receipts || []).map(summary => verifyNormalizedReceipt(targetRoot, summary, 'local raw replay auxiliary metrics output receipt'))
+  const lineage = inspectCaptureLineage(capture, targetRoot)
+  if (capture.series_sha256 !== hash(series) || capture.producer_code_sha256 !== DATA_V5_PRODUCER_CODE_SHA256 || capture.adapter_code_sha256 !== DATA_V5_ADAPTER_CODE_SHA256 || lineage.producer_binding_status !== 'BOUND' || lineage.adapter_binding_status !== 'BOUND') throw new Error(`local raw replay auxiliary metrics output lineage is not current: ${seriesKey(series)}`)
+  verifyCaptureCustody(capture, targetRoot)
+  if (existingTargetCapture && stable(existingTargetCapture) !== stable(capture)) throw new Error(`local raw replay existing target capture differs from deterministic auxiliary replay: ${seriesKey(series)}`)
+  return { capture, lineage, auxiliary_raw_verified_count: verified.verifiedRawCount, auxiliary_checkpoint_path: verified.checkpointRelative, source_checkpoint_sha256: verified.checkpoint.content_sha256 }
+}
+
+function replayResponseShim({ series, sourceRoot, restPages = null, archiveResponses = null, capturedAt }) {
+  const used = new Set(); const archiveUsed = new Set(); const expectedEndpoints = new Set(restPages?.endpoints || [])
+  return { used, archiveUsed, fetchImpl: async requestUrl => {
+    let url
+    try { url = new URL(String(requestUrl)) } catch { throw new Error(`local raw replay adapter requested an invalid URL: ${requestUrl}`) }
+    const endpoint = `${url.origin}${url.pathname}`
+    if (archiveResponses) {
+      const item = archiveResponses.actual.get(String(requestUrl)); if (!item) throw new Error(`local raw replay adapter requested an unretained archive URL: ${requestUrl}`)
+      archiveUsed.add(String(requestUrl)); const body = item.body
+      return { ok: true, status: 200, headers: { get: name => String(name).toLowerCase() === 'date' ? String(capturedAt) : null }, arrayBuffer: async () => Buffer.from(body) }
+    }
+    if (!restPages || !expectedEndpoints.has(endpoint)) throw new Error(`local raw replay adapter requested an unretained REST endpoint: ${requestUrl}`)
+    if (String(url.searchParams.get('symbol') || '').toUpperCase() !== String(series.symbol).toUpperCase()) throw new Error(`local raw replay adapter changed the symbol request: ${seriesKey(series)}`)
+    const interval = endpoint === 'https://fapi.binance.com/fapi/v1/markPriceKlines' && series.series_type === 'funding_events' ? '1h' : (series.series_type === 'funding_events' ? null : String(series.interval)); if (interval === null ? url.searchParams.get('interval') !== null : url.searchParams.get('interval') !== interval) throw new Error(`local raw replay adapter changed the interval request: ${seriesKey(series)}`)
+    const cursor = Number(url.searchParams.get('startTime')); const end = Number(url.searchParams.get('endTime')); const expectedEnd = Number(restPages.end)
+    if (!Number.isInteger(cursor) || cursor < Number(restPages.start) || end !== expectedEnd || url.searchParams.get('limit') !== '1000') throw new Error(`local raw replay adapter changed the bounded request: ${seriesKey(series)}`)
+    const entry = restPages.entries.find(candidate => candidate.endpoint === endpoint && Number(candidate.page.cursor) === cursor); if (!entry) throw new Error(`local raw replay adapter requested an unretained REST cursor: ${seriesKey(series)} ${cursor}`)
+    const keyValue = entry.key; if (used.has(keyValue)) throw new Error(`local raw replay adapter reused a REST cursor: ${seriesKey(series)}`); used.add(keyValue); const body = readFileSync(replayRegularPath(sourceRoot, entry.raw.path, 'local raw replay raw response'))
+    return { ok: true, status: 200, headers: { get: name => String(name).toLowerCase() === 'date' ? String(capturedAt) : null }, arrayBuffer: async () => Buffer.from(body) }
+  } }
+}
+
+function replayPageSignature(receipts) {
+  return receipts.flatMap(receipt => (receipt.pagination || []).map(page => ({ page: Number(page.page), cursor: Number(page.cursor), row_count: Number(page.row_count), response_sha256: page.response_sha256, endpoint: page.endpoint || null, symbol: page.symbol || null, interval: page.interval ?? null })))
+}
+
+/* A producer migration may strengthen the funding settlement-mark summary
+ * after reopening the same retained bytes.  The old summary can therefore
+ * list only the marks repaired by that producer, while the current producer
+ * lists every exact settlement slot.  This is the sole coverage relaxation
+ * allowed by explicit raw replay: every other coverage fact remains byte-
+ * equivalent, and the physical page/row binding below still proves each new
+ * settlement mark. */
+function replayCoverageMatchesSource(sourceCoverage, replayedCoverage) {
+  if (!sourceCoverage) return true
+  const source = clone(sourceCoverage); const replayed = clone(replayedCoverage)
+  const sourceEvents = source.settlement_mark_events; const replayedEvents = replayed.settlement_mark_events
+  delete source.settlement_mark_events; delete replayed.settlement_mark_events
+  if (stable(source) !== stable(replayed)) return false
+  if (sourceEvents === undefined || sourceEvents === null) return replayedEvents === undefined || replayedEvents === null || Array.isArray(replayedEvents)
+  if (!Array.isArray(sourceEvents) || !Array.isArray(replayedEvents)) return false
+  const sourceNormalized = sourceEvents.map(value => String(value)).sort(); const replayedNormalized = replayedEvents.map(value => String(value)).sort()
+  if (new Set(sourceNormalized).size !== sourceNormalized.length || new Set(replayedNormalized).size !== replayedNormalized.length) return false
+  const replayedSet = new Set(replayedNormalized)
+  return sourceNormalized.every(value => replayedSet.has(value))
+}
+
+function replayWriteJson(root, relativePath, value, label) {
+  const path = safePath(root, relativePath, label); const rootPath = resolve(root); const components = relative(rootPath, path).split(sep).filter(Boolean); let cursor = rootPath
+  for (const component of components.slice(0, -1)) { cursor = join(cursor, component); if (existsSync(cursor)) { const stat = lstatSync(cursor); if (stat.isSymbolicLink() || !stat.isDirectory()) throw new Error(`${label} parent is not a regular directory: ${relativePath}`) } }
+  mkdirSync(dirname(path), { recursive: true }); const bytes = Buffer.from(`${JSON.stringify(value, null, 2)}\n`)
+  if (existsSync(path)) { const stat = lstatSync(path); if (stat.isSymbolicLink() || !stat.isFile() || stat.nlink !== 1 || !Buffer.from(readFileSync(path)).equals(bytes)) throw new Error(`${label} immutable output collision: ${relativePath}`) } else writeFileSync(path, bytes, { flag: 'wx' })
+  return { path: relativePath, byte_sha256: hash(bytes), bytes: bytes.byteLength }
+}
+
+function replayWriteRaw(root, relativePath, bytes, expectedSha256, label) {
+  const path = safePath(root, relativePath, label); const rootPath = resolve(root); const components = relative(rootPath, path).split(sep).filter(Boolean); let cursor = rootPath
+  for (const component of components.slice(0, -1)) { cursor = join(cursor, component); if (existsSync(cursor)) { const stat = lstatSync(cursor); if (stat.isSymbolicLink() || !stat.isDirectory()) throw new Error(`${label} parent is not a regular directory: ${relativePath}`) } }
+  const body = Buffer.from(bytes); if (hash(body) !== expectedSha256) throw new Error(`${label} bytes do not match their retained hash: ${relativePath}`)
+  mkdirSync(dirname(path), { recursive: true })
+  if (existsSync(path)) { const stat = lstatSync(path); if (stat.isSymbolicLink() || !stat.isFile() || stat.nlink !== 1 || hash(readFileSync(path)) !== expectedSha256) throw new Error(`${label} immutable output collision: ${relativePath}`) } else writeFileSync(path, body, { flag: 'wx' })
+  return { path: relativePath, byte_sha256: expectedSha256, bytes: body.byteLength }
+}
+
+function replayTargetRoot(root) {
+  const path = resolve(root || ''); if (!root || !existsSync(path)) { mkdirSync(path, { recursive: true }); return path }
+  const stat = lstatSync(path); if (stat.isSymbolicLink() || !stat.isDirectory()) throw new Error('local raw replay target root must be a regular directory')
+  return path
+}
+
+function replayExistingTargetCaptures({ targetRoot, checkpointPath, plan }) {
+  const checkpoint = safePath(targetRoot, checkpointPath, 'local raw replay existing target checkpoint')
+  if (!existsSync(checkpoint)) return new Map()
+  replayRegularPath(targetRoot, checkpointPath, 'local raw replay existing target checkpoint')
+  let value
+  try { value = JSON.parse(readFileSync(checkpoint, 'utf8')) } catch (error) { throw new Error(`local raw replay existing target checkpoint JSON is invalid: ${error.message}`) }
+  if (!value || value.schema !== DATA_V5.checkpoint || value.content_sha256 !== ownHash(value)) throw new Error('local raw replay existing target checkpoint hash/schema is invalid')
+  validateContractSchema(value)
+  if (value.plan_sha256 !== plan.content_sha256) throw new Error('local raw replay existing target checkpoint is bound to a different frozen plan')
+  if (value.producer_code_sha256 !== DATA_V5_PRODUCER_CODE_SHA256 || value.coverage_rules_sha256 !== DATA_V5_COVERAGE_RULES_SHA256) throw new Error('local raw replay existing target checkpoint has stale producer or coverage-rules hashes')
+  const planByKey = new Map(plan.series.map(series => [seriesKey(series), series])); const completed = value.completed || {}; const lineage = value.capture_lineage || {}; const ids = Object.keys(completed).sort()
+  if (stable(ids) !== stable(Object.keys(lineage).sort())) throw new Error('local raw replay existing target checkpoint capture lineage inventory is missing, extra, or mismatched')
+  const result = new Map()
+  for (const id of ids) {
+    const series = planByKey.get(id); if (!series) throw new Error(`local raw replay existing target capture is not declared by the frozen plan: ${id}`)
+    const capture = completed[id]; if (!capture || capture.unavailable === true || capture.series_sha256 !== hash(series)) throw new Error(`local raw replay existing target capture is stale: ${id}`)
+    verifyCaptureCustody(capture, targetRoot); revalidateCompletedAcquisitionCapture(capture, series, targetRoot)
+    const actualLineage = inspectCaptureLineage(capture, targetRoot); if (stable(actualLineage) !== stable(lineage[id])) throw new Error(`local raw replay existing target capture lineage is stale or forged: ${id}`)
+    result.set(id, capture)
+  }
+  return result
+}
+
+async function replayCaptureFromRaw({ capture, series, plan, sourceRoot, targetRoot, existingTargetCapture = null }) {
+  if (existingTargetCapture) verifyCaptureCustody(existingTargetCapture, targetRoot)
+  const custody = replaySourceReceipts(capture, series, sourceRoot, plan.content_sha256); const capturedAtValues = custody.normalized.map(value => Date.parse(String(value.captured_at || ''))).filter(Number.isFinite)
+  if (!capturedAtValues.length) throw new Error(`local raw replay receipt has no valid captured_at: ${seriesKey(series)}`)
+  const capturedAt = new Date(Math.max(...capturedAtValues)).toISOString(); const archive = series.instrument === 'BINANCE_USDM_DATED_FUTURE' || series.series_type === 'metrics_events'; let restPages = null; let archiveResponses = null
+  if (archive) archiveResponses = replayArchiveResponses({ series, normalized: custody.normalized, raws: custody.raws, sourceRoot })
+  else restPages = replayRestPages({ series, normalized: custody.normalized, raws: custody.raws, sourceRoot, capturedAt })
+  const shim = replayResponseShim({ series, sourceRoot, restPages, archiveResponses, capturedAt }); const replayed = await acquireSeries({ series, plan, root: targetRoot, fetchImpl: shim.fetchImpl, capturedAt, fixtureOnly: true, forceArchiveReopen: archive })
+  if (archive) { if (shim.archiveUsed.size !== archiveResponses.actual.size) throw new Error(`local raw replay did not reopen every retained archive response: ${seriesKey(series)}`) } else if (shim.used.size !== restPages.entries.length) throw new Error(`local raw replay did not reopen every retained REST response page: ${seriesKey(series)}`)
+  const targetReceipts = (replayed.source_receipts || []).map(summary => verifyNormalizedReceipt(targetRoot, summary, 'local raw replay output receipt'))
+  const sourcePages = replayPageSignature(custody.normalized); const targetPages = replayPageSignature(targetReceipts); if (stable(sourcePages) !== stable(targetPages)) throw new Error(`local raw replay page/request/row inventory changed: ${seriesKey(series)}`)
+  const sourceCoverage = custody.normalized.map(value => value.coverage).find(Boolean) || capture.coverage; if (sourceCoverage && !replayCoverageMatchesSource(sourceCoverage, replayed.coverage)) throw new Error(`local raw replay coverage changed: ${seriesKey(series)}`)
+  if (replayed.series_sha256 !== hash(series) || replayed.producer_code_sha256 !== DATA_V5_PRODUCER_CODE_SHA256 || replayed.adapter_code_sha256 !== DATA_V5_ADAPTER_CODE_SHA256) throw new Error(`local raw replay output lineage is not current: ${seriesKey(series)}`)
+  verifyCaptureCustody(replayed, targetRoot); const lineage = inspectCaptureLineage(replayed, targetRoot); if (lineage.producer_binding_status !== 'BOUND' || lineage.adapter_binding_status !== 'BOUND' || lineage.producer_code_sha256 !== DATA_V5_PRODUCER_CODE_SHA256 || lineage.adapter_code_sha256 !== DATA_V5_ADAPTER_CODE_SHA256) throw new Error(`local raw replay output capture lineage is not current: ${seriesKey(series)}`)
+  if (existingTargetCapture && stable(existingTargetCapture) !== stable(replayed)) throw new Error(`local raw replay existing target capture differs from deterministic replay: ${seriesKey(series)}`)
+  return { capture: replayed, lineage, source_adapter_code_sha256: capture.adapter_code_sha256 || null, source_producer_code_sha256: capture.producer_code_sha256 || null }
+}
+
+function replayUnavailableCapture(series) {
+  const { trade_scope: _tradeScope, ...captureSeries } = series
+  return { ...captureSeries, series_sha256: hash(series), coverage: { complete: false, reason: 'SOURCE_CAPTURE_NOT_RETAINED_FOR_LOCAL_REPLAY' }, limitations: [`${seriesKey(series)}:SOURCE_CAPTURE_NOT_RETAINED_FOR_LOCAL_REPLAY`], unavailable: true }
+}
+
+/**
+ * Re-run retained captures from physical raw bytes only.  `sourceCheckpoint`
+ * may carry stale producer/adapter hashes; that is expected at this explicit
+ * boundary and is never copied into the output.  The source checkpoint,
+ * normalized receipts, raw bytes, pagination, and plan identity are all
+ * verified before any output is written.
+ */
+export async function replayAuthoritativeStagingFromRaw({ plan, sourceCheckpoint, sourceRoot, targetRoot, sourceRootReference = null, targetRootReference = null, checkpointPath = 'checkpoint.json', manifestPath = 'acquisition-replay.json', expectedSourceCheckpointSha256 = null, recoverAuxiliaryMetrics = true } = {}) {
+  validatePlan(plan); if (!sourceCheckpoint || sourceCheckpoint.schema !== DATA_V5.checkpoint || sourceCheckpoint.content_sha256 !== ownHash(sourceCheckpoint)) throw new Error('local raw replay source checkpoint hash/schema is invalid'); validateContractSchema(sourceCheckpoint)
+  if (expectedSourceCheckpointSha256 !== null && sourceCheckpoint.content_sha256 !== expectedSourceCheckpointSha256) throw new Error('local raw replay source checkpoint predecessor hash mismatch')
+  if (sourceCheckpoint.plan_sha256 !== plan.content_sha256) throw new Error('local raw replay source checkpoint is bound to a different frozen plan')
+  if (sourceRootReference !== null && sourceCheckpoint.root_reference !== sourceRootReference) throw new Error('local raw replay source root reference differs from the checkpoint')
+  if (!sourceRoot || !targetRoot) throw new Error('local raw replay requires sourceRoot and targetRoot'); const source = resolve(sourceRoot); const target = replayTargetRoot(targetRoot); if (source === target) throw new Error('local raw replay requires distinct source and target roots')
+  for (const [root, label] of [[source, 'source'], [target, 'target']]) { const stat = lstatSync(root); if (stat.isSymbolicLink() || !stat.isDirectory()) throw new Error(`local raw replay ${label} root is not a regular directory`) }
+  if (!checkpointPath || String(checkpointPath).startsWith('/') || String(checkpointPath).includes('\\') || String(checkpointPath).split('/').includes('..')) throw new Error('local raw replay checkpointPath must be confined below targetRoot')
+  if (!manifestPath || String(manifestPath).startsWith('/') || String(manifestPath).includes('\\') || String(manifestPath).split('/').includes('..')) throw new Error('local raw replay manifestPath must be confined below targetRoot')
+  const existingTargetCaptures = replayExistingTargetCaptures({ targetRoot: target, checkpointPath, plan })
+  const sourceCompleted = sourceCheckpoint.completed || {}; const sourceLineage = sourceCheckpoint.capture_lineage || {}; const completedKeys = Object.keys(sourceCompleted).sort(); if (stable(completedKeys) !== stable(Object.keys(sourceLineage).sort())) throw new Error('local raw replay source checkpoint capture lineage inventory is missing, extra, or mismatched')
+  const planByKey = new Map(plan.series.map(series => [seriesKey(series), series])); for (const id of completedKeys) if (!planByKey.has(id)) throw new Error(`local raw replay capture is not declared by the frozen plan: ${id}`)
+  const replayedByKey = {}; const lineageByKey = {}; const sourceLineageSummary = {}; const auxiliaryMetrics = []; const sortedCaptures = completedKeys.map(id => [id, sourceCompleted[id]])
+  for (const [id, capture] of sortedCaptures) {
+    const series = planByKey.get(id); if (!capture || capture.unavailable === true) continue
+    if (capture.series_sha256 !== hash(series)) throw new Error(`local raw replay capture series binding is stale: ${id}`)
+    // Metrics archives are latest-retrieval/revised proxies, not authoritative
+    // PIT vintages.  Incomplete metrics captures are resumed through their
+    // dedicated auxiliary checkpoint path; they must never enter the strict
+    // archive page inventory used for required bars/funding/dated futures.
+    // An explicit false disables optional metric recovery altogether.
+    if (series.series_type === 'metrics_events' && (recoverAuxiliaryMetrics === false || capture.coverage?.complete !== true)) continue
+    replayRegularPath(source, capture.partition?.path, 'local raw replay source partition'); for (const mark of [capture.mark_partition].filter(Boolean)) replayRegularPath(source, mark.path, 'local raw replay source mark partition')
+    verifyCaptureCustody(capture, source); const actualLineage = inspectCaptureLineage(capture, source); if (stable(actualLineage) !== stable(sourceLineage[id])) throw new Error(`local raw replay source capture lineage is stale or forged: ${id}`)
+    const result = await replayCaptureFromRaw({ capture, series, plan, sourceRoot: source, targetRoot: target, existingTargetCapture: existingTargetCaptures.get(id) || null }); replayedByKey[id] = result.capture; lineageByKey[id] = result.lineage; sourceLineageSummary[id] = { producer_code_sha256: result.source_producer_code_sha256, adapter_code_sha256: result.source_adapter_code_sha256 }
+  }
+  if (recoverAuxiliaryMetrics) {
+    for (const series of plan.series.filter(value => value.series_type === 'metrics_events')) {
+      const id = seriesKey(series); if (replayedByKey[id] && replayedByKey[id].unavailable !== true) continue
+      const auxiliaryPath = resolve(source, `checkpoints/metrics-${String(series.asset).toLowerCase()}-${String(series.symbol).toLowerCase()}.json`)
+      if (!existsSync(auxiliaryPath)) continue
+      const result = await replayAuxiliaryMetricsFromRaw({ series, plan, sourceRoot: source, targetRoot: target, existingTargetCapture: existingTargetCaptures.get(id) || null })
+      if (result.partial) auxiliaryMetrics.push({ series: id, checkpoint_path: result.auxiliary_checkpoint_path, source_checkpoint_sha256: result.source_checkpoint_sha256 || null, raw_verified_count: result.auxiliary_raw_verified_count, saved_count: result.saved_count, remaining_count: result.remaining_count, status: 'PARTIAL_CHECKPOINT_REPLAYED_FOR_NETWORK_RESUME', limitation: `PARTIAL_CHECKPOINT_REPLAYED_FOR_NETWORK_RESUME:saved=${result.saved_count}:remaining=${result.remaining_count}` })
+      else {
+        auxiliaryMetrics.push({ series: id, checkpoint_path: result.auxiliary_checkpoint_path, source_checkpoint_sha256: result.source_checkpoint_sha256 || null, raw_verified_count: result.auxiliary_raw_verified_count, status: result.capture.unavailable === true ? 'UNAVAILABLE' : 'REPLAYED', limitation: result.capture.unavailable === true ? result.capture.coverage?.reason || null : null })
+        if (result.capture.unavailable !== true) { replayedByKey[id] = result.capture; lineageByKey[id] = result.lineage }
+      }
+    }
+  }
+  const captures = plan.series.map(series => replayedByKey[seriesKey(series)] || replayUnavailableCapture(series)); const required = captures.filter(capture => capture.required !== false); const optional = captures.filter(capture => capture.required === false); const complete = capture => capture.unavailable !== true && capture.coverage?.complete === true && capture.partition?.storage_role === 'STAGING'; const baseComplete = required.length > 0 && required.every(complete); const declaredComplete = captures.length > 0 && captures.every(complete); const checkpointReference = targetRootReference === null ? portableRoot(target, null) : relativeReference(target, targetRootReference); const checkpointValue = withHash({ schema: DATA_V5.checkpoint, version: 1, plan_sha256: plan.content_sha256, root_reference: checkpointReference, prior_checkpoint_sha256: null, producer_code_sha256: DATA_V5_PRODUCER_CODE_SHA256, coverage_rules_sha256: DATA_V5_COVERAGE_RULES_SHA256, capture_lineage: lineageByKey, completed: replayedByKey }); replayWriteJson(target, checkpointPath, checkpointValue, 'local raw replay checkpoint')
+  const manifestRootReference = checkpointReference; const unavailableRequired = required.filter(capture => !complete(capture)).map(seriesKey); const unavailableOptional = optional.filter(capture => !complete(capture)).map(seriesKey); const partialMetricsLimitations = auxiliaryMetrics.filter(value => value.status === 'PARTIAL_CHECKPOINT_REPLAYED_FOR_NETWORK_RESUME').map(value => `${value.limitation}:${value.series}:source=${value.source_checkpoint_sha256}`); const limitations = [...new Set([...unavailableRequired.map(value => `REQUIRED_SERIES_UNAVAILABLE:${value}`), ...unavailableOptional.map(value => `OPTIONAL_SERIES_UNAVAILABLE:${value}`), ...partialMetricsLimitations, 'LOCAL_RAW_REPLAY_NO_NETWORK'])].sort(); const acquisition = withHash({ schema: DATA_V5.acquisition, version: 1, status: baseComplete ? 'STAGING_COMPLETE' : 'STAGING_PARTIAL', plan_sha256: plan.content_sha256, root_reference: manifestRootReference, staging_format: 'JSONL', storage_role: 'STAGING', authoritative: false, captures, checkpoint_path: checkpointPath, checkpoint_sha256: checkpointValue.content_sha256, base_complete: baseComplete, declared_complete: declaredComplete, full_plan_complete: declaredComplete, completion_scope: declaredComplete ? 'ALL_DECLARED' : baseComplete ? 'BASE_ONLY' : 'NONE', required_series_count: required.length, required_complete_count: required.filter(complete).length, optional_series_count: optional.length, optional_complete_count: optional.filter(complete).length, optional_complete: optional.every(complete), declared_requirements_sha256: plan.timeframe_requirements_sha256 || null, source_receipts: [...new Set(captures.flatMap(capture => (capture.source_receipts || []).map(receipt => receipt.path)))].sort(), source_receipt_sha256: [...new Set(captures.flatMap(capture => (capture.source_receipts || []).map(receipt => receipt.content_sha256 || receipt.sha256)))].sort(), source_receipt_byte_sha256: [...new Set(captures.flatMap(capture => (capture.source_receipts || []).flatMap(receipt => Array.isArray(receipt.byte_sha256) ? receipt.byte_sha256 : [receipt.byte_sha256]).filter(Boolean)))].sort(), auxiliary_metrics: auxiliaryMetrics, limitations, conversion: { status: 'AVAILABLE', required_format: 'PARQUET', dependency: '@duckdb/node-api@1.5.5-r.4', threads: 1, promotion: 'REQUIRES_VERIFIED_BYTES_ROWS_SCHEMA_AND_PARTITION_MANIFEST' } }); verifyAuthoritativeStaging({ manifest: acquisition, root: target, planSha256: plan.content_sha256 }); replayWriteJson(target, manifestPath, acquisition, 'local raw replay acquisition manifest')
+  return { checkpoint: checkpointValue, acquisition, replayed_count: Object.keys(replayedByKey).length, retained_count: completedKeys.length, source_lineage: sourceLineageSummary, auxiliary_metrics: auxiliaryMetrics, target_root: target, target_root_reference: manifestRootReference }
+}
+
 const sqlLiteral = value => `'${String(value).replaceAll("'", "''")}'`
 const normalizeDuckRows = rows => rows.map(row => Object.fromEntries(Object.entries(row).map(([name, value]) => [name, typeof value === 'bigint' ? Number(value) : value])))
 
@@ -1642,6 +2216,10 @@ export async function convertToParquet({ stagingManifest, stagingRoot, outputRoo
   if (!stagingManifest || ![DATA_V5.acquisition, DATA_V5.hydration].includes(stagingManifest.schema)) throw new Error('Parquet conversion requires a v5 staging manifest')
   assertOwnHash(stagingManifest, stagingManifest.schema, 'v5 staging manifest')
   if (!['STAGING_COMPLETE'].includes(stagingManifest.status) || stagingManifest.storage_role !== 'STAGING' || stagingManifest.staging_format !== 'JSONL') throw new Error('Parquet conversion requires a complete JSONL STAGING manifest; incomplete data cannot be promoted')
+  if (stagingManifest.schema === DATA_V5.acquisition) {
+    const captures = ensureArray(stagingManifest.captures, 'acquisition captures'); const required = captures.filter(capture => capture.required !== false); const optional = captures.filter(capture => capture.required === false); const complete = capture => capture.unavailable !== true && capture.coverage?.complete === true && capture.partition?.storage_role === 'STAGING' && (capture.series_type !== 'funding_events' || (capture.coverage?.boundaries_covered === true && capture.coverage?.source_pagination_complete === true)); const baseComplete = required.length > 0 && required.every(complete); const declaredComplete = captures.length > 0 && captures.every(complete); const expected = { base_complete: baseComplete, declared_complete: declaredComplete, full_plan_complete: declaredComplete, completion_scope: declaredComplete ? 'ALL_DECLARED' : baseComplete ? 'BASE_ONLY' : 'NONE', required_series_count: required.length, required_complete_count: required.filter(complete).length, optional_series_count: optional.length, optional_complete_count: optional.filter(complete).length, optional_complete: optional.every(complete) }
+    if (Object.entries(expected).some(([field, value]) => stagingManifest[field] !== value)) throw new Error('Parquet conversion staging completion contract is missing or inconsistent with its physical captures')
+  }
   if (!stagingRoot || !outputRoot) throw new Error('Parquet conversion requires stagingRoot and outputRoot')
   verifyAuthoritativeStaging({ manifest: stagingManifest, root: stagingRoot, planSha256: stagingManifest.plan_sha256, envelopeSha256: stagingManifest.envelope_sha256, candidateSetSha256: stagingManifest.candidate_set_sha256 })
   let duckdb
@@ -1665,12 +2243,12 @@ export async function convertToParquet({ stagingManifest, stagingRoot, outputRoo
     }
   } finally { connection.disconnectSync() }
   const datasetRoot = hash({ source_manifest_sha256: stagingManifest.content_sha256, plan_sha256: stagingManifest.plan_sha256, captures: converted.map(capture => ({ identity: seriesKey(capture), partition: capture.partition })).sort((a, b) => a.identity.localeCompare(b.identity)) })
-  const result = withHash({ schema: 'strategy-v5-parquet-conversion/1', version: 1, status: 'AUTHORITATIVE_PARQUET', source_manifest_sha256: stagingManifest.content_sha256, plan_sha256: stagingManifest.plan_sha256, output_root_reference: rootReference, format: 'PARQUET', storage_role: 'AUTHORITATIVE', authoritative: true, threads: 1, captures: converted, dataset_root_sha256: datasetRoot, limitations: [...(stagingManifest.limitations || [])] })
+  const result = withHash({ schema: 'strategy-v5-parquet-conversion/1', version: 1, status: 'AUTHORITATIVE_PARQUET', source_manifest_sha256: stagingManifest.content_sha256, plan_sha256: stagingManifest.plan_sha256, output_root_reference: rootReference, format: 'PARQUET', storage_role: 'AUTHORITATIVE', authoritative: true, threads: 1, captures: converted, dataset_root_sha256: datasetRoot, ...(stagingManifest.schema === DATA_V5.acquisition ? { source_completion_scope: stagingManifest.completion_scope, source_base_complete: stagingManifest.base_complete === true, source_declared_complete: stagingManifest.declared_complete === true, source_required_series_count: stagingManifest.required_series_count, source_required_complete_count: stagingManifest.required_complete_count, source_optional_series_count: stagingManifest.optional_series_count, source_optional_complete_count: stagingManifest.optional_complete_count, source_optional_complete: stagingManifest.optional_complete === true } : {}), limitations: [...(stagingManifest.limitations || [])] })
   return result
 }
 
 export function verifyParquetConversionManifest(manifest, { root, planSha256 = null } = {}) {
-  assertOwnHash(manifest, 'strategy-v5-parquet-conversion/1', 'Parquet conversion manifest'); if (manifest.status !== 'AUTHORITATIVE_PARQUET' || manifest.format !== 'PARQUET' || manifest.storage_role !== 'AUTHORITATIVE' || manifest.authoritative !== true || manifest.threads !== 1) throw new Error('Parquet conversion manifest is not authoritative single-threaded output'); if (planSha256 && manifest.plan_sha256 !== planSha256) throw new Error('Parquet conversion manifest is bound to a different plan'); if (!root) throw new Error('Parquet conversion verification requires root'); const seen = new Set(); for (const capture of manifest.captures || []) { const partition = capture.partition; if (!partition || partition.format !== 'PARQUET' || partition.storage_role !== 'AUTHORITATIVE' || partition.authoritative !== true || seen.has(partition.path)) throw new Error('Parquet conversion partition metadata is invalid'); seen.add(partition.path); const path = safePath(root, partition.path, 'Parquet partition'); if (!existsSync(path)) throw new Error(`Parquet partition is missing or tampered: ${partition.path}`); const bytes = readFileSync(path); if (hash(bytes) !== partition.sha256 || bytes.byteLength !== partition.bytes || !Number.isInteger(partition.row_count) || !HASH_RE.test(String(partition.schema_sha256 || ''))) throw new Error(`Parquet partition is missing or tampered: ${partition.path}`) } const datasetRoot = hash({ source_manifest_sha256: manifest.source_manifest_sha256, plan_sha256: manifest.plan_sha256, captures: (manifest.captures || []).map(capture => ({ identity: seriesKey(capture), partition: capture.partition })).sort((a, b) => a.identity.localeCompare(b.identity)) }); if (datasetRoot !== manifest.dataset_root_sha256) throw new Error('Parquet conversion dataset root is invalid'); return true
+  assertOwnHash(manifest, 'strategy-v5-parquet-conversion/1', 'Parquet conversion manifest'); if (manifest.status !== 'AUTHORITATIVE_PARQUET' || manifest.format !== 'PARQUET' || manifest.storage_role !== 'AUTHORITATIVE' || manifest.authoritative !== true || manifest.threads !== 1) throw new Error('Parquet conversion manifest is not authoritative single-threaded output'); if (planSha256 && manifest.plan_sha256 !== planSha256) throw new Error('Parquet conversion manifest is bound to a different plan'); if (!root) throw new Error('Parquet conversion verification requires root'); const seen = new Set(); for (const capture of manifest.captures || []) { const partition = capture.partition; if (!partition || partition.format !== 'PARQUET' || partition.storage_role !== 'AUTHORITATIVE' || partition.authoritative !== true || seen.has(partition.path)) throw new Error('Parquet conversion partition metadata is invalid'); seen.add(partition.path); const path = verifiedRegularPath(root, partition.path, 'Parquet partition'); const bytes = readFileSync(path); if (hash(bytes) !== partition.sha256 || bytes.byteLength !== partition.bytes || !Number.isInteger(partition.row_count) || !HASH_RE.test(String(partition.schema_sha256 || ''))) throw new Error(`Parquet partition is missing or tampered: ${partition.path}`) } const datasetRoot = hash({ source_manifest_sha256: manifest.source_manifest_sha256, plan_sha256: manifest.plan_sha256, captures: (manifest.captures || []).map(capture => ({ identity: seriesKey(capture), partition: capture.partition })).sort((a, b) => a.identity.localeCompare(b.identity)) }); if (datasetRoot !== manifest.dataset_root_sha256) throw new Error('Parquet conversion dataset root is invalid'); return true
 }
 
 /* The synchronous verifier above is intentionally cheap and remains useful
@@ -1678,20 +2256,27 @@ export function verifyParquetConversionManifest(manifest, { root, planSha256 = n
  * partition with the pinned runtime: declared byte/count/schema metadata is
  * not evidence that a file can still be decoded or that its rows retain the
  * declared acquisition role. */
-export async function verifyParquetConversionManifestAuthoritative(manifest, { root, planSha256 = null } = {}) {
+export async function verifyParquetConversionManifestAuthoritative(manifest, { root, stagingRoot = null, planSha256 = null } = {}) {
   verifyParquetConversionManifest(manifest, { root, planSha256 })
+  const hasFundingCapture = (manifest.captures || []).some(capture => capture.series_type === 'funding_events')
+  if (hasFundingCapture && !stagingRoot) throw new Error('authoritative funding Parquet verification requires the physical acquisition/staging root')
   let duckdb
   try { duckdb = await import('@duckdb/node-api') } catch (error) { throw new Error(`AUTHORITATIVE_PARQUET_REOPEN_UNAVAILABLE: ${error.message}`) }
   const instance = await duckdb.DuckDBInstance.create(':memory:', { threads: '1', enable_external_access: 'true' }); const connection = await instance.connect()
   try {
     for (const capture of manifest.captures || []) {
-      const partition = capture.partition; const path = safePath(root, partition.path, 'Parquet partition')
+      const partition = capture.partition; const path = verifiedRegularPath(root, partition.path, 'Parquet partition')
       const descriptor = await connection.runAndReadAll(`DESCRIBE SELECT * FROM read_parquet(${sqlLiteral(path)});`); const descriptorRows = descriptor.getRows().map(row => row.map(value => value === null || value === undefined ? null : String(value)))
       if (hash(descriptorRows) !== partition.schema_sha256) throw new Error(`reopened acquisition Parquet schema differs from the bound schema: ${partition.path}`)
       const countReader = await connection.runAndReadAll(`SELECT count(*)::BIGINT AS row_count FROM read_parquet(${sqlLiteral(path)});`); const rowCount = Number(countReader.getRows()[0]?.[0]); if (rowCount !== partition.row_count) throw new Error(`reopened acquisition Parquet row count differs from the bound count: ${partition.path}`)
       const roleRows = descriptorRows.map(row => ({ name: row[0], type: row[1] })); const roleInfo = { capture: { columns: roleRows } }; const table = `read_parquet(${sqlLiteral(path)})`;
       if (capture.series_type === 'funding_events') {
-        const fundingTimeColumn = roleRows.some(row => row.name === 'raw_event_time') ? 'raw_event_time' : 'event_time'; const fundingTime = parquetTimestampExpr(roleInfo, 'capture', fundingTimeColumn); const fundingMarkColumn = roleRows.some(row => row.name === 'settlement_mark') ? 'settlement_mark' : (roleRows.some(row => row.name === 'mark_price') ? 'mark_price' : null); if (!fundingMarkColumn) throw new Error(`reopened funding Parquet has no bound settlement mark column: ${partition.path}`); await sqlCount(connection, `SELECT count(*) FROM ${table} WHERE asset IS NULL OR instrument IS NULL OR symbol IS NULL OR event_id IS NULL OR ${sqlIdentifier(fundingTimeColumn)} IS NULL OR funding_rate IS NULL OR ${sqlIdentifier(fundingMarkColumn)} IS NULL OR ${sqlIdentifier(fundingMarkColumn)} <= 0`, `reopened funding Parquet role (${partition.path})`); await sqlCount(connection, `SELECT count(*) - count(DISTINCT event_id) FROM ${table}`, `reopened funding Parquet duplicate identities (${partition.path})`)
+        const requiredFundingColumns = ['asset', 'instrument', 'symbol', 'event_id', 'funding_rate', 'settlement_mark', 'mark_price', 'settlement_slot', 'settlement_mark_source', 'settlement_mark_event_time', 'settlement_mark_availability_time', 'settlement_mark_source_response_sha256']; for (const required of requiredFundingColumns) if (!roleRows.some(row => row.name === required)) throw new Error(`reopened funding Parquet is missing required provenance column ${required}: ${partition.path}`)
+        const fundingTimeColumn = roleRows.some(row => row.name === 'raw_event_time') ? 'raw_event_time' : 'event_time'; const fundingTime = parquetTimestampExpr(roleInfo, 'capture', fundingTimeColumn); const settlementSlot = parquetTimestampExpr(roleInfo, 'capture', 'settlement_slot'); const markEvent = parquetTimestampExpr(roleInfo, 'capture', 'settlement_mark_event_time'); const markAvailability = parquetTimestampExpr(roleInfo, 'capture', 'settlement_mark_availability_time'); const source = sqlIdentifier('settlement_mark_source'); const sourceHash = sqlIdentifier('settlement_mark_source_response_sha256'); const markSource = 'BINANCE_MARK_PRICE_KLINE_OPEN_AT_SETTLEMENT';
+        await sqlCount(connection, `SELECT count(*) FROM ${table} WHERE asset IS NULL OR instrument IS NULL OR symbol IS NULL OR event_id IS NULL OR ${sqlIdentifier(fundingTimeColumn)} IS NULL OR funding_rate IS NULL OR settlement_mark IS NULL OR settlement_mark <= 0 OR mark_price IS NULL OR mark_price <= 0 OR settlement_mark <> mark_price OR ${settlementSlot} IS NULL OR ${markEvent} IS NULL OR ${markAvailability} IS NULL OR ${markEvent} <> ${settlementSlot} OR ${markAvailability} <> ${settlementSlot} OR ${source} IS NULL OR ${source} <> ${sqlLiteral(markSource)} OR ${sourceHash} IS NULL`, `reopened funding Parquet role/provenance (${partition.path})`); await sqlCount(connection, `SELECT count(*) - count(DISTINCT event_id) FROM ${table}`, `reopened funding Parquet duplicate identities (${partition.path})`)
+        const markResponseHashes = new Set(); const markEndpoint = 'https://fapi.binance.com/fapi/v1/markPriceKlines'; for (const summary of capture.source_receipts || []) { const normalized = verifyNormalizedReceipt(stagingRoot, summary, 'reopened funding source receipt'); for (const page of normalized.pagination || []) if (page.endpoint === markEndpoint && HASH_RE.test(String(page.response_sha256 || ''))) markResponseHashes.add(String(page.response_sha256)) }
+        if (!markResponseHashes.size) throw new Error(`reopened funding Parquet has no physically retained settlement-mark response pages: ${partition.path}`)
+        const provenance = await connection.runAndReadAll(`SELECT DISTINCT CAST(${sourceHash} AS VARCHAR) FROM ${table}`); for (const value of provenance.getRows().map(row => String(row[0] || ''))) if (!HASH_RE.test(value) || !markResponseHashes.has(value)) throw new Error(`reopened funding Parquet settlement-mark response hash is not bound to a retained mark-price page: ${partition.path}`)
       } else if (capture.series_type === 'metrics_events') {
         const eventTime = parquetTimestampExpr(roleInfo, 'capture', 'event_time'); const availability = roleRows.some(row => row.name === 'availability_time') ? parquetTimestampExpr(roleInfo, 'capture', 'availability_time') : null; for (const required of ['asset', 'instrument', 'symbol', 'event_time', 'series_role', 'open_interest', 'open_interest_value']) if (!roleRows.some(row => row.name === required)) throw new Error(`reopened metrics Parquet is missing required column ${required}: ${partition.path}`); const requiredFields = capture.coverage?.required_metric_fields || capture.metric_required_fields || []; const minimumCoverage = Number(capture.coverage?.minimum_field_coverage ?? capture.metric_minimum_field_coverage ?? 0.95); if (capture.coverage?.field_coverage && requiredFields.some(field => Number(capture.coverage.field_coverage[field]?.fraction ?? 0) < minimumCoverage)) throw new Error(`reopened metrics Parquet required-field coverage is below its frozen minimum: ${partition.path}`); await sqlCount(connection, `SELECT count(*) FROM ${table} WHERE asset IS NULL OR instrument IS NULL OR symbol IS NULL OR series_role <> 'METRICS' OR event_time IS NULL`, `reopened metrics Parquet role (${partition.path})`); await sqlCount(connection, `SELECT count(*) - count(DISTINCT concat_ws('|', lower(asset), upper(instrument), upper(symbol), CAST(${eventTime} AS VARCHAR))) FROM ${table}`, `reopened metrics Parquet duplicate identities (${partition.path})`); if (availability) { const cutoff = timestamp(capture.availability_cutoff_at || capture.end_at); await sqlCount(connection, `SELECT count(*) FROM ${table} WHERE ${availability} IS NULL OR ${availability} < ${eventTime} OR ${availability} > TIMESTAMP '${iso(cutoff)}'`, `reopened metrics Parquet availability (${partition.path})`) }
       } else {
@@ -1723,7 +2308,7 @@ export async function convertSeparatedArtifactsToParquet({ stagingManifest, stag
   verifySeparatedArtifactManifest(stagingManifest, { root: stagingRoot, plan, requireParquet: false, predictorRegistry, candidatePredicates })
   let duckdb
   try { duckdb = await import('@duckdb/node-api') } catch (error) { throw new Error(`AUTHORITATIVE_CONVERSION_UNAVAILABLE: install the pinned @duckdb/node-api dependency; JSONL remains STAGING_ONLY (${error.message})`) }
-  const inputRoot = resolve(stagingRoot); const outRoot = resolve(outputRoot); mkdirSync(outRoot, { recursive: true }); const rootReference = portableRoot(outRoot, outputRootReference); const sourceContext = verifySourceChain(inputRoot, stagingManifest.source_manifest_reference, stagingManifest.source_manifest_sha256, stagingManifest.plan_sha256, 'separated source manifest'); copySourceChainFiles(inputRoot, outRoot, sourceContext); const sourceManifestReference = copyPhysicalJsonReference(inputRoot, outRoot, stagingManifest.source_manifest_reference, 'separated source manifest'); const sourceArtifactManifestReference = persistJsonReference(outRoot, stagingManifest, 'source staging artifact manifest'); const instance = await duckdb.DuckDBInstance.create(':memory:', { threads: '1', enable_external_access: 'true' }); const connection = await instance.connect(); const artifacts = {}
+  const inputRoot = resolve(stagingRoot); const outRoot = resolve(outputRoot); mkdirSync(outRoot, { recursive: true }); const rootReference = portableRoot(outRoot, outputRootReference); const sourceContext = verifyAuthoritativeSourceChain(inputRoot, stagingManifest.source_manifest_reference, stagingManifest.source_manifest_sha256, stagingManifest.plan_sha256, 'separated source manifest'); copySourceChainFiles(inputRoot, outRoot, sourceContext); const sourceManifestReference = copyPhysicalJsonReference(inputRoot, outRoot, stagingManifest.source_manifest_reference, 'separated source manifest'); const sourceArtifactManifestReference = persistJsonReference(outRoot, stagingManifest, 'source staging artifact manifest'); const instance = await duckdb.DuckDBInstance.create(':memory:', { threads: '1', enable_external_access: 'true' }); const connection = await instance.connect(); const artifacts = {}
   try {
     for (const [roleKey, artifact] of Object.entries(stagingManifest.artifacts || {}).sort(([a], [b]) => a.localeCompare(b))) {
       const role = requireRole(roleKey); const input = safePath(inputRoot, artifact.path, `${role} staging artifact`); if (!existsSync(input) || hash(readFileSync(input)) !== artifact.sha256) throw new Error(`staging artifact bytes are missing or tampered: ${artifact.path}`)
@@ -1748,11 +2333,12 @@ export function verifyParquetConversion(manifest, { root, plan, requireAuthorita
   throw new Error(`unsupported Parquet conversion manifest schema: ${manifest?.schema || '?'}`)
 }
 
-export async function verifyParquetArtifactManifest({ manifest, root, plan, predictorRegistry, candidatePredicates = [] } = {}) {
-  verifySeparatedArtifactManifest(manifest, { root, plan, requireParquet: true, predictorRegistry, candidatePredicates }); if (!predictorRegistry || predictorRegistry.content_sha256 !== manifest.predictor_registry_sha256) throw new Error('Parquet artifact predictor registry is not bound'); validatePredictorRegistry(predictorRegistry); if (!manifest.conversion || manifest.conversion.runtime !== 'node-duckdb/@duckdb/node-api@1.5.5-r.4' || manifest.conversion.threads !== 1 || !HASH_RE.test(String(manifest.conversion.source_artifact_manifest_sha256 || ''))) throw new Error('Parquet artifact conversion runtime/source binding is invalid')
+export async function verifyParquetArtifactManifest({ manifest, root, plan, predictorRegistry, candidatePredicates = null } = {}) {
+  const expectedInventory = candidatePredicates === null ? (manifest.candidate_predicates || []) : candidatePredicates
+  verifySeparatedArtifactManifest(manifest, { root, plan, requireParquet: true, predictorRegistry, candidatePredicates: expectedInventory }); if (!predictorRegistry || predictorRegistry.content_sha256 !== manifest.predictor_registry_sha256) throw new Error('Parquet artifact predictor registry is not bound'); validatePredictorRegistry(predictorRegistry); const declaredPredicateIds = predicateInventoryIds(manifest.candidate_predicates || [], 'manifest candidate predicate inventory'); const expectedPredicateIds = predicateInventoryIds(expectedInventory, 'evaluator predicate inventory'); if (stable(declaredPredicateIds) !== stable(expectedPredicateIds)) throw new Error('Parquet artifact predicate inventory does not exactly match the evaluator predicate IDs'); if (!manifest.conversion || manifest.conversion.runtime !== 'node-duckdb/@duckdb/node-api@1.5.5-r.4' || manifest.conversion.threads !== 1 || !HASH_RE.test(String(manifest.conversion.source_artifact_manifest_sha256 || ''))) throw new Error('Parquet artifact conversion runtime/source binding is invalid')
   let duckdb; try { duckdb = await import('@duckdb/node-api') } catch (error) { throw new Error(`AUTHORITATIVE_PARQUET_REOPEN_UNAVAILABLE: ${error.message}`) }; const instance = await duckdb.DuckDBInstance.create(':memory:', { threads: '1', enable_external_access: 'true' }); const connection = await instance.connect()
   const paths = {}
-  try { for (const [roleKey, artifact] of Object.entries(manifest.artifacts || {}).sort(([a], [b]) => a.localeCompare(b))) { const role = requireRole(roleKey); const path = safePath(root, artifact.path, `${role} Parquet artifact`); const descriptor = await connection.runAndReadAll(`DESCRIBE SELECT * FROM read_parquet(${sqlLiteral(path)});`); const descriptorRows = descriptor.getRows().map(row => row.map(value => value === null || value === undefined ? null : String(value))); if (hash(descriptorRows) !== artifact.schema_sha256) throw new Error(`reopened Parquet ${role} schema differs from the bound schema`); const countReader = await connection.runAndReadAll(`SELECT count(*)::BIGINT AS row_count FROM read_parquet(${sqlLiteral(path)});`); const rowCount = Number(countReader.getRows()[0]?.[0]); if (rowCount !== artifact.row_count) throw new Error(`reopened Parquet ${role} row count differs from the bound count`); paths[roleKey] = { path, columns: descriptorRows.map(row => ({ name: row[0], type: row[1] })) } } await validateParquetRolesBounded(connection, paths, { predictorRegistry, candidatePredicates, plan }) } finally { connection.disconnectSync() }
+  try { for (const [roleKey, artifact] of Object.entries(manifest.artifacts || {}).sort(([a], [b]) => a.localeCompare(b))) { const role = requireRole(roleKey); const path = safePath(root, artifact.path, `${role} Parquet artifact`); const descriptor = await connection.runAndReadAll(`DESCRIBE SELECT * FROM read_parquet(${sqlLiteral(path)});`); const descriptorRows = descriptor.getRows().map(row => row.map(value => value === null || value === undefined ? null : String(value))); if (hash(descriptorRows) !== artifact.schema_sha256) throw new Error(`reopened Parquet ${role} schema differs from the bound schema`); const countReader = await connection.runAndReadAll(`SELECT count(*)::BIGINT AS row_count FROM read_parquet(${sqlLiteral(path)});`); const rowCount = Number(countReader.getRows()[0]?.[0]); if (rowCount !== artifact.row_count) throw new Error(`reopened Parquet ${role} row count differs from the bound count`); paths[roleKey] = { path, columns: descriptorRows.map(row => ({ name: row[0], type: row[1] })) } } await validateParquetRolesBounded(connection, paths, { predictorRegistry, candidatePredicates: expectedInventory, plan }) } finally { connection.disconnectSync() }
   return true
 }
 
@@ -1761,7 +2347,7 @@ export async function verifyParquetArtifactManifest({ manifest, root, plan, pred
  * and stable identity fields.  LABEL/EXECUTION columns are intentionally not
  * queryable through this interface; outcome evaluation has a separate
  * chronology-bound path and can never leak caller rows into predicates. */
-export async function* readVerifiedFeatureBatches({ manifest, root, plan, predictorRegistry, candidatePredicates = [], columns = null, episodeIds = [], decisionStart = null, decisionEnd = null, batchSize = 10_000 } = {}) {
+export async function* readVerifiedFeatureBatches({ manifest, root, plan, predictorRegistry, candidatePredicates = null, columns = null, episodeIds = [], decisionStart = null, decisionEnd = null, batchSize = 10_000 } = {}) {
   if (!Number.isInteger(Number(batchSize)) || Number(batchSize) <= 0 || Number(batchSize) > 100_000) throw new Error('feature Parquet batch size is outside the bounded range')
   await verifyParquetArtifactManifest({ manifest, root, plan, predictorRegistry, candidatePredicates })
   const feature = manifest.artifacts?.feature; if (!feature || feature.role !== 'FEATURE') throw new Error('verified Parquet feature role is missing')
@@ -1821,6 +2407,13 @@ export function validateDenseBarCoverageV5(rows, series, { oneMinute = false } =
   const step = oneMinute ? ONE_MINUTE : Number(series.expected_step_ms); const start = timestamp(series.start_at); const end = timestamp(series.end_at); const ordered = [...rows].sort((a, b) => rowTime(a) - rowTime(b)); const times = ordered.map(rowTime)
   if (new Set(times).size !== times.length || times[0] !== start || times.at(-1) !== end || times.some((value, index) => value !== start + index * step)) return { complete: false, reason: 'MISSING_OR_DUPLICATE_BAR', first_event_time: times[0], last_event_time: times.at(-1), observed_rows: rows.length }
   const cutoff = timestamp(series.availability_cutoff_at); if (ordered.some(row => rowAvailability(row) < rowTime(row))) return { complete: false, reason: 'AVAILABILITY_BEFORE_EVENT' }; if (ordered.some(row => rowAvailability(row) > cutoff)) return { complete: false, reason: 'AVAILABILITY_AFTER_CUTOFF' }
+  const earlyAvailability = ordered.flatMap((row, index) => {
+    const expectedBoundary = times[index] + step
+    if (rowAvailability(row) >= expectedBoundary - 1000) return []
+    const close = row.close_time === undefined || row.close_time === null ? null : timestamp(row.close_time)
+    return close !== null && close < expectedBoundary - 1000 && rowAvailability(row) >= close ? [] : [{ event_time: iso(times[index]), availability_time: iso(rowAvailability(row)), expected_boundary_time: iso(expectedBoundary), reason: 'BAR_AVAILABLE_BEFORE_CLOSE' }]
+  })
+  if (earlyAvailability.length) return { complete: false, reason: 'BAR_AVAILABLE_BEFORE_CLOSE', early_bars: earlyAvailability, expected_rows: times.length, observed_rows: rows.length }
   const lateBars = ordered.flatMap((row, index) => {
     const expectedBoundary = times[index] + step
     return rowAvailability(row) > expectedBoundary ? [{ event_time: iso(times[index]), availability_time: iso(rowAvailability(row)), expected_boundary_time: iso(expectedBoundary), reason: 'BAR_AVAILABLE_AFTER_BOUNDARY' }] : []
@@ -1838,10 +2431,14 @@ export function validateDenseBarCoverageV5(rows, series, { oneMinute = false } =
 function coverageLimitations(series, coverage, error = null) {
   const identity = seriesKey(series)
   const reasons = []
+  const diagnostic = value => {
+    if (value && typeof value === 'object') return stable(value)
+    return String(value)
+  }
   if (error) reasons.push(String(error.message || error))
   for (const field of ['reason', 'missing_slots', 'missing_days', 'missing_months', 'gap_starts', 'duplicate_events', 'irregular_bars']) {
     const value = coverage?.[field]
-    if (Array.isArray(value) && value.length) reasons.push(`${field}=${value.map(String).sort().join(',')}`)
+    if (Array.isArray(value) && value.length) reasons.push(`${field}=${value.map(diagnostic).sort().join(',')}`)
     else if (typeof value === 'string' && value) reasons.push(value)
   }
   if (coverage?.source_pagination_complete === false) reasons.push('SOURCE_PAGINATION_INCOMPLETE')
@@ -1851,21 +2448,40 @@ function coverageLimitations(series, coverage, error = null) {
 
 function revalidateCompletedAcquisitionCapture(capture, series, root) {
   if (!capture || capture.unavailable === true || !capture.partition?.path) throw new Error('completed checkpoint capture is unavailable')
-  const rows = readJsonl(safePath(root, capture.partition.path, 'checkpoint partition'))
+  const partitionPath = verifiedRegularPath(root, capture.partition.path, 'checkpoint partition')
+  const rows = readJsonl(partitionPath)
   if (series.series_type === 'funding_events') {
-    if (rows.some(row => !(Number(row.settlement_mark ?? row.mark_price) > 0))) throw new Error('completed funding checkpoint lacks an exact positive settlement mark')
+    // A funding event stream is authoritative only when the frozen capture
+    // explicitly carries both proofs. `complete:true` is a summary, not
+    // evidence of exact boundaries or paginator continuity.
+    if (capture.coverage?.boundaries_covered !== true) throw new Error('completed funding checkpoint lacks exact source boundaries')
+    if (capture.coverage?.source_pagination_complete !== true) throw new Error('completed funding checkpoint lacks complete source pagination')
+    if (rows.some(row => !(Number(row.settlement_mark) > 0) || !(Number(row.mark_price) > 0) || Number(row.settlement_mark) !== Number(row.mark_price))) throw new Error('completed funding checkpoint lacks an exact positive settlement mark')
     const boundRawHashes = new Set((capture.source_receipts || []).flatMap(receipt => Array.isArray(receipt.byte_sha256) ? receipt.byte_sha256 : [receipt.byte_sha256]).filter(Boolean).map(String))
-    for (const row of rows.filter(row => row.settlement_mark_source === 'BINANCE_MARK_PRICE_KLINE_OPEN_AT_SETTLEMENT')) {
+    for (const row of rows) {
+      if (row.settlement_mark_source !== 'BINANCE_MARK_PRICE_KLINE_OPEN_AT_SETTLEMENT') throw new Error('completed funding checkpoint has an unproven settlement mark')
       const sourceHash = String(row.settlement_mark_source_response_sha256 || '')
       if (!HASH_RE.test(sourceHash) || !boundRawHashes.has(sourceHash)) throw new Error('completed funding checkpoint has an unbound settlement-mark response hash')
-      if (timestamp(row.settlement_mark_event_time) !== timestamp(row.raw_event_time ?? row.event_time) || timestamp(row.settlement_mark_availability_time) !== timestamp(row.settlement_mark_event_time)) throw new Error('completed funding checkpoint settlement-mark identity changed')
+      if (timestamp(row.settlement_mark_event_time) !== timestamp(row.settlement_slot) || timestamp(row.settlement_mark_availability_time) !== timestamp(row.settlement_mark_event_time)) throw new Error('completed funding checkpoint settlement-mark identity changed')
     }
-    const canonical = canonicalizeFundingRows({ rows, series: { ...series, require_source_coverage: true, source_coverage_complete: capture.coverage?.source_pagination_complete !== false } })
+    // Reopen and recompute the retained REST page sequence as well as the
+    // canonical event slots, binding the summary to physical raw bytes.
+    const normalized = (capture.source_receipts || []).map(summary => verifyNormalizedReceipt(root, summary, 'completed funding source receipt'))
+    if (!normalized.length) throw new Error('completed funding checkpoint lacks a source receipt')
+    const raws = normalized.flatMap(value => value.raw_receipts || [])
+    const capturedAtValues = normalized.map(value => Date.parse(String(value.captured_at || ''))).filter(Number.isFinite)
+    if (!raws.length || !capturedAtValues.length) throw new Error('completed funding checkpoint lacks retained pagination bytes')
+    const replayedPages = replayRestPages({ series, normalized, raws, sourceRoot: root, capturedAt: new Date(Math.max(...capturedAtValues)).toISOString() })
+    verifyFundingSettlementMarkPageBindings(rows, replayedPages.entries)
+    const canonical = canonicalizeFundingRows({ rows, series: { ...series, require_source_coverage: true, source_coverage_complete: true } })
     if (!canonical.coverage.complete) throw new Error(`completed funding checkpoint coverage changed: ${canonical.coverage.missing_slots?.join(',') || 'incomplete'}`)
   } else if (series.series_type === 'metrics_events') {
     const requiredFields = capture.coverage?.required_metric_fields || series.metric_required_fields || []
     const minimum = Number(capture.coverage?.minimum_field_coverage ?? series.metric_minimum_field_coverage ?? 0.95)
-    if (capture.coverage?.field_coverage && requiredFields.some(field => Number(capture.coverage.field_coverage[field]?.fraction ?? 0) < minimum)) throw new Error('completed metrics checkpoint required-field coverage is below its frozen minimum')
+    const requiredCoverage = capture.coverage?.required_field_coverage || requiredFields.map(field => ({ field, fraction: Number(capture.coverage?.field_coverage?.[field]?.fraction ?? 0) }))
+    if (!Number.isFinite(minimum) || requiredFields.some(field => { const row = requiredCoverage.find(value => String(value?.field) === String(field)); return !row || Number(row.fraction) < minimum })) throw new Error('completed metrics checkpoint required-field coverage is below its frozen minimum')
+    const pitVintage = capture.metrics_pit_vintage_status || capture.coverage?.metrics_pit_vintage_status || capture.coverage?.pit_vintage_status || capture.coverage?.source_pit_vintage_status
+    if (pitVintage !== 'HISTORICAL_PIT_VINTAGE') throw new Error(`completed metrics checkpoint is not historical PIT-vintage custody: ${METRICS_PIT_VINTAGE_BLOCK_REASON}`)
     if (rows.some(row => !['open_interest', 'open_interest_value', 'top_trader_account_long_short_ratio', 'top_trader_position_long_short_ratio', 'global_long_short_ratio', 'taker_buy_sell_volume_ratio'].every(field => row[field] === null || Number.isFinite(Number(row[field]))))) throw new Error('completed metrics checkpoint contains a non-numeric metric')
   } else {
     const coverage = validateDenseBarCoverageV5(rows, series)
@@ -1920,13 +2536,27 @@ function bindRowsToSeries(rows, series, { seriesId = null } = {}) {
 }
 
 /** Bind a funding event to a separately acquired mark-price observation at
- * the exact settlement event.  This helper is intentionally strict and
+ * its exact canonical settlement slot.  This helper is intentionally strict and
  * exported for adversarial tests: no nearest row, trade price, or zero fill is
  * an acceptable substitute. */
-export function bindFundingSettlementMarks({ fundingRows, markRows, markResponseSha256 = [] } = {}) {
-  const sourceHash = hash(markResponseSha256); const byEvent = new Map()
-  for (const mark of ensureArray(markRows, 'funding settlement mark rows')) { const event = timestamp(mark.event_time); if (byEvent.has(event)) throw new Error(`funding settlement mark source has duplicate event identity ${iso(event)}`); if (!(Number(mark.mark_open) > 0)) throw new Error(`funding settlement mark source has no exact positive mark at ${iso(event)}`); byEvent.set(event, mark) }
-  return ensureArray(fundingRows, 'funding rows').map(row => { const existing = Number(row.settlement_mark ?? row.mark_price); if (existing > 0) return clone(row); const event = timestamp(row.raw_event_time ?? row.event_time); const mark = byEvent.get(event); if (!mark || Number(mark.event_time) !== event) throw new Error(`funding settlement mark source is missing exact event ${iso(event)}`); return { ...clone(row), settlement_mark: Number(mark.mark_open), mark_price: Number(mark.mark_open), settlement_mark_source: 'BINANCE_MARK_PRICE_KLINE_OPEN_AT_SETTLEMENT', settlement_mark_event_time: iso(event), settlement_mark_availability_time: iso(event), settlement_mark_source_response_sha256: mark.response_sha256 || sourceHash } })
+export function bindFundingSettlementMarks({ fundingRows, markRows, markResponseSha256 = [], series = null } = {}) {
+  const retainedResponseHashes = new Set(ensureArray(markResponseSha256, 'funding settlement mark response hashes').map(value => String(value)).filter(value => HASH_RE.test(value)))
+  if (!retainedResponseHashes.size) throw new Error('funding settlement mark source has no physically retained response SHA')
+  const byEvent = new Map()
+  for (const mark of ensureArray(markRows, 'funding settlement mark rows')) {
+    const event = timestamp(mark.event_time); const available = timestamp(mark.availability_time)
+    if (!Number.isFinite(event) || byEvent.has(event)) throw new Error(`funding settlement mark source has duplicate event identity ${iso(event)}`)
+    if (available !== event) throw new Error(`funding settlement mark source availability is not exact at ${iso(event)}`)
+    if (!(Number(mark.mark_open) > 0)) throw new Error(`funding settlement mark source has no exact positive mark at ${iso(event)}`)
+    const responseSha = String(mark.response_sha256 || '')
+    if (!retainedResponseHashes.has(responseSha)) throw new Error(`funding settlement mark source response SHA is not physically retained at ${iso(event)}`)
+    byEvent.set(event, mark)
+  }
+  // If the caller has not already canonicalized the event sequence, do that
+  // here before looking up marks.  This makes the helper safe as a production
+  // boundary as well as preserving the direct no-jitter test contract.
+  const canonicalRows = series ? canonicalizeFundingRows({ rows: fundingRows, series }).rows : ensureArray(fundingRows, 'funding rows')
+  return canonicalRows.map(row => { const settlementSlot = timestamp(row.settlement_slot ?? row.raw_event_time ?? row.event_time); const mark = byEvent.get(settlementSlot); if (!mark || Number(mark.event_time) !== settlementSlot || timestamp(mark.availability_time) !== settlementSlot) throw new Error(`funding settlement mark source is missing exact event ${iso(settlementSlot)}`); return { ...clone(row), settlement_mark: Number(mark.mark_open), mark_price: Number(mark.mark_open), settlement_mark_source: 'BINANCE_MARK_PRICE_KLINE_OPEN_AT_SETTLEMENT', settlement_mark_event_time: iso(settlementSlot), settlement_mark_availability_time: iso(settlementSlot), settlement_mark_source_response_sha256: mark.response_sha256 } })
 }
 
 function retainedRawRequest(raw, { symbol, interval } = {}) {
@@ -1953,37 +2583,55 @@ export function fundingRequestBounds(series) {
   return { startTime: Math.max(0, start - tolerance), endTime: Math.min(cutoff, end + tolerance), slot_tolerance_ms: tolerance }
 }
 
-async function acquireSeries({ series, plan, root, fetchImpl, maxPages, maxRows, rateLimitMs, capturedAt, fixtureOnly = false }) {
+async function acquireSeries({ series, plan, root, fetchImpl, maxPages, maxRows, rateLimitMs, capturedAt, fixtureOnly = false, forceArchiveReopen = false }) {
   const start = timestamp(series.start_at); const end = timestamp(series.end_at); let result; let rows; let coverage
   if (series.series_type === 'funding_events') {
     const bounds = fundingRequestBounds(series); const queryStart = bounds.startTime; const queryEnd = bounds.endTime; result = await backfillBinanceFunding({ asset: series.asset, symbolOverride: series.symbol, startTime: queryStart, endTime: queryEnd, maxPages, maxRows, rateLimitMs, fetchImpl, capturedAt: fixtureOnly ? capturedAt : null, fixtureOnly }); let observedRows = bindRowsToSeries(result.rows, series)
+    // Canonicalize before acquiring fallback marks.  The raw event timestamp
+    // is retained, but the settlement slot is the unique deterministic key
+    // used to bind the exact 1h mark open.
+    const canonical = canonicalizeFundingRows({ rows: observedRows, series: { ...series, require_source_coverage: true, source_coverage_complete: result.coverage?.complete === true } }); observedRows = canonical.rows
     // Binance has historically omitted markPrice on some funding responses.
     // A trade-price fallback would fabricate funding PnL.  Reopen the exact
     // settlement instant from the separately acquired mark-price series and
     // bind its physical response hashes into every repaired event.
-    const missingMarks = observedRows.filter(row => !(Number(row.settlement_mark ?? row.mark_price) > 0)).map(row => timestamp(row.raw_event_time ?? row.event_time)); let markResult = null
-    if (missingMarks.length) {
+    const settlementMarkSlots = observedRows.map(row => timestamp(row.settlement_slot)); let markResult = null
+    if (settlementMarkSlots.length) {
       markResult = await backfillBinanceMarkPriceOhlc({ asset: series.asset, symbolOverride: series.symbol, startTime: queryStart, endTime: queryEnd, interval: '1h', maxPages, maxRows, rateLimitMs, fetchImpl, capturedAt: fixtureOnly ? capturedAt : null, fixtureOnly })
       const markStep = 60 * 60 * 1000
       const markRowsWithResponse = (markResult.rows || []).map(mark => {
         const event = Number(mark.event_time)
-        const page = (markResult.pages || []).find(candidate => Number(candidate.cursor) <= event && event < Number(candidate.cursor) + Number(candidate.row_count || 0) * markStep)
-        return { ...mark, response_sha256: page?.response_sha256 || null }
+        const exactPages = (markResult.page_event_times || []).map((events, index) => events.includes(event) ? index : -1).filter(index => index >= 0)
+        if (exactPages.length > 1) throw new Error(`funding settlement mark source has ambiguous response page for ${iso(event)}`)
+        const page = exactPages.length === 1 ? markResult.pages[exactPages[0]] : (markResult.pages || []).find(candidate => Number(candidate.cursor) <= event && event < Number(candidate.cursor) + Number(candidate.row_count || 0) * markStep)
+        return { ...mark, availability_time: event, response_sha256: page?.response_sha256 || null }
       })
+      const requiredMarkSlots = new Set(settlementMarkSlots)
+      for (const slot of requiredMarkSlots) {
+        const mark = markRowsWithResponse.find(value => Number(value.event_time) === slot)
+        if (!mark || !mark.response_sha256) throw new Error(`funding settlement mark source is missing exact event ${iso(slot)} (no exact response page)`)
+      }
       observedRows = bindFundingSettlementMarks({ fundingRows: observedRows, markRows: markRowsWithResponse, markResponseSha256: markResult.response_sha256 || [] })
       result = { ...result, rows: observedRows, raw_responses: [...(result.raw_responses || []), ...(markResult.raw_responses || [])], response_sha256: [...(result.response_sha256 || []), ...(markResult.response_sha256 || [])], pages: [...(result.pages || []), ...(markResult.pages || [])], captured_at: latestObservedAt([result.captured_at, markResult.captured_at]) }
     }
-    const canonical = canonicalizeFundingRows({ rows: observedRows, series: { ...series, require_source_coverage: true, source_coverage_complete: result.coverage?.complete === true } }); if (canonical.rows.some(row => !Number.isFinite(Number(row.settlement_mark ?? row.mark_price)) || !(Number(row.settlement_mark ?? row.mark_price) > 0))) throw new Error('funding acquisition lacks the exact positive settlement mark from funding or separately bound mark-price source'); rows = canonical.rows; coverage = { ...canonical.coverage, query_start_at: iso(queryStart), query_end_at: iso(queryEnd), source_pagination_complete: result.coverage?.complete === true, ...(markResult ? { settlement_mark_source: 'BINANCE_MARK_PRICE_KLINE_OPEN_AT_SETTLEMENT', settlement_mark_source_response_sha256: hash(markResult.response_sha256 || []), settlement_mark_events: missingMarks.map(iso).sort() } : {}) }
+    if (observedRows.some(row => !Number.isFinite(Number(row.settlement_mark)) || !(Number(row.settlement_mark) > 0) || row.settlement_mark_source !== 'BINANCE_MARK_PRICE_KLINE_OPEN_AT_SETTLEMENT' || timestamp(row.settlement_mark_event_time) !== timestamp(row.settlement_slot) || timestamp(row.settlement_mark_availability_time) !== timestamp(row.settlement_slot) || !HASH_RE.test(String(row.settlement_mark_source_response_sha256 || '')))) throw new Error('funding acquisition lacks an exact separately bound positive settlement mark'); rows = observedRows; coverage = { ...canonical.coverage, query_start_at: iso(queryStart), query_end_at: iso(queryEnd), source_pagination_complete: result.coverage?.complete === true, settlement_mark_source: 'BINANCE_MARK_PRICE_KLINE_OPEN_AT_SETTLEMENT', settlement_mark_source_response_sha256: hash(markResult?.response_sha256 || []), settlement_mark_events: settlementMarkSlots.map(iso).sort() }
   } else if (series.series_type === 'metrics_events') {
-    result = await backfillBinanceMetricsArchives({ asset: series.asset, symbol: series.symbol, startTime: start, endTime: end, maxFiles: maxPages * 31, rawOutputRoot: root, fetchImpl, capturedAt: fixtureOnly ? capturedAt : null, fixtureOnly }); const metricsDuplicate = Array.isArray(result.coverage?.duplicate_events) ? result.coverage.duplicate_events.length > 0 : result.coverage?.duplicate_events === true; const requiredFields = series.metric_required_fields || []; const minimumFieldCoverage = Number(series.metric_minimum_field_coverage ?? 0.95); const aggregated = series.interval === 'event' ? { rows: result.rows, coverage: { ...result.coverage, coverage_mode: 'EVENT_SEQUENCE', boundaries_covered: result.coverage?.complete === true, source_pagination_complete: (result.coverage?.missing_days || []).length === 0 && !metricsDuplicate && (result.coverage?.gap_starts || []).length === 0, required_metric_fields: requiredFields, minimum_field_coverage: minimumFieldCoverage, required_field_coverage: requiredFields.map(field => { const observed = result.rows.filter(row => row[field] !== null && row[field] !== undefined && Number.isFinite(Number(row[field]))).length; const expected = result.rows.length; return { field, observed, expected, fraction: expected ? observed / expected : 0 } }), complete: result.coverage?.complete === true && requiredFields.every(field => { const observed = result.rows.filter(row => row[field] !== null && row[field] !== undefined && Number.isFinite(Number(row[field]))).length; return result.rows.length > 0 && observed / result.rows.length >= minimumFieldCoverage }) } } : aggregateBinanceMetricsRows(result.rows, { interval: series.interval, startTime: start, endTime: end, requiredFields, minimumFieldCoverage }); rows = bindRowsToSeries(aggregated.rows, series); coverage = { ...result.coverage, ...aggregated.coverage }
+    result = await backfillBinanceMetricsArchives({ asset: series.asset, symbol: series.symbol, startTime: start, endTime: end, maxFiles: maxPages * 31, rawOutputRoot: root, fetchImpl, capturedAt: fixtureOnly ? capturedAt : null, fixtureOnly, forceReopen: forceArchiveReopen }); const metricsDuplicate = Array.isArray(result.coverage?.duplicate_events) ? result.coverage.duplicate_events.length > 0 : result.coverage?.duplicate_events === true; const requiredFields = series.metric_required_fields || []; const minimumFieldCoverage = Number(series.metric_minimum_field_coverage ?? 0.95); const aggregated = series.interval === 'event' ? { rows: result.rows, coverage: { ...result.coverage, coverage_mode: 'EVENT_SEQUENCE', boundaries_covered: result.coverage?.complete === true, source_pagination_complete: (result.coverage?.missing_days || []).length === 0 && !metricsDuplicate && (result.coverage?.gap_starts || []).length === 0, required_metric_fields: requiredFields, minimum_field_coverage: minimumFieldCoverage, required_field_coverage: requiredFields.map(field => { const observed = result.rows.filter(row => row[field] !== null && row[field] !== undefined && Number.isFinite(Number(row[field]))).length; const expected = result.rows.length; return { field, observed, expected, fraction: expected ? observed / expected : 0 } }), complete: result.coverage?.complete === true && requiredFields.every(field => { const observed = result.rows.filter(row => row[field] !== null && row[field] !== undefined && Number.isFinite(Number(row[field]))).length; return result.rows.length > 0 && observed / result.rows.length >= minimumFieldCoverage }) } } : aggregateBinanceMetricsRows(result.rows, { interval: series.interval, startTime: start, endTime: end, requiredFields, minimumFieldCoverage }); rows = bindRowsToSeries(aggregated.rows, series); coverage = { ...result.coverage, ...aggregated.coverage }
   } else if (series.instrument === 'BINANCE_USDM_DATED_FUTURE') {
-    result = await backfillBinanceDatedKlineArchives({ asset: series.asset, symbol: series.symbol, interval: series.interval, startTime: start, endTime: end, maxFiles: maxPages * 31, rawOutputRoot: root, fetchImpl, capturedAt: fixtureOnly ? capturedAt : null, fixtureOnly }); rows = bindRowsToSeries(result.rows, series); coverage = validateDenseBarCoverageV5(rows, series); if (result.coverage?.missing_months?.length) coverage = { ...coverage, complete: false, reason: `MISSING_DATED_ARCHIVE_MONTHS:${result.coverage.missing_months.join(',')}` }
+    result = await backfillBinanceDatedKlineArchives({ asset: series.asset, symbol: series.symbol, interval: series.interval, startTime: start, endTime: end, maxFiles: maxPages * 31, rawOutputRoot: root, fetchImpl, capturedAt: fixtureOnly ? capturedAt : null, fixtureOnly, forceReopen: forceArchiveReopen }); rows = bindRowsToSeries(result.rows, series); coverage = validateDenseBarCoverageV5(rows, series); if (result.coverage?.missing_months?.length) coverage = { ...coverage, complete: false, reason: `MISSING_DATED_ARCHIVE_MONTHS:${result.coverage.missing_months.join(',')}` }
   } else if (series.series_type === 'mark_bars' || series.instrument === 'BINANCE_USDM_PERPETUAL_MARK') {
     result = await backfillBinanceMarkPriceOhlc({ asset: series.asset, symbolOverride: series.symbol, startTime: start, endTime: end, interval: series.interval, maxPages, maxRows, rateLimitMs, fetchImpl, capturedAt: fixtureOnly ? capturedAt : null, fixtureOnly }); rows = bindRowsToSeries(result.rows, series); coverage = validateDenseBarCoverageV5(rows, series)
   } else {
     result = await backfillBinanceOhlc({ asset: series.asset, symbolOverride: series.symbol, startTime: start, endTime: end, interval: series.interval, linear: series.instrument !== 'BINANCE_SPOT', maxPages, maxRows, rateLimitMs, fetchImpl, capturedAt: fixtureOnly ? capturedAt : null, fixtureOnly }); rows = bindRowsToSeries(result.rows, series); coverage = validateDenseBarCoverageV5(rows, series)
   }
   coverage = contractCoverage(coverage, { start, end })
+  if (series.series_type === 'metrics_events') {
+    // The public archive is explicitly a latest retrieval. Preserve all rows
+    // and receipts for diagnostic/research replay, but do not advertise them
+    // as authoritative PIT coverage until a historical-vintage custody
+    // adapter supplies an explicit unlock marker.
+    coverage = { ...coverage, complete: false, reason: METRICS_PIT_VINTAGE_BLOCK_REASON, metrics_pit_vintage_status: 'LATEST_RETRIEVAL_NOT_HISTORICAL_VINTAGE' }
+  }
   // Coverage receipts retain the strict schema's compact reason field while
   // physical partition rows retain the complete observed close_time.  Do not
   // turn an authentic early-close candle into a fabricated full-duration bar.
@@ -2033,8 +2681,25 @@ function coverageSeriesIdentity(series) {
 function promotedCaptureCoverageComplete(series, capture) {
   if (!capture || capture.unavailable === true || capture.coverage?.complete !== true) return false
   const coverage = capture.coverage
+  if (series.series_type === 'metrics_events') {
+    // A complete row/count envelope is not enough for market-flow metrics:
+    // Data Vision is a revised/latest-retrieval proxy, not a historical PIT
+    // publication vintage. Only explicitly retained historical-vintage
+    // custody can unlock a metric-dependent strategy.
+    const pitVintage = capture.metrics_pit_vintage_status || coverage.metrics_pit_vintage_status || coverage.pit_vintage_status || coverage.source_pit_vintage_status
+    if (pitVintage !== 'HISTORICAL_PIT_VINTAGE') return false
+    const requiredFields = [...new Set((coverage.required_metric_fields || series.metric_required_fields || []).map(String))]
+    const minimum = Number(coverage.minimum_field_coverage ?? series.metric_minimum_field_coverage ?? 0.95)
+    const observed = coverage.required_field_coverage || requiredFields.map(field => ({ field, fraction: Number(coverage.field_coverage?.[field]?.fraction ?? 0) }))
+    if (!Number.isFinite(minimum) || minimum < 0 || minimum > 1 || requiredFields.some(field => {
+      const row = observed.find(value => String(value?.field) === field)
+      return !row || !(Number(row.fraction) >= minimum)
+    })) return false
+  }
   if (series.interval === 'event' || series.series_type === 'funding_events') {
-    if (coverage.boundaries_covered === false || coverage.source_pagination_complete === false) return false
+    // Both facts are mandatory evidence.  Missing is not equivalent to true:
+    // a self-hashed five-year capture with only complete:true is incomplete.
+    if (coverage.boundaries_covered !== true || coverage.source_pagination_complete !== true) return false
     return true
   }
   const expected = Number(series.expected_event_count)
@@ -2079,7 +2744,7 @@ export function resolvePromotedCoverage({ plan, acquisition, parquet = null, tim
   const requiredSeries = [...new Map([...plan.series.filter(series => series.required !== false), ...declaredContext].map(series => [seriesKey(series), series])).values()].sort((a, b) => seriesKey(a).localeCompare(seriesKey(b)))
   const optionalSeries = plan.series.filter(series => !requiredSeries.some(required => seriesKey(required) === seriesKey(series))).sort((a, b) => seriesKey(a).localeCompare(seriesKey(b)))
   const rows = [...requiredSeries, ...optionalSeries].map(series => {
-    const identity = seriesKey(series); const acquired = acquisitionByKey.get(identity) || null; const promoted = parquetByKey.get(identity) || null; const acquiredComplete = Boolean(acquired && promotedCaptureCoverageComplete(series, acquired) && acquired.partition?.storage_role === 'STAGING'); const promotedComplete = Boolean(promoted && promoted.partition?.storage_role === 'AUTHORITATIVE' && promoted.partition?.format === 'PARQUET'); const complete = acquiredComplete && (!requireParquet || promotedComplete); const coverage = acquired?.coverage || {}; const gaps = [...new Set([...(acquired?.limitations || []), ...(coverage.missing_slots || []), ...(coverage.missing_days || []), ...(coverage.missing_months || []), ...(coverage.gap_starts || []), ...(coverage.reason ? [coverage.reason] : []), ...(!acquired ? ['NOT_ACQUIRED'] : []), ...(acquired?.unavailable ? ['UNAVAILABLE'] : []), ...(acquired && !acquiredComplete && coverage.complete === true ? ['BOUNDARY_OR_EXPECTED_COUNT_NOT_VERIFIED'] : []), ...(requireParquet && !promoted ? ['PARQUET_NOT_PROMOTED'] : [])].map(String))].sort()
+  const identity = seriesKey(series); const acquired = acquisitionByKey.get(identity) || null; const promoted = parquetByKey.get(identity) || null; const acquiredComplete = Boolean(acquired && promotedCaptureCoverageComplete(series, acquired) && acquired.partition?.storage_role === 'STAGING'); const promotedComplete = Boolean(promoted && promoted.partition?.storage_role === 'AUTHORITATIVE' && promoted.partition?.format === 'PARQUET'); const complete = acquiredComplete && (!requireParquet || promotedComplete); const coverage = acquired?.coverage || {}; const metricPitVintage = acquired?.metrics_pit_vintage_status || coverage.metrics_pit_vintage_status || coverage.pit_vintage_status || coverage.source_pit_vintage_status || (coverage.source === 'HISTORICAL_PIT_VINTAGE' ? coverage.source : null); const metricPitBlocked = series.series_type === 'metrics_events' && coverage.complete === true && metricPitVintage !== 'HISTORICAL_PIT_VINTAGE'; const metricCoverageBelow = series.series_type === 'metrics_events' && coverage.complete === true && (() => { const fields = [...new Set((coverage.required_metric_fields || series.metric_required_fields || []).map(String))]; const minimum = Number(coverage.minimum_field_coverage ?? series.metric_minimum_field_coverage ?? 0.95); const observed = coverage.required_field_coverage || fields.map(field => ({ field, fraction: Number(coverage.field_coverage?.[field]?.fraction ?? 0) })); return !Number.isFinite(minimum) || minimum < 0 || minimum > 1 || fields.some(field => { const row = observed.find(value => String(value?.field) === field); return !row || Number(row.fraction) < minimum }) })(); const gaps = [...new Set([...(acquired?.limitations || []), ...(coverage.missing_slots || []), ...(coverage.missing_days || []), ...(coverage.missing_months || []), ...(coverage.gap_starts || []), ...(coverage.reason ? [coverage.reason] : []), ...(metricPitBlocked ? [METRICS_PIT_VINTAGE_BLOCK_REASON] : []), ...(metricCoverageBelow ? ['METRICS_FIELD_COVERAGE_BELOW_FROZEN_MINIMUM'] : []), ...(!acquired ? ['NOT_ACQUIRED'] : []), ...(acquired?.unavailable ? ['UNAVAILABLE'] : []), ...(acquired && !acquiredComplete && coverage.complete === true ? ['BOUNDARY_OR_EXPECTED_COUNT_NOT_VERIFIED'] : []), ...(requireParquet && !promoted ? ['PARQUET_NOT_PROMOTED'] : [])].map(String))].sort()
     return { ...coverageSeriesIdentity(series), identity, required: requiredSeries.some(required => seriesKey(required) === identity), observed_rows: Number.isInteger(coverage.observed_rows) ? coverage.observed_rows : Number.isInteger(coverage.observed_events) ? coverage.observed_events : Number(acquired?.partition?.row_count || 0), expected_rows: Number.isInteger(series.expected_event_count) ? series.expected_event_count : null, observed_min_event_time: coverage.min_event_time || coverage.first_event_time || null, observed_max_event_time: coverage.max_event_time || coverage.last_event_time || null, observed_min_availability_time: coverage.min_availability_time || null, observed_max_availability_time: coverage.max_availability_time || null, gaps, acquisition_complete: acquiredComplete, parquet_complete: promotedComplete, complete, acquisition_partition_sha256: acquired?.partition?.sha256 || null, parquet_partition_sha256: promoted?.partition?.sha256 || null }
   })
   const requiredRows = rows.filter(row => row.required); const optionalRows = rows.filter(row => !row.required); const baseComplete = requiredRows.length > 0 && requiredRows.every(row => row.complete); const declaredRequirementsComplete = baseComplete; const fullPlanComplete = rows.length > 0 && rows.every(row => row.complete); const limitations = [...new Set([...(plan.limitations || []), ...(acquisition.limitations || []), ...rows.filter(row => !row.complete).flatMap(row => row.gaps.map(gap => `${row.identity}:${gap}`))])].sort()
@@ -2126,7 +2791,44 @@ function fieldNames(rows) { return [...new Set(rows.flatMap(row => Object.keys(r
 function rejectDuplicate(rows, identity, label) { const seen = new Set(); for (const row of rows) { const id = identity(row); if (!id || seen.has(id)) throw new Error(`${label} is missing or duplicated: ${id || '?'}`); seen.add(id) } }
 function inWindow(time, plan) { return time >= timestamp(plan.window.start_at) && time <= timestamp(plan.window.completed_through_at) }
 
-export function validateCandidatePredicates({ predictorRegistry, predicates } = {}) { const registry = validatePredictorRegistry(predictorRegistry); for (const predicate of ensureArray(predicates, 'candidate predicates')) { const id = typeof predicate === 'string' ? predicate : predicate.predictor_id; if (!registry.has(id)) throw new Error(`candidate predicate references an unregistered predictor: ${id}`) } return true }
+/* The evaluator owns the predicate AST, but the data boundary must be able to
+ * derive its complete leaf inventory independently.  In particular, a leaf
+ * below NOT is still a required predictor: dropping it would let a malformed
+ * feature row turn `NOT missing` into a signal. */
+export function derivePredicatePredictorIds(predicate, output = new Set()) {
+  if (!predicate || typeof predicate !== 'object' || Array.isArray(predicate)) throw new Error('predicate AST is invalid')
+  if (predicate.predictor_id !== undefined) {
+    const id = String(predicate.predictor_id)
+    if (!id) throw new Error('predicate predictor_id is empty')
+    output.add(id)
+    return [...output].sort()
+  }
+  const children = predicate.all || predicate.any
+  if (children !== undefined) {
+    if (!Array.isArray(children) || !children.length) throw new Error('predicate AST conjunction/disjunction is empty')
+    for (const child of children) derivePredicatePredictorIds(child, output)
+    return [...output].sort()
+  }
+  if (predicate.not !== undefined) return derivePredicatePredictorIds(predicate.not, output)
+  throw new Error('predicate AST is invalid')
+}
+
+function predicateInventoryIds(predicates, label = 'predicate inventory') {
+  const ids = []
+  for (const predicate of ensureArray(predicates, label)) {
+    const id = typeof predicate === 'string' ? predicate : predicate?.predictor_id
+    if (!id || typeof id !== 'string') throw new Error(`${label} contains an invalid predictor identity`)
+    ids.push(id)
+  }
+  return [...new Set(ids)].sort()
+}
+
+export function validateCandidatePredicates({ predictorRegistry, predicates } = {}) {
+  const registry = validatePredictorRegistry(predictorRegistry); const ids = predicateInventoryIds(predicates, 'candidate predicates')
+  for (const id of ids) if (!registry.has(id)) throw new Error(`candidate predicate references an unregistered predictor: ${id}`)
+  if (ids.length !== ensureArray(predicates, 'candidate predicates').length) throw new Error('candidate predicate inventory contains duplicate predictor IDs')
+  return true
+}
 
 function validateFeatureRows(rows, { predictorRegistry, plan, candidatePredicates = [] }) {
   const registry = validatePredictorRegistry(predictorRegistry); validateCandidatePredicates({ predictorRegistry, predicates: candidatePredicates }); const base = new Set(['asset', 'symbol', 'venue', 'instrument', 'timeframe', 'event_time', 'decision_time', 'availability_time', 'signal_eligible', 'signal_id', 'episode_id'])
@@ -2212,6 +2914,13 @@ export function makeSeparatedArtifactManifest({ plan, planSha256 = null, root, p
 export function verifySeparatedArtifactManifest(manifest, { root, plan, requireParquet = false, predictorRegistry = null, candidatePredicates = manifest?.candidate_predicates || [] } = {}) {
   assertOwnHash(manifest, DATA_V5.artifacts, 'separated artifact manifest'); if (!plan || manifest.plan_sha256 !== plan.content_sha256) throw new Error('separated artifact manifest is not bound to the supplied plan'); if (requireParquet && (manifest.format !== 'PARQUET' || manifest.status !== 'AUTHORITATIVE_PARQUET' || manifest.storage_role !== 'AUTHORITATIVE' || manifest.authoritative !== true)) throw new Error('authoritative artifacts require verified Parquet conversion'); if (manifest.format === 'PARQUET' && (!manifest.conversion || !HASH_RE.test(String(manifest.conversion.source_artifact_manifest_sha256 || '')) || !manifest.conversion.source_artifact_manifest_reference)) throw new Error('Parquet artifact conversion source manifest is not physically bound'); if (!root) throw new Error('artifact verification requires root')
   for (const [field, label] of [['source_manifest_sha256', 'source manifest'], ['source_dataset_root_sha256', 'source dataset root'], ['transformation_code_sha256', 'transformation code'], ['label_code_sha256', 'label code'], ['execution_code_sha256', 'execution code'], ['config_sha256', 'config'], ['precommit_sha256', 'precommit'], ['envelope_sha256', 'opportunity envelope'], ['predictor_registry_sha256', 'predictor registry']]) sha(manifest[field], label)
+  if (predictorRegistry) {
+    const registry = validatePredictorRegistry(predictorRegistry); const registryIds = [...registry.keys()].sort(); const manifestIds = predicateInventoryIds(manifest.predictor_ids || [], 'manifest predictor inventory')
+    if (stable(manifestIds) !== stable(registryIds)) throw new Error('separated artifact predictor inventory does not exactly match the frozen predictor registry')
+    if (manifest.predictor_registry_sha256 !== predictorRegistry.content_sha256) throw new Error('separated artifact predictor registry is not bound')
+  }
+  const declaredPredicateIds = predicateInventoryIds(manifest.candidate_predicates || [], 'manifest candidate predicate inventory'); const suppliedPredicateIds = predicateInventoryIds(candidatePredicates, 'evaluator predicate inventory')
+  if (stable(declaredPredicateIds) !== stable(suppliedPredicateIds)) throw new Error('separated artifact predicate inventory does not exactly match the evaluator predicate IDs')
   verifySeparatedSourceManifest(resolve(root), manifest.source_manifest_reference, manifest.source_manifest_sha256, manifest.plan_sha256, 'separated source manifest')
   if (manifest.format === 'PARQUET') verifyPhysicalJsonReference(resolve(root), manifest.conversion.source_artifact_manifest_reference, manifest.conversion.source_artifact_manifest_sha256, 'Parquet source staging manifest')
   const expectedRoles = new Set(['feature', 'label', 'execution', 'mark']); const actualRoles = new Set(Object.keys(manifest.artifacts || {})); if (actualRoles.size !== expectedRoles.size || [...expectedRoles].some(role => !actualRoles.has(role))) throw new Error('separated artifact roles are incomplete or duplicated')
@@ -2225,14 +2934,50 @@ function makeMetadataReceiptLegacy({ kind, status, records = [], source = null, 
   const allowed = ['FEE_SCHEDULE', 'FUNDING_IDENTITY', 'CONTRACT_SPEC', 'EXPIRY', 'MARGIN', 'LIQUIDATION', 'EXECUTION_MODEL']; const name = String(kind || '').toUpperCase(); if (!allowed.includes(name)) throw new Error(`unsupported metadata kind ${kind}`); if (!DATA_V5_STATUSES.includes(status)) throw new Error(`unsupported metadata status ${status}`); if (status !== 'UNAVAILABLE' && !records.length) throw new Error(`${name} metadata requires records unless UNAVAILABLE`); if (status === 'PUBLIC_OBSERVED' || status === 'USER_BOUND') { sha(sourceReceiptSha256, `${name}.source_receipt_sha256`); const sourceBytes = Array.isArray(sourceByteSha256) ? sourceByteSha256 : [sourceByteSha256]; if (!sourceBytes.length || sourceBytes.some(value => !HASH_RE.test(String(value)))) throw new Error(`${name}.source_byte_sha256 is invalid`); const boundSourceSha = source?.content_sha256 || source?.sha256; const boundBytes = source?.byte_sha256 ?? source?.source_byte_sha256; const boundBytesArray = Array.isArray(boundBytes) ? boundBytes : [boundBytes]; if (boundSourceSha !== sourceReceiptSha256 || stable([...boundBytesArray].sort()) !== stable([...sourceBytes].sort())) throw new Error(`${name} metadata source receipt and physical source-byte hashes are not bound`) } if (status === 'CONSERVATIVE_MODEL') { sha(modelSha256, `${name}.model_sha256`); sha(precommitSha256, `${name}.precommit_sha256`) } if (planSha256) sha(planSha256, 'plan_sha256'); const normalized = records.map(record => { if (!record.asset || !record.instrument || !record.effective_from || !record.effective_to || !record.availability_time) throw new Error(`${name} record lacks effective identity/bounds or availability_time`); if (timestamp(record.effective_to) < timestamp(record.effective_from)) throw new Error(`${name} effective bounds are invalid`); const normalizedRecord = { venue: 'BINANCE', symbol: `${String(record.asset).toUpperCase()}USDT`, ...clone(record) }; const requiredNumber = (field, positive = false) => { const number = Number(normalizedRecord[field]); if (!Number.isFinite(number) || (positive && !(number > 0))) throw new Error(`${name} record ${field} is invalid`); return number }; if (name === 'FEE_SCHEDULE') requiredNumber('taker_fee_rate'); if (name === 'FUNDING_IDENTITY') { if (!normalizedRecord.event_id) throw new Error('FUNDING_IDENTITY record event_id is missing'); requiredNumber('funding_rate') } if (name === 'CONTRACT_SPEC') requiredNumber('contract_multiplier', true); if (name === 'MARGIN') requiredNumber('maintenance_margin_ratio', true); if (name === 'LIQUIDATION') requiredNumber('liquidation_price', true); if (name === 'EXECUTION_MODEL') { requiredNumber('slippage_bps'); requiredNumber('impact_bps'); if (!normalizedRecord.outage_policy || !normalizedRecord.gap_policy) throw new Error('EXECUTION_MODEL outage/gap policy is missing') } if (name === 'EXPIRY' && !normalizedRecord.expiry && !normalizedRecord.delivery_date) throw new Error('EXPIRY record expiry is missing'); return normalizedRecord }); const authoritative = status === 'PUBLIC_OBSERVED' || status === 'USER_BOUND' || (status === 'CONSERVATIVE_MODEL' && name === 'EXECUTION_MODEL'); return withHash({ schema: DATA_V5.metadata, version: 1, kind: name, status, plan_sha256: planSha256, captured_at: iso(capturedAt), source: source ? clone(source) : null, source_receipt_sha256: sourceReceiptSha256, source_byte_sha256: sourceByteSha256, model_sha256: modelSha256, precommit_sha256: precommitSha256, provenance_mode: status === 'CONSERVATIVE_MODEL' ? 'MODEL_BOUND' : (status === 'UNAVAILABLE' ? 'UNAVAILABLE' : 'BOUND_SOURCE'), records: normalized, coverage: coverage ? clone(coverage) : null, limitations: [...new Set(limitations)].sort(), authoritative })
 }
 
+function makeSettlementMetadataReceiptLegacy({ status, records = [], source = null, sourceReceiptSha256 = null, sourceByteSha256 = null, limitations = [], coverage = null, planSha256 = null, capturedAt = now() } = {}) {
+  if (!DATA_V5_STATUSES.includes(status)) throw new Error('unsupported metadata status SETTLEMENT')
+  if (!['PUBLIC_OBSERVED', 'USER_BOUND', 'UNAVAILABLE'].includes(status)) throw new Error('SETTLEMENT metadata must be physically observed/user-bound or unavailable')
+  if (status !== 'UNAVAILABLE' && !records.length) throw new Error('SETTLEMENT metadata requires records unless UNAVAILABLE')
+  const sourceBytes = Array.isArray(sourceByteSha256) ? sourceByteSha256 : [sourceByteSha256]
+  if (status === 'PUBLIC_OBSERVED' || status === 'USER_BOUND') {
+    sha(sourceReceiptSha256, 'SETTLEMENT.source_receipt_sha256')
+    if (!sourceBytes.length || sourceBytes.some(value => !HASH_RE.test(String(value)))) throw new Error('SETTLEMENT.source_byte_sha256 is invalid')
+    const boundSourceSha = source?.content_sha256 || source?.sha256; const boundBytes = source?.byte_sha256 ?? source?.source_byte_sha256; const boundBytesArray = Array.isArray(boundBytes) ? boundBytes : [boundBytes]
+    if (boundSourceSha !== sourceReceiptSha256 || stable([...boundBytesArray].sort()) !== stable([...sourceBytes].sort())) throw new Error('SETTLEMENT metadata source receipt and physical source-byte hashes are not bound')
+  }
+  if (planSha256) sha(planSha256, 'plan_sha256')
+  const captured = timestamp(capturedAt)
+  const normalized = records.map(record => {
+    if (!record.asset || String(record.venue || '').toUpperCase() !== 'BINANCE' || !record.symbol || String(record.instrument || '').toUpperCase() !== 'BINANCE_USDM_DATED_FUTURE' || !record.effective_from || !record.effective_to || !record.availability_time) throw new Error('SETTLEMENT record lacks exact dated-futures identity/bounds or availability_time')
+    const settlementPrice = Number(record.settlement_price ?? record.delivery_price ?? record.settlement_value)
+    if (!(settlementPrice > 0)) throw new Error('SETTLEMENT record settlement_price is invalid')
+    if (timestamp(record.effective_to) < timestamp(record.effective_from)) throw new Error('SETTLEMENT effective bounds are invalid')
+    const expiry = timestamp(record.expiry || record.delivery_date)
+    const event = timestamp(record.event_time)
+    const settlement = timestamp(record.settlement_time)
+    const available = timestamp(record.availability_time)
+    if (![expiry, event, settlement, available, captured].every(Number.isFinite) || event !== settlement || event < expiry || available < event || available > captured) throw new Error('SETTLEMENT event/expiry/availability chronology is invalid')
+    if (!record.settlement_mark_event_id) throw new Error('SETTLEMENT record settlement_mark_event_id is missing')
+    const sourceHash = String(record.settlement_mark_source_sha256 || '')
+    if (!HASH_RE.test(sourceHash) || !sourceBytes.includes(sourceHash)) throw new Error('SETTLEMENT record mark source is not in the bound physical source-byte inventory')
+    if (record.source_receipt_sha256 && record.source_receipt_sha256 !== sourceReceiptSha256) throw new Error('SETTLEMENT record source receipt identity differs from the bound receipt')
+    const normalizedRecord = { ...clone(record), venue: 'BINANCE', instrument: 'BINANCE_USDM_DATED_FUTURE', settlement_price: settlementPrice, source_receipt_sha256: sourceReceiptSha256, source_byte_sha256: sourceHash }
+    delete normalizedRecord.delivery_price
+    delete normalizedRecord.settlement_value
+    return normalizedRecord
+  })
+  return withHash({ schema: DATA_V5.metadata, version: 1, kind: 'SETTLEMENT', status, plan_sha256: planSha256, captured_at: iso(capturedAt), source: source ? clone(source) : null, source_receipt_sha256: sourceReceiptSha256, source_byte_sha256: sourceByteSha256, model_sha256: null, precommit_sha256: null, provenance_mode: status === 'UNAVAILABLE' ? 'UNAVAILABLE' : 'BOUND_SOURCE', records: normalized, coverage: coverage ? clone(coverage) : null, limitations: [...new Set(limitations)].sort(), authoritative: status === 'PUBLIC_OBSERVED' || status === 'USER_BOUND' })
+}
+
 export function makeMetadataReceipt({ sourceRoot = null, sourceRootReference = null, sourceReceiptPath = null, ...args } = {}) {
-  const value = makeMetadataReceiptLegacy(args)
-  if (value.status !== 'PUBLIC_OBSERVED' && value.status !== 'USER_BOUND') return value
+  const settlement = String(args.kind || '').toUpperCase() === 'SETTLEMENT'
+  const normalizedValue = settlement ? makeSettlementMetadataReceiptLegacy(args) : makeMetadataReceiptLegacy(args)
+  if (normalizedValue.status !== 'PUBLIC_OBSERVED' && normalizedValue.status !== 'USER_BOUND') return normalizedValue
   const sourcePath = sourceReceiptPath || args.source?.path || args.source?.receipt_path
-  if (!sourceRoot || !sourcePath) throw new Error(`${value.kind} public/user-bound metadata requires an explicit physical source root and normalized receipt path`)
-  const summary = { schema: 'strategy-v5-source-receipt/1', path: sourcePath, sha256: args.sourceReceiptSha256, content_sha256: args.sourceReceiptSha256, byte_sha256: args.sourceByteSha256, status: value.status }
-  verifyNormalizedReceipt(resolve(sourceRoot), summary, `${value.kind} metadata source receipt`)
-  const bound = { ...value, source_root_reference: portableRoot(resolve(sourceRoot), sourceRootReference), source_receipts: [{ path: sourcePath, sha256: args.sourceReceiptSha256, content_sha256: args.sourceReceiptSha256, byte_sha256: args.sourceByteSha256, schema: 'strategy-v5-source-receipt/1', status: value.status }] }
+  if (!sourceRoot || !sourcePath) throw new Error(`${normalizedValue.kind} public/user-bound metadata requires an explicit physical source root and normalized receipt path`)
+  const summary = { schema: 'strategy-v5-source-receipt/1', path: sourcePath, sha256: args.sourceReceiptSha256, content_sha256: args.sourceReceiptSha256, byte_sha256: args.sourceByteSha256, status: normalizedValue.status }
+  verifyNormalizedReceipt(resolve(sourceRoot), summary, `${normalizedValue.kind} metadata source receipt`)
+  const bound = { ...normalizedValue, source_root_reference: portableRoot(resolve(sourceRoot), sourceRootReference), source_receipts: [{ path: sourcePath, sha256: args.sourceReceiptSha256, content_sha256: args.sourceReceiptSha256, byte_sha256: args.sourceByteSha256, schema: 'strategy-v5-source-receipt/1', status: normalizedValue.status }] }
   return withHash(bound)
 }
 

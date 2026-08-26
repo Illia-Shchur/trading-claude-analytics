@@ -1,0 +1,20 @@
+{
+  "schema": "strategy-github-attestation-key-registry/1",
+  "version": 1,
+  "status": "FROZEN",
+  "repository": "Illia-Shchur/trading-claude-analytics",
+  "repository_id": "1238541043",
+  "environment": "prospective-v5",
+  "generation": 1,
+  "keys": [
+    {
+      "key_id": "actions-2026-08-25-1",
+      "role": "ACTIONS_ATTESTATION",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAz1q/nN9ZJsjxOpO8/rKEq6scuAQg8OAw62Ofd1L9U8s=\n-----END PUBLIC KEY-----\n",
+      "fingerprint": "dcc54634fdab9a9947281ef26f246bb89891ccff5fd489cb4c1406911b87282b",
+      "valid_from": "2026-08-25T00:00:00.000Z",
+      "valid_until": "2026-11-23T00:00:00.000Z"
+    }
+  ],
+  "content_sha256": "457c885899f684bb4ab25e727432e64ef6f1497cc0072d46f5b63b571ee1b09e"
+}

@@ -19,6 +19,7 @@ import {
   runNestedWfoV5,
   runNullControlsV5,
   runStatisticalAuditV5,
+  validateNestedWfoArtifact,
   validateStatisticalArtifactSet,
   withHash
 } from '../tools/strategy-research-v5-statistical.mjs'
@@ -206,7 +207,7 @@ function auditFixture({ value = 0.05 } = {}) {
     evaluator: tracedEvaluator,
     exposureHead: fixture.exposureHead,
     stressProvider: ({ lineage_sha256, artifact, selected_candidate_id }) => makeStressDecision({ lineage_sha256, sourceArtifactSha256: artifact.content_sha256, selectedCandidateId: selected_candidate_id, pass: true }),
-    portfolioProvider: ({ lineage_sha256, artifact, asset_decisions }) => makePortfolioDecision({ lineage_sha256, pass: true, artifact, assetDecisions: asset_decisions, returnIncrements: artifact.episodes.map(row => ({ episode_id: row.episode_id, asset: row.asset, net_r: 0.05 })) }),
+    portfolioProvider: ({ lineage_sha256, artifact, asset_decisions }) => { const expected = new Map(asset_decisions.flatMap(row => row.selected_return_vector || []).map(row => [`${row.asset}|${row.episode_id}`, row])); return makePortfolioDecision({ lineage_sha256, pass: true, artifact, assetDecisions: asset_decisions, returnIncrements: artifact.episodes.map(row => expected.get(`${row.asset}|${row.episode_id}`)).filter(row => row?.traded === true).map(row => ({ episode_id: row.episode_id, asset: row.asset, net_r: row.net_r })) }) },
     oosVectorProvider: ({ exposureHead, episode_ids }) => makeVectorInventory({ exposureHead, episodeIds: episode_ids, vectors: Object.fromEntries(exposureHead.entries.map(row => [row.behavior_sha256, episode_ids.map((episode_id, index) => ({ episode_id, net_r: 0.05 + (index % 5) * 0.005, traded: true }))])) }),
     replay,
     selectionBudget,
@@ -227,6 +228,16 @@ function auditFixture({ value = 0.05 } = {}) {
   assert.equal(out.audit.pbo.source_phase, 'OUTER_TRAIN_ONLY'); assert.equal(out.audit.pbo.outer_oos_bound, false)
   assert.equal(out.developmentRefit.selected_from_outer_fold_winners, false); assert.equal(out.developmentRefit.excluded_from_retrospective_oos_audit, true); assert.notEqual(out.developmentRefit.content_sha256, out.audit.content_sha256)
   assert.ok(out.developmentRefit.asset_refits.every(row => row.status !== 'SELECTED_FOR_SHADOW' || (row.source_phase === 'FRESH_FULL_DEVELOPMENT_GA' && row.selected_from_outer_fold_winners === false && !foldDecisions.some(fold => fold.genetic_sha256 === row.genetic_sha256))), 'deployable SHADOW definitions come from a distinct full-development GA, not an outer winner')
+  const forged = structuredClone(out.run)
+  const forgedOuter = forged.asset_decisions.find(row => Object.values(row.asset_decisions || {}).some(decision => decision.selected_behavior_alias_sha256))
+  const forgedDecision = Object.values(forgedOuter.asset_decisions).find(decision => decision.selected_behavior_alias_sha256)
+  const forgedRows = forgedOuter.vector.vectors[forgedDecision.selected_behavior_alias_sha256]
+  forgedRows.find(row => row.episode_id === forgedDecision.selected_return_vector[0].episode_id).net_r = 999
+  forgedOuter.vector = withHash(forgedOuter.vector)
+  const forgedFoldIndex = forged.folds.findIndex(row => row.fold_id === forgedOuter.fold_id)
+  forged.folds[forgedFoldIndex] = withHash({ ...forged.folds[forgedFoldIndex], test: { ...forged.folds[forgedFoldIndex].test, vector_inventory_sha256: forgedOuter.vector.content_sha256 } })
+  const forgedWfo = withHash(forged)
+  assert.throws(() => validateNestedWfoArtifact(forgedWfo), /selected returns disagree with its vector inventory/i, 'a rehashed fold vector cannot rewrite an OOS return independently of its selected decision')
 }
 
 // A crash after the physical exposure HEAD commit but before registry finality

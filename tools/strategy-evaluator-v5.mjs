@@ -176,6 +176,14 @@ function predicatePredictors(predicate, output = []) {
   return output
 }
 
+function requiredPredicatePredictorIds(predicate) {
+  return [...new Set(predicatePredictors(predicate).map(row => row.predictor_id))].sort()
+}
+
+function missingPredicatePredictors(predicate, feature) {
+  return requiredPredicatePredictorIds(predicate).filter(predictorId => !feature || !Object.hasOwn(feature, predictorId) || feature[predictorId] === null || feature[predictorId] === undefined)
+}
+
 function geneReferences(value, output = new Set()) {
   if (Array.isArray(value)) value.forEach(child => geneReferences(child, output))
   else if (value && typeof value === 'object') {
@@ -272,10 +280,18 @@ function compare(actual, op, expected) {
 }
 
 export function evaluateSignalPredicateV5(predicate, feature, chromosome) {
+  // Check the complete predicate inventory before descending into the AST.
+  // Otherwise a missing leaf evaluates false and `NOT missing_leaf` becomes
+  // true, turning absent predictor data into a signal.
+  if (missingPredicatePredictors(predicate, feature).length) return false
+  return evaluateSignalPredicateNodeV5(predicate, feature, chromosome)
+}
+
+function evaluateSignalPredicateNodeV5(predicate, feature, chromosome) {
   if (predicate.predictor_id) return compare(feature[predicate.predictor_id], predicate.op, resolveTemplate(predicate.value, chromosome))
-  if (predicate.all) return predicate.all.every(child => evaluateSignalPredicateV5(child, feature, chromosome))
-  if (predicate.any) return predicate.any.some(child => evaluateSignalPredicateV5(child, feature, chromosome))
-  if (predicate.not) return !evaluateSignalPredicateV5(predicate.not, feature, chromosome)
+  if (predicate.all) return predicate.all.every(child => evaluateSignalPredicateNodeV5(child, feature, chromosome))
+  if (predicate.any) return predicate.any.some(child => evaluateSignalPredicateNodeV5(child, feature, chromosome))
+  if (predicate.not) return !evaluateSignalPredicateNodeV5(predicate.not, feature, chromosome)
   throw new Error('predicate AST is invalid')
 }
 
@@ -377,7 +393,7 @@ function createBoundEvaluator({ evaluatorSpec, geneSpace, predictorRegistry, fea
   for (const row of execution) { if (executionByEpisode.has(row.episode_id)) throw new Error(`duplicate execution episode ${row.episode_id}`); executionByEpisode.set(row.episode_id, clone(row)) }
   for (const [episodeId, feature] of featureByEpisode) { const label = labelByEpisode.get(episodeId); const path = executionByEpisode.get(episodeId); if (feature.signal_eligible !== false && (!label || !path || feature.episode_id !== label.episode_id || feature.episode_id !== path.episode_id || identity(feature) !== identity(label) || identity(feature) !== identity(path))) throw new Error(`episode ${episodeId} lacks exact separated bindings`) }
 
-  const predictorIds = [...new Set(predicatePredictors(evaluatorSpec.predicate).map(row => row.predictor_id))].sort()
+  const predictorIds = requiredPredicatePredictorIds(evaluatorSpec.predicate)
   const evaluateOne = ({ artifact, episode_ids: episodeIds, chromosome, phase, fold_id: foldId = null, cutoff = null, fit_cutoff: fitCutoff = null, evaluation_cutoff: evaluationCutoff = null, weighting = null, forced_intents: forcedIntents = null } = {}) => {
     if (!artifact || artifact.source_artifact_sha256 !== sourceArtifactSha256) throw new Error('evaluator signal view is not bound to the separated source artifact')
     const inventory = exactSignalInventory(artifact, Array.isArray(episodeIds) ? episodeIds : [], { phase, foldId, featureByEpisode, labelByEpisode, executionByEpisode })
@@ -403,6 +419,8 @@ function createBoundEvaluator({ evaluatorSpec, geneSpace, predictorRegistry, fea
     const candidateReturns = {}; const signalIntentVector = []; const outcomes = []
     for (const episodeId of episodeIds) {
       const feature = featureByEpisode.get(episodeId); if (!feature) throw new Error(`feature episode ${episodeId} is missing`)
+      const missingPredictors = missingPredicatePredictors(evaluatorSpec.predicate, feature)
+      if (feature.signal_eligible !== false && missingPredictors.length) throw new Error(`eligible feature episode ${episodeId} is missing required predictor fields: ${missingPredictors.join(', ')}`)
       const intent = feature.signal_eligible !== false && (forcedIntents && Object.hasOwn(forcedIntents, episodeId) ? Boolean(forcedIntents[episodeId]) : evaluateSignalPredicateV5(evaluatorSpec.predicate, publicFeatureRow(feature, predictorIds), chromosome)); signalIntentVector.push({ episode_id: episodeId, intent })
       if (!intent) { candidateReturns[episodeId] = { net_r: 0, traded: false }; outcomes.push(null); continue }
       const label = labelByEpisode.get(episodeId); const path = materializeLazyExecutionPath(executionByEpisode.get(episodeId), executionLazy); const canonicalLifecycle = candidate.lifecycle || candidate.lifecycle_spec || path.lifecycle || path.lifecycle_spec || candidate.lifecycle_engine === 'strategy-v5-trade-lifecycle/1' || path.lifecycle_engine === 'strategy-v5-trade-lifecycle/1'; let lifecycleBoundPath = path; try { lifecycleBoundPath = canonicalLifecycle ? { ...path, lifecycle_trust_token: makeLoaderLifecycleTrustTokenV5(path, lifecycleBinding) } : path } catch (error) { throw new Error(`canonical lifecycle episode ${episodeId} trust: ${error.message}`) }; let outcome; try { outcome = deriveBoundExecutionOutcome({ feature, label, execution: lifecycleBoundPath, candidate, envelopeWindow: envelopeByEpisode[episodeId] || null, metadata, evaluatorSpec, fixtureOnly }) } catch (error) { throw new Error(`canonical lifecycle episode ${episodeId}: ${error.message}`) }; outcome.episode_id = episodeId; candidateReturns[episodeId] = { net_r: outcome.net_r, traded: true }; outcomes.push(outcome)

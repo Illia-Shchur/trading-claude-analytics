@@ -1,0 +1,23 @@
+{
+  "schema": "strategy-v5-authoritative-command-receipt/1",
+  "version": 1,
+  "command": "validate",
+  "status": "COMPLETE",
+  "inputs": [
+    {
+      "role": "artifact",
+      "storage": "PHYSICAL",
+      "path": "strategy-research/config/v5-attestation-key-registry.json",
+      "byte_sha256": "2aec7b3f3a08694e6faca104411dab67e8da3b906b7e00e1a7de8e196153bb1d",
+      "content_sha256": "457c885899f684bb4ab25e727432e64ef6f1497cc0072d46f5b63b571ee1b09e",
+      "bytes": 766
+    }
+  ],
+  "outputs": [],
+  "limitations": [],
+  "details": {
+    "mode": "STRICT_SCHEMA_AND_SEMANTIC",
+    "active": false
+  },
+  "content_sha256": "a474ef0e2a822ebe7e4f02866232ba6f2f457477bef8ef3bb9de3eef014069bd"
+}

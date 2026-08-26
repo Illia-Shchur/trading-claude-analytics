@@ -28,6 +28,7 @@ credentials.json
 /strategy-research/v5-cache/
 /strategy-research/v5-checkpoints/
 /strategy-research/v5-raw/
+/tmp/
 /strategy-research/v5-data/
 /strategy-research/prospective-v5/
 *.snapshot.json

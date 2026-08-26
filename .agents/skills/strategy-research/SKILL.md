@@ -152,92 +152,16 @@ Use `node tools/strategy-research.mjs precommit` before `generate`. The CLI and
 registry are authoritative for immutable hashes, candidate accounting, run
 recording, indexes, and tamper checks; narrated results do not replace them.
 
-## Additive v4 stack boundary
+## Legacy compatibility boundary
 
-The canonical next-generation path is `node tools/strategy-research-next.mjs`:
-freeze the filled canonical precommit, generate candidates, append the durable
-family×dataset exposure ledger, bind a PIT snapshot/receipts, then run the
-authoritative feature-backed `evaluate` command with separate raw feature/label
-rows plus frozen `--feature-set` and `--label-set` artifacts. The `wfo` command
-requires the same frozen stack, manifest, feature/label sets, receipts, and
-folds. `GRID`, `RANDOM`, and `ML`
-outputs carry frozen seeds/budgets/cutoffs. The GENETIC contract is recognized
-but remains fail-closed until a recorded evolutionary fitness/selection
-implementation is supplied; deterministic sampling is never mislabelled as a
-genetic optimizer. Caller-supplied WFO metrics are rejected.
-
-The v4 executor is Binance spot and USD-M linear swing scope only (MARKET and
-STOP_MARKET), with completed-bar → next 1m-child ordering, adverse OHLC
-collisions, bound fee/funding receipts, capacity and outage fail-closed rules.
-Its portfolio simulator is event-time based: entries reserve current-equity
-capacity and PnL/funding are credited only at exit/settlement events. PIT
-validation requires source-registry receipts, row bindings, physical hashes,
-and complete eight-asset 1m/1h/4h/1d coverage for non-development evidence.
-
-Prospective signals/outcomes are reservation- and lineage-bound; one matching
-signal, declared horizon, capture receipt, and one resolution are mandatory.
-Fast minimums (60 days, 25 portfolio trades, 8 per proposed asset) do not waive
-statistical, stress, monitoring, or portfolio gates. Research emits only
-`REJECTED`, `SHADOW`, or `CANDIDATE_REVIEW`; activation requires an external
-trust-root Ed25519 signature, distinct asset/portfolio approvers, exact evidence
-digests, a 90-day lease, and revocation/drift checks. Local readiness reports
-activation infrastructure separately and keeps actual active strategies at 0.
-Missing GitHub/OIDC custody or external trust roots is an honest fail-closed
-limitation, not a readiness pass.
-
-## Canonical v3 execution (mandatory for new research)
-
-New strategy-research/3 outcome work must use `node tools/strategy-research.mjs
-evaluate-v3` with a frozen experiment/candidate set, PIT feature/label sets and
-`strategy-data-manifest/2`. The registered `swing-engine/1` adapter is the
-implemented ordinary completed-bar swing capability. It hashes adapter source,
-config, supported features/instruments, feature/data manifests,
-package-lock/environment, seed ledger, timezone/bar convention, same-bar
-collision and cost/funding assumptions. It derives canonical trades and
-metrics for every effective candidate × required asset, while zero-trade
-episodes remain internal and digest-bound; it recomputes the selected/OOS stress suite and mark-to-market
-linear crypto portfolio from those trades. `strategy-evidence-bundle/2` binds
-candidate accounting, compact selected/OOS trades, derived-metrics, stress and
-portfolio hashes.
-
-The local path rejects `SEALED_CONFIRMATION`; an externally signed attestation
-bound to experiment/candidate/data hashes is required for that label, and no
-v3 path can produce `ACTIVE`. Caller-supplied metrics, trades, stress or
-portfolio JSON is only an `EXTERNAL_EXPOSED` migration/read path and remains
-`REJECTED`/`SHADOW`. Require explicit chronology (development/training,
-chronological folds, purge/embargo, test/holdout or prospective bounds,
-selection objective/tie-break, seeds and timezone), PIT/data-manifest safety,
-typed parameter topology, behavioural K, and advanced risk diagnostics.
-Confirmation and prospective phases require a frozen lineage-bound
-one-candidate-per-asset selection and alias/K contract; they never select from
-new confirmation/monitoring outcomes. WFO computes behavioral K from TRAIN
-intent per fold and uses only TRAIN-selected candidates on TEST; purge and
-embargo are timestamp gaps, not labels. A missing or mismatched contract is a
-hard failure.
-Unsupported options, multi-leg basis/carry, nonlinear derivatives,
-HFT/arbitrage, queue/latency and atomic-spread claims fail closed or remain
-diagnostic/SHADOW until a specialized adapter is registered. The portfolio
-mark path supports crypto spot, linear perpetuals and linear dated futures;
-leveraged positions without exact entry/exit marks, a declared mark-gap
-contract, or actual funding/collateral terms fail. Marks carry forward only
-within that gap, and cross-margin maintenance is aggregate-account math.
-
-## Foundation v3 implementation boundary
-
-The repository also carries additive `strategy-experiment/3`,
-`strategy-evidence-bundle/2`, and `strategy-run/3` contracts. These bind
-immutable PIT-tiered data manifests, physically separate feature and label
-sets, executor/container hashes, candidate accounting, the acceptance
-contract, and chronological seeds. The `balanced-swing-v1` acceptance profile
-includes independent episodes, raw and search-adjusted expectancy, R/account
-profit factors, bootstrap p20, candidate max-statistic, years, chronological
-blocks, doubled costs, coverage and declared gaps.
-
-`node tools/research-data.mjs` owns snapshots and the pinned Docker DuckDB
-conversion. `node tools/strategy-attestation.mjs` owns reservations, burn
-records, Ed25519 signing, verification and append-only import. GitHub Actions
-may produce `CI_ATTESTED_CONFIRMATION`; it must never be described as sealed
-without independent unseen-data custody. No v3 path can produce `ACTIVE`.
+V1--v4 schemas, records, commands, and migrated evidence remain immutable and
+read-compatible, but they are not the entry point for new research. Use the v5
+path below for every new candidate family, including adaptive genetic search.
+Never reinterpret a legacy deterministic sample as genetic search, upgrade an
+exposed/partial legacy result into sealed evidence, or let a legacy per-asset
+pass authorize a portfolio. Unsupported options, nonlinear instruments, HFT,
+atomic multi-leg execution, and queue/latency claims remain diagnostic or
+fail-closed until a specialized authoritative adapter exists.
 
 ## Deliverables by request type
 

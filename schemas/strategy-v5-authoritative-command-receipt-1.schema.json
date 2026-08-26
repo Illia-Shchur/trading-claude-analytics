@@ -6,7 +6,7 @@
   "properties": {
     "schema": { "const": "strategy-v5-authoritative-command-receipt/1" },
     "version": { "const": 1 },
-    "command": { "enum": ["data-backfill", "opportunity-envelope", "search-genetic", "research-run", "overfit-audit", "prospective-runner", "readiness-audit", "deployment-audit", "validate", "index"] },
+    "command": { "enum": ["data-backfill", "data-raw-replay", "data-local-raw-replay", "opportunity-envelope", "search-genetic", "research-run", "overfit-audit", "prospective-runner", "readiness-audit", "deployment-audit", "validate", "index"] },
     "status": { "enum": ["PLANNED", "COMPLETE", "BLOCKED", "REJECTED"] },
     "inputs": { "type": "array", "items": { "$ref": "#/$defs/reference" } },
     "outputs": { "type": "array", "items": { "$ref": "#/$defs/reference" } },
@@ -35,6 +35,32 @@
         "checkpoint_sha256": { "$ref": "#/$defs/nullableHash" },
         "checkpoint_content_sha256": { "$ref": "#/$defs/nullableHash" },
         "checkpoint_path": { "type": ["string", "null"] },
+        "source_checkpoint_sha256": { "$ref": "#/$defs/nullableHash" },
+        "source_root": { "type": "string", "minLength": 1 },
+        "target_root": { "type": "string", "minLength": 1 },
+        "replayed_count": { "type": "integer", "minimum": 0 },
+        "retained_count": { "type": "integer", "minimum": 0 },
+        "auxiliary_metrics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["series", "checkpoint_path", "source_checkpoint_sha256", "raw_verified_count", "status", "limitation"],
+            "properties": {
+              "series": { "type": "string", "minLength": 1 },
+              "checkpoint_path": { "type": "string", "minLength": 1 },
+              "source_checkpoint_sha256": { "$ref": "#/$defs/nullableHash" },
+              "raw_verified_count": { "type": "integer", "minimum": 0 },
+              "saved_count": { "type": "integer", "minimum": 0 },
+              "remaining_count": { "type": "integer", "minimum": 0 },
+              "status": { "enum": ["REPLAYED", "UNAVAILABLE", "PARTIAL_CHECKPOINT_REPLAYED_FOR_NETWORK_RESUME"] },
+              "limitation": { "type": ["string", "null"] }
+            },
+            "additionalProperties": false
+          }
+        },
+        "acquisition_status": { "enum": ["STAGING_COMPLETE", "STAGING_PARTIAL"] },
+        "base_complete": { "type": "boolean" },
+        "declared_complete": { "type": "boolean" },
         "rate_limit_ms": { "type": ["integer", "null"], "minimum": 0 },
         "lock_stale_ms": { "type": ["integer", "null"], "minimum": 0 },
         "envelope_sha256": { "$ref": "#/$defs/nullableHash" },
@@ -82,7 +108,15 @@
         },
         "active": { "const": false },
         "activated": { "const": false }
-      }
+        ,"publication_artifacts": { "type": "array", "items": { "enum": ["wfo", "research_run", "final_oos_artifact", "final_oos_vector_inventory"] }, "uniqueItems": true, "maxItems": 4 }
+        ,"publication_transaction_path": { "type": ["string", "null"] }
+      },
+      "allOf": [
+        {
+          "if": { "required": ["publication_transaction_path"], "properties": { "publication_transaction_path": { "type": "string" } } },
+          "then": { "properties": { "publication_artifacts": { "minItems": 4, "maxItems": 4 } } }
+        }
+      ]
     },
     "reference": {
       "type": "object",

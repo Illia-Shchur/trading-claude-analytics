@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os'
 import { basename, dirname, join, relative } from 'node:path'
 import { spawnSync } from 'node:child_process'
 import {
-  evaluatePortfolioRiskV5, hash as riskHash, writeMarkArtifact, writeMetadataArtifact
+  evaluatePortfolioRiskV5, hash as riskHash, writeExecutionFillArtifact, writeMarkArtifact, writeMetadataArtifact
 } from '../tools/strategy-portfolio-risk-v5.mjs'
 import {
   appendProspectiveEvent, appendProspectiveEventsAtomically, recoverProspectiveLedger, createProspectiveLedger, createReplayRegistry, hash as prospectiveHash, withHash as prospectiveWithHash,
@@ -85,6 +85,36 @@ test('authoritative marks reject self-authored source-manifest provenance', () =
 
 test('mark PIT availability is not used before completion and respects consuming cutoff', () => {
   const root = dir(); const fees = spotMetadata(root); const future = makeRows().map(row => row.series_type === 'TRADE_MARK' && row.asset === 'btc' && row.event_time === at(10) ? { ...row, availability_time: at(41) } : row); const artifact = writeMarkArtifact(join(root, 'future-mark.json'), { intervalMs: 3_600_000, rows: future }); assert.throws(() => evaluatePortfolioRiskV5({ markPath: artifact.path, markSha256: artifact.sha256, metadata: { feeArtifactPath: fees.path, feeArtifactSha256: fees.sha256 }, policy: basePolicy({ consuming_cutoff: at(40) }), trades: baseTrades() }), /as-of cutoff/); const completed = writeMarkArtifact(join(root, 'completed-mark.json'), { intervalMs: 3_600_000, rows: makeRows() }); const result = evaluatePortfolioRiskV5({ markPath: completed.path, markSha256: completed.sha256, metadata: { feeArtifactPath: fees.path, feeArtifactSha256: fees.sha256 }, policy: basePolicy({ consuming_cutoff: at(40) }), trades: baseTrades() }); assert.equal(result.provenance, 'FIXTURE')
+})
+
+test('future-available marks are omitted at every consuming event timestamp', () => {
+  const root = dir(); const fees = spotMetadata(root)
+  const rows = makeRows().map(row => row.series_type === 'TRADE_MARK' && row.asset === 'btc' && row.event_time === at(10) ? { ...row, availability_time: at(20) } : row)
+  const artifact = writeMarkArtifact(join(root, 'event-future-mark.json'), { intervalMs: 3_600_000, rows })
+  assert.throws(() => evaluatePortfolioRiskV5({ markPath: artifact.path, markSha256: artifact.sha256, metadata: { feeArtifactPath: fees.path, feeArtifactSha256: fees.sha256 }, policy: basePolicy({ consuming_cutoff: at(40) }), trades: baseTrades() }), /duplicate consumption|not dense/)
+})
+
+test('completed-bar marks consume at close while exact execution fills cover entry', () => {
+  const root = dir(); const step = 4 * 3_600_000; const time = offset => new Date(t0 + offset * step).toISOString()
+  const rows = []
+  for (const offset of [-1, 0, 1, 2, 3, 4]) {
+    const event = time(offset); const available = time(offset + 1); const price = 100 + offset * 2
+    if (offset >= 0) rows.push({ asset: 'btc', symbol: 'BTCUSDT', series_type: 'TRADE_MARK', event_time: event, availability_time: available, price })
+    rows.push({ asset: 'btc', symbol: 'BTCUSDT', series_type: 'RISK_REFERENCE', event_time: event, availability_time: available, price: 100 + offset })
+  }
+  const marks = writeMarkArtifact(join(root, '4h-marks.json'), { intervalMs: step, rows })
+  const fees = metadata(root, 'FEE_SCHEDULE', [{ venue: 'binance', symbol: 'BTCUSDT', effective_from: time(-2), effective_to: time(5), taker_rate: 0.001 }], '4h-fees')
+  const execution = writeExecutionFillArtifact(join(root, '4h-execution.json'), { rows: [{ signal_id: '4h-fill', asset: 'btc', symbol: 'BTCUSDT', direction: 'long', quantity: 1, entry_time: time(0), exit_time: time(4), entry_price: 100, exit_price: 108 }] })
+  const result = evaluatePortfolioRiskV5({ markPath: marks.path, markSha256: marks.sha256, executionArtifactPath: execution.path, executionArtifactSha256: execution.sha256, metadata: { feeArtifactPath: fees.path, feeArtifactSha256: fees.sha256 }, requiredAssets: ['btc'], policy: basePolicy({ interval_ms: step, min_common_timestamps: 2, asOf: time(5), consuming_cutoff: time(5) }), trades: [{ signal_id: '4h-fill', asset: 'btc', venue: 'binance', symbol: 'BTCUSDT', instrument_type: 'spot', direction: 'long', quantity: 1, entry_time: time(0), exit_time: time(4), stop_price: 90 }] })
+  assert.equal(result.accepted_trades.length, 1, 'the exact entry fill may precede the first completed-bar close')
+  assert.deepEqual(result.aligned_pnl.timestamps, [time(1), time(2), time(3), time(4)])
+  const missingFirstClose = rows.filter(row => !(row.series_type === 'TRADE_MARK' && row.event_time === time(0)))
+  const missingFirstMarks = writeMarkArtifact(join(root, '4h-missing-first-close.json'), { intervalMs: step, rows: missingFirstClose })
+  const missingFirstResult = evaluatePortfolioRiskV5({ markPath: missingFirstMarks.path, markSha256: missingFirstMarks.sha256, executionArtifactPath: execution.path, executionArtifactSha256: execution.sha256, metadata: { feeArtifactPath: fees.path, feeArtifactSha256: fees.sha256 }, requiredAssets: ['btc'], policy: basePolicy({ interval_ms: step, min_common_timestamps: 2, asOf: time(5), consuming_cutoff: time(5) }), trades: [{ signal_id: '4h-fill', asset: 'btc', venue: 'binance', symbol: 'BTCUSDT', instrument_type: 'spot', direction: 'long', quantity: 1, entry_time: time(0), exit_time: time(4), stop_price: 90 }] })
+  assert.ok(missingFirstResult.failures.includes('selected PnL grid does not cover the selected lifecycle window'), 'a missing first post-entry close may not be hidden by later observations')
+  const delayed = rows.map(row => row.series_type === 'TRADE_MARK' && row.event_time === time(1) ? { ...row, availability_time: time(3) } : row)
+  const delayedMarks = writeMarkArtifact(join(root, '4h-delayed.json'), { intervalMs: step, rows: delayed })
+  assert.throws(() => evaluatePortfolioRiskV5({ markPath: delayedMarks.path, markSha256: delayedMarks.sha256, executionArtifactPath: execution.path, executionArtifactSha256: execution.sha256, metadata: { feeArtifactPath: fees.path, feeArtifactSha256: fees.sha256 }, requiredAssets: ['btc'], policy: basePolicy({ interval_ms: step, min_common_timestamps: 2, asOf: time(5), consuming_cutoff: time(5) }), trades: [{ signal_id: '4h-fill', asset: 'btc', venue: 'binance', symbol: 'BTCUSDT', instrument_type: 'spot', direction: 'long', quantity: 1, entry_time: time(0), exit_time: time(4), stop_price: 90 }] }), /duplicate consumption|not dense/)
 })
 
 test('caller fee/contract forgery and funding arithmetic mismatches fail closed', () => {
