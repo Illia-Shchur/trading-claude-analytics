@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-v5-experiment-policy/1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "version",
+    "status",
+    "experiment_id",
+    "created_at",
+    "stage",
+    "evidence_phase",
+    "acceptance_contract",
+    "chronology",
+    "portfolio_policy",
+    "training_selection_policy",
+    "content_sha256"
+  ],
+  "properties": {
+    "schema": { "const": "strategy-v5-experiment-policy/1" },
+    "version": { "const": 1 },
+    "status": { "const": "FROZEN" },
+    "experiment_id": { "type": "string", "minLength": 1 },
+    "created_at": { "type": "string", "format": "date-time" },
+    "stage": { "const": "CORE_PREMISE" },
+    "evidence_phase": { "const": "DEVELOPMENT" },
+    "acceptance_contract": {
+      "type": "object",
+      "required": ["schema", "contract_id", "profile", "gates", "stress_scenarios", "content_sha256"],
+      "properties": {
+        "schema": { "const": "strategy-acceptance-contract/1" },
+        "content_sha256": { "$ref": "#/$defs/hash" }
+      }
+    },
+    "chronology": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["timezone", "bar_convention", "seeds", "development_window", "monitoring_window"],
+      "properties": {
+        "timezone": { "const": "UTC" },
+        "bar_convention": { "const": "COMPLETED_4H_BOUNDARY_NEXT_1M_OPEN" },
+        "seeds": {
+          "const": [11, 23, 47]
+        },
+        "bar_duration_ms": { "type": "number", "exclusiveMinimum": 0 },
+        "purge_bars": { "type": "integer", "minimum": 0 },
+        "embargo_bars": { "type": "integer", "minimum": 0 },
+        "bootstrap_iterations": { "type": "integer", "minimum": 1 },
+        "development_window": { "$ref": "#/$defs/window" },
+        "monitoring_window": { "$ref": "#/$defs/window" }
+      }
+    },
+    "portfolio_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "initial_equity": { "type": "number", "exclusiveMinimum": 0 },
+        "max_concurrent": { "type": "number", "minimum": 1 },
+        "total_concurrency": { "type": "number", "minimum": 1 },
+        "per_asset_concurrency": { "type": "number", "minimum": 1 },
+        "gross_exposure_cap": { "type": "number", "minimum": 0 },
+        "net_exposure_cap": { "type": "number", "minimum": 0 },
+        "collateral_cap": { "type": "number", "minimum": 0 },
+        "leverage_cap": { "type": "number", "minimum": 1 },
+        "advanced_risk": { "type": "boolean" },
+        "stress_window_bars": { "type": "integer", "minimum": 3 },
+        "stress_correlation_selection": { "enum": ["MAX_ABSOLUTE", "MAX_POSITIVE"] },
+        "max_mark_gap_ms": { "type": "number", "exclusiveMinimum": 0 },
+        "acceptance": { "type": "object" },
+        "venue_caps": { "type": "object" },
+        "cluster_caps": { "type": "object" },
+        "risk_strategy_cluster_caps": { "type": "object" }
+      }
+    },
+    "training_selection_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "minimum_completed_trades", "minimum_expectancy_r", "objective", "tie_break", "nested_search_control", "content_sha256"],
+      "properties": {
+        "schema": { "const": "strategy-training-selection-policy/1" },
+        "minimum_completed_trades": { "type": "integer", "minimum": 1 },
+        "minimum_expectancy_r": { "type": "number" },
+        "objective": { "const": "expectancy_r_desc" },
+        "tie_break": { "const": "candidate_id_asc" },
+        "nested_search_control": { "const": "WFO_NESTED_SELECTION" },
+        "content_sha256": { "$ref": "#/$defs/hash" }
+      }
+    },
+    "content_sha256": { "$ref": "#/$defs/hash" }
+  },
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "window": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start_at", "end_at"],
+      "properties": {
+        "start_at": { "type": "string", "format": "date-time" },
+        "end_at": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}

@@ -19,6 +19,7 @@
   "required_inputs": [{ "input_id": "<input>", "availability": { "rule": "<availability timestamp rule>" }, "point_in_time": { "status": "VERIFIED", "completed_bar_only": true }, "evidence_family": "<family>", "role": "SETUP" }],
   "falsifier": { "test": "<simplest test>", "null": "<null hypothesis>", "rejection_thresholds": { "expectancy_r": 0 } },
   "tradable_instrument_contract": { "universe": "CRYPTO_ONLY", "instruments": [{ "asset": "<crypto asset>", "asset_class": "crypto", "instrument_type": "spot" }] },
+  "trade_assets": ["<crypto asset>"],
   "non_crypto_context_only": [],
   "independence_replication_groups": ["<group>"],
   "role_of_composite_score": "<deferred incremental role; no score or threshold belongs in CORE_PREMISE>",
@@ -36,7 +37,9 @@
       "robust_stats": {
         "max_statistic_p_value": "<predeclare numeric maximum>",
         "minimum_bootstrap_p20_expectancy_r": "<predeclare numeric minimum>",
-        "minimum_effective_independent_episode_count": "<predeclare integer minimum>"
+        "minimum_effective_independent_episode_count": "<predeclare integer minimum>",
+        "maximum_drawdown_r": "<predeclare non-negative R ceiling>",
+        "maximum_cost_r": "<predeclare non-negative average cost-in-R ceiling>"
       },
       "plateau": {},
       "stress": {

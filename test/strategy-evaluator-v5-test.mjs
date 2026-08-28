@@ -4,8 +4,9 @@ import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import canonicalize from 'canonicalize'
-import { DATA_V5_PRODUCER_CODE_SHA256, convertSeparatedArtifactsToParquet, makeFiveYearAuthoritativePlan, makeMetadataReceipt, makePredictorRegistry, makeSeparatedArtifactManifest, ownHash, produceAuthoritativeRoleArtifacts, withHash } from '../tools/strategy-research-v5-data.mjs'
+import { DATA_V5_PRODUCER_CODE_SHA256, convertSeparatedArtifactsToParquet, deriveBoundExecutionOutcome, makeFiveYearAuthoritativePlan, makeMetadataReceipt, makePredictorRegistry, makeSeparatedArtifactManifest, ownHash, produceAuthoritativeRoleArtifacts, withHash } from '../tools/strategy-research-v5-data.mjs'
 import { createFixtureEvaluatorV5, evaluateSignalPredicateV5, loadAuthoritativeEvaluatorV5, makeEvaluatorSpecV5, validateEvaluatorSpecV5 } from '../tools/strategy-evaluator-v5.mjs'
+import { hardFeasible } from '../tools/strategy-research-v5-statistical.mjs'
 
 const hash = value => createHash('sha256').update(typeof value === 'string' || Buffer.isBuffer(value) ? value : canonicalize(value)).digest('hex')
 const h = value => hash(String(value))
@@ -14,7 +15,9 @@ geneSpace.content_sha256 = hash(geneSpace)
 const predictors = makePredictorRegistry({ predictors: [{ id: 'edge', scalar_type: 'number', source_field: 'close', source_family: 'TEST_PIT_FEATURE', availability_derivation: 'completed bar close', pit_role: 'PREDICTOR', lookback_ms: 0, code_sha256: h('predictor-code'), config_sha256: h('predictor-config') }] })
 const precommitInput = { schema: 'strategy-v5-precommit-fixture/1', version: 1, name: 'precommit', content_sha256: null }; precommitInput.content_sha256 = ownHash(precommitInput); const precommit = precommitInput.content_sha256
 const spec = makeEvaluatorSpecV5({ strategyFamily: 'test-family', precommitSha256: precommit, geneSpace, predictorRegistry: predictors, predicate: { predictor_id: 'edge', op: 'GTE', value: { $gene: 'threshold' } }, candidateTemplate: { direction: 'long', entry_policy: 'NEXT_BAR_OPEN', lifecycle_timeframe: '1m', max_lifecycle_ms: 120_000, exit_policy: { type: 'TIME_STOP' }, risk_amount_usd: 10 }, executionContract: { sizing_contract: { mode: 'FIXED_NOTIONAL_USD', notional_usd: 10 } } })
-const normalizedSpec = makeEvaluatorSpecV5({ strategyFamily: 'test-family-normalized', precommitSha256: precommit, geneSpace, predictorRegistry: predictors, predicate: { predictor_id: 'edge', op: 'GTE', value: { $gene: 'threshold' } }, candidateTemplate: { direction: 'long', instrument_type: 'spot', entry_policy: 'NEXT_BAR_OPEN', lifecycle_timeframe: '1m', max_lifecycle_ms: 120_000, exit_policy: { type: 'TIME_STOP' }, lifecycle: { max_lifecycle_ms: 120_000, stop: { type: 'PERCENT', value: .01 }, target: { type: 'R_MULTIPLE', multiple: 1 }, sizing: { mode: 'FIXED_NOTIONAL_USD', notional_usd: 10 } } }, executionContract: { sizing_contract: { mode: 'FIXED_NOTIONAL_USD', notional_usd: 10 } } })
+const normalizedCandidateTemplate = { direction: 'long', instrument_type: 'spot', entry_policy: 'NEXT_BAR_OPEN', lifecycle_timeframe: '1m', max_lifecycle_ms: 120_000, exit_policy: { type: 'TIME_STOP' }, lifecycle: { max_lifecycle_ms: 120_000, stop: { type: 'PERCENT', value: .01 }, target: { type: 'R_MULTIPLE', multiple: 1 }, sizing: { mode: 'FIXED_NOTIONAL_USD', notional_usd: 10 } } }
+const normalizedSpec = makeEvaluatorSpecV5({ strategyFamily: 'test-family-normalized', precommitSha256: precommit, geneSpace, predictorRegistry: predictors, predicate: { predictor_id: 'edge', op: 'GTE', value: { $gene: 'threshold' } }, candidateTemplate: normalizedCandidateTemplate, executionContract: { risk_convention: { mode: 'FIXED_RISK_BUDGET_USD', budget_usd: 10 }, sizing_contract: { mode: 'FIXED_NOTIONAL_USD', notional_usd: 10 } } })
+assert.throws(() => makeEvaluatorSpecV5({ strategyFamily: 'test-family-normalized-missing-risk', precommitSha256: precommit, geneSpace, predictorRegistry: predictors, predicate: { predictor_id: 'edge', op: 'GTE', value: { $gene: 'threshold' } }, candidateTemplate: normalizedCandidateTemplate, executionContract: { sizing_contract: { mode: 'FIXED_NOTIONAL_USD', notional_usd: 10 } } }), /normalized lifecycle requires both a frozen risk_convention and sizing_contract/)
 assert.equal(validateEvaluatorSpecV5(spec, { geneSpace, predictorRegistry: predictors }), true)
 assert.equal(evaluateSignalPredicateV5(spec.predicate, { edge: 2, future_return: -999 }, { threshold: 1 }), true)
 assert.equal(evaluateSignalPredicateV5(spec.predicate, { edge: 0, future_return: 999 }, { threshold: 1 }), false)
@@ -59,6 +62,28 @@ const first = make(label)({ artifact: signalView, episode_ids: ['episode-1'], ch
 assert.equal(first.candidate_returns['episode-1'].traded, true)
 assert.ok(first.candidate_returns['episode-1'].net_r > 0)
 assert.equal(first.metrics.capacity_pass, true)
+const flatExecution = { ...execution, child_bars: child.map(row => ({ ...row, open: 100, high: 100, low: 100, close: 100 })) }
+const roundTripCostMetadata = {
+  ...metadata,
+  fee_schedule: modeled('FEE_SCHEDULE', { taker_fee_rate: 0 }),
+  execution_model: modeled('EXECUTION_MODEL', { slippage_bps: 100, impact_bps: 100, outage_policy: 'FAIL', gap_policy: 'FAIL' })
+}
+const roundTripCost = createFixtureEvaluatorV5({ mode: 'FIXTURE', evaluatorSpec: spec, geneSpace, predictorRegistry: predictors, features: [feature], labels: [label], execution: [flatExecution], metadata: roundTripCostMetadata, sourceArtifactSha256 })({ artifact: signalView, episode_ids: ['episode-1'], chromosome: { threshold: 1 }, phase: 'TRAIN_ONLY', fold_id: 'fold-1', cutoff: '2026-01-01T00:03:59.999Z' })
+const roundTripOutcome = deriveBoundExecutionOutcome({ feature, label, execution: flatExecution, candidate: { ...spec.candidate_template, decision_timestamp_convention: spec.execution_contract.decision_timestamp_convention, decision_timeframe: spec.execution_contract.decision_timeframe, risk_contract: { ...spec.execution_contract.risk_convention, evaluator_spec_sha256: spec.content_sha256 }, sizing_contract: { ...spec.execution_contract.sizing_contract, evaluator_spec_sha256: spec.content_sha256 } }, metadata: roundTripCostMetadata, evaluatorSpec: spec, fixtureOnly: true })
+assert.equal(roundTripOutcome.slippage_usd, 2)
+assert.equal(roundTripOutcome.capacity_debit_usd, 2)
+assert.equal(roundTripOutcome.gross_pnl_usd, 0)
+assert.equal(roundTripOutcome.net_pnl_usd, -4)
+assert.ok(Math.abs(roundTripCost.candidate_returns['episode-1'].net_r + 0.4) < 1e-12, 'flat-price entry and exit must debit both 100 bps slippage and 100 bps impact legs')
+assert.ok(Math.abs(roundTripCost.metrics.cost_r - 0.4) < 1e-12, 'cost_r must consume the exact $4 round-trip debit over $10 bound risk')
+const maximumCostGate = hardFeasible({ ...roundTripCost.metrics, traded_count: 1, expectancy_r: roundTripCost.candidate_returns['episode-1'].net_r }, { minEpisodes: 1, minExpectancy: -1, minProfitFactor: 0, maxDrawdownR: 1, maxCostR: 0.39, minCoverage: 1, requireCapacityPass: true, violationScales: { episodes: 1, expectancy: 1, drawdown: 1, costs: 0.39, coverage: 1, capacity: 1, profit_factor: 1 } })
+assert.equal(maximumCostGate.feasible, false, 'hard maximum_cost_r must reject the exact 0.4R round-trip cost')
+assert.ok(maximumCostGate.violations.includes('COSTS'))
+const derivedQuantityExecution = { ...flatExecution }; delete derivedQuantityExecution.quantity
+const maxNotionalMetadata = maximum => ({ ...roundTripCostMetadata, contract_spec: modeled('CONTRACT_SPEC', { contract_multiplier: 1, max_notional: maximum }) })
+const exactMaxNotional = createFixtureEvaluatorV5({ mode: 'FIXTURE', evaluatorSpec: spec, geneSpace, predictorRegistry: predictors, features: [feature], labels: [label], execution: [derivedQuantityExecution], metadata: maxNotionalMetadata(10.2), sourceArtifactSha256 })({ artifact: signalView, episode_ids: ['episode-1'], chromosome: { threshold: 1 }, phase: 'TRAIN_ONLY', fold_id: 'fold-1', cutoff: '2026-01-01T00:03:59.999Z' })
+assert.equal(exactMaxNotional.candidate_returns['episode-1'].traded, true, 'modeled entry fill exactly at max_notional must pass')
+assert.throws(() => createFixtureEvaluatorV5({ mode: 'FIXTURE', evaluatorSpec: spec, geneSpace, predictorRegistry: predictors, features: [feature], labels: [label], execution: [derivedQuantityExecution], metadata: maxNotionalMetadata(10.19), sourceArtifactSha256 })({ artifact: signalView, episode_ids: ['episode-1'], chromosome: { threshold: 1 }, phase: 'TRAIN_ONLY', fold_id: 'fold-1', cutoff: '2026-01-01T00:03:59.999Z' }), /derived execution quantity exceeds the frozen maximum notional/, 'max_notional must bind the modeled entry fill, not the raw decision-boundary open')
 const earlier = make({ ...label, resolution_ceiling_time: '2026-01-01T00:01:00.000Z', availability_time: '2026-01-01T00:01:59.999Z' })({ artifact: signalView, episode_ids: ['episode-1'], chromosome: { threshold: 1 }, phase: 'TRAIN_ONLY', fold_id: 'fold-1', cutoff: '2026-01-01T00:03:59.999Z' })
 assert.notEqual(earlier.candidate_returns['episode-1'].net_r, first.candidate_returns['episode-1'].net_r, 'label resolution must materially determine derived outcome')
 const noSignal = make(label)({ artifact: signalView, episode_ids: ['episode-1'], chromosome: { threshold: 3 }, phase: 'TRAIN_ONLY', fold_id: 'fold-1', cutoff: '2026-01-01T00:03:59.999Z' })

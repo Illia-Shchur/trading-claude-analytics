@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-v5-authoritative-feature-source/1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "version", "status", "plan_sha256", "plan_reference",
+    "acquisition_sha256", "acquisition_reference", "source_dataset_root_sha256",
+    "predictor_registry_sha256", "predictor_registry_reference",
+    "precommit_sha256", "precommit_reference", "requirements_sha256",
+    "requirements_reference", "promoted_coverage_sha256", "promoted_coverage_reference",
+    "producer_code_sha256", "producer_code_reference", "source_inventory",
+    "source_inventory_sha256", "trade_assets", "trade_instrument", "artifact", "root_reference", "storage_role", "fixture_only", "provenance",
+    "format", "authoritative", "limitations", "content_sha256"
+  ],
+  "properties": {
+    "schema": { "const": "strategy-v5-authoritative-feature-source/1" },
+    "version": { "const": 1 },
+    "status": { "const": "VERIFIED_FEATURES" },
+    "fixture_only": { "type": "boolean" },
+    "provenance": { "enum": ["PUBLIC_ADAPTER_RECOMPUTED", "FIXTURE_INJECTED", "LOCAL_RAW_REPLAY"] },
+    "plan_sha256": { "$ref": "#/$defs/hash" },
+    "plan_reference": { "$ref": "#/$defs/jsonReference" },
+    "acquisition_sha256": { "$ref": "#/$defs/hash" },
+    "acquisition_reference": { "$ref": "#/$defs/jsonReference" },
+    "source_dataset_root_sha256": { "$ref": "#/$defs/hash" },
+    "predictor_registry_sha256": { "$ref": "#/$defs/hash" },
+    "predictor_registry_reference": { "$ref": "#/$defs/jsonReference" },
+    "precommit_sha256": { "$ref": "#/$defs/hash" },
+    "precommit_reference": { "$ref": "#/$defs/jsonReference" },
+    "requirements_sha256": { "$ref": "#/$defs/hash" },
+    "requirements_reference": { "$ref": "#/$defs/jsonReference" },
+    "promoted_coverage_sha256": { "$ref": "#/$defs/hash" },
+    "promoted_coverage_reference": { "$ref": "#/$defs/jsonReference" },
+    "producer_code_sha256": { "$ref": "#/$defs/hash" },
+    "producer_code_reference": { "$ref": "#/$defs/byteReference" },
+    "trade_assets": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "enum": ["btc", "eth", "sol", "bnb", "xrp", "ada", "link", "aave"] } },
+    "trade_instrument": { "enum": ["BINANCE_SPOT", "BINANCE_USDM_PERPETUAL"] },
+    "source_inventory": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "sha256"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
+          "sha256": { "$ref": "#/$defs/hash" }
+        }
+      }
+    },
+    "source_inventory_sha256": { "$ref": "#/$defs/hash" },
+    "artifact": { "$ref": "#/$defs/artifact" },
+    "root_reference": { "type": "string", "minLength": 1 },
+    "storage_role": { "const": "STAGING" },
+    "format": { "const": "JSONL" },
+    "authoritative": { "const": false },
+    "limitations": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "content_sha256": { "$ref": "#/$defs/hash" }
+  },
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "jsonReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "content_sha256", "byte_sha256", "bytes"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "content_sha256": { "$ref": "#/$defs/hash" },
+        "byte_sha256": { "$ref": "#/$defs/hash" },
+        "bytes": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "byteReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "byte_sha256", "bytes"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "byte_sha256": { "$ref": "#/$defs/hash" },
+        "bytes": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "path", "sha256", "bytes", "row_count", "rows_sha256", "field_names", "format", "storage_role", "authoritative"],
+      "properties": {
+        "role": { "const": "FEATURE" },
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/hash" },
+        "bytes": { "type": "integer", "minimum": 1 },
+        "row_count": { "type": "integer", "minimum": 1 },
+        "rows_sha256": { "$ref": "#/$defs/hash" },
+        "field_names": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "format": { "const": "JSONL" },
+        "storage_role": { "const": "STAGING" },
+        "authoritative": { "const": false }
+      }
+    }
+  }
+}

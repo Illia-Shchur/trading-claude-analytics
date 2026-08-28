@@ -13,10 +13,12 @@ import { execFileSync } from 'node:child_process'
 import { createReadStream } from 'node:fs'
 import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync, renameSync, realpathSync } from 'node:fs'
 import { dirname, join, relative, resolve, sep } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { validateKnownContractSchema, validateContractSchema, hasContractSchema, listContractSchemas } from './research-schema-registry.mjs'
 import {
   DATA_V5,
   DATA_V5_ASSETS,
+  DATA_V5_PRODUCER_CODE_SHA256,
   discoverBinanceHistoricalDatedFutures,
   makeFiveYearAuthoritativePlan,
   acquireAuthoritativeStaging,
@@ -28,6 +30,17 @@ import {
   verifyParquetArtifactManifest,
   verifyAuthoritativeStaging,
   verifyAuthoritativeSourceChain,
+  resolvePromotedCoverage,
+  makeTimeframeRequirementsFromPredictorRegistry,
+  derivePrecommitTradeScopeV5,
+  buildUserBoundSpotMetadataV5,
+  produceAuthoritativeFeatureSource,
+  validateAuthoritativeFeatureSource,
+  validateFeatureSubsetAgainstSource,
+  makeSourceBundleManifest,
+  produceAuthoritativeRoleArtifacts,
+  makeSeparatedArtifactManifest,
+  convertSeparatedArtifactsToParquet,
   rebaseAcquisitionCheckpoint,
   replayAuthoritativeStagingFromRaw,
   validateDatedFuturesCatalog,
@@ -40,9 +53,17 @@ import {
 } from './strategy-research-v5-data.mjs'
 import {
   STAT_SCHEMA,
+  STAT_DEFAULTS,
   validateExposureHead,
+  makeExposureHead,
+  appendExposureHead,
+  appendExposureHeadFile,
+  initializeExposureHeadFile,
+  makeStatisticalArtifactSet,
   readExposureHeadFile,
+  readGeneticCheckpointFile,
   validateStatisticalArtifactSet,
+  validateGeneticCheckpoint,
   validateVectorInventory,
   assertWfoRetainedOosBinding,
   runGeneticSearchV5,
@@ -65,10 +86,13 @@ import {
   validateContractSchema as validateStatisticalContractSchema,
   verifyCommittedStatisticalPublication,
   recoverExposureRegistryTransaction,
+  writeExposureRegistryJournal,
   writeStatisticalPublicationTransaction,
   recoverStatisticalPublicationTransaction,
 } from './strategy-research-v5-statistical.mjs'
 import { loadAuthoritativeEvaluatorV5, validateEvaluatorSpecV5, evaluateSignalPredicateV5 } from './strategy-evaluator-v5.mjs'
+import { validateDefinitionV2 } from './strategy-research-v2.mjs'
+import { makeExperimentV3, validateAcceptanceContract, validateExperimentV3 } from './strategy-research-v3.mjs'
 import { resolveLifecyclePhysicalPathV5 } from './strategy-v5-lifecycle-trust.mjs'
 import { isVerifiedPhysicalEvaluator } from './strategy-v5-physical-trust.mjs'
 import {
@@ -88,6 +112,7 @@ import {
 export const AUTHORITATIVE_SCHEMA = 'strategy-v5-authoritative-command-receipt/1'
 export const PIPELINE_V5 = Object.freeze(['features', 'signal_intent', 'labels', 'execution_fills', 'trades', 'metrics', 'stresses', 'portfolio', 'wfo'])
 const HASH = /^[a-f0-9]{64}$/
+const AUTHORITATIVE_V5_RECORD_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'strategy-research', 'v5-records')
 const LOOSE_KEYS = new Set(['returns', 'episode_returns', 'fitness', 'trades', 'fills', 'metrics', 'stress', 'stresses', 'portfolio', 'wfo', 'genetic', 'ga', 'evaluation', 'evaluations', 'vector', 'vectors', 'candidate_returns', 'execution_results', 'execution_result', 'selected_fills', 'selected_trades', 'risk', 'pnl', 'net_pnl', 'gross_pnl', 'pass', 'active', 'candidate_pass', 'asset_decision', 'portfolio_decision', 'selection', 'selected', 'constraints', 'acceptance', 'thresholds', 'config'])
 const now = () => new Date().toISOString()
 export { stable, hash, ownHash }
@@ -96,6 +121,12 @@ const fail = message => { throw new Error(message) }
 const requireSha = (value, label) => HASH.test(String(value || '')) ? String(value) : fail(`${label} must be a SHA-256 hash`)
 const asArray = value => Array.isArray(value) ? value : value?.rows
 const bool = value => value === true || value === 'true'
+const timestampMs = value => {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : Number.NaN
+  const text = String(value ?? '').trim()
+  if (/^-?\d+(?:\.\d+)?$/.test(text)) { const numeric = Number(text); return Number.isFinite(numeric) ? numeric : Number.NaN }
+  return Date.parse(text)
+}
 
 const MARKET_FLOW_FIELDS = new Set(['open_interest', 'open_interest_value', 'top_trader_account_long_short_ratio', 'top_trader_position_long_short_ratio', 'global_long_short_ratio', 'taker_buy_sell_volume_ratio', 'sum_open_interest', 'sum_open_interest_value', 'count_toptrader_long_short_ratio', 'sum_toptrader_long_short_ratio', 'count_long_short_ratio', 'sum_taker_long_short_vol_ratio'])
 const MARKET_FLOW_FAMILIES = new Set(['metrics', 'metrics_events', 'market_flow', 'open_interest_metrics', 'funding_metrics'])
@@ -108,7 +139,9 @@ function metricPredictorIds(predicate, predictorRegistry) {
     const field = String(predictor.source_field || predictor.recipe?.source_field || '').toLowerCase()
     const family = String(predictor.source_family || '').toLowerCase()
     const recipeTypes = predictor.recipe?.required_series_types || []
-    return recipeTypes.includes('metrics_events') || MARKET_FLOW_FIELDS.has(field) || MARKET_FLOW_FAMILIES.has(family) || family.includes('metric') || field.includes('open_interest') || field.includes('long_short')
+    if (recipeTypes.length) return recipeTypes.includes('metrics_events')
+    if (['funding_rate', 'funding'].includes(field) || ['funding', 'funding_events'].includes(family)) return false
+    return MARKET_FLOW_FIELDS.has(field) || MARKET_FLOW_FAMILIES.has(family) || family.includes('metric') || field.includes('open_interest') || field.includes('long_short')
   }).sort()
 }
 
@@ -116,34 +149,50 @@ function seriesIdentity(value) {
   return [value?.asset, value?.venue, value?.instrument, value?.symbol, value?.interval, value?.series_type].map(part => String(part || '').toLowerCase()).join('|')
 }
 
+/* Every production evaluator, including a price-only one, must reopen the
+ * exact data declaration that was frozen for its registry.  Market-flow has
+ * additional vintage checks below, but it is not the only data family that
+ * needs an explicit coverage boundary. */
+function verifyDeclaredDataBoundary({ options, plan, manifest, predictorRegistry, evaluatorSpec, precommit, root, label }) {
+  const prefix = `AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: ${label}`
+  const requirementsPath = options.timeframe_requirements || options.timeframeRequirements
+  if (!requirementsPath) fail(`${prefix} requires the exact frozen timeframe requirements artifact`)
+  const requirementsPhysical = physicalJson(requirementsPath, { label: `${label} frozen timeframe requirements`, schemas: ['strategy-v5-timeframe-requirements/1'] })
+  const requirements = requirementsPhysical.value
+  const expected = makeTimeframeRequirementsFromPredictorRegistry({ predictorRegistry, precommitSha256: precommit.content_sha256 })
+  if (requirements.content_sha256 !== expected.content_sha256) fail(`${prefix} timeframe requirements differ from the deterministic predictor-registry declaration`)
+  if (plan.timeframe_requirements_sha256 !== null && plan.timeframe_requirements_sha256 !== requirements.content_sha256) fail(`${prefix} timeframe requirements are not bound to the exact plan`)
+
+  const sourceContext = verifyAuthoritativeSourceChain(root, manifest.source_manifest_reference, manifest.source_manifest_sha256, plan.content_sha256, `${label} Parquet source chain`)
+  let acquisitionPhysical = null
+  const acquisitionPath = options.acquisition || options.acquisition_manifest || options.source_acquisition
+  if (acquisitionPath) {
+    acquisitionPhysical = physicalJson(acquisitionPath, { label: `${label} physical acquisition manifest`, schemas: [DATA_V5.acquisition] })
+    if (acquisitionPhysical.value.content_sha256 !== sourceContext.acquisition?.content_sha256) fail(`${prefix} acquisition and Parquet source-chain lineage are not exact`)
+  }
+  const promotedCoverage = resolvePromotedCoverage({ plan, acquisition: sourceContext.acquisition, timeframeRequirements: requirements, root, requireParquet: false, requireFrozenRequirements: true })
+  if (promotedCoverage.status !== 'READY' || promotedCoverage.declared_requirements_complete !== true) fail(`${prefix} frozen data coverage is blocked: ${(promotedCoverage.limitations || []).join(';')}`)
+  const declaredIds = new Set((requirements.declarations || []).map(row => String(row.predictor_id)))
+  for (const id of derivePredicatePredictorIds(evaluatorSpec.predicate)) if (!declaredIds.has(id)) fail(`${prefix} timeframe requirements omit evaluator predictor ${id}`)
+  return { requirementsPhysical, acquisitionPhysical, acquisition: sourceContext.acquisition, sourceContext, promotedCoverage }
+}
+
 /* Bind every metric-dependent authoritative consumer to the exact frozen
  * requirement artifact and to physically reopened acquisition/Parquet
  * custody.  The current Binance metrics adapter is deliberately rejected as
  * a latest-retrieval/revised proxy; this gate is the single place that may be
  * relaxed when an historical publication-vintage adapter is introduced. */
-function verifyMetricPITBoundary({ options, plan, manifest, predictorRegistry, evaluatorSpec, precommit, root, label }) {
+function verifyMetricPITBoundary({ options, plan, manifest, predictorRegistry, evaluatorSpec, precommit, root, label, dataBoundary = null }) {
   const metricIds = metricPredictorIds(evaluatorSpec.predicate, predictorRegistry)
   if (!metricIds.length) return null
   const prefix = `AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: ${label}`
-  const requirementsPath = options.timeframe_requirements || options.timeframeRequirements
-  if (!requirementsPath) fail(`${prefix} requires the exact frozen timeframe requirements artifact for metric predictors`)
-  const requirementsPhysical = physicalJson(requirementsPath, { label: `${label} frozen timeframe requirements`, schemas: ['strategy-v5-timeframe-requirements/1'] })
+  const boundary = dataBoundary || verifyDeclaredDataBoundary({ options, plan, manifest, predictorRegistry, evaluatorSpec, precommit, root, label })
+  const requirementsPhysical = boundary.requirementsPhysical
   const requirements = requirementsPhysical.value
-  if (plan.timeframe_requirements_sha256 !== requirements.content_sha256) fail(`${prefix} timeframe requirements are not bound to the exact plan`)
-  if (requirements.predictor_registry_sha256 !== predictorRegistry.content_sha256) fail(`${prefix} timeframe requirements are not bound to the exact predictor registry`)
-  if (requirements.precommit_sha256 !== precommit.content_sha256) fail(`${prefix} timeframe requirements are not bound to the exact precommit`)
   const declarations = requirements.declarations || []
   for (const id of metricIds) if (!declarations.some(row => row.predictor_id === id && row.series_types?.includes('metrics_events'))) fail(`${prefix} timeframe requirements omit metric predictor ${id}`)
-
-  const acquisitionPath = options.acquisition || options.acquisition_manifest || options.source_acquisition
-  if (!acquisitionPath) fail(`${prefix} requires a physical acquisition manifest and root for metric coverage`)
-  const acquisitionPhysical = physicalJson(acquisitionPath, { label: `${label} physical acquisition manifest`, schemas: [DATA_V5.acquisition] })
-  const acquisition = acquisitionPhysical.value
-  if (acquisition.plan_sha256 !== plan.content_sha256) fail(`${prefix} acquisition is bound to a different plan`)
-  const acquisitionRoot = options.acquisition_root || options.source_root || root
-  verifyAuthoritativeStaging({ manifest: acquisition, root: acquisitionRoot, planSha256: plan.content_sha256, requireComplete: false })
-  const sourceContext = verifyAuthoritativeSourceChain(root, manifest.source_manifest_reference, manifest.source_manifest_sha256, plan.content_sha256, `${label} Parquet source chain`)
-  if (sourceContext.acquisition?.content_sha256 !== acquisition.content_sha256) fail(`${prefix} acquisition and Parquet source-chain lineage are not exact`)
+  const acquisitionPhysical = boundary.acquisitionPhysical
+  const acquisition = boundary.acquisition
   const captures = new Map((acquisition.captures || []).map(capture => [seriesIdentity(capture), capture]))
   const metricSeries = plan.series.filter(series => series.series_type === 'metrics_events' && declarations.some(row => row.interval === series.interval && row.series_types?.includes('metrics_events')))
   if (!metricSeries.length) fail(`${prefix} plan has no exact metric series for the frozen requirements`)
@@ -203,9 +252,161 @@ function frozenExperiment(value, label = 'physical experiment') {
   return value
 }
 
+const PRODUCTION_INSTRUMENT_ALIASES = Object.freeze({
+  spot: 'BINANCE_SPOT',
+  binance_spot: 'BINANCE_SPOT',
+  perpetual: 'BINANCE_USDM_PERPETUAL',
+  perp: 'BINANCE_USDM_PERPETUAL',
+  usdm_perpetual: 'BINANCE_USDM_PERPETUAL',
+  binance_usdm_perpetual: 'BINANCE_USDM_PERPETUAL',
+})
+
+function normalizedProductionInstrument(value, label) {
+  const key = String(value || '').trim().toLowerCase().replaceAll('-', '_')
+  const instrument = PRODUCTION_INSTRUMENT_ALIASES[key]
+  if (!instrument) fail(`${label} is not a supported frozen v5 instrument`)
+  return instrument
+}
+
+export function canonicalHypothesisFamilyV5(precommit, { definition = null, evaluatorSpec = null } = {}) {
+  const declared = String(precommit?.hypothesis_family ?? precommit?.precommit_id ?? '').trim()
+  if (!declared || !/^[a-z0-9][a-z0-9._-]*$/.test(declared)) fail('production v5 hypothesis family must be the precommit hypothesis_family/precommit_id in canonical lowercase form')
+  if (definition && String(definition.hypothesis_family || '').trim() !== declared) fail('strategy definition hypothesis_family differs from the canonical precommit family')
+  if (evaluatorSpec && String(evaluatorSpec.strategy_family || '').trim() !== declared) fail('evaluator strategy_family differs from the canonical precommit family')
+  return declared
+}
+
+function exactUniqueStrings(values, label, normalize = value => String(value)) {
+  if (!Array.isArray(values) || !values.length) fail(`${label} must be a non-empty array`)
+  const normalized = values.map((value, index) => {
+    const result = normalize(value, index)
+    if (!result) fail(`${label}[${index}] is empty`)
+    return result
+  })
+  if (new Set(normalized).size !== normalized.length) fail(`${label} contains a duplicate identity`)
+  return normalized.sort()
+}
+
+function assertExactSet(actual, expected, label) {
+  if (stable(actual) !== stable(expected)) fail(`${label} differs from the frozen research scope`)
+}
+
+export function validateExactProductionEpisodeInventoriesV5({ envelope, artifact, roleRows = {} } = {}) {
+  const envelopeIds = exactUniqueStrings((envelope?.windows || []).map(row => String(row.episode_id || '')), 'v2 opportunity envelope episode inventory')
+  const artifactIds = exactUniqueStrings((artifact?.episodes || []).map(row => String(row.episode_id || '')), 'statistical artifact episode inventory')
+  assertExactSet(artifactIds, envelopeIds, 'statistical and v2 opportunity episode inventories')
+  for (const role of ['feature', 'label', 'execution']) {
+    if (roleRows[role] === undefined) continue
+    const ids = exactUniqueStrings((roleRows[role] || []).map(row => String(row.episode_id || '')), `physical ${role} episode inventory`)
+    assertExactSet(ids, envelopeIds, `physical ${role} and v2 opportunity episode inventories`)
+  }
+  return true
+}
+
+/**
+ * The v3 experiment stores one executor digest.  Derive it from every frozen
+ * code/config identity that can change feature transformation, labels,
+ * execution outcomes, or candidate evaluation.  This is deliberately a
+ * content identity rather than a process-local function name.
+ */
+export function makeAuthoritativeExecutorIdentityV5({ evaluatorSpec, manifest, metadataBundleSha256 } = {}) {
+  if (!evaluatorSpec || !manifest) fail('authoritative executor identity requires the evaluator spec and Parquet manifest')
+  return withHash({
+    schema: 'strategy-v5-authoritative-executor-identity/1',
+    version: 1,
+    evaluator_spec_sha256: requireSha(evaluatorSpec.content_sha256, 'executor evaluator_spec_sha256'),
+    evaluator_code_sha256: requireSha(evaluatorSpec.code_sha256, 'executor evaluator_code_sha256'),
+    evaluator_worker_code_sha256: requireSha(evaluatorSpec.worker_code_sha256, 'executor evaluator_worker_code_sha256'),
+    transformation_code_sha256: requireSha(manifest.transformation_code_sha256, 'executor transformation_code_sha256'),
+    label_code_sha256: requireSha(manifest.label_code_sha256, 'executor label_code_sha256'),
+    execution_code_sha256: requireSha(manifest.execution_code_sha256, 'executor execution_code_sha256'),
+    config_sha256: requireSha(manifest.config_sha256, 'executor config_sha256'),
+    metadata_bundle_sha256: requireSha(metadataBundleSha256, 'executor metadata_bundle_sha256'),
+  })
+}
+
+/**
+ * Reopen all immutable strategy-lineage contracts at the production search
+ * boundary.  A self-hashed statistical subset or experiment copied from a
+ * different candidate/data definition must never be usable as a replacement
+ * for the research-init genesis built from this exact opportunity envelope.
+ */
+export function validateProductionResearchBindingsV5({ precommit, definition, experiment, evaluatorSpec, manifest, envelope, artifact, metadataBundleSha256 } = {}) {
+  if (!precommit || !definition || !experiment || !evaluatorSpec || !manifest || !envelope || !artifact) fail('production research binding requires every frozen physical input')
+  if (experiment.schema !== 'strategy-experiment/3') fail('production research requires strategy-experiment/3')
+  validateExperimentV3(experiment, { acceptance: experiment.acceptance_contract })
+  validateDefinitionV2(definition, precommit)
+  const hypothesisFamily = canonicalHypothesisFamilyV5(precommit, { definition, evaluatorSpec })
+
+  const scope = derivePrecommitTradeScopeV5(precommit, { candidateTemplate: evaluatorSpec.candidate_template })
+  if (stable(definition.tradable_instrument_contract) !== stable(precommit.tradable_instrument_contract)) fail('physical definition trade contract differs from the frozen precommit')
+
+  validateOpportunityEnvelopeV5(envelope)
+  if (envelope.schema !== 'strategy-v5-opportunity-envelope/2' || envelope.fixture_only !== false || envelope.provenance !== 'AUTHORITATIVE') fail('production research requires an authoritative non-fixture opportunity-envelope/2')
+  const uniqueWindowAssets = [...new Set(envelope.windows.map(row => String(row.asset || '').trim().toLowerCase()))].filter(Boolean).sort()
+  if (!uniqueWindowAssets.length) fail('opportunity window assets are empty')
+  const uniqueWindowInstruments = [...new Set(envelope.windows.map(row => normalizedProductionInstrument(row.instrument, 'opportunity window instrument')))].sort()
+  if (uniqueWindowInstruments.length !== 1) fail('production opportunity envelope must freeze exactly one instrument type')
+  assertExactSet(uniqueWindowAssets, scope.trade_assets, 'opportunity window assets')
+  assertExactSet(uniqueWindowInstruments, [scope.instrument], 'opportunity window instruments')
+
+  const declaredAssets = exactUniqueStrings(envelope.assets, 'opportunity envelope assets', value => String(value || '').trim().toLowerCase())
+  const declaredInstruments = exactUniqueStrings(envelope.instruments, 'opportunity envelope instruments', value => normalizedProductionInstrument(value, 'opportunity envelope instrument'))
+  assertExactSet(declaredAssets, scope.trade_assets, 'opportunity envelope declared assets')
+  assertExactSet(declaredInstruments, [scope.instrument], 'opportunity envelope declared instruments')
+
+  const windowsByEpisode = new Map()
+  for (const window of envelope.windows) {
+    const episodeId = String(window.episode_id || '')
+    if (!episodeId || windowsByEpisode.has(episodeId)) fail('production opportunity envelope contains a missing or duplicate episode identity')
+    const asset = String(window.asset || '').toLowerCase()
+    if (String(window.symbol || '').toUpperCase() !== `${asset.toUpperCase()}USDT`) fail(`opportunity episode ${episodeId} does not use the canonical same-asset USDT symbol`)
+    windowsByEpisode.set(episodeId, window)
+  }
+  const episodesById = new Map()
+  for (const episode of artifact.episodes || []) {
+    const episodeId = String(episode.episode_id || '')
+    if (!episodeId || episodesById.has(episodeId)) fail('statistical artifact contains a missing or duplicate episode identity')
+    const window = windowsByEpisode.get(episodeId)
+    if (!window) fail(`statistical artifact episode ${episodeId} is outside the frozen opportunity envelope`)
+    if (String(episode.asset || '').toLowerCase() !== String(window.asset || '').toLowerCase() || Date.parse(String(episode.decision_time)) !== Date.parse(String(window.decision_time))) fail(`statistical episode ${episodeId} identity differs from its frozen opportunity window`)
+    episodesById.set(episodeId, episode)
+  }
+  validateExactProductionEpisodeInventoriesV5({ envelope, artifact })
+
+  const candidateSetSha256 = requireSha(envelope.candidate_set_sha256, 'opportunity candidate_set_sha256')
+  const roleSha = role => requireSha(manifest.artifacts?.[role]?.sha256, `Parquet ${role} artifact SHA-256`)
+  if (artifact.lineage?.dataset_sha256 !== manifest.dataset_root_sha256) fail('statistical artifact dataset lineage differs from the frozen Parquet manifest')
+  if (artifact.lineage?.candidate_set_sha256 !== candidateSetSha256) fail('statistical artifact candidate-set lineage differs from the frozen opportunity envelope')
+  for (const [lineageField, role] of [['feature_set_sha256', 'feature'], ['label_set_sha256', 'label'], ['execution_set_sha256', 'execution']]) if (artifact.lineage?.[lineageField] !== roleSha(role)) fail(`statistical artifact ${lineageField} differs from the frozen Parquet role`)
+
+  const acceptance = experiment.acceptance_contract
+  if (experiment.precommit_sha256 !== precommit.content_sha256) fail('experiment precommit lineage differs from the physical precommit')
+  if (experiment.definition_sha256 !== definition.content_sha256) fail('experiment definition lineage differs from the physical definition')
+  if (experiment.candidate_set_sha256 !== candidateSetSha256) fail('experiment candidate-set lineage differs from the frozen opportunity envelope')
+  if (experiment.data_manifest_sha256 !== manifest.content_sha256) fail('experiment data-manifest lineage differs from the physical Parquet manifest')
+  if (experiment.feature_set_sha256 !== roleSha('feature')) fail('experiment feature-set lineage differs from the physical feature role')
+  if (experiment.label_set_sha256 !== roleSha('label')) fail('experiment label-set lineage differs from the physical label role')
+  if (!acceptance || experiment.acceptance_contract_sha256 !== acceptance.content_sha256 || acceptance.content_sha256 !== ownHash(acceptance)) fail('experiment acceptance contract lineage is missing or tampered')
+  for (const key of ['maximum_drawdown_r', 'maximum_cost_r']) if (!Number.isFinite(Number(acceptance.gates?.[key])) || Number(acceptance.gates[key]) < 0) fail(`production v5 acceptance must freeze a non-negative ${key}; portfolio percentages cannot be converted to R`)
+  const executorIdentity = makeAuthoritativeExecutorIdentityV5({ evaluatorSpec, manifest, metadataBundleSha256 })
+  if (experiment.executor_sha256 !== executorIdentity.content_sha256) fail('experiment executor lineage differs from the deterministic authoritative executor identity')
+
+  const requiredAssets = exactUniqueStrings(experiment.required_assets, 'experiment required_assets', (row, index) => {
+    if (!row || typeof row !== 'object' || Array.isArray(row) || row.asset_class !== 'crypto') fail(`experiment required_assets[${index}] must be a crypto instrument object`)
+    const asset = String(row.asset || '').trim().toLowerCase()
+    const instrument = normalizedProductionInstrument(row.instrument, `experiment required_assets[${index}].instrument`)
+    return `${asset}|${instrument}`
+  })
+  assertExactSet(requiredAssets, scope.trade_assets.map(asset => `${asset}|${scope.instrument}`).sort(), 'experiment required_assets')
+  return { scope, executorIdentity, hypothesisFamily }
+}
+
 function physicalMetadataBundle(path, { sourceRoot = null } = {}) {
   if (!path) fail('metadata receipt bundle path is required')
   const absolute = resolve(String(path)); if (!existsSync(absolute)) fail(`metadata receipt bundle is missing: ${path}`)
+  const bundleStat = lstatSync(absolute)
+  if (!bundleStat.isFile() || bundleStat.isSymbolicLink() || bundleStat.nlink !== 1) fail('metadata receipt bundle must be a regular single-link file')
   const bytes = readFileSync(absolute)
   let value
   try { value = JSON.parse(bytes.toString('utf8')) } catch (error) { fail(`metadata receipt bundle is not valid JSON: ${error.message}`) }
@@ -277,9 +478,9 @@ function physicalMetadataBundle(path, { sourceRoot = null } = {}) {
         const capturedAt = Date.parse(String(receipt.captured_at || ''))
         for (const row of receipt.records || []) {
           const expiryAt = Date.parse(String(row.expiry || row.delivery_date || ''))
-          const eventAt = Date.parse(String(row.event_time || ''))
-          const settlementAt = Date.parse(String(row.settlement_time || ''))
-          const availableAt = Date.parse(String(row.availability_time || ''))
+          const eventAt = timestampMs(row.event_time)
+          const settlementAt = timestampMs(row.settlement_time)
+          const availableAt = timestampMs(row.availability_time)
           const sourceHash = String(row.settlement_mark_source_sha256 || '')
           if (String(row.venue || '').toUpperCase() !== 'BINANCE' || String(row.instrument || '').toUpperCase() !== 'BINANCE_USDM_DATED_FUTURE' || !row.symbol) fail('SETTLEMENT metadata lacks exact dated-futures identity')
           if (![expiryAt, eventAt, settlementAt, availableAt, capturedAt].every(Number.isFinite) || eventAt !== settlementAt || eventAt < expiryAt || availableAt < eventAt || availableAt > capturedAt) fail('SETTLEMENT metadata chronology is invalid')
@@ -291,10 +492,12 @@ function physicalMetadataBundle(path, { sourceRoot = null } = {}) {
   return { value, path: absolute, byte_sha256: hash(bytes), bytes: bytes.byteLength, content_sha256: value?.schema === DATA_V5.metadata ? value.content_sha256 : hash(value) }
 }
 
-function validateMetadataLineage(metadata, evaluatorSpec) {
+function validateMetadataLineage(metadata, evaluatorSpec, plan = null, { requireEvaluator = false } = {}) {
   if (!metadata || !evaluatorSpec?.precommit_sha256) fail('metadata/evaluator lineage requires a frozen evaluator precommit')
   for (const receipt of Object.values(metadata)) {
     if (receipt.status !== 'UNAVAILABLE' && receipt.precommit_sha256 !== evaluatorSpec.precommit_sha256) fail(`${receipt.kind} metadata is bound to a different evaluator precommit`)
+    if (receipt.status !== 'UNAVAILABLE' && plan && receipt.plan_sha256 !== plan.content_sha256) fail(`${receipt.kind} metadata is bound to a different data plan`)
+    if (receipt.status !== 'UNAVAILABLE' && requireEvaluator && receipt.evaluator_spec_sha256 !== evaluatorSpec.content_sha256) fail(`${receipt.kind} metadata is bound to a different evaluator spec`)
   }
   return true
 }
@@ -443,6 +646,44 @@ export function behaviorRegistryStatePaths(recordRoot, explicitPath = null) {
   return { directory, statePath, seedPath }
 }
 
+export function canonicalFamilyCustodyRoot(hypothesisFamily) {
+  const family = String(hypothesisFamily || '').trim()
+  if (!family) fail('canonical family custody requires a stable hypothesis family')
+  const identity = hash({ schema: 'strategy-v5-family-custody/1', hypothesis_family: family })
+  return join(AUTHORITATIVE_V5_RECORD_ROOT, 'families', identity)
+}
+
+export function canonicalExposureHeadPath(hypothesisFamily) {
+  return join(canonicalFamilyCustodyRoot(hypothesisFamily), 'exposure-head.json')
+}
+
+function reopenOrAdvanceCanonicalExposureHead({ hypothesisFamily, datasetSha256 } = {}) {
+  if (!HASH.test(String(datasetSha256 || ''))) fail('canonical exposure HEAD requires a dataset SHA-256')
+  const familyRoot = canonicalFamilyCustodyRoot(hypothesisFamily)
+  const headPath = canonicalExposureHeadPath(hypothesisFamily)
+  const registryPaths = behaviorRegistryStatePaths(familyRoot)
+  const journalPath = `${registryPaths.statePath}.journal.json`
+  if (existsSync(journalPath)) recoverExposureRegistryTransaction({ journalPath })
+  if (!existsSync(headPath)) {
+    const head = makeExposureHead({ hypothesisFamily, datasetSha256, entries: [] })
+    return { head: initializeExposureHeadFile({ filePath: headPath, head }), headPath, familyRoot, registryPaths }
+  }
+  const prior = readExposureHeadFile(headPath)
+  if (prior.hypothesis_family !== hypothesisFamily) fail('canonical exposure HEAD family differs from the frozen evaluator family')
+  if (prior.dataset_sha256 === datasetSha256) return { head: prior, headPath, familyRoot, registryPaths }
+
+  const priorRegistry = ensureBehaviorRegistryState(registryPaths)
+  if (prior.entries.length && !priorRegistry) fail('canonical exposure HEAD has historical K but no durable behavior-definition registry')
+  if (priorRegistry) validateBehaviorDefinitionRegistry(priorRegistry, { exposureHead: prior })
+  const next = appendExposureHead({ prior, datasetSha256, behaviorAliases: [], exposureAttemptCount: 0, source: 'ROLLING_DATASET_TRANSITION' })
+  if (priorRegistry) writeExposureRegistryJournal({ journalPath, exposureHeadPath: headPath, registryPath: registryPaths.statePath, priorHead: prior, nextHead: next, priorRegistrySha256: priorRegistry.content_sha256, definitions: [] })
+  appendExposureHeadFile({ filePath: headPath, expectedHeadSha256: prior.content_sha256, datasetSha256, behaviorAliases: [], exposureAttemptCount: 0, source: 'ROLLING_DATASET_TRANSITION' })
+  if (priorRegistry) recoverExposureRegistryTransaction({ journalPath })
+  const head = readExposureHeadFile(headPath)
+  if (head.cumulative_k !== prior.cumulative_k || head.exposure_attempt_k !== prior.exposure_attempt_k) fail('rolling dataset transition changed cumulative family exposure')
+  return { head, headPath, familyRoot, registryPaths }
+}
+
 function ensureBehaviorRegistryState({ statePath, seedPath }) {
   if (existsSync(statePath)) {
     const state = readBehaviorDefinitionRegistryFile(statePath)
@@ -465,6 +706,7 @@ function blockedPrerequisiteResult(command, options, required = []) {
     const value = options[row.key]
     if (!value) { missing.push(`${row.label}: missing physical prerequisite`); continue }
     const absolute = resolve(String(value))
+    if (row.createTarget === true) continue
     if (row.directory ? !existsSync(absolute) : !existsSync(absolute)) missing.push(`${row.label}: path does not exist: ${value}`)
     else {
       const ref = bestEffortPhysicalReference(absolute, row.role || row.label)
@@ -493,6 +735,38 @@ function requireIgnoredSearchDirs(options) {
   }
   mkdirSync(resolve(String(cache)), { recursive: true })
   return { checkpoint, cache }
+}
+
+function authoritativeGeneticCheckpointConfig() {
+  return {
+    population: STAT_DEFAULTS.population,
+    generations: STAT_DEFAULTS.generations,
+    minGenerations: STAT_DEFAULTS.minGenerations,
+    plateauGenerations: STAT_DEFAULTS.plateauGenerations,
+    crossoverProbability: STAT_DEFAULTS.crossoverProbability,
+    mutationProbability: STAT_DEFAULTS.mutationProbability,
+    seeds: [...STAT_DEFAULTS.seeds],
+    halfLifeMonths: STAT_DEFAULTS.halfLifeMonths,
+    operator: 'ARITHMETIC_CROSSOVER_UNIFORM_MUTATION',
+    scheduler_ordering: 'STABLE_SEED_GENERATION_CHROMOSOME_ORDER',
+    mode: 'AUTHORITATIVE',
+  }
+}
+
+export function reopenAuthoritativeGeneticCheckpoint({ checkpointPath, artifact, exposureHead, geneSpace, foldId, config = authoritativeGeneticCheckpointConfig() } = {}) {
+  if (!checkpointPath) fail('authoritative genetic checkpoint path is missing')
+  const target = resolve(String(checkpointPath))
+  if (!existsSync(target)) return null
+  if (!artifact || !exposureHead || !geneSpace || foldId === undefined || foldId === null) fail('authoritative genetic checkpoint validation inputs are incomplete')
+  if (existsSync(`${target}.lock`)) fail('authoritative genetic checkpoint has a competing active writer')
+  try {
+    const checkpoint = readGeneticCheckpointFile(target)
+    validateGeneticCheckpoint(checkpoint, { artifact, exposureHead, geneSpace, foldId, config })
+    if (checkpoint.exposure_predecessor_sha256 !== exposureHead.content_sha256) fail('checkpoint exposure predecessor is stale')
+    return checkpoint
+  } catch (error) {
+    fail(`authoritative genetic checkpoint cannot be resumed: ${error.message}`)
+  }
 }
 
 function coverageIdentity(value) {
@@ -669,7 +943,7 @@ export async function coverageReport({ plan, catalog = null, catalogRoot = null,
   // are explicitly supplied and the trusted data verifiers reopen their
   // bytes, rows, schema, source binding, and recomputed dataset root.
   if (acquisition && parquet && acquisitionRoot && parquetRoot) {
-    verifyAuthoritativeStaging({ manifest: acquisition, root: acquisitionRoot, planSha256: plan.content_sha256, requireComplete: false })
+    verifyAuthoritativeStaging({ manifest: acquisition, root: acquisitionRoot, plan, planSha256: plan.content_sha256, requireComplete: false })
     await verifyParquetConversionManifestAuthoritative(parquet, { root: parquetRoot, stagingRoot: acquisitionRoot, planSha256: plan.content_sha256 })
     const acquired = (acquisition.captures || []).filter(capture => capture?.unavailable !== true && capture.coverage?.complete === true && validPartition(capture.partition, 'JSONL', false) && Number(capture.partition.row_count) > 0)
     const promoted = (parquet.captures || []).filter(capture => capture?.unavailable !== true && capture.coverage?.complete === true && validPartition(capture.partition, 'PARQUET', true) && Number(capture.partition.row_count) > 0)
@@ -797,7 +1071,7 @@ function featureWindows(features, plan, lifecycleMs, candidateSet, evaluatorSpec
   const planEnd = Date.parse(plan.window.end_at); const result = []
   for (const row of rows) {
     const decision = Date.parse(String(row.decision_time ?? row.event_time)); if (!Number.isFinite(decision)) fail('feature-derived window has an invalid decision time')
-    if (!row.episode_id || !row.signal_id || !row.asset || !row.instrument || !row.symbol || !row.availability_time || Date.parse(String(row.availability_time)) > decision) fail('feature-derived window lacks exact PIT episode/series identity')
+    if (!row.episode_id || !row.signal_id || !row.asset || !row.instrument || !row.symbol || !row.availability_time || timestampMs(row.availability_time) > decision) fail('feature-derived window lacks exact PIT episode/series identity')
     const matched = predicates.filter(candidate => evaluateSignalPredicateV5(candidate.predicate, row, resolveTemplate(candidate.chromosome, candidate.chromosome)))
     if (!matched.length) continue
     const start = decision; const end = Math.min(planEnd, start + lifecycleMs)
@@ -869,9 +1143,15 @@ async function exactEnvelopeMap(envelope, artifact, manifest, root) {
   return result
 }
 
-async function exactV2EnvelopeMap(envelope, artifact, manifest, root) {
-  const features = await readPhysicalParquetRoleRows(manifest, root, 'feature'); const byEpisode = new Map()
+async function exactV2EnvelopeMap(envelope, artifact, manifest, root, { requireExact = false } = {}) {
+  const roleRows = requireExact
+    ? Object.fromEntries(await Promise.all(['feature', 'label', 'execution'].map(async role => [role, await readPhysicalParquetRoleRows(manifest, root, role)])))
+    : { feature: await readPhysicalParquetRoleRows(manifest, root, 'feature') }
+  const features = roleRows.feature; const byEpisode = new Map()
   for (const feature of features) { const id = String(feature.episode_id || ''); if (!id || byEpisode.has(id)) fail(`physical feature inventory contains a duplicate v2 envelope episode ${id}`); byEpisode.set(id, feature) }
+  if (requireExact) {
+    validateExactProductionEpisodeInventoriesV5({ envelope, artifact, roleRows })
+  }
   const result = {}
   for (const episode of artifact.episodes) {
     const feature = byEpisode.get(String(episode.episode_id)); if (!feature) fail(`physical feature inventory has no v2 envelope episode ${episode.episode_id}`)
@@ -927,11 +1207,11 @@ async function readV2PartitionRows(path, partition, maxPartitionBytes) {
 }
 
 function validateV2PhysicalRows(rows, partition, interval, label) {
-  const times = rows.map(row => Date.parse(String(row.event_time ?? row.time ?? row.open_time)))
+  const times = rows.map(row => timestampMs(row.event_time ?? row.time ?? row.open_time))
   if (times.some(value => !Number.isFinite(value)) || times[0] !== Date.parse(String(partition.min_event_time)) || times.at(-1) !== Date.parse(String(partition.max_event_time))) fail(`v2 hydration ${label} timestamp bounds are tampered`)
   for (let index = 1; index < times.length; index++) if (times[index] !== times[index - 1] + interval) fail(`v2 hydration ${label} timestamps contain a gap or duplicate`)
   for (const row of rows) {
-    const event = Date.parse(String(row.event_time ?? row.time ?? row.open_time)); const available = Date.parse(String(row.availability_time ?? row.close_time ?? ''))
+    const event = timestampMs(row.event_time ?? row.time ?? row.open_time); const available = timestampMs(row.availability_time ?? row.close_time)
     if (!Number.isFinite(available) || available < event + interval - 1000) fail(`v2 hydration ${label} row is not available after its completed bar`)
     for (const field of ['asset', 'instrument', 'symbol']) if (partition[field] !== null && partition[field] !== undefined && String(row[field] || '').toUpperCase() !== String(partition[field]).toUpperCase()) fail(`v2 hydration ${label} identity differs from partition metadata`)
     const mark = String(partition.series_role || '').toUpperCase() === 'MARK'; const ohlc = (mark ? ['mark_open', 'mark_high', 'mark_low', 'mark_close'] : ['open', 'high', 'low', 'close']).map(field => Number(row[field])); if (ohlc.every(Number.isFinite) && (ohlc.some(value => value <= 0) || ohlc[1] < Math.max(ohlc[0], ohlc[3]) || ohlc[2] > Math.min(ohlc[0], ohlc[3]) || ohlc[2] > ohlc[1])) fail(`v2 hydration ${label} OHLC is inconsistent`)
@@ -970,8 +1250,8 @@ async function verifyV2OpportunityHydration({ envelope, hydration, domain = null
     const selected = new Map()
     for (const ref of refs) {
       const partition = inventory.get(String(ref.partition_sha256)); if (!partition || (ref.partition_path && String(ref.partition_path) !== String(partition.partition_path)) || Number(ref.partition_bytes) !== Number(partition.bytes) || Number(ref.partition_row_count) !== Number(partition.row_count)) fail(`v2 hydration ${label} has an unbound partition reference`)
-      const start = Date.parse(String(ref.row_start)); const end = Date.parse(String(ref.row_end_exclusive)); const rows = rowsByHash.get(String(ref.partition_sha256)); const chosen = rows.filter(row => { const at = Date.parse(String(row.event_time ?? row.time ?? row.open_time)); return at >= start && at < end }); if (!Number.isFinite(start) || !Number.isFinite(end) || !(end > start) || chosen.length !== Number(ref.row_count) || !chosen.length || Date.parse(String(chosen[0].event_time ?? chosen[0].time ?? chosen[0].open_time)) !== start || Date.parse(String(chosen.at(-1).event_time ?? chosen.at(-1).time ?? chosen.at(-1).open_time)) !== end - interval) fail(`v2 hydration ${label} reference bounds/count are not exact`)
-      for (const row of chosen) { const at = Date.parse(String(row.event_time ?? row.time ?? row.open_time)); if (selected.has(at)) fail(`v2 hydration ${label} has overlapping logical references`); selected.set(at, row) }
+      const start = Date.parse(String(ref.row_start)); const end = Date.parse(String(ref.row_end_exclusive)); const rows = rowsByHash.get(String(ref.partition_sha256)); const chosen = rows.filter(row => { const at = timestampMs(row.event_time ?? row.time ?? row.open_time); return at >= start && at < end }); if (!Number.isFinite(start) || !Number.isFinite(end) || !(end > start) || chosen.length !== Number(ref.row_count) || !chosen.length || timestampMs(chosen[0].event_time ?? chosen[0].time ?? chosen[0].open_time) !== start || timestampMs(chosen.at(-1).event_time ?? chosen.at(-1).time ?? chosen.at(-1).open_time) !== end - interval) fail(`v2 hydration ${label} reference bounds/count are not exact`)
+      for (const row of chosen) { const at = timestampMs(row.event_time ?? row.time ?? row.open_time); if (selected.has(at)) fail(`v2 hydration ${label} has overlapping logical references`); selected.set(at, row) }
     }
     const values = [...selected.keys()].sort((a, b) => a - b); if (expectedRows !== null && values.length !== expectedRows) fail(`v2 hydration ${label} row count is not exact`); if (values.length && (values[0] !== lower || values.at(-1) !== upper - interval || values.some((at, index) => index > 0 && at !== values[index - 1] + interval))) fail(`v2 hydration ${label} is not contiguous over its declared range`); return values.length
   }
@@ -1005,7 +1285,10 @@ function verifyDurableBehaviorRegistryForHead(registry, head, { evaluatorSha256,
   return byAlias
 }
 
-export async function authoritativeDataBackfill(options = {}, { fetchImpl = globalThis.fetch } = {}) {
+export async function authoritativeDataBackfill(options = {}, dependencies = undefined) {
+  const fixtureOnly = bool(options.fixture_only || options.fixtureOnly)
+  if (dependencies !== undefined && (!fixtureOnly || Number(options.max_pages) !== 0 || Number(options.max_rows) !== 0)) fail('authoritative data-backfill rejects injected network transports; only an explicitly fixture-only zero-row BLOCKED acquisition may inject fetch')
+  const fetchImpl = dependencies?.fetchImpl || globalThis.fetch
   const download = bool(options.download)
   const frozenPlanPath = options.plan || options.data_plan || null
   const frozenCatalogPath = options.catalog || options.dated_futures_catalog || options.catalog_path || null
@@ -1014,7 +1297,6 @@ export async function authoritativeDataBackfill(options = {}, { fetchImpl = glob
   const requestedAsOf = options.as_of ?? options.asOf
   if (requestedAsOf === undefined && !frozenPlanPath) fail('data-backfill requires an explicit --as-of timestamp so five-year bounds are reproducible')
   const asOf = requestedAsOf ?? null
-  const fixtureOnly = bool(options.fixture_only || options.fixtureOnly)
   // Production custody timestamps come from the adapter's observed call or
   // response time.  An injected timestamp is permitted only for explicit
   // fixture runs; passing a caller timestamp into a public discovery would
@@ -1106,7 +1388,7 @@ export async function authoritativeDataBackfill(options = {}, { fetchImpl = glob
       })
       return outputReceipt('data-backfill', receipt, { plan, acquisition, catalog, coverage, parquet: null }, { receipt: options.receipt || options.receipt_out, record_root: recordRoot })
     }
-    const parquet = await convertToParquet({ stagingManifest: acquisition, stagingRoot, outputRoot: parquetRoot, outputRootReference: options.parquet_root_reference || null })
+    const parquet = await convertToParquet({ stagingManifest: acquisition, stagingRoot, outputRoot: parquetRoot, outputRootReference: options.parquet_root_reference || null, plan })
     await verifyParquetConversionManifestAuthoritative(parquet, { root: parquetRoot, stagingRoot, planSha256: plan.content_sha256 })
     const coverage = await coverageReport({ plan, catalog, catalogRoot: rawRoot, acquisition, parquet, acquisitionRoot: stagingRoot, parquetRoot, capturedAt: catalog.captured_at || now(), mode: 'DOWNLOAD_AND_AUTHORITATIVE_REOPEN' })
     const outputs = foundation.map(row => reference(row.path, row.role, row.value))
@@ -1156,7 +1438,7 @@ export async function authoritativeDataRawReplay(options = {}) {
     const catalogPhysical = physicalJson(catalogOption, { label: 'frozen dated-futures catalog', schemas: [DATA_V5.datedCatalog] }); catalog = catalogPhysical.value
     validateDatedFuturesCatalog(catalog, { root: catalogRootOption })
     const parquetRoot = ignoredRoot(parquetRootOption, 'local replay Parquet root')
-    parquet = await convertToParquet({ stagingManifest: result.acquisition, stagingRoot: targetRoot, outputRoot: parquetRoot, outputRootReference: options.parquet_root_reference || options.parquetRootReference || null })
+    parquet = await convertToParquet({ stagingManifest: result.acquisition, stagingRoot: targetRoot, outputRoot: parquetRoot, outputRootReference: options.parquet_root_reference || options.parquetRootReference || null, plan: planPhysical.value })
     await verifyParquetConversionManifestAuthoritative(parquet, { root: parquetRoot, stagingRoot: targetRoot, planSha256: planPhysical.value.content_sha256 })
     coverage = await coverageReport({ plan: planPhysical.value, catalog, catalogRoot: catalogRootOption, acquisition: result.acquisition, parquet, acquisitionRoot: targetRoot, parquetRoot, capturedAt: catalog.captured_at, mode: 'LOCAL_RAW_REPLAY_AND_AUTHORITATIVE_REOPEN' })
     const recordRoot = resolve(String(options.record_root || options.recordRoot || 'strategy-research/v5-records'))
@@ -1175,31 +1457,260 @@ export async function authoritativeDataRawReplay(options = {}) {
   return outputReceipt('data-raw-replay', receipt, { checkpoint: result.checkpoint, acquisition: result.acquisition, ...(catalog ? { catalog } : {}), ...(parquet ? { parquet } : {}), ...(coverage ? { coverage } : {}), replayed_count: result.replayed_count, retained_count: result.retained_count, auxiliary_metrics: result.auxiliary_metrics || [], target_root: targetRoot }, { receipt: options.receipt || options.receipt_out, record_root: options.record_root || options.recordRoot, result: { checkpoint_path: checkpointPath, manifest_path: manifestPath } })
 }
 
-export async function authoritativeOpportunityEnvelope(options = {}, { fetchImpl = globalThis.fetch } = {}) {
+export async function authoritativeFeatureBuild(options = {}) {
+  rejectLooseOptions(options)
+  const preflight = blockedPrerequisiteResult('feature-build', options, [
+    { key: 'plan', label: 'plan', role: 'plan' },
+    { key: 'acquisition', label: 'acquisition', role: 'acquisition' },
+    { key: 'staging_root', label: 'staging root', role: 'staging_root', directory: true },
+    { key: 'predictor_registry', label: 'predictor registry', role: 'predictor_registry' },
+    { key: 'precommit', label: 'precommit', role: 'precommit' },
+  ])
+  if (preflight) return preflight
+  if (options.features || options.feature_rows || options.labels || options.outcomes) fail('feature-build derives features internally and rejects caller-authored feature/label/outcome rows')
+  const root = ignoredRoot(options.staging_root, 'feature-build staging root')
+  const planPhysical = physicalJson(options.plan, { label: 'feature-build plan', schemas: [DATA_V5.plan] })
+  const acquisitionPhysical = physicalJson(options.acquisition, { label: 'feature-build acquisition', schemas: [DATA_V5.acquisition] })
+  const predictorPhysical = physicalJson(options.predictor_registry, { label: 'feature-build predictor registry', schemas: ['strategy-v5-predictor-registry/1'] })
+  const precommitPhysical = frozenPrecommit(options.precommit, 'feature-build precommit')
+  const requirements = makeTimeframeRequirementsFromPredictorRegistry({ predictorRegistry: predictorPhysical.value, precommitSha256: precommitPhysical.value.content_sha256 })
+  const produced = produceAuthoritativeFeatureSource({ root, rootReference: options.root_reference || null, plan: planPhysical.value, acquisition: acquisitionPhysical.value, predictorRegistry: predictorPhysical.value, precommit: precommitPhysical.value, timeframeRequirements: requirements })
+  const requirementsPath = writeImmutable(options.requirements_out || durableArtifactPath(options, requirements, 'timeframe-requirements'), requirements)
+  const coveragePath = writeImmutable(options.coverage_out || durableArtifactPath(options, produced.promotedCoverage, 'promoted-coverage'), produced.promotedCoverage)
+  const featurePath = writeImmutable(options.out || options.feature_source_out || durableArtifactPath(options, produced.manifest, 'feature-source'), produced.manifest)
+  const inputs = [reference(planPhysical.path, 'plan'), reference(acquisitionPhysical.path, 'acquisition'), reference(predictorPhysical.path, 'predictor_registry'), reference(precommitPhysical.path, 'precommit')]
+  const outputs = [reference(requirementsPath, 'timeframe_requirements', requirements), reference(coveragePath, 'promoted_coverage', produced.promotedCoverage), reference(featurePath, 'feature_source', produced.manifest)]
+  const receipt = makeCommandReceipt({ command: 'feature-build', status: 'COMPLETE', inputs, outputs, limitations: produced.manifest.limitations, details: { mode: 'PHYSICAL_ACQUISITION_TO_DETERMINISTIC_FEATURE_SOURCE', feature_source_sha256: produced.manifest.content_sha256, feature_rows: produced.manifest.artifact.row_count, requirements_sha256: requirements.content_sha256, promoted_coverage_sha256: produced.promotedCoverage.content_sha256, coverage_status: produced.promotedCoverage.status, base_only_compatible: true, active: false } })
+  return outputReceipt('feature-build', receipt, { feature_source: produced.manifest, requirements, promoted_coverage: produced.promotedCoverage, feature_source_path: featurePath, feature_root: root }, { receipt: options.receipt || options.receipt_out, record_root: options.record_root || options.recordRoot })
+}
+
+function writeMetadataBundleImmutable(path, bundle) {
+  const target = resolve(String(path)); mkdirSync(dirname(target), { recursive: true })
+  const bytes = Buffer.from(`${JSON.stringify(bundle, null, 2)}\n`)
+  if (existsSync(target)) {
+    const stat = lstatSync(target)
+    if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1 || hash(readFileSync(target)) !== hash(bytes)) fail(`metadata bundle output is tampered or collides: ${target}`)
+    return target
+  }
+  writeFileSync(target, bytes, { flag: 'wx' })
+  return target
+}
+
+export async function authoritativeMetadataBuild(options = {}) {
+  rejectLooseOptions(options)
+  const preflight = blockedPrerequisiteResult('metadata-build', options, [
+    { key: 'plan', label: 'plan', role: 'plan' },
+    { key: 'precommit', label: 'precommit', role: 'precommit' },
+    { key: 'evaluator_spec', label: 'evaluator spec', role: 'evaluator_spec' },
+    { key: 'policy', label: 'spot execution policy', role: 'spot_execution_policy' },
+    { key: 'output_root', label: 'metadata output root', role: 'metadata_root', directory: true, createTarget: true },
+  ])
+  if (preflight) return preflight
+  const root = ignoredRoot(options.output_root || options.metadata_root, 'metadata output root')
+  const planPhysical = physicalJson(options.plan, { label: 'metadata-build plan', schemas: [DATA_V5.plan] })
+  const precommitPhysical = frozenPrecommit(options.precommit, 'metadata-build precommit')
+  const evaluatorPhysical = physicalJson(options.evaluator_spec, { label: 'metadata-build evaluator spec', schemas: ['strategy-v5-evaluator-spec/1'] })
+  const policyPhysical = physicalJson(options.policy, { label: 'metadata-build spot execution policy', schemas: ['strategy-v5-spot-execution-policy/1'] })
+  const policyStat = lstatSync(policyPhysical.path)
+  if (!policyStat.isFile() || policyStat.isSymbolicLink() || policyStat.nlink !== 1) fail('metadata-build policy must be a regular single-link file')
+  const built = buildUserBoundSpotMetadataV5({ root, rootReference: options.root_reference || null, plan: planPhysical.value, precommit: precommitPhysical.value, evaluatorSpec: evaluatorPhysical.value, policy: policyPhysical.value, policyBytes: readFileSync(policyPhysical.path) })
+  const bundlePath = writeMetadataBundleImmutable(options.out || join(root, 'bundles', `spot-metadata-${built.bundle_sha256}.json`), built.bundle)
+  const verified = physicalMetadataBundle(bundlePath, { sourceRoot: root })
+  if (verified.content_sha256 !== built.bundle_sha256) fail('metadata-build bundle changed during physical reopen')
+  const inputs = [reference(planPhysical.path, 'plan'), reference(precommitPhysical.path, 'precommit'), reference(evaluatorPhysical.path, 'evaluator_spec'), reference(policyPhysical.path, 'spot_execution_policy')]
+  const outputs = [reference(bundlePath, 'metadata')]
+  const limitations = [...new Set([...policyPhysical.value.limitations, 'RETROSPECTIVE_USER_BOUND_RESEARCH_ASSUMPTION', 'NOT_ACTIVATION_EVIDENCE', 'SPOT_EXECUTION_ONLY'])].sort()
+  const receipt = makeCommandReceipt({ command: 'metadata-build', status: 'COMPLETE', inputs, outputs, limitations, details: { mode: 'LOCAL_USER_BOUND_SPOT_EXECUTION_METADATA', spot_execution_policy_sha256: policyPhysical.value.content_sha256, metadata_bundle_sha256: built.bundle_sha256, evaluator_spec_sha256: evaluatorPhysical.value.content_sha256, plan_sha256: planPhysical.value.content_sha256, source_root: portablePath(root), record_count: built.trade_scope.trade_assets.length, active: false } })
+  return outputReceipt('metadata-build', receipt, { metadata: built.bundle, metadata_path: bundlePath, metadata_root: root, source_receipt: built.source_receipt, trade_scope: built.trade_scope }, { receipt: options.receipt || options.receipt_out, record_root: options.record_root || options.recordRoot })
+}
+
+export async function authoritativeArtifactBuild(options = {}) {
+  rejectLooseOptions(options, { allowPhysicalPaths: ['config'] })
+  const preflight = blockedPrerequisiteResult('artifact-build', options, [
+    { key: 'plan', label: 'plan', role: 'plan' },
+    { key: 'acquisition', label: 'acquisition', role: 'acquisition' },
+    { key: 'physical_hydration', label: 'physical v1 hydration', role: 'physical_hydration' },
+    { key: 'physical_envelope', label: 'physical v1 opportunity envelope', role: 'physical_envelope' },
+    { key: 'opportunity_domain', label: 'authoritative v2 opportunity domain', role: 'opportunity_domain' },
+    { key: 'opportunity_envelope', label: 'authoritative v2 opportunity envelope', role: 'opportunity_envelope' },
+    { key: 'opportunity_hydration', label: 'authoritative v2 opportunity hydration', role: 'opportunity_hydration' },
+    { key: 'feature_source', label: 'feature source', role: 'feature_source' },
+    { key: 'staging_root', label: 'staging root', role: 'staging_root', directory: true },
+    { key: 'predictor_registry', label: 'predictor registry', role: 'predictor_registry' },
+    { key: 'precommit', label: 'precommit', role: 'precommit' },
+    { key: 'gene_space', label: 'gene space', role: 'gene_space' },
+    { key: 'evaluator_spec', label: 'evaluator spec', role: 'evaluator_spec' },
+    { key: 'config', label: 'execution/config contract', role: 'config' },
+  ])
+  if (preflight) return preflight
+  if (!options.parquet_root) fail('artifact-build requires --parquet-root')
+  if (options.features || options.labels || options.execution || options.marks || options.role_receipts || options.source_manifest) fail('artifact-build derives every role and source receipt internally; caller-authored roles are rejected')
+  const stagingRoot = ignoredRoot(options.staging_root, 'artifact-build staging root'); const parquetRoot = ignoredRoot(options.parquet_root, 'artifact-build Parquet root')
+  const acquisitionRoot = ignoredRoot(options.acquisition_root || options.source_root || stagingRoot, 'artifact-build acquisition root')
+  const hydrationRoot = ignoredRoot(options.hydration_root || options.opportunity_root || stagingRoot, 'artifact-build hydration root')
+  const featureSourceRoot = ignoredRoot(options.feature_source_root || acquisitionRoot, 'artifact-build feature-source root')
+  const planPhysical = physicalJson(options.plan, { label: 'artifact-build plan', schemas: [DATA_V5.plan] })
+  const acquisitionPhysical = physicalJson(options.acquisition, { label: 'artifact-build acquisition', schemas: [DATA_V5.acquisition] })
+  const hydrationPhysical = physicalJson(options.physical_hydration, { label: 'artifact-build physical hydration', schemas: [DATA_V5.hydration] })
+  const physicalEnvelope = physicalJson(options.physical_envelope, { label: 'artifact-build physical opportunity envelope', schemas: ['strategy-v5-opportunity-envelope/1'] })
+  const opportunityDomainPhysical = physicalJson(options.opportunity_domain || options.domain, { label: 'artifact-build v2 opportunity domain', schemas: ['strategy-v5-opportunity-domain/1'] })
+  const opportunityEnvelopePhysical = physicalJson(options.opportunity_envelope || options.envelope, { label: 'artifact-build v2 opportunity envelope', schemas: ['strategy-v5-opportunity-envelope/2'] })
+  const opportunityHydrationPhysical = physicalJson(options.opportunity_hydration || options.hydration, { label: 'artifact-build v2 opportunity hydration', schemas: ['strategy-v5-opportunity-hydration/2'] })
+  const featureSourcePhysical = physicalJson(options.feature_source, { label: 'artifact-build feature source', schemas: [DATA_V5.featureSource] })
+  const predictorPhysical = physicalJson(options.predictor_registry, { label: 'artifact-build predictor registry', schemas: ['strategy-v5-predictor-registry/1'] })
+  const precommitPhysical = frozenPrecommit(options.precommit, 'artifact-build precommit')
+  const genePhysical = physicalJson(options.gene_space, { label: 'artifact-build gene space' })
+  const evaluatorPhysical = physicalJson(options.evaluator_spec, { label: 'artifact-build evaluator spec', schemas: ['strategy-v5-evaluator-spec/1'] })
+  const configPhysical = physicalJson(options.config, { label: 'artifact-build execution/config contract' })
+  if (hydrationPhysical.value.plan_sha256 !== planPhysical.value.content_sha256 || hydrationPhysical.value.envelope_sha256 !== physicalEnvelope.value.content_sha256 || hydrationPhysical.value.candidate_set_sha256 !== physicalEnvelope.value.candidate_set_sha256) fail('artifact-build physical hydration/envelope/plan lineage differs')
+  if (physicalEnvelope.value.precommit_sha256 !== precommitPhysical.value.content_sha256) fail('artifact-build physical envelope is bound to a different precommit')
+  validateEvaluatorSpecV5(evaluatorPhysical.value, { geneSpace: genePhysical.value, predictorRegistry: predictorPhysical.value })
+  derivePrecommitTradeScopeV5(precommitPhysical.value, { candidateTemplate: evaluatorPhysical.value.candidate_template })
+  const hypothesisFamily = canonicalHypothesisFamilyV5(precommitPhysical.value, { evaluatorSpec: evaluatorPhysical.value })
+  if (evaluatorPhysical.value.precommit_sha256 !== precommitPhysical.value.content_sha256) fail('artifact-build evaluator is bound to a different precommit')
+  await verifyV2OpportunityHydration({ envelope: opportunityEnvelopePhysical.value, hydration: opportunityHydrationPhysical.value, domain: opportunityDomainPhysical.value, root: hydrationRoot, planSha256: planPhysical.value.content_sha256 })
+  if (opportunityEnvelopePhysical.value.precommit_sha256 !== precommitPhysical.value.content_sha256 || opportunityEnvelopePhysical.value.predictor_registry_sha256 !== predictorPhysical.value.content_sha256 || opportunityEnvelopePhysical.value.evaluator_spec_sha256 !== evaluatorPhysical.value.content_sha256 || opportunityEnvelopePhysical.value.gene_space_sha256 !== genePhysical.value.content_sha256 || opportunityEnvelopePhysical.value.candidate_set_sha256 !== physicalEnvelope.value.candidate_set_sha256) fail('artifact-build v2 opportunity lineage differs from frozen strategy inputs')
+  const expectedPhysicalEnvelope = makeOpportunityEnvelope({ planSha256: planPhysical.value.content_sha256, candidateSetSha256: opportunityEnvelopePhysical.value.candidate_set_sha256, windows: opportunityEnvelopePhysical.value.windows.map(window => ({ asset: window.asset, instrument: window.instrument, symbol: window.symbol, execution_start: window.entry_time, execution_end: window.execution_end, source_window_ids: [window.window_id] })), maxLifecycleMs: opportunityEnvelopePhysical.value.max_lifecycle_ms, lifecycleTimeframe: '1m', precommitSha256: precommitPhysical.value.content_sha256 })
+  if (expectedPhysicalEnvelope.content_sha256 !== physicalEnvelope.value.content_sha256) fail('artifact-build physical v1 envelope is not the exact deterministic projection of the complete v2 opportunity inventory')
+  if (opportunityHydrationPhysical.value.physical_hydration_sha256 !== hydrationPhysical.value.content_sha256 || opportunityHydrationPhysical.value.physical_root_reference !== hydrationPhysical.value.root_reference) fail('artifact-build v2 hydration is not bound to the supplied physical v1 hydration custody')
+  const featureSource = validateAuthoritativeFeatureSource({ manifest: featureSourcePhysical.value, root: featureSourceRoot, expectedPlanSha256: planPhysical.value.content_sha256, expectedAcquisitionSha256: acquisitionPhysical.value.content_sha256, expectedPredictorRegistrySha256: predictorPhysical.value.content_sha256, expectedPrecommitSha256: precommitPhysical.value.content_sha256 })
+  const sourceBundle = makeSourceBundleManifest({ root: stagingRoot, rootReference: options.root_reference || null, planSha256: planPhysical.value.content_sha256, acquisition: acquisitionPhysical.value, hydration: hydrationPhysical.value, acquisitionRoot, hydrationRoot, envelopeSha256: physicalEnvelope.value.content_sha256, candidateSetSha256: hydrationPhysical.value.candidate_set_sha256 })
+  const candidatePredicates = derivePredicatePredictorIds(evaluatorPhysical.value.predicate).map(predictor_id => ({ predictor_id }))
+  const produced = produceAuthoritativeRoleArtifacts({ root: stagingRoot, plan: planPhysical.value, predictorRegistry: predictorPhysical.value, sourceManifestReference: sourceBundle.physical_reference, sourceManifestSha256: sourceBundle.content_sha256, sourceDatasetRootSha256: sourceBundle.dataset_root_sha256, transformationCodeSha256: DATA_V5_PRODUCER_CODE_SHA256, labelCodeSha256: DATA_V5_PRODUCER_CODE_SHA256, executionCodeSha256: DATA_V5_PRODUCER_CODE_SHA256, configSha256: configPhysical.value.content_sha256, precommitSha256: precommitPhysical.value.content_sha256, envelopeSha256: opportunityEnvelopePhysical.value.content_sha256, precommit: precommitPhysical.value, envelope: opportunityEnvelopePhysical.value, config: configPhysical.value })
+  validateFeatureSubsetAgainstSource({ featureSourceManifest: featureSource.manifest, root: featureSourceRoot, finalFeatureReference: produced.feature, finalRoot: stagingRoot, opportunityEnvelope: opportunityEnvelopePhysical.value })
+  const stagingManifest = makeSeparatedArtifactManifest({ plan: planPhysical.value, root: stagingRoot, predictorRegistry: predictorPhysical.value, candidatePredicates, sourceManifestSha256: sourceBundle.content_sha256, sourceManifestReference: sourceBundle.physical_reference, sourceDatasetRootSha256: sourceBundle.dataset_root_sha256, transformationCodeSha256: DATA_V5_PRODUCER_CODE_SHA256, labelCodeSha256: DATA_V5_PRODUCER_CODE_SHA256, executionCodeSha256: DATA_V5_PRODUCER_CODE_SHA256, configSha256: configPhysical.value.content_sha256, precommitSha256: precommitPhysical.value.content_sha256, envelopeSha256: opportunityEnvelopePhysical.value.content_sha256, roleReceipts: { feature: produced.feature.role_receipt, label: produced.label.role_receipt, execution: produced.execution.role_receipt, mark: produced.mark.role_receipt }, features: produced.feature, labels: produced.label, execution: produced.execution, marks: produced.mark })
+  const parquet = await convertSeparatedArtifactsToParquet({ stagingManifest, stagingRoot, outputRoot: parquetRoot, outputRootReference: options.parquet_root_reference || null, plan: planPhysical.value, predictorRegistry: predictorPhysical.value, candidatePredicates })
+  await verifyParquetArtifactManifest({ manifest: parquet, root: parquetRoot, plan: planPhysical.value, predictorRegistry: predictorPhysical.value, candidatePredicates })
+  const sourceBundlePath = writeImmutable(options.source_bundle_out || durableArtifactPath(options, sourceBundle, 'source-bundle'), sourceBundle)
+  const stagingPath = writeImmutable(options.staging_out || durableArtifactPath(options, stagingManifest, 'separated-staging'), stagingManifest)
+  const parquetPath = writeImmutable(options.out || options.parquet_manifest_out || durableArtifactPath(options, parquet, 'separated-parquet'), parquet)
+  const inputs = [reference(planPhysical.path, 'plan'), reference(acquisitionPhysical.path, 'acquisition'), reference(hydrationPhysical.path, 'physical_hydration'), reference(physicalEnvelope.path, 'physical_envelope'), reference(opportunityDomainPhysical.path, 'opportunity_domain'), reference(opportunityEnvelopePhysical.path, 'opportunity_envelope'), reference(opportunityHydrationPhysical.path, 'opportunity_hydration'), reference(featureSourcePhysical.path, 'feature_source'), reference(predictorPhysical.path, 'predictor_registry'), reference(precommitPhysical.path, 'precommit'), reference(genePhysical.path, 'gene_space'), reference(evaluatorPhysical.path, 'evaluator_spec'), reference(configPhysical.path, 'config')]
+  const outputs = [reference(sourceBundlePath, 'source_bundle', sourceBundle), reference(stagingPath, 'separated_staging', stagingManifest), reference(parquetPath, 'separated_parquet', parquet)]
+  const receipt = makeCommandReceipt({ command: 'artifact-build', status: 'COMPLETE', inputs, outputs, limitations: parquet.limitations || [], details: { mode: 'FEATURE_SOURCE_PLUS_PHYSICAL_HYDRATION_TO_SEPARATED_PARQUET', source_bundle_sha256: sourceBundle.content_sha256, feature_source_sha256: featureSource.manifest.content_sha256, staging_manifest_sha256: stagingManifest.content_sha256, parquet_manifest_sha256: parquet.content_sha256, feature_rows: parquet.artifacts.feature.row_count, label_rows: parquet.artifacts.label.row_count, execution_rows: parquet.artifacts.execution.row_count, mark_rows: parquet.artifacts.mark.row_count, active: false } })
+  return outputReceipt('artifact-build', receipt, { source_bundle: sourceBundle, staging_manifest: stagingManifest, parquet_manifest: parquet, staging_root: stagingRoot, parquet_root: parquetRoot }, { receipt: options.receipt || options.receipt_out, record_root: options.record_root || options.recordRoot })
+}
+
+function uniqueEpisodeRows(rows, role) {
+  const result = new Map()
+  for (const row of rows) {
+    const id = String(row.episode_id || '')
+    if (!id || result.has(id)) fail(`research-init ${role} role has a missing or duplicate episode identity`)
+    result.set(id, row)
+  }
+  return result
+}
+
+function makeGenesisEpisodes({ envelope, features, labels, executions } = {}) {
+  const featureByEpisode = uniqueEpisodeRows(features, 'feature')
+  const labelByEpisode = uniqueEpisodeRows(labels, 'label')
+  const executionByEpisode = uniqueEpisodeRows(executions, 'execution')
+  const windows = [...(envelope.windows || [])]
+  if (!windows.length || featureByEpisode.size !== windows.length || labelByEpisode.size !== windows.length || executionByEpisode.size !== windows.length) fail('research-init physical role inventory does not exactly equal the v2 opportunity envelope')
+  const rows = windows.map(window => {
+    const id = String(window.episode_id || '')
+    const feature = featureByEpisode.get(id); const label = labelByEpisode.get(id); const execution = executionByEpisode.get(id)
+    if (!feature || !label || !execution) fail(`research-init episode ${id || '?'} lacks exact feature/label/execution custody`)
+    const decision = timestampMs(feature.decision_time ?? feature.event_time)
+    const resolution = timestampMs(label.resolution_ceiling_time ?? label.resolution_time ?? label.outcome_time ?? label.exit_time)
+    const labelAvailable = timestampMs(label.availability_time ?? resolution)
+    const executionAvailable = timestampMs(execution.availability_time ?? resolution)
+    const identity = value => `${String(value.asset || '').toLowerCase()}|${String(value.venue || '').toUpperCase()}|${String(value.instrument || '').toUpperCase()}|${String(value.symbol || '').toUpperCase()}`
+    const expectedIdentity = `${String(window.asset || '').toLowerCase()}|${String(feature.venue || 'BINANCE').toUpperCase()}|${String(window.instrument || '').toUpperCase()}|${String(window.symbol || '').toUpperCase()}`
+    if (!id || String(window.signal_id || '') !== String(feature.signal_id || '') || String(feature.signal_id || '') !== String(label.signal_id || '') || String(feature.signal_id || '') !== String(execution.signal_id || '') || identity(feature) !== expectedIdentity || identity(label) !== expectedIdentity || identity(execution) !== expectedIdentity || decision !== timestampMs(window.decision_time) || decision !== timestampMs(label.decision_time) || decision !== timestampMs(execution.decision_time)) fail(`research-init episode ${id || '?'} lineage differs from the v2 envelope or physical roles`)
+    if (![decision, resolution, labelAvailable, executionAvailable].every(Number.isFinite) || !(resolution > decision) || labelAvailable < resolution || executionAvailable < resolution) fail(`research-init episode ${id} chronology is invalid`)
+    return { episode_id: id, asset: String(window.asset).toLowerCase(), decision_time: new Date(decision).toISOString(), resolution_time: new Date(resolution).toISOString(), label_availability_time: new Date(labelAvailable).toISOString(), execution_availability_time: new Date(executionAvailable).toISOString(), eligible: feature.signal_eligible !== false, candidate_returns: {} }
+  }).sort((left, right) => Date.parse(left.decision_time) - Date.parse(right.decision_time) || left.episode_id.localeCompare(right.episode_id))
+  // The statistical contract uses independent market episodes.  Preserve all
+  // physical opportunities, but deterministically mark later overlapping
+  // opportunities ineligible until the prior asset lifecycle resolves.
+  const lastResolutionByAsset = new Map()
+  for (const row of rows) {
+    const decision = Date.parse(row.decision_time); const prior = lastResolutionByAsset.get(row.asset)
+    if (row.eligible && prior !== undefined && decision < prior) row.eligible = false
+    if (row.eligible) lastResolutionByAsset.set(row.asset, Date.parse(row.resolution_time))
+  }
+  return rows
+}
+
+export async function authoritativeResearchInit(options = {}) {
+  rejectLooseOptions(options)
+  for (const key of ['features', 'feature_rows', 'labels', 'label_rows', 'execution', 'execution_rows', 'episodes', 'candidate_returns', 'returns', 'metrics', 'hypothesis_family']) if (options[key] !== undefined) fail(`research-init rejects caller-supplied ${key}; episodes, lineage, and family are derived from physical artifacts`)
+  const preflight = blockedPrerequisiteResult('research-init', options, [
+    { key: 'plan', label: 'plan', role: 'plan' }, { key: 'parquet_manifest', label: 'Parquet manifest', role: 'parquet_manifest' },
+    { key: 'parquet_root', label: 'Parquet root', role: 'parquet_root', directory: true }, { key: 'predictor_registry', label: 'predictor registry', role: 'predictor_registry' },
+    { key: 'evaluator_spec', label: 'evaluator spec', role: 'evaluator_spec' }, { key: 'precommit', label: 'precommit', role: 'precommit' },
+    { key: 'gene_space', label: 'gene space', role: 'gene_space' }, { key: 'timeframe_requirements', label: 'timeframe requirements', role: 'timeframe_requirements' },
+    { key: 'opportunity_domain', label: 'opportunity domain', role: 'opportunity_domain' }, { key: 'opportunity_envelope', label: 'opportunity envelope', role: 'opportunity_envelope' },
+    { key: 'opportunity_hydration', label: 'opportunity hydration', role: 'opportunity_hydration' }, { key: 'hydration_root', label: 'hydration root', role: 'hydration_root', directory: true },
+  ])
+  if (preflight) return preflight
+  const requestedHeadPath = options.exposure_head_out || options.exposure_head || null
+  const planPhysical = physicalJson(options.plan, { label: 'research-init plan', schemas: [DATA_V5.plan] }); const plan = planPhysical.value
+  const manifestPhysical = physicalJson(options.parquet_manifest, { label: 'research-init separated Parquet manifest', schemas: [DATA_V5.artifacts] }); const manifest = manifestPhysical.value
+  const predictorPhysical = physicalJson(options.predictor_registry, { label: 'research-init predictor registry', schemas: ['strategy-v5-predictor-registry/1'] })
+  const evaluatorPhysical = physicalJson(options.evaluator_spec, { label: 'research-init evaluator spec', schemas: ['strategy-v5-evaluator-spec/1'] })
+  const precommitPhysical = frozenPrecommit(options.precommit, 'research-init precommit')
+  const genePhysical = physicalJson(options.gene_space, { label: 'research-init gene space', schemas: ['strategy-gene-space/1'] })
+  const domainPhysical = physicalJson(options.opportunity_domain, { label: 'research-init opportunity domain', schemas: ['strategy-v5-opportunity-domain/1'] })
+  const envelopePhysical = physicalJson(options.opportunity_envelope, { label: 'research-init opportunity envelope', schemas: ['strategy-v5-opportunity-envelope/2'] })
+  const hydrationPhysical = physicalJson(options.opportunity_hydration, { label: 'research-init opportunity hydration', schemas: ['strategy-v5-opportunity-hydration/2'] })
+  const root = options.parquet_root
+  validateEvaluatorSpecV5(evaluatorPhysical.value, { geneSpace: genePhysical.value, predictorRegistry: predictorPhysical.value })
+  derivePrecommitTradeScopeV5(precommitPhysical.value, { candidateTemplate: evaluatorPhysical.value.candidate_template })
+  const hypothesisFamily = canonicalHypothesisFamilyV5(precommitPhysical.value, { evaluatorSpec: evaluatorPhysical.value })
+  if (evaluatorPhysical.value.precommit_sha256 !== precommitPhysical.value.content_sha256 || manifest.precommit_sha256 !== precommitPhysical.value.content_sha256) fail('research-init precommit lineage differs across evaluator and Parquet manifest')
+  if (manifest.envelope_sha256 !== envelopePhysical.value.content_sha256) fail('research-init Parquet manifest is bound to a different v2 opportunity envelope')
+  if (envelopePhysical.value.plan_sha256 !== plan.content_sha256 || envelopePhysical.value.precommit_sha256 !== precommitPhysical.value.content_sha256 || envelopePhysical.value.evaluator_spec_sha256 !== evaluatorPhysical.value.content_sha256 || envelopePhysical.value.predictor_registry_sha256 !== predictorPhysical.value.content_sha256 || envelopePhysical.value.gene_space_sha256 !== genePhysical.value.content_sha256) fail('research-init v2 opportunity lineage differs from frozen inputs')
+  const predicateInventory = derivePredicatePredictorIds(evaluatorPhysical.value.predicate).map(predictor_id => ({ predictor_id }))
+  const dataBoundary = verifyDeclaredDataBoundary({ options, plan, manifest, predictorRegistry: predictorPhysical.value, evaluatorSpec: evaluatorPhysical.value, precommit: precommitPhysical.value, root, label: 'research-init' })
+  verifyMetricPITBoundary({ options, plan, manifest, predictorRegistry: predictorPhysical.value, evaluatorSpec: evaluatorPhysical.value, precommit: precommitPhysical.value, root, label: 'research-init', dataBoundary })
+  verifySeparatedArtifactManifest(manifest, { root, plan, requireParquet: true, predictorRegistry: predictorPhysical.value, candidatePredicates: predicateInventory })
+  await verifyParquetArtifactManifest({ manifest, root, plan, predictorRegistry: predictorPhysical.value, candidatePredicates: predicateInventory })
+  await verifyV2OpportunityHydration({ envelope: envelopePhysical.value, hydration: hydrationPhysical.value, domain: domainPhysical.value, planSha256: plan.content_sha256, root: options.hydration_root })
+  const [features, labels, executions] = await Promise.all(['feature', 'label', 'execution'].map(role => readPhysicalParquetRoleRows(manifest, root, role)))
+  const episodes = makeGenesisEpisodes({ envelope: envelopePhysical.value, features, labels, executions })
+  const recordRoot = resolve(String(options.record_root || options.recordRoot || 'strategy-research/v5-records'))
+  const custody = reopenOrAdvanceCanonicalExposureHead({ hypothesisFamily, datasetSha256: manifest.dataset_root_sha256 })
+  const { headPath, head } = custody
+  if (requestedHeadPath && resolve(String(requestedHeadPath)) !== headPath) fail(`research-init exposure HEAD path is not canonical for this family/dataset: ${headPath}`)
+  const genesis = head.cumulative_k === 0 && head.exposure_attempt_k === 0
+  const artifact = makeStatisticalArtifactSet({ lineage: { dataset_sha256: manifest.dataset_root_sha256, candidate_set_sha256: envelopePhysical.value.candidate_set_sha256, feature_set_sha256: manifest.artifacts.feature.sha256, label_set_sha256: manifest.artifacts.label.sha256, execution_set_sha256: manifest.artifacts.execution.sha256 }, candidates: [], episodes, exposureHead: head, metadata: genesis ? { artifact_role: 'GENESIS' } : { phase: 'ROLLING_DATASET_INIT' }, allowSubset: !genesis, genesis })
+  const artifactPath = writeImmutable(options.out || options.artifact_out || durableArtifactPath(options, artifact, 'statistical-genesis'), artifact)
+  const inputs = [reference(planPhysical.path, 'plan'), reference(manifestPhysical.path, 'parquet_manifest'), reference(predictorPhysical.path, 'predictor_registry'), reference(evaluatorPhysical.path, 'evaluator_spec'), reference(precommitPhysical.path, 'precommit'), reference(genePhysical.path, 'gene_space'), reference(options.timeframe_requirements, 'timeframe_requirements'), reference(domainPhysical.path, 'opportunity_domain'), reference(envelopePhysical.path, 'opportunity_envelope'), reference(hydrationPhysical.path, 'opportunity_hydration')]
+  const outputs = [reference(artifactPath, 'statistical_artifact'), reference(headPath, 'exposure_head')]
+  const receipt = makeCommandReceipt({ command: 'research-init', status: 'COMPLETE', inputs, outputs, limitations: [], details: { mode: genesis ? 'AUTHORITATIVE_PHYSICAL_STATISTICAL_GENESIS' : 'AUTHORITATIVE_PHYSICAL_ROLLING_DATASET_INIT', statistical_artifact_sha256: artifact.content_sha256, exposure_head_sha256: head.content_sha256, dataset_root_sha256: manifest.dataset_root_sha256, hypothesis_family: hypothesisFamily, episode_count: episodes.length, eligible_episode_count: episodes.filter(row => row.eligible).length, active: false } })
+  return outputReceipt('research-init', receipt, { artifact, exposure_head: head, artifact_path: artifactPath, exposure_head_path: headPath }, { receipt: options.receipt || options.receipt_out, record_root: recordRoot })
+}
+
+export async function authoritativeOpportunityEnvelope(options = {}, dependencies = undefined) {
+  if (dependencies !== undefined) fail('authoritative opportunity-envelope rejects dependency injection; use the physical production transport path')
+  const fetchImpl = globalThis.fetch
   rejectLooseOptions(options)
   const preflight = blockedPrerequisiteResult('opportunity-envelope', options, [
     { key: 'plan', label: 'plan', role: 'plan' }, { key: 'acquisition', label: 'acquisition', role: 'acquisition' },
     { key: 'staging_root', label: 'staging root', role: 'staging_root', directory: true }, { key: 'candidates', label: 'candidate set', role: 'candidate_set' },
     { key: 'precommit', label: 'precommit', role: 'precommit' }, { key: 'gene_space', label: 'gene space', role: 'gene_space' },
     { key: 'predictor_registry', label: 'predictor registry', role: 'predictor_registry' }, { key: 'evaluator_spec', label: 'evaluator spec', role: 'evaluator_spec' },
-    { key: 'features', label: 'feature set', role: 'feature_set' },
+    { key: 'feature_source', label: 'authoritative feature source', role: 'feature_source' },
   ])
   if (preflight) return preflight
+  if (options.features || options.feature_set || options.feature_rows) fail('opportunity-envelope rejects caller-authored feature rows; run feature-build and pass --feature-source')
   if (options.labels || options.label_set || options.outcomes) fail('opportunity-envelope never accepts labels/outcomes')
   const planPhysical = physicalJson(options.plan, { label: 'authoritative plan', schemas: [DATA_V5.plan] }); const plan = planPhysical.value
   const acquiredPhysical = physicalJson(options.acquisition || options.acquired_manifest, { label: 'acquired staging manifest', schemas: [DATA_V5.acquisition] }); const acquired = acquiredPhysical.value
   if (acquired.plan_sha256 !== plan.content_sha256 || acquired.status !== 'STAGING_COMPLETE' || acquired.authoritative !== false || acquired.storage_role !== 'STAGING') fail('opportunity-envelope requires a complete acquired staging manifest bound to the plan')
   if (!options.staging_root) fail('opportunity-envelope requires an explicit --staging-root for acquired staging byte verification')
-  verifyAuthoritativeStaging({ manifest: acquired, root: options.staging_root, planSha256: plan.content_sha256 })
+  verifyAuthoritativeStaging({ manifest: acquired, root: options.staging_root, plan, planSha256: plan.content_sha256 })
   const candidateRef = physicalJson(options.candidates || options.candidate_set, { label: 'frozen candidate set', schemas: ['strategy-candidate-set/5'] }); const candidate = candidateRef.value
   const candidateSha = options.candidate_set_sha256 || candidate.content_sha256; requireSha(candidateSha, 'candidate_set_sha256'); if (candidate.content_sha256 !== candidateSha) fail('candidate set hash does not match frozen --candidate-set-sha256')
-  const precommitPhysical = frozenPrecommit(options.precommit || options.precommit_artifact, 'physical precommit artifact'); const precommitSha = precommitPhysical.content_sha256
+  const precommitPhysical = frozenPrecommit(options.precommit || options.precommit_artifact, 'physical precommit artifact'); const precommitSha = precommitPhysical.value.content_sha256
   const genePhysical = physicalJson(options.gene_space || options.genes, { label: 'frozen gene space' }); const predictorPhysical = physicalJson(options.predictor_registry || options.predictors, { label: 'frozen predictor registry', schemas: ['strategy-v5-predictor-registry/1'] }); const specPhysical = physicalJson(options.evaluator_spec || options.spec, { label: 'frozen evaluator spec', schemas: ['strategy-v5-evaluator-spec/1'] })
   if (!candidate.gene_space || candidate.gene_space.content_sha256 !== genePhysical.content_sha256 || ownHash(candidate.gene_space) !== candidate.gene_space.content_sha256) fail('candidate set nested gene space does not exactly match the supplied physical gene space')
-  validateEvaluatorSpecV5(specPhysical.value, { geneSpace: genePhysical.value, predictorRegistry: predictorPhysical.value }); if (specPhysical.value.precommit_sha256 !== precommitSha) fail('precommit/evaluator spec lineage differs')
-  const featurePhysical = physicalJson(options.features || options.feature_set, { label: 'frozen feature set' }); rejectFeatureOutcomeFields(featurePhysical.value)
+  validateEvaluatorSpecV5(specPhysical.value, { geneSpace: genePhysical.value, predictorRegistry: predictorPhysical.value }); derivePrecommitTradeScopeV5(precommitPhysical.value, { candidateTemplate: specPhysical.value.candidate_template }); if (specPhysical.value.precommit_sha256 !== precommitSha) fail('precommit/evaluator spec lineage differs')
+  const featurePhysical = physicalJson(options.feature_source, { label: 'authoritative feature source', schemas: [DATA_V5.featureSource] })
+  const verifiedFeatureSource = validateAuthoritativeFeatureSource({ manifest: featurePhysical.value, root: options.staging_root, expectedPlanSha256: plan.content_sha256, expectedAcquisitionSha256: acquired.content_sha256, expectedPredictorRegistrySha256: predictorPhysical.value.content_sha256, expectedPrecommitSha256: precommitSha })
   const lifecycleMs = Number(options.max_lifecycle_ms || options.lifecycle_ms || 30 * 86_400_000); if (!Number.isInteger(lifecycleMs) || lifecycleMs <= 0 || lifecycleMs > 30 * 86_400_000) fail('opportunity envelope lifecycle is frozen to at most 30 days')
-  const featureRows = asArray(featurePhysical.value); if (!Array.isArray(featureRows) || !featureRows.length) fail('opportunity-envelope requires feature rows, not only a feature receipt')
+  const featureRows = verifiedFeatureSource.rows; rejectFeatureOutcomeFields(featureRows)
   // The generated candidate set is not the hydration universe.  Freeze an
   // additive domain artifact whose single conservative branch is the full
   // evaluator premise over the bound mutable gene space; selected/adaptive
@@ -1233,7 +1744,7 @@ export async function authoritativeOpportunityEnvelope(options = {}, { fetchImpl
     fixtureOnly: false,
   })
   validateOpportunityEnvelopeV5(envelope)
-  const inputs = [reference(planPhysical.path, 'plan'), reference(acquiredPhysical.path, 'acquisition'), reference(candidateRef.path, 'candidate_set'), reference(precommitPhysical.path, 'precommit'), reference(genePhysical.path, 'gene_space'), reference(predictorPhysical.path, 'predictor_registry'), reference(specPhysical.path, 'evaluator_spec'), reference(featurePhysical.path, 'feature_set')]
+  const inputs = [reference(planPhysical.path, 'plan'), reference(acquiredPhysical.path, 'acquisition'), reference(candidateRef.path, 'candidate_set'), reference(precommitPhysical.path, 'precommit'), reference(genePhysical.path, 'gene_space'), reference(predictorPhysical.path, 'predictor_registry'), reference(specPhysical.path, 'evaluator_spec'), reference(featurePhysical.path, 'feature_source')]
   const outputs = []; { const path = writeImmutable(options.domain_out || durableArtifactPath(options, opportunityDomain, 'opportunity-domain'), opportunityDomain); outputs.push(reference(path, 'opportunity_domain', opportunityDomain)) }; { const path = writeImmutable(options.out || durableArtifactPath(options, envelope, 'opportunity-envelope'), envelope); outputs.push(reference(path, 'opportunity_envelope', envelope)) }
   // The conservative v2 envelope is useful as a diagnostic artifact, but it
   // is never a successful authoritative boundary by itself.  Physical 1m
@@ -1248,12 +1759,14 @@ export async function authoritativeOpportunityEnvelope(options = {}, { fetchImpl
   // partitions into the canonical v2 lazy range contract.  No v1 windows are
   // used to decide which opportunities exist.
   const physicalRequest = makeOpportunityEnvelope({ planSha256: plan.content_sha256, candidateSetSha256: candidateSha, windows: envelope.windows.map(window => ({ asset: window.asset, instrument: window.instrument, symbol: window.symbol, execution_start: window.entry_time, execution_end: window.execution_end, source_window_ids: [window.window_id] })), maxLifecycleMs: lifecycleMs, lifecycleTimeframe: '1m', precommitSha256: precommitSha })
+  const physicalEnvelopePath = writeImmutable(options.physical_envelope_out || durableArtifactPath(options, physicalRequest, 'opportunity-envelope-v1'), physicalRequest)
+  outputs.push(reference(physicalEnvelopePath, 'physical_opportunity_envelope_v1', physicalRequest))
   const physicalHydration = await hydrateOpportunityWindowsV5({ planSha256: plan.content_sha256, candidateSetSha256: candidateSha, opportunityEnvelope: physicalRequest, outputRoot: root, outputRootReference: options.output_root_reference || null, fetchImpl, maxPages: Number(options.max_pages || 1000), maxRows: Number(options.max_rows || 50_000_000), checkpointPath: options.hydration_checkpoint || null })
   const physicalPath = writeImmutable(options.physical_hydration_out || durableArtifactPath(options, physicalHydration, 'opportunity-hydration-v1'), physicalHydration)
   outputs.push(reference(physicalPath, 'physical_opportunity_hydration_v1', physicalHydration))
   if (physicalHydration.status !== 'STAGING_COMPLETE') {
     const receipt = makeCommandReceipt({ command: 'opportunity-envelope', status: 'BLOCKED', inputs, outputs, limitations: ['ONE_MINUTE_HYDRATION_INCOMPLETE', ...(physicalHydration.limitations || [])], details: { mode: 'V2_ENVELOPE_PHYSICAL_HYDRATION_INCOMPLETE', envelope_schema: envelope.schema, hydration_schema: null, envelope_sha256: envelope.content_sha256, hydration_sha256: null, physical_hydration_sha256: physicalHydration.content_sha256, active: false } })
-    return outputReceipt('opportunity-envelope', receipt, { envelope, hydration: null, physicalHydration, candidate }, { receipt: options.receipt || options.receipt_out, record_root: options.record_root || options.recordRoot })
+    return outputReceipt('opportunity-envelope', receipt, { envelope, hydration: null, physicalEnvelope: physicalRequest, physicalHydration, candidate }, { receipt: options.receipt || options.receipt_out, record_root: options.recordRoot || options.record_root })
   }
   const partitions = []; const markPartitions = []
   for (const capture of physicalHydration.captures || []) {
@@ -1273,25 +1786,174 @@ export async function authoritativeOpportunityEnvelope(options = {}, { fetchImpl
   if (!complete) {
     const path = writeImmutable(options.hydration_out || durableArtifactPath(options, hydration, 'opportunity-hydration'), hydration); outputs.push(reference(path, 'opportunity_hydration', hydration))
     const receipt = makeCommandReceipt({ command: 'opportunity-envelope', status: 'BLOCKED', inputs, outputs, limitations: ['V2_HYDRATION_INCOMPLETE_OR_UNRESOLVED_RIGHT_EDGE'], details: { mode: 'V2_CONSERVATIVE_FULL_DOMAIN_HYDRATION_INCOMPLETE', envelope_schema: envelope.schema, hydration_schema: hydration.schema, envelope_sha256: envelope.content_sha256, hydration_sha256: hydration.content_sha256, physical_hydration_sha256: physicalHydration.content_sha256, active: false } })
-    return outputReceipt('opportunity-envelope', receipt, { envelope, hydration, physicalHydration, candidate }, { receipt: options.receipt || options.receipt_out, record_root: options.record_root || options.recordRoot })
+    return outputReceipt('opportunity-envelope', receipt, { envelope, hydration, physicalEnvelope: physicalRequest, physicalHydration, candidate }, { receipt: options.receipt || options.receipt_out, record_root: options.record_root || options.recordRoot })
   }
   { const path = writeImmutable(options.hydration_out || durableArtifactPath(options, hydration, 'opportunity-hydration'), hydration); outputs.push(reference(path, 'opportunity_hydration', hydration)) }
   const receipt = makeCommandReceipt({ command: 'opportunity-envelope', status: 'COMPLETE', inputs, outputs, limitations: [], details: { mode: 'V2_CONSERVATIVE_FULL_DOMAIN_AND_PHYSICAL_1M_HYDRATION', envelope_schema: envelope.schema, hydration_schema: hydration.schema, envelope_sha256: envelope.content_sha256, hydration_sha256: hydration.content_sha256, physical_hydration_sha256: physicalHydration.content_sha256, active: false } })
-  return outputReceipt('opportunity-envelope', receipt, { envelope, hydration, physicalHydration, candidate }, { receipt: options.receipt || options.receipt_out, record_root: options.record_root || options.recordRoot })
+  return outputReceipt('opportunity-envelope', receipt, { envelope, hydration, physicalEnvelope: physicalRequest, physicalHydration, candidate }, { receipt: options.receipt || options.receipt_out, record_root: options.record_root || options.recordRoot })
 }
 
-export async function authoritativeSearchGenetic(options = {}, { loadEvaluator = loadAuthoritativeEvaluatorV5, runGenetic = runGeneticSearchV5 } = {}) {
+const EXPERIMENT_LINEAGE_OPTION_KEYS = new Set([
+  'precommit_sha256', 'definition_sha256', 'candidate_set_sha256', 'data_manifest_sha256',
+  'feature_set_sha256', 'label_set_sha256', 'executor_sha256', 'acceptance_contract_sha256',
+  'training_selection_policy_sha256', 'container_sha256', 'parent_evidence_sha256',
+  'predecessor_sha256', 'required_assets', 'required_instruments', 'asset_scope', 'instrument_scope',
+])
+
+function rejectExperimentLineageOverrides(options) {
+  for (const key of Object.keys(options || {})) {
+    const normalized = String(key).replaceAll('-', '_').toLowerCase()
+    if (EXPERIMENT_LINEAGE_OPTION_KEYS.has(normalized)) fail(`experiment-freeze rejects caller-supplied --${key}; lineage is recomputed from frozen physical inputs`)
+  }
+}
+
+function validateExperimentPolicyWindow(policy) {
+  const chronology = policy.chronology
+  const developmentStart = timestampMs(chronology.development_window.start_at)
+  const developmentEnd = timestampMs(chronology.development_window.end_at)
+  const monitoringStart = timestampMs(chronology.monitoring_window.start_at)
+  const monitoringEnd = timestampMs(chronology.monitoring_window.end_at)
+  if (![developmentStart, developmentEnd, monitoringStart, monitoringEnd].every(Number.isFinite)) fail('experiment policy chronology contains an invalid timestamp')
+  if (!(developmentStart < developmentEnd && monitoringStart < monitoringEnd && developmentEnd <= monitoringStart)) fail('experiment policy must freeze non-overlapping ordered development and monitoring windows')
+}
+
+function validateExplicitCandidateSetForExperimentFreeze(candidate, { precommit, evaluatorSpec } = {}) {
+  if (candidate.precommit_sha256 !== precommit.content_sha256 || candidate.lineage?.precommit_sha256 !== precommit.content_sha256) fail('explicit candidate set is bound to a different precommit')
+  if (!candidate.gene_space || candidate.gene_space.content_sha256 !== ownHash(candidate.gene_space) || candidate.gene_space.content_sha256 !== evaluatorSpec.gene_space_sha256) fail('explicit candidate set gene space differs from the evaluator spec')
+  if (!Array.isArray(candidate.candidates) || !candidate.candidates.length || candidate.declared_k !== candidate.candidates.length || !Array.isArray(candidate.aliases) || candidate.effective_k !== candidate.aliases.length) fail('explicit candidate-set K accounting does not reconcile')
+  const ids = candidate.candidates.map(row => String(row?.candidate_id || ''))
+  if (ids.some(value => !value) || new Set(ids).size !== ids.length) fail('explicit candidate set contains a missing or duplicate candidate id')
+  const aliases = [...new Set(candidate.candidates.map(row => requireSha(row?.behavior_alias_sha256, `candidate ${row?.candidate_id || '?'} behavior alias`)))].sort()
+  if (aliases.length !== candidate.effective_k || stable(aliases) !== stable(candidate.aliases.map(row => requireSha(row?.behavior_sha256, 'candidate alias registry behavior')).sort())) fail('explicit candidate-set behavioral aliases do not reconcile')
+  return candidate.content_sha256
+}
+
+/**
+ * Freeze the DEVELOPMENT experiment only after reopening every physical
+ * producer that owns its lineage. The policy deliberately contains no
+ * lineage fields: callers choose research controls, while this boundary owns
+ * all content identities and the exact crypto asset/instrument scope.
+ */
+export function authoritativeExperimentFreeze(options = {}) {
+  rejectLooseOptions(options, { allowPhysicalPaths: ['experiment_policy'] })
+  rejectExperimentLineageOverrides(options)
+  const candidateSource = options.opportunity_envelope || options.envelope || options.candidates || options.candidate_set
+  const normalizedOptions = { ...options, candidate_source: candidateSource }
+  const preflight = blockedPrerequisiteResult('experiment-freeze', normalizedOptions, [
+    { key: 'precommit', label: 'precommit', role: 'precommit' },
+    { key: 'definition', label: 'strategy definition', role: 'strategy_definition' },
+    { key: 'candidate_source', label: 'opportunity envelope or candidate set', role: 'candidate_source' },
+    { key: 'parquet_manifest', label: 'separated Parquet manifest', role: 'parquet_manifest' },
+    { key: 'evaluator_spec', label: 'evaluator spec', role: 'evaluator_spec' },
+    { key: 'metadata', label: 'execution metadata bundle', role: 'metadata' },
+    { key: 'experiment_policy', label: 'frozen experiment policy', role: 'experiment_policy' },
+  ])
+  if (preflight) return preflight
+
+  const precommitPhysical = frozenPrecommit(options.precommit, 'experiment-freeze precommit')
+  const definitionPhysical = physicalJson(options.definition, { label: 'experiment-freeze strategy definition', schemas: ['strategy-definition/2'] })
+  const manifestPhysical = physicalJson(options.parquet_manifest, { label: 'experiment-freeze separated Parquet manifest', schemas: [DATA_V5.artifacts] })
+  const evaluatorPhysical = physicalJson(options.evaluator_spec, { label: 'experiment-freeze evaluator spec', schemas: ['strategy-v5-evaluator-spec/1'] })
+  const metadataRoot = options.metadata_root || options.metadata_source_root || null
+  const metadataPhysical = physicalMetadataBundle(options.metadata, { sourceRoot: metadataRoot })
+  const policyPhysical = physicalJson(options.experiment_policy, { label: 'experiment-freeze policy', schemas: ['strategy-v5-experiment-policy/1'] })
+  const { value: precommit } = precommitPhysical
+  const { value: definition } = definitionPhysical
+  const { value: manifest } = manifestPhysical
+  const { value: evaluatorSpec } = evaluatorPhysical
+  const { value: policy } = policyPhysical
+
+  validateDefinitionV2(definition, precommit)
+  validateEvaluatorSpecV5(evaluatorSpec)
+  canonicalHypothesisFamilyV5(precommit, { definition, evaluatorSpec })
+  validateAcceptanceContract(policy.acceptance_contract)
+  validateExperimentPolicyWindow(policy)
+  if (definition.stage !== policy.stage || precommit.stage !== policy.stage) fail('experiment policy stage differs from the physical precommit or definition')
+  if (stable(definition.tradable_instrument_contract) !== stable(precommit.tradable_instrument_contract)) fail('experiment-freeze definition trade contract differs from the precommit')
+  if (evaluatorSpec.precommit_sha256 !== precommit.content_sha256 || manifest.precommit_sha256 !== precommit.content_sha256) fail('experiment-freeze precommit lineage differs across evaluator and Parquet manifest')
+  if (manifest.storage_role !== 'AUTHORITATIVE') fail('experiment-freeze requires an authoritative separated Parquet manifest')
+  validateMetadataLineage(metadataPhysical.value, evaluatorSpec, { content_sha256: manifest.plan_sha256 }, { requireEvaluator: true })
+  const featureSetSha256 = requireSha(manifest.artifacts?.feature?.sha256, 'Parquet feature artifact SHA-256')
+  const labelSetSha256 = requireSha(manifest.artifacts?.label?.sha256, 'Parquet label artifact SHA-256')
+  for (const key of ['maximum_drawdown_r', 'maximum_cost_r']) if (!Number.isFinite(Number(policy.acceptance_contract.gates?.[key])) || Number(policy.acceptance_contract.gates[key]) < 0) fail(`experiment-freeze acceptance must freeze a non-negative ${key}`)
+
+  const scope = derivePrecommitTradeScopeV5(precommit, { candidateTemplate: evaluatorSpec.candidate_template })
+  let candidateSetSha256 = null
+  const candidateInputs = []
+  const envelopePath = options.opportunity_envelope || options.envelope
+  const candidatePath = options.candidates || options.candidate_set
+  if (envelopePath) {
+    const envelopePhysical = physicalJson(envelopePath, { label: 'experiment-freeze opportunity envelope', schemas: ['strategy-v5-opportunity-envelope/2'] })
+    const envelope = envelopePhysical.value
+    validateOpportunityEnvelopeV5(envelope)
+    if (envelope.fixture_only !== false || envelope.provenance !== 'AUTHORITATIVE') fail('experiment-freeze requires an authoritative non-fixture opportunity envelope')
+    if (envelope.precommit_sha256 !== precommit.content_sha256 || envelope.evaluator_spec_sha256 !== evaluatorSpec.content_sha256 || manifest.envelope_sha256 !== envelope.content_sha256) fail('experiment-freeze opportunity/data lineage differs from the frozen inputs')
+    const assets = exactUniqueStrings(envelope.assets, 'experiment-freeze envelope assets', value => String(value || '').trim().toLowerCase())
+    const instruments = exactUniqueStrings(envelope.instruments, 'experiment-freeze envelope instruments', value => normalizedProductionInstrument(value, 'experiment-freeze envelope instrument'))
+    assertExactSet(assets, scope.trade_assets, 'experiment-freeze envelope assets')
+    assertExactSet(instruments, [scope.instrument], 'experiment-freeze envelope instruments')
+    candidateSetSha256 = requireSha(envelope.candidate_set_sha256, 'opportunity candidate_set_sha256')
+    candidateInputs.push(reference(envelopePhysical.path, 'opportunity_envelope'))
+  }
+  if (candidatePath) {
+    const candidatePhysical = physicalJson(candidatePath, { label: 'experiment-freeze candidate set', schemas: ['strategy-candidate-set/5'] })
+    const explicitSha256 = validateExplicitCandidateSetForExperimentFreeze(candidatePhysical.value, { precommit, evaluatorSpec })
+    if (candidateSetSha256 && candidateSetSha256 !== explicitSha256) fail('explicit candidate set differs from the opportunity envelope candidate set')
+    candidateSetSha256 = explicitSha256
+    candidateInputs.push(reference(candidatePhysical.path, 'candidate_set'))
+  }
+  candidateSetSha256 = requireSha(candidateSetSha256, 'experiment-freeze candidate-set SHA-256')
+
+  const executorIdentity = makeAuthoritativeExecutorIdentityV5({ evaluatorSpec, manifest, metadataBundleSha256: metadataPhysical.content_sha256 })
+  const requiredAssets = scope.trade_assets.map(asset => ({ asset, asset_class: 'crypto', instrument: scope.instrument }))
+  const experiment = makeExperimentV3({
+    experimentId: policy.experiment_id,
+    createdAt: policy.created_at,
+    stage: policy.stage,
+    evidencePhase: policy.evidence_phase,
+    precommitSha256: precommit.content_sha256,
+    definitionSha256: definition.content_sha256,
+    candidateSetSha256,
+    dataManifestSha256: manifest.content_sha256,
+    featureSetSha256,
+    labelSetSha256,
+    executorSha256: executorIdentity.content_sha256,
+    acceptanceContract: policy.acceptance_contract,
+    requiredAssets,
+    chronology: policy.chronology,
+    portfolioPolicy: policy.portfolio_policy,
+    trainingSelectionPolicy: policy.training_selection_policy,
+  })
+  validateExperimentV3(experiment, { acceptance: policy.acceptance_contract, requiredAssets })
+  validateKnownContractSchema(experiment)
+  const experimentPath = writeImmutable(options.out || durableArtifactPath(options, experiment, 'experiment'), experiment)
+  const inputs = [reference(precommitPhysical.path, 'precommit'), reference(definitionPhysical.path, 'strategy_definition'), ...candidateInputs, reference(manifestPhysical.path, 'parquet_manifest'), reference(evaluatorPhysical.path, 'evaluator_spec'), reference(metadataPhysical.path, 'metadata'), reference(policyPhysical.path, 'experiment_policy')]
+  const outputs = [reference(experimentPath, 'experiment', experiment)]
+  const receipt = makeCommandReceipt({ command: 'experiment-freeze', status: 'COMPLETE', inputs, outputs, limitations: [], details: { mode: 'DETERMINISTIC_PHYSICAL_LINEAGE_FREEZE', evaluator_manifest_sha256: manifest.content_sha256, evaluator_spec_sha256: evaluatorSpec.content_sha256, metadata_bundle_sha256: metadataPhysical.content_sha256, executor_identity_sha256: executorIdentity.content_sha256, definition_sha256: definition.content_sha256, experiment_sha256: experiment.content_sha256, envelope_sha256: envelopePath ? manifest.envelope_sha256 : null, active: false } })
+  return outputReceipt('experiment-freeze', receipt, { experiment, executor_identity: executorIdentity, path: experimentPath }, { receipt: options.receipt || options.receipt_out, record_root: options.record_root || options.recordRoot })
+}
+
+export async function authoritativeSearchGenetic(options = {}, dependencies = undefined) {
+  if (dependencies !== undefined) fail('authoritative search-genetic rejects dependency injection; use the physical production path')
+  const loadEvaluator = loadAuthoritativeEvaluatorV5
+  const runGenetic = runGeneticSearchV5
   rejectLooseOptions(options, { allowPhysicalPaths: ['precommit', 'behavior_registry', 'behavior_definition_registry', 'metadata_root', 'metadata_source_root'] })
-  const legacyFixture = runGenetic !== runGeneticSearchV5 || loadEvaluator !== loadAuthoritativeEvaluatorV5
+  const legacyFixture = false
   if ((options.features || options.labels || options.execution) && !(options.artifact || options.statistical_artifact)) fail('strategy-research-next search-genetic is legacy fixture-only; authoritative search requires physical manifests and a frozen statistical artifact')
+  // Reject a supplied mutable/tampered premise before reporting other missing
+  // prerequisites.  This keeps the immutable-input security boundary stable
+  // when new production-only inputs (such as definition/2) are introduced.
+  if (options.precommit) frozenPrecommit(options.precommit, 'frozen precommit')
   const preflight = blockedPrerequisiteResult('search-genetic', options, [
     { key: 'artifact', label: 'statistical artifact', role: 'statistical_artifact' }, { key: 'exposure_head', label: 'exposure head', role: 'exposure_head' },
     { key: 'plan', label: 'plan', role: 'plan' }, { key: 'parquet_manifest', label: 'Parquet manifest', role: 'parquet_manifest' },
     { key: 'parquet_root', label: 'Parquet root', role: 'parquet_root', directory: true }, { key: 'predictor_registry', label: 'predictor registry', role: 'predictor_registry' },
     { key: 'evaluator_spec', label: 'evaluator spec', role: 'evaluator_spec' }, { key: 'experiment', label: 'experiment', role: 'experiment' },
     { key: 'precommit', label: 'precommit', role: 'precommit' }, { key: 'gene_space', label: 'gene space', role: 'gene_space' },
-    { key: 'metadata', label: 'metadata', role: 'metadata' }, { key: 'checkpoint', label: 'checkpoint', role: 'checkpoint' },
-    { key: 'cache_root', label: 'cache root', role: 'cache_root', directory: true },
+    ...(!legacyFixture ? [{ key: 'definition', label: 'strategy definition', role: 'strategy_definition' }] : []),
+    { key: 'timeframe_requirements', label: 'timeframe requirements', role: 'timeframe_requirements' },
+    { key: 'metadata', label: 'metadata', role: 'metadata' }, { key: 'checkpoint', label: 'checkpoint', role: 'checkpoint', createTarget: true },
+    { key: 'cache_root', label: 'cache root', role: 'cache_root', directory: true, createTarget: true },
   ])
   if (preflight) return preflight
   if (options.config) fail('search-genetic uses the frozen authoritative genetic configuration; caller config overrides are rejected')
@@ -1299,16 +1961,25 @@ export async function authoritativeSearchGenetic(options = {}, { loadEvaluator =
   const artifactPhysical = physicalJson(options.artifact || options.statistical_artifact || options.stack, { label: 'frozen statistical artifact', schemas: [STAT_SCHEMA.input] }); const artifact = artifactPhysical.value
   const headPath = options.exposure_head; if (!headPath) fail('authoritative search-genetic requires --exposure-head')
   const head = readExposureHeadFile(resolve(String(headPath))); validateExposureHead(head)
-  validateStatisticalArtifactSet(artifact, { exposureHead: head })
+  validateStatisticalArtifactSet(artifact, { exposureHead: head, allowSubset: true })
   const planPhysical = physicalJson(options.plan || options.data_plan, { label: 'authoritative plan', schemas: [DATA_V5.plan] }); const plan = planPhysical.value
   const manifestPhysical = physicalJson(options.parquet_manifest || options.manifest, { label: 'authoritative separated Parquet manifest', schemas: [DATA_V5.artifacts] }); const manifest = manifestPhysical.value
   const root = options.parquet_root || options.dataset_root; if (!root) fail('authoritative search-genetic requires --parquet-root')
   const predictorPhysical = physicalJson(options.predictor_registry || options.predictors, { label: 'frozen predictor registry', schemas: ['strategy-v5-predictor-registry/1'] })
   const specPhysical = physicalJson(options.evaluator_spec || options.spec, { label: 'frozen evaluator spec', schemas: ['strategy-v5-evaluator-spec/1'] })
-  const experimentPhysical = physicalJson(options.experiment || options.experiment_artifact, { label: 'frozen experiment acceptance contract', schemas: ['strategy-experiment/3', 'strategy-experiment/2', 'strategy-experiment/1'] }); frozenExperiment(experimentPhysical.value, 'frozen experiment acceptance contract')
+  const recordRoot = resolve(String(options.record_root || options.recordRoot || 'strategy-research/v5-records'))
+  const familyCustodyRoot = canonicalFamilyCustodyRoot(specPhysical.value.strategy_family)
+  const canonicalHeadPath = canonicalExposureHeadPath(specPhysical.value.strategy_family)
+  if (resolve(String(headPath)) !== canonicalHeadPath) fail(`authoritative search exposure HEAD path is not canonical for this family/dataset: ${canonicalHeadPath}`)
+  const experimentPhysical = physicalJson(options.experiment || options.experiment_artifact, { label: 'frozen experiment acceptance contract', schemas: legacyFixture ? ['strategy-experiment/3', 'strategy-experiment/2', 'strategy-experiment/1'] : ['strategy-experiment/3'] }); frozenExperiment(experimentPhysical.value, 'frozen experiment acceptance contract')
   const precommitPhysical = frozenPrecommit(options.precommit, 'frozen precommit')
+  const definitionPhysical = legacyFixture ? null : physicalJson(options.definition, { label: 'frozen strategy definition', schemas: ['strategy-definition/2'] })
+  if (!legacyFixture) canonicalHypothesisFamilyV5(precommitPhysical.value, { definition: definitionPhysical.value, evaluatorSpec: specPhysical.value })
   if (!legacyFixture && (!options.envelope && !options.opportunity_envelope || !options.hydration && !options.opportunity_hydration || !options.hydration_root && !options.opportunity_root || !options.opportunity_domain && !options.domain)) fail('authoritative search requires v2 opportunity domain, envelope, hydration, and its physical partition root')
   const genePhysical = physicalJson(options.gene_space || options.genes, { label: 'frozen gene space' }); const geneSpace = genePhysical.value
+  const foldId = String(options.fold_id || 'GENETIC_TRAIN')
+  const checkpointConfig = authoritativeGeneticCheckpointConfig()
+  const resumeCheckpoint = legacyFixture ? null : reopenAuthoritativeGeneticCheckpoint({ checkpointPath: dirs.checkpoint, artifact, exposureHead: head, geneSpace, foldId, config: checkpointConfig })
   const metadataRoot = options.metadata_root || options.metadata_source_root || null
   const metadataPhysical = physicalMetadataBundle(options.metadata || options.metadata_receipts, { sourceRoot: metadataRoot }); const metadata = metadataPhysical.value
   const envelopePhysical = legacyFixture && !options.envelope && !options.opportunity_envelope ? null : physicalJson(options.envelope || options.opportunity_envelope, { label: 'frozen v2 opportunity envelope', schemas: ['strategy-v5-opportunity-envelope/2'] })
@@ -1317,25 +1988,36 @@ export async function authoritativeSearchGenetic(options = {}, { loadEvaluator =
   const v2Physical = envelopePhysical && hydrationPhysical ? await verifyV2OpportunityHydration({ envelope: envelopePhysical.value, hydration: hydrationPhysical.value, domain: domainPhysical?.value || null, planSha256: plan.content_sha256, root: options.hydration_root || options.opportunity_root }) : null
   if (!legacyFixture && (!envelopePhysical || !hydrationPhysical || !v2Physical)) fail('authoritative search requires a complete v2 opportunity envelope and hydration')
   if (!legacyFixture && (!domainPhysical || domainPhysical.value.provenance !== 'AUTHORITATIVE' || domainPhysical.value.fixture_only !== false)) fail('authoritative search requires an authoritative opportunity domain')
+  if (!legacyFixture && manifest.envelope_sha256 !== envelopePhysical.value.content_sha256) fail('authoritative search Parquet manifest is bound to a different v2 opportunity envelope')
   if (envelopePhysical && envelopePhysical.value.candidate_set_sha256 && artifact.lineage?.candidate_set_sha256 && envelopePhysical.value.candidate_set_sha256 !== artifact.lineage.candidate_set_sha256) fail('v2 opportunity envelope candidate-set lineage differs from the statistical artifact')
   if (envelopePhysical && (envelopePhysical.value.plan_sha256 !== plan.content_sha256 || envelopePhysical.value.precommit_sha256 !== precommitPhysical.value.content_sha256 || envelopePhysical.value.evaluator_spec_sha256 !== specPhysical.value.content_sha256 || envelopePhysical.value.predictor_registry_sha256 !== predictorPhysical.value.content_sha256 || envelopePhysical.value.gene_space_sha256 !== genePhysical.value.content_sha256)) fail('v2 opportunity envelope lineage differs from search inputs')
   if (domainPhysical && envelopePhysical && (domainPhysical.value.content_sha256 !== envelopePhysical.value.opportunity_domain_sha256 || domainPhysical.value.candidate_set_sha256 !== envelopePhysical.value.candidate_set_sha256 || domainPhysical.value.gene_space_sha256 !== envelopePhysical.value.gene_space_sha256 || domainPhysical.value.evaluator_spec_sha256 !== envelopePhysical.value.evaluator_spec_sha256 || domainPhysical.value.predictor_registry_sha256 !== envelopePhysical.value.predictor_registry_sha256 || domainPhysical.value.precommit_sha256 !== envelopePhysical.value.precommit_sha256)) fail('v2 opportunity domain lineage differs from search inputs')
   validateEvaluatorSpecV5(specPhysical.value, { geneSpace, predictorRegistry: predictorPhysical.value })
+  if (!legacyFixture) derivePrecommitTradeScopeV5(precommitPhysical.value, { candidateTemplate: specPhysical.value.candidate_template })
   const evaluatorPredicateInventory = derivePredicatePredictorIds(specPhysical.value.predicate).map(predictor_id => ({ predictor_id }))
-  verifyMetricPITBoundary({ options, plan, manifest, predictorRegistry: predictorPhysical.value, evaluatorSpec: specPhysical.value, precommit: precommitPhysical.value, root, label: 'authoritative search' })
+  // Dependency injection exists only for deterministic legacy fixtures. The
+  // command/production path cannot inject loaders or search engines and must
+  // always reopen the frozen data boundary.
+  const dataBoundary = legacyFixture ? null : verifyDeclaredDataBoundary({ options, plan, manifest, predictorRegistry: predictorPhysical.value, evaluatorSpec: specPhysical.value, precommit: precommitPhysical.value, root, label: 'authoritative search' })
+  if (!legacyFixture) verifyMetricPITBoundary({ options, plan, manifest, predictorRegistry: predictorPhysical.value, evaluatorSpec: specPhysical.value, precommit: precommitPhysical.value, root, label: 'authoritative search', dataBoundary })
   verifySeparatedArtifactManifest(manifest, { root, plan, requireParquet: true, predictorRegistry: predictorPhysical.value, candidatePredicates: evaluatorPredicateInventory })
   await verifyParquetArtifactManifest({ manifest, root, plan, predictorRegistry: predictorPhysical.value, candidatePredicates: evaluatorPredicateInventory })
-  validateMetadataLineage(metadata, specPhysical.value)
+  validateMetadataLineage(metadata, specPhysical.value, legacyFixture ? null : plan, { requireEvaluator: !legacyFixture })
   if (precommitPhysical.value.content_sha256 !== specPhysical.value.precommit_sha256) fail('evaluator spec and physical precommit lineage differs')
   if (experimentPhysical.value.precommit_sha256 && experimentPhysical.value.precommit_sha256 !== precommitPhysical.value.content_sha256) fail('experiment and physical precommit lineage differs')
   const frozenConstraints = deriveFrozenHardConstraints({ precommit: precommitPhysical.value, experiment: experimentPhysical.value })
   if (manifest.precommit_sha256 !== specPhysical.value.precommit_sha256) fail('evaluator spec and separated Parquet manifest precommit lineage differs')
   if (manifest.dataset_root_sha256 !== artifact.lineage.dataset_sha256) fail('statistical artifact and separated Parquet dataset roots differ')
+  const productionBindings = legacyFixture ? null : validateProductionResearchBindingsV5({ precommit: precommitPhysical.value, definition: definitionPhysical.value, experiment: experimentPhysical.value, evaluatorSpec: specPhysical.value, manifest, envelope: envelopePhysical.value, artifact, metadataBundleSha256: metadataPhysical.content_sha256 })
   let envelopeByEpisode = {}
-  if (envelopePhysical) envelopeByEpisode = legacyFixture && envelopePhysical.value.schema !== 'strategy-v5-opportunity-envelope/2' ? await exactEnvelopeMap(envelopePhysical.value, artifact, manifest, root) : await exactV2EnvelopeMap(envelopePhysical.value, artifact, manifest, root)
+  if (envelopePhysical) envelopeByEpisode = legacyFixture && envelopePhysical.value.schema !== 'strategy-v5-opportunity-envelope/2' ? await exactEnvelopeMap(envelopePhysical.value, artifact, manifest, root) : await exactV2EnvelopeMap(envelopePhysical.value, artifact, manifest, root, { requireExact: !legacyFixture })
   const loaded = await loadEvaluator({ evaluatorSpec: specPhysical.value, geneSpace, predictorRegistry: predictorPhysical.value, manifest, plan, root, metadata, metadataRoot, envelopeByEpisode, opportunityEnvelope: envelopePhysical?.value || null, executionHydration: hydrationPhysical?.value || null, executionPartitions: v2Physical ? [...v2Physical.inventory.values()] : [], executionHydrationRoot: v2Physical?.root || null, episodeIds: artifact.episodes.map(row => row.episode_id), cacheRoot: dirs.cache, workerCount: Number(options.workers || 2), timeoutMs: Number(options.timeout_ms || 120_000) })
   try {
-    const recordRoot = resolve(String(options.record_root || options.recordRoot || 'strategy-research/v5-records')); assertLegacyFamilyMigrationBoundary({ recordRoot, family: specPhysical.value.strategy_family, exposureHead: head }); const registryPaths = behaviorRegistryStatePaths(recordRoot, options.behavior_registry || options.behavior_definition_registry || null); const registryPathInput = registryPaths.statePath; const durableSeed = ensureBehaviorRegistryState(registryPaths)
+    assertLegacyFamilyMigrationBoundary({ recordRoot: AUTHORITATIVE_V5_RECORD_ROOT, family: specPhysical.value.strategy_family, exposureHead: head })
+    const registryPaths = behaviorRegistryStatePaths(familyCustodyRoot)
+    const requestedRegistryPath = options.behavior_registry || options.behavior_definition_registry || null
+    if (requestedRegistryPath && resolve(String(requestedRegistryPath)) !== registryPaths.statePath) fail(`authoritative search behavior registry path is not canonical for this family: ${registryPaths.statePath}`)
+    const registryPathInput = registryPaths.statePath; const durableSeed = ensureBehaviorRegistryState(registryPaths)
     const registryContext = { evaluatorSha256: specPhysical.value.content_sha256, precommitSha256: precommitPhysical.value.content_sha256, lifecycleSha256: hash(specPhysical.value.execution_contract) }
     const durableRegistry = durableSeed || (existsSync(registryPathInput) ? readBehaviorDefinitionRegistryFile(registryPathInput) : null)
     if (head.entries.length && !durableRegistry) fail(`AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: durable behavior-definition registry is missing: ${registryPathInput}`)
@@ -1346,19 +2028,20 @@ export async function authoritativeSearchGenetic(options = {}, { loadEvaluator =
     const trainingCutoff = trainingBoundary.at
     const cutoffMs = Date.parse(trainingCutoff); const trainingEpisodeIds = artifact.episodes.filter(row => row.eligible && Date.parse(row.decision_time) < cutoffMs && Date.parse(row.resolution_time) <= cutoffMs && Date.parse(row.label_availability_time || row.resolution_time) <= cutoffMs && Date.parse(row.execution_availability_time || row.resolution_time) <= cutoffMs).map(row => row.episode_id)
     if (!trainingEpisodeIds.length) fail('authoritative training episode inventory is empty at the frozen cutoff')
-    const result = await runGenetic({ artifact, geneSpace, trainingEpisodeIds, evaluator, exposureHead: head, exposureHeadPath: resolve(String(headPath)), checkpointPath: resolve(String(dirs.checkpoint)), mode: 'AUTHORITATIVE', foldId: String(options.fold_id || 'GENETIC_TRAIN'), constraints: frozenConstraints, config: { population: 48, generations: 20, minGenerations: 10, plateauGenerations: 5, crossoverProbability: 0.9, halfLifeMonths: 18, seeds: [11, 23, 47], mode: 'AUTHORITATIVE', trainingCutoff, trainingPhase: trainingBoundary.phase, reservedTestStart: trainingBoundary.reserved_test_start, evaluatorSpecSha256: specPhysical.value.content_sha256, precommitSha256: precommitPhysical.value.content_sha256, experimentSha256: experimentPhysical.value.content_sha256, lifecycleSha256: registryContext.lifecycle_sha256, behaviorDefinitionRegistryPath: registryPathInput, behaviorDefinitionRegistryJournalPath: `${registryPathInput}.journal.json`, constraints: frozenConstraints } })
+    const result = await runGenetic({ artifact, geneSpace, trainingEpisodeIds, evaluator, exposureHead: head, exposureHeadPath: resolve(String(headPath)), checkpointPath: resolve(String(dirs.checkpoint)), ...(resumeCheckpoint ? { resumeCheckpoint } : {}), mode: 'AUTHORITATIVE', foldId, constraints: frozenConstraints, config: { ...checkpointConfig, trainingCutoff, trainingPhase: trainingBoundary.phase, reservedTestStart: trainingBoundary.reserved_test_start, evaluatorSpecSha256: specPhysical.value.content_sha256, precommitSha256: precommitPhysical.value.content_sha256, experimentSha256: experimentPhysical.value.content_sha256, lifecycleSha256: registryContext.lifecycleSha256, behaviorDefinitionRegistryPath: registryPathInput, behaviorDefinitionRegistryJournalPath: `${registryPathInput}.journal.json`, constraints: frozenConstraints } })
     assertExactTrainingInventory(result.run, trainingEpisodeIds, artifact, trainingCutoff)
     // Existing durable rows are historical bytes: do not refresh their
     // dataset, source, observation time, or evaluator provenance at the end
     // of a later search.  A new sighting must be appended as a new row, never
     // rewritten into the predecessor prefix.
-    const registryValue = makeBehaviorDefinitionRegistry({ hypothesisFamily: result.exposureHead.hypothesis_family, exposureHead: result.exposureHead, entries: [...behaviorDefinitionRegistry.values()].map(row => { const historical = Number.isInteger(row.sequence); return { behavior_sha256: row.behavior_sha256, chromosome: structuredClone(row.chromosome), dataset_sha256: historical ? row.dataset_sha256 : artifact.lineage.dataset_sha256, observed_at: historical ? row.observed_at : (row.observed_at ?? trainingCutoff), source: historical ? row.source : (row.source || 'STATISTICAL_SEARCH'), evaluator_sha256: historical ? row.evaluator_sha256 : (row.evaluator_sha256 || registryContext.evaluator_sha256), precommit_sha256: historical ? row.precommit_sha256 : (row.precommit_sha256 ?? registryContext.precommit_sha256), lifecycle_sha256: historical ? row.lifecycle_sha256 : (row.lifecycle_sha256 ?? registryContext.lifecycle_sha256) } }) })
+    const registryValue = result.behaviorDefinitionRegistry || makeBehaviorDefinitionRegistry({ hypothesisFamily: result.exposureHead.hypothesis_family, exposureHead: result.exposureHead, entries: [...behaviorDefinitionRegistry.values()].map(row => { const historical = Number.isInteger(row.sequence); return { behavior_sha256: row.behavior_sha256, chromosome: structuredClone(row.chromosome), dataset_sha256: historical ? row.dataset_sha256 : artifact.lineage.dataset_sha256, observed_at: historical ? row.observed_at : (row.observed_at ?? trainingCutoff), source: historical ? row.source : (row.source || 'STATISTICAL_SEARCH'), evaluator_sha256: historical ? row.evaluator_sha256 : (row.evaluator_sha256 || registryContext.evaluatorSha256), precommit_sha256: historical ? row.precommit_sha256 : (row.precommit_sha256 ?? registryContext.precommitSha256), lifecycle_sha256: historical ? row.lifecycle_sha256 : (row.lifecycle_sha256 ?? registryContext.lifecycleSha256) } }) })
+    validateBehaviorDefinitionRegistry(registryValue, { exposureHead: result.exposureHead })
     const registryPath = writeImmutable(join(registryPaths.directory, `registry-${registryValue.content_sha256}.json`), registryValue)
     const registryState = bindBehaviorDefinitionRegistrySnapshotFile({ filePath: registryPathInput, expectedRegistrySha256: readBehaviorDefinitionRegistryFile(registryPathInput).content_sha256, snapshotPath: registryPath, snapshot: registryValue })
     const outputs = []; for (const [path, value, role] of [[options.out, result.run, 'genetic_run'], [options.exposure_out, result.exposureHead, 'exposure_head'], [options.candidate_out, result.candidateSet, 'candidate_set']]) if (value) { const written = writeImmutable(path || durableArtifactPath(options, value, role), value); outputs.push(reference(written, role, value)) }
     outputs.push(reference(registryPath, 'behavior_definition_registry'), reference(registryPathInput, 'behavior_definition_registry_head', registryState))
     result.behaviorDefinitionRegistry = registryValue
-    const receipt = makeCommandReceipt({ command: 'search-genetic', status: 'COMPLETE', inputs: [reference(artifactPhysical.path, 'statistical_artifact'), reference(planPhysical.path, 'plan'), reference(manifestPhysical.path, 'parquet_manifest'), reference(predictorPhysical.path, 'predictor_registry'), reference(specPhysical.path, 'evaluator_spec'), reference(precommitPhysical.path, 'precommit'), reference(experimentPhysical.path, 'experiment'), reference(genePhysical.path, 'gene_space'), reference(metadataPhysical.path, 'metadata'), reference(headPath, 'exposure_head'), ...(existsSync(resolve(String(dirs.checkpoint))) ? [reference(dirs.checkpoint, 'checkpoint')] : []), ...(domainPhysical ? [reference(domainPhysical.path, 'opportunity_domain')] : []), ...(envelopePhysical ? [reference(envelopePhysical.path, 'opportunity_envelope')] : []), ...(hydrationPhysical ? [reference(hydrationPhysical.path, 'opportunity_hydration')] : [])], outputs, limitations: [], details: { mode: 'AUTHORITATIVE_EVALUATOR', evaluator_manifest_sha256: manifest.content_sha256, evaluator_spec_sha256: specPhysical.value.content_sha256, experiment_sha256: experimentPhysical.value.content_sha256, constraints_sha256: hash(frozenConstraints), training_cutoff: trainingCutoff, training_phase: trainingBoundary.phase, reserved_test_start: trainingBoundary.reserved_test_start, training_episode_ids_sha256: hash(trainingEpisodeIds), behavior_registry_sha256: registryValue.content_sha256, exposure_head_sha256: result.exposureHead?.content_sha256 || null, genetic_sha256: result.run?.content_sha256 || null, opportunity_domain_sha256: domainPhysical?.value.content_sha256 || null, envelope_sha256: envelopePhysical?.value.content_sha256 || null, hydration_sha256: hydrationPhysical?.value.content_sha256 || null, physical_partition_root_sha256: v2Physical?.partition_bytes_root_sha256 || null, active: false } })
+    const receipt = makeCommandReceipt({ command: 'search-genetic', status: 'COMPLETE', inputs: [reference(artifactPhysical.path, 'statistical_artifact'), reference(planPhysical.path, 'plan'), reference(manifestPhysical.path, 'parquet_manifest'), reference(predictorPhysical.path, 'predictor_registry'), reference(specPhysical.path, 'evaluator_spec'), reference(precommitPhysical.path, 'precommit'), ...(definitionPhysical ? [reference(definitionPhysical.path, 'strategy_definition')] : []), reference(experimentPhysical.path, 'experiment'), reference(genePhysical.path, 'gene_space'), reference(metadataPhysical.path, 'metadata'), reference(headPath, 'exposure_head'), ...(existsSync(resolve(String(dirs.checkpoint))) ? [reference(dirs.checkpoint, 'checkpoint')] : []), ...(domainPhysical ? [reference(domainPhysical.path, 'opportunity_domain')] : []), ...(envelopePhysical ? [reference(envelopePhysical.path, 'opportunity_envelope')] : []), ...(hydrationPhysical ? [reference(hydrationPhysical.path, 'opportunity_hydration')] : [])], outputs, limitations: [], details: { mode: 'AUTHORITATIVE_EVALUATOR', evaluator_manifest_sha256: manifest.content_sha256, evaluator_spec_sha256: specPhysical.value.content_sha256, executor_identity_sha256: productionBindings?.executorIdentity.content_sha256 || null, definition_sha256: definitionPhysical?.value.content_sha256 || null, experiment_sha256: experimentPhysical.value.content_sha256, constraints_sha256: hash(frozenConstraints), training_cutoff: trainingCutoff, training_phase: trainingBoundary.phase, reserved_test_start: trainingBoundary.reserved_test_start, training_episode_ids_sha256: hash(trainingEpisodeIds), behavior_registry_sha256: registryValue.content_sha256, exposure_head_sha256: result.exposureHead?.content_sha256 || null, genetic_sha256: result.run?.content_sha256 || null, opportunity_domain_sha256: domainPhysical?.value.content_sha256 || null, envelope_sha256: envelopePhysical?.value.content_sha256 || null, hydration_sha256: hydrationPhysical?.value.content_sha256 || null, physical_partition_root_sha256: v2Physical?.partition_bytes_root_sha256 || null, active: false } })
     return outputReceipt('search-genetic', receipt, { ...result }, { receipt: options.receipt || options.receipt_out, record_root: options.record_root || options.recordRoot })
   } finally { if (typeof loaded.close === 'function') loaded.close(); else if (loaded.evaluator && typeof loaded.evaluator.close === 'function') loaded.evaluator.close() }
 }
@@ -1574,8 +2257,8 @@ function makeV2ExecutionResolver({ hydration, partitions, envelopeByEpisode, max
     })
     const entryMs = Date.parse(String(window.entry_time))
     const rows = range.batches.flat()
-    const preentryBars = rows.filter(row => Date.parse(String(row.event_time ?? row.time ?? row.open_time)) < entryMs)
-    const childBars = rows.filter(row => Date.parse(String(row.event_time ?? row.time ?? row.open_time)) >= entryMs)
+    const preentryBars = rows.filter(row => timestampMs(row.event_time ?? row.time ?? row.open_time) < entryMs)
+    const childBars = rows.filter(row => timestampMs(row.event_time ?? row.time ?? row.open_time) >= entryMs)
     if (!childBars.length) fail(`AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: v2 execution range is empty for ${id}`)
     const capture = hydration.windows.find(row => row.window_id === window.window_id); let markBars = null
     if ((capture?.mark_partition_refs || []).length) markBars = readHydratedRangeV5({ hydration, partitions, role: 'MARK', window_id: window.window_id, start: window.entry_time, end: window.execution_end, batchSize: hydration.batch_size || 4096, maxRows: hydration.max_rows || 100_000, maxResidentBytes: hydration.max_resident_bytes || 192 * 1024 * 1024, maxOutputBytes: hydration.max_output_bytes || 128 * 1024 * 1024 }).batches.flat()
@@ -2316,16 +2999,13 @@ function stressMetrics(rows, parameters, frozenConstraints, resampling) {
   for (const value of values) { equity += value; peak = Math.max(peak, equity); maxDrawdown = Math.max(maxDrawdown, peak - equity) }
   // Cost is measured over completed trades, while the return vector retains
   // internal zeros for synchronized exposure/max-statistics.  Include the
-  // exact execution-model slippage/impact and adverse funding debit emitted by
-  // the physical outcome; fees alone would understate the frozen cost gate.
+  // exact round-trip execution costs and adverse funding debit emitted by the
+  // physical outcome; reconstructing one entry leg understates the frozen gate.
   const costR = traded.length ? traded.reduce((sum, row) => {
     const outcome = row.outcome || {}
-    const risk = Math.max(1e-12, Math.abs(Number(outcome.risk_amount_usd || 1)))
-    const model = outcome.execution_model || {}
-    const notional = Math.abs(Number(outcome.entry_price || 0) * Number(outcome.quantity || 0) * Number(outcome.contract_multiplier || 1))
-    const modelCost = notional * (Math.max(0, Number(model.slippage_bps || 0)) + Math.max(0, Number(model.impact_bps || 0))) / 10_000
-    const fundingDebit = Math.max(0, -Number(outcome.funding_pnl_usd || 0))
-    return sum + (Math.abs(Number(outcome.fees_usd || 0)) + modelCost + fundingDebit) / risk
+    const risk = Number(outcome.risk_amount_usd); const fees = Number(outcome.fees_usd); const slippage = Number(outcome.slippage_usd); const capacityDebit = Number(outcome.capacity_debit_usd); const fundingPnl = Number(outcome.funding_pnl_usd)
+    if (!(risk > 0) || ![risk, fees, slippage, capacityDebit, fundingPnl].every(Number.isFinite) || [fees, slippage, capacityDebit].some(value => value < 0)) fail('AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: stress outcome lacks exact nonnegative round-trip cost accounting')
+    return sum + (fees + slippage + capacityDebit + Math.max(0, -fundingPnl)) / risk
   }, 0) / traded.length : 0
   const coverage = rows.length ? rows.filter(row => row.physical_coverage === true).length / rows.length : 0
   const minimumObservations = Number(parameters.minimum_observations ?? frozenConstraints.minEpisodes)
@@ -2404,7 +3084,7 @@ function scenarioMetadataClone(metadata, id, parameters, contractSha256) {
 
 function shiftedDecisionRows(feature, label, execution, delayBars) {
   const delay = Number(delayBars); if (!Number.isInteger(delay) || delay < 1) fail('AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: frozen delayed-entry bar count is invalid')
-  const bars = Array.isArray(execution.child_bars) ? execution.child_bars.map(row => ({ ...row, _t: Date.parse(String(row.event_time ?? row.time ?? row.open_time)) })).sort((a, b) => a._t - b._t) : []
+  const bars = Array.isArray(execution.child_bars) ? execution.child_bars.map(row => ({ ...row, _t: timestampMs(row.event_time ?? row.time ?? row.open_time) })).sort((a, b) => a._t - b._t) : []
   if (bars.length <= delay) fail('AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: delayed-entry scenario lacks a contiguous physical child bar')
   const decision = Date.parse(String(execution.decision_time ?? feature.decision_time)); if (!Number.isFinite(decision)) fail('AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: delayed-entry decision time is invalid')
   const expectedEntry = decision + delay * 60_000
@@ -2664,7 +3344,7 @@ function makeAuthoritativeStressExecutor({ manifest, root, physicalRows, physica
         if (id === 'LIQUIDATION' && appliesToEpisode(idString)) scenarioExecution = adverseMarkExecution(execution, parameters)
         if (id === 'EXPIRY' && appliesToEpisode(idString)) {
           const { settlementRecord, expiryAt, settlementAt, settlementAvailableAt, settlementPrice, settlementSource, originalResolution } = resolveDatedSettlementForStress({ metadata, execution, label })
-          const rawBars = (execution.child_bars || []).map(row => ({ ...row, __stress_t: Date.parse(String(row.event_time ?? row.time ?? row.open_time)) })).filter(row => Number.isFinite(row.__stress_t) && row.__stress_t <= expiryAt).sort((left, right) => left.__stress_t - right.__stress_t)
+          const rawBars = (execution.child_bars || []).map(row => ({ ...row, __stress_t: timestampMs(row.event_time ?? row.time ?? row.open_time) })).filter(row => Number.isFinite(row.__stress_t) && row.__stress_t <= expiryAt).sort((left, right) => left.__stress_t - right.__stress_t)
           if (!rawBars.length || rawBars.at(-1).__stress_t >= settlementAt) fail('AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: expiry stress lacks a completed pre-settlement child bar')
           const lastBarAt = rawBars.at(-1).__stress_t
           // deriveBoundExecutionOutcome enforces dense one-minute physical
@@ -2679,7 +3359,7 @@ function makeAuthoritativeStressExecutor({ manifest, root, physicalRows, physica
           scenarioExecution = { ...structuredClone(execution), child_bars: bars }
           if (Array.isArray(execution.mark_bars)) {
             const markRow = { event_time: new Date(settlementAt).toISOString(), mark_open: settlementPrice, mark_high: settlementPrice, mark_low: settlementPrice, mark_close: settlementPrice, availability_time: settlementRow.availability_time, settlement_event_id: settlementRecord.settlement_mark_event_id, settlement_source_sha256: settlementSource, physical_settlement: true }
-            const rawMarks = execution.mark_bars.map(row => ({ ...row, __stress_t: Date.parse(String(row.event_time ?? row.time ?? row.open_time)) })).filter(row => Number.isFinite(row.__stress_t) && row.__stress_t < settlementAt).map(({ __stress_t, ...row }) => row)
+            const rawMarks = execution.mark_bars.map(row => ({ ...row, __stress_t: timestampMs(row.event_time ?? row.time ?? row.open_time) })).filter(row => Number.isFinite(row.__stress_t) && row.__stress_t < settlementAt).map(({ __stress_t, ...row }) => row)
             if (!rawMarks.length || rawMarks.at(-1).event_time === undefined && rawMarks.at(-1).time === undefined && rawMarks.at(-1).open_time === undefined) fail('AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: expiry stress mark path is not physically aligned')
             scenarioExecution.mark_bars = rawMarks.concat(markRow)
           }
@@ -2712,7 +3392,7 @@ function makeAuthoritativeStressExecutor({ manifest, root, physicalRows, physica
       const materiallyChanged = fills.some(row => {
         const prior = baseline.get(String(row.episode_id)); if (!prior || row.traded !== prior.traded || Number(row.net_r) !== Number(prior.net_r)) return true
         if (!row.traded || !row.outcome || !prior.outcome) return false
-        return ['fees_usd', 'funding_pnl_usd', 'entry_time', 'entry_price', 'exit_time', 'exit_price', 'exit_reason', 'gap_fill'].some(field => stable(row.outcome[field]) !== stable(prior.outcome[field]))
+        return ['fees_usd', 'slippage_usd', 'capacity_debit_usd', 'funding_pnl_usd', 'entry_time', 'entry_price', 'exit_time', 'exit_price', 'exit_reason', 'gap_fill'].some(field => stable(row.outcome[field]) !== stable(prior.outcome[field]))
       })
       if (physicallyApplicable && !materiallyChanged) fail(`AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: ${id} stress is a no-op over the exact physical role bytes`)
       if (id === 'EXPIRY' && applicableEpisodeIds.length && (!expiryChanged || !fills.some(row => row.traded === true))) fail('AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: EXPIRY stress did not produce an exact physical settlement change')
@@ -2761,7 +3441,7 @@ function makePhysicalOutcomeInventory({ scopedArtifact, alias, observedEvaluatio
 function compactPhysicalFill(outcome) {
   if (!outcome) return null
   const lifecycleExits = Array.isArray(outcome.lifecycle_result?.exits) ? outcome.lifecycle_result.exits : []
-  return { episode_id: outcome.episode_id, asset: outcome.asset, instrument: outcome.instrument, venue: outcome.venue, symbol: outcome.symbol, direction: outcome.direction, quantity: outcome.quantity, entry_time: outcome.entry_time, entry_price: outcome.entry_price, exit_time: outcome.exit_time, exit_price: outcome.exit_price, gross_pnl_usd: outcome.gross_pnl_usd, fees_usd: outcome.fees_usd, funding_pnl_usd: outcome.funding_pnl_usd, net_pnl_usd: outcome.net_pnl_usd, risk_amount_usd: outcome.risk_amount_usd, net_r: outcome.net_r, exit_reason: outcome.exit_reason, gap_fill: outcome.gap_fill === true, funding_settlements: outcome.funding_settlements, execution_model: outcome.execution_model, liquidation_model: outcome.liquidation_model, ...(outcome.provenance === 'DERIVED_FROM_CANONICAL_NORMALIZED_LIFECYCLE' ? { lifecycle_engine: 'strategy-v5-trade-lifecycle/1', lifecycle_exit_count: lifecycleExits.length, partial_exit_count: lifecycleExits.filter(row => String(row.reason || '').toUpperCase() === 'PARTIAL_TARGET').length, trailing_effective_from: outcome.lifecycle_result?.effective_trailing_from || null } : {}), ...(outcome.collateral_used === undefined ? {} : { collateral_used: outcome.collateral_used }), ...(outcome.margin_mode === undefined ? {} : { margin_mode: outcome.margin_mode }), ...(outcome.leverage === undefined ? {} : { leverage: outcome.leverage }), ...(outcome.tier_id === undefined ? {} : { tier_id: outcome.tier_id }) }
+  return { episode_id: outcome.episode_id, asset: outcome.asset, instrument: outcome.instrument, venue: outcome.venue, symbol: outcome.symbol, direction: outcome.direction, quantity: outcome.quantity, entry_time: outcome.entry_time, entry_price: outcome.entry_price, exit_time: outcome.exit_time, exit_price: outcome.exit_price, gross_pnl_usd: outcome.gross_pnl_usd, fees_usd: outcome.fees_usd, slippage_usd: outcome.slippage_usd, capacity_debit_usd: outcome.capacity_debit_usd, funding_pnl_usd: outcome.funding_pnl_usd, net_pnl_usd: outcome.net_pnl_usd, risk_amount_usd: outcome.risk_amount_usd, net_r: outcome.net_r, exit_reason: outcome.exit_reason, gap_fill: outcome.gap_fill === true, funding_settlements: outcome.funding_settlements, execution_model: outcome.execution_model, liquidation_model: outcome.liquidation_model, ...(outcome.provenance === 'DERIVED_FROM_CANONICAL_NORMALIZED_LIFECYCLE' ? { lifecycle_engine: 'strategy-v5-trade-lifecycle/1', lifecycle_exit_count: lifecycleExits.length, partial_exit_count: lifecycleExits.filter(row => String(row.reason || '').toUpperCase() === 'PARTIAL_TARGET').length, trailing_effective_from: outcome.lifecycle_result?.effective_trailing_from || null } : {}), ...(outcome.collateral_used === undefined ? {} : { collateral_used: outcome.collateral_used }), ...(outcome.margin_mode === undefined ? {} : { margin_mode: outcome.margin_mode }), ...(outcome.leverage === undefined ? {} : { leverage: outcome.leverage }), ...(outcome.tier_id === undefined ? {} : { tier_id: outcome.tier_id }) }
 }
 
 function bindPhysicalDerivativeInputs(outcome, execution) {
@@ -2793,21 +3473,27 @@ function physicalMarksForFill(fill, marks) {
   }) || null)
 }
 
-export async function authoritativeResearchRun(options = {}, { loadEvaluator = loadAuthoritativeEvaluatorV5, runGenetic = runGeneticSearchV5, runWfo = runNestedWfoV5, evaluatePortfolio = evaluatePortfolioRiskV5 } = {}) {
+export async function authoritativeResearchRun(options = {}, dependencies = undefined) {
+  if (dependencies !== undefined) fail('authoritative research-run rejects dependency injection; use the physical production path')
+  const loadEvaluator = loadAuthoritativeEvaluatorV5
+  const runGenetic = runGeneticSearchV5
+  const runWfo = runNestedWfoV5
+  const evaluatePortfolio = evaluatePortfolioRiskV5
   rejectLooseOptions(options, { allowPhysicalPaths: ['mark_artifact', 'mark_artifact_path', 'portfolio_mark_artifact', 'portfolio_policy', 'portfolio_policy_path', 'precommit', 'behavior_registry', 'behavior_definition_registry', 'metadata_root', 'metadata_source_root'] })
   // Injected callbacks are retained only for the explicitly fixture-sized
   // harness.  The normal research-run path must consume the same v2
   // opportunity/hydration custody as search-genetic.
-  const legacyFixture = loadEvaluator !== loadAuthoritativeEvaluatorV5 || runGenetic !== runGeneticSearchV5 || runWfo !== runNestedWfoV5 || evaluatePortfolio !== evaluatePortfolioRiskV5
+  const legacyFixture = false
   if (!(options.plan || options.data_plan || options.manifest)) {
     const preflight = blockedPrerequisiteResult('research-run', options, [
       { key: 'plan', label: 'plan', role: 'plan' }, { key: 'parquet_manifest', label: 'Parquet manifest', role: 'parquet_manifest' },
       { key: 'parquet_root', label: 'Parquet root', role: 'parquet_root', directory: true }, { key: 'artifact', label: 'statistical artifact', role: 'statistical_artifact' },
       { key: 'evaluator_spec', label: 'evaluator spec', role: 'evaluator_spec' }, { key: 'precommit', label: 'precommit', role: 'precommit' },
       { key: 'experiment', label: 'experiment', role: 'experiment' }, { key: 'gene_space', label: 'gene space', role: 'gene_space' },
+      ...(!legacyFixture ? [{ key: 'definition', label: 'strategy definition', role: 'strategy_definition' }] : []),
       { key: 'predictor_registry', label: 'predictor registry', role: 'predictor_registry' }, { key: 'metadata', label: 'metadata', role: 'metadata' },
       { key: 'envelope', label: 'opportunity envelope', role: 'opportunity_envelope' }, { key: 'exposure_head', label: 'exposure head', role: 'exposure_head' },
-      { key: 'checkpoint', label: 'checkpoint', role: 'checkpoint' }, { key: 'cache_root', label: 'cache root', role: 'cache_root', directory: true },
+      { key: 'checkpoint', label: 'checkpoint', role: 'checkpoint', createTarget: true }, { key: 'cache_root', label: 'cache root', role: 'cache_root', directory: true, createTarget: true },
       { key: 'portfolio_policy', label: 'portfolio policy', role: 'portfolio_policy' }, { key: 'portfolio_mark_artifact', label: 'portfolio mark artifact', role: 'portfolio_mark_artifact' },
     ])
     if (preflight) return preflight
@@ -2819,7 +3505,8 @@ export async function authoritativeResearchRun(options = {}, { loadEvaluator = l
   const manifestPhysical = physicalJson(source.parquet_manifest || source.artifact_manifest || source.separated_manifest, { label: 'research-run authoritative Parquet manifest', schemas: [DATA_V5.artifacts] }); const manifest = manifestPhysical.value
   const root = source.parquet_root || source.dataset_root; if (!root) fail('research-run requires --parquet-root')
   verifySeparatedArtifactManifest(manifest, { root, plan, requireParquet: true })
-  const envelopePhysical = source.envelope ? physicalJson(source.envelope, { label: 'research-run opportunity envelope', schemas: ['strategy-v5-opportunity-envelope/2', 'strategy-v5-opportunity-envelope/1'] }) : null
+  const envelopePath = source.envelope || source.opportunity_envelope
+  const envelopePhysical = envelopePath ? physicalJson(envelopePath, { label: 'research-run opportunity envelope', schemas: ['strategy-v5-opportunity-envelope/2', 'strategy-v5-opportunity-envelope/1'] }) : null
   const hydrationPhysical = source.hydration || source.opportunity_hydration ? physicalJson(source.hydration || source.opportunity_hydration, { label: 'research-run opportunity hydration', schemas: ['strategy-v5-opportunity-hydration/2'] }) : null
   const hydrationRoot = source.hydration_root || source.opportunity_root || source.execution_hydration_root || null
   const opportunityDomainPhysical = source.opportunity_domain || source.domain ? physicalJson(source.opportunity_domain || source.domain, { label: 'research-run opportunity domain', schemas: ['strategy-v5-opportunity-domain/1'] }) : null
@@ -2827,7 +3514,8 @@ export async function authoritativeResearchRun(options = {}, { loadEvaluator = l
   const artifact = artifactPhysical?.value || null
   const evaluatorPhysical = source.evaluator_spec ? physicalJson(source.evaluator_spec, { label: 'evaluator spec', schemas: ['strategy-v5-evaluator-spec/1'] }) : null
   const precommitPhysical = source.precommit ? frozenPrecommit(source.precommit, 'physical precommit') : null
-  const experimentPhysical = source.experiment ? physicalJson(source.experiment, { label: 'physical experiment', schemas: ['strategy-experiment/3', 'strategy-experiment/2', 'strategy-experiment/1'] }) : null
+  const definitionPhysical = !legacyFixture && source.definition ? physicalJson(source.definition, { label: 'physical strategy definition', schemas: ['strategy-definition/2'] }) : null
+  const experimentPhysical = source.experiment ? physicalJson(source.experiment, { label: 'physical experiment', schemas: legacyFixture ? ['strategy-experiment/3', 'strategy-experiment/2', 'strategy-experiment/1'] : ['strategy-experiment/3'] }) : null
   if (experimentPhysical) frozenExperiment(experimentPhysical.value, 'physical experiment')
   const genePhysical = source.gene_space ? physicalJson(source.gene_space, { label: 'gene space' }) : null
   const predictorPhysical = source.predictor_registry ? physicalJson(source.predictor_registry, { label: 'predictor registry', schemas: ['strategy-v5-predictor-registry/1'] }) : null
@@ -2835,36 +3523,41 @@ export async function authoritativeResearchRun(options = {}, { loadEvaluator = l
   const metadataPhysical = source.metadata || source.metadata_receipts ? physicalMetadataBundle(source.metadata || source.metadata_receipts, { sourceRoot: metadataRoot }) : null
   const headPath = source.exposure_head || source.exposure_head_artifact || null
   const recordRoot = resolve(String(source.record_root || source.recordRoot || 'strategy-research/v5-records'))
-  const behaviorRegistryPaths = behaviorRegistryStatePaths(recordRoot, source.behavior_registry || source.behavior_definition_registry || null)
-  const behaviorRegistryDirectory = behaviorRegistryPaths.directory
-  const behaviorRegistryPath = behaviorRegistryPaths.statePath
-  const durableRegistrySeed = ensureBehaviorRegistryState(behaviorRegistryPaths)
-  const exposureRegistryJournalPath = `${behaviorRegistryPath}.journal.json`
-  // The GA journal must be recovered before final-publication journals are
-  // inspected: a SIGKILL after the physical HEAD CAS but before the registry
-  // append leaves a valid historical publication alongside a temporarily
-  // inconsistent mutable registry.
-  if (existsSync(exposureRegistryJournalPath)) recoverExposureRegistryTransaction({ journalPath: exposureRegistryJournalPath })
-  // Complete any final-publication transaction left by a killed process
-  // before reopening the mutable registry.  Recovery is content/CAS bound and
-  // never rewinds the physical exposure HEAD.
-  const publicationTransactionRoot = join(recordRoot, '.transactions')
-  if (existsSync(publicationTransactionRoot)) {
-    for (const name of readdirSync(publicationTransactionRoot).filter(value => value.endsWith('.json')).sort()) recoverStatisticalPublicationTransaction({ transactionPath: join(publicationTransactionRoot, name) })
-  }
+  let familyCustodyRoot = null
+  let behaviorRegistryPaths = null
+  const requestedRegistryPath = source.behavior_registry || source.behavior_definition_registry || null
+  let behaviorRegistryDirectory = null
+  let behaviorRegistryPath = null
+  let durableRegistrySeed = null
+  let exposureRegistryJournalPath = null
+  let publicationTransactionRoot = null
   const boundHashes = { evaluator_sha256: evaluatorPhysical?.value.content_sha256 || null, data_sha256: manifest.content_sha256, plan_sha256: plan.content_sha256, opportunity_domain_sha256: opportunityDomainPhysical?.value.content_sha256 || null, opportunity_envelope_sha256: envelopePhysical?.value.content_sha256 || null, opportunity_hydration_sha256: hydrationPhysical?.value.content_sha256 || null, opportunity_partition_root_sha256: null, genetic_sha256: null, wfo_sha256: null, selected_fills_sha256: null, stress_sha256: null, portfolio_sha256: null, behavior_registry_sha256: null }
-  let result; let recomputed = false; let blocked = false; let loaded = null; let stageArtifacts = null; let behaviorRegistryPhysical = null; let durableWfoPath = null
+  let result; let recomputed = false; let blocked = false; let loaded = null; let stageArtifacts = null; let behaviorRegistryPhysical = null; let durableWfoPath = null; let productionBindings = null
   try {
     const missing = []
-    for (const [name, value] of [['statistical artifact', artifact], ['evaluator spec', evaluatorPhysical], ['physical precommit', precommitPhysical], ['physical experiment', experimentPhysical], ['gene space', genePhysical], ['predictor registry', predictorPhysical], ['metadata receipt bundle', metadataPhysical], ['opportunity envelope', envelopePhysical], ['exposure head', headPath], ['checkpoint', source.checkpoint || source.checkpoint_dir], ['cache root', source.cache_root || source.cache || source.cache_dir]]) if (!value) missing.push(name)
+    for (const [name, value] of [['statistical artifact', artifact], ['evaluator spec', evaluatorPhysical], ['physical precommit', precommitPhysical], ['physical experiment', experimentPhysical], ['gene space', genePhysical], ['predictor registry', predictorPhysical], ['timeframe requirements', source.timeframe_requirements || source.timeframeRequirements], ['metadata receipt bundle', metadataPhysical], ['opportunity envelope', envelopePhysical], ['exposure head', headPath], ['checkpoint', source.checkpoint || source.checkpoint_dir], ['cache root', source.cache_root || source.cache || source.cache_dir]]) if (!value) missing.push(name)
+    if (!legacyFixture && !definitionPhysical) missing.push('physical strategy definition')
     if (!legacyFixture && (!envelopePhysical || envelopePhysical.value.schema !== 'strategy-v5-opportunity-envelope/2')) missing.push('opportunity envelope/2: production research-run requires the v2 full-domain envelope')
     if (!legacyFixture && !opportunityDomainPhysical) missing.push('opportunity domain/1: production research-run requires the frozen full structural/gene domain')
     if (!legacyFixture && !hydrationPhysical) missing.push('opportunity hydration/2: production research-run requires frozen 1m hydration')
     if (!legacyFixture && !hydrationRoot) missing.push('opportunity hydration root: production research-run requires the physical lazy partition root')
     if (missing.length) throw new Error(`AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: missing physical prerequisites: ${missing.join(', ')}`)
+    const hypothesisFamily = canonicalHypothesisFamilyV5(precommitPhysical.value, { definition: definitionPhysical?.value || null, evaluatorSpec: evaluatorPhysical.value })
+    familyCustodyRoot = canonicalFamilyCustodyRoot(hypothesisFamily)
+    behaviorRegistryPaths = behaviorRegistryStatePaths(familyCustodyRoot)
+    if (requestedRegistryPath && resolve(String(requestedRegistryPath)) !== behaviorRegistryPaths.statePath) fail(`AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: research-run behavior registry path is not canonical for this family: ${behaviorRegistryPaths.statePath}`)
+    behaviorRegistryDirectory = behaviorRegistryPaths.directory
+    behaviorRegistryPath = behaviorRegistryPaths.statePath
+    durableRegistrySeed = ensureBehaviorRegistryState(behaviorRegistryPaths)
+    exposureRegistryJournalPath = `${behaviorRegistryPath}.journal.json`
+    if (existsSync(exposureRegistryJournalPath)) recoverExposureRegistryTransaction({ journalPath: exposureRegistryJournalPath })
+    publicationTransactionRoot = join(familyCustodyRoot, '.transactions')
+    if (existsSync(publicationTransactionRoot)) for (const name of readdirSync(publicationTransactionRoot).filter(value => value.endsWith('.json')).sort()) recoverStatisticalPublicationTransaction({ transactionPath: join(publicationTransactionRoot, name) })
     const dirs = requireIgnoredSearchDirs(source)
-    const head = readExposureHeadFile(resolve(String(headPath))); validateExposureHead(head); assertLegacyFamilyMigrationBoundary({ recordRoot, family: evaluatorPhysical.value.strategy_family, exposureHead: head }); validateStatisticalArtifactSet(artifact, { exposureHead: head, allowSubset: true })
-    validateEvaluatorSpecV5(evaluatorPhysical.value, { geneSpace: genePhysical.value, predictorRegistry: predictorPhysical.value }); const evaluatorPredicateInventory = derivePredicatePredictorIds(evaluatorPhysical.value.predicate).map(predictor_id => ({ predictor_id })); verifyMetricPITBoundary({ options: source, plan, manifest, predictorRegistry: predictorPhysical.value, evaluatorSpec: evaluatorPhysical.value, precommit: precommitPhysical.value, root, label: 'authoritative research-run' }); verifySeparatedArtifactManifest(manifest, { root, plan, predictorRegistry: predictorPhysical.value, requireParquet: true, candidatePredicates: evaluatorPredicateInventory }); await verifyParquetArtifactManifest({ manifest, root, plan, predictorRegistry: predictorPhysical.value, candidatePredicates: evaluatorPredicateInventory }); validateMetadataLineage(metadataPhysical.value, evaluatorPhysical.value)
+    const canonicalHeadPath = canonicalExposureHeadPath(hypothesisFamily)
+    if (resolve(String(headPath)) !== canonicalHeadPath) fail(`AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: research-run exposure HEAD path is not canonical for this family/dataset: ${canonicalHeadPath}`)
+    const head = readExposureHeadFile(canonicalHeadPath); validateExposureHead(head); assertLegacyFamilyMigrationBoundary({ recordRoot: AUTHORITATIVE_V5_RECORD_ROOT, family: hypothesisFamily, exposureHead: head }); validateStatisticalArtifactSet(artifact, { exposureHead: head, allowSubset: true })
+    validateEvaluatorSpecV5(evaluatorPhysical.value, { geneSpace: genePhysical.value, predictorRegistry: predictorPhysical.value }); if (!legacyFixture) derivePrecommitTradeScopeV5(precommitPhysical.value, { candidateTemplate: evaluatorPhysical.value.candidate_template }); const evaluatorPredicateInventory = derivePredicatePredictorIds(evaluatorPhysical.value.predicate).map(predictor_id => ({ predictor_id })); const dataBoundary = legacyFixture ? null : verifyDeclaredDataBoundary({ options: source, plan, manifest, predictorRegistry: predictorPhysical.value, evaluatorSpec: evaluatorPhysical.value, precommit: precommitPhysical.value, root, label: 'authoritative research-run' }); if (!legacyFixture) verifyMetricPITBoundary({ options: source, plan, manifest, predictorRegistry: predictorPhysical.value, evaluatorSpec: evaluatorPhysical.value, precommit: precommitPhysical.value, root, label: 'authoritative research-run', dataBoundary }); verifySeparatedArtifactManifest(manifest, { root, plan, predictorRegistry: predictorPhysical.value, requireParquet: true, candidatePredicates: evaluatorPredicateInventory }); await verifyParquetArtifactManifest({ manifest, root, plan, predictorRegistry: predictorPhysical.value, candidatePredicates: evaluatorPredicateInventory }); validateMetadataLineage(metadataPhysical.value, evaluatorPhysical.value, legacyFixture ? null : plan, { requireEvaluator: !legacyFixture })
     if (!precommitPhysical || precommitPhysical.value.content_sha256 !== evaluatorPhysical.value.precommit_sha256 || (experimentPhysical && experimentPhysical.value.precommit_sha256 && experimentPhysical.value.precommit_sha256 !== evaluatorPhysical.value.precommit_sha256)) fail('AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: research-run requires a physical precommit and exact experiment lineage bound to the evaluator')
     const lifecycleSha256 = hash(evaluatorPhysical.value.execution_contract)
     const registryContext = { evaluatorSha256: evaluatorPhysical.value.content_sha256, precommitSha256: precommitPhysical.value.content_sha256, lifecycleSha256 }
@@ -2876,13 +3569,15 @@ export async function authoritativeResearchRun(options = {}, { loadEvaluator = l
     if (manifest.dataset_root_sha256 !== artifact.lineage.dataset_sha256) fail('research-run statistical artifact and Parquet dataset roots differ')
     if (envelopePhysical && envelopePhysical.value.plan_sha256 !== plan.content_sha256) fail('research-run opportunity envelope plan lineage differs')
     if (!legacyFixture) {
+      if (manifest.envelope_sha256 !== envelopePhysical.value.content_sha256) fail('AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: research-run Parquet manifest is bound to a different v2 opportunity envelope')
       if (opportunityDomainPhysical.value.provenance !== 'AUTHORITATIVE' || opportunityDomainPhysical.value.fixture_only !== false) fail('AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: research-run opportunity domain is not authoritative')
       if (opportunityDomainPhysical.value.content_sha256 !== envelopePhysical.value.opportunity_domain_sha256) fail('AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: research-run opportunity domain lineage differs from the v2 envelope')
       if (opportunityDomainPhysical.value.candidate_set_sha256 !== envelopePhysical.value.candidate_set_sha256 || opportunityDomainPhysical.value.gene_space_sha256 !== envelopePhysical.value.gene_space_sha256 || opportunityDomainPhysical.value.evaluator_spec_sha256 !== envelopePhysical.value.evaluator_spec_sha256 || opportunityDomainPhysical.value.predictor_registry_sha256 !== envelopePhysical.value.predictor_registry_sha256 || opportunityDomainPhysical.value.precommit_sha256 !== envelopePhysical.value.precommit_sha256) fail('AUTHORITATIVE_RECOMPUTATION_UNAVAILABLE: opportunity domain is not bound to the exact envelope inputs')
     }
     const v2Physical = !legacyFixture ? await verifyV2OpportunityHydration({ envelope: envelopePhysical.value, hydration: hydrationPhysical.value, domain: opportunityDomainPhysical.value, root: hydrationRoot, planSha256: plan.content_sha256 }) : null
     boundHashes.opportunity_partition_root_sha256 = v2Physical?.partition_bytes_root_sha256 || null
-    const envelopeByEpisode = envelopePhysical.value.schema === 'strategy-v5-opportunity-envelope/2' ? await exactV2EnvelopeMap(envelopePhysical.value, artifact, manifest, root) : await exactEnvelopeMap(envelopePhysical.value, artifact, manifest, root)
+    productionBindings = legacyFixture ? null : validateProductionResearchBindingsV5({ precommit: precommitPhysical.value, definition: definitionPhysical.value, experiment: experimentPhysical.value, evaluatorSpec: evaluatorPhysical.value, manifest, envelope: envelopePhysical.value, artifact, metadataBundleSha256: metadataPhysical.content_sha256 })
+    const envelopeByEpisode = envelopePhysical.value.schema === 'strategy-v5-opportunity-envelope/2' ? await exactV2EnvelopeMap(envelopePhysical.value, artifact, manifest, root, { requireExact: !legacyFixture }) : await exactEnvelopeMap(envelopePhysical.value, artifact, manifest, root)
     const physicalRows = {}
     for (const role of ['feature', 'label', 'execution', 'mark']) physicalRows[role] = await readPhysicalParquetRoleRows(manifest, root, role)
     const uniqueRoleMap = (rows, role) => { const result = new Map(); for (const row of rows) { const id = String(row.episode_id || ''); if (!id || result.has(id)) fail(`authoritative ${role} physical rows contain a duplicate episode identity`); result.set(id, row) } return result }
@@ -3146,8 +3841,8 @@ export async function authoritativeResearchRun(options = {}, { loadEvaluator = l
     validateKnownContractSchema(evidence); const path = writeImmutable(source.evidence || durableArtifactPath(source, evidence, 'research-evidence'), evidence); outputs.push(reference(path, 'evidence', evidence))
   }
   const checkpointReceiptPath = source.checkpoint || (source.checkpoint_dir ? `${String(source.checkpoint_dir).replace(/\/$/, '')}/genetic-checkpoint.json` : null)
-  const inputs = [reference(planPhysical.path, 'plan'), reference(manifestPhysical.path, 'parquet_manifest'), ...(evaluatorPhysical ? [reference(evaluatorPhysical.path, 'evaluator_spec')] : []), ...(precommitPhysical ? [reference(precommitPhysical.path, 'precommit')] : []), ...(experimentPhysical ? [reference(experimentPhysical.path, 'experiment')] : []), ...(genePhysical ? [reference(genePhysical.path, 'gene_space')] : []), ...(predictorPhysical ? [reference(predictorPhysical.path, 'predictor_registry')] : []), ...(metadataPhysical ? [reference(metadataPhysical.path, 'metadata')] : []), ...(headPath ? [reference(headPath, 'exposure_head')] : []), ...(checkpointReceiptPath && existsSync(resolve(String(checkpointReceiptPath))) ? [reference(checkpointReceiptPath, 'checkpoint')] : []), ...(envelopePhysical ? [reference(envelopePhysical.path, 'opportunity_envelope')] : []), ...(hydrationPhysical ? [reference(hydrationPhysical.path, 'opportunity_hydration')] : []), ...(artifactPhysical ? [reference(artifactPhysical.path, 'statistical_artifact')] : []), ...(existsSync(behaviorRegistryPath) ? [reference(behaviorRegistryPath, 'behavior_definition_registry_prior')] : [])]
-  const status = blocked ? 'BLOCKED' : result.run.decision === 'SHADOW' ? 'COMPLETE' : 'REJECTED'; const receipt = makeCommandReceipt({ command: 'research-run', status, inputs, outputs, limitations: [result.limitation], details: { mode: recomputed ? 'AUTHORITATIVE_PHYSICAL_RECOMPUTATION' : 'FAIL_CLOSED_RECOMPUTATION', pipeline: PIPELINE_V5, bound_hashes: result.bound_hashes, publication_artifacts: recomputed ? ['wfo', 'research_run', 'final_oos_artifact', 'final_oos_vector_inventory'] : [], publication_transaction_path: recomputed ? portablePath(result.publication_transaction_path) : null, active: false } })
+  const inputs = [reference(planPhysical.path, 'plan'), reference(manifestPhysical.path, 'parquet_manifest'), ...(evaluatorPhysical ? [reference(evaluatorPhysical.path, 'evaluator_spec')] : []), ...(precommitPhysical ? [reference(precommitPhysical.path, 'precommit')] : []), ...(definitionPhysical ? [reference(definitionPhysical.path, 'strategy_definition')] : []), ...(experimentPhysical ? [reference(experimentPhysical.path, 'experiment')] : []), ...(genePhysical ? [reference(genePhysical.path, 'gene_space')] : []), ...(predictorPhysical ? [reference(predictorPhysical.path, 'predictor_registry')] : []), ...(metadataPhysical ? [reference(metadataPhysical.path, 'metadata')] : []), ...(headPath ? [reference(headPath, 'exposure_head')] : []), ...(checkpointReceiptPath && existsSync(resolve(String(checkpointReceiptPath))) ? [reference(checkpointReceiptPath, 'checkpoint')] : []), ...(envelopePhysical ? [reference(envelopePhysical.path, 'opportunity_envelope')] : []), ...(hydrationPhysical ? [reference(hydrationPhysical.path, 'opportunity_hydration')] : []), ...(artifactPhysical ? [reference(artifactPhysical.path, 'statistical_artifact')] : []), ...(existsSync(behaviorRegistryPath) ? [reference(behaviorRegistryPath, 'behavior_definition_registry_prior')] : [])]
+  const status = blocked ? 'BLOCKED' : result.run.decision === 'SHADOW' ? 'COMPLETE' : 'REJECTED'; const receipt = makeCommandReceipt({ command: 'research-run', status, inputs, outputs, limitations: [result.limitation], details: { mode: recomputed ? 'AUTHORITATIVE_PHYSICAL_RECOMPUTATION' : 'FAIL_CLOSED_RECOMPUTATION', pipeline: PIPELINE_V5, executor_identity_sha256: productionBindings?.executorIdentity.content_sha256 || null, definition_sha256: definitionPhysical?.value.content_sha256 || null, bound_hashes: result.bound_hashes, publication_artifacts: recomputed ? ['wfo', 'research_run', 'final_oos_artifact', 'final_oos_vector_inventory'] : [], publication_transaction_path: recomputed ? portablePath(result.publication_transaction_path) : null, active: false } })
   return outputReceipt('research-run', receipt, result, { receipt: source.receipt || source.receipt_out, record_root: source.record_root || source.recordRoot })
 }
 
@@ -3581,7 +4276,12 @@ function authoritativeReadinessAudit(options = {}) {
 export async function runAuthoritativeV5Cli(command, options = {}, { legacyValidate = null, legacyIndex = null } = {}) {
   if (command === 'data-backfill') return authoritativeDataBackfill(options)
   if (command === 'data-raw-replay' || command === 'data-local-raw-replay') return authoritativeDataRawReplay(options)
+  if (command === 'feature-build') return authoritativeFeatureBuild(options)
+  if (command === 'metadata-build') return authoritativeMetadataBuild(options)
   if (command === 'opportunity-envelope') return authoritativeOpportunityEnvelope(options)
+  if (command === 'artifact-build') return authoritativeArtifactBuild(options)
+  if (command === 'research-init' || command === 'statistical-genesis') return authoritativeResearchInit(options)
+  if (command === 'experiment-freeze') return authoritativeExperimentFreeze(options)
   if (command === 'search-genetic') return authoritativeSearchGenetic(options)
   if (command === 'research-run') return authoritativeResearchRun(options)
   if (command === 'overfit-audit') return authoritativeOverfitAudit(options)
@@ -3612,7 +4312,11 @@ export async function runAuthoritativeV5Cli(command, options = {}, { legacyValid
 // CLI helpers.
 export const runDataBackfillV5 = authoritativeDataBackfill
 export const runDataRawReplayV5 = authoritativeDataRawReplay
+export const runFeatureBuildV5 = authoritativeFeatureBuild
+export const runMetadataBuildV5 = authoritativeMetadataBuild
 export const runOpportunityEnvelopeV5 = authoritativeOpportunityEnvelope
+export const runArtifactBuildV5 = authoritativeArtifactBuild
+export const runExperimentFreezeV5 = authoritativeExperimentFreeze
 export const runSearchGeneticV5 = authoritativeSearchGenetic
 export const runResearchRunV5 = authoritativeResearchRun
 export const runOverfitAuditV5 = authoritativeOverfitAudit

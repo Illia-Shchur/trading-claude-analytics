@@ -54,6 +54,11 @@ export const BALANCED_SWING_V1 = Object.freeze({
   minimum_independent_episodes: 30, minimum_completed_episodes: 30, minimum_expectancy_r: 0, minimum_search_adjusted_expectancy_r: 0,
   minimum_r_profit_factor: 1.1, minimum_account_profit_factor: 1.1, minimum_total_return: 0,
   minimum_bootstrap_p20_expectancy_r: 0, maximum_candidate_set_p_value: 0.10, maximum_drawdown_pct: 5,
+  // Search feasibility is measured in trade-risk units, whereas portfolio
+  // acceptance is measured as a percentage of account equity.  Freeze both
+  // contracts explicitly; silently converting between them would require an
+  // unstated position-risk assumption.
+  maximum_drawdown_r: 10, maximum_cost_r: 0.25,
   minimum_positive_years: 2, minimum_episodes_per_positive_year: 6, minimum_positive_blocks: 2,
   maximum_negative_block_expectancy_r: -0.10, minimum_doubled_cost_expectancy_r: 0, minimum_doubled_cost_account_profit_factor: 1,
   minimum_coverage_fraction: 0.95, maximum_undeclared_gap_bars: 2, minimum_wfo_oos_episodes: 20,
@@ -75,7 +80,13 @@ export function validateAcceptanceContract(contract) {
   const contractKeys = new Set(['schema', 'contract_id', 'profile', 'gates', 'stress_scenarios', 'content_sha256']); for (const key of Object.keys(contract)) if (!contractKeys.has(key)) throw new Error(`acceptance contract unknown field: ${key}`)
   if (!contract.contract_id || !contract.profile || !contract.gates || typeof contract.gates !== 'object' || Array.isArray(contract.gates)) throw new Error('acceptance contract is incomplete')
   const gateKeys = new Set(Object.keys(BALANCED_SWING_V1)); for (const key of Object.keys(contract.gates)) if (!gateKeys.has(key)) throw new Error(`acceptance gate unknown field: ${key}`)
-  for (const key of Object.keys(BALANCED_SWING_V1)) if (!Number.isFinite(Number(contract.gates[key]))) throw new Error(`acceptance gate ${key} is required`)
+  // The R-denominated search ceilings were added for production v5. Keep
+  // them optional at the general v3 reader so immutable historical v3
+  // evidence remains byte-compatible; the production v5 boundary requires
+  // both explicitly before it derives GA hard constraints.
+  const optionalProductionV5 = new Set(['maximum_drawdown_r', 'maximum_cost_r'])
+  for (const key of Object.keys(BALANCED_SWING_V1)) if (!optionalProductionV5.has(key) && !Number.isFinite(Number(contract.gates[key]))) throw new Error(`acceptance gate ${key} is required`)
+  for (const key of optionalProductionV5) if (contract.gates[key] !== undefined && (!Number.isFinite(Number(contract.gates[key])) || Number(contract.gates[key]) < 0)) throw new Error(`acceptance gate ${key} must be a non-negative number when declared`)
   const stressRows = Array.isArray(contract.stress_scenarios) ? contract.stress_scenarios : []; const stressNames = stressRows.map(row => row?.name)
   if (stressNames.length !== REQUIRED_STRESS_SCENARIOS.length || new Set(stressNames).size !== stressNames.length || REQUIRED_STRESS_SCENARIOS.some(name => !stressNames.includes(name)) || stressRows.some(row => !row || typeof row !== 'object' || row.required !== true || !row.parameters || typeof row.parameters !== 'object' || Array.isArray(row.parameters))) throw new Error('acceptance contract must declare exactly five fully parameterized stress scenarios')
   const allowedParameters = {

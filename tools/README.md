@@ -249,6 +249,39 @@ read-only. Run `npm run research:docker` for the pinned DuckDB integration
 test and `npm run research:migrate` for the deterministic eight-asset legacy
 index (BTC, ETH, SOL, BNB, XRP, ADA, LINK, AAVE; DOGE excluded).
 
+## Strategy research v5 BASE_ONLY path
+
+New strategy families use `node tools/strategy-research-v5.mjs` and the
+physical chain `feature-build` → `metadata-build` → `opportunity-envelope --hydrate` →
+`artifact-build` → `research-init` → `experiment-freeze` → `search-genetic`. `feature-build` can
+derive completed-bar price and strictly prior, same-asset Binance USD-M
+funding predictors from a verified `BASE_ONLY` acquisition. Missing optional
+market-flow archives do not block a strategy that did not declare them;
+metric-dependent strategies remain blocked.
+
+For spot execution, `metadata-build` turns one frozen, hash-bound local policy
+into physically reopenable `CONTRACT_SPEC`, `FEE_SCHEDULE`, and
+`EXECUTION_MODEL` receipts. The output remains explicitly `USER_BOUND`, covers
+the final signal through its maximum lifecycle, applies exchange lot/notional
+filters and two-sided costs in evaluation, and is never activation evidence.
+The command rejects derivative execution instead of borrowing spot
+assumptions; USD-M funding may still be used as context for a spot strategy.
+
+`artifact-build` internally creates separated FEATURE/LABEL/EXECUTION/MARK
+JSONL and verified Parquet. Spot-only research retains a typed zero-row MARK
+role; it never fabricates a derivative mark series. `research-init` reopens
+those roles and the exact v2 opportunity custody, derives independent episode
+records, initializes the repository-anchored family cumulative exposure HEAD,
+and carries its K unchanged across rolling dataset snapshots,
+and writes the statistical genesis. Caller-authored episodes, returns, metrics,
+features, labels, execution rows, hypothesis-family values, or K counters are
+rejected. `experiment-freeze` then derives the immutable experiment/3 lineage,
+executor identity (including the exact execution-metadata bundle), and exact
+crypto asset/instrument scope from reopened physical inputs plus the frozen
+user-authored experiment policy; lineage and
+statistical-output overrides are rejected. See `strategy-research/V5-README.md`
+for full commands and required frozen inputs.
+
 ## Report-phase attribution contract (2026-08-14)
 
 Machine reports dated on/after 2026-08-12 publish an immutable `report-phase-registry/1` under `tagging.registry`. `canonicalReportPhaseTag()` derives exact tags from the filename's framework, asset, date, and local HHMM: `FK-P1A-BTC-20260813-1744` and `FR-A-1A-SP500-20260812-1542` are representative examples. Decisions are `AUTHORIZED`, `LOCKED`, `STAND_DOWN`, or `UNVERIFIED`; they are not encoded as tag suffixes and are never inferred from a later fill. `FR-B-3` is invalid, and FR channel `none` uses FR-A's rubric vocabulary. `active_tags`/`reserved_tags` remain compatibility fields only; registry validity is independent of fills. Run `node tools/backfill-report-phase-registry.mjs --check` to audit the expected 67 machine-block / 66 prose-only split, then run it to backfill only machine reports.

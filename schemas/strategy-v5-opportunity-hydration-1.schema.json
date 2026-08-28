@@ -4,6 +4,10 @@
   "type": "object",
   "required": ["schema", "version", "status", "plan_sha256", "root_reference", "staging_format", "storage_role", "authoritative", "windows", "captures", "content_sha256"],
   "properties": { "schema": { "const": "strategy-v5-opportunity-hydration/1" }, "version": { "const": 1 }, "status": { "enum": ["STAGING_COMPLETE", "STAGING_PARTIAL"] }, "plan_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "candidate_set_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "envelope_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "max_lifecycle_ms": { "type": "integer", "minimum": 1 }, "lifecycle_timeframe": { "type": "string" }, "root_reference": { "type": "string" }, "staging_format": { "const": "JSONL" }, "storage_role": { "const": "STAGING" }, "authoritative": { "const": false }, "hydrated_before_outcomes": { "type": "boolean" }, "captured_at": { "type": "string", "format": "date-time" }, "merged_window_count": { "type": "integer", "minimum": 0 }, "windows": { "type": "array", "items": { "$ref": "#/$defs/window" } }, "captures": { "type": "array", "items": { "$ref": "#/$defs/capture" } }, "checkpoint_path": { "type": "string" }, "source_receipts": { "type": "array", "items": { "type": "string" } }, "source_receipt_sha256": { "type": "array", "items": { "type": "string", "pattern": "^[a-f0-9]{64}$" } }, "source_receipt_byte_sha256": { "type": "array", "items": { "type": "string", "pattern": "^[a-f0-9]{64}$" } }, "checkpoint_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" }, "limitations": { "type": "array", "items": { "type": "string" } }, "content_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" } },
+  "patternProperties": {
+    "^fixture_only$": { "type": "boolean" },
+    "^provenance$": { "enum": ["PUBLIC_ADAPTER_RECOMPUTED", "FIXTURE_INJECTED", "LOCAL_RAW_REPLAY"] }
+  },
   "additionalProperties": false,
   "$defs": {
     "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },

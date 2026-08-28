@@ -1130,13 +1130,17 @@ if (process.argv[1] && resolve(process.argv[1]) === resolve(fileURLToPath(import
   const command = process.argv[2]; const options = parseFlagOptions(process.argv.slice(3))
   try {
     if (!command || command === '--help' || command === '-h' || options.help === true || options.h === true) {
-      process.stdout.write('usage: strategy-research-v5.mjs data-backfill|data-raw-replay|opportunity-envelope|search-genetic|research-run|overfit-audit|prospective-runner|readiness-audit|deployment-audit|validate|index [options]\n')
+      process.stdout.write('usage: strategy-research-v5.mjs data-backfill|data-raw-replay|feature-build|metadata-build|opportunity-envelope|artifact-build|research-init|experiment-freeze|search-genetic|research-run|overfit-audit|prospective-runner|readiness-audit|deployment-audit|validate|index [options]\n')
       process.exitCode = 0
     } else {
       const authoritative = await runAuthoritativeV5Cli(command, options, { legacyValidate: validateV5Artifact, legacyIndex: indexV5Records })
       if (authoritative !== null) print(authoritative)
       else if (command === 'deployment-audit') { const result = makeDeploymentAuditV5({ settings: options.settings ? readJson(options.settings) : {}, keys: options.keys ? readJson(options.keys) : {}, approvals: options.approvals ? readJson(options.approvals) : [], trustRoot: options.trust_root ? readJson(options.trust_root) : null, pinnedTrustRootFingerprint: options.pinned_trust_root_fingerprint || null, pinnedTrustRootGenesisFingerprint: options.pinned_trust_root_genesis_fingerprint || null, previousTrustRoot: options.previous_trust_root ? readJson(options.previous_trust_root) : null }); print({ path: options.out ? writeImmutable(options.out, result) : null, audit: result }) }
-      else process.stdout.write('usage: strategy-research-v5.mjs data-backfill|data-raw-replay|opportunity-envelope|search-genetic|research-run|overfit-audit|prospective-runner|readiness-audit|deployment-audit|validate|index\n')
+      else {
+        process.stderr.write(`unknown strategy-research-v5 command: ${command}\n`)
+        process.stderr.write('usage: strategy-research-v5.mjs data-backfill|data-raw-replay|feature-build|metadata-build|opportunity-envelope|artifact-build|research-init|experiment-freeze|search-genetic|research-run|overfit-audit|prospective-runner|readiness-audit|deployment-audit|validate|index\n')
+        process.exitCode = 1
+      }
     }
   } catch (error) { process.stderr.write(`${error.message}\n`); process.exitCode = 1 }
 }
