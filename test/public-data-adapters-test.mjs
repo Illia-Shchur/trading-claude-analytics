@@ -7,8 +7,10 @@ import { deflateRawSync } from 'node:zlib'
 import { aggregateBinanceMetricsRows, backfillBinanceDatedKlineArchives, backfillBinanceMetricsArchives, backfillBinanceOpenInterest, fetchAlfredVintage, fetchBinanceDatedKlineArchive, fetchBinanceFundingEvents, fetchBinanceMarkPriceOhlc, fetchBinanceMetricsArchive, fetchBinanceOhlc, fetchBinanceOpenInterest, parseBinanceDatedKlineArchive, parseBinanceMetricsArchive, parseZipArchive, prospectiveCapture } from '../tools/public-data-adapters.mjs'
 
 const fake = body => async () => ({ ok: true, status: 200, arrayBuffer: async () => Buffer.from(JSON.stringify(body)) })
-const ohlc = await fetchBinanceOhlc({ asset: 'btc', fetchImpl: fake([[0, '1', '2', '0.5', '1.5', '10', 3]]) })
+const ohlc = await fetchBinanceOhlc({ asset: 'btc', fetchImpl: fake([[0, '1', '2', '0.5', '1.5', '10', 3, '15', 7, '6', '9', '0']]) })
 assert.equal(ohlc.rows[0].availability_time, 3)
+assert.equal(ohlc.rows[0].quote_volume, 15)
+assert.equal(ohlc.rows[0].trades, 7)
 assert.equal(ohlc.pit_tier, 'T3_REVISED_OR_PROXY')
 assert.equal(ohlc.pit_provenance, 'RECONSTRUCTED_EXCHANGE_EVENT_LATEST_CAPTURE')
 assert.equal(ohlc.revision_status, 'LATEST_RETRIEVAL_NOT_HISTORICAL_VINTAGE')

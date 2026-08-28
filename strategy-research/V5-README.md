@@ -12,9 +12,14 @@ node tools/strategy-research-v5.mjs data-backfill --download --as-of <ISO-UTC> -
 node tools/strategy-research-v5.mjs data-backfill --download --plan <plan.json> --catalog <catalog.json> --raw-root <ignored/raw> --staging-root <ignored/staging> --parquet-root <ignored/parquet> --record-root strategy-research/v5-records --acquisition-out <staging-manifest.json> --parquet-out <parquet-manifest.json> --checkpoint checkpoint.json --rate-limit-ms 250
 node tools/strategy-research-v5.mjs data-raw-replay --plan <plan.json> --source-checkpoint <checkpoint.json> --source-root <prior-staging-root> --target-root <ignored/staging>
 node tools/strategy-research-v5.mjs data-raw-replay --plan <plan.json> --source-checkpoint <checkpoint.json> --source-root <prior-staging-root> --target-root <ignored/staging> --parquet-root <ignored/parquet> --catalog <catalog.json> --catalog-root <catalog-raw-root> --record-root strategy-research/v5-records
-node tools/strategy-research-v5.mjs opportunity-envelope --plan <plan.json> --acquisition <staging-manifest.json> --staging-root <ignored/staging> --candidates <frozen-candidate-set.json> --precommit <precommit.json> --gene-space <gene-space.json> --predictor-registry <predictors.json> --evaluator-spec <evaluator-spec.json> --features <physical-features.json> --hydrate --hydration-root <ignored/one-minute-root> --domain-out <opportunity-domain.json> --out <envelope.json> --hydration-out <hydration.json>
-node tools/strategy-research-v5.mjs search-genetic --artifact <statistical-input.json> --plan <plan.json> --parquet-manifest <parquet-manifest.json> --parquet-root <ignored/parquet> --predictor-registry <predictors.json> --evaluator-spec <evaluator-spec.json> --gene-space <gene-space.json> --metadata <metadata-receipts.json> --exposure-head <canonical-head.json> --checkpoint <ignored/checkpoint.json> --cache-root <ignored/cache> --opportunity-domain <opportunity-domain.json> --opportunity-envelope <envelope.json> --opportunity-hydration <hydration.json> --hydration-root <ignored/one-minute-root>
-node tools/strategy-research-v5.mjs research-run --plan <plan.json> --parquet-manifest <parquet-manifest.json> --parquet-root <ignored/parquet> --artifact <statistical-input.json> --opportunity-domain <opportunity-domain.json> --opportunity-envelope <envelope.json> --opportunity-hydration <hydration.json> --hydration-root <ignored/one-minute-root> --precommit <precommit.json> --experiment <experiment.json> --predictor-registry <predictors.json> --evaluator-spec <evaluator-spec.json> --gene-space <gene-space.json> --metadata <metadata-receipts.json> --exposure-head <canonical-head.json> --checkpoint <ignored/checkpoint.json> --cache-root <ignored/cache> --portfolio-mark-artifact <physical-mark-artifact.json> --portfolio-policy <frozen-portfolio-policy.json>
+node tools/strategy-research-v5.mjs feature-build --plan <plan.json> --acquisition <staging-manifest.json> --staging-root <ignored/acquisition-root> --precommit <precommit.json> --predictor-registry <predictors.json> --requirements-out <timeframe-requirements.json> --coverage-out <promoted-coverage.json> --out <feature-source.json>
+node tools/strategy-research-v5.mjs metadata-build --plan <plan.json> --precommit <precommit.json> --evaluator-spec <evaluator-spec.json> --policy <frozen-spot-execution-policy.json> --output-root <ignored/metadata-root> --out <metadata-bundle.json>
+node tools/strategy-research-v5.mjs opportunity-envelope --plan <plan.json> --acquisition <staging-manifest.json> --staging-root <ignored/acquisition-root> --feature-source <feature-source.json> --candidates <frozen-candidate-set.json> --precommit <precommit.json> --gene-space <gene-space.json> --predictor-registry <predictors.json> --evaluator-spec <evaluator-spec.json> --hydrate --hydration-root <ignored/one-minute-root> --domain-out <opportunity-domain.json> --out <envelope.json> --hydration-out <hydration.json> --physical-envelope-out <physical-envelope-v1.json> --physical-hydration-out <physical-hydration-v1.json>
+node tools/strategy-research-v5.mjs artifact-build --plan <plan.json> --acquisition <staging-manifest.json> --acquisition-root <ignored/acquisition-root> --opportunity-domain <opportunity-domain.json> --opportunity-envelope <envelope.json> --opportunity-hydration <hydration.json> --physical-envelope <physical-envelope-v1.json> --physical-hydration <physical-hydration-v1.json> --hydration-root <ignored/one-minute-root> --feature-source <feature-source.json> --feature-source-root <ignored/acquisition-root> --staging-root <ignored/combined-role-root> --parquet-root <ignored/strategy-parquet-root> --precommit <precommit.json> --predictor-registry <predictors.json> --gene-space <gene-space.json> --evaluator-spec <evaluator-spec.json> --config <execution-config.json> --source-bundle-out <source-bundle.json> --staging-out <separated-staging.json> --out <parquet-manifest.json>
+node tools/strategy-research-v5.mjs research-init --plan <plan.json> --timeframe-requirements <timeframe-requirements.json> --parquet-manifest <parquet-manifest.json> --parquet-root <ignored/strategy-parquet-root> --precommit <precommit.json> --predictor-registry <predictors.json> --gene-space <gene-space.json> --evaluator-spec <evaluator-spec.json> --opportunity-domain <opportunity-domain.json> --opportunity-envelope <envelope.json> --opportunity-hydration <hydration.json> --hydration-root <ignored/one-minute-root> --out <statistical-input.json>
+node tools/strategy-research-v5.mjs experiment-freeze --precommit <precommit.json> --definition <strategy-definition-v2.json> --opportunity-envelope <envelope.json> --candidates <frozen-candidate-set.json> --parquet-manifest <parquet-manifest.json> --evaluator-spec <evaluator-spec.json> --metadata <metadata-bundle.json> --metadata-root <ignored/metadata-root> --experiment-policy <frozen-experiment-policy.json> --out <experiment-v3.json>
+node tools/strategy-research-v5.mjs search-genetic --artifact <statistical-input.json> --plan <plan.json> --timeframe-requirements <timeframe-requirements.json> --parquet-manifest <parquet-manifest.json> --parquet-root <ignored/strategy-parquet-root> --precommit <precommit.json> --definition <strategy-definition-v2.json> --experiment <experiment-v3.json> --predictor-registry <predictors.json> --evaluator-spec <evaluator-spec.json> --gene-space <gene-space.json> --metadata <metadata-bundle.json> --metadata-root <ignored/metadata-root> --exposure-head <research-init-emitted-head-path> --checkpoint <ignored/checkpoint.json> --cache-root <ignored/cache> --opportunity-domain <opportunity-domain.json> --opportunity-envelope <envelope.json> --opportunity-hydration <hydration.json> --hydration-root <ignored/one-minute-root>
+node tools/strategy-research-v5.mjs research-run --plan <plan.json> --timeframe-requirements <timeframe-requirements.json> --parquet-manifest <parquet-manifest.json> --parquet-root <ignored/strategy-parquet-root> --artifact <statistical-input.json> --opportunity-domain <opportunity-domain.json> --opportunity-envelope <envelope.json> --opportunity-hydration <hydration.json> --hydration-root <ignored/one-minute-root> --precommit <precommit.json> --definition <strategy-definition-v2.json> --experiment <experiment-v3.json> --predictor-registry <predictors.json> --evaluator-spec <evaluator-spec.json> --gene-space <gene-space.json> --metadata <metadata-bundle.json> --metadata-root <ignored/metadata-root> --exposure-head <research-init-emitted-head-path> --checkpoint <ignored/checkpoint.json> --cache-root <ignored/cache> --portfolio-mark-artifact <physical-mark-artifact.json> --portfolio-policy <frozen-portfolio-policy.json>
 node tools/strategy-research-v5.mjs overfit-audit --artifact <statistical-input.json> --exposure-head-artifact <exposure-head.json> --vector <vector-inventory.json> --folds <wfo-folds.json> --genetic <genetic-run.json>
 node tools/strategy-research-v5.mjs prospective-runner --ledger <shadow-ledger-dir> --expected-head-sha256 <cas-head-hash> --reservation <frozen-reservation.json> --source-receipt <source-receipt.json> --bar <completed-bar.json> --feature-input <feature.json> --candidate-set <candidate-set.json> --evaluator-code <evaluator-code.json> --signal-decision <signal.json>
 node tools/strategy-research-v5.mjs deployment-audit --out <deployment-audit.json>
@@ -51,6 +56,20 @@ the hydrated universe. `--hydrate` is mandatory for a `COMPLETE` receipt; an
 envelope-only invocation writes a `BLOCKED` receipt, and incomplete/right-edge
 physical one-minute coverage is also blocked.
 
+`metadata-build` is the local, network-free execution-assumption bridge for
+spot research. Its policy must be a hash-valid
+`strategy-v5-spot-execution-policy/1` bound to the exact plan, frozen
+precommit, and evaluator spec. It declares one row per traded asset with the
+canonical `ASSETUSDT` symbol, exchange step/min/max quantity and notional
+filters, plus taker fee, slippage, impact, outage, and gap assumptions. The
+command copies the exact policy bytes into the ignored content-addressed root,
+reopens both normalized and raw receipts, and emits only `USER_BOUND`
+metadata. Coverage extends from the first signal through the last signal's
+full frozen evaluator lifecycle. These are conservative retrospective
+research assumptions—not historical Binance fee observations and never
+activation evidence. Perpetual and dated-future execution remains rejected;
+their funding series may still be a PIT predictor for a spot trade.
+
 ## Reproducible first-strategy workflow
 
 For a new strategy family, freeze the premise and its falsifier first, then
@@ -58,8 +77,9 @@ run the following sequence. Every placeholder is a physical JSON artifact
 written by the preceding command or by the frozen strategy package; do not
 replace one with an inline object or a narrated metric.
 
-1. Freeze `precommit.json`, `experiment.json`, `gene-space.json`,
-   `predictors.json`, `evaluator-spec.json`, and the v5 portfolio policy. The
+1. Freeze `precommit.json`, `strategy-definition-v2.json`,
+   `frozen-experiment-policy.json`, `gene-space.json`, `predictors.json`,
+   `evaluator-spec.json`, and the v5 portfolio policy. The
    policy must be `strategy-portfolio-policy/2`, `version: 2`, `status: FROZEN`,
    and bind the precommit, experiment acceptance, and evaluator lifecycle
    hashes.
@@ -67,25 +87,58 @@ replace one with an inline object or a narrated metric.
    `data-backfill --download` → `validate --input <parquet-manifest.json>`.
    Keep raw/staging/checkpoint/cache roots outside the registry; only the
    content-addressed plan, receipts, and authoritative manifest are evidence.
-3. Freeze the opportunity envelope from the promoted feature rows, run
-   `search-genetic` with the persistent exposure head, and retain its immutable
-   checkpoint/receipt. Candidate metrics and trades are outputs, never inputs.
-4. Run `research-run` with the exact physical plan, Parquet root/manifest,
+3. Run `feature-build` to derive the exact completed-bar price/funding feature
+   source from the reopened acquisition. Run `metadata-build` with the frozen
+   spot execution policy and retain its bundle plus ignored physical source
+   root. Pass the feature receipt to
+   `opportunity-envelope --hydrate`; the command freezes the full v2 domain
+   and envelope before fetching the one-minute execution windows.
+4. Run `artifact-build` with both the v2 domain/envelope/hydration and the
+   physical v1 hydration custody. It recomputes the exact hydrated feature
+   subset, labels, execution rows, and marks, then writes the separated
+   Parquet manifest.
+5. Run `research-init`. It reopens those physical roles, derives the complete
+   chronological episode inventory, creates the empty statistical genesis,
+   and initializes the repository-anchored, family-bound cumulative exposure
+   HEAD. The path returned by `research-init` cannot be relocated or replaced;
+   the canonical family ID is the lowercase precommit `hypothesis_family` or,
+   when absent, `precommit_id`, and both definition and evaluator must match it
+   exactly. Renaming or changing case cannot create a fresh ledger. Rolling
+   data snapshots advance the same HEAD while preserving cumulative K. It
+   rejects caller-provided episodes, returns, metrics, and hypothesis-family
+   counters. Then run `experiment-freeze`: it reopens the precommit,
+   definition/2, candidate envelope/set, separated Parquet manifest,
+   evaluator spec, exact execution-metadata bundle, and user-authored policy;
+   recomputes every experiment/3
+   lineage hash and the exact crypto asset/instrument scope; and rejects
+   caller-supplied lineage, metrics, trades, returns, or fitness. Run
+   `search-genetic` with the emitted experiment and the exact
+   timeframe-requirements artifact. Candidate metrics and trades are outputs,
+   never inputs.
+6. Run `research-run` with the exact physical plan, Parquet root/manifest,
    evaluator inputs, envelope, exposure head, physical marks, and portfolio
    policy. A complete command emits `SHADOW` or `REJECTED`; incomplete inputs
    emit `BLOCKED` and must be repaired before proceeding.
-5. Run `overfit-audit`, `validate`, and `index`. Read historical decisions with
+7. Run `overfit-audit`, `validate`, and `index`. Read historical decisions with
    `index` filters for family/version, experiment, phase/status, and asset;
    never edit an existing content-addressed record to “advance” it.
-6. Build a frozen `strategy-readiness-evidence-manifest/1` whose entries point
+8. Build a frozen `strategy-readiness-evidence-manifest/1` whose entries point
    to the exact JSON evidence files and their byte/content hashes, then run
    `readiness-audit`. The command reopens every listed dependency, writes a
    content-addressed JSON audit and deterministic Markdown with per-check
    evidence/failures, and reports capability separately from operational
    evidence. An empty or forged manifest scores zero and remains `BLOCKED`.
-7. Only after a `SHADOW` evidence bundle is independently reviewed, start the
+9. Only after a `SHADOW` evidence bundle is independently reviewed, start the
    prospective runner and deployment-audit workflow. This path records
    evidence and approvals; it does not authorize live trading locally.
+
+Price and exact Binance USD-M funding can be researched under `BASE_ONLY`.
+Funding predictors use the frozen `SAME_ASSET_FUNDING_SERIES` recipe: the
+canonical same-asset perpetual settlement must be physically bound, strictly
+available before the completed-bar decision, within the declared staleness
+limit, and unambiguous. Optional market-flow archives do not block a strategy
+that does not declare them. A strategy that declares open interest, trader
+ratios, taker-flow, or another unavailable/non-PIT metric remains fail-closed.
 
 Binance spot short positions are not executable under this contract: the
 physical input set has no borrow/locate/recall/rate custody. Spot rows with

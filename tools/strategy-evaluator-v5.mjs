@@ -6,8 +6,8 @@
  * code boundary, rather than a convention imposed on an arbitrary callback.
  */
 import { createHash } from 'node:crypto'
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
-import { isAbsolute, join, relative, resolve } from 'node:path'
+import { existsSync, lstatSync, mkdirSync, readFileSync, realpathSync, renameSync, writeFileSync } from 'node:fs'
+import { isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { Worker } from 'node:worker_threads'
 import canonicalize from 'canonicalize'
@@ -193,6 +193,36 @@ function geneReferences(value, output = new Set()) {
   return output
 }
 
+function lifecycleSizingFromTemplate(candidateTemplate) {
+  const lifecycle = candidateTemplate?.lifecycle || candidateTemplate?.lifecycle_spec
+  return lifecycle?.sizing || candidateTemplate?.sizing || null
+}
+
+function sizingSemantics(sizing, riskConvention = null) {
+  if (!sizing) return null
+  const mode = String(sizing.mode || sizing.type || '').toUpperCase()
+  if (['FIXED_NOTIONAL', 'FIXED_NOTIONAL_USD'].includes(mode)) return { mode: 'FIXED_NOTIONAL_USD', amount: Number(sizing.notional_usd ?? sizing.notional) }
+  if (['RISK_USD', 'FIXED_RISK_BUDGET_USD', 'TARGET_STOP_RISK'].includes(mode)) return { mode: 'TARGET_STOP_RISK', amount: Number(sizing.risk_usd ?? sizing.budget_usd ?? sizing.risk_amount_usd ?? riskConvention?.budget_usd) }
+  return { mode, amount: Number.NaN }
+}
+
+function validateLifecycleSizingBoundary(candidateTemplate, executionContract, label = 'evaluator spec') {
+  const lifecycleSizing = lifecycleSizingFromTemplate(candidateTemplate)
+  const frozenSizing = executionContract?.sizing_contract || null
+  if (!lifecycleSizing || !frozenSizing) return true
+  if (geneReferences(lifecycleSizing).size) throw new Error(`${label} lifecycle sizing cannot be gene-controlled when an execution sizing contract is frozen`)
+  const lifecycle = sizingSemantics(lifecycleSizing, executionContract?.risk_convention)
+  const frozen = sizingSemantics(frozenSizing, executionContract?.risk_convention)
+  if (!lifecycle.mode || lifecycle.mode !== frozen.mode || !Number.isFinite(lifecycle.amount) || !Number.isFinite(frozen.amount) || lifecycle.amount !== frozen.amount) throw new Error(`${label} lifecycle sizing disagrees with the frozen execution sizing contract`)
+  return true
+}
+
+function validateNormalizedLifecycleExecutionContracts(candidateTemplate, executionContract, label = 'evaluator spec') {
+  const normalized = Boolean(candidateTemplate?.lifecycle || candidateTemplate?.lifecycle_spec || candidateTemplate?.lifecycle_engine === 'strategy-v5-trade-lifecycle/1')
+  if (normalized && (!executionContract?.risk_convention || !executionContract?.sizing_contract)) throw new Error(`${label} normalized lifecycle requires both a frozen risk_convention and sizing_contract`)
+  return true
+}
+
 export function makeEvaluatorSpecV5({ strategyFamily, precommitSha256, geneSpace, predictorRegistry, predicate, candidateTemplate, executionContract = {} } = {}) {
   requireHash(precommitSha256, 'precommit_sha256')
   requireHash(geneSpace?.content_sha256, 'gene_space_sha256')
@@ -218,6 +248,8 @@ export function makeEvaluatorSpecV5({ strategyFamily, precommitSha256, geneSpace
     if (suppliedSizing.notional_usd !== undefined) suppliedSizing.notional_usd = Number(suppliedSizing.notional_usd)
     suppliedSizing.precommit_sha256 = precommitSha256
   }
+  validateNormalizedLifecycleExecutionContracts(candidateTemplate, { sizing_contract: suppliedSizing, risk_convention: suppliedRisk }, 'candidate template')
+  validateLifecycleSizingBoundary(candidateTemplate, { sizing_contract: suppliedSizing, risk_convention: suppliedRisk }, 'candidate template')
   const suppliedDerivative = executionContract.derivative_policy ? clone(executionContract.derivative_policy) : null
   if (suppliedDerivative) {
     if (suppliedDerivative.margin_mode !== 'ISOLATED' || !Number.isFinite(Number(suppliedDerivative.leverage)) || !(Number(suppliedDerivative.leverage) > 0)) throw new Error('derivative_policy requires positive ISOLATED leverage')
@@ -253,6 +285,8 @@ export function validateEvaluatorSpecV5(value, { geneSpace = null, predictorRegi
     if (value.predictor_registry_sha256 !== predictorRegistry.content_sha256) throw new Error('evaluator spec predictor binding is invalid')
     validateCandidatePredicates({ predictorRegistry, predicates: predicatePredictors(value.predicate) })
   }
+  validateNormalizedLifecycleExecutionContracts(value.candidate_template, value.execution_contract)
+  validateLifecycleSizingBoundary(value.candidate_template, value.execution_contract)
   return true
 }
 
@@ -357,7 +391,9 @@ function derivedHardMetrics(outcomes, vector, chromosome, featureByEpisode, exec
   const traded = outcomes.filter(Boolean); const values = vector.map(row => row.net_r); const wins = values.filter(value => value > 0).reduce((sum, value) => sum + value, 0); const losses = values.filter(value => value < 0).reduce((sum, value) => sum + Math.abs(value), 0)
   let totalCostR = 0; let capacityPass = true
   for (const outcome of traded) {
-    const execution = executionByEpisode.get(outcome.episode_id); const risk = Number(outcome.risk_amount_usd); const modelBps = Number(outcome.execution_model.slippage_bps) + Number(outcome.execution_model.impact_bps); const notional = Number(outcome.entry_price) * Number(outcome.quantity) * Number(outcome.contract_multiplier); totalCostR += (Number(outcome.fees_usd) + Math.max(0, -Number(outcome.funding_pnl_usd)) + notional * modelBps / 10_000) / risk
+    const execution = executionByEpisode.get(outcome.episode_id); const risk = Number(outcome.risk_amount_usd); const fees = Number(outcome.fees_usd); const slippage = Number(outcome.slippage_usd); const capacityDebit = Number(outcome.capacity_debit_usd); const fundingPnl = Number(outcome.funding_pnl_usd)
+    if (!(risk > 0) || ![risk, fees, slippage, capacityDebit, fundingPnl].every(Number.isFinite) || [fees, slippage, capacityDebit].some(value => value < 0)) throw new Error(`outcome ${outcome.episode_id || '?'} lacks exact nonnegative round-trip cost accounting`)
+    const notional = Number(outcome.entry_price) * Number(outcome.quantity) * Number(outcome.contract_multiplier); totalCostR += (fees + slippage + capacityDebit + Math.max(0, -fundingPnl)) / risk
     const capacity = execution?.capacity_inputs; const available = Number(capacity?.available_liquidity_usd); const participation = Number(capacity?.participation_cap); const order = Number(capacity?.order_notional_usd ?? notional); if (!(available > 0) || !(participation > 0 && participation <= 1) || !(order > 0) || order > available * participation) capacityPass = false
   }
   return {
@@ -374,7 +410,7 @@ function derivedHardMetrics(outcomes, vector, chromosome, featureByEpisode, exec
 function materializeLazyExecutionPath(path, executionLazy) {
   if (!path?.execution_reference) return path
   if (!executionLazy?.hydration || !Array.isArray(executionLazy.partitions)) throw new Error('lazy execution reference lacks its verified hydration/partition custody')
-  const reference = path.execution_reference; const lower = reference.preentry_start || reference.execution_start; const result = readHydratedRangeV5({ hydration: executionLazy.hydration, partitions: executionLazy.partitions, window_id: reference.window_id, start: lower, end: reference.execution_end, batchSize: executionLazy.batch_size || 4096, maxRows: executionLazy.max_rows || 100_000, maxResidentBytes: executionLazy.max_resident_bytes || 192 * 1024 * 1024, maxOutputBytes: executionLazy.max_output_bytes || 128 * 1024 * 1024 }); const rows = result.batches.flat(); const entryMs = Date.parse(String(reference.execution_start)); const preentryBars = rows.filter(row => Date.parse(String(row.event_time ?? row.time ?? row.open_time)) < entryMs); const childBars = rows.filter(row => Date.parse(String(row.event_time ?? row.time ?? row.open_time)) >= entryMs)
+  const reference = path.execution_reference; const lower = reference.preentry_start || reference.execution_start; const result = readHydratedRangeV5({ hydration: executionLazy.hydration, partitions: executionLazy.partitions, window_id: reference.window_id, start: lower, end: reference.execution_end, batchSize: executionLazy.batch_size || 4096, maxRows: executionLazy.max_rows || 100_000, maxResidentBytes: executionLazy.max_resident_bytes || 192 * 1024 * 1024, maxOutputBytes: executionLazy.max_output_bytes || 128 * 1024 * 1024 }); const rows = result.batches.flat(); const hydratedTime = value => typeof value === 'number' ? value : (/^-?\d+(?:\.\d+)?$/.test(String(value ?? '').trim()) ? Number(value) : time(value)); const entryMs = hydratedTime(reference.execution_start); const preentryBars = rows.filter(row => hydratedTime(row.event_time ?? row.time ?? row.open_time) < entryMs); const childBars = rows.filter(row => hydratedTime(row.event_time ?? row.time ?? row.open_time) >= entryMs)
   const capture = executionLazy.hydration.windows.find(row => row.window_id === reference.window_id); let markBars = null
   if ((capture?.mark_partition_refs || []).length) {
     const markResult = readHydratedRangeV5({ hydration: executionLazy.hydration, partitions: executionLazy.partitions, role: 'MARK', window_id: reference.window_id, start: reference.execution_start, end: reference.execution_end, batchSize: executionLazy.batch_size || 4096, maxRows: executionLazy.max_rows || 100_000, maxResidentBytes: executionLazy.max_resident_bytes || 192 * 1024 * 1024, maxOutputBytes: executionLazy.max_output_bytes || 128 * 1024 * 1024 })
@@ -598,6 +634,18 @@ export function createFixtureEvaluatorV5(args = {}) {
 function safeArtifactPath(root, path) {
   const base = resolve(root); const target = resolve(base, String(path || '')); const rel = relative(base, target)
   if (!path || rel.startsWith('..') || rel === '') throw new Error('Parquet role path escapes or aliases its authoritative root')
+  const rootStat = lstatSync(base)
+  if (rootStat.isSymbolicLink() || !rootStat.isDirectory()) throw new Error('Parquet authoritative root is not a regular directory')
+  let cursor = base
+  for (const component of rel.split(sep).filter(Boolean)) {
+    cursor = join(cursor, component)
+    const stat = lstatSync(cursor)
+    if (stat.isSymbolicLink()) throw new Error('Parquet role path contains a symlink')
+    if (cursor !== target && !stat.isDirectory()) throw new Error('Parquet role path parent is not a directory')
+    if (cursor === target && (!stat.isFile() || stat.nlink !== 1)) throw new Error('Parquet role path is not a regular single-link file')
+  }
+  const physicalRel = relative(realpathSync(base), realpathSync(target))
+  if (!physicalRel || physicalRel.startsWith('..') || physicalRel.split(sep).includes('..')) throw new Error('Parquet role path physically escapes its authoritative root')
   return target
 }
 

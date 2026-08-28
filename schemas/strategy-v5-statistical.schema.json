@@ -255,7 +255,7 @@
         "cumulative_k": { "type": "integer", "minimum": 1 },
         "cumulative_exposure_k": { "type": "integer", "minimum": 1 },
         "exposure_head_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
-        "selected_behavior_alias_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+        "selected_behavior_alias_sha256": { "anyOf": [{ "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }, { "type": "null" }] },
         "selected_seed_count": { "type": "integer", "minimum": 0 },
         "seed_stability": { "type": "object", "required": ["required", "stable_aliases"], "properties": { "required": { "type": "integer" }, "stable_aliases": { "type": "array", "items": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" } } }, "additionalProperties": false },
         "baseline": { "anyOf": [{ "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/fitness" }, { "type": "null" }] },

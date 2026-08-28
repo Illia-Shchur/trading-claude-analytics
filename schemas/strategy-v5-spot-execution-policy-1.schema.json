@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-v5-spot-execution-policy/1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "version", "status", "created_at", "plan_sha256",
+    "precommit_sha256", "evaluator_spec_sha256", "instrument",
+    "research_window", "asset_contracts", "cost_model", "outage_policy",
+    "gap_policy", "assumption_mode", "activation_eligible", "limitations",
+    "content_sha256"
+  ],
+  "properties": {
+    "schema": { "const": "strategy-v5-spot-execution-policy/1" },
+    "version": { "const": 1 },
+    "status": { "const": "FROZEN" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "plan_sha256": { "$ref": "#/$defs/hash" },
+    "precommit_sha256": { "$ref": "#/$defs/hash" },
+    "evaluator_spec_sha256": { "$ref": "#/$defs/hash" },
+    "instrument": { "const": "BINANCE_SPOT" },
+    "research_window": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start_at", "end_at"],
+      "properties": {
+        "start_at": { "type": "string", "format": "date-time" },
+        "end_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "asset_contracts": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["asset", "symbol", "contract_multiplier", "step_size", "min_qty", "max_qty", "min_notional", "max_notional"],
+        "properties": {
+          "asset": { "enum": ["btc", "eth", "sol", "bnb", "xrp", "ada", "link", "aave"] },
+          "symbol": { "type": "string", "pattern": "^[A-Z0-9]+USDT$" },
+          "contract_multiplier": { "const": 1 },
+          "step_size": { "type": "number", "exclusiveMinimum": 0 },
+          "min_qty": { "type": "number", "exclusiveMinimum": 0 },
+          "max_qty": { "type": "number", "exclusiveMinimum": 0 },
+          "min_notional": { "type": "number", "exclusiveMinimum": 0 },
+          "max_notional": { "type": "number", "exclusiveMinimum": 0 }
+        }
+      }
+    },
+    "cost_model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["taker_fee_rate", "slippage_bps", "impact_bps"],
+      "properties": {
+        "taker_fee_rate": { "type": "number", "minimum": 0, "maximum": 0.02 },
+        "slippage_bps": { "type": "number", "minimum": 0, "maximum": 1000 },
+        "impact_bps": { "type": "number", "minimum": 0, "maximum": 1000 }
+      }
+    },
+    "outage_policy": { "const": "FAIL" },
+    "gap_policy": { "enum": ["FAIL", "FILL_AT_OPEN"] },
+    "assumption_mode": { "const": "RETROSPECTIVE_USER_BOUND_RESEARCH_ASSUMPTION" },
+    "activation_eligible": { "const": false },
+    "limitations": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+    "content_sha256": { "$ref": "#/$defs/hash" }
+  },
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }
+}

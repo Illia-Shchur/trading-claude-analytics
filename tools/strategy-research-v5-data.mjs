@@ -33,6 +33,7 @@ export const DATA_V5 = Object.freeze({
   plan: 'strategy-v5-authoritative-data-plan/1',
   acquisition: 'strategy-v5-authoritative-acquisition/1',
   hydration: 'strategy-v5-opportunity-hydration/1',
+  featureSource: 'strategy-v5-authoritative-feature-source/1',
   sourceBundle: 'strategy-v5-source-bundle/1',
   artifacts: 'strategy-v5-separated-artifacts/1',
   metadata: 'strategy-v5-metadata-receipt/1',
@@ -91,7 +92,7 @@ function normalizePredictorRecipe(predictor, id) {
   if (recipe.source_series === undefined || typeof recipe.source_series !== 'string' || !recipe.source_series.trim()) throw new Error(`predictor ${id} recipe source_series is missing`)
   const lookbackBars = Number(recipe.lookback_bars ?? (kind === 'FIELD' ? 0 : NaN)); const minHistory = Number(recipe.min_history ?? (kind === 'FIELD' ? 1 : (kind === 'RETURN' || kind === 'RSI') ? lookbackBars + 1 : lookbackBars))
   if (!Number.isInteger(lookbackBars) || lookbackBars < 0 || !Number.isInteger(minHistory) || minHistory < 1 || (kind !== 'FIELD' && lookbackBars < 1) || minHistory > lookbackBars + 1 || (kind === 'RSI' && minHistory !== lookbackBars + 1)) throw new Error(`predictor ${id} recipe history bounds are invalid`)
-  if (recipe.window_policy !== 'COMPLETED_OBSERVATIONS_ONLY' || recipe.availability_policy !== 'MAX_INPUT_AVAILABILITY' || !['SAME_ASSET_VENUE_INSTRUMENT_SYMBOL', 'EXPLICIT_REFERENCE_SERIES'].includes(recipe.series_scope)) throw new Error(`predictor ${id} recipe PIT policies are incomplete`)
+  if (recipe.window_policy !== 'COMPLETED_OBSERVATIONS_ONLY' || recipe.availability_policy !== 'MAX_INPUT_AVAILABILITY' || !['SAME_ASSET_VENUE_INSTRUMENT_SYMBOL', 'SAME_ASSET_FUNDING_SERIES', 'EXPLICIT_REFERENCE_SERIES'].includes(recipe.series_scope)) throw new Error(`predictor ${id} recipe PIT policies are incomplete`)
   const currentObservationPolicy = recipe.current_observation_policy || 'INCLUDE_CURRENT_COMPLETED'
   if (!['INCLUDE_CURRENT_COMPLETED', 'EXCLUDE_CURRENT_COMPLETED'].includes(currentObservationPolicy)) throw new Error(`predictor ${id} recipe current observation policy is invalid`)
   const excludedWindowBars = Number(recipe.excluded_window_bars ?? 0)
@@ -101,6 +102,7 @@ function normalizePredictorRecipe(predictor, id) {
   const requiredSeriesTypes = recipe.required_series_types === undefined ? null : [...new Set(ensureArray(recipe.required_series_types, `${id} recipe required_series_types`).map(value => String(value).toLowerCase()))].sort()
   if (requiredSeriesTypes && (!requiredSeriesTypes.length || requiredSeriesTypes.some(value => !['signal_bars', 'mark_bars', 'funding_events', 'metrics_events'].includes(value)) || (requiredSeriesTypes.includes('funding_events') && requiredSeriesTypes.some(value => !['funding_events', 'metrics_events'].includes(value))))) throw new Error(`predictor ${id} recipe required_series_types are invalid`)
   const explicitReference = recipe.series_scope === 'EXPLICIT_REFERENCE_SERIES'
+  const fundingReference = recipe.series_scope === 'SAME_ASSET_FUNDING_SERIES'
   const reference = explicitReference ? clone(recipe.reference_series) : null
   const referenceAsset = explicitReference && reference ? String(reference.asset).toLowerCase() : null
   if (explicitReference) {
@@ -111,8 +113,15 @@ function normalizePredictorRecipe(predictor, id) {
     const maxStaleness = Number(recipe.max_staleness_ms); const lagBars = Number(recipe.lag_bars ?? 0)
     if (!Number.isInteger(maxStaleness) || maxStaleness < 1 || !Number.isInteger(lagBars) || lagBars < 0 || !['EXACT_EVENT', 'LAST_AVAILABLE', 'BAR_CLOSE'].includes(recipe.resample_policy)) throw new Error(`predictor ${id} explicit reference timing contract is invalid`)
   }
+  if (fundingReference) {
+    const family = String(predictor.source_family || '').trim().toLowerCase()
+    const maxStaleness = Number(recipe.max_staleness_ms); const lagBars = Number(recipe.lag_bars ?? 0)
+    if (String(recipe.source_field).toLowerCase() !== 'funding_rate' || !['funding', 'funding_events'].includes(family) || String(predictor.source_timeframe || '').toLowerCase() !== 'event' || String(recipe.source_series).toLowerCase() !== 'funding_events' || stable(requiredSeriesTypes) !== stable(['funding_events'])) throw new Error(`predictor ${id} funding reference source contract is invalid`)
+    if (recipe.asof_policy !== 'LATEST_AVAILABLE_STRICTLY_BEFORE_DECISION' || recipe.resample_policy !== 'LAST_AVAILABLE' || recipe.context_only !== true || !Number.isInteger(maxStaleness) || maxStaleness < 1 || !Number.isInteger(lagBars) || lagBars < 0) throw new Error(`predictor ${id} funding reference timing contract is invalid`)
+  }
   if (recipe.module_code_sha256 !== predictor.code_sha256 || recipe.module_config_sha256 !== predictor.config_sha256) throw new Error(`predictor ${id} recipe module hashes are not bound to code/config hashes`)
-  return { module: PREDICTOR_RECIPE_MODULE, kind, source_field: recipe.source_field, source_series: recipe.source_series.trim(), lookback_bars: lookbackBars, min_history: minHistory, window_policy: recipe.window_policy, availability_policy: recipe.availability_policy, series_scope: recipe.series_scope, ...(explicitReference ? { reference_series: { asset: referenceAsset, venue: String(reference.venue).toUpperCase(), instrument: String(reference.instrument).toUpperCase(), symbol: String(reference.symbol).toUpperCase(), ...(reference.series_id ? { series_id: String(reference.series_id) } : {}), ...(reference.series_type ? { series_type: String(reference.series_type) } : {}) }, asof_policy: 'LATEST_AVAILABLE_NOT_AFTER_DECISION', max_staleness_ms: Number(recipe.max_staleness_ms), lag_bars: Number(recipe.lag_bars ?? 0), resample_policy: String(recipe.resample_policy).toUpperCase(), context_only: recipe.context_only === true } : {}), ...(requiredSeriesTypes ? { required_series_types: requiredSeriesTypes } : {}), ...(kind === 'RSI' ? { rsi_method: rsiMethod } : {}), current_observation_policy: currentObservationPolicy, excluded_window_bars: excludedWindowBars, module_code_sha256: recipe.module_code_sha256, module_config_sha256: recipe.module_config_sha256 }
+  const timedReference = explicitReference || fundingReference
+  return { module: PREDICTOR_RECIPE_MODULE, kind, source_field: recipe.source_field, source_series: recipe.source_series.trim(), lookback_bars: lookbackBars, min_history: minHistory, window_policy: recipe.window_policy, availability_policy: recipe.availability_policy, series_scope: recipe.series_scope, ...(explicitReference ? { reference_series: { asset: referenceAsset, venue: String(reference.venue).toUpperCase(), instrument: String(reference.instrument).toUpperCase(), symbol: String(reference.symbol).toUpperCase(), ...(reference.series_id ? { series_id: String(reference.series_id) } : {}), ...(reference.series_type ? { series_type: String(reference.series_type) } : {}) } } : {}), ...(timedReference ? { asof_policy: fundingReference ? 'LATEST_AVAILABLE_STRICTLY_BEFORE_DECISION' : 'LATEST_AVAILABLE_NOT_AFTER_DECISION', max_staleness_ms: Number(recipe.max_staleness_ms), lag_bars: Number(recipe.lag_bars ?? 0), resample_policy: String(recipe.resample_policy).toUpperCase(), context_only: recipe.context_only === true } : {}), ...(requiredSeriesTypes ? { required_series_types: requiredSeriesTypes } : {}), ...(kind === 'RSI' ? { rsi_method: rsiMethod } : {}), current_observation_policy: currentObservationPolicy, excluded_window_bars: excludedWindowBars, module_code_sha256: recipe.module_code_sha256, module_config_sha256: recipe.module_config_sha256 }
 }
 export function makePredictorRegistry({ predictors } = {}) {
   const rows = ensureArray(predictors, 'predictor registry').map(predictor => { const id = String(predictor.id || ''); if (!/^[a-z][a-z0-9_]{0,127}$/.test(id) || FORBIDDEN_PREDICTOR.test(id)) throw new Error(`predictor ID is not a permitted registry identifier: ${id}`); if (!['number', 'integer', 'boolean'].includes(predictor.scalar_type)) throw new Error(`predictor ${id} scalar_type is invalid`); if (!predictor.source_field || !predictor.source_family || !predictor.availability_derivation || !['PREDICTOR'].includes(predictor.pit_role)) throw new Error(`predictor ${id} registry provenance is incomplete`); if (/(^|[_-])(label|outcome|pnl|profit|realized|unrealized)([_-]|$)/i.test(`${predictor.source_field} ${predictor.source_family}`)) throw new Error(`predictor ${id} has label/outcome provenance`); if (!Number.isInteger(Number(predictor.lookback_ms)) || Number(predictor.lookback_ms) < 0) throw new Error(`predictor ${id} lookback is invalid`); if (predictor.source_timeframe !== undefined && !['1h', '4h', '1d', 'event'].includes(String(predictor.source_timeframe))) throw new Error(`predictor ${id} source timeframe is invalid`); sha(predictor.code_sha256, `${id}.code_sha256`); sha(predictor.config_sha256, `${id}.config_sha256`); const normalized = { ...clone(predictor), id, lookback_ms: Number(predictor.lookback_ms) }; const recipe = normalizePredictorRecipe(normalized, id); if (recipe) normalized.recipe = recipe; return normalized }).sort((a, b) => a.id.localeCompare(b.id)); if (!rows.length || new Set(rows.map(row => row.id)).size !== rows.length) throw new Error('predictor registry must contain unique predictors'); return withHash({ schema: 'strategy-v5-predictor-registry/1', version: 1, status: 'FROZEN', predictors: rows })
@@ -351,7 +360,12 @@ function sourceReceipt(root, payload) {
     if (!existsSync(rawPath) || hash(readFileSync(rawPath)) !== raw.byte_sha256) throw new Error(`raw source response bytes are missing or tampered: ${raw.path}`)
     assertOwnHash(raw, 'strategy-v5-source-receipt/1', 'raw source receipt')
   }
-  if (!existsSync(absolute)) writeAtomic(absolute, `${JSON.stringify(value, null, 2)}\n`); else assertOwnHash(JSON.parse(readFileSync(absolute, 'utf8')), value.schema)
+  if (!existsSync(absolute)) writeAtomic(absolute, `${JSON.stringify(value, null, 2)}\n`)
+  else {
+    let retained
+    try { retained = JSON.parse(readFileSync(absolute, 'utf8')); assertOwnHash(retained, value.schema); if (retained.content_sha256 !== value.content_sha256 || stable(retained) !== stable(value)) throw new Error('normalized source receipt content-addressed collision') }
+    catch { unlinkSync(absolute); writeAtomic(absolute, `${JSON.stringify(value, null, 2)}\n`) }
+  }
   const byteSha256 = payload.source_byte_sha256 || payload.response_sha256 || null
   // Keep the normalized receipt (including its complete raw-byte receipt
   // inventory) in the ignored staging root.  The tracked acquisition and
@@ -549,7 +563,73 @@ export function emitRoleDerivationReceipt(args = {}) {
   return emitRoleReceipt({ ...args, provenanceMode: 'FIXTURE_ONLY', codeReference: producerCode })
 }
 
-function roleSourceReferences(roleSources, role, sourceParts) {
+function predictorRegistryRequiresFunding(predictorRegistry) {
+  if (!(predictorRegistry instanceof Map)) return false
+  return [...predictorRegistry.values()].some(predictor => {
+    const field = String(predictor.source_field || predictor.recipe?.source_field || '').trim().toLowerCase()
+    const family = String(predictor.source_family || '').trim().toLowerCase()
+    const sourceSeries = String(predictor.recipe?.source_series || '').trim().toLowerCase()
+    return predictor.recipe?.required_series_types?.includes('funding_events') || ['funding_rate', 'funding'].includes(field) || ['funding', 'funding_events'].includes(family) || ['funding', 'funding_events'].includes(sourceSeries)
+  })
+}
+
+const TRADE_INSTRUMENT_BY_TYPE = Object.freeze({
+  spot: 'BINANCE_SPOT',
+  perpetual: 'BINANCE_USDM_PERPETUAL',
+  perp: 'BINANCE_USDM_PERPETUAL',
+  usdm_perpetual: 'BINANCE_USDM_PERPETUAL',
+  binance_spot: 'BINANCE_SPOT',
+  binance_usdm_perpetual: 'BINANCE_USDM_PERPETUAL',
+  dated_future: 'BINANCE_USDM_DATED_FUTURE',
+  dated_futures: 'BINANCE_USDM_DATED_FUTURE',
+  binance_usdm_dated_future: 'BINANCE_USDM_DATED_FUTURE',
+})
+
+function normalizedTradeInstrument(value, label) {
+  if (value && typeof value === 'object') {
+    if (Object.hasOwn(value, '$gene')) throw new Error(`${label} cannot be a structural gene; freeze one instrument type per strategy version`)
+    value = value.instrument_type ?? value.type ?? value.instrument
+  }
+  const normalized = String(value || '').trim().toLowerCase().replaceAll('-', '_')
+  const instrument = TRADE_INSTRUMENT_BY_TYPE[normalized]
+  if (!instrument) throw new Error(`${label} is not a supported fixed crypto instrument type`)
+  return instrument
+}
+
+/**
+ * Freeze the actual trade universe before features exist. A broad physical
+ * lake may contain eight assets and several crypto instruments, but a family
+ * is allowed to research only the assets and one instrument type declared by
+ * its precommit. Multi-instrument chromosomes need a different episode model
+ * and therefore remain fail-closed rather than relying on anti-overlap order.
+ */
+export function derivePrecommitTradeScopeV5(precommit, { candidateTemplate = null } = {}) {
+  if (!precommit || typeof precommit !== 'object') throw new Error('trade scope requires a frozen precommit')
+  const contract = precommit.tradable_instrument_contract
+  if (!contract || contract.universe !== 'CRYPTO_ONLY' || !Array.isArray(contract.instruments) || !contract.instruments.length) throw new Error('precommit must freeze at least one crypto instrument declaration')
+  const normalizedRows = contract.instruments.map((row, index) => ({
+    instrument: normalizedTradeInstrument(row, `precommit tradable instrument ${index}`),
+    asset: row && typeof row === 'object' && row.asset !== undefined ? String(row.asset).trim().toLowerCase() : null,
+  }))
+  const instruments = [...new Set(normalizedRows.map(row => row.instrument))]
+  if (instruments.length !== 1) throw new Error('precommit must freeze exactly one crypto instrument type per strategy version')
+  const instrument = instruments[0]
+  if (instrument === 'BINANCE_USDM_DATED_FUTURE') throw new Error('dated-future research requires a frozen contract-selection rule and is not supported by the single-instrument v5 episode model')
+  const embeddedAssets = [...new Set(normalizedRows.map(row => row.asset).filter(Boolean))].sort()
+  if (embeddedAssets.some(value => !DATA_V5_ASSETS.includes(value))) throw new Error('precommit instrument declarations contain an unsupported crypto asset')
+  const declaredAssets = [...new Set((precommit.trade_assets || []).map(value => String(value || '').trim().toLowerCase()))].sort()
+  if (declaredAssets.length && embeddedAssets.length && stable(declaredAssets) !== stable(embeddedAssets)) throw new Error('precommit trade_assets differ from embedded instrument assets')
+  const tradeAssets = declaredAssets.length ? declaredAssets : embeddedAssets
+  if (!tradeAssets.length || tradeAssets.some(value => !DATA_V5_ASSETS.includes(value))) throw new Error('precommit must freeze a non-empty supported crypto trade_assets scope')
+  if (candidateTemplate) {
+    if (!Object.hasOwn(candidateTemplate, 'instrument_type')) throw new Error('evaluator candidate_template must freeze instrument_type')
+    const candidateInstrument = normalizedTradeInstrument(candidateTemplate.instrument_type, 'evaluator candidate instrument_type')
+    if (candidateInstrument !== instrument) throw new Error('evaluator candidate instrument_type differs from the precommit trade instrument')
+  }
+  return { trade_assets: tradeAssets, instrument }
+}
+
+function roleSourceReferences(roleSources, role, sourceParts, predictorRegistry = null) {
   const lower = role.toLowerCase()
   const supplied = roleSources[lower] ?? roleSources[`${lower}s`] ?? roleSources[role]
   if (supplied !== undefined) {
@@ -570,13 +650,22 @@ function roleSourceReferences(roleSources, role, sourceParts) {
   // per opportunity window.  The inference is deterministic and still
   // requires every physical partition to pass the custody verifier below.
   const inferred = []
+  const hasHydration = sourceParts.some(part => part.kind === 'HYDRATION')
   for (const part of sourceParts) for (const capture of part.manifest.captures || []) {
-    const partition = role === 'MARK' ? (capture.mark_partition || (part.kind === 'ACQUISITION' && String(capture.series_type || '').toLowerCase() === 'mark_bars' ? capture.partition : null)) : capture.partition
+    // Once a frozen opportunity hydration exists, lifecycle marks must come
+    // from its exact 1-minute windows.  The broad acquisition's 4h mark plane
+    // remains valid feature context, but importing it into the execution role
+    // would create unrelated mark series and fail exact feature/mark binding.
+    const partition = role === 'MARK'
+      ? (part.kind === 'HYDRATION' ? capture.mark_partition : (!hasHydration && String(capture.series_type || '').toLowerCase() === 'mark_bars' ? capture.partition : null))
+      : capture.partition
     if (!partition) continue
     const type = String(capture.series_type || '').toLowerCase()
-    const isFeature = part.kind === 'ACQUISITION' && ['signal_bars', 'raw_signal_bars', 'raw_feature_input', 'context_bars', 'raw_context_bars', 'macro_bars'].includes(type)
+    const isFundingContext = role === 'FEATURE' && predictorRegistryRequiresFunding(predictorRegistry) && type === 'funding_events'
+    const isTradeableSignal = ['signal_bars', 'raw_signal_bars', 'raw_feature_input'].includes(type) && capture.tradeable !== false
+    const isFeature = part.kind === 'ACQUISITION' && (isTradeableSignal || ['context_bars', 'raw_context_bars', 'macro_bars'].includes(type) || isFundingContext)
     const isOpportunity = part.kind === 'HYDRATION' && role !== 'FEATURE' && role !== 'MARK'
-    const isMark = role === 'MARK' && (part.kind === 'HYDRATION' || type === 'mark_bars' || String(capture.series_role || '').toUpperCase() === 'MARK')
+    const isMark = role === 'MARK' && (part.kind === 'HYDRATION' ? Boolean(capture.mark_partition) : !hasHydration && (type === 'mark_bars' || String(capture.series_role || '').toUpperCase() === 'MARK'))
     if ((role === 'FEATURE' && isFeature) || (role === 'LABEL' && isOpportunity) || (role === 'EXECUTION' && isOpportunity) || isMark) inferred.push({ path: partition.path, sha256: partition.sha256 })
   }
   const unique = [...new Map(inferred.map(reference => [reference.path, reference])).values()].sort((a, b) => a.path.localeCompare(b.path))
@@ -590,7 +679,7 @@ function sourceRoleCaptures(sourceParts, role, sourceReferences, root) {
     // raw_* aliases are retained for a raw capture, but explicit role-input
     // aliases (raw_label_input/raw_execution_input) are intentionally absent:
     // those names describe a pre-authored role, not an exchange observation.
-    FEATURE: new Set(['signal_bars', 'raw_signal_bars', 'raw_feature_input', 'context_bars', 'raw_context_bars', 'macro_bars', 'SIGNAL_BARS', 'RAW_SIGNAL_BARS', 'RAW_FEATURE_INPUT', 'CONTEXT_BARS', 'RAW_CONTEXT_BARS', 'MACRO_BARS']),
+    FEATURE: new Set(['signal_bars', 'raw_signal_bars', 'raw_feature_input', 'context_bars', 'raw_context_bars', 'macro_bars', 'funding_events', 'SIGNAL_BARS', 'RAW_SIGNAL_BARS', 'RAW_FEATURE_INPUT', 'CONTEXT_BARS', 'RAW_CONTEXT_BARS', 'MACRO_BARS', 'FUNDING_EVENTS']),
     LABEL: new Set(['opportunity_bars', 'raw_opportunity_bars', 'OPPORTUNITY_BARS', 'RAW_OPPORTUNITY_BARS']),
     EXECUTION: new Set(['opportunity_bars', 'execution_bars', 'raw_opportunity_bars', 'raw_execution_bars', 'OPPORTUNITY_BARS', 'EXECUTION_BARS', 'RAW_OPPORTUNITY_BARS', 'RAW_EXECUTION_BARS']),
     MARK: new Set(['mark_bars', 'raw_mark_bars', 'MARK_BARS', 'RAW_MARK_BARS']),
@@ -714,12 +803,9 @@ function predictorSourceAsset(row) {
   return String(value).toLowerCase()
 }
 
-function predictorSeriesIdentity(row) {
-  return `${predictorSourceAsset(row)}|${String(row.venue || '').toUpperCase()}|${String(row.instrument || '').toUpperCase()}|${String(row.symbol || '').toUpperCase()}|${String(row.series_id || '').toUpperCase()}`
-}
-
-function predictorSeriesBaseIdentity(row) {
-  return `${predictorSourceAsset(row)}|${String(row.venue || '').toUpperCase()}|${String(row.instrument || '').toUpperCase()}|${String(row.symbol || '').toUpperCase()}`
+function predictorSeriesIdentity(row, capture = null) {
+  const discriminator = row.series_id ?? row.series_type ?? row.series_role ?? capture?.series_id ?? capture?.series_type ?? capture?.series_role ?? row.interval ?? row.timeframe ?? capture?.interval ?? ''
+  return `${predictorSourceAsset(row)}|${String(row.venue || '').toUpperCase()}|${String(row.instrument || '').toUpperCase()}|${String(row.symbol || '').toUpperCase()}|${String(discriminator).toUpperCase()}`
 }
 
 function referenceSeriesMatchesKey(reference, seriesKey) {
@@ -729,11 +815,15 @@ function referenceSeriesMatchesKey(reference, seriesKey) {
   return !reference.series_id && seriesKey.startsWith(`${base}|`)
 }
 
+function predictorSourceAliases(raw, capture = null) {
+  return [raw.series_id, raw.series_type, raw.series_role, raw.interval, raw.timeframe, capture?.series_id, capture?.series_type, capture?.series_role, capture?.interval, capture?.timeframe]
+    .filter(value => value !== undefined && value !== null).map(value => String(value).trim().toLowerCase())
+}
+
 function predictorSourceSeriesMatches(raw, predictor, recipe, capture) {
   const declared = String(recipe.source_series).trim().toLowerCase()
   if (recipe.series_scope === 'EXPLICIT_REFERENCE_SERIES') return true
-  const actual = [raw.series_id, raw.series_type, raw.series_role, raw.interval, raw.timeframe, capture?.series_id, capture?.series_type, capture?.series_role, capture?.interval, capture?.timeframe, predictor.source_family]
-    .filter(value => value !== undefined && value !== null).map(value => String(value).trim().toLowerCase())
+  const actual = predictorSourceAliases(raw, capture)
   if (declared === 'same_series' || declared === 'same_asset_venue_instrument_symbol') return true
   if (!actual.includes(declared)) throw new Error(`predictor ${predictor.id} source series ${recipe.source_series} is not bound to the physical source series`)
   return true
@@ -747,15 +837,42 @@ function predictorObservation(raw, capture) {
   const expectedBoundary = step > 0 ? event + step : event
   const close = raw.close_time === undefined || raw.close_time === null ? null : timestamp(raw.close_time)
   const irregular = close !== null && step > 0 && close < expectedBoundary - 1000
-  return { raw, event, availability, closed: raw.is_closed !== false, irregular, series: predictorSeriesIdentity(raw), capture }
+  return { raw, event, availability, closed: raw.is_closed !== false, irregular, series: predictorSeriesIdentity(raw, capture), capture }
+}
+
+function eventLowerBound(observations, target) {
+  let low = 0; let high = observations.length
+  while (low < high) { const middle = (low + high) >>> 1; if (observations[middle].event < target) low = middle + 1; else high = middle }
+  return low
+}
+
+function eventUpperBound(observations, target) {
+  let low = 0; let high = observations.length
+  while (low < high) { const middle = (low + high) >>> 1; if (observations[middle].event <= target) low = middle + 1; else high = middle }
+  return low
+}
+
+function sameAssetFundingObservation(primary, observation) {
+  const primaryAsset = predictorSourceAsset(primary)
+  return predictorSourceAsset(observation.raw) === primaryAsset && String(observation.raw.venue || '').toUpperCase() === String(primary.venue || '').toUpperCase() && String(observation.raw.symbol || '').toUpperCase() === `${primaryAsset.toUpperCase()}USDT` && String(observation.raw.instrument || '').toUpperCase() === 'BINANCE_USDM_PERPETUAL' && predictorSourceAliases(observation.raw, observation.capture).some(value => ['funding', 'funding_events'].includes(value))
 }
 
 function recipeWindowForObservation(raw, predictor, recipe, histories, capture, currentDecision, currentEvent) {
-  predictorSourceSeriesMatches(raw, predictor, recipe, capture)
   let history
   let cutoffEvent = currentEvent
   let maxStaleness = null
-  if (recipe.series_scope === 'EXPLICIT_REFERENCE_SERIES') {
+  const fundingReference = recipe.series_scope === 'SAME_ASSET_FUNDING_SERIES'
+  if (fundingReference) {
+    const matches = [...histories.entries()].filter(([, observations]) => observations.length && sameAssetFundingObservation(raw, observations[0]))
+    if (matches.length > 1) throw new Error(`predictor ${predictor.id} funding source matches multiple physical same-asset series`)
+    history = (matches[0]?.[1] || []).map(observation => {
+      const settlementSlot = timestamp(observation.raw.settlement_slot)
+      if (!Number.isFinite(settlementSlot)) throw new Error(`predictor ${predictor.id} funding observation lacks its canonical settlement_slot`)
+      return { ...observation, event: settlementSlot }
+    }).sort((left, right) => left.event - right.event || left.availability - right.availability)
+    cutoffEvent = currentDecision
+    maxStaleness = Number(recipe.max_staleness_ms)
+  } else if (recipe.series_scope === 'EXPLICIT_REFERENCE_SERIES') {
     const matches = [...histories.entries()].filter(([seriesKey]) => referenceSeriesMatchesKey(recipe.reference_series, seriesKey)).flatMap(([, values]) => values)
     history = matches.filter(observation => {
       const reference = recipe.reference_series
@@ -767,17 +884,21 @@ function recipeWindowForObservation(raw, predictor, recipe, histories, capture, 
     })
     cutoffEvent = currentDecision
     maxStaleness = Number(recipe.max_staleness_ms)
-  } else history = histories.get(predictorSeriesIdentity(raw)) || []
-  let eligible = history.filter(observation => observation.closed && !observation.irregular && observation.event <= cutoffEvent && observation.availability <= currentDecision)
-  if (Number(predictor.lookback_ms) > 0) eligible = eligible.filter(observation => observation.event >= cutoffEvent - Number(predictor.lookback_ms))
+  } else { predictorSourceSeriesMatches(raw, predictor, recipe, capture); history = histories.get(predictorSeriesIdentity(raw, capture)) || [] }
+  const lower = Number(predictor.lookback_ms) > 0 ? eventLowerBound(history, cutoffEvent - Number(predictor.lookback_ms)) : 0
+  const upper = fundingReference ? eventLowerBound(history, cutoffEvent) : eventUpperBound(history, cutoffEvent)
+  let eligible = history.slice(lower, upper).filter(observation => observation.closed && !observation.irregular && (fundingReference ? observation.availability < currentDecision : observation.availability <= currentDecision))
   if (recipe.series_scope === 'EXPLICIT_REFERENCE_SERIES' && recipe.resample_policy === 'EXACT_EVENT') eligible = eligible.filter(observation => observation.event === currentEvent || observation.event === currentDecision)
   eligible.sort((left, right) => left.event - right.event)
-  if (recipe.current_observation_policy === 'EXCLUDE_CURRENT_COMPLETED') eligible = eligible.filter(observation => observation.event !== currentEvent)
-  if (recipe.series_scope === 'EXPLICIT_REFERENCE_SERIES' && recipe.lag_bars > 0) eligible = eligible.slice(0, Math.max(0, eligible.length - recipe.lag_bars))
+  if (recipe.current_observation_policy === 'EXCLUDE_CURRENT_COMPLETED') eligible = eligible.filter(observation => observation.event !== cutoffEvent)
+  if ((recipe.series_scope === 'EXPLICIT_REFERENCE_SERIES' || fundingReference) && recipe.lag_bars > 0) eligible = eligible.slice(0, Math.max(0, eligible.length - recipe.lag_bars))
   if (recipe.excluded_window_bars > 0) eligible = eligible.slice(0, Math.max(0, eligible.length - recipe.excluded_window_bars))
   const required = (recipe.kind === 'RETURN' || recipe.kind === 'RSI') ? recipe.lookback_bars + 1 : Math.max(1, recipe.lookback_bars)
   const window = eligible.slice(-required)
-  if (maxStaleness !== null && window.length && currentDecision - window.at(-1).availability > maxStaleness) return { sufficient: false, observations: window }
+  // Funding freshness is a property of the settlement event, not of when a
+  // delayed/recovered response happened to become available. Availability is
+  // enforced independently above as the strict PIT gate.
+  if (maxStaleness !== null && window.length && currentDecision - window.at(-1).event > maxStaleness) return { sufficient: false, observations: window }
   if (window.length < recipe.min_history || (recipe.kind !== 'FIELD' && window.length < required)) return { sufficient: false, observations: window }
   return { sufficient: true, observations: window }
 }
@@ -785,7 +906,6 @@ function recipeWindowForObservation(raw, predictor, recipe, histories, capture, 
 function evaluatePredictorRecipe(raw, predictor, role, { histories, capture, currentDecision, currentEvent } = {}) {
   const recipe = normalizePredictorRecipe(predictor, predictor.id)
   if (!recipe) return { value: coercePredictorScalar(predictorSourceValue(raw, predictor.source_field, role), predictor, role), availability: rowAvailability(raw), sufficient: true }
-  predictorSourceSeriesMatches(raw, predictor, recipe, capture)
   const windowResult = recipeWindowForObservation(raw, predictor, recipe, histories, capture, currentDecision, currentEvent)
   if (!windowResult.sufficient) return { value: null, availability: rowAvailability(raw), sufficient: false }
   const observations = windowResult.observations
@@ -932,6 +1052,41 @@ function deriveMarkRowsFromRaw(rawRows) {
   return rows.sort((left, right) => `${left.asset}|${left.venue}|${left.instrument}|${left.symbol}|${left.series_id}|${left.event_time}`.localeCompare(`${right.asset}|${right.venue}|${right.instrument}|${right.symbol}|${right.series_id}|${right.event_time}`))
 }
 
+function featureRowsFromSourceParts({ sourceParts, root, predictorRegistry, roleSources = {}, tradeScope = null } = {}) {
+  const registry = validatePredictorRegistry(predictorRegistry)
+  const references = roleSourceReferences(roleSources, 'FEATURE', sourceParts, registry)
+  const bounds = sourceRoleCaptures(sourceParts, 'FEATURE', references, root)
+  const isContext = bound => ['CONTEXT_BARS', 'RAW_CONTEXT_BARS', 'MACRO_BARS', 'CONTEXT', 'MACRO', 'FUNDING_EVENTS', 'FUNDING'].includes(String(bound.capture.series_type || bound.capture.series_role || '').toUpperCase())
+  let featureBounds = bounds.filter(bound => !isContext(bound)); let contextBounds = bounds.filter(isContext)
+  if (tradeScope) {
+    const assets = new Set(tradeScope.trade_assets)
+    featureBounds = featureBounds.filter(bound => assets.has(asset(bound.capture.asset)) && String(bound.capture.instrument).toUpperCase() === tradeScope.instrument)
+    const observedAssets = new Set(featureBounds.map(bound => asset(bound.capture.asset)))
+    const missingAssets = [...assets].filter(value => !observedAssets.has(value))
+    if (missingAssets.length) throw new Error(`FEATURE source inventory lacks the frozen trade instrument for asset(s): ${missingAssets.join(',')}`)
+    contextBounds = contextBounds.filter(bound => {
+      const type = String(bound.capture.series_type || '').toLowerCase()
+      return type !== 'funding_events' || assets.has(asset(bound.capture.asset))
+    })
+  }
+  if (featureBounds.some(bound => bound.capture.tradeable === false)) throw new Error('FEATURE source inventory contains a non-tradeable signal series')
+  const featureRows = []; const contextRows = []; const captureByRow = new WeakMap(); const contextCaptureByRow = new WeakMap()
+  for (const bound of featureBounds) for (const row of readBoundRoleRows(bound, 'FEATURE')) { featureRows.push(row); captureByRow.set(row, bound.capture) }
+  for (const bound of contextBounds) for (const row of readBoundRoleRows(bound, 'FEATURE')) { contextRows.push(row); contextCaptureByRow.set(row, bound.capture) }
+  if (predictorRegistryRequiresFunding(registry)) {
+    const fundingIdentities = contextBounds.filter(bound => String(bound.capture.series_type || '').toLowerCase() === 'funding_events').map(bound => `${asset(bound.capture.asset)}|${String(bound.capture.venue || 'BINANCE').toUpperCase()}`)
+    if (new Set(fundingIdentities).size !== fundingIdentities.length) throw new Error('FEATURE funding source inventory contains an ambiguous same-asset perpetual series')
+    const required = new Set(featureBounds.map(bound => `${asset(bound.capture.asset)}|${String(bound.capture.venue || 'BINANCE').toUpperCase()}`))
+    const observed = new Set(fundingIdentities)
+    const missing = [...required].filter(identity => !observed.has(identity))
+    if (missing.length) throw new Error(`FEATURE funding source inventory is incomplete for tradeable series: ${missing.join(',')}`)
+  }
+  const rows = deriveFeatureRowsFromRaw(featureRows, { capture: featureBounds[0]?.capture, predictorRegistry, contextRows, captureByRow, contextCaptureByRow })
+  const selectedBounds = [...featureBounds, ...contextBounds]
+  const selectedReferences = [...new Map(selectedBounds.map(bound => [bound.reference.path, bound.reference])).values()].sort((left, right) => left.path.localeCompare(right.path) || left.sha256.localeCompare(right.sha256))
+  return { rows, references: selectedReferences, bounds: selectedBounds, featureBounds, contextBounds }
+}
+
 /**
  * Produce role artifacts from partitions that are physically enumerated by a
  * verified, complete acquisition/hydration chain.  The function reads and
@@ -942,7 +1097,7 @@ function deriveMarkRowsFromRaw(rawRows) {
  */
 export function produceAuthoritativeRoleArtifacts({ root, plan, predictorRegistry, sourceManifestReference, sourceManifestSha256, sourceDatasetRootSha256, transformationCodeSha256, labelCodeSha256, executionCodeSha256, configSha256, precommitSha256, envelopeSha256, precommit, envelope, config, roleSources = {}, producerCodeReference = null } = {}) {
   if (!root || !plan || !predictorRegistry || !sourceManifestReference) throw new Error('authoritative role production requires a physical root, plan, registry, and source manifest')
-  validatePlan(plan); validatePredictorRegistry(predictorRegistry)
+  validatePlan(plan); const validatedPredictorRegistry = validatePredictorRegistry(predictorRegistry)
   const rootPath = resolve(root)
   const sourceContext = verifyAuthoritativeSourceChain(rootPath, sourceManifestReference, sourceManifestSha256, plan.content_sha256, 'authoritative role source bundle')
   const source = sourceContext.acquisition
@@ -954,28 +1109,64 @@ export function produceAuthoritativeRoleArtifacts({ root, plan, predictorRegistr
   if (sourceDatasetRootSha256 && sourceDatasetRootSha256 !== derivedDatasetRoot) throw new Error('source dataset root hash does not match the verified physical source inventory')
 
   const rawInputs = {}; const sourceReferences = {}; const boundInputs = {}
+  // Production entry points accept only strategy-precommit/1 and therefore
+  // always freeze this scope. Lower-level mechanics fixtures use explicit
+  // fixture schemas so they can test multi-instrument source plumbing without
+  // masquerading as a research-authoritative strategy definition.
+  const tradeScope = precommit?.schema === 'strategy-precommit/1' ? derivePrecommitTradeScopeV5(precommit) : null
+  const markNotApplicable = envelope?.schema === 'strategy-v5-opportunity-envelope/2'
+    && Array.isArray(envelope.windows)
+    && envelope.windows.length > 0
+    && envelope.windows.every(window => String(window.instrument).toUpperCase() === 'BINANCE_SPOT')
   for (const role of ['FEATURE', 'LABEL', 'EXECUTION', 'MARK']) {
-    const references = roleSourceReferences(roleSources, role, sourceParts)
-    const bounds = sourceRoleCaptures(sourceParts, role, references, rootPath)
     if (role === 'FEATURE') {
-      const isContext = bound => ['CONTEXT_BARS', 'RAW_CONTEXT_BARS', 'MACRO_BARS', 'CONTEXT', 'MACRO'].includes(String(bound.capture.series_type || bound.capture.series_role || '').toUpperCase())
-      const featureBounds = bounds.filter(bound => !isContext(bound)); const contextBounds = bounds.filter(isContext); const featureRows = []; const contextRows = []; const captureByRow = new WeakMap(); const contextCaptureByRow = new WeakMap()
-      for (const bound of featureBounds) for (const row of readBoundRoleRows(bound, role)) { featureRows.push(row); captureByRow.set(row, bound.capture) }
-      for (const bound of contextBounds) for (const row of readBoundRoleRows(bound, role)) { contextRows.push(row); contextCaptureByRow.set(row, bound.capture) }
-      rawInputs[role] = { rows: featureRows, contextRows, captureByRow, contextCaptureByRow, bounds }
-    } else rawInputs[role] = { rows: role === 'MARK' || !sourceContext.hydration ? bounds.flatMap(bound => readBoundRoleRows(bound, role)) : [], bounds }
+      const featureInput = featureRowsFromSourceParts({ sourceParts, root: rootPath, predictorRegistry, roleSources, tradeScope })
+      rawInputs[role] = featureInput
+      sourceReferences[role] = featureInput.references
+      boundInputs[role] = featureInput.bounds
+      continue
+    }
+    if (role === 'MARK' && markNotApplicable) {
+      const supplied = roleSources.mark ?? roleSources.marks ?? roleSources.MARK
+      if (supplied !== undefined && (Array.isArray(supplied) ? supplied.length : true)) throw new Error('spot-only MARK role must be empty; derivative mark sources are not applicable')
+      rawInputs[role] = { rows: [], bounds: [] }
+      sourceReferences[role] = []
+      boundInputs[role] = []
+      continue
+    }
+    const references = roleSourceReferences(roleSources, role, sourceParts, validatedPredictorRegistry)
+    const bounds = sourceRoleCaptures(sourceParts, role, references, rootPath)
+    rawInputs[role] = { rows: role === 'MARK' || !sourceContext.hydration ? bounds.flatMap(bound => readBoundRoleRows(bound, role)) : [], bounds }
     sourceReferences[role] = references
     boundInputs[role] = bounds
   }
 
-  let featureRows = deriveFeatureRowsFromRaw(rawInputs.FEATURE.rows, { capture: rawInputs.FEATURE.bounds[0]?.capture, predictorRegistry, contextRows: rawInputs.FEATURE.contextRows, captureByRow: rawInputs.FEATURE.captureByRow, contextCaptureByRow: rawInputs.FEATURE.contextCaptureByRow })
+  let featureRows = rawInputs.FEATURE.rows
   // Full 4h acquisition is intentionally broader than the frozen opportunity
   // envelope.  Only features with a matching hydrated opportunity may become
   // eligible role rows; otherwise a caller could silently turn an unhydrated
   // historical bar into an evaluated trade.
   if (sourceContext.hydration) {
-    const windows = (sourceContext.hydration.captures || []).map(hydrationWindowForIdentity)
-    featureRows = featureRows.filter(row => windows.some(window => asset(row.asset) === window.asset && String(row.instrument).toUpperCase() === window.instrument && String(row.symbol).toUpperCase() === window.symbol && timestamp(row.decision_time) >= window.start && timestamp(row.decision_time) <= window.end))
+    if (envelope?.schema === 'strategy-v5-opportunity-envelope/2') {
+      const sourceByIdentity = new Map()
+      for (const row of featureRows) {
+        const identity = `${asset(row.asset)}|${String(row.instrument).toUpperCase()}|${String(row.symbol).toUpperCase()}|${timestamp(row.decision_time)}`
+        if (sourceByIdentity.has(identity)) throw new Error(`derived feature inventory is ambiguous for v2 opportunity identity: ${identity}`)
+        sourceByIdentity.set(identity, row)
+      }
+      const selected = []
+      for (const window of envelope.windows || []) {
+        const identity = `${asset(window.asset)}|${String(window.instrument).toUpperCase()}|${String(window.symbol).toUpperCase()}|${timestamp(window.decision_time)}`
+        const row = sourceByIdentity.get(identity)
+        if (!row || row.episode_id !== window.episode_id || row.signal_id !== window.signal_id || hash(row) !== window.source_row_sha256) throw new Error(`v2 opportunity window is not exactly bound to one derived feature row: ${identity}`)
+        selected.push(row)
+      }
+      if (!selected.length || new Set(selected.map(row => `${row.signal_id}|${row.episode_id}`)).size !== selected.length) throw new Error('v2 opportunity feature inventory is empty or duplicated')
+      featureRows = selected
+    } else {
+      const windows = (sourceContext.hydration.captures || []).map(hydrationWindowForIdentity)
+      featureRows = featureRows.filter(row => windows.some(window => asset(row.asset) === window.asset && String(row.instrument).toUpperCase() === window.instrument && String(row.symbol).toUpperCase() === window.symbol && timestamp(row.decision_time) >= window.start && timestamp(row.decision_time) <= window.end))
+    }
     rawInputs.LABEL.rows = hydrationOpportunityRowsFromFeatures(rawInputs.LABEL.bounds, featureRows, envelope)
     rawInputs.EXECUTION.rows = hydrationOpportunityRowsFromFeatures(rawInputs.EXECUTION.bounds, featureRows, envelope)
   }
@@ -1032,6 +1223,127 @@ export function produceAuthoritativeRoleArtifacts({ root, plan, predictorRegistr
   return roleValues
 }
 
+function validateFeatureBuildInputs({ plan, acquisition, predictorRegistry, precommit, timeframeRequirements, root, fixtureOnly = false } = {}) {
+  validatePlan(plan); assertOwnHash(plan, DATA_V5.plan, 'feature-build plan')
+  const registry = validatePredictorRegistry(predictorRegistry)
+  assertOwnHash(acquisition, DATA_V5.acquisition, 'feature-build acquisition')
+  if (acquisition.plan_sha256 !== plan.content_sha256) throw new Error('feature-build acquisition is bound to a different plan')
+  if (!precommit || typeof precommit !== 'object' || precommit.content_sha256 !== ownHash(precommit)) throw new Error('feature-build precommit is missing or tampered')
+  assertOwnHash(timeframeRequirements, 'strategy-v5-timeframe-requirements/1', 'feature-build timeframe requirements')
+  if (timeframeRequirements.precommit_sha256 !== precommit.content_sha256 || timeframeRequirements.predictor_registry_sha256 !== predictorRegistry.content_sha256) throw new Error('feature-build requirements are not bound to the precommit and predictor registry')
+  const expectedRequirements = makeTimeframeRequirementsFromPredictorRegistry({ predictorRegistry, precommitSha256: precommit.content_sha256 })
+  if (expectedRequirements.content_sha256 !== timeframeRequirements.content_sha256) throw new Error('feature-build requirements differ from the deterministic predictor-registry requirements')
+  if (acquisition.fixture_only === true && fixtureOnly !== true) throw new Error('fixture-only acquisition cannot produce an authoritative feature source')
+  verifyAuthoritativeStaging({ manifest: acquisition, root, plan, planSha256: plan.content_sha256, requireComplete: true, allowFixture: fixtureOnly === true })
+  const promotedCoverage = resolvePromotedCoverage({ plan, acquisition, timeframeRequirements, root, requireParquet: false, requireFrozenRequirements: true })
+  if (promotedCoverage.status !== 'READY' || promotedCoverage.declared_requirements_complete !== true) throw new Error(`feature-build declared price/funding coverage is blocked: ${promotedCoverage.limitations.join(';')}`)
+  return { registry, promotedCoverage }
+}
+
+/** Build the pre-hydration feature plane directly from the verified acquisition.
+ * The resulting manifest is self-contained and deterministically re-openable;
+ * no caller-authored feature row can become an opportunity input. */
+export function produceAuthoritativeFeatureSource({ root, rootReference = null, plan, acquisition, predictorRegistry, precommit, timeframeRequirements, roleSources = {}, fixtureOnly = false } = {}) {
+  if (!root) throw new Error('feature-build requires a physical staging root')
+  const rootPath = resolve(root); const { promotedCoverage } = validateFeatureBuildInputs({ plan, acquisition, predictorRegistry, precommit, timeframeRequirements, root: rootPath, fixtureOnly })
+  const sourceDatasetRootSha256 = computeSourceDatasetRootSha256({ manifest: acquisition, root: rootPath })
+  const sourceParts = [{ manifest: acquisition, kind: 'ACQUISITION' }]
+  const tradeScope = derivePrecommitTradeScopeV5(precommit)
+  const featureInput = featureRowsFromSourceParts({ sourceParts, root: rootPath, predictorRegistry, roleSources, tradeScope })
+  const rows = roleSort(featureInput.rows)
+  validateFeatureRows(rows, { predictorRegistry, plan, candidatePredicates: [] })
+  if (!rows.length) throw new Error('feature-build produced no completed tradeable feature rows')
+  const canonical = canonicalRows(rows); const digest = hash(canonical); const inventory = featureInput.references.map(reference => ({ path: reference.path, sha256: reference.sha256 }))
+  const inventorySha256 = hash(inventory); const artifactPath = `derived/feature-source/features-${inventorySha256}-${digest}.jsonl`; const artifactAbsolute = safePath(rootPath, artifactPath, 'feature-build artifact')
+  mkdirSync(dirname(artifactAbsolute), { recursive: true })
+  if (existsSync(artifactAbsolute)) { if (hash(readFileSync(artifactAbsolute)) !== digest) throw new Error('feature-build content-addressed artifact collision') } else writeFileSync(artifactAbsolute, canonical, { flag: 'wx' })
+  const planReference = persistPhysicalJsonInput(rootPath, plan, plan.content_sha256, 'feature-source-plan')
+  const acquisitionReference = persistPhysicalJsonInput(rootPath, acquisition, acquisition.content_sha256, 'feature-source-acquisition')
+  const predictorRegistryReference = persistPhysicalJsonInput(rootPath, predictorRegistry, predictorRegistry.content_sha256, 'feature-source-predictor-registry')
+  const precommitReference = persistPhysicalJsonInput(rootPath, precommit, precommit.content_sha256, 'feature-source-precommit')
+  const requirementsReference = persistPhysicalJsonInput(rootPath, timeframeRequirements, timeframeRequirements.content_sha256, 'feature-source-timeframe-requirements')
+  const promotedCoverageReference = persistPhysicalJsonInput(rootPath, promotedCoverage, promotedCoverage.content_sha256, 'feature-source-promoted-coverage')
+  const producerCodeReference = persistPhysicalByteReference(rootPath, `lineage/producer-code/feature-source-${DATA_V5_PRODUCER_CODE_SHA256}.mjs`, DATA_V5_PRODUCER_CODE_BYTES, 'feature-source producer code')
+  const value = withHash({
+    schema: DATA_V5.featureSource, version: 1, status: 'VERIFIED_FEATURES', fixture_only: fixtureOnly === true, provenance: fixtureOnly === true ? 'FIXTURE_INJECTED' : (acquisition.provenance || 'PUBLIC_ADAPTER_RECOMPUTED'),
+    plan_sha256: plan.content_sha256, plan_reference: planReference,
+    acquisition_sha256: acquisition.content_sha256, acquisition_reference: acquisitionReference,
+    source_dataset_root_sha256: sourceDatasetRootSha256,
+    predictor_registry_sha256: predictorRegistry.content_sha256, predictor_registry_reference: predictorRegistryReference,
+    precommit_sha256: precommit.content_sha256, precommit_reference: precommitReference,
+    requirements_sha256: timeframeRequirements.content_sha256, requirements_reference: requirementsReference,
+    promoted_coverage_sha256: promotedCoverage.content_sha256, promoted_coverage_reference: promotedCoverageReference,
+    producer_code_sha256: DATA_V5_PRODUCER_CODE_SHA256, producer_code_reference: producerCodeReference,
+    trade_assets: tradeScope.trade_assets, trade_instrument: tradeScope.instrument,
+    source_inventory: inventory, source_inventory_sha256: inventorySha256,
+    artifact: { role: 'FEATURE', path: artifactPath, sha256: digest, bytes: Buffer.byteLength(canonical), row_count: rows.length, rows_sha256: hash(rows), field_names: fieldNames(rows), format: 'JSONL', storage_role: 'STAGING', authoritative: false },
+    root_reference: rootReference || portableRoot(rootPath), storage_role: 'STAGING', format: 'JSONL', authoritative: false,
+    limitations: [...new Set(promotedCoverage.limitations)].sort(),
+  })
+  return { manifest: value, rows, promotedCoverage }
+}
+
+/** Reopen and independently recompute a feature-source manifest.  This is the
+ * authority check used by opportunity-envelope and artifact-build. */
+export function validateAuthoritativeFeatureSource({ manifest, root, expectedPlanSha256 = null, expectedAcquisitionSha256 = null, expectedPredictorRegistrySha256 = null, expectedPrecommitSha256 = null, allowFixture = false } = {}) {
+  assertOwnHash(manifest, DATA_V5.featureSource, 'authoritative feature source')
+  if (manifest.fixture_only === true && allowFixture !== true) throw new Error('fixture-only feature source cannot enter an authoritative research boundary')
+  if (!root) throw new Error('authoritative feature-source verification requires its physical root')
+  const rootPath = resolve(root)
+  const plan = verifyPhysicalJsonReference(rootPath, manifest.plan_reference, manifest.plan_sha256, 'feature-source plan')
+  const acquisition = verifyPhysicalJsonReference(rootPath, manifest.acquisition_reference, manifest.acquisition_sha256, 'feature-source acquisition')
+  const predictorRegistry = verifyPhysicalJsonReference(rootPath, manifest.predictor_registry_reference, manifest.predictor_registry_sha256, 'feature-source predictor registry')
+  const precommit = verifyPhysicalJsonReference(rootPath, manifest.precommit_reference, manifest.precommit_sha256, 'feature-source precommit')
+  const timeframeRequirements = verifyPhysicalJsonReference(rootPath, manifest.requirements_reference, manifest.requirements_sha256, 'feature-source timeframe requirements')
+  const recordedCoverage = verifyPhysicalJsonReference(rootPath, manifest.promoted_coverage_reference, manifest.promoted_coverage_sha256, 'feature-source promoted coverage')
+  if (expectedPlanSha256 && manifest.plan_sha256 !== expectedPlanSha256) throw new Error('feature source is bound to a different plan')
+  if (expectedAcquisitionSha256 && manifest.acquisition_sha256 !== expectedAcquisitionSha256) throw new Error('feature source is bound to a different acquisition')
+  if (expectedPredictorRegistrySha256 && manifest.predictor_registry_sha256 !== expectedPredictorRegistrySha256) throw new Error('feature source is bound to a different predictor registry')
+  if (expectedPrecommitSha256 && manifest.precommit_sha256 !== expectedPrecommitSha256) throw new Error('feature source is bound to a different precommit')
+  const { promotedCoverage } = validateFeatureBuildInputs({ plan, acquisition, predictorRegistry, precommit, timeframeRequirements, root: rootPath, fixtureOnly: allowFixture === true })
+  if (promotedCoverage.content_sha256 !== recordedCoverage.content_sha256 || promotedCoverage.content_sha256 !== manifest.promoted_coverage_sha256) throw new Error('feature-source promoted coverage no longer recomputes exactly')
+  const sourceDatasetRootSha256 = computeSourceDatasetRootSha256({ manifest: acquisition, root: rootPath })
+  if (sourceDatasetRootSha256 !== manifest.source_dataset_root_sha256) throw new Error('feature-source physical dataset root changed')
+  if (manifest.producer_code_sha256 !== DATA_V5_PRODUCER_CODE_SHA256) throw new Error('feature-source producer code version is no longer registered')
+  verifyPhysicalByteReference(rootPath, manifest.producer_code_reference, manifest.producer_code_sha256, 'feature-source producer code')
+  const tradeScope = derivePrecommitTradeScopeV5(precommit)
+  if (stable(manifest.trade_assets) !== stable(tradeScope.trade_assets) || manifest.trade_instrument !== tradeScope.instrument) throw new Error('feature-source trade scope differs from the frozen precommit')
+  const featureInput = featureRowsFromSourceParts({ sourceParts: [{ manifest: acquisition, kind: 'ACQUISITION' }], root: rootPath, predictorRegistry, tradeScope })
+  const inventory = featureInput.references.map(reference => ({ path: reference.path, sha256: reference.sha256 }))
+  if (hash(inventory) !== manifest.source_inventory_sha256 || stable(inventory) !== stable(manifest.source_inventory)) throw new Error('feature-source physical input inventory changed')
+  const rows = roleSort(featureInput.rows); validateFeatureRows(rows, { predictorRegistry, plan, candidatePredicates: [] })
+  const canonical = canonicalRows(rows); const artifactPath = verifiedRegularPath(rootPath, manifest.artifact.path, 'feature-source artifact'); const bytes = readFileSync(artifactPath)
+  if (hash(bytes) !== manifest.artifact.sha256 || bytes.byteLength !== manifest.artifact.bytes || manifest.artifact.sha256 !== hash(canonical) || bytes.toString('utf8') !== canonical || manifest.artifact.row_count !== rows.length || manifest.artifact.rows_sha256 !== hash(rows) || stable(manifest.artifact.field_names) !== stable(fieldNames(rows))) throw new Error('feature-source artifact differs from deterministic physical-source recomputation')
+  return { manifest, plan, acquisition, predictorRegistry, precommit, timeframeRequirements, promotedCoverage, rows }
+}
+
+export function validateFeatureSubsetAgainstSource({ featureSourceManifest, root, finalFeatureReference, finalRoot = root, opportunityEnvelope = null } = {}) {
+  const source = validateAuthoritativeFeatureSource({ manifest: featureSourceManifest, root })
+  if (!finalFeatureReference?.path || !HASH_RE.test(String(finalFeatureReference.sha256 || ''))) throw new Error('final feature subset requires a physical JSONL reference')
+  const finalPath = verifiedRegularPath(resolve(finalRoot), finalFeatureReference.path, 'final feature subset')
+  const bytes = readFileSync(finalPath); if (hash(bytes) !== finalFeatureReference.sha256) throw new Error('final feature subset bytes are tampered')
+  const finalRows = readJsonl(finalPath); const sourceByIdentity = new Map(source.rows.map(row => [`${asset(row.asset)}|${String(row.venue).toUpperCase()}|${String(row.instrument).toUpperCase()}|${String(row.symbol).toUpperCase()}|${timestamp(row.decision_time)}`, row])); const finalByIdentity = new Map()
+  for (const row of finalRows) {
+    const identity = `${asset(row.asset)}|${String(row.venue).toUpperCase()}|${String(row.instrument).toUpperCase()}|${String(row.symbol).toUpperCase()}|${timestamp(row.decision_time)}`
+    if (!sourceByIdentity.has(identity) || stable(sourceByIdentity.get(identity)) !== stable(row)) throw new Error(`final feature subset differs from pre-hydration feature source: ${identity}`)
+    if (finalByIdentity.has(identity)) throw new Error(`final feature subset contains a duplicate opportunity identity: ${identity}`)
+    finalByIdentity.set(identity, row)
+  }
+  if (opportunityEnvelope) {
+    assertOwnHash(opportunityEnvelope, 'strategy-v5-opportunity-envelope/2', 'final feature opportunity envelope')
+    const expected = new Map()
+    for (const window of opportunityEnvelope.windows || []) {
+      const identity = `${asset(window.asset)}|BINANCE|${String(window.instrument).toUpperCase()}|${String(window.symbol).toUpperCase()}|${timestamp(window.decision_time)}`
+      if (expected.has(identity)) throw new Error(`v2 opportunity envelope contains a duplicate feature identity: ${identity}`)
+      const row = sourceByIdentity.get(identity)
+      if (!row || row.episode_id !== window.episode_id || row.signal_id !== window.signal_id || hash(row) !== window.source_row_sha256) throw new Error(`v2 opportunity window is not exactly bound to its feature-source row: ${identity}`)
+      expected.set(identity, row)
+    }
+    if (!expected.size || expected.size !== finalByIdentity.size || [...expected.keys()].some(identity => !finalByIdentity.has(identity))) throw new Error('final feature subset does not exactly equal the complete v2 opportunity inventory')
+  }
+  return true
+}
+
 function copyPhysicalJsonReference(sourceRoot, targetRoot, reference, label) {
   const source = safePath(sourceRoot, reference.path, label)
   if (!existsSync(source)) throw new Error(`${label} source is missing or tampered: ${reference.path}`)
@@ -1072,6 +1384,25 @@ function copyAcquisitionChainFiles(sourceRoot, targetRoot, acquisitionManifest) 
   }
 }
 
+function copyHydrationChainFiles(sourceRoot, targetRoot, hydrationManifest) {
+  if (!hydrationManifest || hydrationManifest.schema !== DATA_V5.hydration) throw new Error('source bundle hydration manifest has an invalid schema')
+  const paths = new Set()
+  for (const capture of hydrationManifest.captures || []) {
+    for (const partition of [capture.partition, capture.mark_partition].filter(Boolean)) if (partition.path) paths.add(partition.path)
+    for (const receipt of [...(capture.source_receipts || []), ...(capture.mark_source_receipts || [])]) {
+      if (receipt.path) paths.add(receipt.path)
+      const normalized = verifyNormalizedReceipt(sourceRoot, receipt, 'opportunity hydration normalized source receipt')
+      for (const raw of normalized.raw_receipts || []) if (raw.path) paths.add(raw.path)
+    }
+  }
+  for (const relativePath of paths) {
+    const source = safePath(sourceRoot, relativePath, 'opportunity hydration chain file')
+    if (!existsSync(source)) throw new Error(`opportunity hydration chain file is missing: ${relativePath}`)
+    const target = safePath(targetRoot, relativePath, 'opportunity hydration chain file'); mkdirSync(dirname(target), { recursive: true }); const bytes = readFileSync(source)
+    if (existsSync(target)) { if (hash(readFileSync(target)) !== hash(bytes)) throw new Error(`opportunity hydration chain content-addressed collision: ${relativePath}`) } else writeFileSync(target, bytes, { flag: 'wx' })
+  }
+}
+
 function copySourceChainFiles(sourceRoot, targetRoot, sourceContext) {
   if (sourceContext.bundle) {
     for (const reference of [sourceContext.bundle.acquisition_reference, sourceContext.bundle.hydration_reference]) {
@@ -1085,23 +1416,7 @@ function copySourceChainFiles(sourceRoot, targetRoot, sourceContext) {
   const manifests = [sourceContext.acquisition, sourceContext.hydration].filter(Boolean)
   for (const manifest of manifests) {
     if (manifest.schema === DATA_V5.acquisition) copyAcquisitionChainFiles(sourceRoot, targetRoot, manifest)
-    else if (manifest.schema === DATA_V5.hydration) {
-      const paths = new Set()
-      for (const capture of manifest.captures || []) {
-        for (const partition of [capture.partition, capture.mark_partition].filter(Boolean)) if (partition.path) paths.add(partition.path)
-        for (const receipt of [...(capture.source_receipts || []), ...(capture.mark_source_receipts || [])]) {
-          if (receipt.path) paths.add(receipt.path)
-          const normalized = verifyNormalizedReceipt(sourceRoot, receipt, 'opportunity hydration normalized source receipt')
-          for (const raw of normalized.raw_receipts || []) if (raw.path) paths.add(raw.path)
-        }
-      }
-      for (const relativePath of paths) {
-        const source = safePath(sourceRoot, relativePath, 'opportunity hydration chain file')
-        if (!existsSync(source)) throw new Error(`opportunity hydration chain file is missing: ${relativePath}`)
-        const target = safePath(targetRoot, relativePath, 'opportunity hydration chain file'); mkdirSync(dirname(target), { recursive: true }); const bytes = readFileSync(source)
-        if (existsSync(target)) { if (hash(readFileSync(target)) !== hash(bytes)) throw new Error(`opportunity hydration chain content-addressed collision: ${relativePath}`) } else writeFileSync(target, bytes, { flag: 'wx' })
-      }
-    }
+    else if (manifest.schema === DATA_V5.hydration) copyHydrationChainFiles(sourceRoot, targetRoot, manifest)
   }
 }
 
@@ -1116,21 +1431,98 @@ function copyRoleDerivationChainFiles(sourceRoot, targetRoot, receipt, label = '
   }
 }
 
-function verifyCaptureCustody(capture, root) {
-  if (!capture || capture.unavailable === true) return true
+const ACQUISITION_SERIES_IDENTITY_FIELDS = Object.freeze(['asset', 'venue', 'instrument', 'symbol', 'interval', 'series_type', 'series_role'])
+
+function normalizedSeriesIdentityField(field, value) {
+  if (field === 'asset') return String(value || '').toLowerCase()
+  if (['venue', 'instrument', 'symbol', 'series_role'].includes(field)) return String(value || '').toUpperCase()
+  return String(value || '').toLowerCase()
+}
+
+function verifyCaptureSeriesBinding(capture, series, planSha256 = null) {
+  if (!capture || !series) throw new Error('acquisition capture requires its exact frozen plan series')
+  if (seriesKey(capture) !== seriesKey(series)) throw new Error(`acquisition capture identity differs from the frozen plan series: ${seriesKey(capture)}`)
+  const expectedSeriesSha256 = hash(series)
+  if (capture.series_sha256 !== expectedSeriesSha256) throw new Error(`acquisition capture series SHA differs from the frozen plan series: ${seriesKey(series)}`)
+  for (const [field, expected] of Object.entries(series)) {
+    if (field === 'trade_scope') continue
+    if (stable(capture[field]) !== stable(expected)) throw new Error(`acquisition capture field ${field} differs from the frozen plan series: ${seriesKey(series)}`)
+  }
+  if (planSha256 && !HASH_RE.test(String(planSha256))) throw new Error('acquisition capture plan SHA is invalid')
+  return expectedSeriesSha256
+}
+
+function verifyAcquisitionPartitionRows(capture, rows, series = null) {
+  const strict = Boolean(series || capture.series_sha256)
+  if (!strict) return true
+  const expected = series || capture
+  if (!Array.isArray(rows) || !rows.length) throw new Error(`acquisition partition has no rows: ${seriesKey(expected)}`)
+  for (const [index, row] of rows.entries()) {
+    if (!row || typeof row !== 'object' || Array.isArray(row)) throw new Error(`acquisition partition row ${index + 1} is not an object: ${seriesKey(expected)}`)
+    for (const field of ACQUISITION_SERIES_IDENTITY_FIELDS) {
+      if (row[field] === undefined && field === 'series_type') continue
+      const rowValue = field === 'series_type' ? (row.series_type ?? expected.series_type) : field === 'interval' ? (row.interval ?? row.timeframe) : row[field]
+      if (normalizedSeriesIdentityField(field, rowValue) !== normalizedSeriesIdentityField(field, expected[field])) throw new Error(`acquisition partition row ${index + 1} ${field} differs from its capture/plan series: ${seriesKey(expected)}`)
+    }
+    const rawEventTime = timestamp(row.raw_event_time ?? row.event_time)
+    const eventTime = expected.series_type === 'funding_events' ? timestamp(row.settlement_slot) : timestamp(row.event_time ?? row.raw_event_time)
+    const availabilityTime = timestamp(row.availability_time)
+    if (!Number.isFinite(eventTime) || !Number.isFinite(rawEventTime) || !Number.isFinite(availabilityTime) || availabilityTime < rawEventTime) throw new Error(`acquisition partition row ${index + 1} has invalid event/availability time: ${seriesKey(expected)}`)
+    if (series && (eventTime < timestamp(series.start_at) || eventTime > timestamp(series.end_at) || availabilityTime > timestamp(series.availability_cutoff_at))) throw new Error(`acquisition partition row ${index + 1} escapes the frozen plan bounds: ${seriesKey(series)}`)
+    if (['signal_bars', 'mark_bars', 'execution_bars'].includes(String(expected.series_type))) {
+      const prices = [Number(row.open), Number(row.high), Number(row.low), Number(row.close)]
+      if (!prices.every(value => Number.isFinite(value) && value > 0) || Number(row.low) > Number(row.high) || Number(row.open) < Number(row.low) || Number(row.open) > Number(row.high) || Number(row.close) < Number(row.low) || Number(row.close) > Number(row.high)) throw new Error(`acquisition partition row ${index + 1} has an invalid OHLC schema: ${seriesKey(expected)}`)
+    } else if (expected.series_type === 'funding_events') {
+      if (!String(row.event_id || '') || !Number.isFinite(Number(row.funding_rate))) throw new Error(`acquisition funding row ${index + 1} has an invalid event schema: ${seriesKey(expected)}`)
+    }
+  }
+  return true
+}
+
+function verifyAcquisitionReceiptIdentity(receipt, capture, series = null, planSha256 = null) {
+  const strict = Boolean(series || capture.series_sha256)
+  if (!strict) return true
+  const expected = series || capture
+  const expectedSeriesSha256 = series ? hash(series) : capture.series_sha256
+  if (!HASH_RE.test(String(expectedSeriesSha256 || '')) || receipt.series_sha256 !== expectedSeriesSha256) throw new Error(`acquisition normalized receipt series SHA is not bound: ${seriesKey(expected)}`)
+  if (planSha256 && receipt.plan_sha256 !== planSha256) throw new Error(`acquisition normalized receipt plan SHA is not bound: ${seriesKey(expected)}`)
+  for (const field of ['asset', 'instrument', 'symbol', 'interval', 'series_type']) {
+    if (normalizedSeriesIdentityField(field, receipt.series?.[field]) !== normalizedSeriesIdentityField(field, expected[field])) throw new Error(`acquisition normalized receipt ${field} identity is not bound: ${seriesKey(expected)}`)
+  }
+  if (series && (receipt.request?.start_at !== series.start_at || receipt.request?.end_at !== series.end_at)) throw new Error(`acquisition normalized receipt time bounds are not bound: ${seriesKey(series)}`)
+  const permittedIntervals = expected.series_type === 'funding_events' ? new Set([String(expected.interval), '1h']) : new Set([String(expected.interval)])
+  for (const raw of receipt.raw_receipts || []) {
+    if (String(raw.source || '').toUpperCase() !== String(expected.instrument || '').toUpperCase()) throw new Error(`acquisition raw receipt instrument identity is not bound: ${seriesKey(expected)}`)
+    if (String(raw.request?.symbol || '').toUpperCase() !== String(expected.symbol || '').toUpperCase()) throw new Error(`acquisition raw receipt symbol identity is not bound: ${seriesKey(expected)}`)
+    if (!permittedIntervals.has(String(raw.request?.interval || ''))) throw new Error(`acquisition raw receipt cadence identity is not bound: ${seriesKey(expected)}`)
+  }
+  return true
+}
+
+function verifyCaptureCustody(capture, root, { series = null, planSha256 = null } = {}) {
+  if (!capture) throw new Error('capture custody requires a capture')
+  if (series) verifyCaptureSeriesBinding(capture, series, planSha256)
+  if (capture.unavailable === true) {
+    if (series && (capture.partition || capture.source_receipts?.length)) throw new Error(`unavailable acquisition capture claims physical custody: ${seriesKey(series)}`)
+    return true
+  }
   if (!capture.partition?.path) throw new Error(`capture ${capture.asset}/${capture.instrument} has no staging partition`)
+  if (capture.partition.format !== 'JSONL' || capture.partition.storage_role !== 'STAGING' || capture.partition.authoritative !== false) throw new Error(`capture ${capture.asset}/${capture.instrument} staging partition metadata is invalid`)
   const partitionPath = verifiedRegularPath(root, capture.partition.path, 'staging partition')
   if (!existsSync(partitionPath)) throw new Error(`staging partition is missing or tampered: ${capture.partition.path}`)
   const partitionBytes = readFileSync(partitionPath); if (hash(partitionBytes) !== capture.partition.sha256 || partitionBytes.byteLength !== capture.partition.bytes) throw new Error(`staging partition is missing or tampered: ${capture.partition.path}`)
+  const partitionRows = readJsonl(partitionPath)
+  if (!Number.isInteger(capture.partition.row_count) || capture.partition.row_count !== partitionRows.length) throw new Error(`staging partition row_count differs from physical rows: ${capture.partition.path}`)
+  verifyAcquisitionPartitionRows(capture, partitionRows, series)
   if (capture.adapter_code_sha256 || capture.producer_code_sha256) {
-    const partitionRows = readJsonl(partitionPath)
     const adapterHashes = [...new Set(partitionRows.map(row => row.adapter_code_sha256).filter(Boolean))]
     const producerHashes = [...new Set(partitionRows.map(row => row.producer_code_sha256).filter(Boolean))]
     if (capture.adapter_code_sha256 && (adapterHashes.length !== 1 || adapterHashes[0] !== capture.adapter_code_sha256)) throw new Error(`capture adapter code hash is not bound to every partition row: ${capture.asset}/${capture.instrument}`)
     if (capture.producer_code_sha256 && (producerHashes.length !== 1 || producerHashes[0] !== capture.producer_code_sha256)) throw new Error(`capture producer code hash is not bound to every partition row: ${capture.asset}/${capture.instrument}`)
   }
   const normalizedReceipts = []
-  for (const summary of capture.source_receipts || []) { const normalized = verifyNormalizedReceipt(root, summary); if (capture.adapter_code_sha256 && normalized.adapter_code_sha256 !== capture.adapter_code_sha256) throw new Error(`capture adapter code hash is not bound to its normalized receipt: ${capture.asset}/${capture.instrument}`); if (capture.producer_code_sha256 && normalized.producer_code_sha256 !== capture.producer_code_sha256) throw new Error(`capture producer code hash is not bound to its normalized receipt: ${capture.asset}/${capture.instrument}`); normalizedReceipts.push(normalized) }
+  for (const summary of capture.source_receipts || []) { const normalized = verifyNormalizedReceipt(root, summary); if (capture.adapter_code_sha256 && normalized.adapter_code_sha256 !== capture.adapter_code_sha256) throw new Error(`capture adapter code hash is not bound to its normalized receipt: ${capture.asset}/${capture.instrument}`); if (capture.producer_code_sha256 && normalized.producer_code_sha256 !== capture.producer_code_sha256) throw new Error(`capture producer code hash is not bound to its normalized receipt: ${capture.asset}/${capture.instrument}`); verifyAcquisitionReceiptIdentity(normalized, capture, series, planSha256); normalizedReceipts.push(normalized) }
+  if ((series || capture.series_sha256) && !normalizedReceipts.length) throw new Error(`acquisition capture has no identity-bound normalized receipt: ${seriesKey(series || capture)}`)
   if (capture.mark_partition) {
     const markPath = verifiedRegularPath(root, capture.mark_partition.path, 'mark staging partition')
     if (!existsSync(markPath)) throw new Error(`mark staging partition is missing or tampered: ${capture.mark_partition.path}`)
@@ -1143,6 +1535,19 @@ function verifyCaptureCustody(capture, root) {
   const summaryContent = (capture.source_receipts || []).map(summary => summary.content_sha256 || summary.sha256).sort()
   if (capture.source_receipt_sha256 && stable(summaryContent) !== stable([...capture.source_receipt_sha256].sort())) throw new Error(`capture normalized receipt inventory is not bound: ${capture.asset}/${capture.instrument}`)
   if (capture.source_receipt_byte_sha256 && stable(summaryBytes) !== stable([...capture.source_receipt_byte_sha256].sort())) throw new Error(`capture normalized byte inventory is not bound: ${capture.asset}/${capture.instrument}`)
+  const observedRows = capture.coverage?.observed_rows ?? capture.coverage?.observed_events
+  if (observedRows !== undefined && Number(observedRows) !== partitionRows.length) throw new Error(`capture coverage row count differs from its physical partition: ${seriesKey(series || capture)}`)
+  if (series && Number.isInteger(series.expected_event_count) && partitionRows.length !== series.expected_event_count) throw new Error(`capture physical row count differs from the frozen plan series: ${seriesKey(series)}`)
+  if (!series && capture.execution_start && capture.execution_end) {
+    const priceSeries = { asset: capture.asset, venue: 'BINANCE', instrument: capture.instrument, symbol: capture.symbol, interval: '1m', series_type: 'signal_bars', series_role: 'PRICE', expected_step_ms: ONE_MINUTE, start_at: capture.execution_start, end_at: capture.execution_end, availability_cutoff_at: capture.execution_end }
+    verifyRestPartitionAgainstRaw({ capture, series: priceSeries, root, partitionRows })
+    if (capture.mark_partition) {
+      const markRows = readJsonl(verifiedRegularPath(root, capture.mark_partition.path, 'mark staging partition'))
+      const markSeries = { ...priceSeries, instrument: 'BINANCE_USDM_PERPETUAL_MARK', series_type: 'mark_bars', series_role: 'MARK' }
+      verifyRestPartitionAgainstRaw({ capture, series: markSeries, root, partitionRows: markRows, sourceReceipts: capture.mark_source_receipts, mark: true })
+    }
+  }
+  if (series && capture.coverage?.complete === true) revalidateCompletedAcquisitionCapture(capture, series, root)
   return true
 }
 
@@ -1186,21 +1591,49 @@ export function inspectCaptureLineage(capture, root) {
 /** Reopen all physical bytes named by an acquisition or hydration manifest.
  * This is intentionally required at checkpoint reuse and promotion: a valid
  * normalized JSONL hash cannot make deleted/tampered raw evidence durable. */
-export function verifyAuthoritativeStaging({ manifest, root, planSha256 = null, envelopeSha256 = null, candidateSetSha256 = null, requireComplete = false } = {}) {
+export function verifyAuthoritativeStaging({ manifest, root, plan = null, planSha256 = null, envelopeSha256 = null, candidateSetSha256 = null, requireComplete = false, allowFixture = false } = {}) {
   if (!manifest || ![DATA_V5.acquisition, DATA_V5.hydration].includes(manifest.schema)) throw new Error('authoritative staging verifier requires an acquisition or hydration manifest')
   assertOwnHash(manifest, manifest.schema, 'authoritative staging manifest')
   if (!root) throw new Error('authoritative staging verification requires root')
+  if (manifest.fixture_only === true && allowFixture !== true) throw new Error('fixture-only staging evidence cannot enter an authoritative research boundary')
+  const checkpointCandidate = manifest.checkpoint_path ? safePath(root, manifest.checkpoint_path, 'staging checkpoint provenance') : null
+  if (manifest.fixture_only === undefined && manifest.checkpoint_sha256 && checkpointCandidate && existsSync(checkpointCandidate)) {
+    const checkpointPath = verifiedRegularPath(root, manifest.checkpoint_path, 'staging checkpoint provenance')
+    const checkpointBytes = readFileSync(checkpointPath)
+    let checkpoint
+    try { checkpoint = JSON.parse(checkpointBytes.toString('utf8')) } catch (error) { throw new Error(`staging checkpoint provenance is invalid JSON: ${error.message}`) }
+    assertOwnHash(checkpoint, DATA_V5.checkpoint, 'staging checkpoint provenance')
+    if (checkpoint.content_sha256 !== manifest.checkpoint_sha256) throw new Error('staging checkpoint provenance hash differs from the manifest')
+    validateContractSchema(checkpoint)
+    if (checkpoint.fixture_only === true && allowFixture !== true) throw new Error('fixture-injected checkpoint cannot enter an authoritative research boundary')
+  }
+  if (plan) {
+    if (manifest.schema !== DATA_V5.acquisition) throw new Error('a frozen plan object may bind only an acquisition staging manifest')
+    validatePlan(plan)
+    if (plan.content_sha256 !== manifest.plan_sha256) throw new Error('staging manifest is bound to a different physical plan')
+    if (planSha256 && plan.content_sha256 !== planSha256) throw new Error('physical plan differs from the declared plan SHA')
+  }
   if (planSha256 && manifest.plan_sha256 !== planSha256) throw new Error('staging manifest is bound to a different plan')
   if (envelopeSha256 && manifest.envelope_sha256 !== envelopeSha256) throw new Error('staging manifest is bound to a different opportunity envelope')
   if (candidateSetSha256 && manifest.candidate_set_sha256 !== candidateSetSha256) throw new Error('staging manifest is bound to a different candidate set')
   if (manifest.schema === DATA_V5.acquisition) {
+    const planByIdentity = plan ? new Map(plan.series.map(series => [seriesKey(series), series])) : null
+    if (planByIdentity) {
+      const declared = [...planByIdentity.keys()].sort()
+      const captured = (manifest.captures || []).map(seriesKey).sort()
+      if (stable(captured) !== stable(declared)) throw new Error('acquisition capture inventory differs from the exact frozen plan series inventory')
+    }
     // Funding/event captures need a physical/recomputed proof at every
     // authoritative boundary (resume, staging verification, and conversion),
     // not merely a complete:true bit in a caller-owned manifest.
     for (const capture of manifest.captures || []) {
-      if (capture.series_type !== 'funding_events' || capture.coverage?.complete !== true) continue
-      if (capture.coverage?.boundaries_covered !== true || capture.coverage?.source_pagination_complete !== true) throw new Error('completed funding acquisition lacks exact source boundaries or complete source pagination')
-      revalidateCompletedAcquisitionCapture(capture, capture, root)
+      const frozenSeries = planByIdentity?.get(seriesKey(capture)) || null
+      if (planByIdentity && !frozenSeries) throw new Error(`acquisition capture is not declared by the exact frozen plan: ${seriesKey(capture)}`)
+      verifyCaptureCustody(capture, root, { series: frozenSeries, planSha256: plan?.content_sha256 || planSha256 })
+      if (capture.series_type === 'funding_events' && capture.coverage?.complete === true) {
+        if (capture.coverage?.boundaries_covered !== true || capture.coverage?.source_pagination_complete !== true) throw new Error('completed funding acquisition lacks exact source boundaries or complete source pagination')
+        if (!frozenSeries) revalidateCompletedAcquisitionCapture(capture, capture, root)
+      }
     }
   }
   if (requireComplete) {
@@ -1229,14 +1662,15 @@ export function verifyAuthoritativeStaging({ manifest, root, planSha256 = null, 
         unavailable_optional: optional.filter(capture => !complete(capture)).map(seriesKey).sort(),
       }
       for (const [field, expected] of Object.entries(expectedCompletion)) {
-        if (stable(manifest[field]) !== stable(expected)) throw new Error(`acquisition completion contract field ${field} is missing or inconsistent with its physical captures`)
+        const normalizeInventory = value => Array.isArray(value) ? value.map(item => String(item).toLowerCase()).sort() : value
+        if (stable(normalizeInventory(manifest[field])) !== stable(normalizeInventory(expected))) throw new Error(`acquisition completion contract field ${field} is missing or inconsistent with its physical captures`)
       }
     }
     if (manifest.schema === DATA_V5.hydration && manifest.hydrated_before_outcomes !== true) throw new Error('opportunity hydration is not frozen before outcomes')
     if (manifest.schema === DATA_V5.hydration && captures.some(capture => capture.instrument !== 'BINANCE_SPOT' && (capture.mark_coverage?.complete !== true || !capture.mark_partition || !capture.mark_source_receipts?.length))) throw new Error('completed derivative opportunity hydration lacks a complete bound mark capture')
     const identities = captures.map(capture => manifest.schema === DATA_V5.hydration ? `${capture.asset}|${capture.instrument}|${capture.symbol}|${capture.execution_start}|${capture.execution_end}` : seriesKey(capture)); if (new Set(identities).size !== identities.length) throw new Error('completed source chain contains duplicate capture identities')
   }
-  for (const capture of manifest.captures || []) verifyCaptureCustody(capture, root)
+  if (manifest.schema !== DATA_V5.acquisition) for (const capture of manifest.captures || []) verifyCaptureCustody(capture, root)
   const declaredReceiptPaths = [...new Set((manifest.source_receipts || []))].sort(); const discoveredReceiptPaths = [...new Set((manifest.captures || []).flatMap(capture => [...(capture.source_receipts || []), ...(capture.mark_source_receipts || [])].map(receipt => receipt.path)))].sort()
   if (stable(declaredReceiptPaths) !== stable(discoveredReceiptPaths)) throw new Error('staging manifest source receipt inventory is not reconciled with captures')
   const declaredContent = [...new Set(manifest.source_receipt_sha256 || [])].sort(); const discoveredContent = [...new Set((manifest.captures || []).flatMap(capture => [...(capture.source_receipts || []), ...(capture.mark_source_receipts || [])].map(receipt => receipt.content_sha256 || receipt.sha256)))].sort()
@@ -1265,7 +1699,7 @@ function physicalManifestInventory(manifest, root) {
  * same authoritative dataset. */
 export function computeSourceDatasetRootSha256({ manifest, root } = {}) {
   if (!manifest || manifest.schema !== DATA_V5.acquisition) throw new Error('source dataset root requires an acquisition manifest')
-  verifyAuthoritativeStaging({ manifest, root, planSha256: manifest.plan_sha256, requireComplete: true })
+  verifyAuthoritativeStaging({ manifest, root, planSha256: manifest.plan_sha256, requireComplete: true, allowFixture: manifest.fixture_only === true })
   const captures = (manifest.captures || []).filter(capture => capture.unavailable !== true && capture.coverage?.complete === true).map(capture => {
     const partition = capture.partition ? { path: capture.partition.path, sha256: capture.partition.sha256, bytes: capture.partition.bytes, row_count: capture.partition.row_count, format: capture.partition.format, storage_role: capture.partition.storage_role } : null
     const markPartition = capture.mark_partition ? { path: capture.mark_partition.path, sha256: capture.mark_partition.sha256, bytes: capture.mark_partition.bytes, row_count: capture.mark_partition.row_count, format: capture.mark_partition.format, storage_role: capture.mark_partition.storage_role } : null
@@ -1295,16 +1729,26 @@ function writeSourceBundleReference(root, manifest, relativePath = null) {
   return { path, content_sha256: manifest.content_sha256, byte_sha256: hash(bytes) }
 }
 
-export function makeSourceBundleManifest({ root, planSha256, acquisitionReference, hydrationReference, envelopeSha256, candidateSetSha256, rootReference = null, outputPath = null, limitations = [] } = {}) {
+export function makeSourceBundleManifest({ root, planSha256, acquisitionReference = null, hydrationReference = null, acquisition = null, hydration = null, acquisitionRoot = root, hydrationRoot = root, envelopeSha256, candidateSetSha256, rootReference = null, outputPath = null, limitations = [] } = {}) {
   sha(planSha256, 'source bundle plan_sha256'); sha(envelopeSha256, 'source bundle envelope_sha256'); sha(candidateSetSha256, 'source bundle candidate_set_sha256')
   if (!root) throw new Error('source bundle requires its portable root')
   const portable = resolve(root)
-  const acquisition = verifyPhysicalJsonReference(portable, acquisitionReference, acquisitionReference?.content_sha256, 'source bundle acquisition manifest')
-  const hydration = verifyPhysicalJsonReference(portable, hydrationReference, hydrationReference?.content_sha256, 'source bundle opportunity hydration manifest')
-  if (acquisition.schema !== DATA_V5.acquisition || hydration.schema !== DATA_V5.hydration) throw new Error('source bundle requires acquisition and opportunity hydration manifests')
-  if (acquisition.plan_sha256 !== planSha256 || hydration.plan_sha256 !== planSha256 || hydration.envelope_sha256 !== envelopeSha256 || hydration.candidate_set_sha256 !== candidateSetSha256) throw new Error('source bundle child manifest binding is invalid')
-  const datasetRoot = computeSourceBundleDatasetRootSha256({ acquisition, hydration, root: portable, envelopeSha256, candidateSetSha256 })
-  const bundle = withHash({ schema: DATA_V5.sourceBundle, version: 1, status: 'VERIFIED_COMPLETE', plan_sha256: planSha256, candidate_set_sha256: candidateSetSha256, envelope_sha256: envelopeSha256, acquisition_reference: clone(acquisitionReference), hydration_reference: clone(hydrationReference), acquisition_sha256: acquisition.content_sha256, hydration_sha256: hydration.content_sha256, dataset_root_sha256: datasetRoot, root_reference: rootReference || portableRoot(portable), storage_role: 'SOURCE_BUNDLE', authoritative: false, limitations: [...new Set(limitations)].sort() })
+  if (acquisition && !acquisitionReference) {
+    verifyAuthoritativeStaging({ manifest: acquisition, root: acquisitionRoot, planSha256, requireComplete: true })
+    copyAcquisitionChainFiles(resolve(acquisitionRoot), portable, acquisition)
+  }
+  if (hydration && !hydrationReference) {
+    verifyAuthoritativeStaging({ manifest: hydration, root: hydrationRoot, planSha256, envelopeSha256, candidateSetSha256 })
+    copyHydrationChainFiles(resolve(hydrationRoot), portable, hydration)
+  }
+  const acquisitionRef = acquisitionReference || (acquisition ? persistPhysicalJsonInput(portable, acquisition, acquisition.content_sha256, 'source-bundle-acquisition') : null)
+  const hydrationRef = hydrationReference || (hydration ? persistPhysicalJsonInput(portable, hydration, hydration.content_sha256, 'source-bundle-hydration') : null)
+  const acquisitionValue = verifyPhysicalJsonReference(portable, acquisitionRef, acquisitionRef?.content_sha256, 'source bundle acquisition manifest')
+  const hydrationValue = verifyPhysicalJsonReference(portable, hydrationRef, hydrationRef?.content_sha256, 'source bundle opportunity hydration manifest')
+  if (acquisitionValue.schema !== DATA_V5.acquisition || hydrationValue.schema !== DATA_V5.hydration) throw new Error('source bundle requires acquisition and opportunity hydration manifests')
+  if (acquisitionValue.plan_sha256 !== planSha256 || hydrationValue.plan_sha256 !== planSha256 || hydrationValue.envelope_sha256 !== envelopeSha256 || hydrationValue.candidate_set_sha256 !== candidateSetSha256) throw new Error('source bundle child manifest binding is invalid')
+  const datasetRoot = computeSourceBundleDatasetRootSha256({ acquisition: acquisitionValue, hydration: hydrationValue, root: portable, envelopeSha256, candidateSetSha256 })
+  const bundle = withHash({ schema: DATA_V5.sourceBundle, version: 1, status: 'VERIFIED_COMPLETE', plan_sha256: planSha256, candidate_set_sha256: candidateSetSha256, envelope_sha256: envelopeSha256, acquisition_reference: clone(acquisitionRef), hydration_reference: clone(hydrationRef), acquisition_sha256: acquisitionValue.content_sha256, hydration_sha256: hydrationValue.content_sha256, dataset_root_sha256: datasetRoot, root_reference: rootReference || portableRoot(portable), storage_role: 'SOURCE_BUNDLE', authoritative: false, limitations: [...new Set(limitations)].sort() })
   const reference = writeSourceBundleReference(portable, bundle, outputPath)
   Object.defineProperty(bundle, 'physical_reference', { value: reference, enumerable: false })
   return bundle
@@ -1720,6 +2164,7 @@ function readCheckpoint(path, plan, rootReference, expectedPriorSha256 = undefin
   if (value.plan_sha256 !== plan.content_sha256 || value.root_reference !== rootReference) throw new Error('checkpoint is bound to a different plan or portable root')
   if (expectedPriorSha256 !== undefined && (value.content_sha256 || null) !== expectedPriorSha256) throw new Error('checkpoint compare-and-swap predecessor hash mismatch')
   if (binding && (value.envelope_sha256 !== binding.envelope_sha256 || value.candidate_set_sha256 !== binding.candidate_set_sha256 || value.max_lifecycle_ms !== binding.max_lifecycle_ms)) throw new Error('checkpoint is bound to a different frozen opportunity envelope')
+  if (binding?.fixture_only !== undefined && (value.fixture_only !== binding.fixture_only || value.provenance !== binding.provenance)) throw new Error('checkpoint fixture provenance differs from the current acquisition mode')
   if (Array.isArray(plan.series)) {
     const seriesByKey = new Map(plan.series.map(series => [seriesKey(series), series]))
     for (const [identity, capture] of Object.entries(value.completed || {})) {
@@ -1756,7 +2201,7 @@ export function rebaseAcquisitionCheckpoint({ manifest, sourceRoot, targetRoot, 
   const source = resolve(sourceRoot || ''); const target = resolve(targetRoot || '')
   if (!sourceRoot || !targetRoot || source === target) throw new Error('acquisition rebase requires distinct source and target roots')
   for (const [root, label] of [[source, 'source'], [target, 'target']]) { if (existsSync(root) && lstatSync(root).isSymbolicLink()) throw new Error(`acquisition rebase ${label} root cannot be a symlink`) }
-  verifyAuthoritativeStaging({ manifest, root: source, planSha256: manifest.plan_sha256 })
+  verifyAuthoritativeStaging({ manifest, root: source, planSha256: manifest.plan_sha256, allowFixture: manifest.fixture_only === true })
   const rootReference = portableRoot(target, targetRootReference)
   const copied = new Set()
   const confined = (rootPath, relativePath, label) => {
@@ -1786,7 +2231,7 @@ export function rebaseAcquisitionCheckpoint({ manifest, sourceRoot, targetRoot, 
     completed[seriesKey(capture)] = capture
   }
   const checkpointFile = confined(target, checkpointPath, 'acquisition rebase checkpoint')
-  return saveCheckpoint(checkpointFile, { plan_sha256: manifest.plan_sha256, root_reference: rootReference, completed, capture_lineage: captureLineage })
+  return saveCheckpoint(checkpointFile, { plan_sha256: manifest.plan_sha256, root_reference: rootReference, completed, capture_lineage: captureLineage }, { binding: manifest.fixture_only === true ? { fixture_only: true, provenance: manifest.provenance || 'FIXTURE_INJECTED' } : null })
 }
 
 /*
@@ -1916,6 +2361,46 @@ function replayRestPages({ series, normalized, raws, sourceRoot, capturedAt }) {
   const responseHashes = [...new Set(raws.map(raw => `${raw.path}|${raw.byte_sha256}`))].sort(); const pageHashes = [...new Set(entries.map(entry => `${entry.raw.path}|${entry.raw.byte_sha256}`))].sort()
   if (stable(responseHashes) !== stable(pageHashes)) throw new Error(`local raw replay REST raw/page inventory mismatch: ${seriesKey(series)}`)
   return { entries, start, end, endpoints: [...groups.keys()].sort() }
+}
+
+/* Recompute the market values in a normalized REST partition directly from
+ * the retained response bytes.  Hashing the partition and raw responses
+ * independently is insufficient: a caller could alter OHLC/funding values
+ * and then rehash only the normalized chain.  This comparison makes the raw
+ * exchange response the semantic source of truth at every reopen boundary. */
+function verifyRestPartitionAgainstRaw({ capture, series, root, partitionRows, sourceReceipts = capture.source_receipts, mark = false }) {
+  if (series.instrument === 'BINANCE_USDM_DATED_FUTURE' || series.series_type === 'metrics_events') return true
+  const normalized = (sourceReceipts || []).map(summary => verifyNormalizedReceipt(root, summary, mark ? 'mark normalized source receipt' : 'normalized source receipt'))
+  const raws = normalized.flatMap(value => value.raw_receipts || [])
+  const capturedAtValues = normalized.map(value => Date.parse(String(value.captured_at || ''))).filter(Number.isFinite)
+  if (!normalized.length || !raws.length || !capturedAtValues.length) throw new Error(`REST partition lacks retained source bytes: ${seriesKey(series)}`)
+  // Older imported fixtures predate pagination custody. They remain exposed
+  // legacy evidence; only page-bound captures satisfy raw-semantic replay.
+  if (!normalized.some(value => Array.isArray(value.pagination) && value.pagination.length)) return true
+  const capturedAt = Math.max(...capturedAtValues)
+  const replayed = replayRestPages({ series, normalized, raws, sourceRoot: root, capturedAt: new Date(capturedAt).toISOString() })
+  const endpoint = replayEndpointForSeries(series)
+  const values = replayed.entries.filter(entry => entry.endpoint === endpoint).flatMap(entry => entry.parsed.values)
+  const within = event => event >= timestamp(series.start_at) && event <= timestamp(series.end_at)
+  if (series.series_type === 'funding_events') {
+    const rawRows = values.map(value => ({ event_time: Number(value.fundingTime), raw_event_time: Number(value.fundingTime), availability_time: Number(value.fundingTime), funding_rate: Number(value.fundingRate), event_id: `${value.symbol}:${value.fundingTime}` }))
+    const expected = canonicalizeFundingRows({ rows: rawRows, series: { ...series, require_source_coverage: true, source_coverage_complete: true } }).rows.map(row => ({ event_time: timestamp(row.raw_event_time ?? row.event_time), funding_rate: Number(row.funding_rate), event_id: row.event_id }))
+    const actual = partitionRows.map(row => ({ event_time: timestamp(row.raw_event_time ?? row.event_time), funding_rate: Number(row.funding_rate), event_id: row.event_id }))
+    if (stable(expected) !== stable(actual)) throw new Error(`normalized funding partition differs from retained raw response bytes: ${seriesKey(series)}`)
+    return true
+  }
+  const expected = values.filter(value => Number(value[6]) <= capturedAt && within(Number(value[0]))).map(value => ({
+    event_time: Number(value[0]), close_time: Number(value[6]), availability_time: Number(value[6]),
+    open: Number(value[1]), high: Number(value[2]), low: Number(value[3]), close: Number(value[4]),
+    ...(mark ? { mark_open: Number(value[1]), mark_high: Number(value[2]), mark_low: Number(value[3]), mark_close: Number(value[4]), price: Number(value[4]) } : { volume: Number(value[5]), ...(Number.isFinite(Number(value[7])) ? { quote_volume: Number(value[7]) } : {}), ...(Number.isFinite(Number(value[8])) ? { trades: Number(value[8]) } : {}) }),
+  }))
+  const actual = partitionRows.map(row => ({
+    event_time: timestamp(row.event_time), close_time: timestamp(row.close_time), availability_time: timestamp(row.availability_time),
+    open: Number(row.open), high: Number(row.high), low: Number(row.low), close: Number(row.close),
+    ...(mark ? { mark_open: Number(row.mark_open), mark_high: Number(row.mark_high), mark_low: Number(row.mark_low), mark_close: Number(row.mark_close), price: Number(row.price) } : { volume: Number(row.volume), ...(row.quote_volume !== undefined ? { quote_volume: Number(row.quote_volume) } : {}), ...(row.trades !== undefined ? { trades: Number(row.trades) } : {}) }),
+  }))
+  if (stable(expected) !== stable(actual)) throw new Error(`normalized ${mark ? 'mark ' : ''}OHLC partition differs from retained raw response bytes: ${seriesKey(series)}`)
+  return true
 }
 
 function verifyFundingSettlementMarkPageBindings(rows, entries) {
@@ -2204,24 +2689,24 @@ export async function replayAuthoritativeStagingFromRaw({ plan, sourceCheckpoint
       }
     }
   }
-  const captures = plan.series.map(series => replayedByKey[seriesKey(series)] || replayUnavailableCapture(series)); const required = captures.filter(capture => capture.required !== false); const optional = captures.filter(capture => capture.required === false); const complete = capture => capture.unavailable !== true && capture.coverage?.complete === true && capture.partition?.storage_role === 'STAGING'; const baseComplete = required.length > 0 && required.every(complete); const declaredComplete = captures.length > 0 && captures.every(complete); const checkpointReference = targetRootReference === null ? portableRoot(target, null) : relativeReference(target, targetRootReference); const checkpointValue = withHash({ schema: DATA_V5.checkpoint, version: 1, plan_sha256: plan.content_sha256, root_reference: checkpointReference, prior_checkpoint_sha256: null, producer_code_sha256: DATA_V5_PRODUCER_CODE_SHA256, coverage_rules_sha256: DATA_V5_COVERAGE_RULES_SHA256, capture_lineage: lineageByKey, completed: replayedByKey }); replayWriteJson(target, checkpointPath, checkpointValue, 'local raw replay checkpoint')
-  const manifestRootReference = checkpointReference; const unavailableRequired = required.filter(capture => !complete(capture)).map(seriesKey); const unavailableOptional = optional.filter(capture => !complete(capture)).map(seriesKey); const partialMetricsLimitations = auxiliaryMetrics.filter(value => value.status === 'PARTIAL_CHECKPOINT_REPLAYED_FOR_NETWORK_RESUME').map(value => `${value.limitation}:${value.series}:source=${value.source_checkpoint_sha256}`); const limitations = [...new Set([...unavailableRequired.map(value => `REQUIRED_SERIES_UNAVAILABLE:${value}`), ...unavailableOptional.map(value => `OPTIONAL_SERIES_UNAVAILABLE:${value}`), ...partialMetricsLimitations, 'LOCAL_RAW_REPLAY_NO_NETWORK'])].sort(); const acquisition = withHash({ schema: DATA_V5.acquisition, version: 1, status: baseComplete ? 'STAGING_COMPLETE' : 'STAGING_PARTIAL', plan_sha256: plan.content_sha256, root_reference: manifestRootReference, staging_format: 'JSONL', storage_role: 'STAGING', authoritative: false, captures, checkpoint_path: checkpointPath, checkpoint_sha256: checkpointValue.content_sha256, base_complete: baseComplete, declared_complete: declaredComplete, full_plan_complete: declaredComplete, completion_scope: declaredComplete ? 'ALL_DECLARED' : baseComplete ? 'BASE_ONLY' : 'NONE', required_series_count: required.length, required_complete_count: required.filter(complete).length, optional_series_count: optional.length, optional_complete_count: optional.filter(complete).length, optional_complete: optional.every(complete), declared_requirements_sha256: plan.timeframe_requirements_sha256 || null, source_receipts: [...new Set(captures.flatMap(capture => (capture.source_receipts || []).map(receipt => receipt.path)))].sort(), source_receipt_sha256: [...new Set(captures.flatMap(capture => (capture.source_receipts || []).map(receipt => receipt.content_sha256 || receipt.sha256)))].sort(), source_receipt_byte_sha256: [...new Set(captures.flatMap(capture => (capture.source_receipts || []).flatMap(receipt => Array.isArray(receipt.byte_sha256) ? receipt.byte_sha256 : [receipt.byte_sha256]).filter(Boolean)))].sort(), auxiliary_metrics: auxiliaryMetrics, limitations, conversion: { status: 'AVAILABLE', required_format: 'PARQUET', dependency: '@duckdb/node-api@1.5.5-r.4', threads: 1, promotion: 'REQUIRES_VERIFIED_BYTES_ROWS_SCHEMA_AND_PARTITION_MANIFEST' } }); verifyAuthoritativeStaging({ manifest: acquisition, root: target, planSha256: plan.content_sha256 }); replayWriteJson(target, manifestPath, acquisition, 'local raw replay acquisition manifest')
+  const captures = plan.series.map(series => replayedByKey[seriesKey(series)] || replayUnavailableCapture(series)); const required = captures.filter(capture => capture.required !== false); const optional = captures.filter(capture => capture.required === false); const complete = capture => capture.unavailable !== true && capture.coverage?.complete === true && capture.partition?.storage_role === 'STAGING'; const baseComplete = required.length > 0 && required.every(complete); const declaredComplete = captures.length > 0 && captures.every(complete); const checkpointReference = targetRootReference === null ? portableRoot(target, null) : relativeReference(target, targetRootReference); const checkpointValue = withHash({ schema: DATA_V5.checkpoint, version: 1, plan_sha256: plan.content_sha256, root_reference: checkpointReference, prior_checkpoint_sha256: null, producer_code_sha256: DATA_V5_PRODUCER_CODE_SHA256, coverage_rules_sha256: DATA_V5_COVERAGE_RULES_SHA256, fixture_only: false, provenance: 'LOCAL_RAW_REPLAY', capture_lineage: lineageByKey, completed: replayedByKey }); replayWriteJson(target, checkpointPath, checkpointValue, 'local raw replay checkpoint')
+  const manifestRootReference = checkpointReference; const unavailableRequired = required.filter(capture => !complete(capture)).map(seriesKey); const unavailableOptional = optional.filter(capture => !complete(capture)).map(seriesKey); const partialMetricsLimitations = auxiliaryMetrics.filter(value => value.status === 'PARTIAL_CHECKPOINT_REPLAYED_FOR_NETWORK_RESUME').map(value => `${value.limitation}:${value.series}:source=${value.source_checkpoint_sha256}`); const limitations = [...new Set([...unavailableRequired.map(value => `REQUIRED_SERIES_UNAVAILABLE:${value}`), ...unavailableOptional.map(value => `OPTIONAL_SERIES_UNAVAILABLE:${value}`), ...partialMetricsLimitations, 'LOCAL_RAW_REPLAY_NO_NETWORK'])].sort(); const acquisition = withHash({ schema: DATA_V5.acquisition, version: 1, status: baseComplete ? 'STAGING_COMPLETE' : 'STAGING_PARTIAL', plan_sha256: plan.content_sha256, root_reference: manifestRootReference, staging_format: 'JSONL', storage_role: 'STAGING', authoritative: false, captures, checkpoint_path: checkpointPath, checkpoint_sha256: checkpointValue.content_sha256, base_complete: baseComplete, declared_complete: declaredComplete, full_plan_complete: declaredComplete, completion_scope: declaredComplete ? 'ALL_DECLARED' : baseComplete ? 'BASE_ONLY' : 'NONE', required_series_count: required.length, required_complete_count: required.filter(complete).length, optional_series_count: optional.length, optional_complete_count: optional.filter(complete).length, optional_complete: optional.every(complete), declared_requirements_sha256: plan.timeframe_requirements_sha256 || null, source_receipts: [...new Set(captures.flatMap(capture => (capture.source_receipts || []).map(receipt => receipt.path)))].sort(), source_receipt_sha256: [...new Set(captures.flatMap(capture => (capture.source_receipts || []).map(receipt => receipt.content_sha256 || receipt.sha256)))].sort(), source_receipt_byte_sha256: [...new Set(captures.flatMap(capture => (capture.source_receipts || []).flatMap(receipt => Array.isArray(receipt.byte_sha256) ? receipt.byte_sha256 : [receipt.byte_sha256]).filter(Boolean)))].sort(), auxiliary_metrics: auxiliaryMetrics, limitations, conversion: { status: 'AVAILABLE', required_format: 'PARQUET', dependency: '@duckdb/node-api@1.5.5-r.4', threads: 1, promotion: 'REQUIRES_VERIFIED_BYTES_ROWS_SCHEMA_AND_PARTITION_MANIFEST' } }); verifyAuthoritativeStaging({ manifest: acquisition, root: target, plan, planSha256: plan.content_sha256 }); replayWriteJson(target, manifestPath, acquisition, 'local raw replay acquisition manifest')
   return { checkpoint: checkpointValue, acquisition, replayed_count: Object.keys(replayedByKey).length, retained_count: completedKeys.length, source_lineage: sourceLineageSummary, auxiliary_metrics: auxiliaryMetrics, target_root: target, target_root_reference: manifestRootReference }
 }
 
 const sqlLiteral = value => `'${String(value).replaceAll("'", "''")}'`
 const normalizeDuckRows = rows => rows.map(row => Object.fromEntries(Object.entries(row).map(([name, value]) => [name, typeof value === 'bigint' ? Number(value) : value])))
 
-export async function convertToParquet({ stagingManifest, stagingRoot, outputRoot, outputRootReference = null } = {}) {
+export async function convertToParquet({ stagingManifest, stagingRoot, outputRoot, outputRootReference = null, plan = null, fixtureOnly = false } = {}) {
   if (!stagingManifest || ![DATA_V5.acquisition, DATA_V5.hydration].includes(stagingManifest.schema)) throw new Error('Parquet conversion requires a v5 staging manifest')
   assertOwnHash(stagingManifest, stagingManifest.schema, 'v5 staging manifest')
-  if (!['STAGING_COMPLETE'].includes(stagingManifest.status) || stagingManifest.storage_role !== 'STAGING' || stagingManifest.staging_format !== 'JSONL') throw new Error('Parquet conversion requires a complete JSONL STAGING manifest; incomplete data cannot be promoted')
+  if (!(stagingManifest.status === 'STAGING_COMPLETE' || fixtureOnly === true && stagingManifest.status === 'STAGING_PARTIAL') || stagingManifest.storage_role !== 'STAGING' || stagingManifest.staging_format !== 'JSONL') throw new Error('Parquet conversion requires a complete JSONL STAGING manifest; incomplete data cannot be promoted outside an explicit fixture-only conversion')
   if (stagingManifest.schema === DATA_V5.acquisition) {
     const captures = ensureArray(stagingManifest.captures, 'acquisition captures'); const required = captures.filter(capture => capture.required !== false); const optional = captures.filter(capture => capture.required === false); const complete = capture => capture.unavailable !== true && capture.coverage?.complete === true && capture.partition?.storage_role === 'STAGING' && (capture.series_type !== 'funding_events' || (capture.coverage?.boundaries_covered === true && capture.coverage?.source_pagination_complete === true)); const baseComplete = required.length > 0 && required.every(complete); const declaredComplete = captures.length > 0 && captures.every(complete); const expected = { base_complete: baseComplete, declared_complete: declaredComplete, full_plan_complete: declaredComplete, completion_scope: declaredComplete ? 'ALL_DECLARED' : baseComplete ? 'BASE_ONLY' : 'NONE', required_series_count: required.length, required_complete_count: required.filter(complete).length, optional_series_count: optional.length, optional_complete_count: optional.filter(complete).length, optional_complete: optional.every(complete) }
     if (Object.entries(expected).some(([field, value]) => stagingManifest[field] !== value)) throw new Error('Parquet conversion staging completion contract is missing or inconsistent with its physical captures')
   }
   if (!stagingRoot || !outputRoot) throw new Error('Parquet conversion requires stagingRoot and outputRoot')
-  verifyAuthoritativeStaging({ manifest: stagingManifest, root: stagingRoot, planSha256: stagingManifest.plan_sha256, envelopeSha256: stagingManifest.envelope_sha256, candidateSetSha256: stagingManifest.candidate_set_sha256 })
+  verifyAuthoritativeStaging({ manifest: stagingManifest, root: stagingRoot, plan, planSha256: stagingManifest.plan_sha256, envelopeSha256: stagingManifest.envelope_sha256, candidateSetSha256: stagingManifest.candidate_set_sha256, allowFixture: fixtureOnly === true })
   let duckdb
   try { duckdb = await import('@duckdb/node-api') } catch (error) { throw new Error(`AUTHORITATIVE_CONVERSION_UNAVAILABLE: install the pinned @duckdb/node-api dependency; JSONL remains STAGING_ONLY (${error.message})`) }
   const inputRoot = resolve(stagingRoot); const outRoot = resolve(outputRoot); mkdirSync(outRoot, { recursive: true }); const rootReference = portableRoot(outRoot, outputRootReference); const instance = await duckdb.DuckDBInstance.create(':memory:', { threads: '1', enable_external_access: 'true' }); const connection = await instance.connect(); const converted = []
@@ -2311,9 +2796,14 @@ export async function convertSeparatedArtifactsToParquet({ stagingManifest, stag
   const inputRoot = resolve(stagingRoot); const outRoot = resolve(outputRoot); mkdirSync(outRoot, { recursive: true }); const rootReference = portableRoot(outRoot, outputRootReference); const sourceContext = verifyAuthoritativeSourceChain(inputRoot, stagingManifest.source_manifest_reference, stagingManifest.source_manifest_sha256, stagingManifest.plan_sha256, 'separated source manifest'); copySourceChainFiles(inputRoot, outRoot, sourceContext); const sourceManifestReference = copyPhysicalJsonReference(inputRoot, outRoot, stagingManifest.source_manifest_reference, 'separated source manifest'); const sourceArtifactManifestReference = persistJsonReference(outRoot, stagingManifest, 'source staging artifact manifest'); const instance = await duckdb.DuckDBInstance.create(':memory:', { threads: '1', enable_external_access: 'true' }); const connection = await instance.connect(); const artifacts = {}
   try {
     for (const [roleKey, artifact] of Object.entries(stagingManifest.artifacts || {}).sort(([a], [b]) => a.localeCompare(b))) {
-      const role = requireRole(roleKey); const input = safePath(inputRoot, artifact.path, `${role} staging artifact`); if (!existsSync(input) || hash(readFileSync(input)) !== artifact.sha256) throw new Error(`staging artifact bytes are missing or tampered: ${artifact.path}`)
+      const role = requireRole(roleKey); const input = verifiedRegularPath(inputRoot, artifact.path, `${role} staging artifact`); if (hash(readFileSync(input)) !== artifact.sha256) throw new Error(`staging artifact bytes are missing or tampered: ${artifact.path}`)
       const outputRelative = `parquet/${role.toLowerCase()}/${basename(artifact.path, '.jsonl')}.parquet`; const output = resolve(outRoot, outputRelative); mkdirSync(dirname(output), { recursive: true }); const temporary = `${output}.tmp-${process.pid}-${Date.now()}`
-      await connection.run(`COPY (SELECT * FROM read_json_auto(${sqlLiteral(input)}, union_by_name=true)) TO ${sqlLiteral(temporary)} (FORMAT PARQUET, COMPRESSION ZSTD);`)
+      if (artifact.row_count === 0) {
+        if (role !== 'MARK') throw new Error(`authoritative ${role} role cannot be empty`)
+        await connection.run(`COPY (SELECT CAST(NULL AS VARCHAR) AS asset, CAST(NULL AS VARCHAR) AS venue, CAST(NULL AS VARCHAR) AS instrument, CAST(NULL AS VARCHAR) AS symbol, CAST(NULL AS VARCHAR) AS series_role, CAST(NULL AS VARCHAR) AS series_id, CAST(NULL AS BIGINT) AS cadence_ms, CAST(NULL AS TIMESTAMP) AS event_time, CAST(NULL AS TIMESTAMP) AS availability_time, CAST(NULL AS DOUBLE) AS price WHERE false) TO ${sqlLiteral(temporary)} (FORMAT PARQUET, COMPRESSION ZSTD);`)
+      } else {
+        await connection.run(`COPY (SELECT * FROM read_json_auto(${sqlLiteral(input)}, union_by_name=true)) TO ${sqlLiteral(temporary)} (FORMAT PARQUET, COMPRESSION ZSTD);`)
+      }
       const schemaReader = await connection.runAndReadAll(`DESCRIBE SELECT * FROM read_parquet(${sqlLiteral(temporary)});`); const schemaRows = schemaReader.getRows().map(row => row.map(value => value === null || value === undefined ? null : String(value))); const countReader = await connection.runAndReadAll(`SELECT count(*)::BIGINT AS row_count FROM read_parquet(${sqlLiteral(temporary)});`); const countRows = countReader.getRows(); const rowCount = Number(countRows[0]?.[0]); if (!Number.isInteger(rowCount) || rowCount !== artifact.row_count) throw new Error(`Parquet row count mismatch for ${role}`)
       const outputSha = hash(readFileSync(temporary)); if (existsSync(output)) { if (hash(readFileSync(output)) !== outputSha) throw new Error(`content-addressed Parquet collision: ${outputRelative}`); unlinkSync(temporary) } else renameSync(temporary, output)
       const roleReceipt = verifyRoleDerivationReceipt(inputRoot, { path: artifact.derivation_receipt_path, content_sha256: artifact.derivation_receipt_sha256, byte_sha256: artifact.derivation_receipt_byte_sha256 }, role, artifact.sha256, stagingManifest)
@@ -2338,7 +2828,7 @@ export async function verifyParquetArtifactManifest({ manifest, root, plan, pred
   verifySeparatedArtifactManifest(manifest, { root, plan, requireParquet: true, predictorRegistry, candidatePredicates: expectedInventory }); if (!predictorRegistry || predictorRegistry.content_sha256 !== manifest.predictor_registry_sha256) throw new Error('Parquet artifact predictor registry is not bound'); validatePredictorRegistry(predictorRegistry); const declaredPredicateIds = predicateInventoryIds(manifest.candidate_predicates || [], 'manifest candidate predicate inventory'); const expectedPredicateIds = predicateInventoryIds(expectedInventory, 'evaluator predicate inventory'); if (stable(declaredPredicateIds) !== stable(expectedPredicateIds)) throw new Error('Parquet artifact predicate inventory does not exactly match the evaluator predicate IDs'); if (!manifest.conversion || manifest.conversion.runtime !== 'node-duckdb/@duckdb/node-api@1.5.5-r.4' || manifest.conversion.threads !== 1 || !HASH_RE.test(String(manifest.conversion.source_artifact_manifest_sha256 || ''))) throw new Error('Parquet artifact conversion runtime/source binding is invalid')
   let duckdb; try { duckdb = await import('@duckdb/node-api') } catch (error) { throw new Error(`AUTHORITATIVE_PARQUET_REOPEN_UNAVAILABLE: ${error.message}`) }; const instance = await duckdb.DuckDBInstance.create(':memory:', { threads: '1', enable_external_access: 'true' }); const connection = await instance.connect()
   const paths = {}
-  try { for (const [roleKey, artifact] of Object.entries(manifest.artifacts || {}).sort(([a], [b]) => a.localeCompare(b))) { const role = requireRole(roleKey); const path = safePath(root, artifact.path, `${role} Parquet artifact`); const descriptor = await connection.runAndReadAll(`DESCRIBE SELECT * FROM read_parquet(${sqlLiteral(path)});`); const descriptorRows = descriptor.getRows().map(row => row.map(value => value === null || value === undefined ? null : String(value))); if (hash(descriptorRows) !== artifact.schema_sha256) throw new Error(`reopened Parquet ${role} schema differs from the bound schema`); const countReader = await connection.runAndReadAll(`SELECT count(*)::BIGINT AS row_count FROM read_parquet(${sqlLiteral(path)});`); const rowCount = Number(countReader.getRows()[0]?.[0]); if (rowCount !== artifact.row_count) throw new Error(`reopened Parquet ${role} row count differs from the bound count`); paths[roleKey] = { path, columns: descriptorRows.map(row => ({ name: row[0], type: row[1] })) } } await validateParquetRolesBounded(connection, paths, { predictorRegistry, candidatePredicates: expectedInventory, plan }) } finally { connection.disconnectSync() }
+  try { for (const [roleKey, artifact] of Object.entries(manifest.artifacts || {}).sort(([a], [b]) => a.localeCompare(b))) { const role = requireRole(roleKey); const path = verifiedRegularPath(root, artifact.path, `${role} Parquet artifact`); const descriptor = await connection.runAndReadAll(`DESCRIBE SELECT * FROM read_parquet(${sqlLiteral(path)});`); const descriptorRows = descriptor.getRows().map(row => row.map(value => value === null || value === undefined ? null : String(value))); if (hash(descriptorRows) !== artifact.schema_sha256) throw new Error(`reopened Parquet ${role} schema differs from the bound schema`); const countReader = await connection.runAndReadAll(`SELECT count(*)::BIGINT AS row_count FROM read_parquet(${sqlLiteral(path)});`); const rowCount = Number(countReader.getRows()[0]?.[0]); if (rowCount !== artifact.row_count) throw new Error(`reopened Parquet ${role} row count differs from the bound count`); paths[roleKey] = { path, columns: descriptorRows.map(row => ({ name: row[0], type: row[1] })) } } await validateParquetRolesBounded(connection, paths, { predictorRegistry, candidatePredicates: expectedInventory, plan }) } finally { connection.disconnectSync() }
   return true
 }
 
@@ -2450,6 +2940,7 @@ function revalidateCompletedAcquisitionCapture(capture, series, root) {
   if (!capture || capture.unavailable === true || !capture.partition?.path) throw new Error('completed checkpoint capture is unavailable')
   const partitionPath = verifiedRegularPath(root, capture.partition.path, 'checkpoint partition')
   const rows = readJsonl(partitionPath)
+  verifyRestPartitionAgainstRaw({ capture, series, root, partitionRows: rows, mark: series.series_type === 'mark_bars' || series.instrument === 'BINANCE_USDM_PERPETUAL_MARK' })
   if (series.series_type === 'funding_events') {
     // A funding event stream is authoritative only when the frozen capture
     // explicitly carries both proofs. `complete:true` is a summary, not
@@ -2530,6 +3021,8 @@ function bindRowsToSeries(rows, series, { seriesId = null } = {}) {
     venue: series.venue,
     instrument: series.instrument,
     symbol: series.symbol,
+    interval: series.interval,
+    timeframe: series.interval,
     series_role: series.series_role,
     ...(series.series_type === 'mark_bars' ? { series_id: seriesId || hash(series), cadence_ms: series.expected_step_ms } : {})
   }))
@@ -2647,25 +3140,30 @@ async function acquireSeries({ series, plan, root, fetchImpl, maxPages, maxRows,
 }
 
 export async function acquireAuthoritativeStaging({ plan, outputRoot, outputRootReference = null, fetchImpl = globalThis.fetch, maxPages = 1000, maxRows = 10_000_000, rateLimitMs = 0, capturedAt = null, fixtureOnly = false, checkpointPath = null, expectedCheckpointSha256 = undefined, lockStaleMs = 6 * 60 * 60 * 1000 } = {}) {
-  validatePlan(plan); if (!outputRoot) throw new Error('staging acquisition requires outputRoot'); const effectiveCapturedAt = fixtureOnly && capturedAt ? capturedAt : now()
+  validatePlan(plan); if (!outputRoot) throw new Error('staging acquisition requires outputRoot'); if (fetchImpl !== globalThis.fetch && fixtureOnly !== true) throw new Error('production acquisition rejects injected network transport; use the default public adapter transport'); const effectiveCapturedAt = fixtureOnly && capturedAt ? capturedAt : now(); const provenanceBinding = { fixture_only: fixtureOnly === true, provenance: fixtureOnly === true ? 'FIXTURE_INJECTED' : 'PUBLIC_ADAPTER_RECOMPUTED' }
   const root = resolve(outputRoot); mkdirSync(root, { recursive: true }); const rootReference = portableRoot(root, outputRootReference); const checkpointFile = checkpointPath ? safePath(root, checkpointPath, 'acquisition checkpoint') : join(root, 'checkpoint.json'); const lock = acquireExclusiveLock(`${checkpointFile}.lock`, { staleMs: lockStaleMs })
   try {
-    let checkpoint = readCheckpoint(checkpointFile, plan, rootReference, expectedCheckpointSha256, null, { requireCaptureLineage: true, lineageRoot: root }); const captures = []; const limitations = [...(plan.limitations || [])]
+    let checkpoint = readCheckpoint(checkpointFile, plan, rootReference, expectedCheckpointSha256, provenanceBinding, { requireCaptureLineage: true, lineageRoot: root }); const captures = []; const limitations = [...(plan.limitations || [])]
     for (const series of plan.series) {
       const id = seriesKey(series); const saved = checkpoint.completed[id]
       if (saved && saved.series_sha256 === hash(series) && saved.partition?.path && existsSync(safePath(root, saved.partition.path, 'checkpoint partition')) && hash(readFileSync(safePath(root, saved.partition.path, 'checkpoint partition'))) === saved.partition.sha256) {
         try { verifyCaptureCustody(saved, root); const expectedLineage = checkpoint.capture_lineage?.[id]; const actualLineage = inspectCaptureLineage(saved, root); if (!expectedLineage || stable(actualLineage) !== stable(expectedLineage)) throw new Error(`checkpoint capture lineage is stale or forged: ${id}`); if (actualLineage.adapter_binding_status !== 'BOUND' || actualLineage.producer_binding_status !== 'BOUND' || actualLineage.adapter_code_sha256 !== DATA_V5_ADAPTER_CODE_SHA256 || actualLineage.producer_code_sha256 !== DATA_V5_PRODUCER_CODE_SHA256) throw new Error(`checkpoint capture lineage is legacy or stale and must be reacquired: ${id}`); revalidateCompletedAcquisitionCapture(saved, series, root); captures.push(saved); limitations.push(...(saved.limitations || [])); continue } catch { /* semantic/raw/receipt custody failed: reacquire below */ }
       }
-      try { const capture = await acquireSeries({ series, plan, root, fetchImpl, maxPages, maxRows, rateLimitMs, capturedAt: effectiveCapturedAt, fixtureOnly }); verifyCaptureCustody(capture, root); const lineage = inspectCaptureLineage(capture, root); captures.push(capture); limitations.push(...(capture.limitations || [])); checkpoint = saveCheckpoint(checkpointFile, { plan_sha256: plan.content_sha256, root_reference: rootReference, capture_lineage: { ...(checkpoint.capture_lineage || {}), [id]: lineage }, completed: { ...checkpoint.completed, [id]: capture } }, { expectedPriorSha256: checkpoint.content_sha256 || null }) } catch (error) {
+      try { const capture = await acquireSeries({ series, plan, root, fetchImpl, maxPages, maxRows, rateLimitMs, capturedAt: effectiveCapturedAt, fixtureOnly }); verifyCaptureCustody(capture, root); const lineage = inspectCaptureLineage(capture, root); captures.push(capture); limitations.push(...(capture.limitations || [])); checkpoint = saveCheckpoint(checkpointFile, { plan_sha256: plan.content_sha256, root_reference: rootReference, capture_lineage: { ...(checkpoint.capture_lineage || {}), [id]: lineage }, completed: { ...checkpoint.completed, [id]: capture } }, { expectedPriorSha256: checkpoint.content_sha256 || null, binding: provenanceBinding }) } catch (error) {
         const captureLimitations = coverageLimitations(series, { complete: false, reason: error.message }, error); const { trade_scope: _tradeScope, ...captureSeries } = series; captures.push({ ...captureSeries, series_sha256: hash(series), coverage: { complete: false, reason: error.message }, limitations: captureLimitations, unavailable: true }); limitations.push(...captureLimitations)
       }
     }
-    const required = captures.filter(row => row.required !== false); const optional = captures.filter(row => row.required === false); const isComplete = row => row.unavailable !== true && row.coverage?.complete === true && row.partition?.storage_role === 'STAGING'; const baseComplete = required.length > 0 && required.every(isComplete); const declaredComplete = captures.length > 0 && captures.every(isComplete); const optionalComplete = optional.length === 0 || optional.every(isComplete); const unavailableRequired = required.filter(row => !isComplete(row)).map(seriesKey); const unavailableOptional = optional.filter(row => !isComplete(row)).map(seriesKey); const completionScope = declaredComplete ? 'ALL_DECLARED' : baseComplete ? 'BASE_ONLY' : 'NONE'; if (unavailableRequired.length) limitations.push(...unavailableRequired.map(value => `REQUIRED_SERIES_UNAVAILABLE:${value}`)); if (unavailableOptional.length) limitations.push(...unavailableOptional.map(value => `OPTIONAL_SERIES_UNAVAILABLE:${value}`)); const result = withHash({ schema: DATA_V5.acquisition, version: 1, status: baseComplete ? 'STAGING_COMPLETE' : 'STAGING_PARTIAL', plan_sha256: plan.content_sha256, root_reference: rootReference, staging_format: 'JSONL', storage_role: 'STAGING', authoritative: false, captures, checkpoint_path: relative(root, checkpointFile).replaceAll('\\', '/'), checkpoint_sha256: checkpoint.content_sha256, base_complete: baseComplete, declared_complete: declaredComplete, full_plan_complete: declaredComplete, completion_scope: completionScope, required_series_count: required.length, required_complete_count: required.filter(isComplete).length, optional_series_count: optional.length, optional_complete_count: optional.filter(isComplete).length, optional_complete: optionalComplete, unavailable_required: [...new Set(unavailableRequired)].sort(), unavailable_optional: [...new Set(unavailableOptional)].sort(), declared_requirements_sha256: plan.timeframe_requirements_sha256 || null, source_receipts: [...new Set(captures.flatMap(row => (row.source_receipts || []).map(receipt => receipt.path)))].sort(), source_receipt_sha256: [...new Set(captures.flatMap(row => (row.source_receipts || []).map(receipt => receipt.content_sha256 || receipt.sha256)))].sort(), source_receipt_byte_sha256: [...new Set(captures.flatMap(row => (row.source_receipts || []).flatMap(receipt => Array.isArray(receipt.byte_sha256) ? receipt.byte_sha256 : [receipt.byte_sha256]).filter(Boolean)))].sort(), limitations: [...new Set(limitations)].sort(), conversion: { status: 'AVAILABLE', required_format: 'PARQUET', dependency: '@duckdb/node-api@1.5.5-r.4', threads: 1, promotion: 'REQUIRES_VERIFIED_BYTES_ROWS_SCHEMA_AND_PARTITION_MANIFEST' } }); verifyAuthoritativeStaging({ manifest: result, root, planSha256: plan.content_sha256 }); return result
+    const required = captures.filter(row => row.required !== false); const optional = captures.filter(row => row.required === false); const isComplete = row => row.unavailable !== true && row.coverage?.complete === true && row.partition?.storage_role === 'STAGING'; const baseComplete = required.length > 0 && required.every(isComplete); const declaredComplete = captures.length > 0 && captures.every(isComplete); const optionalComplete = optional.length === 0 || optional.every(isComplete); const unavailableRequired = required.filter(row => !isComplete(row)).map(seriesKey); const unavailableOptional = optional.filter(row => !isComplete(row)).map(seriesKey); const completionScope = declaredComplete ? 'ALL_DECLARED' : baseComplete ? 'BASE_ONLY' : 'NONE'; if (unavailableRequired.length) limitations.push(...unavailableRequired.map(value => `REQUIRED_SERIES_UNAVAILABLE:${value}`)); if (unavailableOptional.length) limitations.push(...unavailableOptional.map(value => `OPTIONAL_SERIES_UNAVAILABLE:${value}`)); const result = withHash({ schema: DATA_V5.acquisition, version: 1, status: baseComplete ? 'STAGING_COMPLETE' : 'STAGING_PARTIAL', plan_sha256: plan.content_sha256, root_reference: rootReference, staging_format: 'JSONL', storage_role: 'STAGING', authoritative: false, ...provenanceBinding, captures, checkpoint_path: relative(root, checkpointFile).replaceAll('\\', '/'), checkpoint_sha256: checkpoint.content_sha256, base_complete: baseComplete, declared_complete: declaredComplete, full_plan_complete: declaredComplete, completion_scope: completionScope, required_series_count: required.length, required_complete_count: required.filter(isComplete).length, optional_series_count: optional.length, optional_complete_count: optional.filter(isComplete).length, optional_complete: optionalComplete, unavailable_required: [...new Set(unavailableRequired)].sort(), unavailable_optional: [...new Set(unavailableOptional)].sort(), declared_requirements_sha256: plan.timeframe_requirements_sha256 || null, source_receipts: [...new Set(captures.flatMap(row => (row.source_receipts || []).map(receipt => receipt.path)))].sort(), source_receipt_sha256: [...new Set(captures.flatMap(row => (row.source_receipts || []).map(receipt => receipt.content_sha256 || receipt.sha256)))].sort(), source_receipt_byte_sha256: [...new Set(captures.flatMap(row => (row.source_receipts || []).flatMap(receipt => Array.isArray(receipt.byte_sha256) ? receipt.byte_sha256 : [receipt.byte_sha256]).filter(Boolean)))].sort(), limitations: [...new Set(limitations)].sort(), conversion: { status: 'AVAILABLE', required_format: 'PARQUET', dependency: '@duckdb/node-api@1.5.5-r.4', threads: 1, promotion: 'REQUIRES_VERIFIED_BYTES_ROWS_SCHEMA_AND_PARTITION_MANIFEST' } }); verifyAuthoritativeStaging({ manifest: result, root, plan, planSha256: plan.content_sha256, allowFixture: fixtureOnly }); return result
   } finally { releaseExclusiveLock(lock) }
 }
 
 function requirementMatchesSeries(requirements, series) {
-  return (requirements?.declarations || []).some(declaration => String(declaration.interval) === String(series.interval) && (declaration.series_types || []).includes(series.series_type))
+  return (requirements?.declarations || []).some(declaration => {
+    if (String(declaration.interval) !== String(series.interval) || !(declaration.series_types || []).includes(series.series_type)) return false
+    if (String(series.instrument).toUpperCase() === 'BINANCE_USDM_DATED_FUTURE' && series.tradeable !== true) return false
+    if (declaration.context_only === true) return true
+    return series.trade_scope !== 'CONTEXT_ONLY' && series.tradeable !== false
+  })
 }
 
 function coverageSeriesIdentity(series) {
@@ -2725,11 +3223,11 @@ export function resolvePromotedCoverage({ plan, acquisition, parquet = null, tim
   if (requireFrozenRequirements && !timeframeRequirements) throw new Error('strategy coverage resolution requires a frozen timeframe requirement artifact')
   if (timeframeRequirements) {
     validateContractSchema(timeframeRequirements); assertOwnHash(timeframeRequirements, 'strategy-v5-timeframe-requirements/1', 'timeframe requirements')
-    if (plan.timeframe_requirements_sha256 !== timeframeRequirements.content_sha256) throw new Error('timeframe requirements hash does not match the frozen plan')
+    if (plan.timeframe_requirements_sha256 && plan.timeframe_requirements_sha256 !== timeframeRequirements.content_sha256) throw new Error('timeframe requirements hash does not match the frozen plan')
   } else if (plan.timeframe_requirements_sha256) throw new Error('frozen plan requires its bound timeframe requirement artifact')
   if (!acquisition || acquisition.schema !== DATA_V5.acquisition) throw new Error('promoted coverage requires an acquisition manifest')
   assertOwnHash(acquisition, DATA_V5.acquisition, 'acquisition manifest')
-  if (root) verifyAuthoritativeStaging({ manifest: acquisition, root, planSha256: plan.content_sha256 })
+  if (root) verifyAuthoritativeStaging({ manifest: acquisition, root, plan, planSha256: plan.content_sha256, allowFixture: acquisition.fixture_only === true })
   if (parquet) {
     assertOwnHash(parquet, parquet.schema, 'Parquet manifest')
     if (root) verifyParquetConversionManifest(parquet, { root, planSha256: plan.content_sha256 })
@@ -2738,7 +3236,7 @@ export function resolvePromotedCoverage({ plan, acquisition, parquet = null, tim
   const parquetByKey = new Map((parquet?.captures || []).map(capture => [seriesKey(capture), capture]))
   const declaredContext = timeframeRequirements ? plan.series.filter(series => requirementMatchesSeries(timeframeRequirements, series)) : []
   for (const declaration of timeframeRequirements?.declarations || []) {
-    const matches = plan.series.filter(series => String(series.interval) === String(declaration.interval) && (declaration.series_types || []).includes(series.series_type))
+    const matches = plan.series.filter(series => requirementMatchesSeries({ declarations: [declaration] }, series))
     if (!matches.length) throw new Error(`frozen timeframe requirement has no matching plan series: ${declaration.predictor_id}/${declaration.interval}`)
   }
   const requiredSeries = [...new Map([...plan.series.filter(series => series.required !== false), ...declaredContext].map(series => [seriesKey(series), series])).values()].sort((a, b) => seriesKey(a).localeCompare(seriesKey(b)))
@@ -2760,7 +3258,19 @@ function mergeWindows(windows) {
 }
 
 export function makeOpportunityEnvelope({ planSha256, candidateSetSha256, windows, maxLifecycleMs, lifecycleTimeframe = '1m', precommitSha256 = null } = {}) {
-  sha(planSha256, 'plan_sha256'); sha(candidateSetSha256, 'candidate_set_sha256'); if (!Number.isInteger(Number(maxLifecycleMs)) || Number(maxLifecycleMs) <= 0) throw new Error('opportunity envelope requires a positive maximum lifecycle in milliseconds'); const normalized = mergeWindows(windows).map(window => ({ asset: window.asset, instrument: window.instrument, symbol: window.symbol, execution_start: window.execution_start, execution_end: window.execution_end, source_window_ids: window.source_window_ids, max_lifecycle_ms: Number(maxLifecycleMs), lifecycle_timeframe: String(lifecycleTimeframe) })); if (normalized.some(window => timestamp(window.execution_end) - timestamp(window.execution_start) > Number(maxLifecycleMs))) throw new Error('opportunity window exceeds frozen maximum lifecycle'); if (precommitSha256) sha(precommitSha256, 'precommit_sha256'); return withHash({ schema: 'strategy-v5-opportunity-envelope/1', version: 1, status: 'FROZEN', plan_sha256: planSha256, candidate_set_sha256: candidateSetSha256, precommit_sha256: precommitSha256, max_lifecycle_ms: Number(maxLifecycleMs), lifecycle_timeframe: String(lifecycleTimeframe), windows: normalized })
+  sha(planSha256, 'plan_sha256'); sha(candidateSetSha256, 'candidate_set_sha256'); if (!Number.isInteger(Number(maxLifecycleMs)) || Number(maxLifecycleMs) <= 0) throw new Error('opportunity envelope requires a positive maximum lifecycle in milliseconds')
+  // Preserve one frozen window per strategy opportunity. Hydration merges
+  // overlapping windows only after this commitment, so a dense swing signal
+  // set can share one physical download without turning the union span into a
+  // fictitious single-trade lifecycle longer than maxLifecycleMs.
+  const normalized = ensureArray(windows, 'opportunity windows').map(window => {
+    const a = asset(window.asset); const instrument = String(window.instrument || 'BINANCE_SPOT'); const symbol = String(window.symbol || `${a.toUpperCase()}USDT`); const start = timestamp(window.execution_start ?? window.start_at); const end = timestamp(window.execution_end ?? window.end_at)
+    if (!(end >= start) || end - start > Number(maxLifecycleMs)) throw new Error('opportunity window exceeds frozen maximum lifecycle')
+    const ids = window.source_window_ids?.length ? window.source_window_ids.map(String) : [String(window.window_id || hash(window))]
+    return { asset: a, instrument, symbol, execution_start: iso(Math.floor(start / ONE_MINUTE) * ONE_MINUTE), execution_end: iso(Math.floor(end / ONE_MINUTE) * ONE_MINUTE), source_window_ids: [...new Set(ids)].sort(), max_lifecycle_ms: Number(maxLifecycleMs), lifecycle_timeframe: String(lifecycleTimeframe) }
+  }).sort((left, right) => `${left.asset}|${left.instrument}|${left.symbol}|${left.execution_start}|${left.execution_end}|${stable(left.source_window_ids)}`.localeCompare(`${right.asset}|${right.instrument}|${right.symbol}|${right.execution_start}|${right.execution_end}|${stable(right.source_window_ids)}`))
+  if (!normalized.length) throw new Error('opportunity envelope has no windows')
+  if (precommitSha256) sha(precommitSha256, 'precommit_sha256'); return withHash({ schema: 'strategy-v5-opportunity-envelope/1', version: 1, status: 'FROZEN', plan_sha256: planSha256, candidate_set_sha256: candidateSetSha256, precommit_sha256: precommitSha256, max_lifecycle_ms: Number(maxLifecycleMs), lifecycle_timeframe: String(lifecycleTimeframe), windows: normalized })
 }
 
 function validateOpportunityEnvelope(envelope, { planSha256, candidateSetSha256 } = {}) {
@@ -2774,7 +3284,7 @@ function validateHydratedRows(rows, window, capturedAt) {
 }
 
 export async function hydrateOpportunityWindowsV5({ planSha256, candidateSetSha256, opportunityEnvelope, outputRoot, outputRootReference = null, fetchImpl = globalThis.fetch, capturedAt = null, fixtureOnly = false, maxPages = 1000, maxRows = 50_000_000, rateLimitMs = 0, checkpointPath = null, expectedCheckpointSha256 = undefined, lockStaleMs = 6 * 60 * 60 * 1000 } = {}) {
-  sha(planSha256, 'plan_sha256'); sha(candidateSetSha256, 'candidate_set_sha256'); if (!outputRoot) throw new Error('opportunity hydration requires outputRoot'); validateOpportunityEnvelope(opportunityEnvelope, { planSha256, candidateSetSha256 }); const captureTime = fixtureOnly && capturedAt ? capturedAt : now(); const root = resolve(outputRoot); mkdirSync(root, { recursive: true }); const rootReference = portableRoot(root, outputRootReference); const binding = { envelope_sha256: opportunityEnvelope.content_sha256, candidate_set_sha256: candidateSetSha256, max_lifecycle_ms: opportunityEnvelope.max_lifecycle_ms }; const merged = mergeWindows(opportunityEnvelope.windows); const checkpointFile = checkpointPath ? safePath(root, checkpointPath, 'hydration checkpoint') : join(root, 'hydration-checkpoint.json'); const lock = acquireExclusiveLock(`${checkpointFile}.lock`, { staleMs: lockStaleMs })
+  sha(planSha256, 'plan_sha256'); sha(candidateSetSha256, 'candidate_set_sha256'); if (!outputRoot) throw new Error('opportunity hydration requires outputRoot'); if (fetchImpl !== globalThis.fetch && fixtureOnly !== true) throw new Error('production opportunity hydration rejects injected network transport'); validateOpportunityEnvelope(opportunityEnvelope, { planSha256, candidateSetSha256 }); const captureTime = fixtureOnly && capturedAt ? capturedAt : now(); const root = resolve(outputRoot); mkdirSync(root, { recursive: true }); const rootReference = portableRoot(root, outputRootReference); const binding = { envelope_sha256: opportunityEnvelope.content_sha256, candidate_set_sha256: candidateSetSha256, max_lifecycle_ms: opportunityEnvelope.max_lifecycle_ms, fixture_only: fixtureOnly === true, provenance: fixtureOnly === true ? 'FIXTURE_INJECTED' : 'PUBLIC_ADAPTER_RECOMPUTED' }; const merged = mergeWindows(opportunityEnvelope.windows); const checkpointFile = checkpointPath ? safePath(root, checkpointPath, 'hydration checkpoint') : join(root, 'hydration-checkpoint.json'); const lock = acquireExclusiveLock(`${checkpointFile}.lock`, { staleMs: lockStaleMs })
   try {
     let checkpoint = existsSync(checkpointFile) ? readCheckpoint(checkpointFile, { content_sha256: planSha256 }, rootReference, expectedCheckpointSha256, binding) : { schema: DATA_V5.checkpoint, version: 1, plan_sha256: planSha256, root_reference: rootReference, ...binding, completed: {}, content_sha256: null }; const captures = []
     for (const window of merged) { const id = hash({ envelope_sha256: opportunityEnvelope.content_sha256, asset: window.asset, instrument: window.instrument, symbol: window.symbol, execution_start: window.execution_start, execution_end: window.execution_end }); const saved = checkpoint.completed[id]; if (saved && saved.coverage?.complete === true && saved.envelope_sha256 === opportunityEnvelope.content_sha256 && saved.partition && existsSync(safePath(root, saved.partition.path, 'checkpoint partition')) && hash(readFileSync(safePath(root, saved.partition.path, 'checkpoint partition'))) === saved.partition.sha256) { try { verifyCaptureCustody(saved, root); const savedRows = readJsonl(safePath(root, saved.partition.path, 'checkpoint partition')); const semanticCoverage = validateHydratedRows(savedRows, window, captureTime); if (!semanticCoverage.complete) throw new Error(`completed hydration checkpoint coverage changed: ${semanticCoverage.reason}`); if (saved.mark_partition) { const markRows = readJsonl(safePath(root, saved.mark_partition.path, 'checkpoint mark partition')); const markCoverage = validateHydratedRows(markRows, window, captureTime); if (!markCoverage.complete) throw new Error(`completed hydration mark checkpoint coverage changed: ${markCoverage.reason}`) } captures.push(saved); continue } catch { /* semantic/raw/receipt custody failed: reacquire below */ } }
@@ -2782,7 +3292,7 @@ export async function hydrateOpportunityWindowsV5({ planSha256, candidateSetSha2
       if (window.instrument !== 'BINANCE_SPOT') { const markResult = await backfillBinanceMarkPriceOhlc({ asset: window.asset, symbolOverride: window.symbol, startTime: timestamp(window.execution_start), endTime: timestamp(window.execution_end), interval: '1m', maxPages, maxRows, rateLimitMs, fetchImpl, capturedAt: fixtureOnly ? captureTime : null, fixtureOnly }); const markSeries = { asset: window.asset, venue: 'BINANCE', instrument: 'BINANCE_USDM_PERPETUAL_MARK', symbol: window.symbol, series_type: 'mark_bars', series_role: 'MARK', expected_step_ms: ONE_MINUTE }; const markRows = bindRowsToSeries(markResult.rows.filter(row => rowTime(row) >= timestamp(window.execution_start) && rowTime(row) <= timestamp(window.execution_end)), markSeries, { seriesId: id }); markCoverage = validateHydratedRows(markRows, window, captureTime); if (!markCoverage.complete) throw new Error('derivative opportunity hydration has incomplete mark-price coverage'); markPartition = writeJsonlPartition(root, 'opportunity-1m-mark', `${window.asset}-${window.instrument}-${window.symbol}-${id}`, markRows); markRawReceipts = (markResult.raw_responses || []).map(raw => bindPersistedRawResponse(root, raw, { source: 'BINANCE_USDM_PERPETUAL_MARK', request: retainedRawRequest(raw, { symbol: window.symbol, interval: '1m' }) })); markReceipt = sourceReceipt(root, { status: 'PUBLIC_OBSERVED', plan_sha256: planSha256, envelope_sha256: opportunityEnvelope.content_sha256, candidate_set_sha256: candidateSetSha256, window_sha256: id, window: { asset: window.asset, instrument: 'BINANCE_USDM_PERPETUAL_MARK', symbol: window.symbol, execution_start: window.execution_start, execution_end: window.execution_end }, captured_at: markResult.captured_at || captureTime, response_sha256: markResult.response_sha256 || [], source_byte_sha256: markRawReceipts.map(raw => raw.byte_sha256), raw_receipts: markRawReceipts, pagination: markResult.pages || [], coverage: markCoverage }) }
       const savedCapture = { asset: window.asset, instrument: window.instrument, symbol: window.symbol, execution_start: window.execution_start, execution_end: window.execution_end, source_window_ids: window.source_window_ids, envelope_sha256: opportunityEnvelope.content_sha256, candidate_set_sha256: candidateSetSha256, max_lifecycle_ms: opportunityEnvelope.max_lifecycle_ms, window_sha256: id, partition, source_receipts: [receipt], source_receipt_sha256: [receipt.sha256], coverage, mark_partition: markPartition, mark_source_receipts: markReceipt ? [markReceipt] : [], mark_coverage: markCoverage }; verifyCaptureCustody(savedCapture, root); captures.push(savedCapture); checkpoint = saveCheckpoint(checkpointFile, { plan_sha256: planSha256, root_reference: rootReference, completed: { ...checkpoint.completed, [id]: savedCapture } }, { expectedPriorSha256: checkpoint.content_sha256 || null, binding })
     }
-    const complete = captures.length === merged.length && captures.every(row => row.coverage?.complete === true); const result = withHash({ schema: DATA_V5.hydration, version: 1, status: complete ? 'STAGING_COMPLETE' : 'STAGING_PARTIAL', plan_sha256: planSha256, candidate_set_sha256: candidateSetSha256, envelope_sha256: opportunityEnvelope.content_sha256, max_lifecycle_ms: opportunityEnvelope.max_lifecycle_ms, lifecycle_timeframe: opportunityEnvelope.lifecycle_timeframe, root_reference: rootReference, staging_format: 'JSONL', storage_role: 'STAGING', authoritative: false, hydrated_before_outcomes: complete, captured_at: captureTime, windows: merged.map(window => ({ asset: window.asset, instrument: window.instrument, symbol: window.symbol, execution_start: iso(window.start), execution_end: iso(window.end), source_window_ids: window.source_window_ids, max_lifecycle_ms: opportunityEnvelope.max_lifecycle_ms, lifecycle_timeframe: opportunityEnvelope.lifecycle_timeframe })), merged_window_count: merged.length, captures, checkpoint_path: relative(root, checkpointFile).replaceAll('\\', '/'), checkpoint_sha256: checkpoint.content_sha256, source_receipts: [...new Set(captures.flatMap(row => [...(row.source_receipts || []), ...(row.mark_source_receipts || [])]).map(receipt => receipt.path))].sort(), source_receipt_sha256: [...new Set(captures.flatMap(row => [...(row.source_receipt_sha256 || []), ...(row.mark_source_receipts || []).map(receipt => receipt.content_sha256 || receipt.sha256)]))].sort(), source_receipt_byte_sha256: [...new Set(captures.flatMap(row => [...(row.source_receipts || []), ...(row.mark_source_receipts || [])].flatMap(receipt => Array.isArray(receipt.byte_sha256) ? receipt.byte_sha256 : [receipt.byte_sha256]).filter(Boolean)))].sort(), limitations: complete ? [] : ['ONE_MINUTE_HYDRATION_INCOMPLETE'] }); verifyAuthoritativeStaging({ manifest: result, root, planSha256, envelopeSha256: opportunityEnvelope.content_sha256, candidateSetSha256 }); return result
+    const complete = captures.length === merged.length && captures.every(row => row.coverage?.complete === true); const result = withHash({ schema: DATA_V5.hydration, version: 1, status: complete ? 'STAGING_COMPLETE' : 'STAGING_PARTIAL', plan_sha256: planSha256, candidate_set_sha256: candidateSetSha256, envelope_sha256: opportunityEnvelope.content_sha256, max_lifecycle_ms: opportunityEnvelope.max_lifecycle_ms, lifecycle_timeframe: opportunityEnvelope.lifecycle_timeframe, root_reference: rootReference, staging_format: 'JSONL', storage_role: 'STAGING', authoritative: false, fixture_only: fixtureOnly === true, provenance: fixtureOnly === true ? 'FIXTURE_INJECTED' : 'PUBLIC_ADAPTER_RECOMPUTED', hydrated_before_outcomes: complete, captured_at: captureTime, windows: merged.map(window => ({ asset: window.asset, instrument: window.instrument, symbol: window.symbol, execution_start: iso(window.start), execution_end: iso(window.end), source_window_ids: window.source_window_ids, max_lifecycle_ms: opportunityEnvelope.max_lifecycle_ms, lifecycle_timeframe: opportunityEnvelope.lifecycle_timeframe })), merged_window_count: merged.length, captures, checkpoint_path: relative(root, checkpointFile).replaceAll('\\', '/'), checkpoint_sha256: checkpoint.content_sha256, source_receipts: [...new Set(captures.flatMap(row => [...(row.source_receipts || []), ...(row.mark_source_receipts || [])]).map(receipt => receipt.path))].sort(), source_receipt_sha256: [...new Set(captures.flatMap(row => [...(row.source_receipt_sha256 || []), ...(row.mark_source_receipts || []).map(receipt => receipt.content_sha256 || receipt.sha256)]))].sort(), source_receipt_byte_sha256: [...new Set(captures.flatMap(row => [...(row.source_receipts || []), ...(row.mark_source_receipts || [])].flatMap(receipt => Array.isArray(receipt.byte_sha256) ? receipt.byte_sha256 : [receipt.byte_sha256]).filter(Boolean)))].sort(), limitations: complete ? [] : ['ONE_MINUTE_HYDRATION_INCOMPLETE'] }); verifyAuthoritativeStaging({ manifest: result, root, planSha256, envelopeSha256: opportunityEnvelope.content_sha256, candidateSetSha256, allowFixture: fixtureOnly }); return result
   } finally { releaseExclusiveLock(lock) }
 }
 
@@ -2835,7 +3345,7 @@ function validateFeatureRows(rows, { predictorRegistry, plan, candidatePredicate
   rejectDuplicate(rows, row => `${asset(row.asset)}|${String(row.venue || '').toLowerCase()}|${String(row.instrument || '').toUpperCase()}|${String(row.symbol || '').toUpperCase()}|${timestamp(row.decision_time ?? row.event_time)}`, 'feature decision identity')
   for (const row of rows) { const decision = timestamp(row.decision_time ?? row.event_time); const available = timestamp(row.availability_time); if (!row.signal_id || !row.episode_id || !row.venue || !row.instrument || !row.symbol || !inWindow(decision, plan) || available > decision) throw new Error('feature row is outside the plan, lacks exact series identity, or is not PIT-available')
     for (const name of Object.keys(row)) { if (!base.has(name) && !registry.has(name)) throw new Error(`feature field is undeclared or not in the frozen predictor registry: ${name}`); if (registry.has(name) && (row[name] !== null && (typeof row[name] === 'object' || (typeof row[name] === 'number' && !Number.isFinite(row[name]))))) throw new Error(`predictor ${name} is non-scalar/non-finite in an evaluated feature row`) }
-    for (const [id, predictor] of registry) { if (row[id] === undefined) continue; if (predictor.scalar_type === 'number' && typeof row[id] !== 'number') throw new Error(`predictor ${id} does not match its registered scalar type`); if (predictor.scalar_type === 'integer' && (!Number.isInteger(row[id]))) throw new Error(`predictor ${id} does not match its registered integer type`); if (predictor.scalar_type === 'boolean' && typeof row[id] !== 'boolean') throw new Error(`predictor ${id} does not match its registered boolean type`); if (String(predictor.source_family).toUpperCase().includes('LABEL') || String(predictor.pit_role).toUpperCase() !== 'PREDICTOR') throw new Error(`predictor ${id} has label-role provenance`) }
+    for (const [id, predictor] of registry) { if (!Object.hasOwn(row, id)) throw new Error(`feature row is missing registered predictor ${id}`); if (row[id] === null) { if (row.signal_eligible !== false) throw new Error(`eligible feature row has null registered predictor ${id}`); continue } if (predictor.scalar_type === 'number' && typeof row[id] !== 'number') throw new Error(`predictor ${id} does not match its registered scalar type`); if (predictor.scalar_type === 'integer' && (!Number.isInteger(row[id]))) throw new Error(`predictor ${id} does not match its registered integer type`); if (predictor.scalar_type === 'boolean' && typeof row[id] !== 'boolean') throw new Error(`predictor ${id} does not match its registered boolean type`); if (String(predictor.source_family).toUpperCase().includes('LABEL') || String(predictor.pit_role).toUpperCase() !== 'PREDICTOR') throw new Error(`predictor ${id} has label-role provenance`) }
   }
 }
 
@@ -2906,7 +3416,7 @@ export function makeSeparatedArtifactManifest({ plan, planSha256 = null, root, p
   const lineage = { plan_sha256: boundPlanSha, source_manifest_sha256: sourceManifestSha256, source_dataset_root_sha256: sourceDatasetRootSha256, predictor_registry_sha256: predictorRegistry.content_sha256, transformation_code_sha256: transformationCodeSha256, label_code_sha256: labelCodeSha256, execution_code_sha256: executionCodeSha256, config_sha256: configSha256, precommit_sha256: precommitSha256, envelope_sha256: envelopeSha256 }
   verifySeparatedSourceManifest(resolve(root), sourceManifestReference, sourceManifestSha256, boundPlanSha, 'separated source manifest')
   const roles = { FEATURE: features, LABEL: labels, EXECUTION: execution, MARK: marks }; const paths = new Set(); const artifacts = {}; const roleRows = {}
-  for (const [roleName, reference] of Object.entries(roles)) { const role = requireRole(roleName); const roleReceipt = roleReceipts?.[role.toLowerCase()]; if (!roleReceipt || !roleReceipt.path || !HASH_RE.test(String(roleReceipt.content_sha256 || '')) || !HASH_RE.test(String(roleReceipt.byte_sha256 || ''))) throw new Error(`${role} role derivation receipt requires a physical path/content/byte binding`); if (!reference?.path || paths.has(reference.path)) throw new Error(`artifact ${role} path is missing or reused`); paths.add(reference.path); const path = safePath(root, reference.path, `${role} staging artifact`); if (!existsSync(path)) throw new Error(`artifact ${role} is missing: ${reference.path}`); const bytes = readFileSync(path); const digest = hash(bytes); if (reference.sha256 && reference.sha256 !== digest) throw new Error(`artifact ${role} hash mismatch`); if (reference.format && String(reference.format).toUpperCase() !== 'JSONL') throw new Error(`artifact ${role} must be explicitly JSONL staging before Parquet conversion`); const rows = readJsonl(path); roleRows[role.toLowerCase()] = rows; if (role === 'FEATURE') validateFeatureRows(rows, { predictorRegistry, plan, candidatePredicates }); if (role === 'LABEL') validateLabelRows(rows, { plan }); if (role === 'EXECUTION') validateExecutionRows(rows, { plan }); if (role === 'MARK') validateMarkRows(rows, { plan }); const verifiedReceipt = verifyRoleDerivationReceipt(resolve(root), roleReceipt, role, digest, lineage); artifacts[role.toLowerCase()] = { role, path: reference.path, sha256: digest, bytes: bytes.byteLength, row_count: rows.length, format: 'JSONL', storage_role: 'STAGING', authoritative: false, rows_sha256: hash(rows), field_names: fieldNames(rows), derivation_receipt_path: roleReceipt.path, derivation_receipt_sha256: verifiedReceipt.content_sha256, derivation_receipt_byte_sha256: roleReceipt.byte_sha256 } }
+  for (const [roleName, reference] of Object.entries(roles)) { const role = requireRole(roleName); const roleReceipt = roleReceipts?.[role.toLowerCase()]; if (!roleReceipt || !roleReceipt.path || !HASH_RE.test(String(roleReceipt.content_sha256 || '')) || !HASH_RE.test(String(roleReceipt.byte_sha256 || ''))) throw new Error(`${role} role derivation receipt requires a physical path/content/byte binding`); if (!reference?.path || paths.has(reference.path)) throw new Error(`artifact ${role} path is missing or reused`); paths.add(reference.path); const path = verifiedRegularPath(root, reference.path, `${role} staging artifact`); const bytes = readFileSync(path); const digest = hash(bytes); if (reference.sha256 && reference.sha256 !== digest) throw new Error(`artifact ${role} hash mismatch`); if (reference.format && String(reference.format).toUpperCase() !== 'JSONL') throw new Error(`artifact ${role} must be explicitly JSONL staging before Parquet conversion`); const rows = readJsonl(path); roleRows[role.toLowerCase()] = rows; if (role === 'FEATURE') validateFeatureRows(rows, { predictorRegistry, plan, candidatePredicates }); if (role === 'LABEL') validateLabelRows(rows, { plan }); if (role === 'EXECUTION') validateExecutionRows(rows, { plan }); if (role === 'MARK') validateMarkRows(rows, { plan }); const verifiedReceipt = verifyRoleDerivationReceipt(resolve(root), roleReceipt, role, digest, lineage); artifacts[role.toLowerCase()] = { role, path: reference.path, sha256: digest, bytes: bytes.byteLength, row_count: rows.length, format: 'JSONL', storage_role: 'STAGING', authoritative: false, rows_sha256: hash(rows), field_names: fieldNames(rows), derivation_receipt_path: roleReceipt.path, derivation_receipt_sha256: verifiedReceipt.content_sha256, derivation_receipt_byte_sha256: roleReceipt.byte_sha256 } }
   validateRoleCrossBindings(roleRows.feature, roleRows.label, roleRows.execution, roleRows.mark)
   const predictorList = [...registry.keys()].sort(); const rootFields = { plan_sha256: boundPlanSha, predictor_registry_sha256: predictorRegistry.content_sha256, source_manifest_sha256: sourceManifestSha256, source_manifest_reference: sourceManifestReference, source_dataset_root_sha256: sourceDatasetRootSha256, transformation_code_sha256: transformationCodeSha256, label_code_sha256: labelCodeSha256, execution_code_sha256: executionCodeSha256, config_sha256: configSha256, precommit_sha256: precommitSha256, envelope_sha256: envelopeSha256, artifacts }; const result = withHash({ schema: DATA_V5.artifacts, version: 1, status: 'STAGING_ONLY', plan_sha256: boundPlanSha, predictor_ids: predictorList, predictor_registry_sha256: predictorRegistry.content_sha256, candidate_predicates: clone(candidatePredicates), source_manifest_sha256: sourceManifestSha256, source_manifest_reference: clone(sourceManifestReference), source_dataset_root_sha256: sourceDatasetRootSha256, transformation_code_sha256: transformationCodeSha256, label_code_sha256: labelCodeSha256, execution_code_sha256: executionCodeSha256, config_sha256: configSha256, precommit_sha256: precommitSha256, envelope_sha256: envelopeSha256, artifacts, storage_role: 'STAGING', format: 'JSONL', authoritative: false, dataset_root_sha256: hash(rootFields), conversion_required: 'PARQUET', conversion_status: 'AVAILABLE_LOCAL_DUCKDB' }); return result
 }
@@ -2925,13 +3435,13 @@ export function verifySeparatedArtifactManifest(manifest, { root, plan, requireP
   if (manifest.format === 'PARQUET') verifyPhysicalJsonReference(resolve(root), manifest.conversion.source_artifact_manifest_reference, manifest.conversion.source_artifact_manifest_sha256, 'Parquet source staging manifest')
   const expectedRoles = new Set(['feature', 'label', 'execution', 'mark']); const actualRoles = new Set(Object.keys(manifest.artifacts || {})); if (actualRoles.size !== expectedRoles.size || [...expectedRoles].some(role => !actualRoles.has(role))) throw new Error('separated artifact roles are incomplete or duplicated')
   const roleRows = {}
-  for (const [roleKey, artifact] of Object.entries(manifest.artifacts || {})) { const role = requireRole(roleKey); const expectedFormat = manifest.format === 'PARQUET' ? 'PARQUET' : 'JSONL'; if (artifact.role !== role || artifact.format !== expectedFormat || artifact.storage_role !== (expectedFormat === 'PARQUET' ? 'AUTHORITATIVE' : 'STAGING') || artifact.authoritative !== (expectedFormat === 'PARQUET')) throw new Error(`artifact ${role} role/storage metadata is invalid`); const path = safePath(root, artifact.path, `${role} artifact`); if (!existsSync(path)) throw new Error(`artifact bytes are missing or tampered: ${artifact.path}`); const bytes = readFileSync(path); if (hash(bytes) !== artifact.sha256 || bytes.byteLength !== artifact.bytes) throw new Error(`artifact bytes are missing or tampered: ${artifact.path}`); if (!Number.isInteger(artifact.row_count) || artifact.row_count < 0) throw new Error(`artifact ${role} row count metadata is invalid`); if (!artifact.derivation_receipt_path) throw new Error(`${role} artifact lacks a physical derivation receipt reference`); const roleReceipt = verifyRoleDerivationReceipt(resolve(root), { path: artifact.derivation_receipt_path, content_sha256: artifact.derivation_receipt_sha256, byte_sha256: artifact.derivation_receipt_byte_sha256 }, role, artifact.format === 'JSONL' ? artifact.sha256 : artifact.source_jsonl_sha256, manifest); if (roleReceipt.content_sha256 !== artifact.derivation_receipt_sha256) throw new Error(`${role} derivation receipt hash changed`); if (expectedFormat === 'JSONL') { const rows = readJsonl(path); if (rows.length !== artifact.row_count || hash(rows) !== artifact.rows_sha256) throw new Error(`artifact ${role} rows are missing or tampered`); roleRows[roleKey] = rows } }
+  for (const [roleKey, artifact] of Object.entries(manifest.artifacts || {})) { const role = requireRole(roleKey); const expectedFormat = manifest.format === 'PARQUET' ? 'PARQUET' : 'JSONL'; if (artifact.role !== role || artifact.format !== expectedFormat || artifact.storage_role !== (expectedFormat === 'PARQUET' ? 'AUTHORITATIVE' : 'STAGING') || artifact.authoritative !== (expectedFormat === 'PARQUET')) throw new Error(`artifact ${role} role/storage metadata is invalid`); const path = verifiedRegularPath(root, artifact.path, `${role} artifact`); const bytes = readFileSync(path); if (hash(bytes) !== artifact.sha256 || bytes.byteLength !== artifact.bytes) throw new Error(`artifact bytes are missing or tampered: ${artifact.path}`); if (!Number.isInteger(artifact.row_count) || artifact.row_count < 0) throw new Error(`artifact ${role} row count metadata is invalid`); if (!artifact.derivation_receipt_path) throw new Error(`${role} artifact lacks a physical derivation receipt reference`); const roleReceipt = verifyRoleDerivationReceipt(resolve(root), { path: artifact.derivation_receipt_path, content_sha256: artifact.derivation_receipt_sha256, byte_sha256: artifact.derivation_receipt_byte_sha256 }, role, artifact.format === 'JSONL' ? artifact.sha256 : artifact.source_jsonl_sha256, manifest); if (roleReceipt.content_sha256 !== artifact.derivation_receipt_sha256) throw new Error(`${role} derivation receipt hash changed`); if (expectedFormat === 'JSONL') { const rows = readJsonl(path); if (rows.length !== artifact.row_count || hash(rows) !== artifact.rows_sha256) throw new Error(`artifact ${role} rows are missing or tampered`); roleRows[roleKey] = rows } }
   if (manifest.format === 'JSONL') { if (predictorRegistry) { if (predictorRegistry.content_sha256 !== manifest.predictor_registry_sha256) throw new Error('separated artifact predictor registry is not bound'); validatePredictorRegistry(predictorRegistry); validateFeatureRows(roleRows.feature, { predictorRegistry, plan, candidatePredicates }); validateLabelRows(roleRows.label, { plan }); validateExecutionRows(roleRows.execution, { plan }); validateMarkRows(roleRows.mark, { plan }) } validateRoleCrossBindings(roleRows.feature, roleRows.label, roleRows.execution, roleRows.mark) }
   const rootHash = hash({ plan_sha256: manifest.plan_sha256, predictor_registry_sha256: manifest.predictor_registry_sha256, source_manifest_sha256: manifest.source_manifest_sha256, source_manifest_reference: manifest.source_manifest_reference, source_dataset_root_sha256: manifest.source_dataset_root_sha256, transformation_code_sha256: manifest.transformation_code_sha256, label_code_sha256: manifest.label_code_sha256, execution_code_sha256: manifest.execution_code_sha256, config_sha256: manifest.config_sha256, precommit_sha256: manifest.precommit_sha256, envelope_sha256: manifest.envelope_sha256, artifacts: manifest.artifacts }); if (manifest.dataset_root_sha256 !== rootHash) throw new Error('separated artifact dataset root is invalid'); return true
 }
 
-function makeMetadataReceiptLegacy({ kind, status, records = [], source = null, sourceReceiptSha256 = null, sourceByteSha256 = null, modelSha256 = null, precommitSha256 = null, limitations = [], coverage = null, planSha256 = null, capturedAt = now() } = {}) {
-  const allowed = ['FEE_SCHEDULE', 'FUNDING_IDENTITY', 'CONTRACT_SPEC', 'EXPIRY', 'MARGIN', 'LIQUIDATION', 'EXECUTION_MODEL']; const name = String(kind || '').toUpperCase(); if (!allowed.includes(name)) throw new Error(`unsupported metadata kind ${kind}`); if (!DATA_V5_STATUSES.includes(status)) throw new Error(`unsupported metadata status ${status}`); if (status !== 'UNAVAILABLE' && !records.length) throw new Error(`${name} metadata requires records unless UNAVAILABLE`); if (status === 'PUBLIC_OBSERVED' || status === 'USER_BOUND') { sha(sourceReceiptSha256, `${name}.source_receipt_sha256`); const sourceBytes = Array.isArray(sourceByteSha256) ? sourceByteSha256 : [sourceByteSha256]; if (!sourceBytes.length || sourceBytes.some(value => !HASH_RE.test(String(value)))) throw new Error(`${name}.source_byte_sha256 is invalid`); const boundSourceSha = source?.content_sha256 || source?.sha256; const boundBytes = source?.byte_sha256 ?? source?.source_byte_sha256; const boundBytesArray = Array.isArray(boundBytes) ? boundBytes : [boundBytes]; if (boundSourceSha !== sourceReceiptSha256 || stable([...boundBytesArray].sort()) !== stable([...sourceBytes].sort())) throw new Error(`${name} metadata source receipt and physical source-byte hashes are not bound`) } if (status === 'CONSERVATIVE_MODEL') { sha(modelSha256, `${name}.model_sha256`); sha(precommitSha256, `${name}.precommit_sha256`) } if (planSha256) sha(planSha256, 'plan_sha256'); const normalized = records.map(record => { if (!record.asset || !record.instrument || !record.effective_from || !record.effective_to || !record.availability_time) throw new Error(`${name} record lacks effective identity/bounds or availability_time`); if (timestamp(record.effective_to) < timestamp(record.effective_from)) throw new Error(`${name} effective bounds are invalid`); const normalizedRecord = { venue: 'BINANCE', symbol: `${String(record.asset).toUpperCase()}USDT`, ...clone(record) }; const requiredNumber = (field, positive = false) => { const number = Number(normalizedRecord[field]); if (!Number.isFinite(number) || (positive && !(number > 0))) throw new Error(`${name} record ${field} is invalid`); return number }; if (name === 'FEE_SCHEDULE') requiredNumber('taker_fee_rate'); if (name === 'FUNDING_IDENTITY') { if (!normalizedRecord.event_id) throw new Error('FUNDING_IDENTITY record event_id is missing'); requiredNumber('funding_rate') } if (name === 'CONTRACT_SPEC') requiredNumber('contract_multiplier', true); if (name === 'MARGIN') requiredNumber('maintenance_margin_ratio', true); if (name === 'LIQUIDATION') requiredNumber('liquidation_price', true); if (name === 'EXECUTION_MODEL') { requiredNumber('slippage_bps'); requiredNumber('impact_bps'); if (!normalizedRecord.outage_policy || !normalizedRecord.gap_policy) throw new Error('EXECUTION_MODEL outage/gap policy is missing') } if (name === 'EXPIRY' && !normalizedRecord.expiry && !normalizedRecord.delivery_date) throw new Error('EXPIRY record expiry is missing'); return normalizedRecord }); const authoritative = status === 'PUBLIC_OBSERVED' || status === 'USER_BOUND' || (status === 'CONSERVATIVE_MODEL' && name === 'EXECUTION_MODEL'); return withHash({ schema: DATA_V5.metadata, version: 1, kind: name, status, plan_sha256: planSha256, captured_at: iso(capturedAt), source: source ? clone(source) : null, source_receipt_sha256: sourceReceiptSha256, source_byte_sha256: sourceByteSha256, model_sha256: modelSha256, precommit_sha256: precommitSha256, provenance_mode: status === 'CONSERVATIVE_MODEL' ? 'MODEL_BOUND' : (status === 'UNAVAILABLE' ? 'UNAVAILABLE' : 'BOUND_SOURCE'), records: normalized, coverage: coverage ? clone(coverage) : null, limitations: [...new Set(limitations)].sort(), authoritative })
+function makeMetadataReceiptLegacy({ kind, status, records = [], source = null, sourceReceiptSha256 = null, sourceByteSha256 = null, modelSha256 = null, precommitSha256 = null, evaluatorSpecSha256 = null, limitations = [], coverage = null, planSha256 = null, capturedAt = now() } = {}) {
+  const allowed = ['FEE_SCHEDULE', 'FUNDING_IDENTITY', 'CONTRACT_SPEC', 'EXPIRY', 'MARGIN', 'LIQUIDATION', 'EXECUTION_MODEL']; const name = String(kind || '').toUpperCase(); if (!allowed.includes(name)) throw new Error(`unsupported metadata kind ${kind}`); if (!DATA_V5_STATUSES.includes(status)) throw new Error(`unsupported metadata status ${status}`); if (status !== 'UNAVAILABLE' && !records.length) throw new Error(`${name} metadata requires records unless UNAVAILABLE`); if (status === 'PUBLIC_OBSERVED' || status === 'USER_BOUND') { sha(sourceReceiptSha256, `${name}.source_receipt_sha256`); const sourceBytes = Array.isArray(sourceByteSha256) ? sourceByteSha256 : [sourceByteSha256]; if (!sourceBytes.length || sourceBytes.some(value => !HASH_RE.test(String(value)))) throw new Error(`${name}.source_byte_sha256 is invalid`); const boundSourceSha = source?.content_sha256 || source?.sha256; const boundBytes = source?.byte_sha256 ?? source?.source_byte_sha256; const boundBytesArray = Array.isArray(boundBytes) ? boundBytes : [boundBytes]; if (boundSourceSha !== sourceReceiptSha256 || stable([...boundBytesArray].sort()) !== stable([...sourceBytes].sort())) throw new Error(`${name} metadata source receipt and physical source-byte hashes are not bound`) } if (status === 'CONSERVATIVE_MODEL') { sha(modelSha256, `${name}.model_sha256`); sha(precommitSha256, `${name}.precommit_sha256`) } if (planSha256) sha(planSha256, 'plan_sha256'); if (evaluatorSpecSha256) sha(evaluatorSpecSha256, 'evaluator_spec_sha256'); const normalized = records.map(record => { if (!record.asset || !record.instrument || !record.effective_from || !record.effective_to || !record.availability_time) throw new Error(`${name} record lacks effective identity/bounds or availability_time`); if (timestamp(record.effective_to) < timestamp(record.effective_from)) throw new Error(`${name} effective bounds are invalid`); const normalizedRecord = { venue: 'BINANCE', symbol: `${String(record.asset).toUpperCase()}USDT`, ...clone(record) }; const requiredNumber = (field, positive = false) => { const number = Number(normalizedRecord[field]); if (!Number.isFinite(number) || (positive && !(number > 0))) throw new Error(`${name} record ${field} is invalid`); return number }; if (name === 'FEE_SCHEDULE') requiredNumber('taker_fee_rate'); if (name === 'FUNDING_IDENTITY') { if (!normalizedRecord.event_id) throw new Error('FUNDING_IDENTITY record event_id is missing'); requiredNumber('funding_rate') } if (name === 'CONTRACT_SPEC') requiredNumber('contract_multiplier', true); if (name === 'MARGIN') requiredNumber('maintenance_margin_ratio', true); if (name === 'LIQUIDATION') requiredNumber('liquidation_price', true); if (name === 'EXECUTION_MODEL') { requiredNumber('slippage_bps'); requiredNumber('impact_bps'); if (!normalizedRecord.outage_policy || !normalizedRecord.gap_policy) throw new Error('EXECUTION_MODEL outage/gap policy is missing') } if (name === 'EXPIRY' && !normalizedRecord.expiry && !normalizedRecord.delivery_date) throw new Error('EXPIRY record expiry is missing'); return normalizedRecord }); const authoritative = status === 'PUBLIC_OBSERVED' || status === 'USER_BOUND' || (status === 'CONSERVATIVE_MODEL' && name === 'EXECUTION_MODEL'); return withHash({ schema: DATA_V5.metadata, version: 1, kind: name, status, plan_sha256: planSha256, captured_at: iso(capturedAt), source: source ? clone(source) : null, source_receipt_sha256: sourceReceiptSha256, source_byte_sha256: sourceByteSha256, model_sha256: modelSha256, precommit_sha256: precommitSha256, evaluator_spec_sha256: evaluatorSpecSha256, provenance_mode: status === 'CONSERVATIVE_MODEL' ? 'MODEL_BOUND' : (status === 'UNAVAILABLE' ? 'UNAVAILABLE' : 'BOUND_SOURCE'), records: normalized, coverage: coverage ? clone(coverage) : null, limitations: [...new Set(limitations)].sort(), authoritative })
 }
 
 function makeSettlementMetadataReceiptLegacy({ status, records = [], source = null, sourceReceiptSha256 = null, sourceByteSha256 = null, limitations = [], coverage = null, planSha256 = null, capturedAt = now() } = {}) {
@@ -2981,6 +3491,64 @@ export function makeMetadataReceipt({ sourceRoot = null, sourceRootReference = n
   return withHash(bound)
 }
 
+function writeMetadataCustodyBytes(root, reference, bytes, label) {
+  const target = safePath(root, reference, label); mkdirSync(dirname(target), { recursive: true })
+  if (existsSync(target)) {
+    const reopened = readFileSync(verifiedRegularPath(root, reference, label))
+    if (hash(reopened) !== hash(bytes) || reopened.byteLength !== bytes.byteLength) throw new Error(`${label} content-addressed collision`)
+  } else writeFileSync(target, bytes, { flag: 'wx' })
+  return target
+}
+
+/** Build the three metadata receipts required for spot research from one
+ * frozen local assumption policy. These are deliberately USER_BOUND research
+ * assumptions, never mislabeled as historical Binance fee observations. */
+export function buildUserBoundSpotMetadataV5({ root, rootReference = null, plan, precommit, evaluatorSpec, policy, policyBytes } = {}) {
+  if (!root) throw new Error('spot metadata build requires a physical output root')
+  validatePlan(plan); assertOwnHash(plan, DATA_V5.plan, 'spot metadata plan')
+  assertOwnHash(precommit, 'strategy-precommit/1', 'spot metadata precommit')
+  assertOwnHash(evaluatorSpec, 'strategy-v5-evaluator-spec/1', 'spot metadata evaluator')
+  validateContractSchema(policy); assertOwnHash(policy, 'strategy-v5-spot-execution-policy/1', 'spot execution policy')
+  const scope = derivePrecommitTradeScopeV5(precommit, { candidateTemplate: evaluatorSpec.candidate_template })
+  if (scope.instrument !== 'BINANCE_SPOT' || policy.instrument !== 'BINANCE_SPOT') throw new Error('metadata-build currently supports spot execution only')
+  if (policy.plan_sha256 !== plan.content_sha256 || policy.precommit_sha256 !== precommit.content_sha256 || policy.evaluator_spec_sha256 !== evaluatorSpec.content_sha256) throw new Error('spot execution policy lineage differs from plan/precommit/evaluator')
+  if (policy.research_window.start_at !== plan.window.start_at || policy.research_window.end_at !== plan.window.end_at) throw new Error('spot execution policy must cover the exact frozen research window')
+  const contracts = [...policy.asset_contracts].sort((left, right) => left.asset.localeCompare(right.asset))
+  if (stable(contracts.map(row => row.asset)) !== stable(scope.trade_assets)) throw new Error('spot execution policy asset inventory differs from the frozen precommit')
+  for (const row of contracts) {
+    if (row.symbol !== `${row.asset.toUpperCase()}USDT` || Number(row.contract_multiplier) !== 1) throw new Error(`spot execution policy symbol/multiplier is invalid for ${row.asset}`)
+    for (const field of ['step_size', 'min_qty', 'max_qty', 'min_notional', 'max_notional']) if (!(Number(row[field]) > 0)) throw new Error(`spot execution policy ${field} is invalid for ${row.asset}`)
+    if (Number(row.max_qty) < Number(row.min_qty) || Number(row.max_notional) < Number(row.min_notional)) throw new Error(`spot execution policy bounds are inverted for ${row.asset}`)
+  }
+  const bytes = Buffer.isBuffer(policyBytes) ? policyBytes : Buffer.from(policyBytes || '')
+  if (!bytes.byteLength) throw new Error('spot execution policy source bytes are empty')
+  let parsed
+  try { parsed = JSON.parse(bytes.toString('utf8')) } catch (error) { throw new Error(`spot execution policy source bytes are invalid JSON: ${error.message}`) }
+  if (stable(parsed) !== stable(policy)) throw new Error('spot execution policy source bytes differ from the validated policy object')
+  const outputRoot = resolve(root); mkdirSync(outputRoot, { recursive: true })
+  const sourceByteSha256 = hash(bytes); const rawPath = `raw/spot-execution-policy-${sourceByteSha256}.json`
+  writeMetadataCustodyBytes(outputRoot, rawPath, bytes, 'spot execution policy raw bytes')
+  const rawReceipt = withHash({ schema: 'strategy-v5-source-receipt/1', version: 1, path: rawPath, source: 'USER_BOUND_SPOT_EXECUTION_POLICY', request: { endpoint: 'user-bound://spot-execution-policy', response_sha256: sourceByteSha256 }, byte_sha256: sourceByteSha256, bytes: bytes.byteLength, format: 'RAW_BYTES', storage_role: 'RAW_IGNORED', authoritative: false })
+  validateContractSchema(rawReceipt)
+  const normalized = withHash({ schema: 'strategy-v5-source-receipt/1', version: 1, status: 'USER_BOUND', captured_at: policy.created_at, request: { endpoint: 'user-bound://spot-execution-policy', response_sha256: sourceByteSha256 }, response_sha256: [sourceByteSha256], source_byte_sha256: [sourceByteSha256], raw_receipts: [rawReceipt], coverage: { complete: true } })
+  validateContractSchema(normalized)
+  const normalizedPath = `receipts/spot-execution-policy-${normalized.content_sha256}.json`; const normalizedBytes = Buffer.from(`${JSON.stringify(normalized, null, 2)}\n`)
+  writeMetadataCustodyBytes(outputRoot, normalizedPath, normalizedBytes, 'spot execution policy normalized receipt')
+  const source = { provider: 'USER', kind: 'SPOT_EXECUTION_POLICY', content_sha256: normalized.content_sha256, byte_sha256: sourceByteSha256, path: normalizedPath }
+  const maxLifecycleMs = Number(evaluatorSpec.candidate_template?.max_lifecycle_ms)
+  if (!Number.isInteger(maxLifecycleMs) || maxLifecycleMs <= 0 || maxLifecycleMs > 30 * 24 * 60 * 60 * 1000) throw new Error('metadata-build requires a fixed positive evaluator max_lifecycle_ms no greater than 30 days')
+  const executionCoverageEndAt = iso(timestamp(plan.window.end_at) + maxLifecycleMs)
+  const limitations = [...new Set([...policy.limitations, 'RETROSPECTIVE_USER_BOUND_RESEARCH_ASSUMPTION', 'NOT_ACTIVATION_EVIDENCE'])].sort()
+  const coverage = { complete: true, signal_start_at: plan.window.start_at, signal_end_at: plan.window.end_at, execution_end_at: executionCoverageEndAt, max_lifecycle_ms: maxLifecycleMs }
+  const common = { status: 'USER_BOUND', source, sourceReceiptSha256: normalized.content_sha256, sourceByteSha256, sourceRoot: outputRoot, sourceRootReference: rootReference, sourceReceiptPath: normalizedPath, precommitSha256: precommit.content_sha256, evaluatorSpecSha256: evaluatorSpec.content_sha256, planSha256: plan.content_sha256, capturedAt: policy.created_at, coverage, limitations }
+  const base = row => ({ asset: row.asset, venue: 'BINANCE', instrument: 'BINANCE_SPOT', symbol: row.symbol, effective_from: plan.window.start_at, effective_to: executionCoverageEndAt, availability_time: plan.window.start_at })
+  const contractSpec = makeMetadataReceipt({ ...common, kind: 'CONTRACT_SPEC', records: contracts.map(row => ({ ...base(row), contract_multiplier: 1, step_size: Number(row.step_size), lot_step: Number(row.step_size), min_qty: Number(row.min_qty), max_qty: Number(row.max_qty), min_notional: Number(row.min_notional), max_notional: Number(row.max_notional) })) })
+  const feeSchedule = makeMetadataReceipt({ ...common, kind: 'FEE_SCHEDULE', records: contracts.map(row => ({ ...base(row), taker_fee_rate: Number(policy.cost_model.taker_fee_rate) })) })
+  const executionModel = makeMetadataReceipt({ ...common, kind: 'EXECUTION_MODEL', records: contracts.map(row => ({ ...base(row), slippage_bps: Number(policy.cost_model.slippage_bps), impact_bps: Number(policy.cost_model.impact_bps), outage_policy: policy.outage_policy, gap_policy: policy.gap_policy })) })
+  const bundle = { contract_spec: contractSpec, fee_schedule: feeSchedule, execution_model: executionModel }
+  return { bundle, source_receipt: normalized, source_receipt_path: normalizedPath, raw_receipt: rawReceipt, raw_path: rawPath, source_byte_sha256: sourceByteSha256, bundle_sha256: hash(bundle), trade_scope: scope }
+}
+
 export function verifyMetadataCoverage({ receipts, requiredKinds, requiredPairs, startAt, endAt } = {}) {
   const limitations = []; const coverage = {}; for (const kind of requiredKinds || []) { const receipt = receipts?.[kind] || receipts?.[String(kind).toLowerCase()]; if (!receipt || receipt.schema !== DATA_V5.metadata || receipt.kind !== String(kind).toUpperCase() || receipt.content_sha256 !== ownHash(receipt)) { limitations.push(`${kind}: MISSING_OR_TAMPERED_RECEIPT`); continue } if (receipt.status === 'UNAVAILABLE') { limitations.push(`${kind}: ${receipt.limitations?.join(',') || 'UNAVAILABLE'}`); continue } const records = receipt.records || []; const missing = []; for (const pair of requiredPairs || []) { const [a, instrument] = String(pair).split('|'); const rows = records.filter(row => String(row.asset).toLowerCase() === a.toLowerCase() && String(row.instrument).toUpperCase() === instrument.toUpperCase()).sort((x, y) => timestamp(x.effective_from) - timestamp(y.effective_from)); let cursor = timestamp(startAt); for (const row of rows) { const from = timestamp(row.effective_from); const to = timestamp(row.effective_to); if (from > cursor) break; cursor = Math.max(cursor, to) } if (cursor < timestamp(endAt)) missing.push(pair) } coverage[kind] = { status: receipt.status, missing_pairs: missing }; if (missing.length) limitations.push(`${kind}: UNCOVERED_PAIRS:${missing.join(',')}`) }
   return { pass: limitations.length === 0, coverage, limitations }
@@ -3003,25 +3571,74 @@ function timeframeMilliseconds(value) { const match = String(value || '').match(
  * its frozen TARGET_STOP/TIME_STOP contract, while this adapter makes the
  * canonical lifecycle available to the authoritative evaluator whenever a
  * candidate explicitly binds strategy-v5-trade-lifecycle/1. */
-function deriveNormalizedLifecycleOutcome({ feature, label, execution, candidate, envelopeWindow, fixtureOnly }) {
+function normalizedLifecycleSizingSemantics(sizing, riskContract = null) {
+  if (!sizing) return null
+  const mode = String(sizing.mode || sizing.type || '').toUpperCase()
+  if (['FIXED_NOTIONAL', 'FIXED_NOTIONAL_USD'].includes(mode)) return { mode: 'FIXED_NOTIONAL_USD', amount: Number(sizing.notional_usd ?? sizing.notional) }
+  if (['RISK_USD', 'FIXED_RISK_BUDGET_USD', 'TARGET_STOP_RISK'].includes(mode)) return { mode: 'TARGET_STOP_RISK', amount: Number(sizing.risk_usd ?? sizing.budget_usd ?? sizing.risk_amount_usd ?? riskContract?.budget_usd) }
+  return { mode, amount: Number.NaN }
+}
+
+function normalizedLifecycleContracts({ lifecycle, candidate, execution, evaluatorSpec, fixtureOnly }) {
+  const candidateRisk = candidate.risk_contract || null
+  const executionRisk = execution.risk_contract || null
+  const riskSemantic = value => value ? { mode: String(value.mode), budget_usd: Number(value.budget_usd), precommit_sha256: value.precommit_sha256 || null, evaluator_spec_sha256: value.evaluator_spec_sha256 || null } : null
+  if (candidateRisk && executionRisk && stable(riskSemantic(candidateRisk)) !== stable(riskSemantic(executionRisk))) throw new Error('normalized lifecycle candidate/execution risk_contract values conflict')
+  const riskContract = candidateRisk || (fixtureOnly === true ? executionRisk : null)
+  if (!riskContract && fixtureOnly !== true) throw new Error('authoritative normalized lifecycle requires an evaluator-bound candidate risk_contract')
+  if (riskContract && (riskContract.mode !== 'FIXED_RISK_BUDGET_USD' || !(Number(riskContract.budget_usd) > 0) || !HASH_RE.test(String(riskContract.precommit_sha256 || '')) || !HASH_RE.test(String(riskContract.evaluator_spec_sha256 || '')))) throw new Error('normalized lifecycle risk_contract is not a hash-bound fixed risk budget')
+
+  const candidateSizing = candidate.sizing_contract || null
+  const executionSizing = execution.sizing_contract || null
+  const sizingSemantic = value => value ? { ...normalizedLifecycleSizingSemantics(value, riskContract), precommit_sha256: value.precommit_sha256 || null, evaluator_spec_sha256: value.evaluator_spec_sha256 || null } : null
+  if (candidateSizing && executionSizing && stable(sizingSemantic(candidateSizing)) !== stable(sizingSemantic(executionSizing))) throw new Error('normalized lifecycle candidate/execution sizing_contract values conflict')
+  const sizingContract = candidateSizing || (fixtureOnly === true ? executionSizing : null)
+  if (!sizingContract && fixtureOnly !== true) throw new Error('authoritative normalized lifecycle requires an evaluator-bound candidate sizing_contract')
+  if (sizingContract && (!['FIXED_NOTIONAL_USD', 'TARGET_STOP_RISK'].includes(String(sizingContract.mode)) || !HASH_RE.test(String(sizingContract.precommit_sha256 || '')) || !HASH_RE.test(String(sizingContract.evaluator_spec_sha256 || '')))) throw new Error('normalized lifecycle sizing_contract is not evaluator-bound')
+
+  if (fixtureOnly !== true) {
+    if (!evaluatorSpec || !HASH_RE.test(String(evaluatorSpec.content_sha256 || '')) || !HASH_RE.test(String(evaluatorSpec.precommit_sha256 || ''))) throw new Error('authoritative normalized lifecycle requires its verified evaluator spec')
+    const frozenRisk = evaluatorSpec.execution_contract?.risk_convention
+    const frozenSizing = evaluatorSpec.execution_contract?.sizing_contract
+    if (!frozenRisk || riskContract.precommit_sha256 !== evaluatorSpec.precommit_sha256 || riskContract.evaluator_spec_sha256 !== evaluatorSpec.content_sha256 || riskContract.mode !== frozenRisk.mode || Number(riskContract.budget_usd) !== Number(frozenRisk.budget_usd)) throw new Error('normalized lifecycle risk_contract differs from the verified evaluator spec')
+    const frozenSizingSemantic = normalizedLifecycleSizingSemantics(frozenSizing, frozenRisk)
+    const candidateSizingSemantic = normalizedLifecycleSizingSemantics(sizingContract, riskContract)
+    if (!frozenSizing || sizingContract.precommit_sha256 !== evaluatorSpec.precommit_sha256 || sizingContract.evaluator_spec_sha256 !== evaluatorSpec.content_sha256 || stable(candidateSizingSemantic) !== stable(frozenSizingSemantic)) throw new Error('normalized lifecycle sizing_contract differs from the verified evaluator spec')
+  }
+
+  let effectiveLifecycle = clone(lifecycle)
+  if (sizingContract) {
+    const frozen = normalizedLifecycleSizingSemantics(sizingContract, riskContract)
+    const declared = normalizedLifecycleSizingSemantics(lifecycle.sizing, riskContract)
+    if (declared && stable(declared) !== stable(frozen)) throw new Error('normalized lifecycle sizing disagrees with the evaluator-bound sizing_contract')
+    if (!Number.isFinite(frozen.amount) || !(frozen.amount > 0)) throw new Error('normalized lifecycle frozen sizing amount is invalid')
+    effectiveLifecycle = { ...effectiveLifecycle, sizing: frozen.mode === 'FIXED_NOTIONAL_USD' ? { mode: 'FIXED_NOTIONAL_USD', notional_usd: frozen.amount } : { mode: 'FIXED_RISK_BUDGET_USD', budget_usd: Number(riskContract?.budget_usd) } }
+  }
+  return { lifecycle: effectiveLifecycle, riskContract }
+}
+
+function deriveNormalizedLifecycleOutcome({ feature, label, execution, candidate, envelopeWindow, fixtureOnly, evaluatorSpec }) {
   const lifecycle = candidate.lifecycle || candidate.lifecycle_spec || execution.lifecycle || execution.lifecycle_spec || (candidate.lifecycle_engine === 'strategy-v5-trade-lifecycle/1' || execution.lifecycle_engine === 'strategy-v5-trade-lifecycle/1' ? { max_lifecycle_ms: candidate.max_lifecycle_ms || execution.max_lifecycle_ms || label.max_lifecycle_ms, stop: candidate.stop || candidate.stop_spec || execution.stop || execution.stop_spec, target: candidate.target || candidate.target_spec || execution.target || execution.target_spec, partial_exits: candidate.partial_exits || candidate.partials || candidate.exit_policy?.partial_exits || candidate.exit_policy?.partials || execution.partial_exits || execution.partials, trailing: candidate.trailing || candidate.ratchet || candidate.exit_policy?.trailing || candidate.exit_policy?.ratchet || execution.trailing || execution.ratchet, gap_policy: candidate.gap_policy || candidate.exit_policy?.gap_policy || execution.gap_policy, sizing: candidate.sizing || execution.sizing || (candidate.risk_amount_usd !== undefined ? { mode: 'RISK_USD', risk_usd: candidate.risk_amount_usd } : null) } : null)
   if (!lifecycle) return null
+  const boundContracts = normalizedLifecycleContracts({ lifecycle, candidate, execution, evaluatorSpec, fixtureOnly })
+  const effectiveLifecycle = boundContracts.lifecycle
   const intent = {
     ...clone(candidate),
     fixtureOnly: fixtureOnly === true,
     direction: candidate.direction || execution.direction || label.direction || 'long',
     instrument_type: candidate.instrument_type || execution.instrument_type || label.instrument_type || execution.instrument || 'spot',
     decision_time: candidate.decision_time || execution.decision_time || feature.decision_time,
-    lifecycle,
+    lifecycle: effectiveLifecycle,
     ...(candidate.contract ? { contract: clone(candidate.contract) } : {}),
   }
   const fundingRows = execution.funding_rows || execution.funding_events || []
   const markBars = execution.mark_bars || []
   const result = normalizeTradeLifecycleV5({ intent, bars: execution.child_bars, funding: fundingRows, marks: markBars, interval_ms: Number(execution.interval_ms || ONE_MINUTE), execution })
   if (envelopeWindow && (timestamp(result.entry_time) < timestamp(envelopeWindow.execution_start) || timestamp(result.lifecycle_end_exclusive) > timestamp(envelopeWindow.execution_end))) throw new Error('normalized lifecycle path escapes frozen opportunity envelope')
-  const sizing = lifecycle.sizing || candidate.sizing || execution.sizing || {}
-  const multiplier = Number(result.contract_multiplier); const stopDistance = result.stop_price === null ? null : Math.abs(Number(result.entry_price) - Number(result.stop_price)); const inferredRisk = stopDistance !== null ? stopDistance * Number(result.quantity) * multiplier : Number(result.entry_price) * Number(result.quantity) * multiplier; const riskAmount = Number(sizing.risk_usd ?? sizing.budget_usd ?? sizing.risk_amount_usd ?? inferredRisk)
+  const sizing = effectiveLifecycle.sizing || candidate.sizing || execution.sizing || {}
+  const multiplier = Number(result.contract_multiplier); const stopDistance = result.stop_price === null ? null : Math.abs(Number(result.entry_price) - Number(result.stop_price)); const inferredRisk = stopDistance !== null ? stopDistance * Number(result.quantity) * multiplier : Number(result.entry_price) * Number(result.quantity) * multiplier; const riskAmount = Number(boundContracts.riskContract?.budget_usd ?? sizing.risk_usd ?? sizing.budget_usd ?? sizing.risk_amount_usd ?? inferredRisk)
   if (!(riskAmount > 0) || !Number.isFinite(riskAmount)) throw new Error('normalized lifecycle risk denominator is invalid')
+  for (const supplied of [candidate.risk_amount_usd, execution.risk_amount_usd].filter(value => value !== undefined && value !== null)) if (!Number.isFinite(Number(supplied)) || Math.abs(Number(supplied) - riskAmount) > Math.max(1e-9, riskAmount * 1e-9)) throw new Error('normalized lifecycle caller risk amount conflicts with the frozen fixed-risk budget')
   const finalExit = result.exits.at(-1); if (!finalExit) throw new Error('normalized lifecycle produced no terminal exit')
   const fundingSettlements = result.exits.flatMap(row => row.funding_settlements || []).map(row => ({ event_id: row.event_id, raw_event_time: row.event_time, settlement_slot: row.event_time, funding_rate: Number(row.rate), settlement_mark: Number(row.mark_price), pnl_usd: Number(row.amount_usd) }))
   const normalizedExitPolicy = { type: 'NORMALIZED_LIFECYCLE', collision_policy: 'ADVERSE_STOP_FIRST', partial_exits: lifecycle.partial_exits || lifecycle.partials || [], trailing: lifecycle.trailing || null }
@@ -3029,7 +3646,7 @@ function deriveNormalizedLifecycleOutcome({ feature, label, execution, candidate
   const modelSlippageBps = Number(boundModel.slippage_bps ?? 0)
   const modelImpactBps = Number(boundModel.impact_bps ?? 0)
   if (![modelSlippageBps, modelImpactBps].every(value => Number.isFinite(value) && value >= 0)) throw new Error('normalized lifecycle execution model costs are invalid')
-  return { traded: true, asset: asset(feature.asset), instrument: String(result.instrument_type === 'SPOT' ? 'BINANCE_SPOT' : result.instrument_type === 'DATED_FUTURE' ? 'BINANCE_USDM_DATED_FUTURE' : 'BINANCE_USDM_PERPETUAL'), direction: result.direction, entry_policy: 'NEXT_BAR_OPEN', entry_delay_bars: 0, entry_time: result.entry_time, exit_time: finalExit.time, entry_price: Number(result.entry_price), exit_price: Number(finalExit.price), raw_exit_price: Number(finalExit.price), exit_reason: finalExit.reason, gap_fill: finalExit.fill_type === 'GAP_OPEN', quantity: Number(result.quantity), signed_quantity: result.direction === 'short' ? -Number(result.quantity) : Number(result.quantity), contract_multiplier: multiplier, gross_pnl_usd: Number(result.gross_pnl_usd), fees_usd: Number(result.fees_usd), funding_pnl_usd: Number(result.funding_usd), slippage_usd: Number(result.slippage_usd), capacity_debit_usd: Number(result.capacity_debit_usd), net_pnl_usd: Number(result.net_pnl_usd), risk_amount_usd: riskAmount, net_r: Number(result.net_pnl_usd) / riskAmount, funding_settlements: fundingSettlements, liquidation_model: null, exit_policy: normalizedExitPolicy, execution_model: { slippage_bps: modelSlippageBps, impact_bps: modelImpactBps, provenance: 'STRATEGY_V5_TRADE_LIFECYCLE_1' }, risk_denominator: stopDistance === null ? 'FIXED_NOTIONAL_OR_VOLATILITY' : 'DERIVED_STOP_DISTANCE', provenance: 'DERIVED_FROM_CANONICAL_NORMALIZED_LIFECYCLE', lifecycle_result: result }
+  return { traded: true, asset: asset(feature.asset), instrument: String(result.instrument_type === 'SPOT' ? 'BINANCE_SPOT' : result.instrument_type === 'DATED_FUTURE' ? 'BINANCE_USDM_DATED_FUTURE' : 'BINANCE_USDM_PERPETUAL'), direction: result.direction, entry_policy: 'NEXT_BAR_OPEN', entry_delay_bars: 0, entry_time: result.entry_time, exit_time: finalExit.time, entry_price: Number(result.entry_price), exit_price: Number(finalExit.price), raw_exit_price: Number(finalExit.price), exit_reason: finalExit.reason, gap_fill: finalExit.fill_type === 'GAP_OPEN', quantity: Number(result.quantity), signed_quantity: result.direction === 'short' ? -Number(result.quantity) : Number(result.quantity), contract_multiplier: multiplier, gross_pnl_usd: Number(result.gross_pnl_usd), fees_usd: Number(result.fees_usd), funding_pnl_usd: Number(result.funding_usd), slippage_usd: Number(result.slippage_usd), capacity_debit_usd: Number(result.capacity_debit_usd), net_pnl_usd: Number(result.net_pnl_usd), risk_amount_usd: riskAmount, net_r: Number(result.net_pnl_usd) / riskAmount, funding_settlements: fundingSettlements, liquidation_model: null, exit_policy: normalizedExitPolicy, execution_model: { slippage_bps: modelSlippageBps, impact_bps: modelImpactBps, provenance: 'STRATEGY_V5_TRADE_LIFECYCLE_1' }, risk_denominator: boundContracts.riskContract ? 'FROZEN_FIXED_RISK_BUDGET' : (stopDistance === null ? 'FIXED_NOTIONAL_OR_VOLATILITY' : 'DERIVED_STOP_DISTANCE'), provenance: 'DERIVED_FROM_CANONICAL_NORMALIZED_LIFECYCLE', lifecycle_result: result }
 }
 
 export function deriveBoundExecutionOutcome({ feature, label, execution, candidate = {}, envelopeWindow = null, metadata = {}, evaluatorSpec = null, fixtureOnly = false } = {}) {
@@ -3038,7 +3655,7 @@ export function deriveBoundExecutionOutcome({ feature, label, execution, candida
   if (decisionConvention !== 'COMPLETED_4H_BOUNDARY') throw new Error('execution decision timestamp convention is not explicitly bound to COMPLETED_4H_BOUNDARY')
   const decisionTimeframe = String(candidate.decision_timeframe || execution.decision_timeframe || label.decision_timeframe || '').toLowerCase()
   if (decisionTimeframe !== '4h' || decision % FOUR_HOURS !== 0) throw new Error('decision time is not the exact completed 4h boundary')
-  if (candidate.lifecycle || candidate.lifecycle_spec || execution.lifecycle || execution.lifecycle_spec || candidate.lifecycle_engine === 'strategy-v5-trade-lifecycle/1' || execution.lifecycle_engine === 'strategy-v5-trade-lifecycle/1') return deriveNormalizedLifecycleOutcome({ feature, label, execution, candidate, envelopeWindow, fixtureOnly })
+  if (candidate.lifecycle || candidate.lifecycle_spec || execution.lifecycle || execution.lifecycle_spec || candidate.lifecycle_engine === 'strategy-v5-trade-lifecycle/1' || execution.lifecycle_engine === 'strategy-v5-trade-lifecycle/1') return deriveNormalizedLifecycleOutcome({ feature, label, execution, candidate, envelopeWindow, fixtureOnly, evaluatorSpec })
   for (const name of ['funding_settlements', 'funding_debit', 'funding_pnl_usd', 'funding_amount']) if (execution?.[name] !== undefined) throw new Error(`caller-supplied ${name} is not an authoritative funding input`)
   const bars = ensureArray(execution?.child_bars, 'execution child bars').map(row => ({ ...clone(row), t: timestamp(row.event_time ?? row.time ?? row.open_time), open: Number(row.open), high: Number(row.high), low: Number(row.low), close: Number(row.close) })).sort((x, y) => x.t - y.t)
   if (new Set(bars.map(row => row.t)).size !== bars.length || bars.some((row, index) => index > 0 && row.t !== bars[index - 1].t + ONE_MINUTE)) throw new Error('execution path is not dense one-minute data')
@@ -3082,6 +3699,7 @@ export function deriveBoundExecutionOutcome({ feature, label, execution, candida
   if (expiry && resolutionCeiling > timestamp(expiry)) throw new Error('execution path extends beyond contract expiry')
   if (instrument === 'BINANCE_USDM_DATED_FUTURE') { const expiryReceipt = boundMetadata(metadata.expiry, 'EXPIRY', true, metadataRoot, { fixtureOnly }); const expiryRecord = metadataRecord(expiryReceipt.records, a, instrument, venue, symbol, entry.t); const expiryTime = timestamp(expiryRecord.expiry || expiryRecord.delivery_date); if (resolutionCeiling > expiryTime) throw new Error('dated future execution path extends beyond bound settlement expiry') }
   const executionModelReceipt = boundMetadata(metadata.execution_model, 'EXECUTION_MODEL', true, metadataRoot, { fixtureOnly, allowConservativeModel: true }); const executionModel = metadataRecord(executionModelReceipt.records, a, instrument, venue, symbol, entry.t); const slippageBps = Number(executionModel.slippage_bps); const impactBps = Number(executionModel.impact_bps); const outagePolicy = String(executionModel.outage_policy || '').toUpperCase(); const gapPolicy = String(executionModel.gap_policy || '').toUpperCase(); if (![slippageBps, impactBps].every(value => Number.isFinite(value) && value >= 0)) throw new Error('execution slippage/impact model is invalid'); if (outagePolicy !== 'FAIL') throw new Error(`unsupported outage policy ${outagePolicy || '?'}`); if (!['FAIL', 'FILL_AT_OPEN'].includes(gapPolicy)) throw new Error(`unsupported gap policy ${gapPolicy || '?'}`)
+  const modeledEntryPrice = direction === 'long' ? entry.open * (1 + (slippageBps + impactBps) / 10_000) : entry.open * (1 - (slippageBps + impactBps) / 10_000)
   if (policyType === 'TARGET_STOP') { const stop = Number(exitPolicy.stop_price); const target = Number(exitPolicy.target_price); if (!(stop > 0) || !(target > 0)) throw new Error('target/stop exit policy is invalid'); if (collisionPolicy !== 'ADVERSE_STOP_FIRST') throw new Error('only ADVERSE_STOP_FIRST OHLC collision policy is supported'); for (const bar of bars.filter(row => row.t >= entry.t && row.t <= lifecycleEnd)) { const long = direction === 'long'; const hitStop = long ? bar.low <= stop : bar.high >= stop; const hitTarget = long ? bar.high >= target : bar.low <= target; if (!hitStop && !hitTarget) continue; const gapStop = long ? bar.open <= stop : bar.open >= stop; const gapTarget = long ? bar.open >= target : bar.open <= target; const stopFirst = hitStop && (!hitTarget || collisionPolicy === 'ADVERSE_STOP_FIRST'); if ((gapStop || gapTarget) && gapPolicy === 'FAIL') throw new Error('execution path contains a gap through a target/stop under FAIL gap policy'); selectedExitTime = bar.t; exitFill = { reason: gapStop || gapTarget ? (stopFirst ? 'STOP_GAP_OPEN' : 'TARGET_GAP_OPEN') : (stopFirst ? 'STOP' : 'TARGET'), raw_price: gapStop || gapTarget ? bar.open : (stopFirst ? stop : target), gap: gapStop || gapTarget }; break } } else if (policyType !== 'TIME_STOP') throw new Error(`unsupported exit policy ${policyType}`)
   const resolution = selectedExitTime; if (envelopeWindow && (entry.t < timestamp(envelopeWindow.execution_start) || resolution > timestamp(envelopeWindow.execution_end))) throw new Error('outcome path escapes frozen opportunity envelope')
   const expectedPathStart = entryPolicy === 'DELAYED_BAR_OPEN' ? decision : entry.t
@@ -3110,7 +3728,7 @@ export function deriveBoundExecutionOutcome({ feature, label, execution, candida
     if (policyType === 'TARGET_STOP') {
       if (riskContract.mode !== 'FIXED_RISK_BUDGET_USD') throw new Error('target-stop sizing requires a fixed-risk-budget contract')
       const budget = Number(riskContract.budget_usd); const stop = Number(exitPolicy.stop_price)
-      const stopDistance = Math.abs(entry.open * (direction === 'long' ? 1 + (slippageBps + impactBps) / 10000 : 1 - (slippageBps + impactBps) / 10000) - stop)
+      const stopDistance = Math.abs(modeledEntryPrice - stop)
       if (!(budget > 0) || !Number.isFinite(budget) || !(stopDistance > 0)) throw new Error('target-stop sizing contract or stop distance is invalid')
       quantity = budget / (stopDistance * multiplier)
     } else {
@@ -3122,9 +3740,17 @@ export function deriveBoundExecutionOutcome({ feature, label, execution, candida
     // Contract filters are physical instrument terms; the precommit sizing
     // artifact may add stricter filters, but may not omit exchange lot rules
     // and let a caller inject an arbitrary quantity.
-    const stepValue = sizingContract?.quantity_step ?? contract.quantity_step
-    const minQuantityValue = sizingContract?.min_quantity ?? contract.min_quantity
-    const maxQuantityValue = sizingContract?.max_quantity ?? contract.max_quantity
+    const exchangeStepValue = contract.step_size ?? contract.lot_step ?? contract.quantity_step
+    const candidateStepValue = sizingContract?.quantity_step
+    if (candidateStepValue !== undefined && exchangeStepValue !== undefined) {
+      const exchangeStep = Number(exchangeStepValue); const candidateStep = Number(candidateStepValue); const ratio = candidateStep / exchangeStep
+      if (!(candidateStep >= exchangeStep) || !Number.isFinite(ratio) || Math.abs(ratio - Math.round(ratio)) > 1e-9) throw new Error('sizing quantity_step may not loosen or conflict with the frozen exchange step_size')
+    }
+    const stepValue = candidateStepValue ?? exchangeStepValue
+    const strictMinimum = (candidateValue, exchangeValue) => candidateValue === undefined ? exchangeValue : exchangeValue === undefined ? candidateValue : Math.max(Number(candidateValue), Number(exchangeValue))
+    const strictMaximum = (candidateValue, exchangeValue) => candidateValue === undefined ? exchangeValue : exchangeValue === undefined ? candidateValue : Math.min(Number(candidateValue), Number(exchangeValue))
+    const minQuantityValue = strictMinimum(sizingContract?.min_quantity, contract.min_qty ?? contract.min_quantity)
+    const maxQuantityValue = strictMaximum(sizingContract?.max_quantity, contract.max_qty ?? contract.max_quantity)
     const step = stepValue === undefined ? null : Number(stepValue)
     if (step !== null && (!(step > 0) || !Number.isFinite(step))) throw new Error('sizing quantity_step is invalid')
     if (step !== null) quantity = Math.floor(quantity / step) * step
@@ -3132,13 +3758,14 @@ export function deriveBoundExecutionOutcome({ feature, label, execution, candida
     const maxQuantity = maxQuantityValue === undefined ? null : Number(maxQuantityValue)
     if (minQuantity !== null && (!(minQuantity > 0) || !Number.isFinite(minQuantity) || quantity < minQuantity)) throw new Error('derived execution quantity is below the frozen minimum quantity')
     if (maxQuantity !== null && (!(maxQuantity > 0) || !Number.isFinite(maxQuantity) || quantity > maxQuantity)) throw new Error('derived execution quantity exceeds the frozen maximum quantity')
-    const minNotionalValue = sizingContract?.min_notional_usd ?? contract.min_notional_usd
-    const maxNotionalValue = sizingContract?.max_notional_usd ?? contract.max_notional_usd
+    const minNotionalValue = strictMinimum(sizingContract?.min_notional_usd, contract.min_notional ?? contract.min_notional_usd)
+    const maxNotionalValue = strictMaximum(sizingContract?.max_notional_usd, contract.max_notional ?? contract.max_notional_usd)
     const minNotional = minNotionalValue === undefined ? null : Number(minNotionalValue)
     const maxNotional = maxNotionalValue === undefined ? null : Number(maxNotionalValue)
-    const sizedNotional = quantity * entry.open * multiplier
+    const sizedNotional = quantity * entry.open * multiplier; const modeledEntryNotional = quantity * modeledEntryPrice * multiplier
     if (minNotional !== null && (!(minNotional > 0) || sizedNotional < minNotional)) throw new Error('derived execution quantity is below the frozen minimum notional')
-    if (maxNotional !== null && (!(maxNotional > 0) || sizedNotional > maxNotional)) throw new Error('derived execution quantity exceeds the frozen maximum notional')
+    const maxNotionalTolerance = maxNotional === null ? 0 : Number.EPSILON * Math.max(1, Math.abs(maxNotional), Math.abs(modeledEntryNotional)) * 8
+    if (maxNotional !== null && (!(maxNotional > 0) || modeledEntryNotional - maxNotional > maxNotionalTolerance)) throw new Error('derived execution quantity exceeds the frozen maximum notional')
     if (!(quantity > 0)) throw new Error('frozen sizing contract rounds execution quantity to zero')
   }
   const signedQuantity = (direction === 'short' ? -1 : 1) * quantity
@@ -3146,10 +3773,13 @@ export function deriveBoundExecutionOutcome({ feature, label, execution, candida
   const feeReceipt = boundMetadata(metadata.fee_schedule, 'FEE_SCHEDULE', true, metadataRoot, { fixtureOnly }); const feeEntry = metadataRecord(feeReceipt.records, a, instrument, venue, symbol, entry.t); const feeExit = metadataRecord(feeReceipt.records, a, instrument, venue, symbol, resolution)
   const feeRateEntry = Number(feeEntry.taker_fee_rate); const feeRateExit = Number(feeExit.taker_fee_rate)
   if (![feeRateEntry, feeRateExit].every(value => Number.isFinite(value) && value >= 0)) throw new Error('effective fee schedule rates are invalid')
-  const entryPrice = direction === 'long' ? entry.open * (1 + (slippageBps + impactBps) / 10000) : entry.open * (1 - (slippageBps + impactBps) / 10000); const exitPrice = direction === 'long' ? exitFill.raw_price * (1 - (slippageBps + impactBps) / 10000) : exitFill.raw_price * (1 + (slippageBps + impactBps) / 10000)
-  const entryNotional = entryPrice * Math.abs(signedQuantity) * multiplier; const exitNotional = exitPrice * Math.abs(signedQuantity) * multiplier
+  const entryPrice = modeledEntryPrice; const exitPrice = direction === 'long' ? exitFill.raw_price * (1 - (slippageBps + impactBps) / 10000) : exitFill.raw_price * (1 + (slippageBps + impactBps) / 10000)
+  const quantityNotional = Math.abs(signedQuantity) * multiplier; const rawEntryNotional = entry.open * quantityNotional; const rawExitNotional = exitFill.raw_price * quantityNotional
+  const entryNotional = entryPrice * quantityNotional; const exitNotional = exitPrice * quantityNotional
   const fees = entryNotional * feeRateEntry + exitNotional * feeRateExit
-  const gross = (direction === 'short' ? entryPrice - exitPrice : exitPrice - entryPrice) * Math.abs(signedQuantity) * multiplier
+  const slippage = (rawEntryNotional + rawExitNotional) * slippageBps / 10_000
+  const capacityDebit = (rawEntryNotional + rawExitNotional) * impactBps / 10_000
+  const gross = (direction === 'short' ? entry.open - exitFill.raw_price : exitFill.raw_price - entry.open) * quantityNotional
   const fundingReceipt = instrument === 'BINANCE_USDM_PERPETUAL' ? boundMetadata(metadata.funding_identity, 'FUNDING_IDENTITY', true, metadataRoot, { fixtureOnly }) : null
   if (instrument === 'BINANCE_USDM_DATED_FUTURE') { const datedFunding = metadata.funding_identity; const notApplicable = datedFunding?.status === 'NOT_APPLICABLE' || (datedFunding?.status === 'UNAVAILABLE' && (datedFunding.limitations || []).some(value => String(value).toUpperCase().includes('NOT_APPLICABLE'))); if (!notApplicable) throw new Error('dated futures must declare funding as NOT_APPLICABLE; periodic funding is not accepted') }
   if (instrument === 'BINANCE_USDM_PERPETUAL' && fundingReceipt.coverage?.complete !== true) throw new Error('perpetual derivative funding coverage is incomplete')
@@ -3191,7 +3821,7 @@ export function deriveBoundExecutionOutcome({ feature, label, execution, candida
       if (equity <= maintenance) throw new Error('execution path breaches dynamically derived maintenance margin/liquidation boundary')
     }
   }
-  const net = gross - fees + funding
+  const net = gross - fees - slippage - capacityDebit + funding
   const suppliedCandidateRisk = candidate.risk_amount_usd === undefined ? null : Number(candidate.risk_amount_usd)
   const suppliedExecutionRisk = execution.risk_amount_usd === undefined ? null : Number(execution.risk_amount_usd)
   let riskAmount
@@ -3214,7 +3844,7 @@ export function deriveBoundExecutionOutcome({ feature, label, execution, candida
     riskAmount = budget
   }
   const netR = net / riskAmount
-  return { traded: true, asset: a, instrument, direction, entry_policy: entryPolicy, entry_delay_bars: entryDelayBars, entry_time: iso(entry.t), exit_time: iso(resolution), entry_price: entryPrice, exit_price: exitPrice, raw_exit_price: exitFill.raw_price, exit_reason: exitFill.reason, gap_fill: exitFill.gap, quantity: Math.abs(signedQuantity), signed_quantity: signedQuantity, contract_multiplier: multiplier, gross_pnl_usd: gross, fees_usd: fees, funding_pnl_usd: funding, net_pnl_usd: net, risk_amount_usd: riskAmount, net_r: netR, funding_settlements: fundingSettlements, liquidation_model: derivative ? liquidationModel : null, ...(derivative ? { collateral_used: liquidationModel.collateral_usd, margin_mode: liquidationModel.margin_mode, leverage: liquidationModel.leverage, tier_id: liquidationModel.tier_id } : {}), exit_policy: { type: policyType, collision_policy: collisionPolicy }, execution_model: { slippage_bps: slippageBps, impact_bps: impactBps, outage_policy: outagePolicy, gap_policy: gapPolicy, provenance: executionModelReceipt.provenance_mode }, risk_denominator: policyType === 'TARGET_STOP' ? 'DERIVED_STOP_DISTANCE' : 'FROZEN_FIXED_RISK_BUDGET', provenance: 'DERIVED_FROM_BOUND_BARS_AND_METADATA' }
+  return { traded: true, asset: a, instrument, direction, entry_policy: entryPolicy, entry_delay_bars: entryDelayBars, entry_time: iso(entry.t), exit_time: iso(resolution), entry_price: entryPrice, exit_price: exitPrice, raw_exit_price: exitFill.raw_price, exit_reason: exitFill.reason, gap_fill: exitFill.gap, quantity: Math.abs(signedQuantity), signed_quantity: signedQuantity, contract_multiplier: multiplier, gross_pnl_usd: gross, fees_usd: fees, funding_pnl_usd: funding, slippage_usd: slippage, capacity_debit_usd: capacityDebit, net_pnl_usd: net, risk_amount_usd: riskAmount, net_r: netR, funding_settlements: fundingSettlements, liquidation_model: derivative ? liquidationModel : null, ...(derivative ? { collateral_used: liquidationModel.collateral_usd, margin_mode: liquidationModel.margin_mode, leverage: liquidationModel.leverage, tier_id: liquidationModel.tier_id } : {}), exit_policy: { type: policyType, collision_policy: collisionPolicy }, execution_model: { slippage_bps: slippageBps, impact_bps: impactBps, outage_policy: outagePolicy, gap_policy: gapPolicy, provenance: executionModelReceipt.provenance_mode }, risk_denominator: policyType === 'TARGET_STOP' ? 'DERIVED_STOP_DISTANCE' : 'FROZEN_FIXED_RISK_BUDGET', provenance: 'DERIVED_FROM_BOUND_BARS_AND_METADATA' }
 }
 
 export function validateOutcomeBindings({ feature, label, execution, envelopeWindow = null, metadata = {}, candidate = {} } = {}) { return deriveBoundExecutionOutcome({ feature, label, execution, envelopeWindow, metadata, candidate }) }

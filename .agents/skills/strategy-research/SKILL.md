@@ -204,12 +204,47 @@ stopping, 0.90 crossover, and `1/gene_count` mutation. Three seeds are
 independent search exposure and never reduce cumulative K. A missing/stale/
 competing HEAD fails closed; genesis is explicit and one-time.
 
+The cumulative family namespace is not caller-selected. Its canonical ID is
+the lowercase frozen precommit `hypothesis_family`, falling back to
+`precommit_id`; definition `hypothesis_family` and evaluator `strategy_family`
+must equal it exactly. Renaming, case changes, alternate record roots, and
+rolling data snapshots never reset family K.
+
 The v5 data planner freezes the latest five completed years for the eight
 required crypto assets and declares Binance spot, USD-M perpetual, and available
 dated-future series. It writes a resumable public-data plan, not fabricated
 rows; raw data remains gitignored. The opportunity envelope commits the full
 execution universe before outcomes, including 1-minute bars for every eligible
 asset/window and maximum 30-day lifecycle.
+
+For every new family, declare only the inputs its premise actually needs and
+use the physical build chain `feature-build -> metadata-build ->
+opportunity-envelope --hydrate -> artifact-build -> research-init ->
+experiment-freeze -> search-genetic`. `experiment-freeze` must reopen the
+precommit, definition/2, candidate envelope or immutable candidate set,
+separated Parquet manifest, evaluator spec, exact execution-metadata bundle,
+and frozen experiment policy. It
+derives every experiment/3 lineage hash, the authoritative executor identity,
+and the exact crypto asset/instrument scope; never supply or override lineage,
+metrics, trades, returns, or fitness. For spot research, `metadata-build` consumes a frozen policy
+bound to the exact plan/precommit/evaluator and emits physically reopenable
+`USER_BOUND` contract, fee, and execution-model receipts. Its assumptions must
+cover the final signal through the full maximum lifecycle, apply exchange lot
+and notional filters plus two-sided costs, and remain explicitly retrospective
+and ineligible for activation. Never project those spot assumptions onto a
+perpetual or dated future. `research-init` derives
+the chronological episode inventory and repository-anchored family cumulative-K
+HEAD from the exact Parquet roles; never hand-author or relocate either. Rolling
+data snapshots advance that same HEAD without resetting prior search exposure.
+A `BASE_ONLY` acquisition may support
+completed-bar price plus exact Binance USD-M funding predictors even when all
+optional market-flow archives are unavailable. Funding must use the frozen
+`SAME_ASSET_FUNDING_SERIES` recipe, the canonical same-asset perpetual stream,
+strict event and availability time before the decision, bounded staleness, and
+unambiguous physical receipts. Optional metrics do not block a family that did
+not declare them. Open interest, trader ratios, taker flow, or any other
+declared unavailable/non-PIT metric still fails closed; do not replace it with
+funding or silently weaken the precommit.
 
 Authoritative v5 evaluation derives `features -> signal intent -> labels ->
 execution fills -> trades -> metrics -> stresses -> portfolio -> WFO`. Feature,

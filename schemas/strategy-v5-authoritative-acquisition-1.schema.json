@@ -53,6 +53,8 @@
     "authoritative": {
       "const": false
     },
+    "fixture_only": { "type": "boolean" },
+    "provenance": { "enum": ["PUBLIC_ADAPTER_RECOMPUTED", "FIXTURE_INJECTED", "LOCAL_RAW_REPLAY"] },
     "captures": {
       "type": "array",
       "items": {

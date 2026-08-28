@@ -41,6 +41,7 @@ import {
   writeGeneticCheckpointFile
 } from '../tools/strategy-research-v5-statistical.mjs'
 import { registerInternalVerifiedPhysicalEvaluator } from '../tools/strategy-v5-physical-trust.mjs'
+import { reopenAuthoritativeGeneticCheckpoint } from '../tools/strategy-research-v5-authoritative.mjs'
 
 const lineage = { dataset_sha256: hash('correction-dataset'), candidate_set_sha256: hash('correction-candidate'), feature_set_sha256: hash('correction-feature'), label_set_sha256: hash('correction-label'), execution_set_sha256: hash('correction-execution') }
 const rows = Array.from({ length: 40 }, (_, index) => {
@@ -378,6 +379,37 @@ assert.equal(hardFeasible({ sample_count: 100, traded_count: 1, expectancy_r: 1,
   const checkpoint = makeGeneticCheckpoint({ artifact, exposureHead: head, geneSpace, foldId: 'fold-1', seed: 11, generation: 2, config: { population: 4, generations: 3, minGenerations: 3, plateauGenerations: 3, crossoverProbability: 0.9, mutationProbability: null, seeds: [11, 23, 47], halfLifeMonths: 18, operator: 'ARITHMETIC_CROSSOVER_UNIFORM_MUTATION', scheduler_ordering: 'STABLE_SEED_GENERATION_CHROMOSOME_ORDER', mode: 'FIXTURE' }, population: [], history: [] })
   validateContractSchema(checkpoint); validateGeneticCheckpoint(checkpoint, { artifact, exposureHead: head, geneSpace, foldId: 'fold-1', config: checkpoint.config })
   const directory = mkdtempSync(join(tmpdir(), 'v5-stat-checkpoint-')); const path = join(directory, 'checkpoint.json'); writeGeneticCheckpointFile({ filePath: path, checkpoint, expectedExposureHeadSha256: head.content_sha256 }); const receipt = JSON.parse(readFileSync(`${path}.jsonl`, 'utf8').trim()); assert.equal(receipt.checkpoint_sha256, checkpoint.content_sha256); assert.equal(Object.hasOwn(receipt, 'history'), false, 'append-only checkpoint journal stores compact receipts, not repeated full histories'); assert.throws(() => writeGeneticCheckpointFile({ filePath: path, checkpoint: withHash({ ...checkpoint, generation: 1 }), expectedExposureHeadSha256: head.content_sha256 }), /stale|competing/); rmSync(directory, { recursive: true, force: true })
+}
+
+// The production command boundary accepts a fresh destination, but an
+// existing checkpoint is resumable only when every frozen search input still
+// matches.  This is intentionally stricter than merely parsing the schema.
+{
+  const directory = mkdtempSync(join(tmpdir(), 'v5-authoritative-checkpoint-resume-'))
+  const path = join(directory, 'checkpoint.json')
+  const geneSpace = { genes: [{ name: 'threshold', type: 'continuous', min: 0, max: 1, step: 0.1, default: 0.5 }] }
+  const config = { population: 48, generations: 20, minGenerations: 10, plateauGenerations: 5, crossoverProbability: 0.9, mutationProbability: null, seeds: [11, 23, 47], halfLifeMonths: 18, operator: 'ARITHMETIC_CROSSOVER_UNIFORM_MUTATION', scheduler_ordering: 'STABLE_SEED_GENERATION_CHROMOSOME_ORDER', mode: 'AUTHORITATIVE' }
+  const checkpoint = makeGeneticCheckpoint({ artifact, exposureHead: head, geneSpace, foldId: 'GENETIC_TRAIN', seed: 11, generation: 2, config, population: [], history: [] })
+  assert.equal(reopenAuthoritativeGeneticCheckpoint({ checkpointPath: path, artifact, exposureHead: head, geneSpace, foldId: 'GENETIC_TRAIN' }), null)
+  writeGeneticCheckpointFile({ filePath: path, checkpoint, expectedExposureHeadSha256: head.content_sha256 })
+  assert.equal(reopenAuthoritativeGeneticCheckpoint({ checkpointPath: path, artifact, exposureHead: head, geneSpace, foldId: 'GENETIC_TRAIN' }).content_sha256, checkpoint.content_sha256)
+
+  const assertVariantRejected = (name, value, pattern, overrides = {}) => {
+    const variantPath = join(directory, `${name}.json`)
+    writeFileSync(variantPath, typeof value === 'string' ? value : `${JSON.stringify(value)}\n`)
+    assert.throws(() => reopenAuthoritativeGeneticCheckpoint({ checkpointPath: variantPath, artifact, exposureHead: head, geneSpace, foldId: 'GENETIC_TRAIN', ...overrides }), pattern)
+  }
+  assertVariantRejected('malformed', '{', /cannot be resumed/i)
+  assertVariantRejected('state-tampered', withHash({ ...checkpoint, generation: checkpoint.generation + 1 }), /tampered|contract is invalid/i)
+  assertVariantRejected('artifact-stale', makeGeneticCheckpoint({ artifact: makeStatisticalArtifactSet({ lineage, candidates: [{ candidate_id: 'c', behavior_sha256: behavior }], episodes: rows.map((row, index) => index === 0 ? { ...row, candidate_returns: { c: { net_r: 0.04, traded: true } } } : row), exposureHead: head }), exposureHead: head, geneSpace, foldId: 'GENETIC_TRAIN', seed: 11, generation: 2, config, population: [], history: [] }), /artifact lineage mismatch/i)
+  assertVariantRejected('head-stale', checkpoint, /exposure predecessor is stale/i, { exposureHead: makeExposureHead({ hypothesisFamily: 'different-head', datasetSha256: lineage.dataset_sha256, entries: [{ behavior_sha256: behavior }] }) })
+  assertVariantRejected('predecessor-stale', withHash({ ...checkpoint, exposure_predecessor_sha256: hash('stale-predecessor') }), /exposure predecessor is stale/i)
+  assertVariantRejected('gene-stale', checkpoint, /gene space mismatch/i, { geneSpace: { genes: [{ name: 'threshold', type: 'continuous', min: 0, max: 1, step: 0.1, default: 0.6 }] } })
+  assertVariantRejected('fold-stale', checkpoint, /fold mismatch/i, { foldId: 'OTHER_FOLD' })
+  assertVariantRejected('config-stale', checkpoint, /configuration mismatch/i, { config: { ...config, population: 47 } })
+  writeFileSync(`${path}.lock`, 'active\n')
+  assert.throws(() => reopenAuthoritativeGeneticCheckpoint({ checkpointPath: path, artifact, exposureHead: head, geneSpace, foldId: 'GENETIC_TRAIN' }), /competing active writer/i)
+  rmSync(directory, { recursive: true, force: true })
 }
 
 {

@@ -22,10 +22,11 @@
     "model_config_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
     "model_config_path": { "type": ["string", "null"] },
     "precommit_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+    "evaluator_spec_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
     "precommit_path": { "type": ["string", "null"] },
     "provenance_mode": { "enum": ["BOUND_SOURCE", "MODEL_BOUND", "UNAVAILABLE", "FIXTURE_ONLY"] },
     "records": { "type": "array", "items": { "$ref": "#/$defs/record" } },
-    "coverage": { "type": ["object", "null"], "properties": { "complete": { "type": "boolean" }, "coverage_mode": { "type": "string" }, "expected_slots": { "type": ["integer", "null"] }, "observed_events": { "type": "integer" }, "missing_slots": { "type": ["array", "null"], "items": { "type": "string" } }, "slot_tolerance_ms": { "type": "integer" }, "cadence_ms": { "type": ["integer", "null"] }, "anchor_time": { "type": ["string", "null"], "format": "date-time" }, "cadence_segments": { "type": "array", "items": { "$ref": "#/$defs/cadenceSegment" } }, "source_pagination_complete": { "type": ["boolean", "null"] } }, "additionalProperties": false },
+    "coverage": { "type": ["object", "null"], "properties": { "complete": { "type": "boolean" }, "coverage_mode": { "type": "string" }, "expected_slots": { "type": ["integer", "null"] }, "observed_events": { "type": "integer" }, "missing_slots": { "type": ["array", "null"], "items": { "type": "string" } }, "slot_tolerance_ms": { "type": "integer" }, "cadence_ms": { "type": ["integer", "null"] }, "anchor_time": { "type": ["string", "null"], "format": "date-time" }, "cadence_segments": { "type": "array", "items": { "$ref": "#/$defs/cadenceSegment" } }, "source_pagination_complete": { "type": ["boolean", "null"] }, "signal_start_at": { "type": "string", "format": "date-time" }, "signal_end_at": { "type": "string", "format": "date-time" }, "execution_end_at": { "type": "string", "format": "date-time" }, "max_lifecycle_ms": { "type": "integer", "exclusiveMinimum": 0 } }, "additionalProperties": false },
     "limitations": { "type": "array", "items": { "type": "string" } },
     "authoritative": { "type": "boolean" },
     "content_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
