@@ -1,0 +1,22 @@
+{
+  "schema": "strategy-portfolio-risk-v5-frozen-oracle/1",
+  "source": "tools/strategy-portfolio-risk-v5.mjs",
+  "hash_binding": {
+    "hash": "8770367190045f278b09f307fba38d9e97f6257e82f3e508c893d4a6b167f265",
+    "own_hash": "99168216144c7fed5d4c54916cf98d9c66096280c04a499822a99b6658bd177a",
+    "with_hash": {
+      "z": 2,
+      "a": 1,
+      "content_sha256": "99168216144c7fed5d4c54916cf98d9c66096280c04a499822a99b6658bd177a"
+    }
+  },
+  "writers": {
+    "mark_content_sha256": "31988c91e2ac61513841bb50af26f954f67effce05d8329514cf2b35a1b90e0b",
+    "fees_content_sha256": "9fe0323a448301a4c6750d2503d4a826bef03ae5947959dcab6a4316917e025a",
+    "model_normalized_own_hash": "fd8c4b57b00f7691b856c3ea4369880fc5b7563d7e8f19fde2c3f1ae49bd4ddd"
+  },
+  "lineage": {
+    "selected_trades_sha256": "a28072a583c0dc107d2f28e2cacf31e03a4e0a1641060f8733f68311efe3af78",
+    "evaluation_sha256": "e1247b0706ff757762f479feb38abddc634bd89bccca519be860db1400789efa"
+  }
+}

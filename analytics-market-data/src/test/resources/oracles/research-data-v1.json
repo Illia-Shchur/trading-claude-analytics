@@ -1,0 +1,170 @@
+{
+  "rows": [{
+    "asset": "btc",
+    "time": "2026-01-01T00:00:00Z",
+    "availability_time": "2026-01-01T04:00:00Z",
+    "note": "comma, newline\nand \"quote\""
+  }],
+  "hash": "456341a4a4ba214a3f9f76e630d12f2b26a3dda99857989eb8edac2d49f4d65a",
+  "withHash": {
+    "z": 2,
+    "a": {"nested": true},
+    "content_sha256": "456341a4a4ba214a3f9f76e630d12f2b26a3dda99857989eb8edac2d49f4d65a"
+  },
+  "normalized": [
+    {
+      "asset": "btc",
+      "time": "2026-01-01T00:00:00Z",
+      "availability_time": 1767240000000,
+      "close": 1,
+      "asset_class": "crypto",
+      "venue": "binance",
+      "instrument": "spot",
+      "timeframe": "4h",
+      "event_time": 1767225600000,
+      "dataset_id": "oracle-bars",
+      "dataset_version": "oracle-bars",
+      "source": "fixture-ohlc",
+      "pit_tier": "T0_IMMUTABLE_EVENT",
+      "revision_status": "ORIGINAL",
+      "role": "FEATURE"
+    },
+    {
+      "asset": "eth",
+      "time": "2026-01-01T04:00:00Z",
+      "availability_time": 1767254400000,
+      "close": 2,
+      "asset_class": "crypto",
+      "venue": "binance",
+      "instrument": "spot",
+      "timeframe": "4h",
+      "event_time": 1767240000000,
+      "dataset_id": "oracle-bars",
+      "dataset_version": "oracle-bars",
+      "source": "fixture-ohlc",
+      "pit_tier": "T0_IMMUTABLE_EVENT",
+      "revision_status": "ORIGINAL",
+      "role": "FEATURE"
+    }
+  ],
+  "split": {
+    "features": [{"event_time": 1, "asset": "btc", "dataset_id": "d", "close": 10}],
+    "labels": [{
+      "forward_return": 0.2,
+      "resolved_at": 2,
+      "event_time": 1,
+      "asset": "btc",
+      "dataset_id": "d"
+    }]
+  },
+  "manifest": {
+    "schema": "strategy-data-manifest/2",
+    "manifest_id": "oracle-manifest",
+    "snapshot_id": null,
+    "role": "FEATURE",
+    "source": "fixture-ohlc",
+    "public_source": true,
+    "partitioning": ["dataset_version", "asset", "venue", "instrument", "timeframe", "utc_year", "utc_month"],
+    "lineage": {
+      "adapter_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "code_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "container_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "config_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+    },
+    "feature_store": null,
+    "datasets": [
+      {
+        "dataset_id": "oracle-bars",
+        "dataset_version": "oracle-bars",
+        "asset": "btc",
+        "asset_class": "crypto",
+        "venue": "binance",
+        "instrument_id": "spot",
+        "timeframe": "4h",
+        "row_count": 1,
+        "min_time": 1767225600000,
+        "max_time": 1767225600000,
+        "source_sha256": "f4e013bb4f170f4ad5cce6b46e0cc0bc5e69d76a9981ff369150a64691352cae",
+        "availability_time_policy": "availability_time <= decision_time",
+        "point_in_time_status": "PIT_SAFE",
+        "revision_status": "ORIGINAL",
+        "pit_tiers": ["T0_IMMUTABLE_EVENT"],
+        "coverage": {
+          "expected_rows": 1,
+          "observed_rows": 1,
+          "observed_fraction": 1,
+          "gap_count": 0,
+          "max_gap_bars": 0,
+          "minimum_fraction": 0.95,
+          "frozen": true
+        },
+        "source": "fixture-ohlc",
+        "public_source": true
+      },
+      {
+        "dataset_id": "oracle-bars",
+        "dataset_version": "oracle-bars",
+        "asset": "eth",
+        "asset_class": "crypto",
+        "venue": "binance",
+        "instrument_id": "spot",
+        "timeframe": "4h",
+        "row_count": 1,
+        "min_time": 1767240000000,
+        "max_time": 1767240000000,
+        "source_sha256": "d362fb4dae63bebbf3eeac99c54afd9a38c35fe2e53a4ac87f60db8c27d63c52",
+        "availability_time_policy": "availability_time <= decision_time",
+        "point_in_time_status": "PIT_SAFE",
+        "revision_status": "ORIGINAL",
+        "pit_tiers": ["T0_IMMUTABLE_EVENT"],
+        "coverage": {
+          "expected_rows": 1,
+          "observed_rows": 1,
+          "observed_fraction": 1,
+          "gap_count": 0,
+          "max_gap_bars": 0,
+          "minimum_fraction": 0.95,
+          "frozen": true
+        },
+        "source": "fixture-ohlc",
+        "public_source": true
+      }
+    ],
+    "label_datasets": [],
+    "coverage_summary": {"price_fraction": 1, "derivatives_fraction": null, "funding_fraction": null},
+    "label_coverage_summary": {"price_fraction": null, "derivatives_fraction": null, "funding_fraction": null},
+    "gaps": [],
+    "data_root_sha256": "89c0ff747714e092b80ef635c3424af4a81aab0201cde8d60b1e6177992150c6",
+    "authoritative": true,
+    "content_sha256": "f89513738dec8b9f70007ee4245bd87f5540bb38563c88fb0e4c5260fec60c79"
+  },
+  "feature": {
+    "schema": "research-feature-set/1",
+    "feature_set_id": "features-aaaaaaaaaaaa",
+    "data_manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "feature_code_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "lineage": [],
+    "warmup_bars": 2,
+    "coverage": {"btc": 1},
+    "partitions": [],
+    "labels_allowed": false,
+    "content_sha256": "756bf81f8bdac72b3947215e28c289222735cb351f08c81f0612bce743267792"
+  },
+  "label": {
+    "schema": "research-label-set/1",
+    "label_set_id": "labels-aaaaaaaaaaaa",
+    "data_manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "label_code_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "horizon": {"bars": 2, "unit": "bars"},
+    "derivation": {
+      "label_code_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "source_manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "availability": "resolved_at_or_frozen_horizon_end",
+      "resolution_field": "resolved_at",
+      "predictor_eligible": false
+    },
+    "partitions": [],
+    "predictor_eligible": false,
+    "content_sha256": "21a2d26586944cb270b0e89e93706ac0ffea2212ec4782337d9ef66bbcc7e271"
+  }
+}

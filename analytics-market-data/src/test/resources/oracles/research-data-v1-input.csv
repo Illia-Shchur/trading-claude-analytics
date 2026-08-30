@@ -1,0 +1,3 @@
+asset,time,availability_time,note
+btc,2026-01-01T00:00:00Z,2026-01-01T04:00:00Z,"comma, newline
+and ""quote"""

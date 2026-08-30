@@ -28,7 +28,7 @@ jobs:
           persist-credentials: true
 
       # Git objects and the proposed evidence bytes are untrusted data.  Do
-      # this diff/object inspection before npm or any repository-provided
+      # this diff/object inspection before Java or any repository-provided
       # module is executed, and never checkout the PR head as the verifier.
       - name: Inspect PR objects and materialize proposed evidence
         working-directory: verifier-worktree
@@ -55,9 +55,13 @@ jobs:
           printf '%s\n' "$proposed_root" > .v5-proposed-root
           git archive --format=tar "$HEAD_SHA" "$proposed_root" > .v5-proposed.tar
 
-      - name: Install pinned trusted verifier dependencies
-        working-directory: verifier-worktree
-        run: npm ci --ignore-scripts
+      - name: Install Java 21 trusted verifier runtime
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: verifier-worktree/pom.xml
 
       - name: Validate and extract proposed evidence archive
         working-directory: verifier-worktree
@@ -65,14 +69,9 @@ jobs:
           set -euo pipefail
           # Validate untrusted archive member names, types, and deterministic
           # JSON/byte ceilings before tar is allowed to create any path.
-          node --input-type=module <<'NODE'
-          import { readFileSync } from 'node:fs'
-          import { requireSingleProspectiveSnapshotRootV5, verifyTarArchive } from './tools/strategy-v5-workflow-security.mjs'
-          const root = readFileSync('.v5-proposed-root', 'utf8').trim()
-          const changed = readFileSync('.v5-custody-diff', 'utf8').split(/\r?\n/).filter(Boolean).map(line => line.split(/\t/)[1]).filter(Boolean)
-          if (requireSingleProspectiveSnapshotRootV5(changed) !== root) throw new Error('proposed snapshot root does not match the additive diff')
-          verifyTarArchive('.v5-proposed.tar', 'proposed evidence archive')
-          NODE
+          proposed_root="$(tr -d '\r\n' < .v5-proposed-root)"
+          ./bin/analytics strategy-v5-workflow-security snapshot-root .v5-custody-diff "$proposed_root"
+          ./bin/analytics strategy-v5-workflow-security archive 'proposed evidence archive' .v5-proposed.tar
           rm -rf .v5-proposed
           mkdir -p .v5-proposed
           tar -xf .v5-proposed.tar -C .v5-proposed
@@ -84,12 +83,8 @@ jobs:
           V5_ATTESTATION_KEY_FINGERPRINT: ${{ vars.V5_ATTESTATION_KEY_FINGERPRINT }}
         run: |
           set -euo pipefail
-          node --input-type=module <<'NODE'
-          import { readFileSync } from 'node:fs'
-          import { requireSingleProspectiveSnapshotRootV5, verifyProspectiveSnapshotV5 } from './tools/strategy-v5-workflow-security.mjs'
-          const snapshotRoot = readFileSync('.v5-proposed-root', 'utf8').trim()
-          const changed = readFileSync('.v5-custody-diff', 'utf8').split(/\r?\n/).filter(Boolean).map(line => line.split(/\t/)[1]).filter(Boolean)
-          if (requireSingleProspectiveSnapshotRootV5(changed) !== snapshotRoot) throw new Error('proposed snapshot root does not match the additive diff')
-          const result = await verifyProspectiveSnapshotV5({ proposedRoot: `.v5-proposed/${snapshotRoot}`, trustedBaseRoot: '.', trustedRegistryPath: process.env.V5_ATTESTATION_KEY_REGISTRY_PATH || 'strategy-research/config/v5-attestation-key-registry.json', pinnedAttestationFingerprint: process.env.V5_ATTESTATION_KEY_FINGERPRINT, nowAt: Date.now() })
-          process.stdout.write(JSON.stringify({ verified_artifacts: true, ledger_snapshots: 1, trusted_base_latest_sequence: result.trusted_base_sequence, proposed_sequence: result.sequence }) + '\n')
-          NODE
+          snapshot_root="$(tr -d '\r\n' < .v5-proposed-root)"
+          registry="${V5_ATTESTATION_KEY_REGISTRY_PATH:-strategy-research/config/v5-attestation-key-registry.json}"
+          ./bin/analytics strategy-v5-workflow-security snapshot-root .v5-custody-diff "$snapshot_root"
+          ./bin/analytics strategy-v5-workflow-security snapshot \
+            ".v5-proposed/$snapshot_root" . "$registry" "${V5_ATTESTATION_KEY_FINGERPRINT:-}"

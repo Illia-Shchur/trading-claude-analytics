@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+set -eu
+
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
+JAR="$REPO_ROOT/analytics-cli/target/analytics-cli-1.0.0-SNAPSHOT-exec.jar"
+
+if [ ! -f "$JAR" ]; then
+  "$REPO_ROOT/mvnw" -q -pl analytics-cli -am package -DskipTests
+fi
+
+exec java -jar "$JAR" "$@"

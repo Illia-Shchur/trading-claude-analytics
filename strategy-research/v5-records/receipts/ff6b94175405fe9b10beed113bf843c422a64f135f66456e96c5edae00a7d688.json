@@ -1,0 +1,20 @@
+{
+  "schema": "strategy-v5-authoritative-command-receipt/1",
+  "version": 1,
+  "command": "data-raw-replay",
+  "status": "BLOCKED",
+  "inputs": [],
+  "outputs": [],
+  "limitations": [
+    "frozen authoritative plan: missing physical prerequisite",
+    "local replay target root: missing physical prerequisite",
+    "source acquisition checkpoint: missing physical prerequisite",
+    "source root: missing physical prerequisite"
+  ],
+  "details": {
+    "mode": "BLOCKED_MISSING_PHYSICAL_PREREQUISITES",
+    "reason": "authoritative command requires every listed physical input before recomputation",
+    "active": false
+  },
+  "content_sha256": "ff6b94175405fe9b10beed113bf843c422a64f135f66456e96c5edae00a7d688"
+}

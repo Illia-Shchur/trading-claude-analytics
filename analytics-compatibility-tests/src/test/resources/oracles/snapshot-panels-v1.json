@@ -1,0 +1,241 @@
+{
+  "proximity": {
+    "note": "DISCLOSED CONTEXT ONLY — not a scored input and NOT a trigger. Proximity to a boundary is a heads-up that the NEXT report may route differently; it never authorizes a deployment on its own. Adds no new rubric: every threshold is read from the classifiers the frameworks already score with.",
+    "near_bands": {
+      "percentage points": 5,
+      "percentage points of 20-session slope": 0.5,
+      "RSI points": 3,
+      "index points": 3
+    },
+    "nearest": "ma200_slope_sign_flip",
+    "near_count": 6,
+    "items": [
+      {
+        "id": "ma200_slope_sign_flip",
+        "metric": "trend.ma200_slope20_pct",
+        "value": 0.3,
+        "threshold": 0,
+        "gap": 0.3,
+        "gap_units": "percentage points of 20-session slope",
+        "direction": "flattening toward a FALLING 200dma",
+        "price_move_required_pct": null,
+        "crossed": false,
+        "consequence": "ma200_falling flips -> FR Channel B structure input, frChannel routing",
+        "near": true,
+        "near_band": 0.5
+      },
+      {
+        "id": "fk_gate6_200w_band",
+        "metric": "weekly.sma_200w.pct_vs_spot",
+        "value": 9,
+        "threshold": 8,
+        "gap": 1,
+        "gap_units": "percentage points",
+        "direction": "needs price DOWN",
+        "price_move_required_pct": -0.91,
+        "crossed": false,
+        "consequence": "FK gate 6 (200-week MA proximity) lights",
+        "near": true,
+        "near_band": 5
+      },
+      {
+        "id": "fk_momentum_band_edge",
+        "metric": "weekly.rsi14.rsi",
+        "value": 39,
+        "threshold": 40,
+        "gap": 1,
+        "gap_units": "RSI points",
+        "direction": "needs RSI ABOVE this edge to LOSE a band (an exact edge keeps the higher band)",
+        "price_move_required_pct": null,
+        "crossed": false,
+        "consequence": "FK momentum leg drops from 2 to 1",
+        "near": true,
+        "near_band": 3
+      },
+      {
+        "id": "fk_sentiment_band_edge",
+        "metric": "sentiment.avg_3d",
+        "value": 24,
+        "threshold": 25,
+        "gap": 1,
+        "gap_units": "index points",
+        "direction": "needs F&G UP to LOSE a band",
+        "price_move_required_pct": null,
+        "crossed": false,
+        "consequence": "FK sentiment leg drops from 3 to 3",
+        "near": true,
+        "near_band": 3
+      },
+      {
+        "id": "fr_channel_A_eligibility",
+        "metric": "high_1y.pct_below",
+        "value": 22,
+        "threshold": 20,
+        "gap": 2,
+        "gap_units": "percentage points",
+        "direction": "needs price UP",
+        "price_move_required_pct": 0,
+        "crossed": false,
+        "consequence": "FR routes Channel A instead of B/stand-down (frChannel)",
+        "near": true,
+        "near_band": 5
+      },
+      {
+        "id": "fr_phase_cycle_cap_8_to_14",
+        "metric": "high_1y.pct_below",
+        "value": 22,
+        "threshold": 20,
+        "gap": 2,
+        "gap_units": "percentage points",
+        "direction": "needs price UP",
+        "price_move_required_pct": 0,
+        "crossed": false,
+        "consequence": "FR phase-of-cycle cap loosens from 8% to 14% (fr.phaseCycleCap)",
+        "near": true,
+        "near_band": 5
+      },
+      {
+        "id": "frb_weekly_rsi50_qualifier",
+        "metric": "weekly.rsi14.rsi",
+        "value": 39,
+        "threshold": 50,
+        "gap": 11,
+        "gap_units": "RSI points",
+        "direction": "needs RSI UP",
+        "price_move_required_pct": null,
+        "crossed": false,
+        "consequence": "FR-B momentum leg forced to 0 (weekly RSI >= 50 hard qualifier)",
+        "near": false,
+        "near_band": 3
+      },
+      {
+        "id": "fr_phase_cycle_cap_14_to_uncapped",
+        "metric": "high_1y.pct_below",
+        "value": 22,
+        "threshold": 10,
+        "gap": 12,
+        "gap_units": "percentage points",
+        "direction": "needs price UP",
+        "price_move_required_pct": 12.5,
+        "crossed": false,
+        "consequence": "FR phase-of-cycle cap lifts entirely (fr.phaseCycleCap -> null)",
+        "near": false,
+        "near_band": 5
+      }
+    ]
+  },
+  "proximity_empty": {
+    "note": "no snapshot",
+    "items": []
+  },
+  "tripwire": {
+    "crossings": [
+      {
+        "asset": "BTC",
+        "type": "fk_sentiment_band",
+        "from": 1,
+        "to": 0,
+        "prev_value": 49,
+        "next_value": 61
+      },
+      {
+        "asset": "BTC",
+        "type": "fk_gate1_streak_le15_ge7",
+        "from": false,
+        "to": true,
+        "prev_value": 6,
+        "next_value": 7
+      },
+      {
+        "asset": "BTC",
+        "type": "gate6_within_8pct",
+        "from": false,
+        "to": true
+      },
+      {
+        "asset": "BTC",
+        "type": "fr_channel_routing",
+        "from": "B",
+        "to": "A"
+      },
+      {
+        "asset": "BTC",
+        "type": "fr_phase_cycle_cap",
+        "from": 8,
+        "to": 14,
+        "prev_value": 21,
+        "next_value": 19
+      },
+      {
+        "asset": "BTC",
+        "type": "funding_sign",
+        "from": -1,
+        "to": 1,
+        "prev_value": -1,
+        "next_value": 1
+      },
+      {
+        "asset": "BTC",
+        "type": "fr_euphoria_band",
+        "from": 0,
+        "to": 2,
+        "prev_value": 49,
+        "next_value": 61
+      },
+      {
+        "asset": "BTC",
+        "type": "fr_momentum_band",
+        "from": 0,
+        "to": 2,
+        "prev_value": 59,
+        "next_value": 66
+      },
+      {
+        "asset": "BTC",
+        "type": "frb_rally_band",
+        "from": 1,
+        "to": 3,
+        "prev_value": 12,
+        "next_value": 19
+      },
+      {
+        "asset": "BTC",
+        "type": "frb_maturity_penalty",
+        "from": -2,
+        "to": 0,
+        "prev_value": 7,
+        "next_value": 8
+      },
+      {
+        "asset": "BTC",
+        "type": "fr_gate8_sustained_negative",
+        "from": false,
+        "to": true
+      },
+      {
+        "asset": "BTC",
+        "type": "checkpoint_adr_distance",
+        "from": 2.5,
+        "to": 0.75,
+        "line": 90
+      },
+      {
+        "asset": "ETH",
+        "type": "fk_momentum_band",
+        "from": 2,
+        "to": 0,
+        "prev_value": 40,
+        "next_value": 49
+      },
+      {
+        "asset": "ETH",
+        "type": "frb_momentum_band",
+        "from": 0,
+        "to": 2,
+        "prev_value": 44,
+        "next_value": 53
+      }
+    ],
+    "n_crossings": 14
+  }
+}

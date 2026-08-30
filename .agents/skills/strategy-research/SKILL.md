@@ -148,7 +148,7 @@ At minimum:
 - record metrics for every effective candidate and compact trades for finalists;
 - preserve all source/content hashes and fail closed on missing evidence.
 
-Use `node tools/strategy-research.mjs precommit` before `generate`. The CLI and
+Use `./bin/analytics strategy-research precommit` before `generate`. The CLI and
 registry are authoritative for immutable hashes, candidate accounting, run
 recording, indexes, and tamper checks; narrated results do not replace them.
 
@@ -188,9 +188,10 @@ sealed and prospective evidence.
 
 ## Additive strategy-research/5 implementation
 
-The v5 implementation is exposed by `node tools/strategy-research-v5.mjs` (and
-the same command names through `strategy-research-next.mjs`). It preserves all
-v1--v4 records and schemas as immutable read-compatible history. `generate
+The v5 implementation is exposed by `./bin/analytics strategy-research-v5`
+(with legacy v1--v4 commands retained under `./bin/analytics
+strategy-research-next`). It preserves all v1--v4 records and schemas as
+immutable read-compatible history. `generate
 --method GENETIC` remains fail-closed; only `search-genetic` runs an adaptive
 NSGA-II evaluator. Authoritative search also requires a persistent canonical
 exposure-head path; a process-local ledger is test-only evidence.

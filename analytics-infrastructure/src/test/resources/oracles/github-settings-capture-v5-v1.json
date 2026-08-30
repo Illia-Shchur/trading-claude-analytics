@@ -1,0 +1,275 @@
+{
+  "schema": "github-deployment-settings-capture/1",
+  "version": 1,
+  "captured_at": "2026-08-28T12:00:00.000Z",
+  "repository": "owner/repo",
+  "repository_id": 1,
+  "repository_private": false,
+  "repository_visibility": "PUBLIC",
+  "repository_visibility_verified": true,
+  "api_response": {
+    "status": 200,
+    "body_sha256": "c7f82e5583a5aeba4ff6e3fd01ec5033d40acec8821b9347fd960a2f200cc02f",
+    "provider": "github-api"
+  },
+  "evidence_branch": "strategy-v5-evidence",
+  "evidence_branch_head_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+  "oidc_subject": "repo:owner@2/repo@1:environment:prospective-v5",
+  "oidc_claims": {
+    "repository_id": "1",
+    "repository_owner_id": "2",
+    "environment": "prospective-v5",
+    "workflow_ref": "owner/repo/.github/workflows/strategy-v5-prospective.yml@refs/heads/main",
+    "workflow_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "sub": "repo:owner@2/repo@1:environment:prospective-v5",
+    "aud": "strategy-v5",
+    "iss": "https://token.actions.githubusercontent.com",
+    "iat": 1787918370,
+    "exp": 1787918970,
+    "run_id": "42",
+    "run_attempt": 1
+  },
+  "oidc_signature_verified": true,
+  "branch_protection": {
+    "api_status": 404,
+    "enforce_admins": false,
+    "required_pull_request_reviews": true,
+    "required_status_checks": true,
+    "allow_force_pushes": false,
+    "allow_deletions": false,
+    "required_linear_history": false,
+    "restrictions": {
+      "users": [],
+      "teams": [],
+      "apps": [],
+      "app_ids": [],
+      "apps_verified": false,
+      "installed_app": {
+        "status": 0,
+        "id": null,
+        "slug": null,
+        "verified": false
+      }
+    },
+    "verified": true
+  },
+  "rulesets": {
+    "api_status": 200,
+    "status": 200,
+    "ids": [
+      7,
+      8,
+      9
+    ],
+    "protected_branch_ids": [
+      7,
+      8,
+      9
+    ],
+    "immutable_ruleset_ids": [
+      7
+    ],
+    "writer_gate_ruleset_ids": [
+      8
+    ],
+    "layers": [
+      {
+        "id": 7,
+        "layer": "IMMUTABLE_CORE",
+        "status": 200,
+        "target": "branch",
+        "enforcement": "ACTIVE",
+        "refs": [
+          "refs/heads/strategy-v5-evidence"
+        ],
+        "rule_types": [
+          "deletion",
+          "non_fast_forward"
+        ],
+        "required_status_contexts": [],
+        "required_status_check_integrations": [],
+        "strict_status_checks": false,
+        "pull_request_parameters": {},
+        "bypass_actors": [],
+        "body_sha256": "5a36b266c9594d198eeb16bcf5265b1012f812958f1a14f6261f7e238d3cdc88",
+        "rules_verified": true
+      },
+      {
+        "id": 8,
+        "layer": "WRITER_GATE",
+        "status": 200,
+        "target": "branch",
+        "enforcement": "ACTIVE",
+        "refs": [
+          "refs/heads/strategy-v5-evidence"
+        ],
+        "rule_types": [
+          "pull_request",
+          "required_status_checks"
+        ],
+        "required_status_contexts": [
+          "strategy-v5-evidence-custody"
+        ],
+        "required_status_check_integrations": [
+          15368
+        ],
+        "strict_status_checks": true,
+        "pull_request_parameters": {
+          "required_approving_review_count": 0
+        },
+        "bypass_actors": [],
+        "body_sha256": "3788bac7816f4347b195bac4b4f5deeaba781cc300f77937d3a9848032141291",
+        "rules_verified": true
+      },
+      {
+        "id": 9,
+        "layer": "IMMUTABLE_CORE",
+        "status": 200,
+        "target": "branch",
+        "enforcement": "ACTIVE",
+        "refs": [
+          "refs/heads/main"
+        ],
+        "rule_types": [
+          "deletion",
+          "non_fast_forward",
+          "pull_request"
+        ],
+        "required_status_contexts": [],
+        "required_status_check_integrations": [],
+        "strict_status_checks": false,
+        "pull_request_parameters": {
+          "required_approving_review_count": 1,
+          "dismiss_stale_reviews_on_push": true,
+          "require_last_push_approval": true
+        },
+        "bypass_actors": [],
+        "body_sha256": "06b231174c936223dd08cf13d4b2b5afd27e5ae03b4966c21f409c610c2562d0",
+        "rules_verified": false
+      }
+    ],
+    "evidence_writer_app_id": 4716299,
+    "evidence_writer_credential_configured": true,
+    "actions_bypass_app_ids": [],
+    "protected_ref_matches": true,
+    "bypass_verified": true,
+    "actions_only_bypass_verified": true,
+    "immutable_policy_verified": true,
+    "writer_gate_policy_verified": true,
+    "layered_policy_verified": true,
+    "enforcement_verified": true,
+    "rules_verified": true,
+    "detail_statuses_ok": true,
+    "verified": true
+  },
+  "environment_protection": {
+    "reviewer_count": 1,
+    "required_reviewer_rule_count": 1,
+    "protection_rule_count": 1,
+    "can_admins_bypass": false,
+    "protected_branches": true,
+    "custom_branch_policies": false,
+    "prevent_self_review": true,
+    "verified": true
+  },
+  "writer_environment_protection": {
+    "api_status": 200,
+    "reviewer_count": 1,
+    "required_reviewer_rule_count": 1,
+    "protection_rule_count": 1,
+    "can_admins_bypass": false,
+    "protected_branches": true,
+    "custom_branch_policies": false,
+    "prevent_self_review": true,
+    "verified": true
+  },
+  "actions_permissions": {
+    "api_status": 200,
+    "selected_api_status": 200,
+    "workflow_api_status": 200,
+    "allowed_actions": "selected",
+    "sha_pinning_required": true,
+    "github_owned_allowed": true,
+    "verified_allowed": false,
+    "patterns_allowed": [],
+    "default_workflow_permissions": "read",
+    "can_approve_pull_request_reviews": false,
+    "verified": true
+  },
+  "actions_secret": {
+    "name": "PROD_V5_ACTIONS_ATTESTATION_PRIVATE_KEY_B64",
+    "environment_status": 200,
+    "environment_body_sha256": "ea57e82ff33552b736adbd62f8bb9ec34978f46ea6e3586086b55dd259620695",
+    "repository_status": 404,
+    "repository_body_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "organization_status": 404,
+    "organization_body_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "verified": true
+  },
+  "evidence_writer_secret": {
+    "name": "V5_EVIDENCE_WRITER_APP_PRIVATE_KEY_PEM",
+    "environment_status": 200,
+    "environment_body_sha256": "ea57e82ff33552b736adbd62f8bb9ec34978f46ea6e3586086b55dd259620695",
+    "repository_status": 404,
+    "repository_body_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "organization_status": 404,
+    "organization_body_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "verified": true
+  },
+  "settings_token_secret": {
+    "name": "V5_GITHUB_SETTINGS_PAT",
+    "environment_status": 200,
+    "environment_body_sha256": "ea57e82ff33552b736adbd62f8bb9ec34978f46ea6e3586086b55dd259620695",
+    "repository_status": 404,
+    "repository_body_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "organization_status": 404,
+    "organization_body_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "verified": true
+  },
+  "settings_token_identity": {
+    "api_status": 200,
+    "app_id": null,
+    "user_id": 123,
+    "login": "settings-bot",
+    "token_kind": "PAT",
+    "expected_user_id": 123,
+    "expected_login": "settings-bot",
+    "secret_name": "V5_GITHUB_SETTINGS_PAT",
+    "secret_environment_status": 200,
+    "secret_environment_body_sha256": "ea57e82ff33552b736adbd62f8bb9ec34978f46ea6e3586086b55dd259620695",
+    "secret_repository_status": 404,
+    "secret_repository_body_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "secret_organization_status": 404,
+    "secret_organization_body_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "body_sha256": "f5fd75eea807298eddb2ca45933c0cc4002ddb165c60ad59008e9534941a7576",
+    "verified": true
+  },
+  "settings_auditor_installation": {
+    "token_kind": "PAT",
+    "expected_app_id": null,
+    "expected_installation_id": null,
+    "expected_app_slug": "strategy-v5-settings-auditor",
+    "app_endpoint_status": 0,
+    "app_endpoint_body_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "installation_endpoint_status": 0,
+    "installation_endpoint_body_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "repositories_endpoint_status": 0,
+    "repositories_endpoint_body_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "app_id": null,
+    "app_slug": null,
+    "installation_id": null,
+    "repository_selection": null,
+    "account": null,
+    "permissions": null,
+    "installation_permissions": null,
+    "events": null,
+    "installation_events": null,
+    "accessible_repository_count": 0,
+    "accessible_repository": null,
+    "verified": false
+  },
+  "oidc_subject_restricted": true,
+  "verified": true,
+  "blocked_reason": null,
+  "content_sha256": "f5c29e53617c8d4f857c7d29f0197dc57fa072a5dbb94d341497fe2825565266"
+}

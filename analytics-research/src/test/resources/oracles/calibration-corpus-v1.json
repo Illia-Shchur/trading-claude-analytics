@@ -1,0 +1,397 @@
+{
+  "schema": "calibration-corpus-oracle/1",
+  "pure": {
+    "dropMachineBlock": [
+      {
+        "text": "plain text",
+        "dropped": null
+      },
+      {
+        "text": "# résumé\n\nbody\n",
+        "dropped": {
+          "bytes": 34,
+          "sha256": "bb157861a164e35cdde9d726b0af9ce2765a8f530c35d9e45732b94ee65e9557",
+          "raw": "{\"x\":1}\n"
+        }
+      },
+      {
+        "text": "## 1. Verified Live Data\nsecret\n## 2. Other\nkeep\n",
+        "dropped": null
+      },
+      {
+        "text": "## 7. Verified Live Data Points — BTC\nsecret\n## 8a. Fallen Knives Composite Score\nscore\n## 9. Verdict\nkeep\n",
+        "dropped": null
+      }
+    ],
+    "dropVerifiedDataSection": [
+      {
+        "text": "plain text",
+        "dropped": null
+      },
+      {
+        "text": "# résumé\n\nbody\n---\n\n```json machine\n{\"x\":1}\n```\n",
+        "dropped": null
+      },
+      {
+        "text": "## 2. Other\nkeep\n",
+        "dropped": {
+          "bytes": 32,
+          "heading": "## 1. Verified Live Data"
+        }
+      },
+      {
+        "text": "## 9. Verdict\nkeep\n",
+        "dropped": {
+          "bytes": 90,
+          "heading": "## 7. Verified Live Data Points — BTC"
+        }
+      }
+    ],
+    "dropCompositeScoreSection": [
+      {
+        "text": "plain text",
+        "dropped": null
+      },
+      {
+        "text": "# résumé\n\nbody\n---\n\n```json machine\n{\"x\":1}\n```\n",
+        "dropped": null
+      },
+      {
+        "text": "## 1. Verified Live Data\nsecret\n## 2. Other\nkeep\n",
+        "dropped": null
+      },
+      {
+        "text": "## 7. Verified Live Data Points — BTC\nsecret\n## 9. Verdict\nkeep\n",
+        "dropped": {
+          "bytes": 43,
+          "heading": "## 8a. Fallen Knives Composite Score"
+        }
+      }
+    ],
+    "projectDigest": [
+      {
+        "ok": true,
+        "schema": null,
+        "framework": null,
+        "asset": null,
+        "date": null,
+        "spot": null,
+        "score": {
+          "legs": null,
+          "discretionary": null,
+          "mechanical": null,
+          "raw": null,
+          "adjusted": null
+        },
+        "gates": {
+          "active": null,
+          "na": null,
+          "passed": null
+        },
+        "ev": {
+          "scenarios": [],
+          "stated_ev": null,
+          "vs_spot_pct": null
+        },
+        "deployment": {
+          "deployed_pct": null,
+          "dry_pct": null,
+          "tranches": []
+        },
+        "stops": {
+          "catastrophic": null,
+          "deepest_zone_floor": null,
+          "compound": null,
+          "checkpoint": null
+        },
+        "companion_fr": null,
+        "companion_fk": null,
+        "position": null
+      },
+      {
+        "ok": true,
+        "schema": "report-machine/1",
+        "framework": null,
+        "asset": null,
+        "date": null,
+        "spot": null,
+        "score": {
+          "legs": null,
+          "discretionary": null,
+          "mechanical": null,
+          "raw": null,
+          "adjusted": 9
+        },
+        "gates": {
+          "active": null,
+          "na": null,
+          "passed": null
+        },
+        "ev": {
+          "scenarios": [],
+          "stated_ev": null,
+          "vs_spot_pct": null
+        },
+        "deployment": {
+          "deployed_pct": null,
+          "dry_pct": null,
+          "tranches": [
+            {
+              "phase": "1A",
+              "discretionary": null,
+              "deployed": true,
+              "entry_price": 100,
+              "entry_note": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx…[170ch, see slice prose]"
+            }
+          ]
+        },
+        "stops": {
+          "catastrophic": null,
+          "deepest_zone_floor": null,
+          "compound": null,
+          "checkpoint": null
+        },
+        "companion_fr": null,
+        "companion_fk": null,
+        "position": null
+      },
+      {
+        "ok": true,
+        "schema": null,
+        "framework": null,
+        "asset": null,
+        "date": null,
+        "spot": null,
+        "score": {
+          "legs": null,
+          "discretionary": null,
+          "mechanical": null,
+          "raw": null,
+          "adjusted": null
+        },
+        "gates": {
+          "active": null,
+          "na": null,
+          "passed": null
+        },
+        "ev": {
+          "scenarios": [
+            {
+              "name": "base",
+              "p": 0.5,
+              "low": 1
+            }
+          ],
+          "stated_ev": null,
+          "vs_spot_pct": null
+        },
+        "deployment": {
+          "deployed_pct": null,
+          "dry_pct": null,
+          "tranches": []
+        },
+        "stops": {
+          "catastrophic": null,
+          "deepest_zone_floor": null,
+          "compound": null,
+          "checkpoint": {
+            "date": "2026-01-01"
+          }
+        },
+        "companion_fr": null,
+        "companion_fk": null,
+        "position": null,
+        "verdict_note": "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv…[230ch, see slice prose]"
+      },
+      {
+        "ok": false,
+        "error": "unparseable machine block: Expected property name or '}' in JSON at position 1 (line 1 column 2)"
+      }
+    ],
+    "projectV2Digest": [
+      {
+        "ok": true,
+        "schema": "report-machine/2",
+        "framework": "fallen_knives",
+        "asset": "BTC",
+        "date": "2026-08-22",
+        "report_id": "btc_fallen_knives_20260822_0346",
+        "spot": "77409.69",
+        "score": {
+          "legs": {
+            "capitulation": 1,
+            "holder": 0,
+            "momentum": 2,
+            "sentiment": 0,
+            "valuation": 3
+          },
+          "discretionary": 0,
+          "mechanical": 6,
+          "raw": 6,
+          "adjusted": 6
+        },
+        "gates": {
+          "active": 9,
+          "na": [],
+          "passed": [
+            3,
+            7,
+            9
+          ]
+        },
+        "ev": {
+          "scenarios": [
+            {
+              "name": "Rally",
+              "p": 0.3,
+              "low": "82000",
+              "high": "88000",
+              "mid": "85000"
+            },
+            {
+              "name": "Range",
+              "p": 0.35,
+              "low": "73000",
+              "high": "82000",
+              "mid": "77500"
+            },
+            {
+              "name": "Retest",
+              "p": 0.25,
+              "low": "68000",
+              "high": "73000",
+              "mid": "70500"
+            },
+            {
+              "name": "Bear",
+              "p": 0.1,
+              "low": "60000",
+              "high": "68000",
+              "mid": "64000"
+            }
+          ],
+          "stated_ev": "76650",
+          "vs_spot_pct": "-0.98"
+        },
+        "deployment": {
+          "deployed_pct": "0",
+          "dry_pct": "100",
+          "tranches": [
+            {
+              "phase": "1A",
+              "pct": "10",
+              "deployed": false,
+              "entry_price": null,
+              "stop": null
+            },
+            {
+              "phase": "1B",
+              "pct": "15",
+              "deployed": false,
+              "entry_price": null,
+              "stop": null
+            },
+            {
+              "phase": "2",
+              "pct": "30",
+              "deployed": false,
+              "entry_price": null,
+              "stop": null
+            },
+            {
+              "phase": "3",
+              "pct": "45",
+              "deployed": false,
+              "entry_price": null,
+              "stop": null
+            }
+          ]
+        },
+        "position": {
+          "status": "DATA_LIMITED",
+          "quantity": null,
+          "custody": {
+            "reason": "Live balance and fill replay disagree; neither withdrawals nor a migration seed explains the gap.",
+            "status": "UNEXPLAINED"
+          },
+          "basis": {
+            "avg_cost": null,
+            "reason": "Unbacked disposals make basis non-derivable; no average cost, basis, unrealized PnL or ROI is quoted.",
+            "reliable": false,
+            "total_cost": null
+          }
+        },
+        "verdict_note": "BTC is not an accumulation entry: adjusted 6/20, gates 3/9, and every phase remains locked. Do not add; reconcile the ledger and let leverage cool."
+      }
+    ],
+    "isEventReport": [
+      false,
+      true,
+      true,
+      true
+    ],
+    "selectWithCap": [
+      {
+        "keptIdx": [
+          0,
+          9,
+          1,
+          4,
+          6
+        ],
+        "sampledOut": [
+          "r2",
+          "r3",
+          "r5",
+          "r7",
+          "r8"
+        ],
+        "capExceededByEvents": false
+      }
+    ]
+  },
+  "cli": {
+    "success": {
+      "generated_at": "2026-08-30T15:31:13.977Z",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "calib-corpus: 2 report(s) selected, 2 with machine block, 0 without.\n  bytes: 45017 -> 1684 (96.3% reduction)\n  wrote $TMP/out/corpus.json, manifest.json, and per-report .slice.md/.digest.json\n",
+      "files": {
+        "btc_fallen_knives_20260822_0346.json.digest.json": "ewogICJhc3NldCI6ICJCVEMiLAogICJkYXRlIjogIjIwMjYtMDgtMjIiLAogICJkZXBsb3ltZW50IjogewogICAgImRlcGxveWVkX3BjdCI6ICIwIiwKICAgICJkcnlfcGN0IjogIjEwMCIsCiAgICAidHJhbmNoZXMiOiBbCiAgICAgIHsKICAgICAgICAiZGVwbG95ZWQiOiBmYWxzZSwKICAgICAgICAiZW50cnlfcHJpY2UiOiBudWxsLAogICAgICAgICJwY3QiOiAiMTAiLAogICAgICAgICJwaGFzZSI6ICIxQSIsCiAgICAgICAgInN0b3AiOiBudWxsCiAgICAgIH0sCiAgICAgIHsKICAgICAgICAiZGVwbG95ZWQiOiBmYWxzZSwKICAgICAgICAiZW50cnlfcHJpY2UiOiBudWxsLAogICAgICAgICJwY3QiOiAiMTUiLAogICAgICAgICJwaGFzZSI6ICIxQiIsCiAgICAgICAgInN0b3AiOiBudWxsCiAgICAgIH0sCiAgICAgIHsKICAgICAgICAiZGVwbG95ZWQiOiBmYWxzZSwKICAgICAgICAiZW50cnlfcHJpY2UiOiBudWxsLAogICAgICAgICJwY3QiOiAiMzAiLAogICAgICAgICJwaGFzZSI6ICIyIiwKICAgICAgICAic3RvcCI6IG51bGwKICAgICAgfSwKICAgICAgewogICAgICAgICJkZXBsb3llZCI6IGZhbHNlLAogICAgICAgICJlbnRyeV9wcmljZSI6IG51bGwsCiAgICAgICAgInBjdCI6ICI0NSIsCiAgICAgICAgInBoYXNlIjogIjMiLAogICAgICAgICJzdG9wIjogbnVsbAogICAgICB9CiAgICBdCiAgfSwKICAiZXYiOiB7CiAgICAic2NlbmFyaW9zIjogWwogICAgICB7CiAgICAgICAgImhpZ2giOiAiODgwMDAiLAogICAgICAgICJsb3ciOiAiODIwMDAiLAogICAgICAgICJtaWQiOiAiODUwMDAiLAogICAgICAgICJuYW1lIjogIlJhbGx5IiwKICAgICAgICAicCI6IDAuMwogICAgICB9LAogICAgICB7CiAgICAgICAgImhpZ2giOiAiODIwMDAiLAogICAgICAgICJsb3ciOiAiNzMwMDAiLAogICAgICAgICJtaWQiOiAiNzc1MDAiLAogICAgICAgICJuYW1lIjogIlJhbmdlIiwKICAgICAgICAicCI6IDAuMzUKICAgICAgfSwKICAgICAgewogICAgICAgICJoaWdoIjogIjczMDAwIiwKICAgICAgICAibG93IjogIjY4MDAwIiwKICAgICAgICAibWlkIjogIjcwNTAwIiwKICAgICAgICAibmFtZSI6ICJSZXRlc3QiLAogICAgICAgICJwIjogMC4yNQogICAgICB9LAogICAgICB7CiAgICAgICAgImhpZ2giOiAiNjgwMDAiLAogICAgICAgICJsb3ciOiAiNjAwMDAiLAogICAgICAgICJtaWQiOiAiNjQwMDAiLAogICAgICAgICJuYW1lIjogIkJlYXIiLAogICAgICAgICJwIjogMC4xCiAgICAgIH0KICAgIF0sCiAgICAic3RhdGVkX2V2IjogIjc2NjUwIiwKICAgICJ2c19zcG90X3BjdCI6ICItMC45OCIKICB9LAogICJmcmFtZXdvcmsiOiAiZmFsbGVuX2tuaXZlcyIsCiAgImdhdGVzIjogewogICAgImFjdGl2ZSI6IDksCiAgICAibmEiOiBbXSwKICAgICJwYXNzZWQiOiBbCiAgICAgIDMsCiAgICAgIDcsCiAgICAgIDkKICAgIF0KICB9LAogICJvayI6IHRydWUsCiAgInBvc2l0aW9uIjogewogICAgImJhc2lzIjogewogICAgICAiYXZnX2Nvc3QiOiBudWxsLAogICAgICAicmVhc29uIjogIlVuYmFja2VkIGRpc3Bvc2FscyBtYWtlIGJhc2lzIG5vbi1kZXJpdmFibGU7IG5vIGF2ZXJhZ2UgY29zdCwgYmFzaXMsIHVucmVhbGl6ZWQgUG5MIG9yIFJPSSBpcyBxdW90ZWQuIiwKICAgICAgInJlbGlhYmxlIjogZmFsc2UsCiAgICAgICJ0b3RhbF9jb3N0IjogbnVsbAogICAgfSwKICAgICJjdXN0b2R5IjogewogICAgICAicmVhc29uIjogIkxpdmUgYmFsYW5jZSBhbmQgZmlsbCByZXBsYXkgZGlzYWdyZWU7IG5laXRoZXIgd2l0aGRyYXdhbHMgbm9yIGEgbWlncmF0aW9uIHNlZWQgZXhwbGFpbnMgdGhlIGdhcC4iLAogICAgICAic3RhdHVzIjogIlVORVhQTEFJTkVEIgogICAgfSwKICAgICJxdWFudGl0eSI6IG51bGwsCiAgICAic3RhdHVzIjogIkRBVEFfTElNSVRFRCIKICB9LAogICJyZXBvcnRfaWQiOiAiYnRjX2ZhbGxlbl9rbml2ZXNfMjAyNjA4MjJfMDM0NiIsCiAgInNjaGVtYSI6ICJyZXBvcnQtbWFjaGluZS8yIiwKICAic2NvcmUiOiB7CiAgICAiYWRqdXN0ZWQiOiA2LAogICAgImRpc2NyZXRpb25hcnkiOiAwLAogICAgImxlZ3MiOiB7CiAgICAgICJjYXBpdHVsYXRpb24iOiAxLAogICAgICAiaG9sZGVyIjogMCwKICAgICAgIm1vbWVudHVtIjogMiwKICAgICAgInNlbnRpbWVudCI6IDAsCiAgICAgICJ2YWx1YXRpb24iOiAzCiAgICB9LAogICAgIm1lY2hhbmljYWwiOiA2LAogICAgInJhdyI6IDYKICB9LAogICJzcG90IjogIjc3NDA5LjY5IiwKICAidmVyZGljdF9ub3RlIjogIkJUQyBpcyBub3QgYW4gYWNjdW11bGF0aW9uIGVudHJ5OiBhZGp1c3RlZCA2LzIwLCBnYXRlcyAzLzksIGFuZCBldmVyeSBwaGFzZSByZW1haW5zIGxvY2tlZC4gRG8gbm90IGFkZDsgcmVjb25jaWxlIHRoZSBsZWRnZXIgYW5kIGxldCBsZXZlcmFnZSBjb29sLiIKfQoK",
+        "btc_fallen_knives_20260822_0346.json.slice.md": "PCEtLSBjYWxpYi1jb3JwdXMgdjIgc3VtbWFyeSBmb3IgYnRjX2ZhbGxlbl9rbml2ZXNfMjAyNjA4MjJfMDM0Ni5qc29uOyBjYW5vbmljYWwgSlNPTiByZW1haW5zIGF1dGhvcml0YXRpdmUgYW5kIHRoZSBNYXJrZG93biB2aWV3IGlzIG9wdGlvbmFsLiAtLT4KCiMgQlRDIEZhbGxlbiBLbml2ZXMg4oCUIDIwMjYtMDgtMjIgMDM6NDYKCioqV0FJVDoqKiBCVEMgaXMgbm90IGFuIGFjY3VtdWxhdGlvbiBlbnRyeTogYWRqdXN0ZWQgNi8yMCwgZ2F0ZXMgMy85LCBhbmQgZXZlcnkgcGhhc2UgcmVtYWlucyBsb2NrZWQuIERvIG5vdCBhZGQ7IHJlY29uY2lsZSB0aGUgbGVkZ2VyIGFuZCBsZXQgbGV2ZXJhZ2UgY29vbC4KCi0gU2NvcmU6ICoqNi8yMCoqIChtZWNoYW5pY2FsIDYpCi0gR2F0ZXM6ICoqMy85KiogcGFzc2VkCi0gUG9zaXRpb246ICoqREFUQV9MSU1JVEVEKio7IGNvbnRyb2xzICoqREFUQV9MSU1JVEVEKioKLSBQcmltYXJ5IGFjdGlvbjogKipXQUlUX05PX0FERCoqIOKAlCBQaGFzZSAxQSBzY29yZSBpcyB0d28gcG9pbnRzIHNob3J0OyBubyBkaXNjcmV0aW9uYXJ5IGNoYW5uZWwgY2FuIGJyaWRnZSBpdC4KCldBSVQgLyBOTyBBREQuIEJUQyBGSyBpcyA2LzIwIHdpdGggMy85IGdhdGVzOyB0aGUgc2NvcmUgaXMgdHdvIHBvaW50cyBiZWxvdyBQaGFzZSAxQS4gU3BvdCBkZW1hbmQgaXMgcmVhbCwgYnV0IHRoaXMgaXMgYSBsZXZlcmFnZWQgcG9zdC1zcXVlZXplIHJhbGx5LCBub3QgYSBmYWxsZW4ga25pZmUuIFBvc2l0aW9uIGNvbnRyb2xzIGFyZSBkYXRhLWxpbWl0ZWQgYnkgYW4gdW5leHBsYWluZWQgbGVkZ2VyIG1pc21hdGNoLgo=",
+        "corpus.json": "ewogICJmaWx0ZXJzIjogewogICAgImFzc2V0IjogbnVsbCwKICAgICJmcmFtZXdvcmsiOiBudWxsLAogICAgInNpbmNlIjogIjIwMjYtMDgtMjIiLAogICAgInVudGlsIjogbnVsbAogIH0sCiAgInJlcG9ydHMiOiBbCiAgICB7CiAgICAgICJhIjogIkJUQyIsCiAgICAgICJhdF91dGMiOiAiMjAyNi0wOC0yMlQwNzo0NjowMFoiLAogICAgICAiYnl0ZV9yZWNvbmNpbGlhdGlvbl9vayI6IHRydWUsCiAgICAgICJieXRlc19kcm9wcGVkIjogMCwKICAgICAgImJ5dGVzX3NsaWNlIjogODE4LAogICAgICAiYnl0ZXNfdG90YWwiOiAyMjA5NCwKICAgICAgImNhbm9uaWNhbF9maWxlIjogImJ0Y19mYWxsZW5fa25pdmVzXzIwMjYwODIyXzAzNDYuanNvbiIsCiAgICAgICJjb21wb3NpdGVfc2NvcmVfc2VjdGlvbiI6IHsKICAgICAgICAibm90ZSI6ICJ2MiBzdW1tYXJ5IGdlbmVyYXRlZCBmcm9tIHN0cnVjdHVyZWQgSlNPTiIsCiAgICAgICAgInByZXNlbnQiOiBmYWxzZQogICAgICB9LAogICAgICAiZCI6ICIyMDI2LTA4LTIyIiwKICAgICAgImYiOiAiYnRjX2ZhbGxlbl9rbml2ZXNfMjAyNjA4MjJfMDM0Ni5qc29uIiwKICAgICAgIm1hY2hpbmVfYmxvY2siOiB7CiAgICAgICAgImJ5dGVzIjogMjIwOTQsCiAgICAgICAgInByZXNlbnQiOiB0cnVlLAogICAgICAgICJzaGEyNTYiOiAiYmNmYzlkODE4NjA2OTU2MGY3ZDA3MWRmNGY4NzFjZDBmY2UxM2YzZDE3OTA5M2I2MTJkNmRhMTAyOTcyMzNjYyIsCiAgICAgICAgInN0YW5kYWxvbmVfanNvbiI6IHRydWUKICAgICAgfSwKICAgICAgInJlZHVjdGlvbl9wY3QiOiAwLAogICAgICAic2NoZW1hX2Vwb2NoIjogInJlcG9ydF9tYWNoaW5lXzIiLAogICAgICAic291cmNlX3NjaGVtYSI6ICJyZXBvcnQtbWFjaGluZS8yIiwKICAgICAgInQiOiAiZmFsbGVuX2tuaXZlcyIsCiAgICAgICJ2ZXJpZmllZF9kYXRhX3NlY3Rpb24iOiB7CiAgICAgICAgIm5vdGUiOiAidjIgc3VtbWFyeSBnZW5lcmF0ZWQgZnJvbSBzdHJ1Y3R1cmVkIEpTT04iLAogICAgICAgICJwcmVzZW50IjogZmFsc2UKICAgICAgfSwKICAgICAgInZpZXdfZmlsZSI6ICJidGNfZmFsbGVuX2tuaXZlc18yMDI2MDgyMl8wMzQ2Lm1kIgogICAgfSwKICAgIHsKICAgICAgImEiOiAiRVRIIiwKICAgICAgImF0X3V0YyI6ICIyMDI2LTA4LTIyVDA3OjQ2OjAwWiIsCiAgICAgICJieXRlX3JlY29uY2lsaWF0aW9uX29rIjogdHJ1ZSwKICAgICAgImJ5dGVzX2Ryb3BwZWQiOiAwLAogICAgICAiYnl0ZXNfc2xpY2UiOiA4NjYsCiAgICAgICJieXRlc190b3RhbCI6IDIyOTIzLAogICAgICAiY2Fub25pY2FsX2ZpbGUiOiAiZXRoX2ZhbGxlbl9rbml2ZXNfMjAyNjA4MjJfMDM0Ni5qc29uIiwKICAgICAgImNvbXBvc2l0ZV9zY29yZV9zZWN0aW9uIjogewogICAgICAgICJub3RlIjogInYyIHN1bW1hcnkgZ2VuZXJhdGVkIGZyb20gc3RydWN0dXJlZCBKU09OIiwKICAgICAgICAicHJlc2VudCI6IGZhbHNlCiAgICAgIH0sCiAgICAgICJkIjogIjIwMjYtMDgtMjIiLAogICAgICAiZiI6ICJldGhfZmFsbGVuX2tuaXZlc18yMDI2MDgyMl8wMzQ2Lmpzb24iLAogICAgICAibWFjaGluZV9ibG9jayI6IHsKICAgICAgICAiYnl0ZXMiOiAyMjkyMywKICAgICAgICAicHJlc2VudCI6IHRydWUsCiAgICAgICAgInNoYTI1NiI6ICIxMzU1YzE5MTk3NTk4NzdkODk3YjI1MjEzZGNiZjYwN2EzNmRiMzMxZWI3Zjk2NDRhZTg2YzYwNDBiNTViOGNjIiwKICAgICAgICAic3RhbmRhbG9uZV9qc29uIjogdHJ1ZQogICAgICB9LAogICAgICAicmVkdWN0aW9uX3BjdCI6IDAsCiAgICAgICJzY2hlbWFfZXBvY2giOiAicmVwb3J0X21hY2hpbmVfMiIsCiAgICAgICJzb3VyY2Vfc2NoZW1hIjogInJlcG9ydC1tYWNoaW5lLzIiLAogICAgICAidCI6ICJmYWxsZW5fa25pdmVzIiwKICAgICAgInZlcmlmaWVkX2RhdGFfc2VjdGlvbiI6IHsKICAgICAgICAibm90ZSI6ICJ2MiBzdW1tYXJ5IGdlbmVyYXRlZCBmcm9tIHN0cnVjdHVyZWQgSlNPTiIsCiAgICAgICAgInByZXNlbnQiOiBmYWxzZQogICAgICB9LAogICAgICAidmlld19maWxlIjogImV0aF9mYWxsZW5fa25pdmVzXzIwMjYwODIyXzAzNDYubWQiCiAgICB9CiAgXSwKICAic2NoZW1hIjogImNhbGliLWNvcnB1cy8xIgp9Cgo=",
+        "eth_fallen_knives_20260822_0346.json.digest.json": "ewogICJhc3NldCI6ICJFVEgiLAogICJkYXRlIjogIjIwMjYtMDgtMjIiLAogICJkZXBsb3ltZW50IjogewogICAgImRlcGxveWVkX3BjdCI6ICIwIiwKICAgICJkcnlfcGN0IjogIjEwMCIsCiAgICAidHJhbmNoZXMiOiBbCiAgICAgIHsKICAgICAgICAiZGVwbG95ZWQiOiBmYWxzZSwKICAgICAgICAiZW50cnlfcHJpY2UiOiBudWxsLAogICAgICAgICJwY3QiOiAiMTAiLAogICAgICAgICJwaGFzZSI6ICIxQSIsCiAgICAgICAgInN0b3AiOiBudWxsCiAgICAgIH0sCiAgICAgIHsKICAgICAgICAiZGVwbG95ZWQiOiBmYWxzZSwKICAgICAgICAiZW50cnlfcHJpY2UiOiBudWxsLAogICAgICAgICJwY3QiOiAiMTUiLAogICAgICAgICJwaGFzZSI6ICIxQiIsCiAgICAgICAgInN0b3AiOiBudWxsCiAgICAgIH0sCiAgICAgIHsKICAgICAgICAiZGVwbG95ZWQiOiBmYWxzZSwKICAgICAgICAiZW50cnlfcHJpY2UiOiBudWxsLAogICAgICAgICJwY3QiOiAiMzAiLAogICAgICAgICJwaGFzZSI6ICIyIiwKICAgICAgICAic3RvcCI6IG51bGwKICAgICAgfSwKICAgICAgewogICAgICAgICJkZXBsb3llZCI6IGZhbHNlLAogICAgICAgICJlbnRyeV9wcmljZSI6IG51bGwsCiAgICAgICAgInBjdCI6ICI0NSIsCiAgICAgICAgInBoYXNlIjogIjMiLAogICAgICAgICJzdG9wIjogbnVsbAogICAgICB9CiAgICBdCiAgfSwKICAiZXYiOiB7CiAgICAic2NlbmFyaW9zIjogWwogICAgICB7CiAgICAgICAgImhpZ2giOiAiMzAwMCIsCiAgICAgICAgImxvdyI6ICIyNzAwIiwKICAgICAgICAibWlkIjogIjI4NTAiLAogICAgICAgICJuYW1lIjogIlJhbGx5IiwKICAgICAgICAicCI6IDAuMjkKICAgICAgfSwKICAgICAgewogICAgICAgICJoaWdoIjogIjI3MDAiLAogICAgICAgICJsb3ciOiAiMjI1MCIsCiAgICAgICAgIm1pZCI6ICIyNDc1IiwKICAgICAgICAibmFtZSI6ICJSYW5nZSIsCiAgICAgICAgInAiOiAwLjM2CiAgICAgIH0sCiAgICAgIHsKICAgICAgICAiaGlnaCI6ICIyMjUwIiwKICAgICAgICAibG93IjogIjIwMDAiLAogICAgICAgICJtaWQiOiAiMjEyNSIsCiAgICAgICAgIm5hbWUiOiAiUmV0ZXN0IiwKICAgICAgICAicCI6IDAuMjUKICAgICAgfSwKICAgICAgewogICAgICAgICJoaWdoIjogIjIwMDAiLAogICAgICAgICJsb3ciOiAiMTcwMCIsCiAgICAgICAgIm1pZCI6ICIxODUwIiwKICAgICAgICAibmFtZSI6ICJCZWFyIiwKICAgICAgICAicCI6IDAuMQogICAgICB9CiAgICBdLAogICAgInN0YXRlZF9ldiI6ICIyNDMzLjc1IiwKICAgICJ2c19zcG90X3BjdCI6ICItMC4xOSIKICB9LAogICJmcmFtZXdvcmsiOiAiZmFsbGVuX2tuaXZlcyIsCiAgImdhdGVzIjogewogICAgImFjdGl2ZSI6IDgsCiAgICAibmEiOiBbCiAgICAgIDUKICAgIF0sCiAgICAicGFzc2VkIjogWwogICAgICAzLAogICAgICA2LAogICAgICA3LAogICAgICA5CiAgICBdCiAgfSwKICAib2siOiB0cnVlLAogICJwb3NpdGlvbiI6IHsKICAgICJiYXNpcyI6IHsKICAgICAgImF2Z19jb3N0IjogbnVsbCwKICAgICAgInJlYXNvbiI6ICJSZXBsYXkgYmFzaXMgZmxhZyBpcyByZWxpYWJsZSwgYnV0IHRoZSBjdXN0b2R5IGRlZmVjdCBwcm9oaWJpdHMgcXVvdGluZyBpdCBhcyB0aGUgYmFzaXMgb2YgYW4gZXhhY3QgaGVsZCBxdWFudGl0eS4iLAogICAgICAicmVsaWFibGUiOiB0cnVlLAogICAgICAidG90YWxfY29zdCI6IG51bGwKICAgIH0sCiAgICAiY3VzdG9keSI6IHsKICAgICAgInJlYXNvbiI6ICJMaXZlIGJhbGFuY2UgYW5kIGZpbGwgcmVwbGF5IGRpc2FncmVlOyBuZWl0aGVyIHdpdGhkcmF3YWxzIG5vciBhIG1pZ3JhdGlvbiBzZWVkIGV4cGxhaW5zIHRoZSBnYXAuIiwKICAgICAgInN0YXR1cyI6ICJVTkVYUExBSU5FRCIKICAgIH0sCiAgICAicXVhbnRpdHkiOiBudWxsLAogICAgInN0YXR1cyI6ICJEQVRBX0xJTUlURUQiCiAgfSwKICAicmVwb3J0X2lkIjogImV0aF9mYWxsZW5fa25pdmVzXzIwMjYwODIyXzAzNDYiLAogICJzY2hlbWEiOiAicmVwb3J0LW1hY2hpbmUvMiIsCiAgInNjb3JlIjogewogICAgImFkanVzdGVkIjogNywKICAgICJkaXNjcmV0aW9uYXJ5IjogLTAuNSwKICAgICJsZWdzIjogewogICAgICAiY2FwaXR1bGF0aW9uIjogMSwKICAgICAgImhvbGRlciI6IDEuNSwKICAgICAgIm1vbWVudHVtIjogMSwKICAgICAgInNlbnRpbWVudCI6IDAsCiAgICAgICJ2YWx1YXRpb24iOiA0CiAgICB9LAogICAgIm1lY2hhbmljYWwiOiA3LAogICAgInJhdyI6IDcKICB9LAogICJzcG90IjogIjI0MzguMzkiLAogICJ2ZXJkaWN0X25vdGUiOiAiRVRIIGlzIG5vdCBhbiBhY2N1bXVsYXRpb24gZW50cnk6IGFkanVzdGVkIDcvMjAsIGdhdGVzIDQvOCwgYW5kIGV2ZXJ5IHBoYXNlIHJlbWFpbnMgbG9ja2VkLiBEbyBub3QgYWRkOyByZWNvbmNpbGUgdGhlIGxlZGdlciBhbmQgbGV0IGxldmVyYWdlIGNvb2wuIgp9Cgo=",
+        "eth_fallen_knives_20260822_0346.json.slice.md": "PCEtLSBjYWxpYi1jb3JwdXMgdjIgc3VtbWFyeSBmb3IgZXRoX2ZhbGxlbl9rbml2ZXNfMjAyNjA4MjJfMDM0Ni5qc29uOyBjYW5vbmljYWwgSlNPTiByZW1haW5zIGF1dGhvcml0YXRpdmUgYW5kIHRoZSBNYXJrZG93biB2aWV3IGlzIG9wdGlvbmFsLiAtLT4KCiMgRVRIIEZhbGxlbiBLbml2ZXMg4oCUIDIwMjYtMDgtMjIgMDM6NDYKCioqV0FJVDoqKiBFVEggaXMgbm90IGFuIGFjY3VtdWxhdGlvbiBlbnRyeTogYWRqdXN0ZWQgNy8yMCwgZ2F0ZXMgNC84LCBhbmQgZXZlcnkgcGhhc2UgcmVtYWlucyBsb2NrZWQuIERvIG5vdCBhZGQ7IHJlY29uY2lsZSB0aGUgbGVkZ2VyIGFuZCBsZXQgbGV2ZXJhZ2UgY29vbC4KCi0gU2NvcmU6ICoqNy8yMCoqIChtZWNoYW5pY2FsIDcpCi0gR2F0ZXM6ICoqNC84KiogcGFzc2VkCi0gUG9zaXRpb246ICoqREFUQV9MSU1JVEVEKio7IGNvbnRyb2xzICoqREFUQV9MSU1JVEVEKioKLSBQcmltYXJ5IGFjdGlvbjogKipXQUlUX05PX0FERCoqIOKAlCBQaGFzZSAxQSBzY29yZSBpcyBvbmUgcG9pbnQgc2hvcnQ7IG5vIGRpc2NyZXRpb25hcnkgY2hhbm5lbCBjYW4gYnJpZGdlIGl0LgoKV0FJVCAvIE5PIEFERC4gRVRIIEZLIGlzIDcvMjAgd2l0aCA0LzggZ2F0ZXM7IHRoZSBzY29yZSBpcyBvbmUgcG9pbnQgYmVsb3cgUGhhc2UgMUEuIFRoZSAyMDAtd2VlayByZWNsYWltIGFuZCBFVEYgZGVtYW5kIGFyZSBjb25zdHJ1Y3RpdmUsIGJ1dCBkYWlseSBSU0kgNzkuNTcgYW5kIHJlY29yZCBPSSBtYWtlIHRoaXMgYSBzcXVlZXplIGNoYXNlLCBub3QgYSBmYWxsZW4ga25pZmUuIFBvc2l0aW9uIGNvbnRyb2xzIGFyZSBkYXRhLWxpbWl0ZWQgYnkgYW4gdW5leHBsYWluZWQgbGVkZ2VyIG1pc21hdGNoLgo=",
+        "manifest.json": "ewogICJieXRlX3JlY29uY2lsaWF0aW9uX2ZhaWx1cmVzIjogW10sCiAgImJ5dGVzIjogewogICAgImRyb3BwZWQiOiA0MzMzMywKICAgICJyZWR1Y3Rpb25fcGN0IjogOTYuMywKICAgICJzbGljZWQiOiAxNjg0LAogICAgInRvdGFsIjogNDUwMTcKICB9LAogICJjYXBfZXhjZWVkZWRfYnlfZXZlbnRzIjogW10sCiAgImNvdW50cyI6IHsKICAgICJmaWxlc19pZ25vcmVkX25vbl9yZXBvcnQiOiA3LAogICAgInJlcG9ydHNfc2VsZWN0ZWQiOiAyLAogICAgInNhbXBsZWRfb3V0X2J5X2NhcCI6IDAsCiAgICAidmVyaWZpZWRfZGF0YV9zZWN0aW9uX25vdF9tYXRjaGVkIjogMCwKICAgICJ3aXRoX21hY2hpbmVfYmxvY2siOiAyLAogICAgIndpdGhvdXRfbWFjaGluZV9ibG9jayI6IDAKICB9LAogICJmaWx0ZXJzIjogewogICAgImFzc2V0IjogbnVsbCwKICAgICJmcmFtZXdvcmsiOiBudWxsLAogICAgIm1heF9wZXJfc2VyaWVzIjogMiwKICAgICJzaW5jZSI6ICIyMDI2LTA4LTIyIiwKICAgICJ1bnRpbCI6IG51bGwKICB9LAogICJnZW5lcmF0ZWRfYXQiOiAiJFRJTUUiLAogICJpZ25vcmVkX2ZpbGVzX3NhbXBsZSI6IFsKICAgIHsKICAgICAgImZpbGUiOiAiY2FsaWJyYXRpb25fbGVkZ2VyLm1kIiwKICAgICAgInJlYXNvbiI6ICJmaWxlbmFtZSBkb2VzIG5vdCBtYXRjaCA8YXNzZXQ+XzxmcmFtZXdvcms+X1lZWVlNTUREX0hITU0ubWQiCiAgICB9LAogICAgewogICAgICAiZmlsZSI6ICJmYWxsZW5fa25pdmVzX2NhbGlicmF0aW9uXzIwMjYwODA1Lm1kIiwKICAgICAgInJlYXNvbiI6ICJmaWxlbmFtZSBkb2VzIG5vdCBtYXRjaCA8YXNzZXQ+XzxmcmFtZXdvcms+X1lZWVlNTUREX0hITU0ubWQiCiAgICB9LAogICAgewogICAgICAiZmlsZSI6ICJmYWxsZW5fa25pdmVzX2NhbGlicmF0aW9uXzIwMjYwODA2Lm1kIiwKICAgICAgInJlYXNvbiI6ICJmaWxlbmFtZSBkb2VzIG5vdCBtYXRjaCA8YXNzZXQ+XzxmcmFtZXdvcms+X1lZWVlNTUREX0hITU0ubWQiCiAgICB9LAogICAgewogICAgICAiZmlsZSI6ICJmbHlpbmdfcm9ja2V0X2NhbGlicmF0aW9uXzIwMjYwODA1Lm1kIiwKICAgICAgInJlYXNvbiI6ICJmaWxlbmFtZSBkb2VzIG5vdCBtYXRjaCA8YXNzZXQ+XzxmcmFtZXdvcms+X1lZWVlNTUREX0hITU0ubWQiCiAgICB9LAogICAgewogICAgICAiZmlsZSI6ICJmcl9ldGhfZmFsbF9jYXB0dXJlX2JhY2t0ZXN0XzIwMjYwNzI3Lm1kIiwKICAgICAgInJlYXNvbiI6ICJmaWxlbmFtZSBkb2VzIG5vdCBtYXRjaCA8YXNzZXQ+XzxmcmFtZXdvcms+X1lZWVlNTUREX0hITU0ubWQiCiAgICB9LAogICAgewogICAgICAiZmlsZSI6ICJzdHJhdGVneV9yZXRyb3NwZWN0aXZlXzIwMjYwNjExLm1kIiwKICAgICAgInJlYXNvbiI6ICJmaWxlbmFtZSBkb2VzIG5vdCBtYXRjaCA8YXNzZXQ+XzxmcmFtZXdvcms+X1lZWVlNTUREX0hITU0ubWQiCiAgICB9LAogICAgewogICAgICAiZmlsZSI6ICJzdHJhdGVneV9yZXRyb3NwZWN0aXZlXzIwMjYwNzA0Lm1kIiwKICAgICAgInJlYXNvbiI6ICJmaWxlbmFtZSBkb2VzIG5vdCBtYXRjaCA8YXNzZXQ+XzxmcmFtZXdvcms+X1lZWVlNTUREX0hITU0ubWQiCiAgICB9CiAgXSwKICAib3V0X2RpciI6ICIkVE1QL291dCIsCiAgInNhbXBsZWRfb3V0IjogW10sCiAgInNjaGVtYSI6ICJjYWxpYi1jb3JwdXMtbWFuaWZlc3QvMSIKfQoK"
+      }
+    },
+    "failures": [
+      {
+        "args": [],
+        "exit": 1,
+        "stdout": "",
+        "stderr": "usage: ./bin/analytics calib-corpus --since YYYY-MM-DD [--until YYYY-MM-DD] [--framework fallen_knives|flying_rocket] [--asset btc,eth,gold] [--max-per-series N] [--out .calib-run/<dir>]\n"
+      },
+      {
+        "args": [
+          "--since",
+          "2026-01-01",
+          "--framework",
+          "bad"
+        ],
+        "exit": 1,
+        "stdout": "",
+        "stderr": "--framework must be fallen_knives or flying_rocket, got \"bad\"\n"
+      },
+      {
+        "args": [
+          "--since",
+          "2999-01-01"
+        ],
+        "exit": 1,
+        "stdout": "",
+        "stderr": "no reports matched --since 2999-01-01\n"
+      }
+    ]
+  }
+}

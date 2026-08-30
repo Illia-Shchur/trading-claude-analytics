@@ -1,0 +1,72 @@
+{
+  "flow": [
+    {
+      "time": 1000000,
+      "buy_usd": 125,
+      "sell_usd": 125,
+      "close": 14,
+      "symbols_covered": [
+        "BTCUSDT",
+        "ETHUSDT"
+      ],
+      "coverage_count": 2,
+      "expected_count": 2,
+      "coverage_complete": true
+    }
+  ],
+  "values": [
+    {
+      "time": 1800000,
+      "value": 30,
+      "symbols_covered": [
+        "BTC",
+        "ETH"
+      ],
+      "coverage_count": 2,
+      "expected_count": 2,
+      "coverage_complete": true
+    }
+  ],
+  "weighted": [
+    {
+      "time": 1800000,
+      "value": -0.0033333333333333335,
+      "total_oi_usd": 30,
+      "symbols_covered": [
+        "BTC",
+        "ETH"
+      ],
+      "coverage_count": 2,
+      "expected_count": 2,
+      "coverage_complete": true
+    }
+  ],
+  "candles": [
+    {
+      "time": 0,
+      "open": 10,
+      "high": 12,
+      "low": 10,
+      "close": 12,
+      "samples": 2,
+      "expected_samples": 2,
+      "sampling_complete": true,
+      "min_contract_coverage": 2,
+      "expected_contracts": 2,
+      "contract_coverage_complete": true
+    },
+    {
+      "time": 3600000,
+      "open": 11,
+      "high": 11,
+      "low": 11,
+      "close": 11,
+      "samples": 1,
+      "expected_samples": 2,
+      "sampling_complete": false,
+      "min_contract_coverage": 1,
+      "expected_contracts": 2,
+      "contract_coverage_complete": false
+    }
+  ]
+}

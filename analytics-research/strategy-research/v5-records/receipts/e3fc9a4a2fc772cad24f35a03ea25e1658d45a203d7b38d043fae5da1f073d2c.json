@@ -1,0 +1,35 @@
+{
+  "schema": "strategy-v5-authoritative-command-receipt/1",
+  "version": 1,
+  "command": "search-genetic",
+  "status": "BLOCKED",
+  "inputs": [],
+  "outputs": [],
+  "limitations": [
+    "Parquet manifest: missing physical prerequisite",
+    "Parquet root: missing physical prerequisite",
+    "cache root: missing physical prerequisite",
+    "checkpoint: missing physical prerequisite",
+    "evaluator spec: missing physical prerequisite",
+    "experiment: missing physical prerequisite",
+    "exposure head: missing physical prerequisite",
+    "gene space: missing physical prerequisite",
+    "hydration root: missing physical prerequisite",
+    "metadata: missing physical prerequisite",
+    "opportunity domain: missing physical prerequisite",
+    "opportunity envelope: missing physical prerequisite",
+    "opportunity hydration: missing physical prerequisite",
+    "plan: missing physical prerequisite",
+    "precommit: missing physical prerequisite",
+    "predictor registry: missing physical prerequisite",
+    "statistical artifact: missing physical prerequisite",
+    "strategy definition: missing physical prerequisite",
+    "timeframe requirements: missing physical prerequisite"
+  ],
+  "details": {
+    "mode": "BLOCKED_MISSING_PHYSICAL_PREREQUISITES",
+    "reason": "authoritative command requires every listed physical input before recomputation",
+    "active": false
+  },
+  "content_sha256": "e3fc9a4a2fc772cad24f35a03ea25e1658d45a203d7b38d043fae5da1f073d2c"
+}

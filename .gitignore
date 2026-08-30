@@ -34,6 +34,9 @@ credentials.json
 *.snapshot.json
 exports/*.tmp
 node_modules/
+target/
+**/target/
+/.jqwik-database
 
 # report-machine/2 draft and renderer scratch (never committed)
 /.report-run/

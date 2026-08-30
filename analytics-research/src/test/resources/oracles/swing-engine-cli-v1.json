@@ -1,0 +1,32 @@
+{
+  "schema": "swing-engine-cli-frozen-oracle/1",
+  "source": "tools/swing-engine.mjs",
+  "help": {
+    "exit": 0,
+    "stdout": "Usage: swing-engine.mjs build-cache --input features.json --out store.json | build-cache --assets btc,eth --years 3 --out store.json [--cache-dir data/swing-calibration/cache] | run --cache store.json --candidates candidates.json [--candidate-ids id1,id2] --out run.json [--summary summary.md] | benchmark --cache store.json [--candidate-count 1000] | inspect-trades --run run.json\n",
+    "stderr": ""
+  },
+  "unknown": {"exit": 1, "stdout": "", "stderr": "FAIL — unknown command unknown\n"},
+  "missing_run": {"exit": 1, "stdout": "", "stderr": "FAIL — run requires --cache and --out\n"},
+  "build": {
+    "rows": 3,
+    "features_sha256": "44f2e6167793cce33e6e7a4f7b8c8d03c7f288c54e748de2919ad34f15c667f7",
+    "normalized_store_sha256": "163497fe95a4f4e99b1c824aeff4f49451b634b188331421dab478009b711eaa"
+  },
+  "run": {
+    "run_sha256": "52ec5b1729d1deb3373d154ecd6eb45a6b044b0b160bede8743594fb321576e1",
+    "normalized_artifact_sha256": "f34ad729b6984607b88e16805dda647bd03c97786aef0171f0f2bb5af925169b"
+  },
+  "inspect": {
+    "run_sha256": "52ec5b1729d1deb3373d154ecd6eb45a6b044b0b160bede8743594fb321576e1",
+    "completed_trades": 0,
+    "trades": []
+  },
+  "benchmark": {
+    "engine": "swing-engine/1",
+    "candidates": 1,
+    "rows": 3,
+    "feature_store_sha256": "44f2e6167793cce33e6e7a4f7b8c8d03c7f288c54e748de2919ad34f15c667f7",
+    "out": null
+  }
+}

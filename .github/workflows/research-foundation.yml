@@ -15,11 +15,16 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 0
-      - name: Install locked dependencies
-        run: npm ci
-      - name: Run unit and contract suite
-        run: npm test
-      - name: Run pinned DuckDB integration
-        run: |
-          docker version
-          node test/research-foundation-v3-docker-test.mjs
+      - name: Install Java 21
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Run the complete Java unit, contract, and integration reactor
+        run: ./mvnw --batch-mode --no-transfer-progress verify
+      - name: Re-run the pinned DuckDB and immutable Parquet contract explicitly
+        run: >-
+          ./mvnw --batch-mode --no-transfer-progress -pl analytics-market-data
+          -Dtest=ResearchDataTest#originalDockerParquetContractRunsLocallyAndIsIdempotent
+          test

@@ -1,0 +1,271 @@
+{
+  "counts": {
+    "files_in_reports_dir": 1,
+    "framework_reports": 1,
+    "mismatched_v2_pairs": 0,
+    "non_framework_files_ignored": 0,
+    "orphaned_v2": 0,
+    "signals": 1,
+    "skipped_no_machine_block": 0,
+    "skipped_post_epoch_missing_block": 0,
+    "skipped_unparseable": 0,
+    "v2_signals": 0,
+    "v3_signals": 1
+  },
+  "encoding": "decimal quantities (prices, scores, percentages, EV) are JSON strings in plain decimal notation; counts, gate numbers, booleans and enums are native",
+  "epochs": {
+    "discretion_and_two_channel": "2026-07-27",
+    "entry_price": "2026-07-29",
+    "machine_block": "2026-07-11",
+    "report_phase_registry": "report-phase-registry/1"
+  },
+  "generated_at": "2026-08-30T15:16:46Z",
+  "generated_by": "tools/export-signals.mjs",
+  "ignored_files": [],
+  "mismatched_v2_pairs": [],
+  "orphaned_v2": [],
+  "schema": "signal-feed/1",
+  "signals": [
+    {
+      "asset": "BTC",
+      "audit": {
+        "completed_through": "2026-08-22T15:00:00Z",
+        "coverage": "COMPLETE",
+        "lint": "PASS",
+        "notes": [],
+        "sources": {
+          "binance": {
+            "as_of": "2026-08-22T15:00:00Z",
+            "name": "Binance aggregate flow"
+          }
+        }
+      },
+      "canonical_file": "btc_fallen_knives_20260822_1200.json",
+      "canonical_sha256": "c2d0364abef435064b29ccd24b1e58e1d90b863b5ebdfeb10328e874b20b3640",
+      "channel": null,
+      "content_sha256": "c2d0364abef435064b29ccd24b1e58e1d90b863b5ebdfeb10328e874b20b3640",
+      "deployment": {
+        "authorized": false,
+        "phase": "1A"
+      },
+      "entry_state": {
+        "authorized": false,
+        "mechanical_score": "12",
+        "phase": "1A",
+        "phase_threshold": "8",
+        "risk_status": "DATA_LIMITED",
+        "score_pass": true,
+        "trigger_fresh": false,
+        "trigger_status": "WAIT",
+        "veto_active": false
+      },
+      "expectancy_r": {
+        "status": "DATA_LIMITED",
+        "value_r": null
+      },
+      "features": {
+        "flow": {
+          "completed_through": "2026-08-22T15:00:00Z",
+          "futures_bid_ask_delta": {
+            "24h": "up",
+            "3d": "up"
+          },
+          "futures_cvd": {
+            "24h": "up",
+            "3d": "up"
+          },
+          "interval_hours": "4",
+          "oi_weighted_funding": {
+            "24h": "flat",
+            "3d": "flat",
+            "latest": "-0.0001"
+          },
+          "open_interest": {
+            "24h": "up",
+            "3d": "up",
+            "setup_signal_24h": "aligned",
+            "setup_signal_3d": "aligned"
+          },
+          "scope": "Binance aggregate, single venue",
+          "spot_cvd": {
+            "24h": "up",
+            "3d": "up",
+            "read": "spot absorption"
+          }
+        },
+        "macro": {
+          "impulse": "neutral"
+        },
+        "sentiment": {
+          "fear_greed": "22"
+        },
+        "structure": {
+          "demand": "absorption"
+        },
+        "technical": {
+          "rsi_4h": "38"
+        },
+        "valuation": {
+          "cycle": "discount"
+        }
+      },
+      "framework": "fallen_knives",
+      "gates": null,
+      "model_activation": {
+        "activated_at": null,
+        "artifact": null,
+        "sha256": null,
+        "status": "SHADOW"
+      },
+      "position": {
+        "quantity": null,
+        "status": "FRESH"
+      },
+      "report_at_utc": "2026-08-22T16:00:00Z",
+      "report_date": "2026-08-22",
+      "report_file": "btc_fallen_knives_20260822_1200.md",
+      "report_local_time": "12:00",
+      "report_zone": "America/New_York",
+      "risk_budget": {
+        "asset_risk_pct": "3",
+        "equity_usd": null,
+        "notional_usd": null,
+        "phase_cap_pct": "10",
+        "portfolio_risk_pct": "1.5",
+        "status": "DATA_LIMITED",
+        "stop_distance_pct": null
+      },
+      "schema_epoch": "report_machine_3",
+      "score": {
+        "adjusted": "12",
+        "impulse": "1",
+        "legs": {
+          "flow": "4",
+          "macro": "2",
+          "sentiment": "1",
+          "structure": "1",
+          "technical": "3",
+          "valuation": "1"
+        },
+        "mechanical": "12"
+      },
+      "setup": {
+        "channel": null,
+        "discretion": "0",
+        "entry_authorized": false,
+        "framework": "fallen_knives",
+        "horizon_days": {
+          "max": "30",
+          "min": "3"
+        },
+        "impulse": "1",
+        "leg_components": {
+          "macro": {
+            "impulse": "1",
+            "state": "1",
+            "total": "2"
+          },
+          "sentiment": {
+            "impulse": "0.5",
+            "state": "0.5",
+            "total": "1"
+          },
+          "structure": {
+            "impulse": "0.5",
+            "state": "0.5",
+            "total": "1"
+          },
+          "technical": {
+            "impulse": "1.5",
+            "state": "1.5",
+            "total": "3"
+          },
+          "valuation": {
+            "impulse": "0.5",
+            "state": "0.5",
+            "total": "1"
+          }
+        },
+        "legs": {
+          "flow": "4",
+          "macro": "2",
+          "sentiment": "1",
+          "structure": "1",
+          "technical": "3",
+          "valuation": "1"
+        },
+        "mechanical_score": "12",
+        "phase": "1A",
+        "phase_threshold": "8",
+        "score": "12",
+        "status": "READY",
+        "variant": "capitulation-reversal"
+      },
+      "source_schema": "report-machine/3",
+      "tags": {
+        "active": [],
+        "entries": [],
+        "reserved": [
+          "FK-P1A-BTC-20260822-1200"
+        ]
+      },
+      "trigger": {
+        "better_price_required": true,
+        "completed_bar_required": true,
+        "created_at": null,
+        "direction": "LONG",
+        "expires_at": null,
+        "level": null,
+        "rationale": "Await a completed-bar retest.",
+        "status": "WAIT",
+        "timeframe": "4h",
+        "window_bars": "2"
+      },
+      "verdict": "WAIT for a completed-bar trigger.",
+      "vetoes": [
+        {
+          "active": false,
+          "code": "FLOW_COVERAGE",
+          "reason": "Complete common-bar coverage."
+        },
+        {
+          "active": false,
+          "code": "OPPOSING_FLOW",
+          "reason": "No opposing two-horizon flow."
+        },
+        {
+          "active": false,
+          "code": "REGIME_MISMATCH",
+          "reason": "Setup matches the routed regime."
+        },
+        {
+          "active": false,
+          "code": "RISK_BUDGET",
+          "reason": "Measured equity and stop available."
+        },
+        {
+          "active": false,
+          "code": "NARRATIVE_EXIT",
+          "reason": "No narrative exit is active."
+        },
+        {
+          "active": false,
+          "code": "CARRY",
+          "reason": "Carry is not a veto."
+        },
+        {
+          "active": false,
+          "code": "FUNDING",
+          "reason": "Funding is not a veto."
+        },
+        {
+          "active": false,
+          "code": "MACRO_SHOCK",
+          "reason": "No extreme opposing macro shock."
+        }
+      ],
+      "view_file": "btc_fallen_knives_20260822_1200.md"
+    }
+  ],
+  "skipped": []
+}

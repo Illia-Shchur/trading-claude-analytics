@@ -70,9 +70,12 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 1
-      - name: Install pinned dependencies
-        if: always()
-        run: npm ci --ignore-scripts
+      - name: Install Java 21
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
       - name: Mint protected settings-auditor App token
         id: settings-auditor-token
         uses: actions/create-github-app-token@df432ceedc7162793a195dd1713ff69aefc7379e
@@ -97,40 +100,22 @@ jobs:
           V5_REPOSITORY_VISIBILITY: ${{ vars.V5_REPOSITORY_VISIBILITY }}
           V5_EVIDENCE_WRITER_APP_ID: '4716299'
           V5_ACTIONS_ATTESTATION_SECRET_NAME: ${{ vars.V5_ACTIONS_ATTESTATION_SECRET_NAME }}
-        run: |
-          node tools/capture-github-settings.mjs
+        run: ./bin/analytics strategy-v5-prospective-workflow capture-settings
       - name: Verify repository-side custody and approval contract
+        if: always()
+        continue-on-error: true
         env:
           V5_PUBLIC_KEYS_PATH: ${{ vars.V5_PUBLIC_KEYS_PATH }}
           V5_APPROVALS_PATH: ${{ vars.V5_APPROVALS_PATH }}
           V5_TRUST_ROOT_PATH: ${{ vars.V5_TRUST_ROOT_PATH }}
           V5_TRUST_ROOT_FINGERPRINT: ${{ vars.V5_TRUST_ROOT_FINGERPRINT }}
           V5_TRUST_ROOT_GENESIS_FINGERPRINT: ${{ vars.V5_TRUST_ROOT_GENESIS_FINGERPRINT }}
-        if: always()
-        continue-on-error: true
-        run: |
-          node --input-type=module <<'NODE'
-          import { existsSync, readFileSync, writeFileSync } from 'node:fs'
-          import { resolve } from 'node:path'
-          import { makeDeploymentAuditV5, makeDeploymentSettingsCaptureV5 } from './tools/strategy-research-v5.mjs'
-          import { readConfinedJson, repositoryRelativePath } from './tools/strategy-v5-workflow-security.mjs'
-          const root = process.env.GITHUB_WORKSPACE || process.cwd()
-          const load = (path, label) => {
-            if (!path) return {}
-            const relativePath = repositoryRelativePath(path, label)
-            return existsSync(resolve(root, relativePath)) ? readConfinedJson(root, relativePath, label).value : {}
-          }
-          const loadList = (path, label) => { const value = load(path, label); return Array.isArray(value) ? value : (Array.isArray(value?.approvals) ? value.approvals : []) }
-          const capture = existsSync('github-deployment-settings-capture.json') ? JSON.parse(readFileSync('github-deployment-settings-capture.json', 'utf8')) : makeDeploymentSettingsCaptureV5({ githubApiResponse: { status: 0, body: {} }, oidcSubject: null })
-          const audit = makeDeploymentAuditV5({ settings: {}, settingsCapture: capture, keys: load(process.env.V5_PUBLIC_KEYS_PATH, 'v5 public-key registry'), approvals: loadList(process.env.V5_APPROVALS_PATH, 'v5 approvals'), trustRoot: load(process.env.V5_TRUST_ROOT_PATH, 'v5 trust root') })
-          writeFileSync('v5-deployment-audit-early.json', JSON.stringify(audit, null, 2) + '\n')
-          if (audit.blocked && audit.shadow_append_eligible !== true) process.exitCode = 1
-          NODE
+        run: ./bin/analytics strategy-v5-prospective-workflow early-audit --out v5-deployment-audit-early.json
       - name: Emit blocked diagnostic when custody audit is unavailable
         if: always()
         run: |
           if [ ! -f v5-deployment-audit-early.json ]; then
-            node --input-type=module -e "import {writeFileSync} from 'node:fs'; import {makeDeploymentAuditV5} from './tools/strategy-research-v5.mjs'; writeFileSync('v5-deployment-audit-early.json', JSON.stringify(makeDeploymentAuditV5({settings:{}}), null, 2)+'\\n')"
+            ./bin/analytics strategy-v5-prospective-workflow early-audit --out v5-deployment-audit-early.json || true
           fi
       - name: Hydrate the latest append-only prospective ledger
         if: always()
@@ -146,116 +131,33 @@ jobs:
           if [ -n "$remote_ref" ]; then
             git fetch --no-tags --depth=1 origin strategy-v5-evidence
             git archive --format=tar origin/strategy-v5-evidence > .v5-evidence-state.tar
-            node --input-type=module <<'NODE'
-          import { verifyTarArchive } from './tools/strategy-v5-workflow-security.mjs'
-          // The historical branch is a full repository archive.  Apply
-          // JSON/byte custody ceilings only to the proposed evidence subtree;
-          // retain archive metadata/path/symlink checks for the repository.
-          verifyTarArchive('.v5-evidence-state.tar', 'strategy-v5 evidence archive', { evidenceOnly: false })
-          NODE
+            ./bin/analytics strategy-v5-prospective-workflow archive --label 'strategy-v5 evidence archive' --path .v5-evidence-state.tar --repository true
             tar -x --no-same-owner --no-same-permissions -f .v5-evidence-state.tar -C .v5-evidence-state
-            node --input-type=module <<'NODE'
-          import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
-          import { basename, join, resolve } from 'node:path'
-          import { readProspectiveLedger } from './tools/strategy-prospective-v5.mjs'
-          import { hash, ownHash } from './tools/strategy-readiness-v5.mjs'
-          import { validateContractSchema } from './tools/research-schema-registry.mjs'
-          import { verifyWriterInstallationReceipt } from './tools/verify-evidence-writer-installation.mjs'
-          import { copyConfinedDirectory, selectProspectiveLedgerCandidateV5, verifySafeTree } from './tools/strategy-v5-workflow-security.mjs'
-          verifySafeTree('.v5-evidence-state', 'strategy-v5 evidence checkout', { evidenceOnly: false })
-          const settingsCandidates = []
-          const settingsWalk = directory => {
-            if (!existsSync(directory)) return
-            for (const entry of readdirSync(directory, { withFileTypes: true })) {
-              const path = join(directory, entry.name)
-              if (entry.isDirectory()) settingsWalk(path)
-              else if (entry.name === 'github-deployment-settings-capture.json') {
-                const apiPath = join(directory, 'github-settings-api-receipt.json')
-                if (!existsSync(apiPath)) throw new Error(`GitHub settings baseline is missing its API receipt: ${path}`)
-                try {
-                  const capture = JSON.parse(readFileSync(path, 'utf8')); const api = JSON.parse(readFileSync(apiPath, 'utf8'))
-                  if (capture.schema !== 'github-deployment-settings-capture/1' || capture.content_sha256 !== ownHash(capture) || api.schema !== 'github-settings-api-receipt/1' || api.content_sha256 !== ownHash(api)) throw new Error('settings/API baseline hash or schema is invalid')
-                  validateContractSchema(capture); validateContractSchema(api)
-                  const writerPath = join(directory, 'github-writer-installation-receipt.json'); if (existsSync(writerPath)) { const writer = JSON.parse(readFileSync(writerPath, 'utf8')); if (!verifyWriterInstallationReceipt(writer, { repository: capture.repository, repositoryId: capture.repository_id, appId: capture.rulesets?.evidence_writer_app_id })) throw new Error('historical writer-App installation receipt is invalid or not capture-bound') }
-                  settingsCandidates.push({ path, apiPath, writerPath: existsSync(writerPath) ? writerPath : null, capturedAt: Date.parse(capture.captured_at), captureSha: capture.content_sha256, apiSha: api.content_sha256 })
-                } catch (error) { throw new Error(`invalid historical GitHub settings baseline ${path}: ${error.message}`) }
-              }
-            }
-          }
-          await settingsWalk(resolve('.v5-evidence-state'))
-          settingsCandidates.sort((a, b) => b.capturedAt - a.capturedAt || String(a.captureSha).localeCompare(String(b.captureSha)))
-          if (settingsCandidates.length && Number.isFinite(settingsCandidates[0].capturedAt)) {
-            const selected = settingsCandidates[0]
-            if (settingsCandidates.filter(row => row.capturedAt === selected.capturedAt && row.captureSha !== selected.captureSha).length) throw new Error('competing GitHub settings baselines share a capture timestamp')
-            copyFileSync(selected.path, resolve('.v5-previous-settings-capture.json'))
-            copyFileSync(selected.apiPath, resolve('.v5-previous-settings-api-receipt.json'))
-            if (selected.writerPath) copyFileSync(selected.writerPath, resolve('.v5-previous-writer-installation-receipt.json'))
-          }
-          const roots = []
-          const walk = directory => {
-            if (!existsSync(directory)) return
-            for (const entry of readdirSync(directory, { withFileTypes: true })) {
-              const path = join(directory, entry.name)
-              if (entry.isDirectory()) walk(path)
-              else if (entry.name === 'HEAD.json' && basename(directory) === 'ledger') roots.push(directory)
-            }
-          }
-          walk(resolve('.v5-evidence-state'))
-          const candidates = []
-          for (const path of roots) {
-            try {
-              const ledger = readProspectiveLedger(path, { nowAt: Date.now(), allowFuture: true })
-              candidates.push({ path, sequence: ledger.sequence, head: ledger.current_head_sha256, lineage: ledger.lineage_sha256, eventHeads: ledger.events.map(event => event.event_sha256) })
-            } catch (error) { throw new Error(`invalid historical ledger ${path}: ${error.message}`) }
-          }
-          const selected = selectProspectiveLedgerCandidateV5(candidates)
-          if (selected) {
-            // Hydrate the selected delta chain into the private working ledger
-            // before the next append.  Published roots remain O(delta): each
-            // root carries only its new event files, while this ephemeral
-            // ledger has the complete immutable prefix required by append CAS.
-            const ledger = readProspectiveLedger(selected.path, { nowAt: Date.now(), allowFuture: true })
-            mkdirSync(resolve('.v5-ledger/events'), { recursive: true })
-            const eventRefs = ledger.events.map(event => { const bytes = Buffer.from(`${JSON.stringify(event, null, 2)}\n`); const name = `events/${String(event.sequence).padStart(12, '0')}-${event.event_sha256}.json`; writeFileSync(resolve('.v5-ledger', name), bytes, { flag: 'wx' }); return { sequence: event.sequence, event_sha256: event.event_sha256, byte_sha256: hash(bytes), path: name } })
-            const sourceHead = JSON.parse(readFileSync(join(selected.path, 'HEAD.json'), 'utf8')); const hydratedHead = { ...sourceHead, prior_snapshot_root: null, prior_head_sha256: null, sequence: ledger.sequence, head_sha256: ledger.current_head_sha256, event_refs: eventRefs, content_sha256: null }; hydratedHead.content_sha256 = ownHash(hydratedHead); writeFileSync(resolve('.v5-ledger/HEAD.json'), `${JSON.stringify(hydratedHead, null, 2)}\n`, { flag: 'wx' })
-          }
-          process.stdout.write(JSON.stringify({ candidates: candidates.length, selected }) + '\n')
-          NODE
+            if [ -n "$bundle" ]; then
+              ./bin/analytics strategy-v5-prospective-workflow hydrate --state-root .v5-evidence-state --ledger .v5-ledger --root . --bundle "$bundle"
+            else
+              ./bin/analytics strategy-v5-prospective-workflow hydrate --state-root .v5-evidence-state --ledger .v5-ledger --root .
+            fi
             rm -f .v5-evidence-state.tar
           else
-            if [ "$V5_EVIDENCE_BOOTSTRAP" != 'true' ] || [ -z "$bundle" ]; then
+            if [ "${V5_EVIDENCE_BOOTSTRAP:-}" != 'true' ] || [ -z "$bundle" ]; then
               echo 'Unable to fetch the protected strategy-v5-evidence branch; refusing to reset custody to genesis without explicit bootstrap and source bundle.' >&2
               exit 1
             fi
             echo 'No protected evidence branch exists; an operator must create the protected base branch before this workflow can append evidence.' >&2
             exit 1
           fi
-          if [ -n "$bundle" ]; then
-            V5_BUNDLE_PATH="$bundle" node --input-type=module <<'NODE'
-          import { existsSync } from 'node:fs'
-          import { resolve } from 'node:path'
-          import { copyConfinedDirectory, verifyProspectiveSourceBundle } from './tools/strategy-v5-workflow-security.mjs'
-          const root = process.env.GITHUB_WORKSPACE || process.cwd()
-          const verified = verifyProspectiveSourceBundle({ root, bundlePath: process.env.V5_BUNDLE_PATH })
-          if (!existsSync(resolve('.v5-ledger/HEAD.json'))) copyConfinedDirectory(verified.ledger.absolute, resolve('.v5-ledger'), 'prospective source-bundle ledger')
-          NODE
+          if [ -n "$bundle" ] && [ ! -s .v5-ledger/HEAD.json ]; then
+            ./bin/analytics strategy-v5-prospective-workflow verify-bundle --root . --bundle "$bundle"
           fi
       - name: Compare durable GitHub settings baseline
         if: always()
         continue-on-error: true
         run: |
-          node --input-type=module <<'NODE'
-          import { existsSync, readFileSync, writeFileSync } from 'node:fs'
-          import { makeGitHubSettingsDriftEvidenceV5 } from './tools/strategy-research-v5.mjs'
-          if (!existsSync('github-deployment-settings-capture.json') || !existsSync('github-settings-api-receipt.json')) throw new Error('current GitHub settings/API evidence is unavailable; drift comparison is blocked')
-          const currentCapture = JSON.parse(readFileSync('github-deployment-settings-capture.json', 'utf8'))
-          const currentApiReceipt = JSON.parse(readFileSync('github-settings-api-receipt.json', 'utf8'))
-          const previousCapture = existsSync('.v5-previous-settings-capture.json') ? JSON.parse(readFileSync('.v5-previous-settings-capture.json', 'utf8')) : null
-          const previousApiReceipt = existsSync('.v5-previous-settings-api-receipt.json') ? JSON.parse(readFileSync('.v5-previous-settings-api-receipt.json', 'utf8')) : null
-          const evidence = makeGitHubSettingsDriftEvidenceV5({ currentCapture, currentApiReceipt, previousCapture, previousApiReceipt })
-          writeFileSync('github-settings-drift-evidence.json', JSON.stringify(evidence, null, 2) + '\n', { flag: 'wx' })
-          if (evidence.status === 'DRIFTED') { console.error('GitHub settings drift detected; activation is demoted and append is blocked'); process.exitCode = 1 }
-          NODE
+          args=(drift --capture github-deployment-settings-capture.json --api github-settings-api-receipt.json --out github-settings-drift-evidence.json)
+          if [ -s .v5-previous-settings-capture.json ]; then args+=(--previous-capture .v5-previous-settings-capture.json); fi
+          if [ -s .v5-previous-settings-api-receipt.json ]; then args+=(--previous-api .v5-previous-settings-api-receipt.json); fi
+          ./bin/analytics strategy-v5-prospective-workflow "${args[@]}"
       - name: Run completed 4h-bar SHADOW cycle
         if: always()
         env:
@@ -265,40 +167,19 @@ jobs:
         run: |
           bundle="${V5_SOURCE_BUNDLE_INPUT:-}"
           if [ -z "$bundle" ]; then bundle="${V5_PROSPECTIVE_SOURCE_BUNDLE:-}"; fi
-          if [ -n "$bundle" ]; then
-            V5_BUNDLE_PATH="$bundle" node --input-type=module <<'NODE'
-          import { verifyProspectiveSourceBundle } from './tools/strategy-v5-workflow-security.mjs'
-          const root = process.env.GITHUB_WORKSPACE || process.cwd()
-          verifyProspectiveSourceBundle({ root, bundlePath: process.env.V5_BUNDLE_PATH })
-          NODE
-          fi
-          if [ -n "${V5_RESERVATION_INPUT:-}" ]; then
-            V5_RESERVATION_PATH="$V5_RESERVATION_INPUT" node --input-type=module <<'NODE'
-          import { readConfinedJson } from './tools/strategy-v5-workflow-security.mjs'
-          const root = process.env.GITHUB_WORKSPACE || process.cwd()
-          readConfinedJson(root, process.env.V5_RESERVATION_PATH, 'prospective reservation')
-          NODE
-          fi
-          if [ -n "$bundle" ]; then
-            ledger_args=()
-            if [ -s .v5-ledger/HEAD.json ]; then ledger_args=(--ledger .v5-ledger); fi
-            if [ -n "${V5_RESERVATION_INPUT:-}" ]; then
-              node tools/strategy-research-v5.mjs prospective-runner --source-bundle "$bundle" "${ledger_args[@]}" --reservation "$V5_RESERVATION_INPUT" --receipt v5-shadow-cycle-receipt.json > v5-shadow-cycle.json
-            else
-              node tools/strategy-research-v5.mjs prospective-runner --source-bundle "$bundle" "${ledger_args[@]}" --receipt v5-shadow-cycle-receipt.json > v5-shadow-cycle.json
-            fi
-          else
-            node tools/strategy-research-v5.mjs prospective-runner --live-source-unconfigured --receipt v5-shadow-cycle-receipt.json > v5-shadow-cycle.json
-          fi
+          args=(cycle --receipt v5-shadow-cycle-receipt.json)
+          if [ -n "$bundle" ]; then args+=(--bundle "$bundle"); fi
+          if [ -s .v5-ledger/HEAD.json ]; then args+=(--ledger .v5-ledger); fi
+          if [ -n "${V5_RESERVATION_INPUT:-}" ]; then args+=(--reservation "$V5_RESERVATION_INPUT"); fi
+          ./bin/analytics strategy-v5-prospective-workflow "${args[@]}" > v5-shadow-cycle.json
       - name: Require a schema-valid completed SHADOW cycle
         if: always()
-        run: |
-          node --input-type=module -e "import {existsSync,readFileSync} from 'node:fs'; if(!existsSync('v5-shadow-cycle-receipt.json')){console.error('Missing SHADOW cycle receipt');process.exit(1)}; const receipt=JSON.parse(readFileSync('v5-shadow-cycle-receipt.json','utf8')); if(receipt.schema!=='strategy-v5-authoritative-command-receipt/1'){console.error('Cycle receipt schema is invalid');process.exit(1)}; if(receipt.status==='COMPLETE'&&receipt.details?.active===false)process.exit(0); if(receipt.status==='BLOCKED'&&receipt.limitations?.includes('PROSPECTIVE_LIVE_SOURCE_UNCONFIGURED')){console.error('PROSPECTIVE_LIVE_SOURCE_UNCONFIGURED: no verified frozen Binance adapter is configured');process.exit(1)}; console.error('Completed-bar SHADOW cycle is blocked: '+(receipt.limitations||[]).join('; '));process.exit(1)"
+        run: ./bin/analytics strategy-v5-prospective-workflow require-cycle --receipt v5-shadow-cycle-receipt.json
       - name: Detect an exact no-new completed-bar cycle
         id: cycle-noop
         if: always()
         run: |
-          no_new="$(node --input-type=module -e "import {readFileSync} from 'node:fs'; const r=JSON.parse(readFileSync('v5-shadow-cycle-receipt.json','utf8')); process.stdout.write(r.details?.mode==='NO_NEW_COMPLETED_BAR' && r.details?.no_new_completed_bar===true ? 'true' : 'false')")"
+          no_new="$(jq -r 'if .details?.mode == "NO_NEW_COMPLETED_BAR" and .details?.no_new_completed_bar == true then "true" else "false" end' v5-shadow-cycle-receipt.json)"
           echo "no_new_completed_bar=$no_new" >> "$GITHUB_OUTPUT"
       - name: Require cryptographic Actions attestation
         if: always() && steps.cycle-noop.outputs.no_new_completed_bar != 'true'
@@ -311,28 +192,20 @@ jobs:
           V5_ATTESTATION_OUT: v5-actions-attestation.json
           V5_ATTESTATION_KEY_FINGERPRINT: ${{ vars.V5_ATTESTATION_KEY_FINGERPRINT }}
         run: |
-          if node --input-type=module -e "import {readFileSync} from 'node:fs'; const r=JSON.parse(readFileSync('v5-shadow-cycle-receipt.json','utf8')); process.exit(r.status==='COMPLETE'?0:1)"; then
+          if jq -e '.status == "COMPLETE"' v5-shadow-cycle-receipt.json >/dev/null; then
             if [ -z "${ACTIONS_ATTESTATION_PRIVATE_KEY_B64:-}" ] || [ ! -s "$V5_ATTESTATION_KEY_REGISTRY_PATH" ]; then
-              node --input-type=module -e "import {writeFileSync} from 'node:fs'; import {makeCommandReceipt} from './tools/strategy-research-v5-authoritative.mjs'; const receipt=makeCommandReceipt({command:'github-attestation',status:'BLOCKED',inputs:[],outputs:[],limitations:['ACTIONS_ATTESTATION_KEY_OR_REGISTRY_UNCONFIGURED'],details:{mode:'BLOCKED_MISSING_PROTECTED_KEY_OR_FROZEN_REGISTRY',active:false}}); writeFileSync('v5-actions-attestation-receipt.json',JSON.stringify(receipt,null,2)+'\\n')"
+              ./bin/analytics strategy-v5-prospective-workflow blocked-attestation --out v5-actions-attestation-receipt.json || true
               echo 'ACTIONS_ATTESTATION_KEY_OR_REGISTRY_UNCONFIGURED: protected key or committed registry is unavailable'
               exit 1
             fi
-            node tools/sign-github-attestation.mjs
-            cp "$V5_ATTESTATION_KEY_REGISTRY_PATH" v5-attestation-key-registry.json
+            ./bin/analytics strategy-v5-prospective-workflow sign-attestation
+            cp --no-clobber "$V5_ATTESTATION_KEY_REGISTRY_PATH" v5-attestation-key-registry.json
           else
             echo 'SHADOW cycle is blocked; no attestation can unlock publication.'
           fi
       - name: Record verified no-transition cycle
         if: always() && steps.cycle-noop.outputs.no_new_completed_bar == 'true'
-        run: |
-          node --input-type=module <<'NODE'
-          import { readFileSync, writeFileSync } from 'node:fs'
-          import { ownHash, withHash } from './tools/strategy-research-v5.mjs'
-          const early = JSON.parse(readFileSync('v5-deployment-audit-early.json', 'utf8'))
-          if (early.content_sha256 !== ownHash(early)) throw new Error('early deployment audit is tampered')
-          const audit = withHash({ ...early, checks: { ...early.checks, no_new_completed_bar: true }, shadow_append_eligible: false, activation_eligible: false, blocked: false, reason: 'NO_NEW_COMPLETED_BAR: no append, attestation, publication, or deployment transition was requested', blocked_until_external_prerequisites: false })
-          writeFileSync('v5-deployment-audit.json', JSON.stringify(audit, null, 2) + '\n', { flag: 'wx' })
-          NODE
+        run: ./bin/analytics strategy-v5-prospective-workflow no-op-audit --early v5-deployment-audit-early.json --out v5-deployment-audit.json
       - name: Recompute final deployment audit from post-cycle evidence
         if: always() && steps.cycle-noop.outputs.no_new_completed_bar != 'true'
         env:
@@ -346,48 +219,7 @@ jobs:
           V5_REPLAY_EVIDENCE_PATH: ${{ vars.V5_REPLAY_EVIDENCE_PATH }}
           V5_REVOCATION_EVIDENCE_PATH: ${{ vars.V5_REVOCATION_EVIDENCE_PATH }}
           V5_LEASE_EVIDENCE_PATH: ${{ vars.V5_LEASE_EVIDENCE_PATH }}
-        run: |
-          node --input-type=module <<'NODE'
-          import { existsSync, readFileSync, writeFileSync } from 'node:fs'
-          import { resolve } from 'node:path'
-          import { makeDeploymentAuditV5 } from './tools/strategy-research-v5.mjs'
-          import { confinedPath, readConfinedJson, repositoryRelativePath } from './tools/strategy-v5-workflow-security.mjs'
-          const root = process.env.GITHUB_WORKSPACE || process.cwd()
-          const load = (path, label) => {
-            if (!path) return {}
-            const relativePath = repositoryRelativePath(path, label)
-            return existsSync(resolve(root, relativePath)) ? readConfinedJson(root, relativePath, label).value : {}
-          }
-          const loadList = (path, label) => { const value = load(path, label); return Array.isArray(value) ? value : (Array.isArray(value?.approvals) ? value.approvals : []) }
-          const ref = (path, label) => {
-            if (!path) return undefined
-            const relativePath = repositoryRelativePath(path, label)
-            if (existsSync(resolve(root, relativePath))) confinedPath(root, relativePath, label)
-            return { path: relativePath }
-          }
-          const settings = {
-            settings_capture: ref('github-deployment-settings-capture.json'),
-            github_api_receipt: ref('github-settings-api-receipt.json'),
-            cycle_receipt: ref('v5-shadow-cycle-receipt.json'),
-            github_attestation: ref('v5-actions-attestation.json'),
-            attestation_key_registry: ref('v5-attestation-key-registry.json'),
-            github_settings_drift: ref('github-settings-drift-evidence.json'),
-            actions_only_secret_artifact: ref(process.env.V5_ACTIONS_SECRET_EVIDENCE_PATH, 'actions secret evidence'),
-            replay_artifact: ref(process.env.V5_REPLAY_EVIDENCE_PATH, 'replay evidence'),
-            revocation_artifact: ref(process.env.V5_REVOCATION_EVIDENCE_PATH, 'revocation evidence'),
-            lease_artifact: ref(process.env.V5_LEASE_EVIDENCE_PATH, 'lease evidence'),
-          }
-          const audit = makeDeploymentAuditV5({
-            settings,
-            keys: load(process.env.V5_PUBLIC_KEYS_PATH, 'v5 public-key registry'),
-            approvals: loadList(process.env.V5_APPROVALS_PATH, 'v5 approvals'),
-            trustRoot: load(process.env.V5_TRUST_ROOT_PATH, 'v5 trust root'),
-            pinnedTrustRootFingerprint: process.env.V5_TRUST_ROOT_FINGERPRINT || null,
-            pinnedTrustRootGenesisFingerprint: process.env.V5_TRUST_ROOT_GENESIS_FINGERPRINT || null,
-          })
-          writeFileSync('v5-deployment-audit.json', JSON.stringify(audit, null, 2) + '\n')
-          if (audit.blocked && audit.shadow_append_eligible !== true) process.exitCode = 1
-          NODE
+        run: ./bin/analytics strategy-v5-prospective-workflow final-audit --out v5-deployment-audit.json
       - name: Upload blocked deployment audit and SHADOW cycle
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -410,18 +242,19 @@ jobs:
       - name: Keep activation fail-closed
         if: always()
         run: |
-          node --input-type=module -e "import {existsSync,readFileSync} from 'node:fs'; if (!existsSync('v5-deployment-audit.json')) { console.error('Missing deployment audit; blocked.'); process.exit(1) }; const audit=JSON.parse(readFileSync('v5-deployment-audit.json','utf8')); if (audit.blocked !== false && audit.shadow_append_eligible !== true) { console.error('Deployment custody is not append-eligible; remain blocked.'); process.exit(1) }; if (audit.blocked === true) console.log('Activation remains blocked; appending verified SHADOW evidence is permitted.');"
-      # The workflow deliberately stops until the deployment audit is backed
-      # by real protected settings, OIDC identity, approval keys and offline
-      # activation-root verification. It never prints or commits secrets.
+          if [ ! -s v5-deployment-audit.json ]; then echo 'Missing deployment audit; blocked.' >&2; exit 1; fi
+          if jq -e '(.blocked != false and .shadow_append_eligible != true)' v5-deployment-audit.json >/dev/null; then
+            echo 'Deployment custody is not append-eligible; remain blocked.' >&2
+            exit 1
+          fi
+          if jq -e '.blocked == true' v5-deployment-audit.json >/dev/null; then
+            echo 'Activation remains blocked; appending verified SHADOW evidence is permitted.'
+          fi
 
   append-protected-evidence:
     needs: preflight
     if: needs.preflight.result == 'success' && needs.preflight.outputs.no_new_completed_bar != 'true'
     runs-on: ubuntu-24.04
-    # This is a separate protected environment because the append job must
-    # mint a dedicated writer-App token.  It must never receive the preflight
-    # attestation/settings secrets or push with GITHUB_TOKEN.
     environment: evidence-writer-v5
     concurrency:
       group: strategy-v5-evidence-append
@@ -450,9 +283,13 @@ jobs:
           path: verifier-worktree
           token: ${{ github.token }}
           persist-credentials: false
-      - name: Install pinned verifier dependencies
-        working-directory: verifier-worktree
-        run: npm ci --ignore-scripts
+      - name: Install Java 21 trusted verifier runtime
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: verifier-worktree/pom.xml
       - name: Prove the freshly minted writer-App installation
         env:
           GH_TOKEN: ${{ steps.evidence-writer-token.outputs.token }}
@@ -463,9 +300,9 @@ jobs:
           V5_EVIDENCE_WRITER_APP_PRIVATE_KEY_PEM: ${{ secrets.V5_EVIDENCE_WRITER_APP_PRIVATE_KEY_PEM }}
           V5_WRITER_INSTALLATION_OUT: ${{ github.workspace }}/verifier-worktree/github-writer-installation-receipt.json
         working-directory: verifier-worktree
-        run: node tools/verify-evidence-writer-installation.mjs
+        run: ./bin/analytics verify-evidence-writer-installation
       - name: Download verified preflight artifacts
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c809
         with:
           name: strategy-v5-deployment-audit
           path: evidence-worktree/.v5-preflight
@@ -477,6 +314,7 @@ jobs:
           V5_ATTESTATION_KEY_FINGERPRINT: ${{ vars.V5_ATTESTATION_KEY_FINGERPRINT }}
         working-directory: evidence-worktree
         run: |
+          set -euo pipefail
           test "$(git -C ../verifier-worktree rev-parse HEAD)" = "$TRUSTED_SOURCE_SHA"
           test -s .v5-preflight/v5-deployment-audit.json
           test -s .v5-preflight/v5-shadow-cycle-receipt.json
@@ -485,26 +323,11 @@ jobs:
           test -s .v5-preflight/github-settings-drift-evidence.json
           test -s .v5-preflight/v5-actions-attestation.json
           test -s .v5-preflight/v5-attestation-key-registry.json
-          test -s .v5-preflight/v5-deployment-audit.json
           test -s .v5-preflight/github-deployment-settings-capture.json
           test -s .v5-preflight/.v5-ledger/HEAD.json
           test -s ../verifier-worktree/github-writer-installation-receipt.json
           cp --no-clobber ../verifier-worktree/github-writer-installation-receipt.json .v5-preflight/github-writer-installation-receipt.json
-          node --input-type=module <<'NODE'
-          import { readFileSync } from 'node:fs'
-          import { hash, verifyActionsAttestation } from '../verifier-worktree/tools/strategy-readiness-v5.mjs'
-          import { verifyWriterInstallationReceipt } from '../verifier-worktree/tools/verify-evidence-writer-installation.mjs'
-          import { verifyGitHubSettingsDriftEvidenceV5 } from '../verifier-worktree/tools/strategy-research-v5.mjs'
-          import { validateContractSchema } from '../verifier-worktree/tools/research-schema-registry.mjs'
-          import { verifySafeTree } from '../verifier-worktree/tools/strategy-v5-workflow-security.mjs'
-          verifySafeTree('.v5-preflight', 'downloaded v5 preflight artifact tree')
-          const load = path => JSON.parse(readFileSync(path, 'utf8'))
-          const audit = load('.v5-preflight/v5-deployment-audit.json'); const receipt = load('.v5-preflight/v5-shadow-cycle-receipt.json'); const capture = load('.v5-preflight/github-deployment-settings-capture.json'); const api = load('.v5-preflight/github-settings-api-receipt.json'); const drift = load('.v5-preflight/github-settings-drift-evidence.json'); const writer = load('.v5-preflight/github-writer-installation-receipt.json')
-          const cycleBytes = readFileSync('.v5-preflight/v5-shadow-cycle-receipt.json'); const captureBytes = readFileSync('.v5-preflight/github-deployment-settings-capture.json'); const apiBytes = readFileSync('.v5-preflight/github-settings-api-receipt.json'); const a = load('.v5-preflight/v5-actions-attestation.json'); const k = load('.v5-preflight/v5-attestation-key-registry.json')
-          validateContractSchema(a); validateContractSchema(k)
-          if ((audit.blocked !== false && audit.shadow_append_eligible !== true) || receipt.status !== 'COMPLETE' || receipt.details?.active !== false || api.verified !== true || api.blockers?.length || !verifyGitHubSettingsDriftEvidenceV5(drift, capture, api) || !verifyWriterInstallationReceipt(writer, { repository: capture.repository, repositoryId: capture.repository_id, appId: capture.rulesets?.evidence_writer_app_id })) process.exit(1)
-          verifyActionsAttestation({ attestation: a, capture, publication: null, bytesSha256: hash(captureBytes), nowMs: Date.now(), pinnedFingerprint: process.env.V5_ATTESTATION_KEY_FINGERPRINT, apiReceiptSha256: hash(apiBytes), cycleReceiptSha256: hash(cycleBytes), trustedKeyRegistry: k, trustedKeyRegistrySha256: k.content_sha256, trustedKeyRegistryByteSha256: hash(readFileSync('.v5-preflight/v5-attestation-key-registry.json')) })
-          NODE
+          ../verifier-worktree/bin/analytics strategy-v5-prospective-workflow verify-preflight --root .v5-preflight --fingerprint "$V5_ATTESTATION_KEY_FINGERPRINT"
           digest="$(sha256sum .v5-preflight/v5-shadow-cycle.json | cut -d' ' -f1)"
           target="evidence/prospective-v5/$digest"
           test ! -e "$target"
@@ -513,40 +336,14 @@ jobs:
             test ! -e "$target/$file"
             cp --no-clobber ".v5-preflight/$file" "$target/$file"
           done
-          TARGET_ROOT="$target" node --input-type=module <<'NODE'
-          import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
-          import { join, resolve } from 'node:path'
-          import { readProspectiveLedger } from '../verifier-worktree/tools/strategy-prospective-v5.mjs'
-          import { hash, ownHash } from '../verifier-worktree/tools/strategy-readiness-v5.mjs'
-          import { selectProspectiveLedgerCandidateV5 } from '../verifier-worktree/tools/strategy-v5-workflow-security.mjs'
-          const target = process.env.TARGET_ROOT; const baseRoot = resolve('evidence/prospective-v5'); const candidates = []
-          if (existsSync(baseRoot)) for (const entry of readdirSync(baseRoot, { withFileTypes: true })) { if (!entry.isDirectory() || !/^[a-f0-9]{64}$/.test(entry.name)) continue; const ledgerPath = join(baseRoot, entry.name, 'ledger'); try { const ledger = readProspectiveLedger(ledgerPath, { nowAt: Date.now(), allowFuture: true, snapshotRootBase: baseRoot }); candidates.push({ path: ledgerPath, root: entry.name, sequence: ledger.sequence, head: ledger.current_head_sha256, lineage: ledger.lineage_sha256, eventHeads: ledger.events.map(event => event.event_sha256) }) } catch (error) { throw new Error(`trusted evidence snapshot is invalid: ${entry.name}: ${error.message}`) } }
-          const prior = selectProspectiveLedgerCandidateV5(candidates); const sourceHead = JSON.parse(readFileSync('.v5-preflight/.v5-ledger/HEAD.json', 'utf8')); const priorSequence = prior?.sequence || 0
-          if (sourceHead.sequence <= priorSequence || (prior && sourceHead.event_refs.length <= priorSequence)) throw new Error('preflight ledger is not a strict successor of the trusted evidence snapshot')
-          const refs = sourceHead.event_refs.filter(ref => ref.sequence > priorSequence); if (refs.length !== sourceHead.sequence - priorSequence) throw new Error('preflight ledger delta inventory is incomplete')
-          mkdirSync(join(target, 'ledger/events'), { recursive: true }); const deltaHead = { ...sourceHead, prior_snapshot_root: prior?.root || null, prior_head_sha256: prior?.head || null, event_refs: refs, content_sha256: null }; deltaHead.content_sha256 = ownHash(deltaHead); writeFileSync(join(target, 'ledger/HEAD.json'), `${JSON.stringify(deltaHead, null, 2)}\n`, { flag: 'wx' })
-          for (const ref of refs) { const source = resolve('.v5-preflight/.v5-ledger', ref.path); const destination = join(target, 'ledger', ref.path); if (!existsSync(source)) throw new Error(`preflight delta event is missing: ${ref.path}`); copyFileSync(source, destination, { errorOnExist: true }) }
-          NODE
+          ../verifier-worktree/bin/analytics strategy-v5-prospective-workflow hydrate-delta --target "$target" --base evidence/prospective-v5 --preflight .v5-preflight
+          ../verifier-worktree/bin/analytics strategy-v5-prospective-workflow verify-snapshot --proposed "$target" --trusted-base . --registry "$V5_ATTESTATION_KEY_REGISTRY_PATH" --fingerprint "$V5_ATTESTATION_KEY_FINGERPRINT"
           test ! -e "$target/ledger/.transactions" && test ! -e "$target/ledger/.lock"
-          TARGET_ROOT="$target" node --input-type=module <<'NODE'
-          import { execFileSync } from 'node:child_process'
-          import { readFileSync, readdirSync } from 'node:fs'
-          import { basename, join } from 'node:path'
-          import { hash, ownHash } from '../verifier-worktree/tools/strategy-research-v5-authoritative.mjs'
-          import { readProspectiveLedger } from '../verifier-worktree/tools/strategy-prospective-v5.mjs'
-          const target = process.env.TARGET_ROOT
-          const expectedFiles = new Set(['v5-shadow-cycle.json', 'v5-shadow-cycle-receipt.json', 'github-settings-api-receipt.json', 'github-deployment-settings-capture.json', 'github-settings-drift-evidence.json', 'v5-deployment-audit.json', 'v5-actions-attestation.json', 'v5-attestation-key-registry.json', 'github-writer-installation-receipt.json', 'ledger'])
-          if (basename(target) !== hash(readFileSync(join(target, 'v5-shadow-cycle.json')))) throw new Error('prospective snapshot root is not the exact completed-cycle byte hash')
-          const actual = new Set(readdirSync(target)); if (actual.size !== expectedFiles.size || [...expectedFiles].some(name => !actual.has(name))) throw new Error('prospective snapshot root inventory is not exact')
-          const cycle = JSON.parse(readFileSync(join(target, 'v5-shadow-cycle-receipt.json'))); if (cycle.status !== 'COMPLETE' || cycle.details?.active !== false) throw new Error('prospective cycle receipt is not a completed inactive SHADOW receipt')
-          const registryBytes = readFileSync(join(target, 'v5-attestation-key-registry.json')); const trustedBytes = execFileSync('git', ['show', `HEAD:${process.env.V5_ATTESTATION_KEY_REGISTRY_PATH}`]); if (hash(registryBytes) !== hash(trustedBytes)) throw new Error('proposed attestation registry differs from the trusted-base committed registry bytes')
-          const registry = JSON.parse(registryBytes); if (registry.content_sha256 !== ownHash(registry)) throw new Error('proposed attestation registry content hash is invalid')
-          const ledger = readProspectiveLedger(join(target, 'ledger'), { nowAt: Date.now(), allowFuture: true, snapshotRootBase: join(process.cwd(), 'evidence/prospective-v5') }); if (ledger.current_head_sha256 !== JSON.parse(readFileSync(join(target, 'ledger/HEAD.json'), 'utf8')).head_sha256) throw new Error('proposed delta ledger cannot be reopened against its trusted predecessor')
-          NODE
           test -z "$(git diff --cached --name-only)"
           git add "$target"
           git diff --cached --name-status -- "$target" | awk -v prefix="$target/" 'BEGIN { ok=1 } { if ($1 != "A" || index($2, prefix) != 1) ok=0 } END { if (!ok || NR == 0) exit 1 }'
-          test "$(git diff --cached --name-only | sed -n 's#^##p' | grep -v "^$target/" | wc -l | tr -d ' ')" = 0
+          staged_outside_target="$(git diff --cached --name-only | awk -v prefix="$target/" 'index($0, prefix) != 1 { print }')"
+          test -z "$staged_outside_target"
           prior="$(git rev-parse HEAD)"
           TEMP_BRANCH="strategy-v5-append-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           git checkout -b "$TEMP_BRANCH"
@@ -555,16 +352,16 @@ jobs:
           test "$(git rev-parse "origin/$EVIDENCE_BRANCH")" = "$prior"
           git push origin "HEAD:$TEMP_BRANCH"
           export GH_TOKEN="${GH_TOKEN:?protected writer App token is required}"
-          pr_number="$(gh api --method POST "repos/$GITHUB_REPOSITORY/pulls" -f title='strategy-v5: append completed-bar shadow evidence' -f head="$TEMP_BRANCH" -f base="$EVIDENCE_BRANCH" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>process.stdout.write(String(JSON.parse(s).number||'')))")"
+          pr_number="$(gh api --method POST "repos/$GITHUB_REPOSITORY/pulls" -f title='strategy-v5: append completed-bar shadow evidence' -f head="$TEMP_BRANCH" -f base="$EVIDENCE_BRANCH" | jq -r '.number // empty')"
           test -n "$pr_number"
           head_sha="$(git rev-parse HEAD)"
           required_status_context='strategy-v5-evidence-custody'
           merged=false
           for attempt in $(seq 1 30); do
             pr_state="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$pr_number" || true)"
-            test "$(printf '%s' "$pr_state" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{const r=JSON.parse(s);process.stdout.write(String(r.head?.sha||''))}catch{}})")" = "$head_sha" || { test "$attempt" -lt 30 || { echo 'protected PR head changed or could not be read' >&2; exit 1; }; sleep 2; continue; }
+            test "$(printf '%s' "$pr_state" | jq -r '.head.sha // empty')" = "$head_sha" || { test "$attempt" -lt 30 || { echo 'protected PR head changed or could not be read' >&2; exit 1; }; sleep 2; continue; }
             merge_response="$(gh api --method PUT "repos/$GITHUB_REPOSITORY/pulls/$pr_number/merge" -f sha="$head_sha" -f merge_method=merge || true)"
-            merged="$(printf '%s' "$merge_response" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{const r=JSON.parse(s);process.stdout.write(r.merged===true?'true':'false')}catch{process.stdout.write('false')}})")"
+            merged="$(printf '%s' "$merge_response" | jq -r 'if .merged == true then "true" else "false" end')"
             test "$merged" = true && break
             test "$attempt" -lt 30 || { echo "$required_status_context did not authorize the exact PR head; protected rules remain enforced" >&2; exit 1; }
             sleep 2
