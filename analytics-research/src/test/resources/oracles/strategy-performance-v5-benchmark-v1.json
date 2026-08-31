@@ -1,0 +1,22 @@
+{
+  "schema": "strategy-v5-performance-benchmark/3",
+  "shape": {"assets":8,"outer_folds":8,"inner_folds_per_asset":2,"sample_chromosomes":1,"episodes_per_asset":8},
+  "before": {"signal_callbacks":960,"outcome_callbacks":960},
+  "after": {"signal_callbacks":64,"outcome_callbacks":960,"signal_cache_hits":896,"outcome_cache_hits":0,"disk_revalidation_count":0,"signal_callback_reduction_fraction":0.933333,"outcome_callback_reduction_fraction":0,"callback_reduction_fraction":0.466667,"scope_independent_outcome_reuse":false},
+  "cache_wall_clock": {"interpretation":"CALLBACK_REDUCTION_AND_WALL_CLOCK_ARE_SEPARATE; THIS FIXTURE IS NOT A REPRESENTATIVE PRODUCTION SPEEDUP BENCHMARK"},
+  "checkpoint_resume_smoke": {"status":"PASS","interrupted_checkpoint_sha256":"1cf13db147969ebbe18d46183ac93deef2e51a331ab5b51fa77cfa7810b604fc","resumed_run_sha256":"2282ed7ea8f502f53ad4d59c4935ae9138722c6557f3b87443ac46d9664c0ab7","fresh_run_sha256":"2282ed7ea8f502f53ad4d59c4935ae9138722c6557f3b87443ac46d9664c0ab7","bounded_fixture":true},
+  "physical_v2_fixture": {"representative":true,"production_data":false,"assets":8,"reference_bytes":11022,"nested_child_bytes":20640,"partition_bytes":66040,"partition_count":56,"partition_cache_hit_count":23,"partition_disk_read_count":0,"reference_payload_reduction_fraction":0.465988},
+  "production_readiness": {"ready":false,"status":"BLOCKED_REQUIRES_AUTHORITATIVE_V2_PRODUCTION_BENCHMARK"},
+  "production_estimate": {
+    "schema":"strategy-v5-production-workload-estimate/2","assets":8,"outer_folds":8,"inner_folds_per_asset":2,"ga_runs":192,"population":48,"generations":20,"seeds":3,"null_iterations":128,"physical_null_family_count":4,"attempts_per_ga_run":2880,"base_ga_attempts":552960,"physical_null_ga_attempts":283115520,"confirmation_attempts":9830400,"pbo_evaluation_attempts":2097152,"vector_materialization_attempts":196608,"outer_selected_attempts":32768,"physical_null_total_attempts":295272448,"physical_null_episode_evaluations":295272448,"physical_source_path_materializations":4096,"physical_partition_read_count":28672,"physical_partition_read_bytes":33812480,"bounded_partition_cache_cold_read_bytes":132080,"bounded_partition_cache_warm_read_bytes":33680400,"bounded_partition_cache_warm_read_bytes_upper_bound":33680400,
+    "workload_assumptions":{"confirmation_attempts_per_ga_run":100,"pbo_partitions":8,"pbo_candidates":8,"vector_aliases_per_outer_fold":48,"outer_selected_attempts_per_asset_fold":1,"physical_source_windows":8,"physical_source_partitions_per_window":7,"physical_source_partition_bytes":66040,"physical_source_partition_bytes_scope":"FULL_SOURCE_PASS_ACROSS_ALL_WINDOWS","bounded_cache_warm_bytes_scope":"UPPER_BOUND_IF_LRU_CAPACITY_CANNOT_RETAIN_ALL_REFERENCED_PARTITIONS"},
+    "worker_count":2,"full_role_worker_payload_bytes":4000000000,"lazy_reference_worker_payload_bytes":406653184,"resident_partition_bytes_per_worker":201326592,"resident_partition_bytes_unshared":402653184,"resident_partition_bytes_shared_read_only":201326592,"partition_sharing_model":"PER_WORKER","worker_payload_reduction_fraction":0.898336704,
+    "bounds":{"fixed_null_budget":128,"cumulative_k_unchanged":true,"oos_not_read_during_selection":true,"full_role_replication_avoided":true,"readiness_requires_authoritative_v2_benchmark":true}
+  },
+  "production_complexity": {
+    "schema":"strategy-v5-production-complexity-estimate/1","workload_sha256":"46438714f9a94389cfe6e953d6725c66bdcc172846ed28b07abd6bfe3f2c241a",
+    "operation_counts":{"base_ga":552960,"physical_null_ga":283115520,"confirmation":9830400,"pbo":2097152,"vector_materialization":196608,"outer_selected":32768,"physical_null_total":295272448,"episode_evaluations":295272448},
+    "symbolic_upper_bounds":{"base_ga":"1*assets*outer_folds*(inner_folds+1)*population*generations*seeds","physical_null_ga":"1*physical_null_families*null_iterations*base_ga","source_path_materializations":"1*physical_source_windows*physical_null_families*null_iterations","partition_reads":"1*physical_source_windows*partitions_per_window*physical_null_families*null_iterations"},
+    "decision_preserving_contract":{"fixed_null_budget":128,"cumulative_k_unchanged":true,"oos_not_read_during_selection":true,"reuse_scope":"SIGNAL_VECTORS_ONLY_UNLESS_LOADER_TRUSTED_PHYSICAL_OUTCOME_CAPABILITY","cache_hits_remain_attempts":true}
+  }
+}

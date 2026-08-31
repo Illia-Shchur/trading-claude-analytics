@@ -1,0 +1,24 @@
+{
+  "schema": "strategy-v5-authoritative-command-receipt/1",
+  "version": 1,
+  "command": "index",
+  "status": "COMPLETE",
+  "inputs": [],
+  "outputs": [
+    {
+      "role": "index",
+      "storage": "PHYSICAL",
+      "path": "strategy-research/v5-records/index.json",
+      "byte_sha256": "95d9f5fb7efe372cd408fb51cf24bea6e8ac9f613df2bb84bdfb08e13d0ae4d7",
+      "content_sha256": "09c63b0ee9cd072aacddf7c9c055dab2d5b8eabc8e49af2453c566e1ae7f9b74",
+      "bytes": 8695
+    }
+  ],
+  "limitations": [],
+  "details": {
+    "mode": "DETERMINISTIC_SORTED_INDEX",
+    "record_count": 7,
+    "active": false
+  },
+  "content_sha256": "4b3ccaf102d50e3d3825ada4793d2e2dbd5e3ce9de0c3a1039b0bddc57ebd8da"
+}

@@ -1,0 +1,47 @@
+{
+  "validation": {
+    "ok": false,
+    "errors": [
+      "schema must be \"calibration-registry/1\", got \"wrong\"",
+      "entries[0] missing \"run_id\"",
+      "entries[0] verdict \"invented\" not one of adopted|adopted_with_modification|rejected|withheld|unadjudicated",
+      "entries[0] date \"bad\" not YYYY-MM-DD (or YYYY-MM-DDb for a same-day second run)",
+      "entries[0] revalidation missing date/verdict: {\"date\":\"\",\"verdict\":\"\"}"
+    ]
+  },
+  "matches": [
+    {
+      "entry": {
+        "date": "2026-08-01",
+        "run_id": "1",
+        "framework": "both",
+        "surface": "funding threshold",
+        "name": "Relax funding veto threshold",
+        "verdict": "rejected",
+        "why": "unsafe"
+      },
+      "overlap": [
+        "relax",
+        "funding",
+        "threshold"
+      ],
+      "score": 3
+    },
+    {
+      "entry": {
+        "date": "2026-08-02",
+        "run_id": "2",
+        "framework": "flying_rocket",
+        "surface": "funding controls",
+        "name": "Funding threshold relaxation",
+        "verdict": "withheld",
+        "why": "needs data"
+      },
+      "overlap": [
+        "funding",
+        "threshold"
+      ],
+      "score": 2
+    }
+  ]
+}

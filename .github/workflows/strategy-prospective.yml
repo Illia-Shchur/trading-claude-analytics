@@ -41,15 +41,19 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 1
-      - name: Install pinned dependencies
-        run: npm ci --ignore-scripts
+      - name: Install Java 21
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
       # The reservation and append-only ledger are committed artifacts.  A
       # committed, pinned publisher is a deployment prerequisite; this local
       # workflow intentionally fails closed until one is present.
       - name: Verify frozen future-only reservation
         env:
           LEDGER: ${{ inputs.ledger || vars.PROD_PROSPECTIVE_LEDGER }}
-        run: node tools/strategy-prospective-runner.mjs preflight --ledger "$LEDGER"
+        run: ./bin/analytics strategy-prospective-runner preflight --ledger "$LEDGER"
       - name: Fail closed until committed custody publisher is deployed
         run: |
           echo 'No dynamic shell capture is permitted. A pinned capture/publisher artifact and trust root must be deployed before prospective readiness can be claimed.'

@@ -1,0 +1,3548 @@
+{
+  "hash": [
+    {
+      "result": {
+        "hash": "497b71658af24e7dbe9ba621378be683cc650984941a5695f32365e690e9a220",
+        "ownHash": "497b71658af24e7dbe9ba621378be683cc650984941a5695f32365e690e9a220",
+        "withHash": {
+          "z": -9,
+          "unicode": "Київ-0",
+          "fraction": -2.2857142857142856,
+          "flag": true,
+          "nested": {
+            "b": 0,
+            "a": "row-31"
+          },
+          "values": [
+            0,
+            null,
+            0
+          ],
+          "content_sha256": "497b71658af24e7dbe9ba621378be683cc650984941a5695f32365e690e9a220"
+        }
+      }
+    },
+    {
+      "result": {
+        "hash": "8e51869b2eddf3e7efe335a4c5f900c0cfda4f05ae9fda744171fac26073003b",
+        "ownHash": "8e51869b2eddf3e7efe335a4c5f900c0cfda4f05ae9fda744171fac26073003b",
+        "withHash": {
+          "z": 8,
+          "unicode": "Київ-1",
+          "fraction": -2.142857142857143,
+          "flag": false,
+          "nested": {
+            "b": 1,
+            "a": "row-30"
+          },
+          "values": [
+            1,
+            null,
+            0.1
+          ],
+          "content_sha256": "8e51869b2eddf3e7efe335a4c5f900c0cfda4f05ae9fda744171fac26073003b"
+        }
+      }
+    },
+    {
+      "result": {
+        "hash": "1f72bf33ee05ede3b48a6dfc38848be6bb48333ded93a06931863c08596f267f",
+        "ownHash": "1f72bf33ee05ede3b48a6dfc38848be6bb48333ded93a06931863c08596f267f",
+        "withHash": {
+          "z": 25,
+          "unicode": "Київ-2",
+          "fraction": -2,
+          "flag": true,
+          "nested": {
+            "b": 2,
+            "a": "row-29"
+          },
+          "values": [
+            2,
+            null,
+            0.2
+          ],
+          "content_sha256": "1f72bf33ee05ede3b48a6dfc38848be6bb48333ded93a06931863c08596f267f"
+        }
+      }
+    },
+    {
+      "result": {
+        "hash": "7f3cf43d069b899d13bea969394effe94d907a9c0e3b600ed920efb1bff49000",
+        "ownHash": "7f3cf43d069b899d13bea969394effe94d907a9c0e3b600ed920efb1bff49000",
+        "withHash": {
+          "z": 42,
+          "unicode": "Київ-3",
+          "fraction": -1.8571428571428572,
+          "flag": false,
+          "nested": {
+            "b": 0,
+            "a": "row-28"
+          },
+          "values": [
+            3,
+            null,
+            0.3
+          ],
+          "content_sha256": "7f3cf43d069b899d13bea969394effe94d907a9c0e3b600ed920efb1bff49000"
+        }
+      }
+    },
+    {
+      "result": {
+        "hash": "be5e5c81d3d4c307eaed9e349fcd019c409ef9df5772d00b8842464e5f8667cd",
+        "ownHash": "be5e5c81d3d4c307eaed9e349fcd019c409ef9df5772d00b8842464e5f8667cd",
+        "withHash": {
+          "z": 59,
+          "unicode": "Київ-4",
+          "fraction": -1.7142857142857142,
+          "flag": true,
+          "nested": {
+            "b": 1,
+            "a": "row-27"
+          },
+          "values": [
+            4,
+            null,
+            0.4
+          ],
+          "content_sha256": "be5e5c81d3d4c307eaed9e349fcd019c409ef9df5772d00b8842464e5f8667cd"
+        }
+      }
+    },
+    {
+      "result": {
+        "hash": "8cfce1575b8e755ee494a6754b69ad1cb14fb924f95c44f54453347e750e0e66",
+        "ownHash": "8cfce1575b8e755ee494a6754b69ad1cb14fb924f95c44f54453347e750e0e66",
+        "withHash": {
+          "z": 76,
+          "unicode": "Київ-5",
+          "fraction": -1.5714285714285714,
+          "flag": false,
+          "nested": {
+            "b": 2,
+            "a": "row-26"
+          },
+          "values": [
+            5,
+            null,
+            0.5
+          ],
+          "content_sha256": "8cfce1575b8e755ee494a6754b69ad1cb14fb924f95c44f54453347e750e0e66"
+        }
+      }
+    },
+    {
+      "result": {
+        "hash": "a21a641f7c54a667cd7f53eabb1df0cb3573ea04ecc13f12a38b875d00f22a90",
+        "ownHash": "a21a641f7c54a667cd7f53eabb1df0cb3573ea04ecc13f12a38b875d00f22a90",
+        "withHash": {
+          "z": 93,
+          "unicode": "Київ-6",
+          "fraction": -1.4285714285714286,
+          "flag": true,
+          "nested": {
+            "b": 0,
+            "a": "row-25"
+          },
+          "values": [
+            6,
+            null,
+            0.6
+          ],
+          "content_sha256": "a21a641f7c54a667cd7f53eabb1df0cb3573ea04ecc13f12a38b875d00f22a90"
+        }
+      }
+    },
+    {
+      "result": {
+        "hash": "26f8c7f9e04ff0553fb49778eb97b15a1ed923ba9ca49b63584b698799f8c3b8",
+        "ownHash": "26f8c7f9e04ff0553fb49778eb97b15a1ed923ba9ca49b63584b698799f8c3b8",
+        "withHash": {
+          "z": 110,
+          "unicode": "Київ-7",
+          "fraction": -1.2857142857142858,
+          "flag": false,
+          "nested": {
+            "b": 1,
+            "a": "row-24"
+          },
+          "values": [
+            7,
+            null,
+            0.7
+          ],
+          "content_sha256": "26f8c7f9e04ff0553fb49778eb97b15a1ed923ba9ca49b63584b698799f8c3b8"
+        }
+      }
+    },
+    {
+      "result": {
+        "hash": "6c62d5ed85c84da765f89f57181136880df4375fdaf2825104a2a07c7044e871",
+        "ownHash": "6c62d5ed85c84da765f89f57181136880df4375fdaf2825104a2a07c7044e871",
+        "withHash": {
+          "z": 127,
+          "unicode": "Київ-8",
+          "fraction": -1.1428571428571428,
+          "flag": true,
+          "nested": {
+            "b": 2,
+            "a": "row-23"
+          },
+          "values": [
+            8,
+            null,
+            0.8
+          ],
+          "content_sha256": "6c62d5ed85c84da765f89f57181136880df4375fdaf2825104a2a07c7044e871"
+        }
+      }
+    },
+    {
+      "result": {
+        "hash": "f47d89962ff79952bcb0969edb3aea380379700cfc35cfa46bdb29c5f8697076",
+        "ownHash": "f47d89962ff79952bcb0969edb3aea380379700cfc35cfa46bdb29c5f8697076",
+        "withHash": {
+          "z": 144,
+          "unicode": "Київ-9",
+          "fraction": -1,
+          "flag": false,
+          "nested": {
+            "b": 0,
+            "a": "row-22"
+          },
+          "values": [
+            9,
+            null,
+            0.9
+          ],
+          "content_sha256": "f47d89962ff79952bcb0969edb3aea380379700cfc35cfa46bdb29c5f8697076"
+        }
+      }
+    },
+    {
+      "result": {
+        "hash": "e80fb6a1c21c1448ac04b0670486ab9bab8a7f3a8a3752e4d863970eb245f261",
+        "ownHash": "e80fb6a1c21c1448ac04b0670486ab9bab8a7f3a8a3752e4d863970eb245f261",
+        "withHash": {
+          "z": 161,
+          "unicode": "Київ-10",
+          "fraction": -0.8571428571428571,
+          "flag": true,
+          "nested": {
+            "b": 1,
+            "a": "row-21"
+          },
+          "values": [
+            10,
+            null,
+            1
+          ],
+          "content_sha256": "e80fb6a1c21c1448ac04b0670486ab9bab8a7f3a8a3752e4d863970eb245f261"
+        }
+      }
+    },
+    {
+      "result": {
+        "hash": "b92daed89bdd473f878d7928989b2037fcd30e2e23035e45787351a44a9b9541",
+        "ownHash": "b92daed89bdd473f878d7928989b2037fcd30e2e23035e45787351a44a9b9541",
+        "withHash": {
+          "z": 178,
+          "unicode": "Київ-11",
+          "fraction": -0.7142857142857143,
+          "flag": false,
+          "nested": {
+            "b": 2,
+            "a": "row-20"
+          },
+          "values": [
+            11,
+            null,
+            1.1
+          ],
+          "content_sha256": "b92daed89bdd473f878d7928989b2037fcd30e2e23035e45787351a44a9b9541"
+        }
+      }
+    },
+    {
+      "result": {
+        "hash": "f3ac944c8acb61838b36a096f7918a1b9a13b7d8457e15b80bb3b6d38e77fb5c",
+        "ownHash": "f3ac944c8acb61838b36a096f7918a1b9a13b7d8457e15b80bb3b6d38e77fb5c",
+        "withHash": {
+          "z": 195,
+          "unicode": "Київ-12",
+          "fraction": -0.5714285714285714,
+          "flag": true,
+          "nested": {
+            "b": 0,
+            "a": "row-19"
+          },
+          "values": [
+            12,
+            null,
+            1.2
+          ],
+          "content_sha256": "f3ac944c8acb61838b36a096f7918a1b9a13b7d8457e15b80bb3b6d38e77fb5c"
+        }
+      }
+    },
+    {
+      "result": {
+        "hash": "1845bfeda551b42284857c87d9b80bf5a9a3d4c61eeb57f37ae8248fea5b8261",
+        "ownHash": "1845bfeda551b42284857c87d9b80bf5a9a3d4c61eeb57f37ae8248fea5b8261",
+        "withHash": {
+          "z": 212,
+          "unicode": "Київ-13",
+          "fraction": -0.42857142857142855,
+          "flag": false,
+          "nested": {
+            "b": 1,
+            "a": "row-18"
+          },
+          "values": [
+            13,
+            null,
+            1.3
+          ],
+          "content_sha256": "1845bfeda551b42284857c87d9b80bf5a9a3d4c61eeb57f37ae8248fea5b8261"
+        }
+      }
+    },
+    {
+      "result": {
+        "hash": "20c043c617ad8f283101df8e63a51922c0378dc373fff2cfd8fdc881ba2c0701",
+        "ownHash": "20c043c617ad8f283101df8e63a51922c0378dc373fff2cfd8fdc881ba2c0701",
+        "withHash": {
+          "z": 229,
+          "unicode": "Київ-14",
+          "fraction": -0.2857142857142857,
+          "flag": true,
+          "nested": {
+            "b": 2,
+            "a": "row-17"
+          },
+          "values": [
+            14,
+            null,
+            1.4
+          ],
+          "content_sha256": "20c043c617ad8f283101df8e63a51922c0378dc373fff2cfd8fdc881ba2c0701"
+        }
+      }
+    },
+    {
+      "result": {
+        "hash": "eda936e14788d87f1f8eb915a12803bd9df713aa72382cf375daf450eee992cf",
+        "ownHash": "eda936e14788d87f1f8eb915a12803bd9df713aa72382cf375daf450eee992cf",
+        "withHash": {
+          "z": 246,
+          "unicode": "Київ-15",
+          "fraction": -0.14285714285714285,
+          "flag": false,
+          "nested": {
+            "b": 0,
+            "a": "row-16"
+          },
+          "values": [
+            15,
+            null,
+            1.5
+          ],
+          "content_sha256": "eda936e14788d87f1f8eb915a12803bd9df713aa72382cf375daf450eee992cf"
+        }
+      }
+    },
+    {
+      "result": {
+        "hash": "40e74e49c0005e273ce882c6b5188e56ff59225cf6530dbadf1905b134098fce",
+        "ownHash": "40e74e49c0005e273ce882c6b5188e56ff59225cf6530dbadf1905b134098fce",
+        "withHash": {
+          "z": 263,
+          "unicode": "Київ-16",
+          "fraction": 0,
+          "flag": true,
+          "nested": {
+            "b": 1,
+            "a": "row-15"
+          },
+          "values": [
+            16,
+            null,
+            1.6
+          ],
+          "content_sha256": "40e74e49c0005e273ce882c6b5188e56ff59225cf6530dbadf1905b134098fce"
+        }
+      }
+    },
+    {
+      "result": {
+        "hash": "b746be04c1f52c9e5d526a4c001cce00d7bc40ac53fc8545a61d9907e7ea257f",
+        "ownHash": "b746be04c1f52c9e5d526a4c001cce00d7bc40ac53fc8545a61d9907e7ea257f",
+        "withHash": {
+          "z": 280,
+          "unicode": "Київ-17",
+          "fraction": 0.14285714285714285,
+          "flag": false,
+          "nested": {
+            "b": 2,
+            "a": "row-14"
+          },
+          "values": [
+            17,
+            null,
+            1.7
+          ],
+          "content_sha256": "b746be04c1f52c9e5d526a4c001cce00d7bc40ac53fc8545a61d9907e7ea257f"
+        }
+      }
+    },
+    {
+      "result": {
+        "hash": "9f2eee3159d12e2ad913cd8bc25f05c0738e8f6b55524613cff13972708d691f",
+        "ownHash": "9f2eee3159d12e2ad913cd8bc25f05c0738e8f6b55524613cff13972708d691f",
+        "withHash": {
+          "z": 297,
+          "unicode": "Київ-18",
+          "fraction": 0.2857142857142857,
+          "flag": true,
+          "nested": {
+            "b": 0,
+            "a": "row-13"
+          },
+          "values": [
+            18,
+            null,
+            1.8
+          ],
+          "content_sha256": "9f2eee3159d12e2ad913cd8bc25f05c0738e8f6b55524613cff13972708d691f"
+        }
+      }
+    },
+    {
+      "result": {
+        "hash": "1a343761e56d113933bc420a31d6e1d00a47c4f38acbc1ead9bcec46991996f3",
+        "ownHash": "1a343761e56d113933bc420a31d6e1d00a47c4f38acbc1ead9bcec46991996f3",
+        "withHash": {
+          "z": 314,
+          "unicode": "Київ-19",
+          "fraction": 0.42857142857142855,
+          "flag": false,
+          "nested": {
+            "b": 1,
+            "a": "row-12"
+          },
+          "values": [
+            19,
+            null,
+            1.9
+          ],
+          "content_sha256": "1a343761e56d113933bc420a31d6e1d00a47c4f38acbc1ead9bcec46991996f3"
+        }
+      }
+    },
+    {
+      "result": {
+        "hash": "0d6de2c5a20d535c8bd706ed997ff2a5990a906a61ffd29be062b8e6f116d4ec",
+        "ownHash": "0d6de2c5a20d535c8bd706ed997ff2a5990a906a61ffd29be062b8e6f116d4ec",
+        "withHash": {
+          "z": 331,
+          "unicode": "Київ-20",
+          "fraction": 0.5714285714285714,
+          "flag": true,
+          "nested": {
+            "b": 2,
+            "a": "row-11"
+          },
+          "values": [
+            20,
+            null,
+            2
+          ],
+          "content_sha256": "0d6de2c5a20d535c8bd706ed997ff2a5990a906a61ffd29be062b8e6f116d4ec"
+        }
+      }
+    },
+    {
+      "result": {
+        "hash": "a31f468254d620341cc72a39693c73e9a102d1210d541dd46e7eb4592e65d278",
+        "ownHash": "a31f468254d620341cc72a39693c73e9a102d1210d541dd46e7eb4592e65d278",
+        "withHash": {
+          "z": 348,
+          "unicode": "Київ-21",
+          "fraction": 0.7142857142857143,
+          "flag": false,
+          "nested": {
+            "b": 0,
+            "a": "row-10"
+          },
+          "values": [
+            21,
+            null,
+            2.1
+          ],
+          "content_sha256": "a31f468254d620341cc72a39693c73e9a102d1210d541dd46e7eb4592e65d278"
+        }
+      }
+    },
+    {
+      "result": {
+        "hash": "dadb86ba70eff1592ef0e81b39214aa088c774521c70e7721e979db3cc8a71e5",
+        "ownHash": "dadb86ba70eff1592ef0e81b39214aa088c774521c70e7721e979db3cc8a71e5",
+        "withHash": {
+          "z": 365,
+          "unicode": "Київ-22",
+          "fraction": 0.8571428571428571,
+          "flag": true,
+          "nested": {
+            "b": 1,
+            "a": "row-9"
+          },
+          "values": [
+            22,
+            null,
+            2.2
+          ],
+          "content_sha256": "dadb86ba70eff1592ef0e81b39214aa088c774521c70e7721e979db3cc8a71e5"
+        }
+      }
+    },
+    {
+      "result": {
+        "hash": "812fa8c8d40b669c98ac6a177c72ddf682b4008b6cf42d4755ab182cd75331a3",
+        "ownHash": "812fa8c8d40b669c98ac6a177c72ddf682b4008b6cf42d4755ab182cd75331a3",
+        "withHash": {
+          "z": 382,
+          "unicode": "Київ-23",
+          "fraction": 1,
+          "flag": false,
+          "nested": {
+            "b": 2,
+            "a": "row-8"
+          },
+          "values": [
+            23,
+            null,
+            2.3
+          ],
+          "content_sha256": "812fa8c8d40b669c98ac6a177c72ddf682b4008b6cf42d4755ab182cd75331a3"
+        }
+      }
+    },
+    {
+      "result": {
+        "hash": "7141d35021074e13211104e610da10b497580e455b4742cb3d46ada8343479bc",
+        "ownHash": "7141d35021074e13211104e610da10b497580e455b4742cb3d46ada8343479bc",
+        "withHash": {
+          "z": 399,
+          "unicode": "Київ-24",
+          "fraction": 1.1428571428571428,
+          "flag": true,
+          "nested": {
+            "b": 0,
+            "a": "row-7"
+          },
+          "values": [
+            24,
+            null,
+            2.4
+          ],
+          "content_sha256": "7141d35021074e13211104e610da10b497580e455b4742cb3d46ada8343479bc"
+        }
+      }
+    },
+    {
+      "result": {
+        "hash": "54352e4f1acefa29969e0f9f844fc64ce3ba9b7b196e29afd7751faacfb04967",
+        "ownHash": "54352e4f1acefa29969e0f9f844fc64ce3ba9b7b196e29afd7751faacfb04967",
+        "withHash": {
+          "z": 416,
+          "unicode": "Київ-25",
+          "fraction": 1.2857142857142858,
+          "flag": false,
+          "nested": {
+            "b": 1,
+            "a": "row-6"
+          },
+          "values": [
+            25,
+            null,
+            2.5
+          ],
+          "content_sha256": "54352e4f1acefa29969e0f9f844fc64ce3ba9b7b196e29afd7751faacfb04967"
+        }
+      }
+    },
+    {
+      "result": {
+        "hash": "2a4edcbe3e30971c09ff429a77489bfd1a40122c0558837e2256bfd02bca3fb3",
+        "ownHash": "2a4edcbe3e30971c09ff429a77489bfd1a40122c0558837e2256bfd02bca3fb3",
+        "withHash": {
+          "z": 433,
+          "unicode": "Київ-26",
+          "fraction": 1.4285714285714286,
+          "flag": true,
+          "nested": {
+            "b": 2,
+            "a": "row-5"
+          },
+          "values": [
+            26,
+            null,
+            2.6
+          ],
+          "content_sha256": "2a4edcbe3e30971c09ff429a77489bfd1a40122c0558837e2256bfd02bca3fb3"
+        }
+      }
+    },
+    {
+      "result": {
+        "hash": "51ec1c54512b5ed355291748fc8349487b9819a4d857e63413ac7a603c0f4049",
+        "ownHash": "51ec1c54512b5ed355291748fc8349487b9819a4d857e63413ac7a603c0f4049",
+        "withHash": {
+          "z": 450,
+          "unicode": "Київ-27",
+          "fraction": 1.5714285714285714,
+          "flag": false,
+          "nested": {
+            "b": 0,
+            "a": "row-4"
+          },
+          "values": [
+            27,
+            null,
+            2.7
+          ],
+          "content_sha256": "51ec1c54512b5ed355291748fc8349487b9819a4d857e63413ac7a603c0f4049"
+        }
+      }
+    },
+    {
+      "result": {
+        "hash": "ba1bc0bf5dcd34539ebd060016dce5186c1261f8825c4e0592cca45f8ff017d7",
+        "ownHash": "ba1bc0bf5dcd34539ebd060016dce5186c1261f8825c4e0592cca45f8ff017d7",
+        "withHash": {
+          "z": 467,
+          "unicode": "Київ-28",
+          "fraction": 1.7142857142857142,
+          "flag": true,
+          "nested": {
+            "b": 1,
+            "a": "row-3"
+          },
+          "values": [
+            28,
+            null,
+            2.8
+          ],
+          "content_sha256": "ba1bc0bf5dcd34539ebd060016dce5186c1261f8825c4e0592cca45f8ff017d7"
+        }
+      }
+    },
+    {
+      "result": {
+        "hash": "814ed18039c752a7cd5b07d957805576c335b13177f3c9206806ea15b3110c5d",
+        "ownHash": "814ed18039c752a7cd5b07d957805576c335b13177f3c9206806ea15b3110c5d",
+        "withHash": {
+          "z": 484,
+          "unicode": "Київ-29",
+          "fraction": 1.8571428571428572,
+          "flag": false,
+          "nested": {
+            "b": 2,
+            "a": "row-2"
+          },
+          "values": [
+            29,
+            null,
+            2.9
+          ],
+          "content_sha256": "814ed18039c752a7cd5b07d957805576c335b13177f3c9206806ea15b3110c5d"
+        }
+      }
+    },
+    {
+      "result": {
+        "hash": "c9b2ce3fb1b09173f187393129aec6dd6d3ef61608f993c884b8a552265edd3e",
+        "ownHash": "c9b2ce3fb1b09173f187393129aec6dd6d3ef61608f993c884b8a552265edd3e",
+        "withHash": {
+          "z": 501,
+          "unicode": "Київ-30",
+          "fraction": 2,
+          "flag": true,
+          "nested": {
+            "b": 0,
+            "a": "row-1"
+          },
+          "values": [
+            30,
+            null,
+            3
+          ],
+          "content_sha256": "c9b2ce3fb1b09173f187393129aec6dd6d3ef61608f993c884b8a552265edd3e"
+        }
+      }
+    },
+    {
+      "result": {
+        "hash": "ff1e5e9e9ebb7749966c4f92598e2008f010997c613a9c9ba128968981b338ad",
+        "ownHash": "ff1e5e9e9ebb7749966c4f92598e2008f010997c613a9c9ba128968981b338ad",
+        "withHash": {
+          "z": 518,
+          "unicode": "Київ-31",
+          "fraction": 2.142857142857143,
+          "flag": false,
+          "nested": {
+            "b": 1,
+            "a": "row-0"
+          },
+          "values": [
+            31,
+            null,
+            3.1
+          ],
+          "content_sha256": "ff1e5e9e9ebb7749966c4f92598e2008f010997c613a9c9ba128968981b338ad"
+        }
+      }
+    }
+  ],
+  "environment": [
+    true,
+    false,
+    true,
+    false,
+    true,
+    false,
+    false,
+    false,
+    true,
+    false
+  ],
+  "audit": {
+    "empty": {
+      "audit": {
+        "schema": "strategy-readiness-audit/2",
+        "version": 2,
+        "generated_at": "2025-08-24T01:50:00.000Z",
+        "basis": "EVIDENCE_DERIVED_OPERATIONAL",
+        "dimensions": [
+          {
+            "id": "governance",
+            "title": "Research governance and reproducibility",
+            "capability": {
+              "score": 0,
+              "earned": 0,
+              "total": 2,
+              "checks": [
+                {
+                  "id": "governance.run-schema",
+                  "description": "exact authoritative run schema",
+                  "points": 1,
+                  "passed": false,
+                  "evidence": []
+                },
+                {
+                  "id": "governance.run-hash",
+                  "description": "run content and byte hashes verified",
+                  "points": 1,
+                  "passed": false,
+                  "evidence": []
+                }
+              ]
+            },
+            "operational": {
+              "score": 0,
+              "earned": 0,
+              "total": 2,
+              "checks": [
+                {
+                  "id": "governance.immutable-lineage",
+                  "description": "run has complete immutable lineage",
+                  "points": 1,
+                  "passed": false,
+                  "evidence": []
+                },
+                {
+                  "id": "governance.authoritative",
+                  "description": "authoritative provenance is declared",
+                  "points": 1,
+                  "passed": false,
+                  "evidence": []
+                }
+              ]
+            },
+            "score": 0,
+            "status": "BLOCKED",
+            "blockers": [
+              "governance.run-schema",
+              "governance.run-hash",
+              "governance.immutable-lineage",
+              "governance.authoritative"
+            ]
+          },
+          {
+            "id": "statistical",
+            "title": "Statistical selection controls",
+            "capability": {
+              "score": 0,
+              "earned": 0,
+              "total": 2,
+              "checks": [
+                {
+                  "id": "statistical.wfo-schema",
+                  "description": "exact eight-fold WFO artifact",
+                  "points": 1,
+                  "passed": false,
+                  "evidence": []
+                },
+                {
+                  "id": "statistical.overfit-schema",
+                  "description": "exact fail-closed overfit artifact",
+                  "points": 1,
+                  "passed": false,
+                  "evidence": []
+                }
+              ]
+            },
+            "operational": {
+              "score": 0,
+              "earned": 0,
+              "total": 2,
+              "checks": [
+                {
+                  "id": "statistical.purged-embargoed",
+                  "description": "30-day purge and seven-day embargo",
+                  "points": 1,
+                  "passed": false,
+                  "evidence": []
+                },
+                {
+                  "id": "statistical.lineage-bound",
+                  "description": "WFO binds immutable dataset/precommit/experiment lineage",
+                  "points": 1,
+                  "passed": false,
+                  "evidence": []
+                }
+              ]
+            },
+            "score": 0,
+            "status": "BLOCKED",
+            "blockers": [
+              "statistical.wfo-schema",
+              "statistical.overfit-schema",
+              "statistical.purged-embargoed",
+              "statistical.lineage-bound"
+            ]
+          },
+          {
+            "id": "pit",
+            "title": "PIT historical data readiness",
+            "capability": {
+              "score": 0,
+              "earned": 0,
+              "total": 2,
+              "checks": [
+                {
+                  "id": "pit.authoritative-schema",
+                  "description": "authoritative separated v5 Parquet artifact set",
+                  "points": 1,
+                  "passed": false,
+                  "evidence": []
+                },
+                {
+                  "id": "pit.physical-hashes",
+                  "description": "feature/label/execution/mark files are hash-bound",
+                  "points": 1,
+                  "passed": false,
+                  "evidence": []
+                }
+              ]
+            },
+            "operational": {
+              "score": 0,
+              "earned": 0,
+              "total": 2,
+              "checks": [
+                {
+                  "id": "pit.availability-contract",
+                  "description": "label and execution artifacts preserve availability boundaries",
+                  "points": 1,
+                  "passed": false,
+                  "evidence": []
+                },
+                {
+                  "id": "pit.no-staging-substitute",
+                  "description": "no staging artifact is accepted as authoritative",
+                  "points": 1,
+                  "passed": false,
+                  "evidence": []
+                }
+              ]
+            },
+            "score": 0,
+            "status": "BLOCKED",
+            "blockers": [
+              "pit.authoritative-schema",
+              "pit.physical-hashes",
+              "pit.availability-contract",
+              "pit.no-staging-substitute"
+            ]
+          },
+          {
+            "id": "opportunity",
+            "title": "Frozen opportunity domain and physical hydration",
+            "capability": {
+              "score": 0,
+              "earned": 0,
+              "total": 2,
+              "checks": [
+                {
+                  "id": "opportunity.feature-contract-lineage",
+                  "description": "feature DAG and plan are physically reopened and hash-linked",
+                  "points": 1,
+                  "passed": false,
+                  "evidence": []
+                },
+                {
+                  "id": "opportunity.v2-contracts",
+                  "description": "complete non-fixture domain, envelope and hydration v2 artifacts are present",
+                  "points": 1,
+                  "passed": false,
+                  "evidence": []
+                }
+              ]
+            },
+            "operational": {
+              "score": 0,
+              "earned": 0,
+              "total": 2,
+              "checks": [
+                {
+                  "id": "opportunity.physical-chain",
+                  "description": "v2 hydration reopens its physical v1 partition source and complete coverage",
+                  "points": 1,
+                  "passed": false,
+                  "evidence": []
+                },
+                {
+                  "id": "opportunity.run-lineage",
+                  "description": "the authoritative run binds the exact frozen v2 envelope",
+                  "points": 1,
+                  "passed": false,
+                  "evidence": []
+                }
+              ]
+            },
+            "score": 0,
+            "status": "BLOCKED",
+            "blockers": [
+              "opportunity.feature-contract-lineage",
+              "opportunity.v2-contracts",
+              "opportunity.physical-chain",
+              "opportunity.run-lineage"
+            ]
+          },
+          {
+            "id": "execution",
+            "title": "Execution realism",
+            "capability": {
+              "score": 0,
+              "earned": 0,
+              "total": 2,
+              "checks": [
+                {
+                  "id": "execution.authoritative-schema",
+                  "description": "execution is derived from exact v5 run",
+                  "points": 1,
+                  "passed": false,
+                  "evidence": []
+                },
+                {
+                  "id": "execution.physical-rows",
+                  "description": "execution rows are physically bound",
+                  "points": 1,
+                  "passed": false,
+                  "evidence": []
+                }
+              ]
+            },
+            "operational": {
+              "score": 0,
+              "earned": 0,
+              "total": 2,
+              "checks": [
+                {
+                  "id": "execution.fill-recompute",
+                  "description": "fills/trades are recomputed in canonical pipeline",
+                  "points": 1,
+                  "passed": false,
+                  "evidence": []
+                },
+                {
+                  "id": "execution.label-separation",
+                  "description": "execution is separate from signal predicates",
+                  "points": 1,
+                  "passed": false,
+                  "evidence": []
+                }
+              ]
+            },
+            "score": 0,
+            "status": "BLOCKED",
+            "blockers": [
+              "execution.authoritative-schema",
+              "execution.physical-rows",
+              "execution.fill-recompute",
+              "execution.label-separation"
+            ]
+          },
+          {
+            "id": "portfolio",
+            "title": "Portfolio and risk realism",
+            "capability": {
+              "score": 0,
+              "earned": 0,
+              "total": 2,
+              "checks": [
+                {
+                  "id": "portfolio.authoritative-schema",
+                  "description": "physical portfolio risk artifact is exact v5 schema",
+                  "points": 1,
+                  "passed": false,
+                  "evidence": []
+                },
+                {
+                  "id": "portfolio.physical-mark",
+                  "description": "portfolio binds a physical mark artifact",
+                  "points": 1,
+                  "passed": false,
+                  "evidence": []
+                }
+              ]
+            },
+            "operational": {
+              "score": 0,
+              "earned": 0,
+              "total": 2,
+              "checks": [
+                {
+                  "id": "portfolio.pnl-mrc",
+                  "description": "actual PnL covariance/MRC reconciles",
+                  "points": 1,
+                  "passed": false,
+                  "evidence": []
+                },
+                {
+                  "id": "portfolio.separate-decisions",
+                  "description": "asset and portfolio decisions remain separate",
+                  "points": 1,
+                  "passed": false,
+                  "evidence": []
+                }
+              ]
+            },
+            "score": 0,
+            "status": "BLOCKED",
+            "blockers": [
+              "portfolio.authoritative-schema",
+              "portfolio.physical-mark",
+              "portfolio.pnl-mrc",
+              "portfolio.separate-decisions"
+            ]
+          },
+          {
+            "id": "prospective",
+            "title": "Prospective validation readiness",
+            "capability": {
+              "score": 0,
+              "earned": 0,
+              "total": 2,
+              "checks": [
+                {
+                  "id": "prospective.publication-schema",
+                  "description": "portable signed publication schema is exact",
+                  "points": 1,
+                  "passed": false,
+                  "evidence": []
+                },
+                {
+                  "id": "prospective.evidence-digests",
+                  "description": "all publication evidence is hash-bound",
+                  "points": 1,
+                  "passed": false,
+                  "evidence": []
+                }
+              ]
+            },
+            "operational": {
+              "score": 0,
+              "earned": 0,
+              "total": 2,
+              "checks": [
+                {
+                  "id": "prospective.replay-revocation",
+                  "description": "replay and revocation heads are recorded",
+                  "points": 1,
+                  "passed": false,
+                  "evidence": []
+                },
+                {
+                  "id": "prospective.lease",
+                  "description": "publication lease is bounded",
+                  "points": 1,
+                  "passed": false,
+                  "evidence": []
+                }
+              ]
+            },
+            "score": 0,
+            "status": "BLOCKED",
+            "blockers": [
+              "prospective.publication-schema",
+              "prospective.evidence-digests",
+              "prospective.replay-revocation",
+              "prospective.lease"
+            ]
+          },
+          {
+            "id": "activation",
+            "title": "Activation readiness",
+            "capability": {
+              "score": 0,
+              "earned": 0,
+              "total": 2,
+              "checks": [
+                {
+                  "id": "activation.trust-root-signature",
+                  "description": "root bundle and pinned fingerprint are verified cryptographically",
+                  "points": 1,
+                  "passed": false,
+                  "evidence": []
+                },
+                {
+                  "id": "activation.publication-signature",
+                  "description": "signed evidence and decisions are cryptographically verified",
+                  "points": 1,
+                  "passed": false,
+                  "evidence": []
+                }
+              ]
+            },
+            "operational": {
+              "score": 0,
+              "earned": 0,
+              "total": 2,
+              "checks": [
+                {
+                  "id": "activation.deployment-capture",
+                  "description": "deployment audit and GitHub settings are externally verified",
+                  "points": 1,
+                  "passed": false,
+                  "evidence": []
+                },
+                {
+                  "id": "activation.never-self-declared",
+                  "description": "activation has no self-declared bypass",
+                  "points": 1,
+                  "passed": false,
+                  "evidence": []
+                }
+              ]
+            },
+            "score": 0,
+            "status": "BLOCKED",
+            "blockers": [
+              "activation.trust-root-signature",
+              "activation.publication-signature",
+              "activation.deployment-capture",
+              "activation.never-self-declared"
+            ]
+          }
+        ],
+        "strategy_testing_readiness": {
+          "score": 0,
+          "status": "BLOCKED",
+          "required_dimensions": [
+            "governance",
+            "statistical",
+            "pit",
+            "opportunity",
+            "execution",
+            "portfolio"
+          ],
+          "blockers": [
+            "governance.run-schema",
+            "governance.run-hash",
+            "governance.immutable-lineage",
+            "governance.authoritative",
+            "statistical.wfo-schema",
+            "statistical.overfit-schema",
+            "statistical.purged-embargoed",
+            "statistical.lineage-bound",
+            "pit.authoritative-schema",
+            "pit.physical-hashes",
+            "pit.availability-contract",
+            "pit.no-staging-substitute",
+            "opportunity.feature-contract-lineage",
+            "opportunity.v2-contracts",
+            "opportunity.physical-chain",
+            "opportunity.run-lineage",
+            "execution.authoritative-schema",
+            "execution.physical-rows",
+            "execution.fill-recompute",
+            "execution.label-separation",
+            "portfolio.authoritative-schema",
+            "portfolio.physical-mark",
+            "portfolio.pnl-mrc",
+            "portfolio.separate-decisions"
+          ]
+        },
+        "activation": {
+          "status": "BLOCKED",
+          "ready": false,
+          "active_strategy_count": 0
+        },
+        "artifact_verification": [],
+        "limitations": [
+          "governance:governance.run-schema",
+          "governance:governance.run-hash",
+          "governance:governance.immutable-lineage",
+          "governance:governance.authoritative",
+          "statistical:statistical.wfo-schema",
+          "statistical:statistical.overfit-schema",
+          "statistical:statistical.purged-embargoed",
+          "statistical:statistical.lineage-bound",
+          "pit:pit.authoritative-schema",
+          "pit:pit.physical-hashes",
+          "pit:pit.availability-contract",
+          "pit:pit.no-staging-substitute",
+          "opportunity:opportunity.feature-contract-lineage",
+          "opportunity:opportunity.v2-contracts",
+          "opportunity:opportunity.physical-chain",
+          "opportunity:opportunity.run-lineage",
+          "execution:execution.authoritative-schema",
+          "execution:execution.physical-rows",
+          "execution:execution.fill-recompute",
+          "execution:execution.label-separation",
+          "portfolio:portfolio.authoritative-schema",
+          "portfolio:portfolio.physical-mark",
+          "portfolio:portfolio.pnl-mrc",
+          "portfolio:portfolio.separate-decisions",
+          "prospective:prospective.publication-schema",
+          "prospective:prospective.evidence-digests",
+          "prospective:prospective.replay-revocation",
+          "prospective:prospective.lease",
+          "activation:activation.trust-root-signature",
+          "activation:activation.publication-signature",
+          "activation:activation.deployment-capture",
+          "activation:activation.never-self-declared",
+          "lineage:DATA_MANIFEST_NOT_VERIFIED",
+          "lineage:SOURCE_MANIFEST:REFERENCE_INCOMPLETE",
+          "lineage:PHYSICAL_PARQUET_REOPEN_FAILED",
+          "lineage:DATA_ROLE_FEATURE_MISSING",
+          "lineage:DATA_ROLE_LABEL_MISSING",
+          "lineage:DATA_ROLE_EXECUTION_MISSING",
+          "lineage:DATA_ROLE_MARK_MISSING",
+          "lineage:RUN_DATA_ROLE_LINEAGE_MISMATCH",
+          "lineage:CANDIDATE_SET_PHYSICAL_DEPENDENCY_MISSING",
+          "lineage:EXPOSURE_HEAD_PHYSICAL_DEPENDENCY_MISSING",
+          "lineage:WFO_PHYSICAL_LINEAGE_NOT_REOPENED",
+          "lineage:OVERFIT_PHYSICAL_LINEAGE_NOT_REOPENED",
+          "lineage:PORTFOLIO_MARK_PHYSICAL_DEPENDENCY_MISSING_OR_MISMATCHED",
+          "lineage:PORTFOLIO_STRESS_PHYSICAL_DEPENDENCY_MISSING_OR_MISMATCHED",
+          "lineage:PORTFOLIO_POLICY_PHYSICAL_DEPENDENCY_MISSING",
+          "lineage:PORTFOLIO_SELECTED_TRADES_PHYSICAL_DEPENDENCY_MISSING",
+          "lineage:PORTFOLIO_EXECUTION_FILLS_PHYSICAL_DEPENDENCY_MISSING",
+          "lineage:PORTFOLIO_PHYSICAL_LINEAGE_NOT_REOPENED",
+          "lineage:FEATURE_GRAPH_PLAN_LINEAGE_NOT_REOPENED",
+          "lineage:OPPORTUNITY_DOMAIN_PHYSICAL_DEPENDENCY_MISSING",
+          "lineage:OPPORTUNITY_ENVELOPE_V2_PHYSICAL_DEPENDENCY_MISSING",
+          "lineage:OPPORTUNITY_HYDRATION_V2_PHYSICAL_DEPENDENCY_MISSING",
+          "lineage:OPPORTUNITY_HYDRATION_1_PHYSICAL_DEPENDENCY_MISSING",
+          "lineage:RUN_OPPORTUNITY_ENVELOPE_LINEAGE_MISSING_OR_MISMATCHED"
+        ],
+        "content_sha256": "f0d46f46d9cda51903b87437e1a6ebadc74807a34e68b8e3f05ddf9e7145c163"
+      },
+      "markdown": "# Strategy readiness audit\n\nGenerated: 2025-08-24T01:50:00.000Z\nBasis: EVIDENCE_DERIVED_OPERATIONAL\n\n| Dimension | Capability | Operational | Overall | Status |\n|---|---:|---:|---:|---|\n| Research governance and reproducibility | 0.0 | 0.0 | 0.0 | BLOCKED |\n| Statistical selection controls | 0.0 | 0.0 | 0.0 | BLOCKED |\n| PIT historical data readiness | 0.0 | 0.0 | 0.0 | BLOCKED |\n| Frozen opportunity domain and physical hydration | 0.0 | 0.0 | 0.0 | BLOCKED |\n| Execution realism | 0.0 | 0.0 | 0.0 | BLOCKED |\n| Portfolio and risk realism | 0.0 | 0.0 | 0.0 | BLOCKED |\n| Prospective validation readiness | 0.0 | 0.0 | 0.0 | BLOCKED |\n| Activation readiness | 0.0 | 0.0 | 0.0 | BLOCKED |\n\nStrategy-testing readiness: **0.0/10 (BLOCKED)**\nActivation: **BLOCKED**\n\n## Dimension evidence\n\n### Research governance and reproducibility — BLOCKED\n\n#### Capability (0/2 points)\n- FAIL governance.run-schema: exact authoritative run schema. Evidence: none\n- FAIL governance.run-hash: run content and byte hashes verified. Evidence: none\n#### Operational (0/2 points)\n- FAIL governance.immutable-lineage: run has complete immutable lineage. Evidence: none\n- FAIL governance.authoritative: authoritative provenance is declared. Evidence: none\n- Limitations/blockers: governance.run-schema, governance.run-hash, governance.immutable-lineage, governance.authoritative\n\n### Statistical selection controls — BLOCKED\n\n#### Capability (0/2 points)\n- FAIL statistical.wfo-schema: exact eight-fold WFO artifact. Evidence: none\n- FAIL statistical.overfit-schema: exact fail-closed overfit artifact. Evidence: none\n#### Operational (0/2 points)\n- FAIL statistical.purged-embargoed: 30-day purge and seven-day embargo. Evidence: none\n- FAIL statistical.lineage-bound: WFO binds immutable dataset/precommit/experiment lineage. Evidence: none\n- Limitations/blockers: statistical.wfo-schema, statistical.overfit-schema, statistical.purged-embargoed, statistical.lineage-bound\n\n### PIT historical data readiness — BLOCKED\n\n#### Capability (0/2 points)\n- FAIL pit.authoritative-schema: authoritative separated v5 Parquet artifact set. Evidence: none\n- FAIL pit.physical-hashes: feature/label/execution/mark files are hash-bound. Evidence: none\n#### Operational (0/2 points)\n- FAIL pit.availability-contract: label and execution artifacts preserve availability boundaries. Evidence: none\n- FAIL pit.no-staging-substitute: no staging artifact is accepted as authoritative. Evidence: none\n- Limitations/blockers: pit.authoritative-schema, pit.physical-hashes, pit.availability-contract, pit.no-staging-substitute\n\n### Frozen opportunity domain and physical hydration — BLOCKED\n\n#### Capability (0/2 points)\n- FAIL opportunity.feature-contract-lineage: feature DAG and plan are physically reopened and hash-linked. Evidence: none\n- FAIL opportunity.v2-contracts: complete non-fixture domain, envelope and hydration v2 artifacts are present. Evidence: none\n#### Operational (0/2 points)\n- FAIL opportunity.physical-chain: v2 hydration reopens its physical v1 partition source and complete coverage. Evidence: none\n- FAIL opportunity.run-lineage: the authoritative run binds the exact frozen v2 envelope. Evidence: none\n- Limitations/blockers: opportunity.feature-contract-lineage, opportunity.v2-contracts, opportunity.physical-chain, opportunity.run-lineage\n\n### Execution realism — BLOCKED\n\n#### Capability (0/2 points)\n- FAIL execution.authoritative-schema: execution is derived from exact v5 run. Evidence: none\n- FAIL execution.physical-rows: execution rows are physically bound. Evidence: none\n#### Operational (0/2 points)\n- FAIL execution.fill-recompute: fills/trades are recomputed in canonical pipeline. Evidence: none\n- FAIL execution.label-separation: execution is separate from signal predicates. Evidence: none\n- Limitations/blockers: execution.authoritative-schema, execution.physical-rows, execution.fill-recompute, execution.label-separation\n\n### Portfolio and risk realism — BLOCKED\n\n#### Capability (0/2 points)\n- FAIL portfolio.authoritative-schema: physical portfolio risk artifact is exact v5 schema. Evidence: none\n- FAIL portfolio.physical-mark: portfolio binds a physical mark artifact. Evidence: none\n#### Operational (0/2 points)\n- FAIL portfolio.pnl-mrc: actual PnL covariance/MRC reconciles. Evidence: none\n- FAIL portfolio.separate-decisions: asset and portfolio decisions remain separate. Evidence: none\n- Limitations/blockers: portfolio.authoritative-schema, portfolio.physical-mark, portfolio.pnl-mrc, portfolio.separate-decisions\n\n### Prospective validation readiness — BLOCKED\n\n#### Capability (0/2 points)\n- FAIL prospective.publication-schema: portable signed publication schema is exact. Evidence: none\n- FAIL prospective.evidence-digests: all publication evidence is hash-bound. Evidence: none\n#### Operational (0/2 points)\n- FAIL prospective.replay-revocation: replay and revocation heads are recorded. Evidence: none\n- FAIL prospective.lease: publication lease is bounded. Evidence: none\n- Limitations/blockers: prospective.publication-schema, prospective.evidence-digests, prospective.replay-revocation, prospective.lease\n\n### Activation readiness — BLOCKED\n\n#### Capability (0/2 points)\n- FAIL activation.trust-root-signature: root bundle and pinned fingerprint are verified cryptographically. Evidence: none\n- FAIL activation.publication-signature: signed evidence and decisions are cryptographically verified. Evidence: none\n#### Operational (0/2 points)\n- FAIL activation.deployment-capture: deployment audit and GitHub settings are externally verified. Evidence: none\n- FAIL activation.never-self-declared: activation has no self-declared bypass. Evidence: none\n- Limitations/blockers: activation.trust-root-signature, activation.publication-signature, activation.deployment-capture, activation.never-self-declared\n\n## Verified artifacts\n\n## Aggregate limitations\n- governance:governance.run-schema\n- governance:governance.run-hash\n- governance:governance.immutable-lineage\n- governance:governance.authoritative\n- statistical:statistical.wfo-schema\n- statistical:statistical.overfit-schema\n- statistical:statistical.purged-embargoed\n- statistical:statistical.lineage-bound\n- pit:pit.authoritative-schema\n- pit:pit.physical-hashes\n- pit:pit.availability-contract\n- pit:pit.no-staging-substitute\n- opportunity:opportunity.feature-contract-lineage\n- opportunity:opportunity.v2-contracts\n- opportunity:opportunity.physical-chain\n- opportunity:opportunity.run-lineage\n- execution:execution.authoritative-schema\n- execution:execution.physical-rows\n- execution:execution.fill-recompute\n- execution:execution.label-separation\n- portfolio:portfolio.authoritative-schema\n- portfolio:portfolio.physical-mark\n- portfolio:portfolio.pnl-mrc\n- portfolio:portfolio.separate-decisions\n- prospective:prospective.publication-schema\n- prospective:prospective.evidence-digests\n- prospective:prospective.replay-revocation\n- prospective:prospective.lease\n- activation:activation.trust-root-signature\n- activation:activation.publication-signature\n- activation:activation.deployment-capture\n- activation:activation.never-self-declared\n- lineage:DATA_MANIFEST_NOT_VERIFIED\n- lineage:SOURCE_MANIFEST:REFERENCE_INCOMPLETE\n- lineage:PHYSICAL_PARQUET_REOPEN_FAILED\n- lineage:DATA_ROLE_FEATURE_MISSING\n- lineage:DATA_ROLE_LABEL_MISSING\n- lineage:DATA_ROLE_EXECUTION_MISSING\n- lineage:DATA_ROLE_MARK_MISSING\n- lineage:RUN_DATA_ROLE_LINEAGE_MISMATCH\n- lineage:CANDIDATE_SET_PHYSICAL_DEPENDENCY_MISSING\n- lineage:EXPOSURE_HEAD_PHYSICAL_DEPENDENCY_MISSING\n- lineage:WFO_PHYSICAL_LINEAGE_NOT_REOPENED\n- lineage:OVERFIT_PHYSICAL_LINEAGE_NOT_REOPENED\n- lineage:PORTFOLIO_MARK_PHYSICAL_DEPENDENCY_MISSING_OR_MISMATCHED\n- lineage:PORTFOLIO_STRESS_PHYSICAL_DEPENDENCY_MISSING_OR_MISMATCHED\n- lineage:PORTFOLIO_POLICY_PHYSICAL_DEPENDENCY_MISSING\n- lineage:PORTFOLIO_SELECTED_TRADES_PHYSICAL_DEPENDENCY_MISSING\n- lineage:PORTFOLIO_EXECUTION_FILLS_PHYSICAL_DEPENDENCY_MISSING\n- lineage:PORTFOLIO_PHYSICAL_LINEAGE_NOT_REOPENED\n- lineage:FEATURE_GRAPH_PLAN_LINEAGE_NOT_REOPENED\n- lineage:OPPORTUNITY_DOMAIN_PHYSICAL_DEPENDENCY_MISSING\n- lineage:OPPORTUNITY_ENVELOPE_V2_PHYSICAL_DEPENDENCY_MISSING\n- lineage:OPPORTUNITY_HYDRATION_V2_PHYSICAL_DEPENDENCY_MISSING\n- lineage:OPPORTUNITY_HYDRATION_1_PHYSICAL_DEPENDENCY_MISSING\n- lineage:RUN_OPPORTUNITY_ENVELOPE_LINEAGE_MISSING_OR_MISMATCHED\n"
+    },
+    "physicalVerified": {
+      "schema": "strategy-readiness-audit/2",
+      "version": 2,
+      "generated_at": "2025-08-24T01:50:00.000Z",
+      "basis": "EVIDENCE_DERIVED_OPERATIONAL",
+      "dimensions": [
+        {
+          "id": "governance",
+          "title": "Research governance and reproducibility",
+          "capability": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "governance.run-schema",
+                "description": "exact authoritative run schema",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "governance.run-hash",
+                "description": "run content and byte hashes verified",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "operational": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "governance.immutable-lineage",
+                "description": "run has complete immutable lineage",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "governance.authoritative",
+                "description": "authoritative provenance is declared",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "score": 0,
+          "status": "BLOCKED",
+          "blockers": [
+            "governance.run-schema",
+            "governance.run-hash",
+            "governance.immutable-lineage",
+            "governance.authoritative"
+          ]
+        },
+        {
+          "id": "statistical",
+          "title": "Statistical selection controls",
+          "capability": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "statistical.wfo-schema",
+                "description": "exact eight-fold WFO artifact",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "statistical.overfit-schema",
+                "description": "exact fail-closed overfit artifact",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "operational": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "statistical.purged-embargoed",
+                "description": "30-day purge and seven-day embargo",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "statistical.lineage-bound",
+                "description": "WFO binds immutable dataset/precommit/experiment lineage",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "score": 0,
+          "status": "BLOCKED",
+          "blockers": [
+            "statistical.wfo-schema",
+            "statistical.overfit-schema",
+            "statistical.purged-embargoed",
+            "statistical.lineage-bound"
+          ]
+        },
+        {
+          "id": "pit",
+          "title": "PIT historical data readiness",
+          "capability": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "pit.authoritative-schema",
+                "description": "authoritative separated v5 Parquet artifact set",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "pit.physical-hashes",
+                "description": "feature/label/execution/mark files are hash-bound",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "operational": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "pit.availability-contract",
+                "description": "label and execution artifacts preserve availability boundaries",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "pit.no-staging-substitute",
+                "description": "no staging artifact is accepted as authoritative",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "score": 0,
+          "status": "BLOCKED",
+          "blockers": [
+            "pit.authoritative-schema",
+            "pit.physical-hashes",
+            "pit.availability-contract",
+            "pit.no-staging-substitute"
+          ]
+        },
+        {
+          "id": "opportunity",
+          "title": "Frozen opportunity domain and physical hydration",
+          "capability": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "opportunity.feature-contract-lineage",
+                "description": "feature DAG and plan are physically reopened and hash-linked",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "opportunity.v2-contracts",
+                "description": "complete non-fixture domain, envelope and hydration v2 artifacts are present",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "operational": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "opportunity.physical-chain",
+                "description": "v2 hydration reopens its physical v1 partition source and complete coverage",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "opportunity.run-lineage",
+                "description": "the authoritative run binds the exact frozen v2 envelope",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "score": 0,
+          "status": "BLOCKED",
+          "blockers": [
+            "opportunity.feature-contract-lineage",
+            "opportunity.v2-contracts",
+            "opportunity.physical-chain",
+            "opportunity.run-lineage"
+          ]
+        },
+        {
+          "id": "execution",
+          "title": "Execution realism",
+          "capability": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "execution.authoritative-schema",
+                "description": "execution is derived from exact v5 run",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "execution.physical-rows",
+                "description": "execution rows are physically bound",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "operational": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "execution.fill-recompute",
+                "description": "fills/trades are recomputed in canonical pipeline",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "execution.label-separation",
+                "description": "execution is separate from signal predicates",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "score": 0,
+          "status": "BLOCKED",
+          "blockers": [
+            "execution.authoritative-schema",
+            "execution.physical-rows",
+            "execution.fill-recompute",
+            "execution.label-separation"
+          ]
+        },
+        {
+          "id": "portfolio",
+          "title": "Portfolio and risk realism",
+          "capability": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "portfolio.authoritative-schema",
+                "description": "physical portfolio risk artifact is exact v5 schema",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "portfolio.physical-mark",
+                "description": "portfolio binds a physical mark artifact",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "operational": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "portfolio.pnl-mrc",
+                "description": "actual PnL covariance/MRC reconciles",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "portfolio.separate-decisions",
+                "description": "asset and portfolio decisions remain separate",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "score": 0,
+          "status": "BLOCKED",
+          "blockers": [
+            "portfolio.authoritative-schema",
+            "portfolio.physical-mark",
+            "portfolio.pnl-mrc",
+            "portfolio.separate-decisions"
+          ]
+        },
+        {
+          "id": "prospective",
+          "title": "Prospective validation readiness",
+          "capability": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "prospective.publication-schema",
+                "description": "portable signed publication schema is exact",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "prospective.evidence-digests",
+                "description": "all publication evidence is hash-bound",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "operational": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "prospective.replay-revocation",
+                "description": "replay and revocation heads are recorded",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "prospective.lease",
+                "description": "publication lease is bounded",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "score": 0,
+          "status": "BLOCKED",
+          "blockers": [
+            "prospective.publication-schema",
+            "prospective.evidence-digests",
+            "prospective.replay-revocation",
+            "prospective.lease"
+          ]
+        },
+        {
+          "id": "activation",
+          "title": "Activation readiness",
+          "capability": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "activation.trust-root-signature",
+                "description": "root bundle and pinned fingerprint are verified cryptographically",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "activation.publication-signature",
+                "description": "signed evidence and decisions are cryptographically verified",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "operational": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "activation.deployment-capture",
+                "description": "deployment audit and GitHub settings are externally verified",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "activation.never-self-declared",
+                "description": "activation has no self-declared bypass",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "score": 0,
+          "status": "BLOCKED",
+          "blockers": [
+            "activation.trust-root-signature",
+            "activation.publication-signature",
+            "activation.deployment-capture",
+            "activation.never-self-declared"
+          ]
+        }
+      ],
+      "strategy_testing_readiness": {
+        "score": 0,
+        "status": "BLOCKED",
+        "required_dimensions": [
+          "governance",
+          "statistical",
+          "pit",
+          "opportunity",
+          "execution",
+          "portfolio"
+        ],
+        "blockers": [
+          "governance.run-schema",
+          "governance.run-hash",
+          "governance.immutable-lineage",
+          "governance.authoritative",
+          "statistical.wfo-schema",
+          "statistical.overfit-schema",
+          "statistical.purged-embargoed",
+          "statistical.lineage-bound",
+          "pit.authoritative-schema",
+          "pit.physical-hashes",
+          "pit.availability-contract",
+          "pit.no-staging-substitute",
+          "opportunity.feature-contract-lineage",
+          "opportunity.v2-contracts",
+          "opportunity.physical-chain",
+          "opportunity.run-lineage",
+          "execution.authoritative-schema",
+          "execution.physical-rows",
+          "execution.fill-recompute",
+          "execution.label-separation",
+          "portfolio.authoritative-schema",
+          "portfolio.physical-mark",
+          "portfolio.pnl-mrc",
+          "portfolio.separate-decisions"
+        ]
+      },
+      "activation": {
+        "status": "BLOCKED",
+        "ready": false,
+        "active_strategy_count": 0
+      },
+      "artifact_verification": [
+        {
+          "id": "githubCycleReceipt",
+          "path": "<TEMP_ROOT>/cycle.json",
+          "schema": "strategy-v5-authoritative-command-receipt/1",
+          "verified": true,
+          "byte_sha256": "3c1626b5d8b2102166dfd00f48b668413e70b8caf36a611c94f4628b4b1c9d9b",
+          "content_sha256": "d3ab8768658fdbfedc685c6ce0710d63203da2905514b7cdfb18365a739adc64",
+          "failures": []
+        }
+      ],
+      "limitations": [
+        "governance:governance.run-schema",
+        "governance:governance.run-hash",
+        "governance:governance.immutable-lineage",
+        "governance:governance.authoritative",
+        "statistical:statistical.wfo-schema",
+        "statistical:statistical.overfit-schema",
+        "statistical:statistical.purged-embargoed",
+        "statistical:statistical.lineage-bound",
+        "pit:pit.authoritative-schema",
+        "pit:pit.physical-hashes",
+        "pit:pit.availability-contract",
+        "pit:pit.no-staging-substitute",
+        "opportunity:opportunity.feature-contract-lineage",
+        "opportunity:opportunity.v2-contracts",
+        "opportunity:opportunity.physical-chain",
+        "opportunity:opportunity.run-lineage",
+        "execution:execution.authoritative-schema",
+        "execution:execution.physical-rows",
+        "execution:execution.fill-recompute",
+        "execution:execution.label-separation",
+        "portfolio:portfolio.authoritative-schema",
+        "portfolio:portfolio.physical-mark",
+        "portfolio:portfolio.pnl-mrc",
+        "portfolio:portfolio.separate-decisions",
+        "prospective:prospective.publication-schema",
+        "prospective:prospective.evidence-digests",
+        "prospective:prospective.replay-revocation",
+        "prospective:prospective.lease",
+        "activation:activation.trust-root-signature",
+        "activation:activation.publication-signature",
+        "activation:activation.deployment-capture",
+        "activation:activation.never-self-declared",
+        "lineage:DATA_MANIFEST_NOT_VERIFIED",
+        "lineage:SOURCE_MANIFEST:REFERENCE_INCOMPLETE",
+        "lineage:PHYSICAL_PARQUET_REOPEN_FAILED",
+        "lineage:DATA_ROLE_FEATURE_MISSING",
+        "lineage:DATA_ROLE_LABEL_MISSING",
+        "lineage:DATA_ROLE_EXECUTION_MISSING",
+        "lineage:DATA_ROLE_MARK_MISSING",
+        "lineage:RUN_DATA_ROLE_LINEAGE_MISMATCH",
+        "lineage:CANDIDATE_SET_PHYSICAL_DEPENDENCY_MISSING",
+        "lineage:EXPOSURE_HEAD_PHYSICAL_DEPENDENCY_MISSING",
+        "lineage:WFO_PHYSICAL_LINEAGE_NOT_REOPENED",
+        "lineage:OVERFIT_PHYSICAL_LINEAGE_NOT_REOPENED",
+        "lineage:PORTFOLIO_MARK_PHYSICAL_DEPENDENCY_MISSING_OR_MISMATCHED",
+        "lineage:PORTFOLIO_STRESS_PHYSICAL_DEPENDENCY_MISSING_OR_MISMATCHED",
+        "lineage:PORTFOLIO_POLICY_PHYSICAL_DEPENDENCY_MISSING",
+        "lineage:PORTFOLIO_SELECTED_TRADES_PHYSICAL_DEPENDENCY_MISSING",
+        "lineage:PORTFOLIO_EXECUTION_FILLS_PHYSICAL_DEPENDENCY_MISSING",
+        "lineage:PORTFOLIO_PHYSICAL_LINEAGE_NOT_REOPENED",
+        "lineage:FEATURE_GRAPH_PLAN_LINEAGE_NOT_REOPENED",
+        "lineage:OPPORTUNITY_DOMAIN_PHYSICAL_DEPENDENCY_MISSING",
+        "lineage:OPPORTUNITY_ENVELOPE_V2_PHYSICAL_DEPENDENCY_MISSING",
+        "lineage:OPPORTUNITY_HYDRATION_V2_PHYSICAL_DEPENDENCY_MISSING",
+        "lineage:OPPORTUNITY_HYDRATION_1_PHYSICAL_DEPENDENCY_MISSING",
+        "lineage:RUN_OPPORTUNITY_ENVELOPE_LINEAGE_MISSING_OR_MISMATCHED"
+      ],
+      "content_sha256": "5b0007d6777cefc334479a1be85bedcd3b330cafb438835aa312cca26625f3c8"
+    },
+    "physicalTampered": {
+      "schema": "strategy-readiness-audit/2",
+      "version": 2,
+      "generated_at": "2025-08-24T01:50:00.000Z",
+      "basis": "EVIDENCE_DERIVED_OPERATIONAL",
+      "dimensions": [
+        {
+          "id": "governance",
+          "title": "Research governance and reproducibility",
+          "capability": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "governance.run-schema",
+                "description": "exact authoritative run schema",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "governance.run-hash",
+                "description": "run content and byte hashes verified",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "operational": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "governance.immutable-lineage",
+                "description": "run has complete immutable lineage",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "governance.authoritative",
+                "description": "authoritative provenance is declared",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "score": 0,
+          "status": "BLOCKED",
+          "blockers": [
+            "governance.run-schema",
+            "governance.run-hash",
+            "governance.immutable-lineage",
+            "governance.authoritative"
+          ]
+        },
+        {
+          "id": "statistical",
+          "title": "Statistical selection controls",
+          "capability": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "statistical.wfo-schema",
+                "description": "exact eight-fold WFO artifact",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "statistical.overfit-schema",
+                "description": "exact fail-closed overfit artifact",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "operational": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "statistical.purged-embargoed",
+                "description": "30-day purge and seven-day embargo",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "statistical.lineage-bound",
+                "description": "WFO binds immutable dataset/precommit/experiment lineage",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "score": 0,
+          "status": "BLOCKED",
+          "blockers": [
+            "statistical.wfo-schema",
+            "statistical.overfit-schema",
+            "statistical.purged-embargoed",
+            "statistical.lineage-bound"
+          ]
+        },
+        {
+          "id": "pit",
+          "title": "PIT historical data readiness",
+          "capability": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "pit.authoritative-schema",
+                "description": "authoritative separated v5 Parquet artifact set",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "pit.physical-hashes",
+                "description": "feature/label/execution/mark files are hash-bound",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "operational": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "pit.availability-contract",
+                "description": "label and execution artifacts preserve availability boundaries",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "pit.no-staging-substitute",
+                "description": "no staging artifact is accepted as authoritative",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "score": 0,
+          "status": "BLOCKED",
+          "blockers": [
+            "pit.authoritative-schema",
+            "pit.physical-hashes",
+            "pit.availability-contract",
+            "pit.no-staging-substitute"
+          ]
+        },
+        {
+          "id": "opportunity",
+          "title": "Frozen opportunity domain and physical hydration",
+          "capability": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "opportunity.feature-contract-lineage",
+                "description": "feature DAG and plan are physically reopened and hash-linked",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "opportunity.v2-contracts",
+                "description": "complete non-fixture domain, envelope and hydration v2 artifacts are present",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "operational": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "opportunity.physical-chain",
+                "description": "v2 hydration reopens its physical v1 partition source and complete coverage",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "opportunity.run-lineage",
+                "description": "the authoritative run binds the exact frozen v2 envelope",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "score": 0,
+          "status": "BLOCKED",
+          "blockers": [
+            "opportunity.feature-contract-lineage",
+            "opportunity.v2-contracts",
+            "opportunity.physical-chain",
+            "opportunity.run-lineage"
+          ]
+        },
+        {
+          "id": "execution",
+          "title": "Execution realism",
+          "capability": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "execution.authoritative-schema",
+                "description": "execution is derived from exact v5 run",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "execution.physical-rows",
+                "description": "execution rows are physically bound",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "operational": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "execution.fill-recompute",
+                "description": "fills/trades are recomputed in canonical pipeline",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "execution.label-separation",
+                "description": "execution is separate from signal predicates",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "score": 0,
+          "status": "BLOCKED",
+          "blockers": [
+            "execution.authoritative-schema",
+            "execution.physical-rows",
+            "execution.fill-recompute",
+            "execution.label-separation"
+          ]
+        },
+        {
+          "id": "portfolio",
+          "title": "Portfolio and risk realism",
+          "capability": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "portfolio.authoritative-schema",
+                "description": "physical portfolio risk artifact is exact v5 schema",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "portfolio.physical-mark",
+                "description": "portfolio binds a physical mark artifact",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "operational": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "portfolio.pnl-mrc",
+                "description": "actual PnL covariance/MRC reconciles",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "portfolio.separate-decisions",
+                "description": "asset and portfolio decisions remain separate",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "score": 0,
+          "status": "BLOCKED",
+          "blockers": [
+            "portfolio.authoritative-schema",
+            "portfolio.physical-mark",
+            "portfolio.pnl-mrc",
+            "portfolio.separate-decisions"
+          ]
+        },
+        {
+          "id": "prospective",
+          "title": "Prospective validation readiness",
+          "capability": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "prospective.publication-schema",
+                "description": "portable signed publication schema is exact",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "prospective.evidence-digests",
+                "description": "all publication evidence is hash-bound",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "operational": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "prospective.replay-revocation",
+                "description": "replay and revocation heads are recorded",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "prospective.lease",
+                "description": "publication lease is bounded",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "score": 0,
+          "status": "BLOCKED",
+          "blockers": [
+            "prospective.publication-schema",
+            "prospective.evidence-digests",
+            "prospective.replay-revocation",
+            "prospective.lease"
+          ]
+        },
+        {
+          "id": "activation",
+          "title": "Activation readiness",
+          "capability": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "activation.trust-root-signature",
+                "description": "root bundle and pinned fingerprint are verified cryptographically",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "activation.publication-signature",
+                "description": "signed evidence and decisions are cryptographically verified",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "operational": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "activation.deployment-capture",
+                "description": "deployment audit and GitHub settings are externally verified",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "activation.never-self-declared",
+                "description": "activation has no self-declared bypass",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "score": 0,
+          "status": "BLOCKED",
+          "blockers": [
+            "activation.trust-root-signature",
+            "activation.publication-signature",
+            "activation.deployment-capture",
+            "activation.never-self-declared"
+          ]
+        }
+      ],
+      "strategy_testing_readiness": {
+        "score": 0,
+        "status": "BLOCKED",
+        "required_dimensions": [
+          "governance",
+          "statistical",
+          "pit",
+          "opportunity",
+          "execution",
+          "portfolio"
+        ],
+        "blockers": [
+          "governance.run-schema",
+          "governance.run-hash",
+          "governance.immutable-lineage",
+          "governance.authoritative",
+          "statistical.wfo-schema",
+          "statistical.overfit-schema",
+          "statistical.purged-embargoed",
+          "statistical.lineage-bound",
+          "pit.authoritative-schema",
+          "pit.physical-hashes",
+          "pit.availability-contract",
+          "pit.no-staging-substitute",
+          "opportunity.feature-contract-lineage",
+          "opportunity.v2-contracts",
+          "opportunity.physical-chain",
+          "opportunity.run-lineage",
+          "execution.authoritative-schema",
+          "execution.physical-rows",
+          "execution.fill-recompute",
+          "execution.label-separation",
+          "portfolio.authoritative-schema",
+          "portfolio.physical-mark",
+          "portfolio.pnl-mrc",
+          "portfolio.separate-decisions"
+        ]
+      },
+      "activation": {
+        "status": "BLOCKED",
+        "ready": false,
+        "active_strategy_count": 0
+      },
+      "artifact_verification": [
+        {
+          "id": "githubCycleReceipt",
+          "path": "<TEMP_ROOT>/cycle.json",
+          "schema": "strategy-v5-authoritative-command-receipt/1",
+          "verified": false,
+          "byte_sha256": "17f1ff0f091152ccb5ae518c109fb8a97bff7f6a1453fc0b40131cfb6a565521",
+          "content_sha256": "d3ab8768658fdbfedc685c6ce0710d63203da2905514b7cdfb18365a739adc64",
+          "failures": [
+            "ARTIFACT_BYTE_HASH_MISMATCH",
+            "CENTRAL_SCHEMA_VALIDATION_FAILED",
+            "CONTENT_HASH_MISMATCH"
+          ]
+        }
+      ],
+      "limitations": [
+        "governance:governance.run-schema",
+        "governance:governance.run-hash",
+        "governance:governance.immutable-lineage",
+        "governance:governance.authoritative",
+        "statistical:statistical.wfo-schema",
+        "statistical:statistical.overfit-schema",
+        "statistical:statistical.purged-embargoed",
+        "statistical:statistical.lineage-bound",
+        "pit:pit.authoritative-schema",
+        "pit:pit.physical-hashes",
+        "pit:pit.availability-contract",
+        "pit:pit.no-staging-substitute",
+        "opportunity:opportunity.feature-contract-lineage",
+        "opportunity:opportunity.v2-contracts",
+        "opportunity:opportunity.physical-chain",
+        "opportunity:opportunity.run-lineage",
+        "execution:execution.authoritative-schema",
+        "execution:execution.physical-rows",
+        "execution:execution.fill-recompute",
+        "execution:execution.label-separation",
+        "portfolio:portfolio.authoritative-schema",
+        "portfolio:portfolio.physical-mark",
+        "portfolio:portfolio.pnl-mrc",
+        "portfolio:portfolio.separate-decisions",
+        "prospective:prospective.publication-schema",
+        "prospective:prospective.evidence-digests",
+        "prospective:prospective.replay-revocation",
+        "prospective:prospective.lease",
+        "activation:activation.trust-root-signature",
+        "activation:activation.publication-signature",
+        "activation:activation.deployment-capture",
+        "activation:activation.never-self-declared",
+        "lineage:DATA_MANIFEST_NOT_VERIFIED",
+        "lineage:SOURCE_MANIFEST:REFERENCE_INCOMPLETE",
+        "lineage:PHYSICAL_PARQUET_REOPEN_FAILED",
+        "lineage:DATA_ROLE_FEATURE_MISSING",
+        "lineage:DATA_ROLE_LABEL_MISSING",
+        "lineage:DATA_ROLE_EXECUTION_MISSING",
+        "lineage:DATA_ROLE_MARK_MISSING",
+        "lineage:RUN_DATA_ROLE_LINEAGE_MISMATCH",
+        "lineage:CANDIDATE_SET_PHYSICAL_DEPENDENCY_MISSING",
+        "lineage:EXPOSURE_HEAD_PHYSICAL_DEPENDENCY_MISSING",
+        "lineage:WFO_PHYSICAL_LINEAGE_NOT_REOPENED",
+        "lineage:OVERFIT_PHYSICAL_LINEAGE_NOT_REOPENED",
+        "lineage:PORTFOLIO_MARK_PHYSICAL_DEPENDENCY_MISSING_OR_MISMATCHED",
+        "lineage:PORTFOLIO_STRESS_PHYSICAL_DEPENDENCY_MISSING_OR_MISMATCHED",
+        "lineage:PORTFOLIO_POLICY_PHYSICAL_DEPENDENCY_MISSING",
+        "lineage:PORTFOLIO_SELECTED_TRADES_PHYSICAL_DEPENDENCY_MISSING",
+        "lineage:PORTFOLIO_EXECUTION_FILLS_PHYSICAL_DEPENDENCY_MISSING",
+        "lineage:PORTFOLIO_PHYSICAL_LINEAGE_NOT_REOPENED",
+        "lineage:FEATURE_GRAPH_PLAN_LINEAGE_NOT_REOPENED",
+        "lineage:OPPORTUNITY_DOMAIN_PHYSICAL_DEPENDENCY_MISSING",
+        "lineage:OPPORTUNITY_ENVELOPE_V2_PHYSICAL_DEPENDENCY_MISSING",
+        "lineage:OPPORTUNITY_HYDRATION_V2_PHYSICAL_DEPENDENCY_MISSING",
+        "lineage:OPPORTUNITY_HYDRATION_1_PHYSICAL_DEPENDENCY_MISSING",
+        "lineage:RUN_OPPORTUNITY_ENVELOPE_LINEAGE_MISSING_OR_MISMATCHED"
+      ],
+      "content_sha256": "7e65f5d24cd3ddea838b2b4a96afc4303509ce74d6042bce1505236939828ce1"
+    },
+    "expired": {
+      "schema": "strategy-readiness-audit/2",
+      "version": 2,
+      "generated_at": "2025-08-24T01:50:00.000Z",
+      "basis": "EVIDENCE_DERIVED_OPERATIONAL",
+      "dimensions": [
+        {
+          "id": "governance",
+          "title": "Research governance and reproducibility",
+          "capability": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "governance.run-schema",
+                "description": "exact authoritative run schema",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "governance.run-hash",
+                "description": "run content and byte hashes verified",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "operational": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "governance.immutable-lineage",
+                "description": "run has complete immutable lineage",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "governance.authoritative",
+                "description": "authoritative provenance is declared",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "score": 0,
+          "status": "BLOCKED",
+          "blockers": [
+            "governance.run-schema",
+            "governance.run-hash",
+            "governance.immutable-lineage",
+            "governance.authoritative"
+          ]
+        },
+        {
+          "id": "statistical",
+          "title": "Statistical selection controls",
+          "capability": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "statistical.wfo-schema",
+                "description": "exact eight-fold WFO artifact",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "statistical.overfit-schema",
+                "description": "exact fail-closed overfit artifact",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "operational": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "statistical.purged-embargoed",
+                "description": "30-day purge and seven-day embargo",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "statistical.lineage-bound",
+                "description": "WFO binds immutable dataset/precommit/experiment lineage",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "score": 0,
+          "status": "BLOCKED",
+          "blockers": [
+            "statistical.wfo-schema",
+            "statistical.overfit-schema",
+            "statistical.purged-embargoed",
+            "statistical.lineage-bound"
+          ]
+        },
+        {
+          "id": "pit",
+          "title": "PIT historical data readiness",
+          "capability": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "pit.authoritative-schema",
+                "description": "authoritative separated v5 Parquet artifact set",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "pit.physical-hashes",
+                "description": "feature/label/execution/mark files are hash-bound",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "operational": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "pit.availability-contract",
+                "description": "label and execution artifacts preserve availability boundaries",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "pit.no-staging-substitute",
+                "description": "no staging artifact is accepted as authoritative",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "score": 0,
+          "status": "BLOCKED",
+          "blockers": [
+            "pit.authoritative-schema",
+            "pit.physical-hashes",
+            "pit.availability-contract",
+            "pit.no-staging-substitute"
+          ]
+        },
+        {
+          "id": "opportunity",
+          "title": "Frozen opportunity domain and physical hydration",
+          "capability": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "opportunity.feature-contract-lineage",
+                "description": "feature DAG and plan are physically reopened and hash-linked",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "opportunity.v2-contracts",
+                "description": "complete non-fixture domain, envelope and hydration v2 artifacts are present",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "operational": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "opportunity.physical-chain",
+                "description": "v2 hydration reopens its physical v1 partition source and complete coverage",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "opportunity.run-lineage",
+                "description": "the authoritative run binds the exact frozen v2 envelope",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "score": 0,
+          "status": "BLOCKED",
+          "blockers": [
+            "opportunity.feature-contract-lineage",
+            "opportunity.v2-contracts",
+            "opportunity.physical-chain",
+            "opportunity.run-lineage"
+          ]
+        },
+        {
+          "id": "execution",
+          "title": "Execution realism",
+          "capability": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "execution.authoritative-schema",
+                "description": "execution is derived from exact v5 run",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "execution.physical-rows",
+                "description": "execution rows are physically bound",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "operational": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "execution.fill-recompute",
+                "description": "fills/trades are recomputed in canonical pipeline",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "execution.label-separation",
+                "description": "execution is separate from signal predicates",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "score": 0,
+          "status": "BLOCKED",
+          "blockers": [
+            "execution.authoritative-schema",
+            "execution.physical-rows",
+            "execution.fill-recompute",
+            "execution.label-separation"
+          ]
+        },
+        {
+          "id": "portfolio",
+          "title": "Portfolio and risk realism",
+          "capability": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "portfolio.authoritative-schema",
+                "description": "physical portfolio risk artifact is exact v5 schema",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "portfolio.physical-mark",
+                "description": "portfolio binds a physical mark artifact",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "operational": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "portfolio.pnl-mrc",
+                "description": "actual PnL covariance/MRC reconciles",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "portfolio.separate-decisions",
+                "description": "asset and portfolio decisions remain separate",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "score": 0,
+          "status": "BLOCKED",
+          "blockers": [
+            "portfolio.authoritative-schema",
+            "portfolio.physical-mark",
+            "portfolio.pnl-mrc",
+            "portfolio.separate-decisions"
+          ]
+        },
+        {
+          "id": "prospective",
+          "title": "Prospective validation readiness",
+          "capability": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "prospective.publication-schema",
+                "description": "portable signed publication schema is exact",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "prospective.evidence-digests",
+                "description": "all publication evidence is hash-bound",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "operational": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "prospective.replay-revocation",
+                "description": "replay and revocation heads are recorded",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "prospective.lease",
+                "description": "publication lease is bounded",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "score": 0,
+          "status": "BLOCKED",
+          "blockers": [
+            "prospective.publication-schema",
+            "prospective.evidence-digests",
+            "prospective.replay-revocation",
+            "prospective.lease"
+          ]
+        },
+        {
+          "id": "activation",
+          "title": "Activation readiness",
+          "capability": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "activation.trust-root-signature",
+                "description": "root bundle and pinned fingerprint are verified cryptographically",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "activation.publication-signature",
+                "description": "signed evidence and decisions are cryptographically verified",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "operational": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "activation.deployment-capture",
+                "description": "deployment audit and GitHub settings are externally verified",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "activation.never-self-declared",
+                "description": "activation has no self-declared bypass",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "score": 0,
+          "status": "BLOCKED",
+          "blockers": [
+            "activation.trust-root-signature",
+            "activation.publication-signature",
+            "activation.deployment-capture",
+            "activation.never-self-declared"
+          ]
+        }
+      ],
+      "strategy_testing_readiness": {
+        "score": 0,
+        "status": "BLOCKED",
+        "required_dimensions": [
+          "governance",
+          "statistical",
+          "pit",
+          "opportunity",
+          "execution",
+          "portfolio"
+        ],
+        "blockers": [
+          "governance.run-schema",
+          "governance.run-hash",
+          "governance.immutable-lineage",
+          "governance.authoritative",
+          "statistical.wfo-schema",
+          "statistical.overfit-schema",
+          "statistical.purged-embargoed",
+          "statistical.lineage-bound",
+          "pit.authoritative-schema",
+          "pit.physical-hashes",
+          "pit.availability-contract",
+          "pit.no-staging-substitute",
+          "opportunity.feature-contract-lineage",
+          "opportunity.v2-contracts",
+          "opportunity.physical-chain",
+          "opportunity.run-lineage",
+          "execution.authoritative-schema",
+          "execution.physical-rows",
+          "execution.fill-recompute",
+          "execution.label-separation",
+          "portfolio.authoritative-schema",
+          "portfolio.physical-mark",
+          "portfolio.pnl-mrc",
+          "portfolio.separate-decisions"
+        ]
+      },
+      "activation": {
+        "status": "BLOCKED",
+        "ready": false,
+        "active_strategy_count": 0
+      },
+      "artifact_verification": [
+        {
+          "id": "githubCycleReceipt",
+          "path": "<TEMP_ROOT>/dated.json",
+          "schema": "strategy-v5-authoritative-command-receipt/1",
+          "verified": false,
+          "byte_sha256": "437aa48b8324071ed03d7ff37230b99cbfeee252e4e9dd4bc9e34698ffd3357f",
+          "content_sha256": "b94b66b750e31c56512f2fd66d53933b3e835bc3780e53f1988995131ae1cd2e",
+          "failures": [
+            "CENTRAL_SCHEMA_VALIDATION_FAILED",
+            "ARTIFACT_EXPIRED"
+          ]
+        }
+      ],
+      "limitations": [
+        "governance:governance.run-schema",
+        "governance:governance.run-hash",
+        "governance:governance.immutable-lineage",
+        "governance:governance.authoritative",
+        "statistical:statistical.wfo-schema",
+        "statistical:statistical.overfit-schema",
+        "statistical:statistical.purged-embargoed",
+        "statistical:statistical.lineage-bound",
+        "pit:pit.authoritative-schema",
+        "pit:pit.physical-hashes",
+        "pit:pit.availability-contract",
+        "pit:pit.no-staging-substitute",
+        "opportunity:opportunity.feature-contract-lineage",
+        "opportunity:opportunity.v2-contracts",
+        "opportunity:opportunity.physical-chain",
+        "opportunity:opportunity.run-lineage",
+        "execution:execution.authoritative-schema",
+        "execution:execution.physical-rows",
+        "execution:execution.fill-recompute",
+        "execution:execution.label-separation",
+        "portfolio:portfolio.authoritative-schema",
+        "portfolio:portfolio.physical-mark",
+        "portfolio:portfolio.pnl-mrc",
+        "portfolio:portfolio.separate-decisions",
+        "prospective:prospective.publication-schema",
+        "prospective:prospective.evidence-digests",
+        "prospective:prospective.replay-revocation",
+        "prospective:prospective.lease",
+        "activation:activation.trust-root-signature",
+        "activation:activation.publication-signature",
+        "activation:activation.deployment-capture",
+        "activation:activation.never-self-declared",
+        "lineage:DATA_MANIFEST_NOT_VERIFIED",
+        "lineage:SOURCE_MANIFEST:REFERENCE_INCOMPLETE",
+        "lineage:PHYSICAL_PARQUET_REOPEN_FAILED",
+        "lineage:DATA_ROLE_FEATURE_MISSING",
+        "lineage:DATA_ROLE_LABEL_MISSING",
+        "lineage:DATA_ROLE_EXECUTION_MISSING",
+        "lineage:DATA_ROLE_MARK_MISSING",
+        "lineage:RUN_DATA_ROLE_LINEAGE_MISMATCH",
+        "lineage:CANDIDATE_SET_PHYSICAL_DEPENDENCY_MISSING",
+        "lineage:EXPOSURE_HEAD_PHYSICAL_DEPENDENCY_MISSING",
+        "lineage:WFO_PHYSICAL_LINEAGE_NOT_REOPENED",
+        "lineage:OVERFIT_PHYSICAL_LINEAGE_NOT_REOPENED",
+        "lineage:PORTFOLIO_MARK_PHYSICAL_DEPENDENCY_MISSING_OR_MISMATCHED",
+        "lineage:PORTFOLIO_STRESS_PHYSICAL_DEPENDENCY_MISSING_OR_MISMATCHED",
+        "lineage:PORTFOLIO_POLICY_PHYSICAL_DEPENDENCY_MISSING",
+        "lineage:PORTFOLIO_SELECTED_TRADES_PHYSICAL_DEPENDENCY_MISSING",
+        "lineage:PORTFOLIO_EXECUTION_FILLS_PHYSICAL_DEPENDENCY_MISSING",
+        "lineage:PORTFOLIO_PHYSICAL_LINEAGE_NOT_REOPENED",
+        "lineage:FEATURE_GRAPH_PLAN_LINEAGE_NOT_REOPENED",
+        "lineage:OPPORTUNITY_DOMAIN_PHYSICAL_DEPENDENCY_MISSING",
+        "lineage:OPPORTUNITY_ENVELOPE_V2_PHYSICAL_DEPENDENCY_MISSING",
+        "lineage:OPPORTUNITY_HYDRATION_V2_PHYSICAL_DEPENDENCY_MISSING",
+        "lineage:OPPORTUNITY_HYDRATION_1_PHYSICAL_DEPENDENCY_MISSING",
+        "lineage:RUN_OPPORTUNITY_ENVELOPE_LINEAGE_MISSING_OR_MISMATCHED"
+      ],
+      "content_sha256": "1dc5b9d2c98cb53921125cfd8c6f8a669e5b1335feb78cbbd362a0a0331a0831"
+    },
+    "failureDuplicate": "duplicate evidence id githubCycleReceipt",
+    "failureExpiry": null,
+    "manifestVerified": {
+      "schema": "strategy-readiness-audit/2",
+      "version": 2,
+      "generated_at": "2025-08-24T01:50:00.000Z",
+      "basis": "EVIDENCE_DERIVED_OPERATIONAL",
+      "dimensions": [
+        {
+          "id": "governance",
+          "title": "Research governance and reproducibility",
+          "capability": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "governance.run-schema",
+                "description": "exact authoritative run schema",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "governance.run-hash",
+                "description": "run content and byte hashes verified",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "operational": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "governance.immutable-lineage",
+                "description": "run has complete immutable lineage",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "governance.authoritative",
+                "description": "authoritative provenance is declared",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "score": 0,
+          "status": "BLOCKED",
+          "blockers": [
+            "governance.run-schema",
+            "governance.run-hash",
+            "governance.immutable-lineage",
+            "governance.authoritative"
+          ]
+        },
+        {
+          "id": "statistical",
+          "title": "Statistical selection controls",
+          "capability": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "statistical.wfo-schema",
+                "description": "exact eight-fold WFO artifact",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "statistical.overfit-schema",
+                "description": "exact fail-closed overfit artifact",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "operational": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "statistical.purged-embargoed",
+                "description": "30-day purge and seven-day embargo",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "statistical.lineage-bound",
+                "description": "WFO binds immutable dataset/precommit/experiment lineage",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "score": 0,
+          "status": "BLOCKED",
+          "blockers": [
+            "statistical.wfo-schema",
+            "statistical.overfit-schema",
+            "statistical.purged-embargoed",
+            "statistical.lineage-bound"
+          ]
+        },
+        {
+          "id": "pit",
+          "title": "PIT historical data readiness",
+          "capability": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "pit.authoritative-schema",
+                "description": "authoritative separated v5 Parquet artifact set",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "pit.physical-hashes",
+                "description": "feature/label/execution/mark files are hash-bound",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "operational": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "pit.availability-contract",
+                "description": "label and execution artifacts preserve availability boundaries",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "pit.no-staging-substitute",
+                "description": "no staging artifact is accepted as authoritative",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "score": 0,
+          "status": "BLOCKED",
+          "blockers": [
+            "pit.authoritative-schema",
+            "pit.physical-hashes",
+            "pit.availability-contract",
+            "pit.no-staging-substitute"
+          ]
+        },
+        {
+          "id": "opportunity",
+          "title": "Frozen opportunity domain and physical hydration",
+          "capability": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "opportunity.feature-contract-lineage",
+                "description": "feature DAG and plan are physically reopened and hash-linked",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "opportunity.v2-contracts",
+                "description": "complete non-fixture domain, envelope and hydration v2 artifacts are present",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "operational": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "opportunity.physical-chain",
+                "description": "v2 hydration reopens its physical v1 partition source and complete coverage",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "opportunity.run-lineage",
+                "description": "the authoritative run binds the exact frozen v2 envelope",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "score": 0,
+          "status": "BLOCKED",
+          "blockers": [
+            "opportunity.feature-contract-lineage",
+            "opportunity.v2-contracts",
+            "opportunity.physical-chain",
+            "opportunity.run-lineage"
+          ]
+        },
+        {
+          "id": "execution",
+          "title": "Execution realism",
+          "capability": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "execution.authoritative-schema",
+                "description": "execution is derived from exact v5 run",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "execution.physical-rows",
+                "description": "execution rows are physically bound",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "operational": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "execution.fill-recompute",
+                "description": "fills/trades are recomputed in canonical pipeline",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "execution.label-separation",
+                "description": "execution is separate from signal predicates",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "score": 0,
+          "status": "BLOCKED",
+          "blockers": [
+            "execution.authoritative-schema",
+            "execution.physical-rows",
+            "execution.fill-recompute",
+            "execution.label-separation"
+          ]
+        },
+        {
+          "id": "portfolio",
+          "title": "Portfolio and risk realism",
+          "capability": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "portfolio.authoritative-schema",
+                "description": "physical portfolio risk artifact is exact v5 schema",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "portfolio.physical-mark",
+                "description": "portfolio binds a physical mark artifact",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "operational": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "portfolio.pnl-mrc",
+                "description": "actual PnL covariance/MRC reconciles",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "portfolio.separate-decisions",
+                "description": "asset and portfolio decisions remain separate",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "score": 0,
+          "status": "BLOCKED",
+          "blockers": [
+            "portfolio.authoritative-schema",
+            "portfolio.physical-mark",
+            "portfolio.pnl-mrc",
+            "portfolio.separate-decisions"
+          ]
+        },
+        {
+          "id": "prospective",
+          "title": "Prospective validation readiness",
+          "capability": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "prospective.publication-schema",
+                "description": "portable signed publication schema is exact",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "prospective.evidence-digests",
+                "description": "all publication evidence is hash-bound",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "operational": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "prospective.replay-revocation",
+                "description": "replay and revocation heads are recorded",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "prospective.lease",
+                "description": "publication lease is bounded",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "score": 0,
+          "status": "BLOCKED",
+          "blockers": [
+            "prospective.publication-schema",
+            "prospective.evidence-digests",
+            "prospective.replay-revocation",
+            "prospective.lease"
+          ]
+        },
+        {
+          "id": "activation",
+          "title": "Activation readiness",
+          "capability": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "activation.trust-root-signature",
+                "description": "root bundle and pinned fingerprint are verified cryptographically",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "activation.publication-signature",
+                "description": "signed evidence and decisions are cryptographically verified",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "operational": {
+            "score": 0,
+            "earned": 0,
+            "total": 2,
+            "checks": [
+              {
+                "id": "activation.deployment-capture",
+                "description": "deployment audit and GitHub settings are externally verified",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              },
+              {
+                "id": "activation.never-self-declared",
+                "description": "activation has no self-declared bypass",
+                "points": 1,
+                "passed": false,
+                "evidence": []
+              }
+            ]
+          },
+          "score": 0,
+          "status": "BLOCKED",
+          "blockers": [
+            "activation.trust-root-signature",
+            "activation.publication-signature",
+            "activation.deployment-capture",
+            "activation.never-self-declared"
+          ]
+        }
+      ],
+      "strategy_testing_readiness": {
+        "score": 0,
+        "status": "BLOCKED",
+        "required_dimensions": [
+          "governance",
+          "statistical",
+          "pit",
+          "opportunity",
+          "execution",
+          "portfolio"
+        ],
+        "blockers": [
+          "governance.run-schema",
+          "governance.run-hash",
+          "governance.immutable-lineage",
+          "governance.authoritative",
+          "statistical.wfo-schema",
+          "statistical.overfit-schema",
+          "statistical.purged-embargoed",
+          "statistical.lineage-bound",
+          "pit.authoritative-schema",
+          "pit.physical-hashes",
+          "pit.availability-contract",
+          "pit.no-staging-substitute",
+          "opportunity.feature-contract-lineage",
+          "opportunity.v2-contracts",
+          "opportunity.physical-chain",
+          "opportunity.run-lineage",
+          "execution.authoritative-schema",
+          "execution.physical-rows",
+          "execution.fill-recompute",
+          "execution.label-separation",
+          "portfolio.authoritative-schema",
+          "portfolio.physical-mark",
+          "portfolio.pnl-mrc",
+          "portfolio.separate-decisions"
+        ]
+      },
+      "activation": {
+        "status": "BLOCKED",
+        "ready": false,
+        "active_strategy_count": 0
+      },
+      "artifact_verification": [
+        {
+          "id": "evidence-manifest",
+          "path": "<TEMP_ROOT>/manifest.json",
+          "schema": "strategy-readiness-evidence-manifest/1",
+          "verified": true,
+          "byte_sha256": "02102cb68df7cf0ca0f4c64187f965eebe63f0432289dfd7340ab0fa69db366d",
+          "content_sha256": "2df05d206e0dcb12fd61d9e2ae4803f194158e14a6899498b1aefacd0205d614",
+          "failures": []
+        },
+        {
+          "id": "githubCycleReceipt",
+          "path": "<TEMP_ROOT>/cycle.json",
+          "schema": "strategy-v5-authoritative-command-receipt/1",
+          "verified": true,
+          "byte_sha256": "3c1626b5d8b2102166dfd00f48b668413e70b8caf36a611c94f4628b4b1c9d9b",
+          "content_sha256": "d3ab8768658fdbfedc685c6ce0710d63203da2905514b7cdfb18365a739adc64",
+          "failures": []
+        }
+      ],
+      "limitations": [
+        "governance:governance.run-schema",
+        "governance:governance.run-hash",
+        "governance:governance.immutable-lineage",
+        "governance:governance.authoritative",
+        "statistical:statistical.wfo-schema",
+        "statistical:statistical.overfit-schema",
+        "statistical:statistical.purged-embargoed",
+        "statistical:statistical.lineage-bound",
+        "pit:pit.authoritative-schema",
+        "pit:pit.physical-hashes",
+        "pit:pit.availability-contract",
+        "pit:pit.no-staging-substitute",
+        "opportunity:opportunity.feature-contract-lineage",
+        "opportunity:opportunity.v2-contracts",
+        "opportunity:opportunity.physical-chain",
+        "opportunity:opportunity.run-lineage",
+        "execution:execution.authoritative-schema",
+        "execution:execution.physical-rows",
+        "execution:execution.fill-recompute",
+        "execution:execution.label-separation",
+        "portfolio:portfolio.authoritative-schema",
+        "portfolio:portfolio.physical-mark",
+        "portfolio:portfolio.pnl-mrc",
+        "portfolio:portfolio.separate-decisions",
+        "prospective:prospective.publication-schema",
+        "prospective:prospective.evidence-digests",
+        "prospective:prospective.replay-revocation",
+        "prospective:prospective.lease",
+        "activation:activation.trust-root-signature",
+        "activation:activation.publication-signature",
+        "activation:activation.deployment-capture",
+        "activation:activation.never-self-declared",
+        "lineage:DATA_MANIFEST_NOT_VERIFIED",
+        "lineage:SOURCE_MANIFEST:REFERENCE_INCOMPLETE",
+        "lineage:PHYSICAL_PARQUET_REOPEN_FAILED",
+        "lineage:DATA_ROLE_FEATURE_MISSING",
+        "lineage:DATA_ROLE_LABEL_MISSING",
+        "lineage:DATA_ROLE_EXECUTION_MISSING",
+        "lineage:DATA_ROLE_MARK_MISSING",
+        "lineage:RUN_DATA_ROLE_LINEAGE_MISMATCH",
+        "lineage:CANDIDATE_SET_PHYSICAL_DEPENDENCY_MISSING",
+        "lineage:EXPOSURE_HEAD_PHYSICAL_DEPENDENCY_MISSING",
+        "lineage:WFO_PHYSICAL_LINEAGE_NOT_REOPENED",
+        "lineage:OVERFIT_PHYSICAL_LINEAGE_NOT_REOPENED",
+        "lineage:PORTFOLIO_MARK_PHYSICAL_DEPENDENCY_MISSING_OR_MISMATCHED",
+        "lineage:PORTFOLIO_STRESS_PHYSICAL_DEPENDENCY_MISSING_OR_MISMATCHED",
+        "lineage:PORTFOLIO_POLICY_PHYSICAL_DEPENDENCY_MISSING",
+        "lineage:PORTFOLIO_SELECTED_TRADES_PHYSICAL_DEPENDENCY_MISSING",
+        "lineage:PORTFOLIO_EXECUTION_FILLS_PHYSICAL_DEPENDENCY_MISSING",
+        "lineage:PORTFOLIO_PHYSICAL_LINEAGE_NOT_REOPENED",
+        "lineage:FEATURE_GRAPH_PLAN_LINEAGE_NOT_REOPENED",
+        "lineage:OPPORTUNITY_DOMAIN_PHYSICAL_DEPENDENCY_MISSING",
+        "lineage:OPPORTUNITY_ENVELOPE_V2_PHYSICAL_DEPENDENCY_MISSING",
+        "lineage:OPPORTUNITY_HYDRATION_V2_PHYSICAL_DEPENDENCY_MISSING",
+        "lineage:OPPORTUNITY_HYDRATION_1_PHYSICAL_DEPENDENCY_MISSING",
+        "lineage:RUN_OPPORTUNITY_ENVELOPE_LINEAGE_MISSING_OR_MISMATCHED"
+      ],
+      "content_sha256": "5ae557e8ea1d88c325b747beba2109c222644c63036c6be224e86a9b4d4f5d69"
+    },
+    "failureManifestTamper": "evidence manifest schema/content hash is invalid"
+  },
+  "signing": {
+    "privateKeyPem": "-----BEGIN PRIVATE KEY-----\nMC4CAQAwBQYDK2VwBCIEIEMhrALGqosuhaqnA/+ZWaMIOlDdu1h0u6AqJhenEGfB\n-----END PRIVATE KEY-----\n",
+    "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAU0Uw5+eHnVLxuzEb7FuVmjjjNcG+xAj2kpf228BHu1w=\n-----END PUBLIC KEY-----\n",
+    "fingerprint": "88a3f705a8129382246b805fe8ac16959e4988534da03ddc7f55688953a09510",
+    "expected": {
+      "schema": "strategy-github-prospective-attestation/1",
+      "version": 1,
+      "repository": "owner/repo",
+      "repository_id": "1",
+      "workflow_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "workflow_ref": "owner/repo/.github/workflows/prospective.yml@refs/heads/main",
+      "run_id": "42",
+      "run_attempt": 1,
+      "environment": "prospective-v5",
+      "oidc_subject": "repo:owner@2/repo@1:environment:prospective-v5",
+      "oidc_audience": "strategy-v5",
+      "oidc_issuer": "https://token.actions.githubusercontent.com",
+      "settings_capture_sha256": "826e79486ea6ef23761f20e2f0bab8fe5aa1c4ac7d93e09925f9586278f01c55",
+      "settings_capture_byte_sha256": "a51d56fdb7d975728eb0a1b6c6278f5f1b734f9747483abbec4eca05e4df3cc0",
+      "api_receipt_sha256": "b332c83f52f37d59a83ec0f7261e432ce3e479bcf972d1582c2e0b205fd0644b",
+      "cycle_receipt_sha256": "e51da109cf50048485459b49391ff37fb60773abfed14f3a1ebb42337ff66701",
+      "ledger_prior_head_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "ledger_new_head_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "ledger_sequence": 1,
+      "trusted_key_registry_sha256": "b11c28fe57722ffb2963438182ebd0b7e8b401a4af0a77465ebd821105922fd7",
+      "trusted_key_registry_byte_sha256": "184f9da4dfac32c654739ad9ddf62248314e7c50b89d226ee4a682e43dac0357",
+      "evidence_branch": "strategy-v5-evidence",
+      "evidence_branch_head_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "issued_at": "2025-08-24T01:49:00.000Z",
+      "expires_at": "2025-08-24T01:52:00.000Z",
+      "nonce": "nonce-attestation-12345",
+      "key_id": "actions-1",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAU0Uw5+eHnVLxuzEb7FuVmjjjNcG+xAj2kpf228BHu1w=\n-----END PUBLIC KEY-----\n",
+      "protected": true,
+      "attestation_payload_sha256": "7eafbf83d5dc98eb59cfc0313c159e91ad2790bbdbdfb86eded60fb330f6c29a",
+      "signature": "/AhL2zIwYC3VExMy6f/PpO0Ot9H2ZaGRlJl1nVD76etuLqyOtYuRFj1TmgfyoPRkkPtxD59WYYcLvRSKVPrvAg==",
+      "content_sha256": "33a2043d0ee561642d2f2b939d7f0021a826efae90af10f08c6e691ba7973684"
+    },
+    "verify": true
+  },
+  "failures": {
+    "duplicate": "duplicate evidence id githubCycleReceipt",
+    "manifestTamper": "evidence manifest schema/content hash is invalid",
+    "badPin": "Actions attestation public key is not in the separately trusted registry",
+    "badSignature": "Actions attestation signature is invalid",
+    "privatePublic": "Actions attestation requires an exact Ed25519 public SPKI key and key id",
+    "activationApiTamper": "API receipt byte hash mismatch"
+  }
+}
+

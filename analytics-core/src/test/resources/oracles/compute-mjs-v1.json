@@ -1,0 +1,797 @@
+{
+  "version": 1,
+  "generated_from": "tools/compute.mjs",
+  "vectors": {
+    "rsi": {
+      "argv": [
+        "rsi",
+        "98.8,101.10000000000001,103.4,105.69999999999999,105.6,107.9,110.2,112.5,112.39999999999999,114.7,117,119.3,119.2,121.5,123.8,126.1,126,128.3,130.6,132.9,132.8,135.1,137.4,139.7,139.60000000000002,141.9,144.2,146.5,146.4,148.70000000000002",
+        "--period",
+        "14"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"input\": {\n    \"closes\": 30,\n    \"period\": 14\n  },\n  \"rsi\": 98.57,\n  \"closes_used\": 30,\n  \"period\": 14,\n  \"confidence\": \"ok\"\n}\n",
+      "stderr": ""
+    },
+    "rsi-insufficient": {
+      "argv": [
+        "rsi",
+        "1,2,3",
+        "--period",
+        "14"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"input\": {\n    \"closes\": 3,\n    \"period\": 14\n  },\n  \"rsi\": null,\n  \"closes_used\": 3,\n  \"confidence\": \"insufficient\",\n  \"note\": \"need ≥15 closes for a seed, ≥15 for a low-confidence read, ≥30 for unflagged (FK momentum input rule)\"\n}\n",
+      "stderr": ""
+    },
+    "thresholds-fk": {
+      "argv": [
+        "thresholds",
+        "8"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"active\": 8,\n  \"p1a\": 3,\n  \"p1b\": 5,\n  \"p2\": 6,\n  \"p3\": 7,\n  \"v_floor\": {\n    \"p1a\": 2,\n    \"p1b\": 3,\n    \"p2\": 3,\n    \"p3\": 4\n  }\n}\n",
+      "stderr": ""
+    },
+    "thresholds-fr": {
+      "argv": [
+        "thresholds",
+        "8",
+        "--fr"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"active\": 8,\n  \"p1a\": 3,\n  \"p1b\": 5,\n  \"p2\": 6,\n  \"p3\": 8\n}\n",
+      "stderr": ""
+    },
+    "round-half-up": {
+      "argv": [
+        "round",
+        "12.5",
+        "--asset",
+        "btc"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"raw\": 12.5,\n  \"convention\": \"half-up\",\n  \"adjusted\": 13\n}\n",
+      "stderr": ""
+    },
+    "round-half-down": {
+      "argv": [
+        "round",
+        "12.5",
+        "--convention",
+        "half-down"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"raw\": 12.5,\n  \"convention\": \"half-down\",\n  \"adjusted\": 12\n}\n",
+      "stderr": ""
+    },
+    "band-fk-sentiment": {
+      "argv": [
+        "band",
+        "fk-sentiment",
+        "15"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"kind\": \"fk-sentiment\",\n  \"value\": 15,\n  \"band\": 4\n}\n",
+      "stderr": ""
+    },
+    "band-fk-momentum": {
+      "argv": [
+        "band",
+        "fk-momentum",
+        "28",
+        "--low-confidence"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"kind\": \"fk-momentum\",\n  \"value\": 28,\n  \"band\": 3,\n  \"low_confidence_edge_rule_applied\": true\n}\n",
+      "stderr": ""
+    },
+    "band-fk-mvrv": {
+      "argv": [
+        "band",
+        "fk-mvrv",
+        "-0.3"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"kind\": \"fk-mvrv\",\n  \"value\": -0.3,\n  \"band\": 5\n}\n",
+      "stderr": ""
+    },
+    "band-fk-drawdown": {
+      "argv": [
+        "band",
+        "fk-drawdown",
+        "42"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"kind\": \"fk-drawdown\",\n  \"value\": 42,\n  \"band\": 2\n}\n",
+      "stderr": ""
+    },
+    "band-fk-gold": {
+      "argv": [
+        "band",
+        "fk-gold",
+        "47",
+        "--cot-flush"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"kind\": \"fk-gold\",\n  \"value\": 47,\n  \"band\": 3,\n  \"note\": \"COT flush confirmed → ≥45% band uncapped\"\n}\n",
+      "stderr": ""
+    },
+    "band-fr-euphoria": {
+      "argv": [
+        "band",
+        "fr-euphoria",
+        "82"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"kind\": \"fr-euphoria\",\n  \"value\": 82,\n  \"band\": 4\n}\n",
+      "stderr": ""
+    },
+    "band-fr-momentum": {
+      "argv": [
+        "band",
+        "fr-momentum",
+        "73"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"kind\": \"fr-momentum\",\n  \"value\": 73,\n  \"band\": 3\n}\n",
+      "stderr": ""
+    },
+    "band-fr-mvrv": {
+      "argv": [
+        "band",
+        "fr-mvrv",
+        "5.2"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"kind\": \"fr-mvrv\",\n  \"value\": 5.2,\n  \"band\": 5\n}\n",
+      "stderr": ""
+    },
+    "band-fr-ath": {
+      "argv": [
+        "band",
+        "fr-ath",
+        "3"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"kind\": \"fr-ath\",\n  \"value\": 3,\n  \"band\": 5\n}\n",
+      "stderr": ""
+    },
+    "band-fr-distribution": {
+      "argv": [
+        "band",
+        "fr-distribution",
+        "2"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"kind\": \"fr-distribution\",\n  \"value\": 2,\n  \"band\": 2\n}\n",
+      "stderr": ""
+    },
+    "band-fr-vulnerability": {
+      "argv": [
+        "band",
+        "fr-vulnerability",
+        "3"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"kind\": \"fr-vulnerability\",\n  \"value\": 3,\n  \"band\": 3\n}\n",
+      "stderr": ""
+    },
+    "ev-weighted": {
+      "argv": [
+        "ev",
+        "--scenarios",
+        "[{\"name\":\"Rally\",\"p\":30,\"low\":70000,\"high\":78000},{\"name\":\"Base\",\"p\":70,\"mid\":60000}]",
+        "--spot",
+        "64400"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"ev\": 64200,\n  \"prob_sum\": 100,\n  \"prob_sum_ok\": true,\n  \"components\": [\n    {\n      \"name\": \"Rally\",\n      \"p\": 30,\n      \"mid\": 74000,\n      \"contribution\": 22200\n    },\n    {\n      \"name\": \"Base\",\n      \"p\": 70,\n      \"mid\": 60000,\n      \"contribution\": 42000\n    }\n  ],\n  \"vs_spot_pct\": -0.31\n}\n",
+      "stderr": ""
+    },
+    "ev-check": {
+      "argv": [
+        "ev",
+        "--scenarios",
+        "[{\"name\":\"Rally\",\"p\":30,\"low\":70000,\"high\":78000},{\"name\":\"Base\",\"p\":70,\"mid\":60000}]",
+        "--spot",
+        "64400",
+        "--stated",
+        "64200"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"recomputed_ev\": 64200,\n  \"stated_ev\": 64200,\n  \"rel_diff_pct\": 0,\n  \"within_tolerance\": true,\n  \"prob_sum\": 100,\n  \"prob_sum_ok\": true,\n  \"rally_cap_ok\": true,\n  \"vs_spot_pct\": -0.31,\n  \"components\": [\n    {\n      \"name\": \"Rally\",\n      \"p\": 30,\n      \"mid\": 74000,\n      \"contribution\": 22200\n    },\n    {\n      \"name\": \"Base\",\n      \"p\": 70,\n      \"mid\": 60000,\n      \"contribution\": 42000\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    "stop-coherence": {
+      "argv": [
+        "stop-coherence",
+        "--catastrophic",
+        "50000",
+        "--floor",
+        "54000"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"pass\": true,\n  \"catastrophic\": 50000,\n  \"deepest_zone_floor\": 54000,\n  \"rule\": \"catastrophic stop must sit STRICTLY below the deepest active buy-zone floor (the compound line may sit inside a band by design)\"\n}\n",
+      "stderr": ""
+    },
+    "adr": {
+      "argv": [
+        "adr",
+        "--sessions",
+        "[{\"date\":\"2026-08-20\",\"high\":110,\"low\":100},{\"date\":\"2026-08-21\",\"high\":113,\"low\":101},{\"date\":\"2026-08-22\",\"high\":115,\"low\":105},{\"date\":\"2026-08-23\",\"high\":116,\"low\":106},{\"date\":\"2026-08-24\",\"high\":120,\"low\":108},{\"date\":\"2026-08-25\",\"high\":121,\"low\":109}]",
+        "--exclude",
+        "2026-08-22",
+        "--n",
+        "5"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"adr\": 11.2,\n  \"used\": [\n    {\n      \"date\": \"2026-08-20\",\n      \"range\": 10\n    },\n    {\n      \"date\": \"2026-08-21\",\n      \"range\": 12\n    },\n    {\n      \"date\": \"2026-08-23\",\n      \"range\": 10\n    },\n    {\n      \"date\": \"2026-08-24\",\n      \"range\": 12\n    },\n    {\n      \"date\": \"2026-08-25\",\n      \"range\": 12\n    }\n  ],\n  \"excluded\": [\n    \"2026-08-22\"\n  ]\n}\n",
+      "stderr": ""
+    },
+    "adr-insufficient": {
+      "argv": [
+        "adr",
+        "--sessions",
+        "[{\"date\":\"2026-08-20\",\"high\":110,\"low\":100}]",
+        "--n",
+        "5"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"adr\": null,\n  \"note\": \"only 1 usable sessions (need 5)\",\n  \"used\": [\n    {\n      \"date\": \"2026-08-20\",\n      \"high\": 110,\n      \"low\": 100\n    }\n  ],\n  \"excluded\": []\n}\n",
+      "stderr": ""
+    },
+    "streak": {
+      "argv": [
+        "streak",
+        "--values",
+        "14,15,12,18",
+        "--threshold",
+        "15"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"threshold\": 15,\n  \"streak\": 3,\n  \"counted\": 4\n}\n",
+      "stderr": ""
+    },
+    "fr-funding": {
+      "argv": [
+        "fr-funding",
+        "--per8h",
+        "0.0053"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"per8h_pct\": 0.0053,\n  \"annualized_pct\": 5.8,\n  \"monthly_pct\": 0.48,\n  \"sign_convention\": \"POSITIVE funding = longs pay shorts = carry INCOME to a short (FR SKILL, Jul 2026)\"\n}\n",
+      "stderr": ""
+    },
+    "swing-score": {
+      "argv": [
+        "swing-score",
+        "--legs",
+        "{\"flow\":1,\"technical\":3,\"macro\":2,\"sentiment\":2,\"valuation\":2,\"structure\":1}",
+        "--flow",
+        "{\"interval_hours\":4,\"completed_through\":\"2026-08-28T08:00:00Z\",\"errors\":[],\"spot_cvd\":{\"direction_24h\":\"positive\",\"direction_3d\":\"positive\"},\"futures_bid_ask_delta\":{\"direction_24h\":\"positive\",\"direction_3d\":\"positive\"},\"futures_cvd\":{\"direction_24h\":\"positive\",\"direction_3d\":\"positive\"},\"open_interest\":{\"setup_signal_24h\":\"aligned\",\"setup_signal_3d\":\"aligned\"},\"oi_weighted_funding\":{\"direction_24h\":\"negative\",\"direction_3d\":\"negative\"}}",
+        "--coverage",
+        "COMPLETE",
+        "--phase",
+        "1A",
+        "--trigger-valid",
+        "true",
+        "--equity-usd",
+        "100000",
+        "--stop-distance-pct",
+        "5",
+        "--phase-cap-pct",
+        "10"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"version\": \"swing-score/1\",\n  \"framework\": \"fallen_knives\",\n  \"channel\": \"A\",\n  \"coverage\": \"COMPLETE\",\n  \"flow_assessment\": {\n    \"version\": \"swing-score/1\",\n    \"requested_coverage\": \"COMPLETE\",\n    \"coverage\": \"COMPLETE\",\n    \"interval_hours\": 4,\n    \"completed_through\": \"2026-08-28T08:00:00Z\",\n    \"rows\": [\n      {\n        \"name\": \"spot_cvd\",\n        \"state\": 1,\n        \"impulse\": 1,\n        \"available\": true,\n        \"aligned\": true,\n        \"opposing\": false\n      },\n      {\n        \"name\": \"futures_bid_ask_delta\",\n        \"state\": 1,\n        \"impulse\": 1,\n        \"available\": true,\n        \"aligned\": true,\n        \"opposing\": false\n      },\n      {\n        \"name\": \"futures_cvd\",\n        \"state\": 1,\n        \"impulse\": 1,\n        \"available\": true,\n        \"aligned\": true,\n        \"opposing\": false\n      },\n      {\n        \"name\": \"open_interest\",\n        \"state\": 1,\n        \"impulse\": 1,\n        \"available\": true,\n        \"aligned\": true,\n        \"opposing\": false\n      },\n      {\n        \"name\": \"oi_weighted_funding\",\n        \"state\": 1,\n        \"impulse\": 1,\n        \"available\": true,\n        \"aligned\": true,\n        \"opposing\": false\n      }\n    ],\n    \"aligned_rows\": 5,\n    \"opposing_rows\": 0,\n    \"evidence_families\": [\n      {\n        \"name\": \"spot_cvd\",\n        \"members\": [\n          \"spot_cvd\"\n        ],\n        \"available\": true,\n        \"aligned\": true,\n        \"opposing\": false\n      },\n      {\n        \"name\": \"futures_taker_flow\",\n        \"members\": [\n          \"futures_bid_ask_delta\",\n          \"futures_cvd\"\n        ],\n        \"available\": true,\n        \"aligned\": true,\n        \"opposing\": false\n      },\n      {\n        \"name\": \"open_interest\",\n        \"members\": [\n          \"open_interest\"\n        ],\n        \"available\": true,\n        \"aligned\": true,\n        \"opposing\": false\n      },\n      {\n        \"name\": \"oi_weighted_funding\",\n        \"members\": [\n          \"oi_weighted_funding\"\n        ],\n        \"available\": true,\n        \"aligned\": true,\n        \"opposing\": false\n      }\n    ],\n    \"aligned_evidence_families\": 4,\n    \"opposing_evidence_families\": 0,\n    \"horizon_agreement\": true,\n    \"eligible_for_entry\": true,\n    \"score\": 5,\n    \"reason\": null\n  },\n  \"score\": {\n    \"version\": \"swing-score/1\",\n    \"legs\": {\n      \"flow\": 5,\n      \"technical\": 3,\n      \"macro\": 2,\n      \"sentiment\": 2,\n      \"valuation\": 2,\n      \"structure\": 1\n    },\n    \"leg_components\": null,\n    \"impulse\": 0,\n    \"discretion\": 0,\n    \"mechanical\": 15,\n    \"adjusted\": 15,\n    \"raw\": 15,\n    \"max\": 20\n  },\n  \"trigger\": {\n    \"status\": \"VALID\",\n    \"timeframe\": \"4h\",\n    \"completed_bar_required\": true,\n    \"completed_bar\": true,\n    \"level\": null,\n    \"created_at\": null,\n    \"expires_at\": null,\n    \"window_bars\": 2,\n    \"age_bars\": null\n  },\n  \"vetoes\": [\n    {\n      \"code\": \"FLOW_COVERAGE\",\n      \"active\": false,\n      \"reason\": \"Flow coverage is incomplete or not common across required horizons.\"\n    },\n    {\n      \"code\": \"OPPOSING_FLOW\",\n      \"active\": false,\n      \"reason\": \"Two-horizon flow points against the proposed setup.\"\n    },\n    {\n      \"code\": \"REGIME_MISMATCH\",\n      \"active\": false,\n      \"reason\": \"The setup does not match the prevailing macro/technical regime.\"\n    },\n    {\n      \"code\": \"RISK_BUDGET\",\n      \"active\": false,\n      \"reason\": \"Portfolio or asset risk budget is exhausted.\"\n    },\n    {\n      \"code\": \"NARRATIVE_EXIT\",\n      \"active\": false,\n      \"reason\": \"A live narrative or position-exit condition is active.\"\n    },\n    {\n      \"code\": \"CARRY\",\n      \"active\": false,\n      \"reason\": \"Carry cost is outside the permitted edge.\"\n    },\n    {\n      \"code\": \"FUNDING\",\n      \"active\": false,\n      \"reason\": \"Funding/carry veto is active for this setup.\"\n    },\n    {\n      \"code\": \"MACRO_SHOCK\",\n      \"active\": false,\n      \"reason\": \"A multi-family macro shock is at the extreme rolling percentile.\"\n    }\n  ],\n  \"phase\": {\n    \"phase\": \"1A\",\n    \"threshold\": 8,\n    \"score\": 15,\n    \"score_pass\": true,\n    \"trigger_pass\": true,\n    \"veto_pass\": true,\n    \"unlocked\": true,\n    \"vetoes\": []\n  },\n  \"thresholds\": {\n    \"2\": 15,\n    \"3\": 17,\n    \"1A\": 8,\n    \"1B\": 11\n  },\n  \"risk_budget\": {\n    \"status\": \"AVAILABLE\",\n    \"equity_usd\": 100000,\n    \"stop_distance_pct\": 5,\n    \"phase_cap_pct\": 10,\n    \"notional_usd\": 10000,\n    \"constraints\": {\n      \"phase_cap_usd\": 10000,\n      \"portfolio_risk_usd\": 30000,\n      \"asset_risk_usd\": 60000\n    }\n  }\n}\n",
+      "stderr": ""
+    },
+    "swing-score-partial": {
+      "argv": [
+        "swing-score",
+        "--legs",
+        "{\"flow\":1,\"technical\":3,\"macro\":2,\"sentiment\":2,\"valuation\":2,\"structure\":1}"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"version\": \"swing-score/1\",\n  \"framework\": \"fallen_knives\",\n  \"channel\": \"A\",\n  \"coverage\": \"PARTIAL\",\n  \"flow_assessment\": {\n    \"version\": \"swing-score/1\",\n    \"requested_coverage\": \"PARTIAL\",\n    \"coverage\": \"PARTIAL\",\n    \"interval_hours\": null,\n    \"completed_through\": null,\n    \"rows\": [\n      {\n        \"name\": \"spot_cvd\",\n        \"state\": null,\n        \"impulse\": null,\n        \"available\": false,\n        \"aligned\": false,\n        \"opposing\": false\n      },\n      {\n        \"name\": \"futures_bid_ask_delta\",\n        \"state\": null,\n        \"impulse\": null,\n        \"available\": false,\n        \"aligned\": false,\n        \"opposing\": false\n      },\n      {\n        \"name\": \"futures_cvd\",\n        \"state\": null,\n        \"impulse\": null,\n        \"available\": false,\n        \"aligned\": false,\n        \"opposing\": false\n      },\n      {\n        \"name\": \"open_interest\",\n        \"state\": null,\n        \"impulse\": null,\n        \"available\": false,\n        \"aligned\": false,\n        \"opposing\": false\n      },\n      {\n        \"name\": \"oi_weighted_funding\",\n        \"state\": null,\n        \"impulse\": null,\n        \"available\": false,\n        \"aligned\": false,\n        \"opposing\": false\n      }\n    ],\n    \"aligned_rows\": 0,\n    \"opposing_rows\": 0,\n    \"evidence_families\": [\n      {\n        \"name\": \"spot_cvd\",\n        \"members\": [\n          \"spot_cvd\"\n        ],\n        \"available\": false,\n        \"aligned\": false,\n        \"opposing\": false\n      },\n      {\n        \"name\": \"futures_taker_flow\",\n        \"members\": [\n          \"futures_bid_ask_delta\",\n          \"futures_cvd\"\n        ],\n        \"available\": false,\n        \"aligned\": false,\n        \"opposing\": false\n      },\n      {\n        \"name\": \"open_interest\",\n        \"members\": [\n          \"open_interest\"\n        ],\n        \"available\": false,\n        \"aligned\": false,\n        \"opposing\": false\n      },\n      {\n        \"name\": \"oi_weighted_funding\",\n        \"members\": [\n          \"oi_weighted_funding\"\n        ],\n        \"available\": false,\n        \"aligned\": false,\n        \"opposing\": false\n      }\n    ],\n    \"aligned_evidence_families\": 0,\n    \"opposing_evidence_families\": 0,\n    \"horizon_agreement\": false,\n    \"eligible_for_entry\": false,\n    \"score\": 0,\n    \"reason\": \"requires error-free completed 4h bars with 24h and 3d directions for all five rows\"\n  },\n  \"score\": {\n    \"version\": \"swing-score/1\",\n    \"legs\": {\n      \"flow\": 0,\n      \"technical\": 3,\n      \"macro\": 2,\n      \"sentiment\": 2,\n      \"valuation\": 2,\n      \"structure\": 1\n    },\n    \"leg_components\": null,\n    \"impulse\": 0,\n    \"discretion\": 0,\n    \"mechanical\": 10,\n    \"adjusted\": 10,\n    \"raw\": 10,\n    \"max\": 20\n  },\n  \"trigger\": {\n    \"status\": \"WAIT\",\n    \"timeframe\": \"4h\",\n    \"completed_bar_required\": true,\n    \"completed_bar\": true,\n    \"level\": null,\n    \"created_at\": null,\n    \"expires_at\": null,\n    \"window_bars\": 2,\n    \"age_bars\": null\n  },\n  \"vetoes\": [\n    {\n      \"code\": \"FLOW_COVERAGE\",\n      \"active\": true,\n      \"reason\": \"Flow coverage is incomplete or not common across required horizons.\"\n    },\n    {\n      \"code\": \"OPPOSING_FLOW\",\n      \"active\": false,\n      \"reason\": \"Two-horizon flow points against the proposed setup.\"\n    },\n    {\n      \"code\": \"REGIME_MISMATCH\",\n      \"active\": false,\n      \"reason\": \"The setup does not match the prevailing macro/technical regime.\"\n    },\n    {\n      \"code\": \"RISK_BUDGET\",\n      \"active\": false,\n      \"reason\": \"Portfolio or asset risk budget is exhausted.\"\n    },\n    {\n      \"code\": \"NARRATIVE_EXIT\",\n      \"active\": false,\n      \"reason\": \"A live narrative or position-exit condition is active.\"\n    },\n    {\n      \"code\": \"CARRY\",\n      \"active\": false,\n      \"reason\": \"Carry cost is outside the permitted edge.\"\n    },\n    {\n      \"code\": \"FUNDING\",\n      \"active\": false,\n      \"reason\": \"Funding/carry veto is active for this setup.\"\n    },\n    {\n      \"code\": \"MACRO_SHOCK\",\n      \"active\": false,\n      \"reason\": \"A multi-family macro shock is at the extreme rolling percentile.\"\n    }\n  ],\n  \"phase\": null,\n  \"thresholds\": {\n    \"2\": 15,\n    \"3\": 17,\n    \"1A\": 8,\n    \"1B\": 11\n  },\n  \"risk_budget\": {\n    \"status\": \"DATA_LIMITED\",\n    \"notional_usd\": null\n  }\n}\n",
+      "stderr": ""
+    },
+    "squeeze-base": {
+      "argv": [
+        "squeeze",
+        "--funding-annualized",
+        "-6.2",
+        "--sustained3"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"inputs\": {\n    \"fundingAnnualizedPct\": -6.2,\n    \"sustained3Intervals\": true,\n    \"oiWithin5PctOf90dHigh\": false,\n    \"singleIntervalBelowMinus7\": false\n  },\n  \"raw_penalty\": -2,\n  \"gate_surcharge\": 1,\n  \"tier\": \"base\",\n  \"note\": \"base tier: annualized < -5% AND sustained >=3 consecutive intervals → -2 raw + 1 gate surcharge. Escalated (+2 surcharge) if OI is additionally within 5% of its 90-day high, or immediately on a single interval < -7% with that same OI conjunct. In Channel B this penalty darkens gate 8, which VOIDS the unlock regardless of gate count.\",\n  \"sign_convention\": \"POSITIVE funding = longs pay shorts = carry INCOME to a short (FR SKILL, Jul 2026)\"\n}\n",
+      "stderr": ""
+    },
+    "squeeze-escalated": {
+      "argv": [
+        "squeeze",
+        "--funding-annualized",
+        "-8",
+        "--oi-within-5pct",
+        "--single-below-7"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"inputs\": {\n    \"fundingAnnualizedPct\": -8,\n    \"sustained3Intervals\": false,\n    \"oiWithin5PctOf90dHigh\": true,\n    \"singleIntervalBelowMinus7\": true\n  },\n  \"raw_penalty\": -2,\n  \"gate_surcharge\": 2,\n  \"tier\": \"escalated\",\n  \"note\": \"base tier: annualized < -5% AND sustained >=3 consecutive intervals → -2 raw + 1 gate surcharge. Escalated (+2 surcharge) if OI is additionally within 5% of its 90-day high, or immediately on a single interval < -7% with that same OI conjunct. In Channel B this penalty darkens gate 8, which VOIDS the unlock regardless of gate count.\",\n  \"sign_convention\": \"POSITIVE funding = longs pay shorts = carry INCOME to a short (FR SKILL, Jul 2026)\"\n}\n",
+      "stderr": ""
+    },
+    "fr-cap": {
+      "argv": [
+        "fr-cap",
+        "--spot",
+        "64400",
+        "--ath1y",
+        "73800"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"spot\": 64400,\n  \"ath_1y\": 73800,\n  \"pct_below_1y_ath\": 12.74,\n  \"cap\": 14,\n  \"note\": \"cap 8 if >20% below · 14 if 10–20% below (exact 10 → 14, conservative) · none within 10%\"\n}\n",
+      "stderr": ""
+    },
+    "sma": {
+      "argv": [
+        "sma",
+        "--values",
+        "1,2,3,4",
+        "--n",
+        "2"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"n\": 2,\n  \"sma\": 3.5\n}\n",
+      "stderr": ""
+    },
+    "drawdown": {
+      "argv": [
+        "drawdown",
+        "--spot",
+        "64400",
+        "--ath",
+        "73800"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"spot\": 64400,\n  \"ath\": 73800,\n  \"drawdown_pct\": 12.74\n}\n",
+      "stderr": ""
+    },
+    "trend": {
+      "argv": [
+        "trend",
+        "--sessions",
+        "[{\"date\":\"2026-001\",\"high\":162,\"low\":158,\"close\":160},{\"date\":\"2026-002\",\"high\":162.21636554295634,\"low\":158.01636554295635,\"close\":160.11636554295634},{\"date\":\"2026-003\",\"high\":162.41119575404588,\"low\":158.0111957540459,\"close\":160.2111957540459},{\"date\":\"2026-004\",\"high\":162.26429426403266,\"low\":157.96429426403265,\"close\":160.26429426403266},{\"date\":\"2026-005\",\"high\":162.35805937873107,\"low\":157.85805937873107,\"close\":160.25805937873108},{\"date\":\"2026-006\",\"high\":162.3785784670978,\"low\":158.17857846709782,\"close\":160.17857846709782},{\"date\":\"2026-007\",\"high\":162.01649298124568,\"low\":157.91649298124568,\"close\":160.01649298124568},{\"date\":\"2026-008\",\"high\":161.8675803256235,\"low\":157.5675803256235,\"close\":159.7675803256235},{\"date\":\"2026-009\",\"high\":161.63301639755593,\"low\":157.13301639755593,\"close\":159.43301639755595},{\"date\":\"2026-010\",\"high\":161.0193024756431,\"low\":156.61930247564308,\"close\":159.0193024756431},{\"date\":\"2026-011\",\"high\":160.63786100174553,\"low\":156.53786100174554,\"close\":158.53786100174554},{\"date\":\"2026-012\",\"high\":160.20432538887326,\"low\":155.90432538887327,\"close\":158.00432538887327},{\"date\":\"2026-013\",\"high\":159.43756801128382,\"low\":155.23756801128383,\"close\":157.43756801128382},{\"date\":\"2026-014\",\"high\":158.95852681165783,\"low\":154.55852681165783,\"close\":156.85852681165784},{\"date\":\"2026-015\",\"high\":158.48890348123453,\"low\":153.88890348123454,\"close\":156.28890348123454},{\"date\":\"2026-016\",\"high\":157.74981415376072,\"low\":153.74981415376072,\"close\":155.74981415376072},{\"date\":\"2026-017\",\"high\":157.3604765065689,\"low\":153.1604765065689,\"close\":155.2604765065689},{\"date\":\"2026-018\",\"high\":157.03701489847998,\"low\":152.63701489848,\"close\":154.83701489848},{\"date\":\"2026-019\",\"high\":156.49145783526887,\"low\":152.19145783526886,\"close\":154.49145783526887},{\"date\":\"2026-020\",\"high\":156.33099009543446,\"low\":151.83099009543446,\"close\":154.23099009543446},{\"date\":\"2026-021\",\"high\":156.2575060154716,\"low\":152.0575060154716,\"close\":154.0575060154716},{\"date\":\"2026-022\",\"high\":155.96749170920276,\"low\":151.86749170920277,\"close\":153.96749170920276},{\"date\":\"2026-023\",\"high\":156.05224354420145,\"low\":151.75224354420146,\"close\":153.95224354420145},{\"date\":\"2026-024\",\"high\":156.19840929150104,\"low\":151.69840929150104,\"close\":153.99840929150105},{\"date\":\"2026-025\",\"high\":156.0888183025215,\"low\":151.6888183025215,\"close\":154.0888183025215},{\"date\":\"2026-026\",\"high\":156.30354909683342,\"low\":152.20354909683343,\"close\":154.20354909683343},{\"date\":\"2026-027\",\"high\":156.52116798332295,\"low\":152.22116798332297,\"close\":154.32116798332297},{\"date\":\"2026-028\",\"high\":156.42006170329284,\"low\":152.22006170329286,\"close\":154.42006170329284},{\"date\":\"2026-029\",\"high\":156.5797812382063,\"low\":152.1797812382063,\"close\":154.4797812382063},{\"date\":\"2026-030\",\"high\":156.6823132306161,\"low\":152.0823132306161,\"close\":154.4823132306161},{\"date\":\"2026-031\",\"high\":156.41319996748462,\"low\":152.41319996748462,\"close\":154.41319996748462},{\"date\":\"2026-032\",\"high\":156.36243829075565,\"low\":152.16243829075566,\"close\":154.26243829075565},{\"date\":\"2026-033\",\"high\":156.2251015452727,\"low\":151.82510154527273,\"close\":154.02510154527272},{\"date\":\"2026-034\",\"high\":155.7016458943351,\"low\":151.40164589433508,\"close\":153.7016458943351},{\"date\":\"2026-035\",\"high\":155.3978819576729,\"low\":150.8978819576729,\"close\":153.2978819576729},{\"date\":\"2026-036\",\"high\":155.02461353525584,\"low\":150.82461353525585,\"close\":152.82461353525585},{\"date\":\"2026-037\",\"high\":154.29696587933844,\"low\":150.19696587933845,\"close\":152.29696587933844},{\"date\":\"2026-038\",\"high\":153.8334452795326,\"low\":149.53344527953263,\"close\":151.73344527953262},{\"date\":\"2026-039\",\"high\":153.35478843135346,\"low\":148.85478843135346,\"close\":151.15478843135347},{\"date\":\"2026-040\",\"high\":152.58267312892883,\"low\":148.18267312892883,\"close\":150.58267312892883},{\"date\":\"2026-041\",\"high\":152.13837044475488,\"low\":148.0383704447549,\"close\":150.0383704447549},{\"date\":\"2026-042\",\"high\":151.74142219743328,\"low\":147.4414221974333,\"close\":149.5414221974333},{\"date\":\"2026-043\",\"high\":151.10842593603965,\"low\":146.90842593603966,\"close\":149.10842593603965},{\"date\":\"2026-044\",\"high\":150.85200298491105,\"low\":146.45200298491105,\"close\":148.75200298491106},{\"date\":\"2026-045\",\"high\":150.680013710829,\"low\":146.080013710829,\"close\":148.480013710829},{\"date\":\"2026-046\",\"high\":150.29506880348424,\"low\":146.29506880348424,\"close\":148.29506880348424},{\"date\":\"2026-047\",\"high\":150.29436695543617,\"low\":146.0943669554362,\"close\":148.19436695543618},{\"date\":\"2026-048\",\"high\":150.36986903384195,\"low\":145.96986903384197,\"close\":148.16986903384196},{\"date\":\"2026-049\",\"high\":150.2087979147994,\"low\":145.90879791479938,\"close\":148.2087979147994},{\"date\":\"2026-050\",\"high\":150.3944329030264,\"low\":145.8944329030264,\"close\":148.2944329030264},{\"date\":\"2026-051\",\"high\":150.6071493437083,\"low\":146.4071493437083,\"close\":148.4071493437083},{\"date\":\"2026-052\",\"high\":150.5256387884836,\"low\":146.4256387884836,\"close\":148.5256387884836},{\"date\":\"2026-053\",\"high\":150.7282338515573,\"low\":146.4282338515573,\"close\":148.6282338515573},{\"date\":\"2026-054\",\"high\":150.8942553828055,\"low\":146.3942553828055,\"close\":148.69425538280552},{\"date\":\"2026-055\",\"high\":150.70529819717228,\"low\":146.30529819717228,\"close\":148.70529819717228},{\"date\":\"2026-056\",\"high\":150.74637541993206,\"low\":146.64637541993207,\"close\":148.64637541993207},{\"date\":\"2026-057\",\"high\":150.7068502979728,\"low\":146.40685029797282,\"close\":148.50685029797282},{\"date\":\"2026-058\",\"high\":150.28109754158586,\"low\":146.08109754158588,\"close\":148.28109754158586},{\"date\":\"2026-059\",\"high\":150.06885307773456,\"low\":145.66885307773455,\"close\":147.96885307773456},{\"date\":\"2026-060\",\"high\":149.77523046883655,\"low\":145.17523046883656,\"close\":147.57523046883657},{\"date\":\"2026-061\",\"high\":149.11040297621994,\"low\":145.11040297621994,\"close\":147.11040297621994},{\"date\":\"2026-062\",\"high\":148.68897103600716,\"low\":144.48897103600717,\"close\":146.58897103600717},{\"date\":\"2026-063\",\"high\":148.2290544747129,\"low\":143.82905447471293,\"close\":146.02905447471292},{\"date\":\"2026-064\",\"high\":147.4511659061936,\"low\":143.1511659061936,\"close\":145.4511659061936},{\"date\":\"2026-065\",\"high\":146.97693535666892,\"low\":142.47693535666892,\"close\":144.87693535666892},{\"date\":\"2026-066\",\"high\":146.52776541445465,\"low\":142.32776541445466,\"close\":144.32776541445466},{\"date\":\"2026-067\",\"high\":145.8235005206832,\"low\":141.72350052068322,\"close\":143.8235005206832},{\"date\":\"2026-068\",\"high\":145.48119313806893,\"low\":141.18119313806895,\"close\":143.38119313806894},{\"date\":\"2026-069\",\"high\":145.21404351136863,\"low\":140.71404351136863,\"close\":143.01404351136864},{\"date\":\"2026-070\",\"high\":144.7305789400971,\"low\":140.3305789400971,\"close\":142.7305789400971},{\"date\":\"2026-071\",\"high\":144.6341235923446,\"low\":140.5341235923446,\"close\":142.5341235923446},{\"date\":\"2026-072\",\"high\":144.62259182410517,\"low\":140.3225918241052,\"close\":142.42259182410518},{\"date\":\"2026-073\",\"high\":144.38861785451965,\"low\":140.18861785451966,\"close\":142.38861785451965},{\"date\":\"2026-074\",\"high\":144.5200137344534,\"low\":140.1200137344534,\"close\":142.42001373445342},{\"date\":\"2026-075\",\"high\":144.70052713414253,\"low\":140.10052713414254,\"close\":142.50052713414254},{\"date\":\"2026-076\",\"high\":144.61085183434162,\"low\":140.61085183434162,\"close\":142.61085183434162},{\"date\":\"2026-077\",\"high\":144.82982809352814,\"low\":140.62982809352815,\"close\":142.72982809352814},{\"date\":\"2026-078\",\"high\":145.0357582581449,\"low\":140.63575825814493,\"close\":142.83575825814492},{\"date\":\"2026-079\",\"high\":144.90775581760744,\"low\":140.60775581760743,\"close\":142.90775581760744},{\"date\":\"2026-080\",\"high\":145.02704402636968,\"low\":140.52704402636968,\"close\":142.92704402636969},{\"date\":\"2026-081\",\"high\":145.07812335101866,\"low\":140.87812335101867,\"close\":142.87812335101867},{\"date\":\"2026-082\",\"high\":144.74973515619118,\"low\":140.64973515619118,\"close\":142.74973515619118},{\"date\":\"2026-083\",\"high\":144.6355617119903,\"low\":140.33556171199032,\"close\":142.5355617119903},{\"date\":\"2026-084\",\"high\":144.4346189998312,\"low\":139.9346189998312,\"close\":142.2346189998312},{\"date\":\"2026-085\",\"high\":143.8513178939505,\"low\":139.4513178939505,\"close\":141.8513178939505},{\"date\":\"2026-086\",\"high\":143.4951899146099,\"low\":139.39518991460992,\"close\":141.39518991460992},{\"date\":\"2026-087\",\"high\":143.08029460433187,\"low\":138.78029460433189,\"close\":140.88029460433188},{\"date\":\"2026-088\",\"high\":142.32434537364142,\"low\":138.12434537364143,\"close\":140.32434537364142},{\"date\":\"2026-089\",\"high\":141.8476081669934,\"low\":137.4476081669934,\"close\":139.74760816699342},{\"date\":\"2026-090\",\"high\":141.3716414245029,\"low\":136.77164142450292,\"close\":139.17164142450292},{\"date\":\"2026-091\",\"high\":140.6179556825553,\"low\":136.6179556825553,\"close\":138.6179556825553},{\"date\":\"2026-092\",\"high\":140.20667615283838,\"low\":136.0066761528384,\"close\":138.1066761528384},{\"date\":\"2026-093\",\"high\":139.85529143415476,\"low\":135.4552914341548,\"close\":137.65529143415478},{\"date\":\"2026-094\",\"high\":139.27756615605273,\"low\":134.97756615605272,\"close\":137.27756615605273},{\"date\":\"2026-095\",\"high\":139.08268516082885,\"low\":134.58268516082885,\"close\":136.98268516082885},{\"date\":\"2026-096\",\"high\":138.9746824345202,\"low\":134.7746824345202,\"close\":136.7746824345202},{\"date\":\"2026-097\",\"high\":138.65219029319073,\"low\":134.55219029319073,\"close\":136.65219029319073},{\"date\":\"2026-098\",\"high\":138.70852441889411,\"low\":134.40852441889413,\"close\":136.60852441889412},{\"date\":\"2026-099\",\"high\":138.83209945818882,\"low\":134.33209945818882,\"close\":136.63209945818883},{\"date\":\"2026-100\",\"high\":138.70714934330223,\"low\":134.30714934330223,\"close\":136.70714934330223},{\"date\":\"2026-101\",\"high\":138.91470754986312,\"low\":134.81470754986313,\"close\":136.81470754986313},{\"date\":\"2026-102\",\"high\":139.13378634352412,\"low\":134.83378634352414,\"close\":136.93378634352413},{\"date\":\"2026-103\",\"high\":139.04268169563102,\"low\":134.84268169563103,\"close\":137.04268169563102},{\"date\":\"2026-104\",\"high\":139.22032273460286,\"low\":134.82032273460285,\"close\":137.12032273460287},{\"date\":\"2026-105\",\"high\":139.34758183067143,\"low\":134.74758183067144,\"close\":137.14758183067144},{\"date\":\"2026-106\",\"high\":139.10846385925745,\"low\":135.10846385925745,\"close\":137.10846385925745},{\"date\":\"2026-107\",\"high\":139.0911007003455,\"low\":134.8911007003455,\"close\":136.9911007003455},{\"date\":\"2026-108\",\"high\":138.98848914070433,\"low\":134.58848914070435,\"close\":136.78848914070434},{\"date\":\"2026-109\",\"high\":138.4989262997663,\"low\":134.1989262997663,\"close\":136.4989262997663},{\"date\":\"2026-110\",\"high\":138.22611550649293,\"low\":133.72611550649293,\"close\":136.12611550649294},{\"date\":\"2026-111\",\"high\":137.8789360443171,\"low\":133.6789360443171,\"close\":135.6789360443171},{\"date\":\"2026-112\",\"high\":137.17089108030538,\"low\":133.0708910803054,\"close\":135.17089108030538},{\"date\":\"2026-113\",\"high\":136.719268103631,\"low\":132.41926810363103,\"close\":134.61926810363101},{\"date\":\"2026-114\",\"high\":136.24406407322806,\"low\":131.74406407322806,\"close\":134.04406407322807},{\"date\":\"2026-115\",\"high\":135.46674210373848,\"low\":131.06674210373848,\"close\":133.46674210373848},{\"date\":\"2026-116\",\"high\":135.00889699299847,\"low\":130.90889699299848,\"close\":132.90889699299848},{\"date\":\"2026-117\",\"high\":134.59091256210183,\"low\":130.29091256210185,\"close\":132.39091256210185},{\"date\":\"2026-118\",\"high\":133.93069428813186,\"low\":129.73069428813187,\"close\":131.93069428813186},{\"date\":\"2026-119\",\"high\":133.64255602831986,\"low\":129.24255602831985,\"close\":131.54255602831986},{\"date\":\"2026-120\",\"high\":133.43633005373076,\"low\":128.83633005373076,\"close\":131.23633005373077},{\"date\":\"2026-121\",\"high\":133.01675572627,\"low\":129.01675572627,\"close\":131.01675572627},{\"date\":\"2026-122\",\"high\":132.983184828115,\"low\":128.783184828115,\"close\":130.883184828115},{\"date\":\"2026-123\",\"high\":133.02962186475978,\"low\":128.6296218647598,\"close\":130.8296218647598},{\"date\":\"2026-124\",\"high\":132.84509683582476,\"low\":128.54509683582475,\"close\":130.84509683582476},{\"date\":\"2026-125\",\"high\":133.0143472965477,\"low\":128.5143472965477,\"close\":130.9143472965477},{\"date\":\"2026-126\",\"high\":133.21876730267698,\"low\":129.018767302677,\"close\":131.018767302677},{\"date\":\"2026-127\",\"high\":133.13756423796846,\"low\":129.03756423796847,\"close\":131.13756423796846},{\"date\":\"2026-128\",\"high\":133.34905159835614,\"low\":129.04905159835616,\"close\":131.24905159835615},{\"date\":\"2026-129\",\"high\":133.53199735373835,\"low\":129.03199735373835,\"close\":131.33199735373836},{\"date\":\"2026-130\",\"high\":133.36694405277353,\"low\":128.96694405277353,\"close\":131.36694405277353},{\"date\":\"2026-131\",\"high\":133.43741859296415,\"low\":129.33741859296416,\"close\":131.33741859296416},{\"date\":\"2026-132\",\"high\":133.43095643838382,\"low\":129.13095643838383,\"close\":131.23095643838383},{\"date\":\"2026-133\",\"high\":133.03987660415015,\"low\":128.83987660415016,\"close\":131.03987660415015},{\"date\":\"2026-134\",\"high\":132.8617592228626,\"low\":128.46175922286258,\"close\":130.7617592228626},{\"date\":\"2026-135\",\"high\":132.59959600023683,\"low\":127.99959600023683,\"close\":130.39959600023684},{\"date\":\"2026-136\",\"high\":131.96160420533357,\"low\":127.96160420533357,\"close\":129.96160420533357},{\"date\":\"2026-137\",\"high\":131.56071576056803,\"low\":127.36071576056804,\"close\":129.46071576056804},{\"date\":\"2026-138\",\"high\":131.11377319740885,\"low\":126.71377319740886,\"close\":128.91377319740886},{\"date\":\"2026-139\",\"high\":130.34048246934688,\"low\":126.04048246934688,\"close\":128.34048246934688},{\"date\":\"2026-140\",\"high\":129.86218773115147,\"low\":125.36218773115147,\"close\":127.76218773115147},{\"date\":\"2026-141\",\"high\":129.40054426270538,\"low\":125.20054426270539,\"close\":127.20054426270539},{\"date\":\"2026-142\",\"high\":128.6761720485876,\"low\":124.57617204858761,\"close\":126.6761720485876},{\"date\":\"2026-143\",\"high\":128.30737372730331,\"low\":124.00737372730333,\"close\":126.20737372730333},{\"date\":\"2026-144\",\"high\":128.00899662186913,\"low\":123.50899662186913,\"close\":125.80899662186913},{\"date\":\"2026-145\",\"high\":127.49150960517963,\"low\":123.09150960517962,\"close\":125.49150960517963},{\"date\":\"2026-146\",\"high\":127.36035219619615,\"low\":123.26035219619615,\"close\":125.26035219619615},{\"date\":\"2026-147\",\"high\":127.31559635700341,\"low\":123.01559635700342,\"close\":125.11559635700341},{\"date\":\"2026-148\",\"high\":127.05194201855583,\"low\":122.85194201855583,\"close\":125.05194201855583},{\"date\":\"2026-149\",\"high\":127.1590466133002,\"low\":122.75904661330021,\"close\":125.05904661330021},{\"date\":\"2026-150\",\"high\":127.32216812593273,\"low\":122.72216812593273,\"close\":125.12216812593273},{\"date\":\"2026-151\",\"high\":127.22308168050895,\"low\":123.22308168050895,\"close\":125.22308168050895},{\"date\":\"2026-152\",\"high\":127.44121267495902,\"low\":123.24121267495903,\"close\":125.34121267495902},{\"date\":\"2026-153\",\"high\":127.65491601019313,\"low\":123.25491601019313,\"close\":125.45491601019313},{\"date\":\"2026-154\",\"high\":127.54282187752648,\"low\":123.24282187752648,\"close\":125.54282187752648},{\"date\":\"2026-155\",\"high\":127.68516442988029,\"low\":123.18516442988029,\"close\":125.5851644298803},{\"date\":\"2026-156\",\"high\":127.76501072641896,\"low\":123.56501072641896,\"close\":125.56501072641896},{\"date\":\"2026-157\",\"high\":127.46931354079773,\"low\":123.36931354079773,\"close\":125.46931354079773},{\"date\":\"2026-158\",\"high\":127.3897225745036,\"low\":123.0897225745036,\"close\":125.2897225745036},{\"date\":\"2026-159\",\"high\":127.22310363797297,\"low\":122.72310363797297,\"close\":125.02310363797297},{\"date\":\"2026-160\",\"high\":126.67173351931837,\"low\":122.27173351931836,\"close\":124.67173351931837},{\"date\":\"2026-161\",\"high\":126.34315842467107,\"low\":122.24315842467108,\"close\":124.24315842467108},{\"date\":\"2026-162\",\"high\":125.9497247916335,\"low\":121.6497247916335,\"close\":123.7497247916335},{\"date\":\"2026-163\",\"high\":125.20781164758779,\"low\":121.00781164758779,\"close\":123.20781164758779},{\"date\":\"2026-164\",\"high\":124.73681224110395,\"low\":120.33681224110396,\"close\":122.63681224110395},{\"date\":\"2026-165\",\"high\":124.2579282636734,\"low\":119.6579282636734,\"close\":122.0579282636734},{\"date\":\"2026-166\",\"high\":123.49285163122066,\"low\":119.49285163122066,\"close\":121.49285163122066},{\"date\":\"2026-167\",\"high\":123.06241578583433,\"low\":118.86241578583434,\"close\":120.96241578583434},{\"date\":\"2026-168\",\"high\":122.68530037324321,\"low\":118.2853003732432,\"close\":120.4853003732432},{\"date\":\"2026-169\",\"high\":122.0768698329181,\"low\":117.77686983291811,\"close\":120.0768698329181},{\"date\":\"2026-170\",\"high\":121.8482181116422,\"low\":117.3482181116422,\"close\":119.7482181116422},{\"date\":\"2026-171\",\"high\":121.70547889563258,\"low\":117.50547889563258,\"close\":119.50547889563258},{\"date\":\"2026-172\",\"high\":121.3494442476393,\"low\":117.2494442476393,\"close\":119.3494442476393},{\"date\":\"2026-173\",\"high\":121.37551536031995,\"low\":117.07551536031995,\"close\":119.27551536031996},{\"date\":\"2026-174\",\"high\":121.47398848780625,\"low\":116.97398848780625,\"close\":119.27398848780625},{\"date\":\"2026-175\",\"high\":121.33065827762263,\"low\":116.93065827762263,\"close\":119.33065827762263},{\"date\":\"2026-176\",\"high\":121.52770099070094,\"low\":117.42770099070094,\"close\":119.42770099070094},{\"date\":\"2026-177\",\"high\":121.74478269514758,\"low\":117.44478269514758,\"close\":119.54478269514757},{\"date\":\"2026-178\",\"high\":121.66032353164296,\"low\":117.46032353164296,\"close\":119.66032353164296},{\"date\":\"2026-179\",\"high\":121.85283944457368,\"low\":117.45283944457368,\"close\":119.75283944457368},{\"date\":\"2026-180\",\"high\":122.00227795655411,\"low\":117.4022779565541,\"close\":119.80227795655411},{\"date\":\"2026-181\",\"high\":121.79126493434777,\"low\":117.79126493434777,\"close\":119.79126493434777},{\"date\":\"2026-182\",\"high\":121.80618482832162,\"low\":117.60618482832163,\"close\":119.70618482832162},{\"date\":\"2026-183\",\"high\":121.73802722137648,\"low\":117.33802722137648,\"close\":119.53802722137648},{\"date\":\"2026-184\",\"high\":121.28294705304096,\"low\":116.98294705304096,\"close\":119.28294705304096},{\"date\":\"2026-185\",\"high\":121.04250368670833,\"low\":116.54250368670833,\"close\":118.94250368670833},{\"date\":\"2026-186\",\"high\":120.72356395597342,\"low\":116.52356395597342,\"close\":118.52356395597342},{\"date\":\"2026-187\",\"high\":120.0378752181786,\"low\":115.9378752181786,\"close\":118.0378752181786},{\"date\":\"2026-188\",\"high\":119.60133496063166,\"low\":115.30133496063166,\"close\":117.50133496063167},{\"date\":\"2026-189\",\"high\":119.1330023718433,\"low\":114.6330023718433,\"close\":116.9330023718433},{\"date\":\"2026-190\",\"high\":118.3539133334971,\"low\":113.9539133334971,\"close\":116.3539133334971},{\"date\":\"2026-191\",\"high\":117.88577251121212,\"low\":113.78577251121213,\"close\":115.78577251121213},{\"date\":\"2026-192\",\"high\":117.44960386355962,\"low\":113.14960386355962,\"close\":115.24960386355961},{\"date\":\"2026-193\",\"high\":116.76444347414687,\"low\":112.56444347414687,\"close\":114.76444347414687},{\"date\":\"2026-194\",\"high\":116.44615598013827,\"low\":112.04615598013828,\"close\":114.34615598013828},{\"date\":\"2026-195\",\"high\":116.20644818595567,\"low\":111.60644818595566,\"close\":114.00644818595566},{\"date\":\"2026-196\",\"high\":115.75214119088024,\"low\":111.75214119088024,\"close\":113.75214119088024},{\"date\":\"2026-197\",\"high\":115.68474628613671,\"low\":111.48474628613673,\"close\":113.58474628613672},{\"date\":\"2026-198\",\"high\":115.70037099012501,\"low\":111.300370990125,\"close\":113.500370990125},{\"date\":\"2026-199\",\"high\":115.48996106407283,\"low\":111.18996106407283,\"close\":113.48996106407283},{\"date\":\"2026-200\",\"high\":115.63986346074935,\"low\":111.13986346074935,\"close\":113.53986346074936},{\"date\":\"2026-201\",\"high\":115.8326752048145,\"low\":111.6326752048145,\"close\":113.6326752048145},{\"date\":\"2026-202\",\"high\":115.74832542553553,\"low\":111.64832542553553,\"close\":113.74832542553553},{\"date\":\"2026-203\",\"high\":115.96532326631767,\"low\":111.66532326631767,\"close\":113.86532326631767},{\"date\":\"2026-204\",\"high\":116.16209408207783,\"low\":111.66209408207783,\"close\":113.96209408207783},{\"date\":\"2026-205\",\"high\":116.01832084618073,\"low\":111.61832084618072,\"close\":114.01832084618073},{\"date\":\"2026-206\",\"high\":116.11620736475126,\"low\":112.01620736475127,\"close\":114.01620736475127},{\"date\":\"2026-207\",\"high\":116.14158475781518,\"low\":111.84158475781518,\"close\":113.94158475781518},{\"date\":\"2026-208\",\"high\":115.78479241162987,\"low\":111.58479241162986,\"close\":113.78479241162987},{\"date\":\"2026-209\",\"high\":115.64127862885667,\"low\":111.24127862885668,\"close\":113.54127862885667},{\"date\":\"2026-210\",\"high\":115.41188363105552,\"low\":110.81188363105551,\"close\":113.21188363105551},{\"date\":\"2026-211\",\"high\":114.80278731777776,\"low\":110.80278731777776,\"close\":112.80278731777776},{\"date\":\"2026-212\",\"high\":114.42512503034418,\"low\":110.22512503034419,\"close\":112.32512503034418},{\"date\":\"2026-213\",\"high\":113.99429521025456,\"low\":109.59429521025456,\"close\":111.79429521025456},{\"date\":\"2026-214\",\"high\":113.22900199867654,\"low\":108.92900199867654,\"close\":111.22900199867654},{\"date\":\"2026-215\",\"high\":112.75009230353976,\"low\":108.25009230353976,\"close\":110.65009230353976},{\"date\":\"2026-216\",\"high\":112.27925963977118,\"low\":108.07925963977118,\"close\":110.07925963977118},{\"date\":\"2026-217\",\"high\":111.53769533160774,\"low\":107.43769533160774,\"close\":109.53769533160774},{\"date\":\"2026-218\",\"high\":111.14477093869384,\"low\":106.84477093869384,\"close\":109.04477093869384},{\"date\":\"2026-219\",\"high\":110.81683382632727,\"low\":106.31683382632727,\"close\":108.61683382632727},{\"date\":\"2026-220\",\"high\":110.26619076546216,\"low\":105.86619076546215,\"close\":108.26619076546216},{\"date\":\"2026-221\",\"high\":110.10034275729794,\"low\":106.00034275729794,\"close\":108.00034275729794},{\"date\":\"2026-222\",\"high\":110.02151865735522,\"low\":105.72151865735522,\"close\":107.82151865735521},{\"date\":\"2026-223\",\"high\":109.72653659603493,\"low\":105.52653659603493,\"close\":107.72653659603493},{\"date\":\"2026-224\",\"high\":109.80700181185871,\"low\":105.40700181185872,\"close\":107.70700181185872},{\"date\":\"2026-225\",\"high\":109.94982859707832,\"low\":105.34982859707831,\"close\":107.74982859707832}]",
+        "--spot",
+        "105",
+        "--fast",
+        "50",
+        "--slow",
+        "200",
+        "--slope-n",
+        "20",
+        "--low-n",
+        "40"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"insufficient\": null,\n  \"rsi14\": 4.15,\n  \"rsi14_confidence\": \"ok\",\n  \"ma50\": 114.12,\n  \"ma200\": 131.37,\n  \"ma200_slope20_pct\": -3.38,\n  \"ma200_falling\": true,\n  \"price_below_ma200\": true,\n  \"ma50_below_ma200\": true,\n  \"gap_now_pct\": 13.13,\n  \"gap_narrowed_20\": false,\n  \"structure_b\": false,\n  \"within_3pct_of_ma200\": false,\n  \"within_3pct_of_ma50_from_below\": false,\n  \"low_40s\": 105.35,\n  \"bounce_pct\": -0.33,\n  \"bounce_age_sessions\": 0,\n  \"sessions_low_to_high\": 0\n}\n",
+      "stderr": ""
+    },
+    "trend-insufficient": {
+      "argv": [
+        "trend",
+        "--sessions",
+        "[{\"date\":\"2026-08-20\",\"high\":2,\"low\":0.5,\"close\":1}]"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"insufficient\": \"need ≥220 daily sessions for a 200dma + 20-session slope, got 1\"\n}\n",
+      "stderr": ""
+    },
+    "stall": {
+      "argv": [
+        "stall",
+        "--close",
+        "99",
+        "--prior-close",
+        "100",
+        "--high",
+        "104",
+        "--bounce-high",
+        "105"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"confirmed\": true,\n  \"failed_new_high\": true,\n  \"closed_down\": true\n}\n",
+      "stderr": ""
+    },
+    "fr-composite": {
+      "argv": [
+        "fr-composite",
+        "--legs",
+        "{\"euphoria\":4,\"momentum\":3,\"valuation\":2,\"distribution\":3,\"vulnerability\":2}",
+        "--penalty",
+        "-2",
+        "--discretionary",
+        "0.5",
+        "--rounding",
+        "half-up",
+        "--channel",
+        "A",
+        "--cap-applied",
+        "--cap-value",
+        "14"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"leg_sum\": 14,\n  \"penalty\": -2,\n  \"mechanical\": 12,\n  \"raw\": 12.5,\n  \"adjusted\": 13,\n  \"cap_applied\": true,\n  \"cap_value\": 14,\n  \"clamped\": false,\n  \"channel\": \"A\"\n}\n",
+      "stderr": ""
+    },
+    "fr-companion": {
+      "argv": [
+        "fr-companion",
+        "--market",
+        "{\"pct_below_1y_ath\":8,\"ma200_falling\":false,\"price_below_ma200\":false,\"fng_avg_3d\":82,\"weekly_rsi\":72,\"funding_annualized_pct\":-8,\"sustained_3_intervals\":true,\"oi_within_5pct_of_90d_high\":true}",
+        "--counts",
+        "{\"mvrv_z\":5.2,\"distribution_count\":3,\"vulnerability_count\":2}",
+        "--rounding",
+        "half-up"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"channel\": \"A\",\n  \"score\": {\n    \"legs\": {\n      \"euphoria\": 4,\n      \"momentum\": 3,\n      \"valuation\": 5,\n      \"distribution\": 3,\n      \"vulnerability\": 2\n    },\n    \"penalty\": -2,\n    \"mechanical\": 15,\n    \"adjusted\": 15,\n    \"rounding\": \"half-up\"\n  },\n  \"cap\": {\n    \"applied\": false,\n    \"value\": null\n  },\n  \"squeeze\": {\n    \"tier\": \"escalated\",\n    \"gate_surcharge\": 2\n  },\n  \"inputs_missing\": [],\n  \"confidence\": \"full\",\n  \"score_floor\": null,\n  \"score_ceiling\": null,\n  \"hard_rule_5_dischargeable\": true,\n  \"oi_within_5pct_of_90d_high\": true,\n  \"standalone_report_owed\": true\n}\n",
+      "stderr": ""
+    },
+    "fr-companion-channel-b-missing-counts": {
+      "argv": [
+        "fr-companion",
+        "--market",
+        "{\"pct_below_1y_ath\":25,\"ma200_falling\":true,\"price_below_ma200\":true,\"bounce_pct\":20,\"daily_rsi\":60,\"weekly_rsi\":45,\"bounce_age_sessions\":5,\"funding_annualized_pct\":0}",
+        "--counts",
+        "{\"resistance_count\":2}",
+        "--rounding",
+        "half-down"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"channel\": \"B\",\n  \"score\": {\n    \"legs\": {\n      \"euphoria\": 3,\n      \"momentum\": 3,\n      \"valuation\": 3,\n      \"distribution\": 0,\n      \"vulnerability\": 0\n    },\n    \"penalty\": -2,\n    \"mechanical\": 7,\n    \"adjusted\": 7,\n    \"rounding\": \"half-down\"\n  },\n  \"cap\": {\n    \"applied\": false,\n    \"value\": 8\n  },\n  \"squeeze\": {\n    \"tier\": \"none\",\n    \"gate_surcharge\": 0\n  },\n  \"inputs_missing\": [\n    \"structure_count\",\n    \"sentiment_count\"\n  ],\n  \"confidence\": \"partial\",\n  \"score_floor\": 7,\n  \"score_ceiling\": 13,\n  \"hard_rule_5_dischargeable\": false,\n  \"oi_within_5pct_of_90d_high\": null,\n  \"standalone_report_owed\": false\n}\n",
+      "stderr": ""
+    },
+    "corr": {
+      "argv": [
+        "corr",
+        "--asset",
+        "[{\"date\":\"2026-08-24\",\"close\":100},{\"date\":\"2026-08-25\",\"close\":102},{\"date\":\"2026-08-26\",\"close\":101},{\"date\":\"2026-08-27\",\"close\":105}]",
+        "--spx",
+        "[{\"date\":\"2026-08-24\",\"close\":6000},{\"date\":\"2026-08-25\",\"close\":6060},{\"date\":\"2026-08-26\",\"close\":6030},{\"date\":\"2026-08-27\",\"close\":6120}]",
+        "--window",
+        "4"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"corr\": 0.9872131865990972,\n  \"label\": \"risk-on\",\n  \"surcharge_applied\": true,\n  \"phase2_corr_condition\": false,\n  \"note\": null,\n  \"method\": \"pearson_daily_log_returns\",\n  \"n_aligned_sessions\": 4,\n  \"n_return_observations\": 3,\n  \"dropped\": {\n    \"a\": 0,\n    \"b\": 0\n  },\n  \"window_start\": \"2026-08-24\",\n  \"window_end\": \"2026-08-27\"\n}\n",
+      "stderr": ""
+    },
+    "corr-dropped-and-trimmed": {
+      "argv": [
+        "corr",
+        "--asset",
+        "[{\"date\":\"2026-08-24\",\"close\":100},{\"date\":\"2026-08-25\",\"close\":102},{\"date\":\"2026-08-26\",\"close\":101},{\"date\":\"2026-08-27\",\"close\":105}]",
+        "--spx",
+        "[{\"date\":\"2026-08-23\",\"close\":5900},{\"date\":\"2026-08-24\",\"close\":6000},{\"date\":\"2026-08-25\",\"close\":6060},{\"date\":\"2026-08-26\",\"close\":6030}]",
+        "--window",
+        "3"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"corr\": 0.9999999999999999,\n  \"label\": \"risk-on\",\n  \"surcharge_applied\": true,\n  \"phase2_corr_condition\": false,\n  \"note\": null,\n  \"method\": \"pearson_daily_log_returns\",\n  \"n_aligned_sessions\": 3,\n  \"n_return_observations\": 2,\n  \"dropped\": {\n    \"a\": 1,\n    \"b\": 1\n  },\n  \"window_start\": \"2026-08-24\",\n  \"window_end\": \"2026-08-26\"\n}\n",
+      "stderr": ""
+    },
+    "percentile": {
+      "argv": [
+        "percentile",
+        "--values",
+        "1,2,2,4,8",
+        "--x",
+        "2"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"n\": 5,\n  \"x\": 2,\n  \"percentile_rank\": 40,\n  \"stats\": {\n    \"n\": 5,\n    \"min\": 1,\n    \"max\": 8,\n    \"median\": 2,\n    \"mean\": 3.4,\n    \"stdev\": 2.792848008753788\n  }\n}\n",
+      "stderr": ""
+    },
+    "rvol": {
+      "argv": [
+        "rvol",
+        "--closes",
+        "100,101.17315463893031,101.89592323672419,101.91287957369033,101.31100147201329,100.47494948494872,99.89269395553485,99.92634821731401,100.65523739199875,101.84197981391753,103.03049217671128,103.75088710628182,103.75051984053289,103.1265279905701,102.27579112410179,101.69465545294646,101.74630610738838,102.50362146339657,103.71788112845425,104.9216343958846,105.63917695082998,105.62091268499981,104.97444728383296,104.1090715765282,103.52950872091375,103.59984108608099,104.38622200968307,105.62832096852364,106.84718545035463,107.56138222748062,107.52463892050939,106.85534199166872,105.9753850611343,105.39786455054936,105.48757877997721,106.30367142008299,107.57392730524047,108.80776006572239,109.51810275942486,109.4622897937454,108.76980548753892,107.8753369314642,107.30034520915038,107.41015643162208,108.25661356677148,109.55533924457497,110.80398372302753,111.50994892198017,111.43446717862224,110.71844208217405,109.80954388710641,109.23758465438999,109.36822310999538,110.24570400639098,111.57320721923031,112.83649284578767,113.53754183214757,113.4417837739968,112.70186723116369,111.77863418906774,111.21022875237767,111.36243992463018,112.27161018496734,113.62819318380105,114.90593499039844,115.60151354174879,115.48486330519916,114.72070774653656,113.78324787918463,113.21893549965351,113.39348024343441,114.3350116462815,115.72097081327132,117.01296903995943,117.70250723421407,117.56434072945711,116.77560201240512,115.82403700364532,115.26437524918349,115.4620299142765,116.43660024375444,117.85222570491368,119.15826540159287,119.84117742509295,119.68086244529046,118.86720020475158,117.90166584069597,117.34723094042386,117.56878749039595,118.57708035590422,120.02265558364913,121.3425062073217,122.01819016636193,121.83508650595174,120.99616451543285,120.0168111326057,119.46819833352306,119.71446445970204,120.75716910543474,122.23297051093174",
+        "--annualize",
+        "365"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"rv10\": 15.19,\n  \"rv30\": 14.03,\n  \"rv90\": 13.99,\n  \"annualize_convention\": 365,\n  \"rv30_percentile_vs_own_history\": 45,\n  \"n_closes\": 100,\n  \"note\": \"context only — not a scored input or gate\"\n}\n",
+      "stderr": ""
+    },
+    "basis": {
+      "argv": [
+        "basis",
+        "--mark",
+        "101",
+        "--index",
+        "100",
+        "--funding-annualized-pct",
+        "5.8",
+        "--risk-free-pct",
+        "4.2"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"available\": true,\n  \"perp_basis_pct\": 1,\n  \"annualized_carry_pct\": 5.8,\n  \"vs_risk_free_pp\": 1.6,\n  \"label\": \"positive (longs pay shorts)\",\n  \"sign_convention\": \"POSITIVE funding = longs pay shorts = carry INCOME to a short (FR SKILL, Jul 2026) — identical convention to fr.annualizedFunding()\",\n  \"note\": \"DISCLOSED CONTEXT ONLY — not a scored leg or gate; label is descriptive, consequence-free (mirrors the correlation label-ladder discipline)\"\n}\n",
+      "stderr": ""
+    },
+    "short-ev": {
+      "argv": [
+        "short-ev",
+        "--directional-ev",
+        "6.2",
+        "--funding-annualized",
+        "-18",
+        "--hold-days",
+        "20",
+        "--target-gain-pct",
+        "8"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"available\": true,\n  \"directional_ev_pct\": 6.2,\n  \"carry_ev_pct_true\": -0.99,\n  \"carry_ev_pct_floored\": -0.99,\n  \"carry_floor_applied\": false,\n  \"total_short_ev_true\": 5.21,\n  \"total_short_ev_for_gates\": 5.21,\n  \"passes_min_edge_filter\": true,\n  \"carry_pct_of_target\": 12.38,\n  \"carry_veto\": false,\n  \"sign_convention\": \"POSITIVE funding = longs pay shorts = carry INCOME to a short (FR SKILL, Jul 2026) — identical convention to fr.annualizedFunding()/basisBlock()\",\n  \"ledger_note\": \"the position snapshot's funding_usd is ACCOUNT CASHFLOW (negative = paid OUT of the account, whichever side the position is on) and INVERTS against this MARKET-RATE convention — use the ledger figure ONLY to fill the realized Carry-Cost-Ledger column (SKILL §6), never here\"\n}\n",
+      "stderr": ""
+    },
+    "borrow": {
+      "argv": [
+        "borrow",
+        "--ticker",
+        "[3.56e-8,2e-8,2,0.82,4e-8,7,1.27]"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"available\": true,\n  \"daily_rate_pct\": 0.00000356,\n  \"annualized_pct\": 0.0012994,\n  \"bid_pct\": 0.000002,\n  \"bid_period_days\": 2,\n  \"bid_size\": 0.82,\n  \"ask_pct\": 0.000004,\n  \"ask_period_days\": 7,\n  \"ask_size\": 1.27,\n  \"scope_note\": \"single-venue Bitfinex margin-FUNDING (lending) book, not necessarily the short's actual borrow venue; ~daily FRR annualized ×365 (simple, matching the fr-funding annualization convention)\",\n  \"note\": \"DISCLOSED CONTEXT ONLY — not a scored leg or gate. Bitfinex margin-funding book: a SINGLE VENUE, and a LENDING book — not necessarily the venue a short is actually borrowed on. Frequently THIN (see bid_size/ask_size) — a single large quote can move the headline rate; check the size before reading the rate as a real market.\"\n}\n",
+      "stderr": ""
+    },
+    "stablecoin": {
+      "argv": [
+        "stablecoin",
+        "--rows",
+        "[{\"date\":1700000000,\"totalCirculatingUSD\":{\"peggedUSD\":150000000000}},{\"date\":1700086400,\"totalCirculatingUSD\":{\"peggedUSD\":150125000000}},{\"date\":1700172800,\"totalCirculatingUSD\":{\"peggedUSD\":150250000000}},{\"date\":1700259200,\"totalCirculatingUSD\":{\"peggedUSD\":150375000000}},{\"date\":1700345600,\"totalCirculatingUSD\":{\"peggedUSD\":150500000000}},{\"date\":1700432000,\"totalCirculatingUSD\":{\"peggedUSD\":150625000000}},{\"date\":1700518400,\"totalCirculatingUSD\":{\"peggedUSD\":150750000000}},{\"date\":1700604800,\"totalCirculatingUSD\":{\"peggedUSD\":150875000000}},{\"date\":1700691200,\"totalCirculatingUSD\":{\"peggedUSD\":151000000000}},{\"date\":1700777600,\"totalCirculatingUSD\":{\"peggedUSD\":151125000000}},{\"date\":1700864000,\"totalCirculatingUSD\":{\"peggedUSD\":151250000000}},{\"date\":1700950400,\"totalCirculatingUSD\":{\"peggedUSD\":151375000000}},{\"date\":1701036800,\"totalCirculatingUSD\":{\"peggedUSD\":151500000000}},{\"date\":1701123200,\"totalCirculatingUSD\":{\"peggedUSD\":151625000000}},{\"date\":1701209600,\"totalCirculatingUSD\":{\"peggedUSD\":151750000000}},{\"date\":1701296000,\"totalCirculatingUSD\":{\"peggedUSD\":151875000000}},{\"date\":1701382400,\"totalCirculatingUSD\":{\"peggedUSD\":152000000000}},{\"date\":1701468800,\"totalCirculatingUSD\":{\"peggedUSD\":152125000000}},{\"date\":1701555200,\"totalCirculatingUSD\":{\"peggedUSD\":152250000000}},{\"date\":1701641600,\"totalCirculatingUSD\":{\"peggedUSD\":152375000000}},{\"date\":1701728000,\"totalCirculatingUSD\":{\"peggedUSD\":152500000000}},{\"date\":1701814400,\"totalCirculatingUSD\":{\"peggedUSD\":152625000000}},{\"date\":1701900800,\"totalCirculatingUSD\":{\"peggedUSD\":152750000000}},{\"date\":1701987200,\"totalCirculatingUSD\":{\"peggedUSD\":152875000000}},{\"date\":1702073600,\"totalCirculatingUSD\":{\"peggedUSD\":153000000000}},{\"date\":1702160000,\"totalCirculatingUSD\":{\"peggedUSD\":153125000000}},{\"date\":1702246400,\"totalCirculatingUSD\":{\"peggedUSD\":153250000000}},{\"date\":1702332800,\"totalCirculatingUSD\":{\"peggedUSD\":153375000000}},{\"date\":1702419200,\"totalCirculatingUSD\":{\"peggedUSD\":153500000000}},{\"date\":1702505600,\"totalCirculatingUSD\":{\"peggedUSD\":153625000000}},{\"date\":1702592000,\"totalCirculatingUSD\":{\"peggedUSD\":153750000000}},{\"date\":1702678400,\"totalCirculatingUSD\":{\"peggedUSD\":153875000000}},{\"date\":1702764800,\"totalCirculatingUSD\":{\"peggedUSD\":154000000000}},{\"date\":1702851200,\"totalCirculatingUSD\":{\"peggedUSD\":154125000000}},{\"date\":1702937600,\"totalCirculatingUSD\":{\"peggedUSD\":154250000000}},{\"date\":1703024000,\"totalCirculatingUSD\":{\"peggedUSD\":154375000000}},{\"date\":1703110400,\"totalCirculatingUSD\":{\"peggedUSD\":154500000000}},{\"date\":1703196800,\"totalCirculatingUSD\":{\"peggedUSD\":154625000000}},{\"date\":1703283200,\"totalCirculatingUSD\":{\"peggedUSD\":154750000000}},{\"date\":1703369600,\"totalCirculatingUSD\":{\"peggedUSD\":154875000000}},{\"date\":1703456000,\"totalCirculatingUSD\":{\"peggedUSD\":155000000000}},{\"date\":1703542400,\"totalCirculatingUSD\":{\"peggedUSD\":155125000000}},{\"date\":1703628800,\"totalCirculatingUSD\":{\"peggedUSD\":155250000000}},{\"date\":1703715200,\"totalCirculatingUSD\":{\"peggedUSD\":155375000000}},{\"date\":1703801600,\"totalCirculatingUSD\":{\"peggedUSD\":155500000000}},{\"date\":1703888000,\"totalCirculatingUSD\":{\"peggedUSD\":155625000000}},{\"date\":1703974400,\"totalCirculatingUSD\":{\"peggedUSD\":155750000000}},{\"date\":1704060800,\"totalCirculatingUSD\":{\"peggedUSD\":155875000000}},{\"date\":1704147200,\"totalCirculatingUSD\":{\"peggedUSD\":156000000000}},{\"date\":1704233600,\"totalCirculatingUSD\":{\"peggedUSD\":156125000000}},{\"date\":1704320000,\"totalCirculatingUSD\":{\"peggedUSD\":156250000000}},{\"date\":1704406400,\"totalCirculatingUSD\":{\"peggedUSD\":156375000000}},{\"date\":1704492800,\"totalCirculatingUSD\":{\"peggedUSD\":156500000000}},{\"date\":1704579200,\"totalCirculatingUSD\":{\"peggedUSD\":156625000000}},{\"date\":1704665600,\"totalCirculatingUSD\":{\"peggedUSD\":156750000000}},{\"date\":1704752000,\"totalCirculatingUSD\":{\"peggedUSD\":156875000000}},{\"date\":1704838400,\"totalCirculatingUSD\":{\"peggedUSD\":157000000000}},{\"date\":1704924800,\"totalCirculatingUSD\":{\"peggedUSD\":157125000000}},{\"date\":1705011200,\"totalCirculatingUSD\":{\"peggedUSD\":157250000000}},{\"date\":1705097600,\"totalCirculatingUSD\":{\"peggedUSD\":157375000000}},{\"date\":1705184000,\"totalCirculatingUSD\":{\"peggedUSD\":157500000000}},{\"date\":1705270400,\"totalCirculatingUSD\":{\"peggedUSD\":157625000000}},{\"date\":1705356800,\"totalCirculatingUSD\":{\"peggedUSD\":157750000000}},{\"date\":1705443200,\"totalCirculatingUSD\":{\"peggedUSD\":157875000000}},{\"date\":1705529600,\"totalCirculatingUSD\":{\"peggedUSD\":158000000000}},{\"date\":1705616000,\"totalCirculatingUSD\":{\"peggedUSD\":158125000000}},{\"date\":1705702400,\"totalCirculatingUSD\":{\"peggedUSD\":158250000000}},{\"date\":1705788800,\"totalCirculatingUSD\":{\"peggedUSD\":158375000000}},{\"date\":1705875200,\"totalCirculatingUSD\":{\"peggedUSD\":158500000000}},{\"date\":1705961600,\"totalCirculatingUSD\":{\"peggedUSD\":158625000000}},{\"date\":1706048000,\"totalCirculatingUSD\":{\"peggedUSD\":158750000000}},{\"date\":1706134400,\"totalCirculatingUSD\":{\"peggedUSD\":158875000000}},{\"date\":1706220800,\"totalCirculatingUSD\":{\"peggedUSD\":159000000000}},{\"date\":1706307200,\"totalCirculatingUSD\":{\"peggedUSD\":159125000000}},{\"date\":1706393600,\"totalCirculatingUSD\":{\"peggedUSD\":159250000000}},{\"date\":1706480000,\"totalCirculatingUSD\":{\"peggedUSD\":159375000000}},{\"date\":1706566400,\"totalCirculatingUSD\":{\"peggedUSD\":159500000000}},{\"date\":1706652800,\"totalCirculatingUSD\":{\"peggedUSD\":159625000000}},{\"date\":1706739200,\"totalCirculatingUSD\":{\"peggedUSD\":159750000000}},{\"date\":1706825600,\"totalCirculatingUSD\":{\"peggedUSD\":159875000000}},{\"date\":1706912000,\"totalCirculatingUSD\":{\"peggedUSD\":160000000000}},{\"date\":1706998400,\"totalCirculatingUSD\":{\"peggedUSD\":160125000000}},{\"date\":1707084800,\"totalCirculatingUSD\":{\"peggedUSD\":160250000000}},{\"date\":1707171200,\"totalCirculatingUSD\":{\"peggedUSD\":160375000000}},{\"date\":1707257600,\"totalCirculatingUSD\":{\"peggedUSD\":160500000000}},{\"date\":1707344000,\"totalCirculatingUSD\":{\"peggedUSD\":160625000000}},{\"date\":1707430400,\"totalCirculatingUSD\":{\"peggedUSD\":160750000000}},{\"date\":1707516800,\"totalCirculatingUSD\":{\"peggedUSD\":160875000000}},{\"date\":1707603200,\"totalCirculatingUSD\":{\"peggedUSD\":161000000000}},{\"date\":1707689600,\"totalCirculatingUSD\":{\"peggedUSD\":161125000000}},{\"date\":1707776000,\"totalCirculatingUSD\":{\"peggedUSD\":161250000000}},{\"date\":1707862400,\"totalCirculatingUSD\":{\"peggedUSD\":161375000000}},{\"date\":1707948800,\"totalCirculatingUSD\":{\"peggedUSD\":161500000000}},{\"date\":1708035200,\"totalCirculatingUSD\":{\"peggedUSD\":161625000000}},{\"date\":1708121600,\"totalCirculatingUSD\":{\"peggedUSD\":161750000000}}]"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"available\": true,\n  \"total_circulating_usd\": 161750000000,\n  \"net_change_30d_pct\": 2.37,\n  \"net_change_90d_pct\": 7.48,\n  \"percentile_vs_history\": 100,\n  \"n_days_history\": 95,\n  \"as_of\": 1708121600,\n  \"note\": \"DISCLOSED CONTEXT ONLY — third-party cross-chain aggregation (DefiLlama), subject to back-revision; a capital-flow tell, not a settled figure\"\n}\n",
+      "stderr": ""
+    },
+    "netliq": {
+      "argv": [
+        "netliq",
+        "--walcl",
+        "6825000",
+        "--rrpontsyd",
+        "84.5",
+        "--wtregen",
+        "760000"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"available\": true,\n  \"net_liquidity_usd_millions\": 5980500,\n  \"net_liquidity_usd_trillions\": 5.98,\n  \"components\": {\n    \"walcl_usd_millions\": 6825000,\n    \"rrpontsyd_usd_billions\": 84.5,\n    \"wtregen_usd_millions\": 760000\n  },\n  \"cadence_note\": \"WALCL/WTREGEN publish WEEKLY (Thursdays) — this is a weekly figure, not daily; a stale mid-week read must not be mistaken for fresh\",\n  \"note\": \"DISCLOSED CONTEXT ONLY — not a scored leg or gate\"\n}\n",
+      "stderr": ""
+    },
+    "positioning": {
+      "argv": [
+        "positioning",
+        "--long-short",
+        "[{\"longShortRatio\":\"1.1\"},{\"longShortRatio\":\"1.2\"},{\"longShortRatio\":\"1.15\"}]",
+        "--taker",
+        "[{\"buySellRatio\":\"0.9\"},{\"buySellRatio\":\"1.05\"}]",
+        "--oi",
+        "[{\"sumOpenInterest\":\"1000\"},{\"sumOpenInterest\":\"1100\"}]"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"long_short_account_ratio\": {\n    \"latest\": 1.15,\n    \"percentile_vs_history\": 50,\n    \"direction\": \"falling\"\n  },\n  \"taker_buy_sell_ratio\": {\n    \"latest\": 1.05,\n    \"percentile_vs_history\": 100,\n    \"direction\": \"rising\"\n  },\n  \"open_interest\": {\n    \"latest\": 1100,\n    \"percentile_vs_history\": 100,\n    \"direction\": \"rising\",\n    \"oi_90d_high_available\": false,\n    \"oi_within_5pct_of_90d_high\": null\n  },\n  \"history_days\": 3,\n  \"scope_note\": \"Binance-ACCOUNT-weighted, SINGLE-VENUE series (not market-wide OI, not a cross-exchange measure); history capped at ~30 days by the endpoint itself, never treated as 90d\",\n  \"note\": \"DISCLOSED CONTEXT ONLY — not a scored leg or gate\"\n}\n",
+      "stderr": ""
+    },
+    "vol-surface-empty": {
+      "argv": [
+        "vol-surface",
+        "--book",
+        "[]",
+        "--dvol",
+        "[[0,1,2,3,49.5]]",
+        "--rv30",
+        "42"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"available\": false,\n  \"reason\": \"no usable option quotes — empty or illiquid book\",\n  \"dvol\": 49.5,\n  \"rv30\": 42,\n  \"note\": \"DISCLOSED CONTEXT ONLY — not a scored leg or gate. Skew is MONEYNESS-based (|strike/spot-1| buckets), NOT a true 25-delta risk reversal (book summary carries no per-instrument delta).\"\n}\n",
+      "stderr": ""
+    },
+    "vol-surface-available": {
+      "argv": [
+        "vol-surface",
+        "--book",
+        "[{\"instrument_name\":\"BTC-20SEP26-90000-P\",\"mark_iv\":63,\"underlying_price\":100000},{\"instrument_name\":\"BTC-20SEP26-100000-P\",\"mark_iv\":55,\"underlying_price\":100000},{\"instrument_name\":\"BTC-20SEP26-100000-C\",\"mark_iv\":54,\"underlying_price\":100000},{\"instrument_name\":\"BTC-20SEP26-110000-C\",\"mark_iv\":58,\"underlying_price\":100000}]",
+        "--dvol",
+        "[[0,1,2,3,49.5]]",
+        "--rv30",
+        "42"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"available\": true,\n  \"dvol\": 49.5,\n  \"expiry_used\": \"2026-09-20\",\n  \"days_out\": 20.7,\n  \"spot_used\": 100000,\n  \"atm_iv_pct\": 54.5,\n  \"skew_90_110_moneyness_pct\": 5,\n  \"skew_sign_convention\": \"POSITIVE = the ~10% OTM put is richer (higher IV) than the ~10% OTM call = a downside hedging bid. A distribution blow-off shows this skew COMPRESSING toward zero or INVERTING (calls bid), not rising — same discipline as fundingBlock.sign_convention and basisBlock.sign_convention: stated in the output because this repo has already been bitten twice by an inverted sign (the Jul-2026 funding correction; the ETH backtest's \\\"funding cuts against shorts\\\" error).\",\n  \"skew_legs\": {\n    \"put_strike\": 90000,\n    \"call_strike\": 110000\n  },\n  \"rv30_pct\": 42,\n  \"vrp_pct\": 12.5,\n  \"note\": \"DISCLOSED CONTEXT ONLY — not a scored leg or gate. Skew is MONEYNESS-based (|strike/spot-1| buckets), NOT a true 25-delta risk reversal (book summary carries no per-instrument delta).\"\n}\n",
+      "stderr": ""
+    },
+    "vol-surface-outside-window": {
+      "argv": [
+        "vol-surface",
+        "--book",
+        "[{\"instrument_name\":\"BTC-20SEP27-100000-C\",\"mark_iv\":50,\"underlying_price\":100000}]"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"available\": false,\n  \"reason\": \"no expiry 7-45 days out\",\n  \"dvol\": null,\n  \"rv30\": null,\n  \"note\": \"DISCLOSED CONTEXT ONLY — not a scored leg or gate. Skew is MONEYNESS-based (|strike/spot-1| buckets), NOT a true 25-delta risk reversal (book summary carries no per-instrument delta).\"\n}\n",
+      "stderr": ""
+    },
+    "marketdata": {
+      "argv": [
+        "marketdata",
+        "--asset",
+        "btc",
+        "--max-age-days",
+        "3"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"asset\": \"BTC\",\n  \"max_age_days\": 3,\n  \"entries\": [\n    {\n      \"asset\": \"BTC\",\n      \"metric\": \"lth_mvrv\",\n      \"value\": 1.27,\n      \"as_of\": \"2026-07-31\",\n      \"source\": \"checkonchain.com (via web fetch, Hard Rule 1) — supply rising, reserves falling\",\n      \"verified_on\": \"2026-08-01\"\n    },\n    {\n      \"asset\": \"BTC\",\n      \"metric\": \"sth_mvrv\",\n      \"value\": 0.93,\n      \"as_of\": \"2026-07-31\",\n      \"source\": \"checkonchain.com (via web fetch, Hard Rule 1)\",\n      \"verified_on\": \"2026-08-01\"\n    },\n    {\n      \"asset\": \"BTC\",\n      \"metric\": \"mvrv_z\",\n      \"value\": 0.3469,\n      \"as_of\": \"2026-08-02\",\n      \"source\": \"bitcoin-data.com /v1/mvrv-zscore/last (public JSON API, Hard Rule 1). Scale cross-checked against Santiment mvrv_usd_z_score for BTC: 0.3315 vs 0.371 on 2026-07-04, 0.04 apart.\",\n      \"verified_on\": \"2026-08-03\"\n    },\n    {\n      \"asset\": \"BTC\",\n      \"metric\": \"realized_price\",\n      \"value\": 52367.36,\n      \"as_of\": \"2026-08-02\",\n      \"source\": \"bitcoin-data.com /v1/realized-price/last (public JSON API, Hard Rule 1)\",\n      \"verified_on\": \"2026-08-03\"\n    }\n  ],\n  \"warnings\": [\n    \"4/4 entries have verified_on >3 days stale — re-confirm against source before relying on them\"\n  ]\n}\n",
+      "stderr": ""
+    },
+    "marketdata-missing-asset": {
+      "argv": [
+        "marketdata",
+        "--asset",
+        "doge",
+        "--max-age-days",
+        "3"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"asset\": \"DOGE\",\n  \"max_age_days\": 3,\n  \"entries\": [],\n  \"warnings\": [\n    \"no marketdata.json entries for DOGE — every manual metric for this asset is unbacked by a dated entry\"\n  ]\n}\n",
+      "stderr": ""
+    },
+    "tier1": {
+      "argv": [
+        "tier1",
+        "--from",
+        "2026-08-28",
+        "--sessions",
+        "5",
+        "--asset-class",
+        "equity"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"from\": \"2026-08-28\",\n  \"sessions\": 5,\n  \"asset_class\": \"equity\",\n  \"window\": [\n    \"2026-08-31\",\n    \"2026-09-01\",\n    \"2026-09-02\",\n    \"2026-09-03\",\n    \"2026-09-04\"\n  ],\n  \"window_end\": \"2026-09-04\",\n  \"upcoming\": [\n    {\n      \"event\": \"Employment Situation (NFP)\",\n      \"date\": \"2026-09-04\",\n      \"source\": \"computed: first Friday of month, see note above\",\n      \"verified_on\": \"2026-08-03\"\n    }\n  ],\n  \"warnings\": []\n}\n",
+      "stderr": ""
+    },
+    "tier1-crypto": {
+      "argv": [
+        "tier1",
+        "--from",
+        "2026-08-28",
+        "--sessions",
+        "3",
+        "--asset-class",
+        "crypto"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"from\": \"2026-08-28\",\n  \"sessions\": 3,\n  \"asset_class\": \"crypto\",\n  \"window\": [\n    \"2026-08-29\",\n    \"2026-08-30\",\n    \"2026-08-31\"\n  ],\n  \"window_end\": \"2026-08-31\",\n  \"upcoming\": [],\n  \"warnings\": []\n}\n",
+      "stderr": ""
+    }
+  },
+  "failures": [
+    {
+      "argv": [],
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "error: unknown command \"\" — rsi | thresholds | round | band | ev | stop-coherence | adr | streak | fr-funding | fr-cap | squeeze | sma | drawdown | trend | stall | fr-composite | fr-companion | corr | tier1 | percentile | rvol | vol-surface | basis | positioning | netliq | stablecoin | marketdata | borrow | short-ev (see header of tools/compute.mjs)\n"
+    },
+    {
+      "argv": [
+        "rsi"
+      ],
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "error: pass comma-separated closes (oldest → newest)\n"
+    },
+    {
+      "argv": [
+        "thresholds",
+        "nope"
+      ],
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "error: not a number: nope\n"
+    },
+    {
+      "argv": [
+        "round",
+        "12.5",
+        "--asset",
+        "sol"
+      ],
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "error: pass --convention half-up|half-down or --asset btc|eth|gold (new assets must declare a convention, FK §4)\n"
+    },
+    {
+      "argv": [
+        "band",
+        "unknown",
+        "2"
+      ],
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "error: unknown band kind \"unknown\" — one of fk-sentiment, fk-momentum, fk-mvrv, fk-drawdown, fk-gold, fr-euphoria, fr-momentum, fr-mvrv, fr-ath, fr-distribution, fr-vulnerability\n"
+    },
+    {
+      "argv": [
+        "ev"
+      ],
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "error: pass --scenarios <json array>\n"
+    },
+    {
+      "argv": [
+        "adr"
+      ],
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "error: pass --sessions <json array of {date,high,low}> (chronological)\n"
+    },
+    {
+      "argv": [
+        "streak",
+        "--values",
+        "1,2"
+      ],
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "error: pass --values v1,v2,... (newest first) --threshold N\n"
+    },
+    {
+      "argv": [
+        "corr",
+        "--asset",
+        "[]"
+      ],
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "error: pass --asset <json array of {date,close}> --spx <json array of {date,close}>\n"
+    },
+    {
+      "argv": [
+        "basis",
+        "--mark",
+        "1"
+      ],
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "error: pass --mark N --index N [--funding-annualized-pct N] [--risk-free-pct N]\n"
+    },
+    {
+      "argv": [
+        "positioning"
+      ],
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "error: pass --long-short <json> and/or --taker <json> and/or --oi <json> (raw Binance fapi arrays)\n"
+    },
+    {
+      "argv": [
+        "tier1"
+      ],
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "error: pass --from <date> --sessions N\n"
+    }
+  ],
+  "uncaught_validation": {
+    "argv": [
+      "fr-composite",
+      "--legs",
+      "{}",
+      "--rounding",
+      "bankers"
+    ],
+    "exitCode": 1,
+    "stdout": "",
+    "stderr": "file:///Users/eternal/Desktop/Trading%20Claude%20Analytics/tools/lib.mjs:1679\n  throw new Error(`unknown rounding convention \"${convention}\" — declare half-up or half-down (FK SKILL §4)`)\n        ^\n\nError: unknown rounding convention \"bankers\" — declare half-up or half-down (FK SKILL §4)\n    at roundScore (file:///Users/eternal/Desktop/Trading%20Claude%20Analytics/tools/lib.mjs:1679:9)\n    at frComposite (file:///Users/eternal/Desktop/Trading%20Claude%20Analytics/tools/lib.mjs:2108:31)\n    at file:///Users/eternal/Desktop/Trading%20Claude%20Analytics/tools/compute.mjs:251:9\n    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)\n\nNode.js v22.23.1\n"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "schema": "strategy-v5-authoritative-command-receipt/1",
+  "version": 1,
+  "command": "artifact-build",
+  "status": "BLOCKED",
+  "inputs": [],
+  "outputs": [],
+  "limitations": [
+    "acquisition: missing physical prerequisite",
+    "authoritative v2 opportunity domain: missing physical prerequisite",
+    "authoritative v2 opportunity envelope: missing physical prerequisite",
+    "authoritative v2 opportunity hydration: missing physical prerequisite",
+    "evaluator spec: missing physical prerequisite",
+    "execution/config contract: missing physical prerequisite",
+    "feature source: missing physical prerequisite",
+    "gene space: missing physical prerequisite",
+    "physical v1 hydration: missing physical prerequisite",
+    "physical v1 opportunity envelope: missing physical prerequisite",
+    "plan: missing physical prerequisite",
+    "precommit: missing physical prerequisite",
+    "predictor registry: missing physical prerequisite",
+    "staging root: missing physical prerequisite"
+  ],
+  "details": {
+    "mode": "BLOCKED_MISSING_PHYSICAL_PREREQUISITES",
+    "reason": "authoritative command requires every listed physical input before recomputation",
+    "active": false
+  },
+  "content_sha256": "ef80964dd42e61b99c0ddbfa144de1b5742241dd2245ad85702f6f0d903be348"
+}

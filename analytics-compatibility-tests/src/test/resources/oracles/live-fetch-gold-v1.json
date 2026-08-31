@@ -1,0 +1,1754 @@
+{
+  "asset" : "GOLD",
+  "errors" : [ ],
+  "spot" : {
+    "canonical" : 339,
+    "sources" : [ {
+      "source" : "Yahoo GC=F (last daily close)",
+      "value" : 339
+    }, {
+      "source" : "Yahoo MGC=F",
+      "value" : 339
+    } ],
+    "divergence_pct" : 0,
+    "warning" : null,
+    "canonical_source" : "priority_first_fallback",
+    "panel" : {
+      "canonical" : null,
+      "method" : "median",
+      "median_kind" : "0-source",
+      "n_sources" : 2,
+      "n_synchronized" : 0,
+      "spread_pct" : null,
+      "spread_gt_0_5pct" : null,
+      "low_confidence" : true,
+      "low_confidence_reason" : "no synchronized quotes available",
+      "synchronized_window_min" : 120,
+      "sources" : [ ],
+      "excluded" : [ {
+        "source" : "Yahoo GC=F",
+        "symbol" : "GC=F",
+        "value" : 339,
+        "ts" : null,
+        "ts_kind" : "bar_close",
+        "age_min" : null,
+        "reason" : "frozen bar close — never enters the median"
+      }, {
+        "source" : "Yahoo MGC=F",
+        "symbol" : "MGC=F",
+        "value" : 339,
+        "ts" : null,
+        "ts_kind" : "bar_close",
+        "age_min" : null,
+        "reason" : "frozen bar close — never enters the median"
+      } ],
+      "priority_first" : 339,
+      "priority_first_delta_pct" : null,
+      "warning" : null
+    },
+    "canonical_median" : null,
+    "method_conflict" : null
+  },
+  "ath" : {
+    "value" : 340,
+    "date" : "2026-08-28",
+    "drawdown_pct" : 0.29,
+    "all_time_verified" : null,
+    "source" : "Yahoo GC=F 10y weekly high — NOT all-time (pre-window history unavailable); flag the window in the report"
+  },
+  "high_1y" : {
+    "value" : 340,
+    "date" : "2026-08-28",
+    "pct_below" : 0.29,
+    "source" : "Yahoo GC=F trailing-1y weekly highs"
+  },
+  "weekly" : {
+    "source" : "Yahoo GC=F 5y 1wk (240 candles)",
+    "boundary" : "Yahoo weekly candles (week-start timestamps, UTC)",
+    "completed_closes" : 233,
+    "last_completed_week" : "2026-08-21",
+    "rsi14" : {
+      "rsi" : 100,
+      "closes_used" : 233,
+      "period" : 14,
+      "confidence" : "ok"
+    },
+    "rsi14_including_live_week" : 100,
+    "sma_200w" : {
+      "value" : 232.5,
+      "pct_vs_spot" : 45.81,
+      "within_8pct" : false,
+      "note" : "gate 6: price within ±8% of the 200-week MA, above OR below"
+    }
+  },
+  "daily" : {
+    "source" : "Yahoo GC=F 2y 1d (240 candles)",
+    "last_sessions" : [ {
+      "date" : "2026-08-17",
+      "high" : 329,
+      "low" : 327,
+      "close" : 328
+    }, {
+      "date" : "2026-08-18",
+      "high" : 330,
+      "low" : 328,
+      "close" : 329
+    }, {
+      "date" : "2026-08-19",
+      "high" : 331,
+      "low" : 329,
+      "close" : 330
+    }, {
+      "date" : "2026-08-20",
+      "high" : 332,
+      "low" : 330,
+      "close" : 331
+    }, {
+      "date" : "2026-08-21",
+      "high" : 333,
+      "low" : 331,
+      "close" : 332
+    }, {
+      "date" : "2026-08-22",
+      "high" : 334,
+      "low" : 332,
+      "close" : 333
+    }, {
+      "date" : "2026-08-23",
+      "high" : 335,
+      "low" : 333,
+      "close" : 334
+    }, {
+      "date" : "2026-08-24",
+      "high" : 336,
+      "low" : 334,
+      "close" : 335
+    }, {
+      "date" : "2026-08-25",
+      "high" : 337,
+      "low" : 335,
+      "close" : 336
+    }, {
+      "date" : "2026-08-26",
+      "high" : 338,
+      "low" : 336,
+      "close" : 337
+    }, {
+      "date" : "2026-08-27",
+      "high" : 339,
+      "low" : 337,
+      "close" : 338
+    }, {
+      "date" : "2026-08-28",
+      "high" : 340,
+      "low" : 338,
+      "close" : 339
+    } ],
+    "adr5" : {
+      "adr" : 2,
+      "used" : [ {
+        "date" : "2026-08-24",
+        "range" : 2
+      }, {
+        "date" : "2026-08-25",
+        "range" : 2
+      }, {
+        "date" : "2026-08-26",
+        "range" : 2
+      }, {
+        "date" : "2026-08-27",
+        "range" : 2
+      }, {
+        "date" : "2026-08-28",
+        "range" : 2
+      } ],
+      "excluded" : [ ]
+    },
+    "note" : "ADR must use 5 FULL sessions — if any listed session is holiday-abbreviated, recompute with tools/compute.mjs adr --exclude <date> and disclose",
+    "series" : [ {
+      "date" : "2026-01-01",
+      "open" : 100,
+      "high" : 101,
+      "low" : 99,
+      "close" : 100
+    }, {
+      "date" : "2026-01-02",
+      "open" : 101,
+      "high" : 102,
+      "low" : 100,
+      "close" : 101
+    }, {
+      "date" : "2026-01-03",
+      "open" : 102,
+      "high" : 103,
+      "low" : 101,
+      "close" : 102
+    }, {
+      "date" : "2026-01-04",
+      "open" : 103,
+      "high" : 104,
+      "low" : 102,
+      "close" : 103
+    }, {
+      "date" : "2026-01-05",
+      "open" : 104,
+      "high" : 105,
+      "low" : 103,
+      "close" : 104
+    }, {
+      "date" : "2026-01-06",
+      "open" : 105,
+      "high" : 106,
+      "low" : 104,
+      "close" : 105
+    }, {
+      "date" : "2026-01-07",
+      "open" : 106,
+      "high" : 107,
+      "low" : 105,
+      "close" : 106
+    }, {
+      "date" : "2026-01-08",
+      "open" : 107,
+      "high" : 108,
+      "low" : 106,
+      "close" : 107
+    }, {
+      "date" : "2026-01-09",
+      "open" : 108,
+      "high" : 109,
+      "low" : 107,
+      "close" : 108
+    }, {
+      "date" : "2026-01-10",
+      "open" : 109,
+      "high" : 110,
+      "low" : 108,
+      "close" : 109
+    }, {
+      "date" : "2026-01-11",
+      "open" : 110,
+      "high" : 111,
+      "low" : 109,
+      "close" : 110
+    }, {
+      "date" : "2026-01-12",
+      "open" : 111,
+      "high" : 112,
+      "low" : 110,
+      "close" : 111
+    }, {
+      "date" : "2026-01-13",
+      "open" : 112,
+      "high" : 113,
+      "low" : 111,
+      "close" : 112
+    }, {
+      "date" : "2026-01-14",
+      "open" : 113,
+      "high" : 114,
+      "low" : 112,
+      "close" : 113
+    }, {
+      "date" : "2026-01-15",
+      "open" : 114,
+      "high" : 115,
+      "low" : 113,
+      "close" : 114
+    }, {
+      "date" : "2026-01-16",
+      "open" : 115,
+      "high" : 116,
+      "low" : 114,
+      "close" : 115
+    }, {
+      "date" : "2026-01-17",
+      "open" : 116,
+      "high" : 117,
+      "low" : 115,
+      "close" : 116
+    }, {
+      "date" : "2026-01-18",
+      "open" : 117,
+      "high" : 118,
+      "low" : 116,
+      "close" : 117
+    }, {
+      "date" : "2026-01-19",
+      "open" : 118,
+      "high" : 119,
+      "low" : 117,
+      "close" : 118
+    }, {
+      "date" : "2026-01-20",
+      "open" : 119,
+      "high" : 120,
+      "low" : 118,
+      "close" : 119
+    }, {
+      "date" : "2026-01-21",
+      "open" : 120,
+      "high" : 121,
+      "low" : 119,
+      "close" : 120
+    }, {
+      "date" : "2026-01-22",
+      "open" : 121,
+      "high" : 122,
+      "low" : 120,
+      "close" : 121
+    }, {
+      "date" : "2026-01-23",
+      "open" : 122,
+      "high" : 123,
+      "low" : 121,
+      "close" : 122
+    }, {
+      "date" : "2026-01-24",
+      "open" : 123,
+      "high" : 124,
+      "low" : 122,
+      "close" : 123
+    }, {
+      "date" : "2026-01-25",
+      "open" : 124,
+      "high" : 125,
+      "low" : 123,
+      "close" : 124
+    }, {
+      "date" : "2026-01-26",
+      "open" : 125,
+      "high" : 126,
+      "low" : 124,
+      "close" : 125
+    }, {
+      "date" : "2026-01-27",
+      "open" : 126,
+      "high" : 127,
+      "low" : 125,
+      "close" : 126
+    }, {
+      "date" : "2026-01-28",
+      "open" : 127,
+      "high" : 128,
+      "low" : 126,
+      "close" : 127
+    }, {
+      "date" : "2026-01-29",
+      "open" : 128,
+      "high" : 129,
+      "low" : 127,
+      "close" : 128
+    }, {
+      "date" : "2026-01-30",
+      "open" : 129,
+      "high" : 130,
+      "low" : 128,
+      "close" : 129
+    }, {
+      "date" : "2026-01-31",
+      "open" : 130,
+      "high" : 131,
+      "low" : 129,
+      "close" : 130
+    }, {
+      "date" : "2026-02-01",
+      "open" : 131,
+      "high" : 132,
+      "low" : 130,
+      "close" : 131
+    }, {
+      "date" : "2026-02-02",
+      "open" : 132,
+      "high" : 133,
+      "low" : 131,
+      "close" : 132
+    }, {
+      "date" : "2026-02-03",
+      "open" : 133,
+      "high" : 134,
+      "low" : 132,
+      "close" : 133
+    }, {
+      "date" : "2026-02-04",
+      "open" : 134,
+      "high" : 135,
+      "low" : 133,
+      "close" : 134
+    }, {
+      "date" : "2026-02-05",
+      "open" : 135,
+      "high" : 136,
+      "low" : 134,
+      "close" : 135
+    }, {
+      "date" : "2026-02-06",
+      "open" : 136,
+      "high" : 137,
+      "low" : 135,
+      "close" : 136
+    }, {
+      "date" : "2026-02-07",
+      "open" : 137,
+      "high" : 138,
+      "low" : 136,
+      "close" : 137
+    }, {
+      "date" : "2026-02-08",
+      "open" : 138,
+      "high" : 139,
+      "low" : 137,
+      "close" : 138
+    }, {
+      "date" : "2026-02-09",
+      "open" : 139,
+      "high" : 140,
+      "low" : 138,
+      "close" : 139
+    }, {
+      "date" : "2026-02-10",
+      "open" : 140,
+      "high" : 141,
+      "low" : 139,
+      "close" : 140
+    }, {
+      "date" : "2026-02-11",
+      "open" : 141,
+      "high" : 142,
+      "low" : 140,
+      "close" : 141
+    }, {
+      "date" : "2026-02-12",
+      "open" : 142,
+      "high" : 143,
+      "low" : 141,
+      "close" : 142
+    }, {
+      "date" : "2026-02-13",
+      "open" : 143,
+      "high" : 144,
+      "low" : 142,
+      "close" : 143
+    }, {
+      "date" : "2026-02-14",
+      "open" : 144,
+      "high" : 145,
+      "low" : 143,
+      "close" : 144
+    }, {
+      "date" : "2026-02-15",
+      "open" : 145,
+      "high" : 146,
+      "low" : 144,
+      "close" : 145
+    }, {
+      "date" : "2026-02-16",
+      "open" : 146,
+      "high" : 147,
+      "low" : 145,
+      "close" : 146
+    }, {
+      "date" : "2026-02-17",
+      "open" : 147,
+      "high" : 148,
+      "low" : 146,
+      "close" : 147
+    }, {
+      "date" : "2026-02-18",
+      "open" : 148,
+      "high" : 149,
+      "low" : 147,
+      "close" : 148
+    }, {
+      "date" : "2026-02-19",
+      "open" : 149,
+      "high" : 150,
+      "low" : 148,
+      "close" : 149
+    }, {
+      "date" : "2026-02-20",
+      "open" : 150,
+      "high" : 151,
+      "low" : 149,
+      "close" : 150
+    }, {
+      "date" : "2026-02-21",
+      "open" : 151,
+      "high" : 152,
+      "low" : 150,
+      "close" : 151
+    }, {
+      "date" : "2026-02-22",
+      "open" : 152,
+      "high" : 153,
+      "low" : 151,
+      "close" : 152
+    }, {
+      "date" : "2026-02-23",
+      "open" : 153,
+      "high" : 154,
+      "low" : 152,
+      "close" : 153
+    }, {
+      "date" : "2026-02-24",
+      "open" : 154,
+      "high" : 155,
+      "low" : 153,
+      "close" : 154
+    }, {
+      "date" : "2026-02-25",
+      "open" : 155,
+      "high" : 156,
+      "low" : 154,
+      "close" : 155
+    }, {
+      "date" : "2026-02-26",
+      "open" : 156,
+      "high" : 157,
+      "low" : 155,
+      "close" : 156
+    }, {
+      "date" : "2026-02-27",
+      "open" : 157,
+      "high" : 158,
+      "low" : 156,
+      "close" : 157
+    }, {
+      "date" : "2026-02-28",
+      "open" : 158,
+      "high" : 159,
+      "low" : 157,
+      "close" : 158
+    }, {
+      "date" : "2026-03-01",
+      "open" : 159,
+      "high" : 160,
+      "low" : 158,
+      "close" : 159
+    }, {
+      "date" : "2026-03-02",
+      "open" : 160,
+      "high" : 161,
+      "low" : 159,
+      "close" : 160
+    }, {
+      "date" : "2026-03-03",
+      "open" : 161,
+      "high" : 162,
+      "low" : 160,
+      "close" : 161
+    }, {
+      "date" : "2026-03-04",
+      "open" : 162,
+      "high" : 163,
+      "low" : 161,
+      "close" : 162
+    }, {
+      "date" : "2026-03-05",
+      "open" : 163,
+      "high" : 164,
+      "low" : 162,
+      "close" : 163
+    }, {
+      "date" : "2026-03-06",
+      "open" : 164,
+      "high" : 165,
+      "low" : 163,
+      "close" : 164
+    }, {
+      "date" : "2026-03-07",
+      "open" : 165,
+      "high" : 166,
+      "low" : 164,
+      "close" : 165
+    }, {
+      "date" : "2026-03-08",
+      "open" : 166,
+      "high" : 167,
+      "low" : 165,
+      "close" : 166
+    }, {
+      "date" : "2026-03-09",
+      "open" : 167,
+      "high" : 168,
+      "low" : 166,
+      "close" : 167
+    }, {
+      "date" : "2026-03-10",
+      "open" : 168,
+      "high" : 169,
+      "low" : 167,
+      "close" : 168
+    }, {
+      "date" : "2026-03-11",
+      "open" : 169,
+      "high" : 170,
+      "low" : 168,
+      "close" : 169
+    }, {
+      "date" : "2026-03-12",
+      "open" : 170,
+      "high" : 171,
+      "low" : 169,
+      "close" : 170
+    }, {
+      "date" : "2026-03-13",
+      "open" : 171,
+      "high" : 172,
+      "low" : 170,
+      "close" : 171
+    }, {
+      "date" : "2026-03-14",
+      "open" : 172,
+      "high" : 173,
+      "low" : 171,
+      "close" : 172
+    }, {
+      "date" : "2026-03-15",
+      "open" : 173,
+      "high" : 174,
+      "low" : 172,
+      "close" : 173
+    }, {
+      "date" : "2026-03-16",
+      "open" : 174,
+      "high" : 175,
+      "low" : 173,
+      "close" : 174
+    }, {
+      "date" : "2026-03-17",
+      "open" : 175,
+      "high" : 176,
+      "low" : 174,
+      "close" : 175
+    }, {
+      "date" : "2026-03-18",
+      "open" : 176,
+      "high" : 177,
+      "low" : 175,
+      "close" : 176
+    }, {
+      "date" : "2026-03-19",
+      "open" : 177,
+      "high" : 178,
+      "low" : 176,
+      "close" : 177
+    }, {
+      "date" : "2026-03-20",
+      "open" : 178,
+      "high" : 179,
+      "low" : 177,
+      "close" : 178
+    }, {
+      "date" : "2026-03-21",
+      "open" : 179,
+      "high" : 180,
+      "low" : 178,
+      "close" : 179
+    }, {
+      "date" : "2026-03-22",
+      "open" : 180,
+      "high" : 181,
+      "low" : 179,
+      "close" : 180
+    }, {
+      "date" : "2026-03-23",
+      "open" : 181,
+      "high" : 182,
+      "low" : 180,
+      "close" : 181
+    }, {
+      "date" : "2026-03-24",
+      "open" : 182,
+      "high" : 183,
+      "low" : 181,
+      "close" : 182
+    }, {
+      "date" : "2026-03-25",
+      "open" : 183,
+      "high" : 184,
+      "low" : 182,
+      "close" : 183
+    }, {
+      "date" : "2026-03-26",
+      "open" : 184,
+      "high" : 185,
+      "low" : 183,
+      "close" : 184
+    }, {
+      "date" : "2026-03-27",
+      "open" : 185,
+      "high" : 186,
+      "low" : 184,
+      "close" : 185
+    }, {
+      "date" : "2026-03-28",
+      "open" : 186,
+      "high" : 187,
+      "low" : 185,
+      "close" : 186
+    }, {
+      "date" : "2026-03-29",
+      "open" : 187,
+      "high" : 188,
+      "low" : 186,
+      "close" : 187
+    }, {
+      "date" : "2026-03-30",
+      "open" : 188,
+      "high" : 189,
+      "low" : 187,
+      "close" : 188
+    }, {
+      "date" : "2026-03-31",
+      "open" : 189,
+      "high" : 190,
+      "low" : 188,
+      "close" : 189
+    }, {
+      "date" : "2026-04-01",
+      "open" : 190,
+      "high" : 191,
+      "low" : 189,
+      "close" : 190
+    }, {
+      "date" : "2026-04-02",
+      "open" : 191,
+      "high" : 192,
+      "low" : 190,
+      "close" : 191
+    }, {
+      "date" : "2026-04-03",
+      "open" : 192,
+      "high" : 193,
+      "low" : 191,
+      "close" : 192
+    }, {
+      "date" : "2026-04-04",
+      "open" : 193,
+      "high" : 194,
+      "low" : 192,
+      "close" : 193
+    }, {
+      "date" : "2026-04-05",
+      "open" : 194,
+      "high" : 195,
+      "low" : 193,
+      "close" : 194
+    }, {
+      "date" : "2026-04-06",
+      "open" : 195,
+      "high" : 196,
+      "low" : 194,
+      "close" : 195
+    }, {
+      "date" : "2026-04-07",
+      "open" : 196,
+      "high" : 197,
+      "low" : 195,
+      "close" : 196
+    }, {
+      "date" : "2026-04-08",
+      "open" : 197,
+      "high" : 198,
+      "low" : 196,
+      "close" : 197
+    }, {
+      "date" : "2026-04-09",
+      "open" : 198,
+      "high" : 199,
+      "low" : 197,
+      "close" : 198
+    }, {
+      "date" : "2026-04-10",
+      "open" : 199,
+      "high" : 200,
+      "low" : 198,
+      "close" : 199
+    }, {
+      "date" : "2026-04-11",
+      "open" : 200,
+      "high" : 201,
+      "low" : 199,
+      "close" : 200
+    }, {
+      "date" : "2026-04-12",
+      "open" : 201,
+      "high" : 202,
+      "low" : 200,
+      "close" : 201
+    }, {
+      "date" : "2026-04-13",
+      "open" : 202,
+      "high" : 203,
+      "low" : 201,
+      "close" : 202
+    }, {
+      "date" : "2026-04-14",
+      "open" : 203,
+      "high" : 204,
+      "low" : 202,
+      "close" : 203
+    }, {
+      "date" : "2026-04-15",
+      "open" : 204,
+      "high" : 205,
+      "low" : 203,
+      "close" : 204
+    }, {
+      "date" : "2026-04-16",
+      "open" : 205,
+      "high" : 206,
+      "low" : 204,
+      "close" : 205
+    }, {
+      "date" : "2026-04-17",
+      "open" : 206,
+      "high" : 207,
+      "low" : 205,
+      "close" : 206
+    }, {
+      "date" : "2026-04-18",
+      "open" : 207,
+      "high" : 208,
+      "low" : 206,
+      "close" : 207
+    }, {
+      "date" : "2026-04-19",
+      "open" : 208,
+      "high" : 209,
+      "low" : 207,
+      "close" : 208
+    }, {
+      "date" : "2026-04-20",
+      "open" : 209,
+      "high" : 210,
+      "low" : 208,
+      "close" : 209
+    }, {
+      "date" : "2026-04-21",
+      "open" : 210,
+      "high" : 211,
+      "low" : 209,
+      "close" : 210
+    }, {
+      "date" : "2026-04-22",
+      "open" : 211,
+      "high" : 212,
+      "low" : 210,
+      "close" : 211
+    }, {
+      "date" : "2026-04-23",
+      "open" : 212,
+      "high" : 213,
+      "low" : 211,
+      "close" : 212
+    }, {
+      "date" : "2026-04-24",
+      "open" : 213,
+      "high" : 214,
+      "low" : 212,
+      "close" : 213
+    }, {
+      "date" : "2026-04-25",
+      "open" : 214,
+      "high" : 215,
+      "low" : 213,
+      "close" : 214
+    }, {
+      "date" : "2026-04-26",
+      "open" : 215,
+      "high" : 216,
+      "low" : 214,
+      "close" : 215
+    }, {
+      "date" : "2026-04-27",
+      "open" : 216,
+      "high" : 217,
+      "low" : 215,
+      "close" : 216
+    }, {
+      "date" : "2026-04-28",
+      "open" : 217,
+      "high" : 218,
+      "low" : 216,
+      "close" : 217
+    }, {
+      "date" : "2026-04-29",
+      "open" : 218,
+      "high" : 219,
+      "low" : 217,
+      "close" : 218
+    }, {
+      "date" : "2026-04-30",
+      "open" : 219,
+      "high" : 220,
+      "low" : 218,
+      "close" : 219
+    }, {
+      "date" : "2026-05-01",
+      "open" : 220,
+      "high" : 221,
+      "low" : 219,
+      "close" : 220
+    }, {
+      "date" : "2026-05-02",
+      "open" : 221,
+      "high" : 222,
+      "low" : 220,
+      "close" : 221
+    }, {
+      "date" : "2026-05-03",
+      "open" : 222,
+      "high" : 223,
+      "low" : 221,
+      "close" : 222
+    }, {
+      "date" : "2026-05-04",
+      "open" : 223,
+      "high" : 224,
+      "low" : 222,
+      "close" : 223
+    }, {
+      "date" : "2026-05-05",
+      "open" : 224,
+      "high" : 225,
+      "low" : 223,
+      "close" : 224
+    }, {
+      "date" : "2026-05-06",
+      "open" : 225,
+      "high" : 226,
+      "low" : 224,
+      "close" : 225
+    }, {
+      "date" : "2026-05-07",
+      "open" : 226,
+      "high" : 227,
+      "low" : 225,
+      "close" : 226
+    }, {
+      "date" : "2026-05-08",
+      "open" : 227,
+      "high" : 228,
+      "low" : 226,
+      "close" : 227
+    }, {
+      "date" : "2026-05-09",
+      "open" : 228,
+      "high" : 229,
+      "low" : 227,
+      "close" : 228
+    }, {
+      "date" : "2026-05-10",
+      "open" : 229,
+      "high" : 230,
+      "low" : 228,
+      "close" : 229
+    }, {
+      "date" : "2026-05-11",
+      "open" : 230,
+      "high" : 231,
+      "low" : 229,
+      "close" : 230
+    }, {
+      "date" : "2026-05-12",
+      "open" : 231,
+      "high" : 232,
+      "low" : 230,
+      "close" : 231
+    }, {
+      "date" : "2026-05-13",
+      "open" : 232,
+      "high" : 233,
+      "low" : 231,
+      "close" : 232
+    }, {
+      "date" : "2026-05-14",
+      "open" : 233,
+      "high" : 234,
+      "low" : 232,
+      "close" : 233
+    }, {
+      "date" : "2026-05-15",
+      "open" : 234,
+      "high" : 235,
+      "low" : 233,
+      "close" : 234
+    }, {
+      "date" : "2026-05-16",
+      "open" : 235,
+      "high" : 236,
+      "low" : 234,
+      "close" : 235
+    }, {
+      "date" : "2026-05-17",
+      "open" : 236,
+      "high" : 237,
+      "low" : 235,
+      "close" : 236
+    }, {
+      "date" : "2026-05-18",
+      "open" : 237,
+      "high" : 238,
+      "low" : 236,
+      "close" : 237
+    }, {
+      "date" : "2026-05-19",
+      "open" : 238,
+      "high" : 239,
+      "low" : 237,
+      "close" : 238
+    }, {
+      "date" : "2026-05-20",
+      "open" : 239,
+      "high" : 240,
+      "low" : 238,
+      "close" : 239
+    }, {
+      "date" : "2026-05-21",
+      "open" : 240,
+      "high" : 241,
+      "low" : 239,
+      "close" : 240
+    }, {
+      "date" : "2026-05-22",
+      "open" : 241,
+      "high" : 242,
+      "low" : 240,
+      "close" : 241
+    }, {
+      "date" : "2026-05-23",
+      "open" : 242,
+      "high" : 243,
+      "low" : 241,
+      "close" : 242
+    }, {
+      "date" : "2026-05-24",
+      "open" : 243,
+      "high" : 244,
+      "low" : 242,
+      "close" : 243
+    }, {
+      "date" : "2026-05-25",
+      "open" : 244,
+      "high" : 245,
+      "low" : 243,
+      "close" : 244
+    }, {
+      "date" : "2026-05-26",
+      "open" : 245,
+      "high" : 246,
+      "low" : 244,
+      "close" : 245
+    }, {
+      "date" : "2026-05-27",
+      "open" : 246,
+      "high" : 247,
+      "low" : 245,
+      "close" : 246
+    }, {
+      "date" : "2026-05-28",
+      "open" : 247,
+      "high" : 248,
+      "low" : 246,
+      "close" : 247
+    }, {
+      "date" : "2026-05-29",
+      "open" : 248,
+      "high" : 249,
+      "low" : 247,
+      "close" : 248
+    }, {
+      "date" : "2026-05-30",
+      "open" : 249,
+      "high" : 250,
+      "low" : 248,
+      "close" : 249
+    }, {
+      "date" : "2026-05-31",
+      "open" : 250,
+      "high" : 251,
+      "low" : 249,
+      "close" : 250
+    }, {
+      "date" : "2026-06-01",
+      "open" : 251,
+      "high" : 252,
+      "low" : 250,
+      "close" : 251
+    }, {
+      "date" : "2026-06-02",
+      "open" : 252,
+      "high" : 253,
+      "low" : 251,
+      "close" : 252
+    }, {
+      "date" : "2026-06-03",
+      "open" : 253,
+      "high" : 254,
+      "low" : 252,
+      "close" : 253
+    }, {
+      "date" : "2026-06-04",
+      "open" : 254,
+      "high" : 255,
+      "low" : 253,
+      "close" : 254
+    }, {
+      "date" : "2026-06-05",
+      "open" : 255,
+      "high" : 256,
+      "low" : 254,
+      "close" : 255
+    }, {
+      "date" : "2026-06-06",
+      "open" : 256,
+      "high" : 257,
+      "low" : 255,
+      "close" : 256
+    }, {
+      "date" : "2026-06-07",
+      "open" : 257,
+      "high" : 258,
+      "low" : 256,
+      "close" : 257
+    }, {
+      "date" : "2026-06-08",
+      "open" : 258,
+      "high" : 259,
+      "low" : 257,
+      "close" : 258
+    }, {
+      "date" : "2026-06-09",
+      "open" : 259,
+      "high" : 260,
+      "low" : 258,
+      "close" : 259
+    }, {
+      "date" : "2026-06-10",
+      "open" : 260,
+      "high" : 261,
+      "low" : 259,
+      "close" : 260
+    }, {
+      "date" : "2026-06-11",
+      "open" : 261,
+      "high" : 262,
+      "low" : 260,
+      "close" : 261
+    }, {
+      "date" : "2026-06-12",
+      "open" : 262,
+      "high" : 263,
+      "low" : 261,
+      "close" : 262
+    }, {
+      "date" : "2026-06-13",
+      "open" : 263,
+      "high" : 264,
+      "low" : 262,
+      "close" : 263
+    }, {
+      "date" : "2026-06-14",
+      "open" : 264,
+      "high" : 265,
+      "low" : 263,
+      "close" : 264
+    }, {
+      "date" : "2026-06-15",
+      "open" : 265,
+      "high" : 266,
+      "low" : 264,
+      "close" : 265
+    }, {
+      "date" : "2026-06-16",
+      "open" : 266,
+      "high" : 267,
+      "low" : 265,
+      "close" : 266
+    }, {
+      "date" : "2026-06-17",
+      "open" : 267,
+      "high" : 268,
+      "low" : 266,
+      "close" : 267
+    }, {
+      "date" : "2026-06-18",
+      "open" : 268,
+      "high" : 269,
+      "low" : 267,
+      "close" : 268
+    }, {
+      "date" : "2026-06-19",
+      "open" : 269,
+      "high" : 270,
+      "low" : 268,
+      "close" : 269
+    }, {
+      "date" : "2026-06-20",
+      "open" : 270,
+      "high" : 271,
+      "low" : 269,
+      "close" : 270
+    }, {
+      "date" : "2026-06-21",
+      "open" : 271,
+      "high" : 272,
+      "low" : 270,
+      "close" : 271
+    }, {
+      "date" : "2026-06-22",
+      "open" : 272,
+      "high" : 273,
+      "low" : 271,
+      "close" : 272
+    }, {
+      "date" : "2026-06-23",
+      "open" : 273,
+      "high" : 274,
+      "low" : 272,
+      "close" : 273
+    }, {
+      "date" : "2026-06-24",
+      "open" : 274,
+      "high" : 275,
+      "low" : 273,
+      "close" : 274
+    }, {
+      "date" : "2026-06-25",
+      "open" : 275,
+      "high" : 276,
+      "low" : 274,
+      "close" : 275
+    }, {
+      "date" : "2026-06-26",
+      "open" : 276,
+      "high" : 277,
+      "low" : 275,
+      "close" : 276
+    }, {
+      "date" : "2026-06-27",
+      "open" : 277,
+      "high" : 278,
+      "low" : 276,
+      "close" : 277
+    }, {
+      "date" : "2026-06-28",
+      "open" : 278,
+      "high" : 279,
+      "low" : 277,
+      "close" : 278
+    }, {
+      "date" : "2026-06-29",
+      "open" : 279,
+      "high" : 280,
+      "low" : 278,
+      "close" : 279
+    }, {
+      "date" : "2026-06-30",
+      "open" : 280,
+      "high" : 281,
+      "low" : 279,
+      "close" : 280
+    }, {
+      "date" : "2026-07-01",
+      "open" : 281,
+      "high" : 282,
+      "low" : 280,
+      "close" : 281
+    }, {
+      "date" : "2026-07-02",
+      "open" : 282,
+      "high" : 283,
+      "low" : 281,
+      "close" : 282
+    }, {
+      "date" : "2026-07-03",
+      "open" : 283,
+      "high" : 284,
+      "low" : 282,
+      "close" : 283
+    }, {
+      "date" : "2026-07-04",
+      "open" : 284,
+      "high" : 285,
+      "low" : 283,
+      "close" : 284
+    }, {
+      "date" : "2026-07-05",
+      "open" : 285,
+      "high" : 286,
+      "low" : 284,
+      "close" : 285
+    }, {
+      "date" : "2026-07-06",
+      "open" : 286,
+      "high" : 287,
+      "low" : 285,
+      "close" : 286
+    }, {
+      "date" : "2026-07-07",
+      "open" : 287,
+      "high" : 288,
+      "low" : 286,
+      "close" : 287
+    }, {
+      "date" : "2026-07-08",
+      "open" : 288,
+      "high" : 289,
+      "low" : 287,
+      "close" : 288
+    }, {
+      "date" : "2026-07-09",
+      "open" : 289,
+      "high" : 290,
+      "low" : 288,
+      "close" : 289
+    }, {
+      "date" : "2026-07-10",
+      "open" : 290,
+      "high" : 291,
+      "low" : 289,
+      "close" : 290
+    }, {
+      "date" : "2026-07-11",
+      "open" : 291,
+      "high" : 292,
+      "low" : 290,
+      "close" : 291
+    }, {
+      "date" : "2026-07-12",
+      "open" : 292,
+      "high" : 293,
+      "low" : 291,
+      "close" : 292
+    }, {
+      "date" : "2026-07-13",
+      "open" : 293,
+      "high" : 294,
+      "low" : 292,
+      "close" : 293
+    }, {
+      "date" : "2026-07-14",
+      "open" : 294,
+      "high" : 295,
+      "low" : 293,
+      "close" : 294
+    }, {
+      "date" : "2026-07-15",
+      "open" : 295,
+      "high" : 296,
+      "low" : 294,
+      "close" : 295
+    }, {
+      "date" : "2026-07-16",
+      "open" : 296,
+      "high" : 297,
+      "low" : 295,
+      "close" : 296
+    }, {
+      "date" : "2026-07-17",
+      "open" : 297,
+      "high" : 298,
+      "low" : 296,
+      "close" : 297
+    }, {
+      "date" : "2026-07-18",
+      "open" : 298,
+      "high" : 299,
+      "low" : 297,
+      "close" : 298
+    }, {
+      "date" : "2026-07-19",
+      "open" : 299,
+      "high" : 300,
+      "low" : 298,
+      "close" : 299
+    }, {
+      "date" : "2026-07-20",
+      "open" : 300,
+      "high" : 301,
+      "low" : 299,
+      "close" : 300
+    }, {
+      "date" : "2026-07-21",
+      "open" : 301,
+      "high" : 302,
+      "low" : 300,
+      "close" : 301
+    }, {
+      "date" : "2026-07-22",
+      "open" : 302,
+      "high" : 303,
+      "low" : 301,
+      "close" : 302
+    }, {
+      "date" : "2026-07-23",
+      "open" : 303,
+      "high" : 304,
+      "low" : 302,
+      "close" : 303
+    }, {
+      "date" : "2026-07-24",
+      "open" : 304,
+      "high" : 305,
+      "low" : 303,
+      "close" : 304
+    }, {
+      "date" : "2026-07-25",
+      "open" : 305,
+      "high" : 306,
+      "low" : 304,
+      "close" : 305
+    }, {
+      "date" : "2026-07-26",
+      "open" : 306,
+      "high" : 307,
+      "low" : 305,
+      "close" : 306
+    }, {
+      "date" : "2026-07-27",
+      "open" : 307,
+      "high" : 308,
+      "low" : 306,
+      "close" : 307
+    }, {
+      "date" : "2026-07-28",
+      "open" : 308,
+      "high" : 309,
+      "low" : 307,
+      "close" : 308
+    }, {
+      "date" : "2026-07-29",
+      "open" : 309,
+      "high" : 310,
+      "low" : 308,
+      "close" : 309
+    }, {
+      "date" : "2026-07-30",
+      "open" : 310,
+      "high" : 311,
+      "low" : 309,
+      "close" : 310
+    }, {
+      "date" : "2026-07-31",
+      "open" : 311,
+      "high" : 312,
+      "low" : 310,
+      "close" : 311
+    }, {
+      "date" : "2026-08-01",
+      "open" : 312,
+      "high" : 313,
+      "low" : 311,
+      "close" : 312
+    }, {
+      "date" : "2026-08-02",
+      "open" : 313,
+      "high" : 314,
+      "low" : 312,
+      "close" : 313
+    }, {
+      "date" : "2026-08-03",
+      "open" : 314,
+      "high" : 315,
+      "low" : 313,
+      "close" : 314
+    }, {
+      "date" : "2026-08-04",
+      "open" : 315,
+      "high" : 316,
+      "low" : 314,
+      "close" : 315
+    }, {
+      "date" : "2026-08-05",
+      "open" : 316,
+      "high" : 317,
+      "low" : 315,
+      "close" : 316
+    }, {
+      "date" : "2026-08-06",
+      "open" : 317,
+      "high" : 318,
+      "low" : 316,
+      "close" : 317
+    }, {
+      "date" : "2026-08-07",
+      "open" : 318,
+      "high" : 319,
+      "low" : 317,
+      "close" : 318
+    }, {
+      "date" : "2026-08-08",
+      "open" : 319,
+      "high" : 320,
+      "low" : 318,
+      "close" : 319
+    }, {
+      "date" : "2026-08-09",
+      "open" : 320,
+      "high" : 321,
+      "low" : 319,
+      "close" : 320
+    }, {
+      "date" : "2026-08-10",
+      "open" : 321,
+      "high" : 322,
+      "low" : 320,
+      "close" : 321
+    }, {
+      "date" : "2026-08-11",
+      "open" : 322,
+      "high" : 323,
+      "low" : 321,
+      "close" : 322
+    }, {
+      "date" : "2026-08-12",
+      "open" : 323,
+      "high" : 324,
+      "low" : 322,
+      "close" : 323
+    }, {
+      "date" : "2026-08-13",
+      "open" : 324,
+      "high" : 325,
+      "low" : 323,
+      "close" : 324
+    }, {
+      "date" : "2026-08-14",
+      "open" : 325,
+      "high" : 326,
+      "low" : 324,
+      "close" : 325
+    }, {
+      "date" : "2026-08-15",
+      "open" : 326,
+      "high" : 327,
+      "low" : 325,
+      "close" : 326
+    }, {
+      "date" : "2026-08-16",
+      "open" : 327,
+      "high" : 328,
+      "low" : 326,
+      "close" : 327
+    }, {
+      "date" : "2026-08-17",
+      "open" : 328,
+      "high" : 329,
+      "low" : 327,
+      "close" : 328
+    }, {
+      "date" : "2026-08-18",
+      "open" : 329,
+      "high" : 330,
+      "low" : 328,
+      "close" : 329
+    }, {
+      "date" : "2026-08-19",
+      "open" : 330,
+      "high" : 331,
+      "low" : 329,
+      "close" : 330
+    }, {
+      "date" : "2026-08-20",
+      "open" : 331,
+      "high" : 332,
+      "low" : 330,
+      "close" : 331
+    }, {
+      "date" : "2026-08-21",
+      "open" : 332,
+      "high" : 333,
+      "low" : 331,
+      "close" : 332
+    }, {
+      "date" : "2026-08-22",
+      "open" : 333,
+      "high" : 334,
+      "low" : 332,
+      "close" : 333
+    }, {
+      "date" : "2026-08-23",
+      "open" : 334,
+      "high" : 335,
+      "low" : 333,
+      "close" : 334
+    }, {
+      "date" : "2026-08-24",
+      "open" : 335,
+      "high" : 336,
+      "low" : 334,
+      "close" : 335
+    }, {
+      "date" : "2026-08-25",
+      "open" : 336,
+      "high" : 337,
+      "low" : 335,
+      "close" : 336
+    }, {
+      "date" : "2026-08-26",
+      "open" : 337,
+      "high" : 338,
+      "low" : 336,
+      "close" : 337
+    }, {
+      "date" : "2026-08-27",
+      "open" : 338,
+      "high" : 339,
+      "low" : 337,
+      "close" : 338
+    }, {
+      "date" : "2026-08-28",
+      "open" : 339,
+      "high" : 340,
+      "low" : 338,
+      "close" : 339
+    } ]
+  },
+  "trend" : {
+    "insufficient" : null,
+    "rsi14" : 100,
+    "rsi14_confidence" : "ok",
+    "ma50" : 314.5,
+    "ma200" : 239.5,
+    "ma200_slope20_pct" : 9.11,
+    "ma200_falling" : false,
+    "price_below_ma200" : false,
+    "ma50_below_ma200" : false,
+    "gap_now_pct" : 31.32,
+    "gap_narrowed_20" : true,
+    "structure_b" : false,
+    "within_3pct_of_ma200" : false,
+    "within_3pct_of_ma50_from_below" : false,
+    "low_40s" : 299,
+    "bounce_pct" : 13.38,
+    "bounce_age_sessions" : 39,
+    "sessions_low_to_high" : 39
+  },
+  "context" : {
+    "note" : "disclosed context only except open_interest_90d, which may populate the pre-existing FR squeeze condition; promoting any other field into the rubric is a framework-calibration job",
+    "realized_vol" : {
+      "rv10" : 0.04,
+      "rv30" : 0.13,
+      "rv90" : 0.49,
+      "annualize_convention" : 252,
+      "rv30_percentile_vs_2y" : 0.71
+    },
+    "drawdown_pct_vs_2y_high" : 0,
+    "drawdown_pct_vs_2y_high_percentile" : 50,
+    "drawdown_note" : "running high WITHIN the fetched 2y daily window, not the true all-time high — see outp.ath for the ATH drawdown",
+    "distance_to_200dma_pct" : 41.54,
+    "distance_to_200dma_percentile" : 1.22,
+    "daily_rsi14_percentile_vs_2y" : 50,
+    "bounce_pct_percentile_vs_2y" : 4.48,
+    "volume" : {
+      "last" : 1239,
+      "percentile_vs_2y" : 100,
+      "units_note" : "Yahoo-reported units are asset-class-specific (crypto pairs: USD quote volume; futures like GC=F: contract count) — not converted, not comparable across assets"
+    },
+    "weekly_rsi14_percentile" : 50,
+    "sentiment_proxy" : {
+      "source" : "Yahoo ^GVZ + PHYS + GC=F",
+      "scored" : false,
+      "note" : "DISCLOSED REGIME CONTEXT ONLY — not a scored leg input. Both proxies were tested over 10y on 2026-08-05 and failed as scored inputs (GVZ: no gradient; PHYS premium: era-dependent, effective N~16). The sentiment leg keeps its NOT-FOUND fallback of 2.",
+      "vol_index" : {
+        "last" : 339,
+        "percentile_vs_2y" : 100,
+        "history_days" : 240,
+        "interpretation" : "direction-blind — a high print means turbulence, NOT fear; never read as a fear signal"
+      }
+    },
+    "proximity" : {
+      "note" : "DISCLOSED CONTEXT ONLY — not a scored input and NOT a trigger. Proximity to a boundary is a heads-up that the NEXT report may route differently; it never authorizes a deployment on its own. Adds no new rubric: every threshold is read from the classifiers the frameworks already score with.",
+      "near_bands" : {
+        "percentage points" : 5,
+        "percentage points of 20-session slope" : 0.5,
+        "RSI points" : 3,
+        "index points" : 3
+      },
+      "nearest" : "ma200_slope_sign_flip",
+      "near_count" : 0,
+      "items" : [ {
+        "id" : "ma200_slope_sign_flip",
+        "metric" : "trend.ma200_slope20_pct",
+        "value" : 9.11,
+        "threshold" : 0,
+        "gap" : 9.11,
+        "gap_units" : "percentage points of 20-session slope",
+        "direction" : "flattening toward a FALLING 200dma",
+        "price_move_required_pct" : null,
+        "crossed" : false,
+        "consequence" : "ma200_falling flips -> FR Channel B structure input, frChannel routing",
+        "near" : false,
+        "near_band" : 0.5
+      }, {
+        "id" : "fr_phase_cycle_cap_14_to_uncapped",
+        "metric" : "high_1y.pct_below",
+        "value" : 0.29,
+        "threshold" : 10,
+        "gap" : -9.71,
+        "gap_units" : "percentage points",
+        "direction" : "already past — currently on the far side",
+        "price_move_required_pct" : -9.73,
+        "crossed" : true,
+        "consequence" : "FR phase-of-cycle cap lifts entirely (fr.phaseCycleCap -> null)",
+        "near" : false,
+        "near_band" : 5
+      }, {
+        "id" : "fr_channel_A_eligibility",
+        "metric" : "high_1y.pct_below",
+        "value" : 0.29,
+        "threshold" : 20,
+        "gap" : -19.71,
+        "gap_units" : "percentage points",
+        "direction" : "already past — currently on the far side",
+        "price_move_required_pct" : -19.76,
+        "crossed" : true,
+        "consequence" : "FR routes Channel A instead of B/stand-down (frChannel)",
+        "near" : false,
+        "near_band" : 5
+      }, {
+        "id" : "fr_phase_cycle_cap_8_to_14",
+        "metric" : "high_1y.pct_below",
+        "value" : 0.29,
+        "threshold" : 20,
+        "gap" : -19.71,
+        "gap_units" : "percentage points",
+        "direction" : "already past — currently on the far side",
+        "price_move_required_pct" : -19.76,
+        "crossed" : true,
+        "consequence" : "FR phase-of-cycle cap loosens from 8% to 14% (fr.phaseCycleCap)",
+        "near" : false,
+        "near_band" : 5
+      }, {
+        "id" : "fk_gate6_200w_band",
+        "metric" : "weekly.sma_200w.pct_vs_spot",
+        "value" : 45.81,
+        "threshold" : 8,
+        "gap" : 37.81,
+        "gap_units" : "percentage points",
+        "direction" : "needs price DOWN",
+        "price_move_required_pct" : -25.93,
+        "crossed" : false,
+        "consequence" : "FK gate 6 (200-week MA proximity) lights",
+        "near" : false,
+        "near_band" : 5
+      }, {
+        "id" : "frb_weekly_rsi50_qualifier",
+        "metric" : "weekly.rsi14.rsi",
+        "value" : 100,
+        "threshold" : 50,
+        "gap" : -50,
+        "gap_units" : "RSI points",
+        "direction" : "already at/above",
+        "price_move_required_pct" : null,
+        "crossed" : true,
+        "consequence" : "FR-B momentum leg forced to 0 (weekly RSI >= 50 hard qualifier)",
+        "near" : false,
+        "near_band" : 3
+      } ]
+    }
+  }
+}

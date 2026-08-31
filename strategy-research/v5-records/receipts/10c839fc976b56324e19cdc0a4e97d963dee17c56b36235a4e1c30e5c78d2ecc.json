@@ -1,0 +1,25 @@
+{
+  "schema": "strategy-v5-authoritative-command-receipt/1",
+  "version": 1,
+  "command": "prospective-runner",
+  "status": "BLOCKED",
+  "inputs": [],
+  "outputs": [],
+  "limitations": [
+    "bar: missing physical prerequisite",
+    "candidate set: missing physical prerequisite",
+    "evaluator code: missing physical prerequisite",
+    "expected CAS head: missing physical prerequisite",
+    "feature input: missing physical prerequisite",
+    "ledger: missing physical prerequisite",
+    "reservation: missing physical prerequisite",
+    "signal decision: missing physical prerequisite",
+    "source receipt: missing physical prerequisite"
+  ],
+  "details": {
+    "mode": "BLOCKED_NO_PRIVATE_KEY_PATH",
+    "reason": "one completed-bar SHADOW cycle requires every physical ledger/reservation/source/bar/feature/candidate/evaluator/decision prerequisite",
+    "active": false
+  },
+  "content_sha256": "10c839fc976b56324e19cdc0a4e97d963dee17c56b36235a4e1c30e5c78d2ecc"
+}

@@ -1,0 +1,94 @@
+{
+  "schema": "report-renderer-frozen-oracle/1",
+  "source": "tools/render-report.mjs",
+  "reports": [
+    {
+      "file": "btc_fallen_knives_20260822_0346.json",
+      "input_sha256": "beee4a036e8f277ca8f660cedc675d290ceae536d63f524291252aab5875f94c",
+      "full_sha256": "e2d3ed4206b2176f083072b4ebdef8ef2da721eb7ef8610558245664e67fd71a",
+      "full_chars": 45779,
+      "summary_sha256": "33ed30ebe845969e3f4306b0f7a38b6acf4a8d4865c55738fbbbb6baae4bbf3e",
+      "summary_chars": 666
+    },
+    {
+      "file": "btc_flying_rocket_20260819_1222.json",
+      "input_sha256": "02b23c4a2846a28066dbc120157aa8a012869e70130c33ec3adf08da5ba71cca",
+      "full_sha256": "ef9492e29b0cc91f3bd124d9e6dca77c8b736b720f69a2d122539e3c1c772001",
+      "full_chars": 44049,
+      "summary_sha256": "15893e811708b37c0574a73f6fab60d08bb1973c0452dfa131a9a696d3d31206",
+      "summary_chars": 597
+    },
+    {
+      "file": "btc_flying_rocket_20260820_1640.json",
+      "input_sha256": "8848759b9e3220f83b15445d0c3f5fb07120d4ec5f64591608b30f877e5d89a0",
+      "full_sha256": "10d37daa00041d20618489182f1f734bdeabd7bbe82e73c44eada9c885c9d455",
+      "full_chars": 40873,
+      "summary_sha256": "6b121c953df314fa12115b162950083d9f1484ebad96f2b8c2c9abaa03a917c1",
+      "summary_chars": 705
+    },
+    {
+      "file": "btc_flying_rocket_20260821_0457.json",
+      "input_sha256": "d2afd6c38bd1432af49794dc1657e0f0d538ef976db9b9644c3c4df17c3fc831",
+      "full_sha256": "05002740e0ddff48dbee6a126057f722c9252692fc354d676a3004c40cf6bacc",
+      "full_chars": 45814,
+      "summary_sha256": "eb46995e47fefc7a904c3fc5ee6a2fc5c349d8a7ec24e3eee72ca74c5ba1de8d",
+      "summary_chars": 670
+    },
+    {
+      "file": "eth_fallen_knives_20260822_0346.json",
+      "input_sha256": "cf659e42794902122a5d3f95c8cc63dc7bc27a51427eb72b21c4fe5d41f377ad",
+      "full_sha256": "0688f0c3304e912137adda13cb42a1e2aaeb10d93478a69718787beac6197ae9",
+      "full_chars": 47374,
+      "summary_sha256": "64bb6ba8d4a40c1dd628399d02e11273fb62c91b77a56e0f6b54574d2d99b808",
+      "summary_chars": 714
+    },
+    {
+      "file": "eth_flying_rocket_20260819_1223.json",
+      "input_sha256": "05eff905090caca9649df6f6f63771262568cc76fcb75554fc7dab6837893d6e",
+      "full_sha256": "24e5581615aa65248350b774f3b14ffd3e5486ee3bf1e23624d261bdb7bdb936",
+      "full_chars": 47176,
+      "summary_sha256": "047a0b2f000004e37e3f50d1ea430c0fa493bc93c4c5b94d1a6653f58146a881",
+      "summary_chars": 600
+    },
+    {
+      "file": "eth_flying_rocket_20260820_1640.json",
+      "input_sha256": "95dbaffdd3b10741125426b051816d49ceb0fc914240f3a6401e6e999669bb8d",
+      "full_sha256": "94f9730e535bc8583c2922de0db5f990b4d0544a272434c0c76ccea057ca11ca",
+      "full_chars": 41988,
+      "summary_sha256": "c8362ee8a7debe7c607fd84882dd863d8d9e97b87407254a5fb4d94f050bec4e",
+      "summary_chars": 789
+    },
+    {
+      "file": "eth_flying_rocket_20260821_0457.json",
+      "input_sha256": "a7c8fcf4ee86e1937d930d44c13b98c3ab9f3af4b572648fad00cc20e98a47bd",
+      "full_sha256": "136e12968c071ed22a4ae0a4106a3fe5fb8bfd54a477badccf5d03dad44fee3d",
+      "full_chars": 47277,
+      "summary_sha256": "2d8c97de15655e074d4f1b3b97178e053eafc7d24164fbffc67e3d0025f6509e",
+      "summary_chars": 754
+    },
+    {
+      "file": "gold_fallen_knives_20260815_1210.json",
+      "input_sha256": "b0fe71a6bb0c9f1a6ce75a56fdbbe72884f1385549f38939f0f8ccf77e7f7418",
+      "full_sha256": "7e6307c2b51e5225bfa777037591f5c963a66e95d620fecd5bcef173ffdc859a",
+      "full_chars": 86443,
+      "summary_sha256": "0a7242123064984626defb3c15811bf4cd8c9f95e226b1be28a815a4f68fb49b",
+      "summary_chars": 828
+    },
+    {
+      "file": "sp500_flying_rocket_20260820_1640.json",
+      "input_sha256": "b8a58b3a588605b36d02229ef63d65da8e661e2099036a48bcad5c5d209263e4",
+      "full_sha256": "d97774d674b4d193ebc5a4d02ba29c67c05f3a2714b02b8721eefc05ccef55ee",
+      "full_chars": 50775,
+      "summary_sha256": "f15f34319522532fd09e92b06d63ee4a892173c63a960aa8025e1067b86c5c3c",
+      "summary_chars": 576
+    }
+  ],
+  "swing": {
+    "file": "tools/fixtures/report-machine-3.sample.json",
+    "input_sha256": "137323c76634c525f0d48ea8bb5076db8577b7b8e6ce73adb739fe5dd41ded82",
+    "full_sha256": "00e3b003786e4136f18375f713ece485cb67dbe5ce48c9be92269f76f80d322b",
+    "full_chars": 3039,
+    "summary_sha256": "c62039bf9b79e127a2b68e1fc68d38a66dbb7ed5bbd4b810378b27b8a332f874",
+    "summary_chars": 171
+  }
+}

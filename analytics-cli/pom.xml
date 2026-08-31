@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent><groupId>com.tradinganalytics</groupId><artifactId>trading-analytics-parent</artifactId><version>1.0.0-SNAPSHOT</version></parent>
+  <artifactId>analytics-cli</artifactId>
+  <dependencies>
+    <dependency><groupId>com.tradinganalytics</groupId><artifactId>analytics-contracts</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>com.tradinganalytics</groupId><artifactId>analytics-core</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>com.tradinganalytics</groupId><artifactId>analytics-infrastructure</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>com.tradinganalytics</groupId><artifactId>analytics-market-data</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>com.tradinganalytics</groupId><artifactId>analytics-reporting</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>com.tradinganalytics</groupId><artifactId>analytics-research</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter</artifactId></dependency>
+    <dependency><groupId>info.picocli</groupId><artifactId>picocli-spring-boot-starter</artifactId></dependency>
+    <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-test</artifactId><scope>test</scope></dependency>
+  </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.springframework.boot</groupId><artifactId>spring-boot-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals><goal>repackage</goal></goals>
+            <configuration><classifier>exec</classifier></configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

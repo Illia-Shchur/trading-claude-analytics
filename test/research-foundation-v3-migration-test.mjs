@@ -1,8 +1,0 @@
-import assert from 'node:assert/strict'
-import { execFileSync } from 'node:child_process'
-import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
-
-const root = mkdtempSync(join(tmpdir(), 'research-migration-')); const runs = join(root, 'runs', 'legacy-run'); mkdirSync(runs, { recursive: true }); const assets = ['btc', 'eth', 'sol', 'bnb', 'xrp', 'ada', 'link', 'aave']; const metricsPath = join(runs, 'metrics.jsonl'); writeFileSync(metricsPath, assets.map(asset => JSON.stringify({ asset, strategy_id: 'legacy-strategy', candidate_id: `candidate-${asset}`, completed_trades: 3, expectancy_r: 0.1, status: 'REJECTED' })).join('\n') + '\n'); writeFileSync(join(runs, 'run.json'), JSON.stringify({ schema: 'strategy-run/2', evidence_phase: 'EXPOSED_CONFIRMATION', strategy_id: 'legacy-strategy', decisions: { portfolio: { status: 'REJECTED' } }, artifacts: { metrics: { path: 'metrics.jsonl', sha256: '0'.repeat(64) } } }))
-const first = join(root, 'migration-a.json'); const second = join(root, 'migration-b.json'); execFileSync(process.execPath, ['tools/migrate-research-v3.mjs', join(root), first], { encoding: 'utf8' }); execFileSync(process.execPath, ['tools/migrate-research-v3.mjs', join(root), second], { encoding: 'utf8' }); assert.equal(readFileSync(first, 'utf8'), readFileSync(second, 'utf8')); const report = JSON.parse(readFileSync(first, 'utf8')); assert.deepEqual(Object.keys(report.deterministic_index).sort(), assets.slice().sort()); assert.ok(report.deterministic_index.btc[0].metric_sha256); assert.deepEqual(report.excluded_assets, ['doge']); assert.equal(report.promotion_policy.includes('read-only'), true); console.log('research-foundation-v3-migration-test: ok')
