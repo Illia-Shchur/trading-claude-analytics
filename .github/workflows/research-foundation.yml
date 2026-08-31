@@ -25,6 +25,7 @@ jobs:
         run: ./mvnw --batch-mode --no-transfer-progress verify
       - name: Re-run the pinned DuckDB and immutable Parquet contract explicitly
         run: >-
-          ./mvnw --batch-mode --no-transfer-progress -pl analytics-market-data
+          ./mvnw --batch-mode --no-transfer-progress -pl analytics-market-data -am
           -Dtest=ResearchDataTest#originalDockerParquetContractRunsLocallyAndIsIdempotent
+          -Dsurefire.failIfNoSpecifiedTests=false
           test
