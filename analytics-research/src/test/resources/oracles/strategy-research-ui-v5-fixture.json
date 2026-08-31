@@ -1,0 +1,141 @@
+{
+  "schema": "strategy-research-ui/1",
+  "version": 1,
+  "presentation_only": true,
+  "fixture_only": true,
+  "generated_at": "2026-01-01T00:00:00Z",
+  "manifest": {
+    "status": "READY",
+    "source_root": "fixture://strategy-research-ui/1",
+    "record_count": 1,
+    "source_hashes": [
+      "ffbc2dfc402782325da71132100e74ff511d1585dd80e4ea196ed4bcace3fef2"
+    ],
+    "limitations": [
+      "FIXTURE — NOT EVIDENCE"
+    ]
+  },
+  "readiness": {
+    "status": "READY",
+    "dimensions": [
+      {
+        "id": "records",
+        "status": "READY",
+        "detail": "Fixture record is complete for UI development only."
+      },
+      {
+        "id": "evidence",
+        "status": "BLOCKED",
+        "detail": "Fixture data is explicitly not evidence."
+      }
+    ],
+    "blockers": []
+  },
+  "strategies": [
+    {
+      "family_id": "fixture-mean-reversion",
+      "strategy_version": "v001",
+      "status": "SHADOW",
+      "stage": "CORE_PREMISE",
+      "phase": "DEVELOPMENT",
+      "premise": "Forced deleveraging creates a temporary liquidity imbalance.",
+      "expected_vs_realized": "Expected: short-lived mean reversion; realized: fixture only.",
+      "assets": [
+        "btc",
+        "eth"
+      ],
+      "declared_predictors": [
+        {
+          "id": "close",
+          "label": "Completed-bar close",
+          "source": "BINANCE_SPOT"
+        },
+        {
+          "id": "funding_rate",
+          "label": "Same-asset funding",
+          "source": "BINANCE_USDM_PERPETUAL"
+        }
+      ],
+      "runs": [
+        {
+          "run_hash": "4bc0ac0030c56833b7daff1b76fa0d3e2c084a9a9210ea5584d32d59780dbd8b",
+          "status": "SHADOW",
+          "stage": "CORE_PREMISE",
+          "evidence_phase": "DEVELOPMENT",
+          "k": 1,
+          "gate_failures": 0,
+          "identity": {
+            "family_id": "fixture-mean-reversion",
+            "strategy_version": "v001",
+            "run_hash": "4bc0ac0030c56833b7daff1b76fa0d3e2c084a9a9210ea5584d32d59780dbd8b"
+          },
+          "candidates": [
+            {
+              "candidate_id": "fixture-candidate",
+              "selected": true,
+              "finalist": true,
+              "evidence_phase": "DEVELOPMENT",
+              "market": {
+                "completed_bars": [
+                  {
+                    "time": "2026-01-01T00:00:00Z",
+                    "open": 100,
+                    "high": 102,
+                    "low": 99,
+                    "close": 101,
+                    "funding_rate": 0.0001
+                  }
+                ]
+              },
+              "signals": [
+                {
+                  "id": "fixture-signal",
+                  "time": "2026-01-01T00:00:00Z",
+                  "predictor": "close",
+                  "value": 101,
+                  "intent": "LONG"
+                }
+              ],
+              "trades": [
+                {
+                  "id": "fixture-trade-1",
+                  "asset": "btc",
+                  "entry_time": "2026-01-01T00:00:00Z",
+                  "net_r": 0.3
+                }
+              ],
+              "performance": {
+                "expectancy_r": 0.3,
+                "win_rate": 1.0,
+                "max_drawdown_r": 0.0
+              },
+              "robustness": {
+                "wfo": {
+                  "status": "UNAVAILABLE"
+                },
+                "bootstrap": {
+                  "status": "UNAVAILABLE"
+                }
+              }
+            }
+          ],
+          "shadow": {
+            "frozen_signal_lane": {
+              "status": "MONITORING",
+              "trades": 1
+            },
+            "real_deal_lane": {
+              "status": "NO_LINKED_DEALS",
+              "trades": 0
+            }
+          },
+          "lineage": {
+            "precommit_sha256": "7e0c93bb95ad76d1e4de4c43d2dff0d7a5f7130b3596298b937d043f43b7462b",
+            "dataset_sha256": "fbf470908cafd856560b0c8bdbb9ca8d3068b475def541b8736a72c1aeb6176e"
+          }
+        }
+      ]
+    }
+  ],
+  "content_sha256": "295b55a5b808b597d8d12b2eb4c4501171d2f7eb1008abbb05c76b0ce50e2ea4"
+}

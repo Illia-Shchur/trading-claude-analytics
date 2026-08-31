@@ -10,7 +10,7 @@ import java.io.PrintStream;
 public final class StrategyResearchV5CommandAdapter {
     public static final String COMMANDS = "data-backfill|data-raw-replay|feature-build|metadata-build|"
             + "opportunity-envelope|artifact-build|research-init|experiment-freeze|search-genetic|"
-            + "research-run|overfit-audit|prospective-runner|readiness-audit|deployment-audit|validate|index";
+            + "research-run|overfit-audit|prospective-runner|readiness-audit|deployment-audit|validate|index|presentation-export";
     public static final String USAGE = "usage: strategy-research-v5.mjs " + COMMANDS;
     public static final String HELP_USAGE = USAGE + " [options]";
 
@@ -32,7 +32,17 @@ public final class StrategyResearchV5CommandAdapter {
                     || options.path("h").isBoolean() && options.path("h").booleanValue()) {
                 stdout.println(HELP_USAGE); return 0;
             }
-            JsonNode result = StrategyResearchV5.runAuthoritativeV5Cli(command, options);
+            JsonNode result;
+            if ("presentation-export".equals(command)) {
+                java.nio.file.Path root = options.has("root") ? java.nio.file.Path.of(options.path("root").asText()) : null;
+                java.nio.file.Path output = options.has("output") ? java.nio.file.Path.of(options.path("output").asText()) : null;
+                boolean fixture = options.path("fixture").asBoolean(false);
+                java.time.Instant asOf = options.has("as_of")
+                        ? java.time.Instant.parse(options.path("as_of").asText()) : null;
+                result = StrategyResearchUiExportV5.write(root, output, fixture, asOf);
+            } else {
+                result = StrategyResearchV5.runAuthoritativeV5Cli(command, options);
+            }
             if (result != null) {
                 stdout.print(NodePrettyJson.write(result)); return 0;
             }

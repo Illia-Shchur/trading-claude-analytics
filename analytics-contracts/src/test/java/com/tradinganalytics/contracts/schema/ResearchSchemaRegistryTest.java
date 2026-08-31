@@ -35,8 +35,8 @@ class ResearchSchemaRegistryTest {
 
     @Test
     void loadsAndCompilesTheExactNodeSchemaCorpusIncludingEmbeddedIds() {
-        assertThat(registry.listSchemaDocuments()).hasSize(127);
-        assertThat(registry.listContractSchemas()).hasSize(144).isSorted().doesNotHaveDuplicates();
+        assertThat(registry.listSchemaDocuments()).hasSize(128);
+        assertThat(registry.listContractSchemas()).hasSize(145).isSorted().doesNotHaveDuplicates();
 
         String filenames = registry.listSchemaDocuments().stream()
                 .map(ResearchSchemaRegistry.SchemaDocument::filename)
@@ -44,9 +44,9 @@ class ResearchSchemaRegistryTest {
                 .reduce("", (left, right) -> left + right + "\n");
         String ids = String.join("\n", registry.listContractSchemas()) + "\n";
         assertThat(Sha256.hex(filenames))
-                .isEqualTo("181465220adaeecedc8767912d427e0328f641ec62e7e915c1efb7bb9ee8fda3");
+                .isEqualTo("e4c1541a27fbe171e2b9230236dfc7daf80212d4426ab51fa970933e7509bdff");
         assertThat(Sha256.hex(ids))
-                .isEqualTo("22053aa442186d61491d38ba7d767d2a55d84e432a8897b848bd720c15917e98");
+                .isEqualTo("9f5c6f85a069100ab039e0ba77fbfbb632663af75f3e73eedc8858d59ea28038");
 
         assertThat(registry.listSchemaDocuments())
                 .allSatisfy(document -> {
@@ -226,7 +226,7 @@ class ResearchSchemaRegistryTest {
         ClassLoader original = thread.getContextClassLoader();
         try {
             thread.setContextClassLoader(null);
-            assertThat(new ResearchSchemaRegistry().listSchemaDocuments()).hasSize(127);
+            assertThat(new ResearchSchemaRegistry().listSchemaDocuments()).hasSize(128);
         } finally {
             thread.setContextClassLoader(original);
         }

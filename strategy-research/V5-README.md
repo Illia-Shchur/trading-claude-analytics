@@ -28,6 +28,25 @@ node tools/strategy-research-v5.mjs validate --input <v5-record.json>
 node tools/strategy-research-v5.mjs index --root strategy-research/v5-records
 ```
 
+The read-only cockpit presentation is produced by the deterministic Java
+adapter after the v5 index and its listed physical records have been
+validated:
+
+```sh
+./bin/analytics strategy-research-v5 presentation-export \
+  --root strategy-research/v5-records \
+  --output .report-run/strategy-research-ui.json
+```
+
+This writes the `strategy-research-ui/1` contract. It is marked
+`presentation_only` and is never an evidence source: the exporter reads only
+the exact hash-bound records named by a `strategy-research-index/5`, rejects
+legacy indexes, missing or mismatched hashes, paths outside the root, and
+undeclared predictors, and never scans the raw/Parquet lake. Before a
+completed production run the command can emit an explicitly labelled local
+fixture with `--fixture`; fixture output is `FIXTURE — NOT EVIDENCE` and must
+not be used as readiness or trading evidence.
+
 The optional replay promotion requires all three of `--parquet-root`,
 `--catalog`, and `--catalog-root`; it refuses a partial acquisition, verifies
 the local Parquet reopen and frozen coverage, and writes content-addressed
