@@ -72,11 +72,12 @@ jobs:
           java-version: '21'
           cache: maven
       - name: Run ${{ matrix.name }} mutation contract
-        run: >-
-          ./mvnw --batch-mode --no-transfer-progress -pl ${{ matrix.module }} -am -Pmutation
-          -DtargetClasses='${{ matrix.classes }}'
-          -DtargetTests=${{ matrix.tests }}
-          -DmutationThreshold=${{ matrix.mutation }}
-          -DtestStrengthThreshold=${{ matrix.strength }}
-          -DcoverageThreshold=${{ matrix.coverage }}
-          org.pitest:pitest-maven:mutationCoverage
+        run: |
+          ./mvnw --batch-mode --no-transfer-progress -pl ${{ matrix.module }} -am -DskipTests install
+          ./mvnw --batch-mode --no-transfer-progress -pl ${{ matrix.module }} -Pmutation \
+            -DtargetClasses='${{ matrix.classes }}' \
+            -DtargetTests=${{ matrix.tests }} \
+            -DmutationThreshold=${{ matrix.mutation }} \
+            -DtestStrengthThreshold=${{ matrix.strength }} \
+            -DcoverageThreshold=${{ matrix.coverage }} \
+            org.pitest:pitest-maven:mutationCoverage
