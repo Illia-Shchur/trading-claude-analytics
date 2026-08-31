@@ -2,6 +2,8 @@ name: java-migration
 
 on:
   push:
+    branches:
+      - main
   pull_request:
 
 permissions:
@@ -22,25 +24,59 @@ jobs:
           cache: maven
       - name: Build Spring application and run Java compatibility tests
         run: ./mvnw --batch-mode --no-transfer-progress install
-      - name: Mutation-test critical public-data, custody, and writer boundaries
-        run: |
-          ./mvnw --batch-mode --no-transfer-progress -pl analytics-market-data -Pmutation \
-            -DtargetClasses=com.tradinganalytics.marketdata.PublicDataSmokeService \
-            -DtargetTests=com.tradinganalytics.marketdata.PublicDataSmokeServiceTest \
-            -DmutationThreshold=100 -DtestStrengthThreshold=100 -DcoverageThreshold=100 \
-            org.pitest:pitest-maven:mutationCoverage
-          ./mvnw --batch-mode --no-transfer-progress -pl analytics-cli -Pmutation \
-            -DtargetClasses=com.tradinganalytics.cli.WriterInstallationCliCommand \
-            -DtargetTests=com.tradinganalytics.cli.WriterInstallationCliCommandTest \
-            -DmutationThreshold=80 -DtestStrengthThreshold=90 -DcoverageThreshold=75 \
-            org.pitest:pitest-maven:mutationCoverage
-          ./mvnw --batch-mode --no-transfer-progress -pl analytics-infrastructure -Pmutation \
-            -DtargetClasses=com.tradinganalytics.infrastructure.github.GitHubAttestationSignerV5 \
-            -DtargetTests=com.tradinganalytics.infrastructure.github.GitHubAttestationSignerV5Test \
-            -DmutationThreshold=80 -DtestStrengthThreshold=90 -DcoverageThreshold=90 \
-            org.pitest:pitest-maven:mutationCoverage
-          ./mvnw --batch-mode --no-transfer-progress -pl analytics-infrastructure -Pmutation \
-            -DtargetClasses='com.tradinganalytics.infrastructure.github.GitHubSettingsCaptureV5*' \
-            -DtargetTests=com.tradinganalytics.infrastructure.github.GitHubSettingsCaptureV5Test \
-            -DmutationThreshold=70 -DtestStrengthThreshold=80 -DcoverageThreshold=90 \
-            org.pitest:pitest-maven:mutationCoverage
+
+  mutation-parity:
+    needs: java-parity
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: public-data
+            module: analytics-market-data
+            classes: com.tradinganalytics.marketdata.PublicDataSmokeService
+            tests: com.tradinganalytics.marketdata.PublicDataSmokeServiceTest
+            mutation: 100
+            strength: 100
+            coverage: 100
+          - name: writer-installation
+            module: analytics-cli
+            classes: com.tradinganalytics.cli.WriterInstallationCliCommand
+            tests: com.tradinganalytics.cli.WriterInstallationCliCommandTest
+            mutation: 80
+            strength: 90
+            coverage: 75
+          - name: attestation-signer
+            module: analytics-infrastructure
+            classes: com.tradinganalytics.infrastructure.github.GitHubAttestationSignerV5
+            tests: com.tradinganalytics.infrastructure.github.GitHubAttestationSignerV5Test
+            mutation: 80
+            strength: 90
+            coverage: 90
+          - name: settings-capture
+            module: analytics-infrastructure
+            classes: com.tradinganalytics.infrastructure.github.GitHubSettingsCaptureV5*
+            tests: com.tradinganalytics.infrastructure.github.GitHubSettingsCaptureV5Test
+            mutation: 70
+            strength: 80
+            coverage: 90
+    name: mutation-parity (${{ matrix.name }})
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Run ${{ matrix.name }} mutation contract
+        run: >-
+          ./mvnw --batch-mode --no-transfer-progress -pl ${{ matrix.module }} -am -Pmutation
+          -DtargetClasses='${{ matrix.classes }}'
+          -DtargetTests=${{ matrix.tests }}
+          -DmutationThreshold=${{ matrix.mutation }}
+          -DtestStrengthThreshold=${{ matrix.strength }}
+          -DcoverageThreshold=${{ matrix.coverage }}
+          org.pitest:pitest-maven:mutationCoverage
