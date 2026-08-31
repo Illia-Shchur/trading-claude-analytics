@@ -256,7 +256,7 @@ class ReportingPipelineNodeOracleTest {
             List<String> args = finalizeGuards.get(index);
             OracleResult node = oracle("finalize-guard-" + index);
             ReportingCommandResult actual = FinalizeReportCommand.run(args, javaRoot, javaRoot);
-            assertEquivalent(node, actual, nodeRoot, javaRoot);
+            assertEquivalent(node, actual, nodeRoot, javaRoot, temporaryDirectory);
         }
 
         List<List<String>> renderGuards = List.of(
@@ -269,7 +269,7 @@ class ReportingPipelineNodeOracleTest {
             List<String> args = renderGuards.get(index);
             OracleResult node = oracle("render-guard-" + index);
             ReportingCommandResult actual = RenderReportCommand.run(args, javaRoot, javaRoot);
-            assertEquivalent(node, actual, nodeRoot, javaRoot);
+            assertEquivalent(node, actual, nodeRoot, javaRoot, temporaryDirectory);
         }
     }
 
