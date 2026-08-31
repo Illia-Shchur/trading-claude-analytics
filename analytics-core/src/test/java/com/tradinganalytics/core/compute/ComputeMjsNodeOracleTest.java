@@ -223,8 +223,12 @@ class ComputeMjsNodeOracleTest {
                         + "{\"date\":\"2026-08-25\",\"close\":6060},{\"date\":\"2026-08-26\",\"close\":6030}]",
                 "--window", "3"));
         vectors.add(v("percentile", "percentile", "--values", "1,2,2,4,8", "--x", "2"));
-        vectors.add(v("rvol", "rvol", "--closes", csvDoubles(100,
-                i -> 100 * Math.exp(0.002 * i + 0.015 * Math.sin(i * 0.7))), "--annualize", "365"));
+        // Math.sin/Math.exp are allowed to differ by a final ULP across JDK/libm
+        // implementations. The original CLI argument bytes are already part of
+        // the frozen oracle, so execute this vector with those exact bytes rather
+        // than regenerating an equivalent series on the current platform.
+        vectors.add(v("rvol", arguments(ORACLE.path("vectors").path("rvol").path("argv"))
+                .toArray(String[]::new)));
         vectors.add(v("basis", "basis", "--mark", "101", "--index", "100",
                 "--funding-annualized-pct", "5.8", "--risk-free-pct", "4.2"));
         vectors.add(v("short-ev", "short-ev", "--directional-ev", "6.2",
