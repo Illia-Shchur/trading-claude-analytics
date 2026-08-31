@@ -17,7 +17,9 @@ class TripwireCommandParityTest {
     @Test
     void fileSelectionMetadataAndTripwireOutputMatchCapturedNodeOracle() throws Exception {
         Path repository = RepositoryRoot.find();
-        Path temporary = Files.createTempDirectory(repository.resolve("data"), "java-tripwire-parity-");
+        Path dataDirectory = repository.resolve("data");
+        Files.createDirectories(dataDirectory);
+        Path temporary = Files.createTempDirectory(dataDirectory, "java-tripwire-parity-");
         try {
             writeRun(temporary, "20260828-1000-aaaaaaaa", "old", 49, 6, 80);
             writeRun(temporary, "20260828-1100-bbbbbbbb", "new", 61, 7, 87);
