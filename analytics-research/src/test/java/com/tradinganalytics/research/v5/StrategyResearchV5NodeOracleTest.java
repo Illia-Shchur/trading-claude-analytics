@@ -28,9 +28,25 @@ import org.junit.jupiter.api.Test;
  */
 public final class StrategyResearchV5NodeOracleTest {
     private static final ObjectMapper JSON = JsonHashes.mapper();
-    private static final Path REPOSITORY = Path.of(
-            System.getProperty("v5.repository", "/Users/eternal/Desktop/Trading Claude Analytics"));
+    private static final Path REPOSITORY = repositoryRoot();
     private static int assertions;
+
+    private static Path repositoryRoot() {
+        String configured = System.getProperty("v5.repository");
+        if (configured == null || configured.isBlank()) {
+            configured = System.getProperty("tradinganalytics.repository.root");
+        }
+        if (configured != null && !configured.isBlank()) {
+            return Path.of(configured).toAbsolutePath().normalize();
+        }
+        Path cursor = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize();
+        while (cursor != null && (!Files.isRegularFile(cursor.resolve("pom.xml"))
+                || !Files.isDirectory(cursor.resolve("analytics-research")))) {
+            cursor = cursor.getParent();
+        }
+        if (cursor == null) throw new IllegalStateException("repository root not found");
+        return cursor;
+    }
 
     @Test
     void completeFacadeCompatibilityContract() throws Exception {

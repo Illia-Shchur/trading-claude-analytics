@@ -104,10 +104,12 @@ final class OpportunityV5NodeOracleTest {
                 bars("2026-01-01T00:01:00Z", 2, "PRICE", 200), pricesRoot);
         ObjectNode markOptions = physicalPartitionOptions(
                 bars("2026-01-01T00:01:00Z", 3, "MARK", 199), marksRoot);
-        ObjectNode expectedPrices = nodeValue("makeContentAddressedPartitionsV5", priceOptions);
+        ObjectNode expectedPrices = physicalOracleValue(
+                "makeContentAddressedPartitionsV5", priceOptions, physicalRoot);
         ObjectNode actualPrices = OpportunityV5.makeContentAddressedPartitionsV5(priceOptions);
         assertJson(actualPrices, expectedPrices);
-        ObjectNode expectedMarks = nodeValue("makeContentAddressedPartitionsV5", markOptions);
+        ObjectNode expectedMarks = physicalOracleValue(
+                "makeContentAddressedPartitionsV5", markOptions, physicalRoot);
         ObjectNode actualMarks = OpportunityV5.makeContentAddressedPartitionsV5(markOptions);
         assertJson(actualMarks, expectedMarks);
 
@@ -122,7 +124,8 @@ final class OpportunityV5NodeOracleTest {
                 .put("terminal_time", "2026-01-01T00:02:00Z");
         hydrationOptions.put("fixtureOnly", false);
         hydrationOptions.put("maxResidentBytes", 100_000);
-        ObjectNode expectedHydration = nodeValue("hydrateOpportunityEnvelopeV5", hydrationOptions);
+        ObjectNode expectedHydration = physicalOracleValue(
+                "hydrateOpportunityEnvelopeV5", hydrationOptions, physicalRoot);
         ObjectNode actualHydration = OpportunityV5.hydrateOpportunityEnvelopeV5(hydrationOptions);
         assertJson(actualHydration, expectedHydration);
         assertThat(actualHydration.path("windows").get(0).path("lifecycle_status").asText()).isEqualTo("COMPLETE");
@@ -134,7 +137,8 @@ final class OpportunityV5NodeOracleTest {
         markRead.put("window_id", envelope.path("windows").get(0).path("window_id").asText());
         markRead.put("role", "MARK");
         markRead.put("end", "2026-01-01T00:03:00Z");
-        assertJson(OpportunityV5.readHydratedRangeV5(markRead), nodeValue("readHydratedRangeV5", markRead));
+        assertJson(OpportunityV5.readHydratedRangeV5(markRead),
+                physicalOracleValue("readHydratedRangeV5", markRead, physicalRoot));
         clearTree(physicalRoot);
     }
 
@@ -362,6 +366,98 @@ final class OpportunityV5NodeOracleTest {
                     .isNotNull();
             return response.deepCopy();
         }
+    }
+
+    /**
+     * Physical partition paths are deliberately absolute in the production contract, but the
+     * frozen oracle was captured on one checkout. Canonicalize only those fixture paths for the
+     * lookup, then restore the current checkout's root in the returned value so the assertion
+     * still covers every path-bearing field without baking a machine-specific path into the key.
+    */
+    private static ObjectNode physicalOracleValue(String action, ObjectNode options, Path actualRoot)
+            throws Exception {
+        Path oracleRoot = oraclePhysicalRoot();
+        ObjectNode canonicalOptions = (ObjectNode) bindPathDependentHashes(
+                relocatePaths(options, actualRoot, oracleRoot));
+        ObjectNode expected = nodeValue(action, canonicalOptions);
+        ObjectNode relocated = (ObjectNode) bindPathDependentHashes(
+                relocatePaths(expected, oracleRoot, actualRoot));
+        return relocated;
+    }
+
+    private static JsonNode bindPathDependentHashes(JsonNode source) {
+        if (source.isObject()) {
+            ObjectNode value = (ObjectNode) source;
+            value.fieldNames().forEachRemaining(name ->
+                    value.set(name, bindPathDependentHashes(value.get(name))));
+            if (value.has("partition_inventory") && value.has("partition_bytes_root_sha256")) {
+                value.put("partition_bytes_root_sha256", partitionBytesRoot(value));
+            }
+            if (value.has("content_sha256")) {
+                value.put("content_sha256", JsonHashes.ownHash(value));
+            }
+            return value;
+        }
+        if (source.isArray()) {
+            ArrayNode value = (ArrayNode) source;
+            for (int index = 0; index < value.size(); index++) {
+                value.set(index, bindPathDependentHashes(value.get(index)));
+            }
+        }
+        return source;
+    }
+
+    private static String partitionBytesRoot(ObjectNode hydration) {
+        List<JsonNode> rows = new java.util.ArrayList<>();
+        hydration.path("partition_inventory").forEach(rows::add);
+        rows.sort(Comparator.comparing(row -> row.path("partition_sha256").asText()));
+        ArrayNode projection = MAPPER.createArrayNode();
+        for (JsonNode inventory : rows) {
+            ObjectNode row = MAPPER.createObjectNode();
+            for (String name : List.of("partition_sha256", "partition_path", "bytes", "row_count",
+                    "min_event_time", "max_event_time", "asset", "instrument", "symbol", "series_role")) {
+                row.set(name, inventory.path(name).deepCopy());
+            }
+            projection.add(row);
+        }
+        return JsonHashes.canonicalSha256(projection);
+    }
+
+    private static Path oraclePhysicalRoot() throws Exception {
+        try (InputStream input = Objects.requireNonNull(
+                OpportunityV5NodeOracleTest.class.getResourceAsStream(
+                        "/oracles/opportunity-v5.json"),
+                "frozen opportunity oracle is missing")) {
+            JsonNode oracle = MAPPER.readTree(input);
+            for (JsonNode response : oracle) {
+                JsonNode path = response.path("value").path("partitions").path(0).path("path");
+                if (path.isTextual() && !path.asText().isBlank()) {
+                    Path partitionPath = Path.of(path.asText());
+                    return partitionPath.getParent().getParent();
+                }
+            }
+        }
+        throw new AssertionError("frozen opportunity oracle has no physical partition path");
+    }
+
+    private static JsonNode relocatePaths(JsonNode source, Path from, Path to) {
+        String fromText = from.toAbsolutePath().normalize().toString();
+        String toText = to.toAbsolutePath().normalize().toString();
+        if (source.isObject()) {
+            ObjectNode result = MAPPER.createObjectNode();
+            source.fields().forEachRemaining(entry ->
+                    result.set(entry.getKey(), relocatePaths(entry.getValue(), from, to)));
+            return result;
+        }
+        if (source.isArray()) {
+            ArrayNode result = MAPPER.createArrayNode();
+            source.forEach(value -> result.add(relocatePaths(value, from, to)));
+            return result;
+        }
+        if (source.isTextual()) {
+            return MAPPER.getNodeFactory().textNode(source.asText().replace(fromText, toText));
+        }
+        return source.deepCopy();
     }
 
     private static void clearTree(Path root) throws Exception {

@@ -534,8 +534,11 @@ public final class SwingEngine {
                 : number(completed.get(completed.size() - 1).get("exit_time")) - number(completed.get(0).get("entry_time"));
         double initialEquity = numberOr(option(options, "initialEquity", "initial_equity"), DEFAULT_INITIAL_EQUITY);
         double totalPnl = sum(completed, "net_pnl");
+        // The frozen Node oracle expects the fdlibm-compatible result. StrictMath
+        // keeps this calculation stable across JVM architectures; Math.pow may
+        // be intrinsified and produce a different final ULP on Linux x64.
         Double annualized = duration != null && duration > 0
-                ? Math.pow(Math.max(EPS, 1 + totalPnl / initialEquity), 365 * 86_400_000d / duration) - 1 : null;
+                ? StrictMath.pow(Math.max(EPS, 1 + totalPnl / initialEquity), 365 * 86_400_000d / duration) - 1 : null;
         double exposureBars = sum(completed, "hold_bars");
         Double totalBars = duration == null ? null : duration / BAR_MS;
         int rawSetupBars = integerOption(options, 0, "rawSetupBars", "raw_setup_bars");
