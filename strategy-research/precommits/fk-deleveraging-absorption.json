@@ -1,0 +1,384 @@
+{
+  "schema": "strategy-precommit/1",
+  "precommit_id": "fk-deleveraging-absorption",
+  "created_at": "2026-08-31T18:56:56.000Z",
+  "stage": "CORE_PREMISE",
+  "phenomenon": "After an abrupt, high-volume downside shock in liquid crypto spot markets, forced and liquidity-insensitive selling can temporarily push price below the level supported by patient spot demand; once the forced flow abates, price may partially rebound over the following several days.",
+  "economic_behavioral_mechanism": "Leveraged long liquidations, collateral constraints, stop cascades, and risk-limit reductions make some holders sell immediately rather than at a reservation price. Patient unlevered spot buyers can supply liquidity only after the completed shock bar makes the dislocation observable. The hypothesized edge is compensation for absorbing urgent inventory, not a forecast that every large decline mean-reverts.",
+  "participants": {
+    "forced_actor": "Leveraged long holders and liquidity-sensitive holders compelled to reduce crypto exposure during a downside shock.",
+    "edge_provider": "Urgent sellers whose execution constraint makes price, volume, and timing secondary to immediate risk reduction.",
+    "edge_consumer": "Patient, unlevered crypto spot liquidity providers able to hold through a multi-day normalization window."
+  },
+  "persistence": "Crypto trades continuously, leverage is structurally available, collateral is marked rapidly, and risk reductions cluster during volatility spikes. Capital willing to absorb those flows is finite because the shock is uncertain in real time and inventory must be held through adverse selection.",
+  "crowding_decay": "The edge should decay if leverage falls materially, liquidation execution becomes smoother, patient capital pre-positions around obvious triggers, or many participants buy the same completed-bar pattern quickly enough that the rebound is captured before a feasible next-bar entry.",
+  "direction": "long",
+  "expression": "Unlevered long positions in liquid Binance crypto spot pairs, entered no earlier than the first tradable instant after the qualifying 4-hour bar closes; no derivatives, short positions, or non-crypto instruments in the core baseline.",
+  "holding_horizon": {
+    "min": 2,
+    "max": 10,
+    "unit": "days"
+  },
+  "expected_signal_frequency": {
+    "min": 0.25,
+    "max": 3,
+    "unit": "qualifying episodes per asset-month"
+  },
+  "expected_win_rate": {
+    "min": 0.4,
+    "max": 0.58
+  },
+  "payoff": {
+    "average_win_r": {
+      "min": 1.1,
+      "max": 2.5
+    },
+    "average_loss_r": {
+      "min": -1.2,
+      "max": -0.7
+    },
+    "qualitative_shape": "Frequent small-to-full predefined losses when the selloff continues, offset by less frequent multi-day normalization gains; no averaging down is assumed."
+  },
+  "regimes": {
+    "expected_to_work": [
+      "Temporary leverage flushes inside otherwise liquid, functioning markets.",
+      "Fast downside shocks followed by declining sell pressure and continued venue availability.",
+      "Broad risk-off episodes where the tested asset retains adequate spot liquidity and is not impaired idiosyncratically."
+    ],
+    "expected_to_fail": [
+      "Persistent crypto bear trends driven by new fundamental information rather than temporary flow imbalance.",
+      "Asset-specific insolvency, exploit, delisting, depeg, or regulatory impairment.",
+      "Venue outages or liquidity gaps that prevent the next-bar execution assumed by the baseline.",
+      "Slow orderly declines without evidence of urgent, concentrated selling."
+    ]
+  },
+  "failure_invalidation_mechanism": "The mechanism is invalidated if completed-bar downside shock episodes do not produce positive net expectancy after conservative costs, do not outperform matched non-shock downside controls, or any apparent edge is confined to one asset, one market cycle, or overlapping market-wide episodes that disappear after dependence-aware resampling.",
+  "required_inputs": [
+    {
+      "input_id": "completed_4h_spot_ohlcv",
+      "availability": {
+        "rule": "A bar becomes usable only after its official 4-hour close time, and its recorded ingestion/as-of time must be no later than the decision time."
+      },
+      "point_in_time": {
+        "status": "VERIFIED",
+        "completed_bar_only": true
+      },
+      "evidence_family": "spot-price-volume-shock",
+      "role": "SETUP"
+    }
+  ],
+  "falsifier": {
+    "test": "Predeclare one fixed completed-4h-bar shock rule without parameter search, enter at the next feasible bar under conservative spot costs, and compare net R over the fixed holding policy with matched non-event downside bars using market-wide episode blocks.",
+    "null": "The dependence-adjusted net expectancy is less than or equal to zero, or is not better than the matched downside-control expectancy.",
+    "rejection_thresholds": {
+      "maximum_statistic_p_value": 0.1,
+      "minimum_bootstrap_p20_expectancy_r": 0.05,
+      "minimum_effective_independent_episode_count": 30
+    }
+  },
+  "tradable_instrument_contract": {
+    "universe": "CRYPTO_ONLY",
+    "instruments": [
+      {
+        "asset": "btc",
+        "asset_class": "crypto",
+        "instrument_type": "spot"
+      },
+      {
+        "asset": "eth",
+        "asset_class": "crypto",
+        "instrument_type": "spot"
+      },
+      {
+        "asset": "sol",
+        "asset_class": "crypto",
+        "instrument_type": "spot"
+      },
+      {
+        "asset": "bnb",
+        "asset_class": "crypto",
+        "instrument_type": "spot"
+      },
+      {
+        "asset": "xrp",
+        "asset_class": "crypto",
+        "instrument_type": "spot"
+      },
+      {
+        "asset": "ada",
+        "asset_class": "crypto",
+        "instrument_type": "spot"
+      },
+      {
+        "asset": "link",
+        "asset_class": "crypto",
+        "instrument_type": "spot"
+      },
+      {
+        "asset": "aave",
+        "asset_class": "crypto",
+        "instrument_type": "spot"
+      }
+    ]
+  },
+  "trade_assets": [
+    "btc",
+    "eth",
+    "sol",
+    "bnb",
+    "xrp",
+    "ada",
+    "link",
+    "aave"
+  ],
+  "non_crypto_context_only": [],
+  "independence_replication_groups": [
+    "market-wide shock episode blocks",
+    "btc-eth major-asset replication block",
+    "sol-bnb-xrp-ada large-cap-alt replication block",
+    "link-aave defi replication block"
+  ],
+  "role_of_composite_score": "None in CORE_PREMISE. A composite score is deferred until the fixed score-free baseline survives its own falsifier; any later score must be tested only for incremental out-of-sample value.",
+  "legacy_relationship": {
+    "related_strategy_id": "fk-deleveraging-absorption",
+    "related_definition": "definitions/fk-deleveraging-absorption/v001.json",
+    "treatment": "The legacy reconstruction and its parameter grid are already exposed evidence. They may inform provenance and candidate accounting but cannot serve as sealed or clean confirmation of this premise-first baseline."
+  },
+  "candidate_template": {
+    "id": "fixed-completed-bar-core-baseline",
+    "direction": "long",
+    "entry_timing": "next feasible Binance spot execution after a qualifying completed 4-hour shock bar",
+    "exit_policy": "one fixed, predeclared price-risk and maximum-holding policy; no averaging down",
+    "instruments": [
+      {
+        "asset": "btc",
+        "asset_class": "crypto",
+        "instrument_type": "spot"
+      },
+      {
+        "asset": "eth",
+        "asset_class": "crypto",
+        "instrument_type": "spot"
+      },
+      {
+        "asset": "sol",
+        "asset_class": "crypto",
+        "instrument_type": "spot"
+      },
+      {
+        "asset": "bnb",
+        "asset_class": "crypto",
+        "instrument_type": "spot"
+      },
+      {
+        "asset": "xrp",
+        "asset_class": "crypto",
+        "instrument_type": "spot"
+      },
+      {
+        "asset": "ada",
+        "asset_class": "crypto",
+        "instrument_type": "spot"
+      },
+      {
+        "asset": "link",
+        "asset_class": "crypto",
+        "instrument_type": "spot"
+      },
+      {
+        "asset": "aave",
+        "asset_class": "crypto",
+        "instrument_type": "spot"
+      }
+    ]
+  },
+  "feature_contract": {
+    "series": [
+      {
+        "series_id": "btc-binance-spot-4h",
+        "asset": "btc",
+        "asset_class": "crypto",
+        "timeframe": "4h",
+        "context_only": false,
+        "tradable": true,
+        "point_in_time": {
+          "status": "VERIFIED",
+          "completed_bar_only": true
+        }
+      },
+      {
+        "series_id": "eth-binance-spot-4h",
+        "asset": "eth",
+        "asset_class": "crypto",
+        "timeframe": "4h",
+        "context_only": false,
+        "tradable": true,
+        "point_in_time": {
+          "status": "VERIFIED",
+          "completed_bar_only": true
+        }
+      },
+      {
+        "series_id": "sol-binance-spot-4h",
+        "asset": "sol",
+        "asset_class": "crypto",
+        "timeframe": "4h",
+        "context_only": false,
+        "tradable": true,
+        "point_in_time": {
+          "status": "VERIFIED",
+          "completed_bar_only": true
+        }
+      },
+      {
+        "series_id": "bnb-binance-spot-4h",
+        "asset": "bnb",
+        "asset_class": "crypto",
+        "timeframe": "4h",
+        "context_only": false,
+        "tradable": true,
+        "point_in_time": {
+          "status": "VERIFIED",
+          "completed_bar_only": true
+        }
+      },
+      {
+        "series_id": "xrp-binance-spot-4h",
+        "asset": "xrp",
+        "asset_class": "crypto",
+        "timeframe": "4h",
+        "context_only": false,
+        "tradable": true,
+        "point_in_time": {
+          "status": "VERIFIED",
+          "completed_bar_only": true
+        }
+      },
+      {
+        "series_id": "ada-binance-spot-4h",
+        "asset": "ada",
+        "asset_class": "crypto",
+        "timeframe": "4h",
+        "context_only": false,
+        "tradable": true,
+        "point_in_time": {
+          "status": "VERIFIED",
+          "completed_bar_only": true
+        }
+      },
+      {
+        "series_id": "link-binance-spot-4h",
+        "asset": "link",
+        "asset_class": "crypto",
+        "timeframe": "4h",
+        "context_only": false,
+        "tradable": true,
+        "point_in_time": {
+          "status": "VERIFIED",
+          "completed_bar_only": true
+        }
+      },
+      {
+        "series_id": "aave-binance-spot-4h",
+        "asset": "aave",
+        "asset_class": "crypto",
+        "timeframe": "4h",
+        "context_only": false,
+        "tradable": true,
+        "point_in_time": {
+          "status": "VERIFIED",
+          "completed_bar_only": true
+        }
+      }
+    ],
+    "inputs": [
+      {
+        "input_id": "completed_4h_spot_ohlcv",
+        "availability": {
+          "rule": "The official bar close and stored ingestion/as-of timestamp must both be no later than the decision time."
+        },
+        "point_in_time": {
+          "status": "VERIFIED",
+          "completed_bar_only": true
+        },
+        "evidence_family": "spot-price-volume-shock",
+        "role": "SETUP"
+      }
+    ]
+  },
+  "experiment": {
+    "experiment_id": "fk-deleveraging-absorption-core-v001",
+    "evidence_phase": "DEVELOPMENT",
+    "ablation_role": "NO_SELECTION_SEARCH",
+    "required_assets": [
+      "btc",
+      "eth",
+      "sol",
+      "bnb",
+      "xrp",
+      "ada",
+      "link",
+      "aave"
+    ],
+    "grid": {},
+    "acceptance": {
+      "robust_stats": {
+        "max_statistic_p_value": 0.1,
+        "minimum_bootstrap_p20_expectancy_r": 0.05,
+        "minimum_effective_independent_episode_count": 30,
+        "maximum_drawdown_r": 15,
+        "maximum_cost_r": 0.15
+      },
+      "plateau": {},
+      "stress": {
+        "required_scenarios": [
+          {
+            "id": "fee_slippage",
+            "multiplier": 2,
+            "minimum_expectancy_r": 0,
+            "minimum_observations": 30
+          },
+          {
+            "id": "funding_carry",
+            "multiplier": 1,
+            "minimum_expectancy_r": 0,
+            "minimum_observations": 30,
+            "spot_policy": "record zero funding debit explicitly"
+          },
+          {
+            "id": "adverse_execution_gap",
+            "debit_r": 0.1,
+            "minimum_expectancy_r": 0,
+            "minimum_observations": 30
+          },
+          {
+            "id": "liquidity_capacity",
+            "maximum_participation_rate": 0.001,
+            "minimum_expectancy_r": 0,
+            "minimum_observations": 30
+          },
+          {
+            "id": "venue_outage_blackout",
+            "windows": [
+              {
+                "venue": "binance",
+                "start": "2024-01-01T00:00:00.000Z",
+                "end": "2024-01-02T00:00:00.000Z"
+              }
+            ],
+            "window_basis": "Synthetic predeclared 24-hour blackout used only as an operational resilience stress; it is not asserted to be a historical Binance outage.",
+            "minimum_expectancy_r": 0,
+            "minimum_observations": 30
+          }
+        ]
+      },
+      "portfolio": {
+        "minimum_accepted_trades": 60,
+        "maximum_drawdown_pct": 20,
+        "minimum_net_pnl": 0
+      }
+    }
+  },
+  "status": "FROZEN",
+  "content_sha256": "96aafcc9d007a775d0df44c5a391bfc89043b6aee457b988f25019533c5f2ea8"
+}
