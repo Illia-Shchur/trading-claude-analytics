@@ -39,6 +39,9 @@ target/
 /.jqwik-database
 **/.jqwik-database
 analytics-research/undefined/
+analytics-research/null/
+analytics-research/*.jsonl
+analytics-research/"/
 
 # report-machine/2 draft and renderer scratch (never committed)
 /.report-run/

@@ -87,16 +87,18 @@ public final class StrategyResearchAuthoritativeV5NodeOracleTest {
         System.out.println("PASS StrategyResearchAuthoritativeV5NodeOracleTest checks=" + checks);
     }
 
-    private static void authoritativeDispatcherCoversEveryCanonicalCommandAndAlias() {
+    private static void authoritativeDispatcherCoversEveryCanonicalCommandAndAlias() throws IOException {
         List<String> commands = List.of("data-backfill", "data-raw-replay", "data-local-raw-replay",
                 "feature-build", "metadata-build", "opportunity-envelope", "artifact-build",
                 "research-init", "statistical-genesis", "experiment-freeze", "search-genetic",
                 "research-run", "overfit-audit", "prospective-runner", "readiness-audit",
                 "validate", "index");
         equal(17, commands.size(), "authoritative dispatcher canonical and alias inventory");
+        Path recordRoot = temporary("dispatcher-records");
         for (String command : commands) {
             try {
-                JsonNode value = StrategyResearchAuthoritativeV5.runAuthoritativeV5Cli(command, object());
+                ObjectNode options = object().put("record_root", recordRoot.resolve(command).toString());
+                JsonNode value = StrategyResearchAuthoritativeV5.runAuthoritativeV5Cli(command, options);
                 truth(value != null, "authoritative dispatcher returns a value for " + command);
             } catch (RuntimeException expected) {
                 truth(expected.getMessage() != null && !expected.getMessage().isBlank(),
