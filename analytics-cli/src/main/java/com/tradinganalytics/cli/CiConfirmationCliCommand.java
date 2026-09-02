@@ -8,7 +8,6 @@ import com.tradinganalytics.research.legacy.LegacyResearchV3;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -61,7 +60,7 @@ public class CiConfirmationCliCommand implements Callable<Integer> {
             throw new IllegalStateException("CONFIRMATION_RUNNER_UNAVAILABLE: public unseen-data custody/fetch "
                     + "and frozen authoritative evaluation are not implemented; no CI_ATTESTED_CONFIRMATION can be produced");
         } catch (Exception exception) {
-            spec.commandLine().getErr().println(message(exception));
+            spec.commandLine().getErr().println(CliMessages.message(exception));
             return 1;
         }
     }
@@ -117,16 +116,11 @@ public class CiConfirmationCliCommand implements Callable<Integer> {
     }
 
     private static String runGit(Path directory, String... arguments) throws Exception {
-        List<String> command = new ArrayList<>(); command.add("git"); command.addAll(List.of(arguments));
-        Process process = new ProcessBuilder(command).directory(directory.toFile()).start();
-        String stdout = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-        String stderr = new String(process.getErrorStream().readAllBytes(), StandardCharsets.UTF_8);
-        if (process.waitFor() != 0) throw new IllegalStateException(stderr.trim());
-        return stdout;
+        try {
+            return CliProcessSupport.runGit(directory, arguments);
+        } catch (CliProcessSupport.GitCommandFailure error) {
+            throw new IllegalStateException(error.getMessage(), error);
+        }
     }
 
-    private static String message(Exception exception) {
-        String value = exception.getMessage();
-        return value == null || value.isBlank() ? exception.getClass().getSimpleName() : value;
-    }
 }

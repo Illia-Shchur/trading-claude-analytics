@@ -9,7 +9,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Callable;
@@ -89,7 +88,7 @@ public class CiBurnTagCliCommand implements Callable<Integer> {
             spec.commandLine().getOut().println(JSON.writeValueAsString(response));
             return 0;
         } catch (Exception exception) {
-            spec.commandLine().getErr().println(message(exception));
+            spec.commandLine().getErr().println(CliMessages.message(exception));
             return 1;
         }
     }
@@ -111,23 +110,14 @@ public class CiBurnTagCliCommand implements Callable<Integer> {
     }
 
     private static String runGit(Path directory, String... arguments) throws Exception {
-        List<String> command = new ArrayList<>(); command.add("git"); command.addAll(List.of(arguments));
-        Process process = new ProcessBuilder(command).directory(directory.toFile()).start();
-        String stdout = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-        String stderr = new String(process.getErrorStream().readAllBytes(), StandardCharsets.UTF_8);
-        int status = process.waitFor();
-        if (status != 0) {
+        try {
+            return CliProcessSupport.runGit(directory, arguments);
+        } catch (CliProcessSupport.GitCommandFailure error) {
             if (arguments.length >= 2 && "rev-parse".equals(arguments[0]) && "--verify".equals(arguments[1])) {
                 throw new MissingGitRefException();
             }
-            throw new IllegalStateException(stderr.trim());
+            throw new IllegalStateException(error.getMessage(), error);
         }
-        return stdout;
-    }
-
-    private static String message(Exception exception) {
-        String value = exception.getMessage();
-        return value == null || value.isBlank() ? exception.getClass().getSimpleName() : value;
     }
 
     @FunctionalInterface
