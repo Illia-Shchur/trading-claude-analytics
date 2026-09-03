@@ -118,8 +118,17 @@ final class MacroDataEndpoints {
             while (cell.find()) {
                 Matcher reference = REFERENCE.matcher(cell.group(1)); Matcher value = VALUE.matcher(cell.group(2));
                 if (!reference.find() || !value.find()) continue;
-                int sharedIndex = Integer.parseInt(value.group(1));
-                String text = cell.group(1).contains("t=\"s\"") ? shared.get(sharedIndex) : xmlText(value.group(1));
+                String rawValue = value.group(1);
+                String text;
+                if (cell.group(1).contains("t=\"s\"")) {
+                    int sharedIndex = Integer.parseInt(rawValue);
+                    if (sharedIndex < 0 || sharedIndex >= shared.size()) {
+                        throw new IllegalArgumentException("State Street XLSX: invalid shared-string index " + sharedIndex);
+                    }
+                    text = shared.get(sharedIndex);
+                } else {
+                    text = xmlText(rawValue);
+                }
                 cells.put(reference.group(1), text);
             }
             rows.add(cells);

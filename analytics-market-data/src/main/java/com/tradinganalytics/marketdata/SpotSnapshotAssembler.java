@@ -22,7 +22,7 @@ final class SpotSnapshotAssembler {
     ObjectNode assemble(MarketFetchSupport.AssetConfig asset, JsonNode cgSpot,
                         ArrayNode daily, ArrayNode cross, Map<String, JsonNode> fetched, long now) {
         Double yahoo = lastClose(daily);
-        Double cg = asset.coinGeckoId() == null ? null : nullableNumber(at(cgSpot, asset.coinGeckoId(), "usd"));
+        Double cg = asset.coinGeckoId() == null ? null : nullablePositiveNumber(at(cgSpot, asset.coinGeckoId(), "usd"));
         Double crossValue = lastClose(cross);
         ArrayNode sources = json.createArrayNode();
         addSource(sources, "CoinGecko", cg);
@@ -60,7 +60,7 @@ final class SpotSnapshotAssembler {
         }
 
         ObjectNode panel = MarketSeriesAnalytics.spotPanel(quotes, now, 120, 0.5);
-        Double panelMedian = nullableNumber(panel.get("canonical"));
+        Double panelMedian = nullablePositiveNumber(panel.get("canonical"));
         Double priority = sources.isEmpty() ? null : sources.get(0).path("value").asDouble();
         Double canonical = panelMedian != null ? panelMedian : priority;
         ObjectNode output = json.createObjectNode();
@@ -72,7 +72,8 @@ final class SpotSnapshotAssembler {
         } else {
             output.set("warning", NullNode.instance);
         }
-        output.put("canonical_source", panelMedian != null ? "panel_median" : "priority_first_fallback");
+        output.put("canonical_source", panelMedian != null ? "panel_median"
+                : priority != null ? "priority_first_fallback" : "unavailable");
         output.set("panel", panel);
         putNullable(output, "canonical_median", panelMedian);
         output.set("method_conflict", NullNode.instance);
@@ -103,7 +104,13 @@ final class SpotSnapshotAssembler {
     }
 
     private static Double lastClose(ArrayNode rows) {
-        return rows == null || rows.isEmpty() ? null : nullableNumber(rows.get(rows.size() - 1).get("close"));
+        return rows == null || rows.isEmpty()
+                ? null : nullablePositiveNumber(rows.get(rows.size() - 1).get("close"));
+    }
+
+    private static Double nullablePositiveNumber(JsonNode value) {
+        Double number = nullableNumber(value);
+        return number != null && number > 0.0 ? number : null;
     }
 
     private static JsonNode at(JsonNode value, String... path) {

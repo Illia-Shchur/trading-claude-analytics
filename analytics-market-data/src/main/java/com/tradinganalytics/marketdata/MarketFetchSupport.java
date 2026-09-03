@@ -71,10 +71,15 @@ public final class MarketFetchSupport {
         } else {
             double rounded = ComputeMath.round2(average);
             putNumber(sma, "value", rounded);
-            double price = spot == null ? 0.0 : spot;
-            putNumber(sma, "pct_vs_spot", ComputeMath.round2((price / rounded - 1.0) * 100.0));
-            sma.put("within_8pct", Math.abs(price / rounded - 1.0) <= 0.08);
-            sma.put("note", "gate 6: price within ±8% of the 200-week MA, above OR below");
+            if (spot == null || !Double.isFinite(spot) || spot <= 0.0) {
+                sma.set("pct_vs_spot", NullNode.instance);
+                sma.set("within_8pct", NullNode.instance);
+                sma.put("note", "gate 6 unavailable: canonical spot is missing or invalid");
+            } else {
+                putNumber(sma, "pct_vs_spot", ComputeMath.round2((spot / rounded - 1.0) * 100.0));
+                sma.put("within_8pct", Math.abs(spot / rounded - 1.0) <= 0.08);
+                sma.put("note", "gate 6: price within ±8% of the 200-week MA, above OR below");
+            }
         }
         return output;
     }

@@ -184,6 +184,24 @@ final class ResearchDataTest {
     }
 
     @Test
+    void assetOnlyParquetQueryDoesNotRequireATimeColumn() throws Exception {
+        Path staging = temporary.resolve("asset-only.jsonl");
+        Files.writeString(staging, """
+                {"asset":"btc","close":100.5}
+                {"asset":"eth","close":200.5}
+                """, StandardCharsets.UTF_8);
+        Path parquet = temporary.resolve("asset-only.parquet");
+        ResearchData.writeParquet(staging, parquet);
+
+        List<ObjectNode> rows = ResearchData.queryParquet(parquet,
+                new ResearchData.QueryOptions(null, null, List.of("BTC")));
+
+        assertThat(rows).hasSize(1);
+        assertThat(rows.get(0).path("asset").asText()).isEqualTo("btc");
+        assertThat(rows.get(0).path("close").asDouble()).isEqualTo(100.5);
+    }
+
+    @Test
     void snapshotIsImmutablePitValidatedAndConfinesPartitionComponents() throws Exception {
         Path input = temporary.resolve("labels.jsonl");
         Files.writeString(input, """

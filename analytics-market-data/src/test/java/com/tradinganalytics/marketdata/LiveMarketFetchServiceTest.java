@@ -1,6 +1,7 @@
 package com.tradinganalytics.marketdata;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tradinganalytics.infrastructure.marketdata.PublicDataAdapters;
@@ -98,6 +99,31 @@ class LiveMarketFetchServiceTest {
         assertThat(result.has("gap_coverage")).isFalse();
     }
 
+    @Test
+    void venueQuoteAdaptersRejectNullPrices() {
+        PublicDataAdapters.InjectableHttpClient getter = (uri, headers) -> {
+            String value = uri.toString();
+            if (value.contains("binance.com")) {
+                return response(200, "{\"lastPrice\":null,\"closeTime\":1}".getBytes(StandardCharsets.UTF_8));
+            }
+            if (value.contains("coinbase.com")) {
+                return response(200, "{\"price\":null,\"time\":\"2026-08-28T12:34:56Z\"}"
+                        .getBytes(StandardCharsets.UTF_8));
+            }
+            return response(200, "{\"error\":[],\"result\":{\"pair\":{\"c\":[null]}}}"
+                    .getBytes(StandardCharsets.UTF_8));
+        };
+        MarketDataEndpoints endpoints = new MarketDataEndpoints(
+                new MarketHttpClient(getter, null, millis -> { }, JSON), JSON, () -> NOW, null);
+
+        assertThatThrownBy(() -> endpoints.binanceQuote("BTCUSDT"))
+                .hasMessage("binance: invalid lastPrice for BTCUSDT");
+        assertThatThrownBy(() -> endpoints.coinbaseQuote("BTC-USD"))
+                .hasMessage("coinbase: invalid price for BTC-USD");
+        assertThatThrownBy(() -> endpoints.krakenQuote("XBTUSD"))
+                .hasMessage("kraken: invalid price for XBTUSD");
+    }
+
     private static String fredCsv() {
         StringBuilder value = new StringBuilder("DATE,VALUE\n");
         for (int index = 0; index < 10; index++) value.append("2026-08-")
@@ -151,8 +177,8 @@ class LiveMarketFetchServiceTest {
                 <worksheet><sheetData>
                 <row><c r="B1" t="s"><v>1</v></c></row>
                 <row><c r="A2" t="s"><v>0</v></c></row>
-                <row><c r="A3" t="s"><v>2</v></c></row>
-                <row><c r="A4" t="s"><v>3</v></c></row>
+                <row><c r="A3" t="s"><v>2</v></c><c r="E3" t="n"><v>8.008136</v></c></row>
+                <row><c r="A4" t="s"><v>3</v></c><c r="G4" t="n"><v>2.96216364E8</v></c></row>
                 </sheetData></worksheet>
                 """;
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();

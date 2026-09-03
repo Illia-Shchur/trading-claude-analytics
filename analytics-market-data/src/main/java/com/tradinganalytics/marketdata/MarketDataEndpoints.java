@@ -46,20 +46,20 @@ public final class MarketDataEndpoints {
 
     public ObjectNode binanceQuote(String symbol) throws IOException {
         JsonNode value = http.getJson(uri("https://api.binance.com/api/v3/ticker/24hr?symbol=" + encode(symbol)));
-        if (value.get("lastPrice") == null) throw new IllegalArgumentException("binance: no lastPrice for " + symbol);
+        double price = positiveNumber(value.get("lastPrice"), "binance: invalid lastPrice for " + symbol);
         ObjectNode output = json.createObjectNode();
         output.put("source", "Binance"); output.put("symbol", symbol);
-        output.put("value", number(value.get("lastPrice"))); output.put("ts", (long) number(value.get("closeTime")));
+        output.put("value", price); output.put("ts", (long) number(value.get("closeTime")));
         output.put("ts_kind", "venue");
         return output;
     }
 
     public ObjectNode coinbaseQuote(String product) throws IOException {
         JsonNode value = http.getJson(uri("https://api.exchange.coinbase.com/products/" + encode(product) + "/ticker"));
-        if (value.get("price") == null) throw new IllegalArgumentException("coinbase: no price for " + product);
+        double price = positiveNumber(value.get("price"), "coinbase: invalid price for " + product);
         ObjectNode output = json.createObjectNode();
         output.put("source", "Coinbase"); output.put("symbol", product);
-        output.put("value", number(value.get("price")));
+        output.put("value", price);
         output.put("ts", Instant.parse(value.path("time").asText()).toEpochMilli());
         output.put("ts_kind", "venue");
         return output;
@@ -78,9 +78,10 @@ public final class MarketDataEndpoints {
             if (values.hasNext()) ticker = values.next();
         }
         if (ticker == null || !ticker.path("c").isArray()) throw new IllegalArgumentException("kraken: no ticker for " + pair);
+        double price = positiveNumber(ticker.path("c").get(0), "kraken: invalid price for " + pair);
         ObjectNode output = json.createObjectNode();
         output.put("source", "Kraken"); output.put("symbol", pair);
-        output.put("value", number(ticker.path("c").get(0))); output.putNull("ts");
+        output.put("value", price); output.putNull("ts");
         output.put("ts_kind", "receipt");
         return output;
     }
@@ -359,6 +360,17 @@ public final class MarketDataEndpoints {
 
     private static double number(JsonNode value) {
         return com.tradinganalytics.core.compute.ComputeMath.jsNumber(value);
+    }
+
+    private static double positiveNumber(JsonNode value, String errorMessage) {
+        if (value == null || value.isNull()) {
+            throw new IllegalArgumentException(errorMessage);
+        }
+        double parsed = number(value);
+        if (!Double.isFinite(parsed) || parsed <= 0.0) {
+            throw new IllegalArgumentException(errorMessage);
+        }
+        return parsed;
     }
 
     private static void putNumber(ObjectNode target, String key, double value) {

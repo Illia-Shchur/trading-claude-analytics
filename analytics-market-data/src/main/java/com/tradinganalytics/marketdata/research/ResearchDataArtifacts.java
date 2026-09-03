@@ -82,25 +82,23 @@ final class ResearchDataArtifacts {
         }
         PathConfinement.validateSinglyLinkedFile(input, "Parquet input");
         options = options == null ? ResearchData.QueryOptions.all() : options;
+        Set<String> columns = parquetColumns(input);
+        String timeColumn = columns.contains("event_time") ? "event_time"
+                : columns.contains("decision_time") ? "decision_time" : null;
+        if ((options.from() != null || options.to() != null) && timeColumn == null) {
+            throw failure("authoritative Parquet query requires event_time or decision_time for time bounds");
+        }
         List<String> clauses = new ArrayList<>();
         if (options.from() != null) {
-            clauses.add("event_time >= " + options.from());
+            clauses.add(timeColumn + " >= " + options.from());
         }
         if (options.to() != null) {
-            clauses.add("event_time <= " + options.to());
+            clauses.add(timeColumn + " <= " + options.to());
         }
         if (options.assets() != null && !options.assets().isEmpty()) {
             clauses.add("lower(cast(asset as varchar)) IN (" + options.assets().stream()
                     .map(asset -> "'" + asset.toLowerCase(Locale.ROOT).replace("'", "''") + "'")
                     .reduce((left, right) -> left + "," + right).orElse("") + ")");
-        }
-        String timeColumn = parquetColumns(input).contains("event_time") ? "event_time"
-                : parquetColumns(input).contains("decision_time") ? "decision_time" : null;
-        if ((!clauses.isEmpty() || options.from() != null || options.to() != null) && timeColumn == null) {
-            throw failure("authoritative Parquet query requires event_time or decision_time");
-        }
-        if (timeColumn != null && !"event_time".equals(timeColumn)) {
-            clauses.replaceAll(clause -> clause.replace("event_time", timeColumn));
         }
         String query = "SELECT * FROM read_parquet('" + sql(input) + "')"
                 + (clauses.isEmpty() ? "" : " WHERE " + String.join(" AND ", clauses))

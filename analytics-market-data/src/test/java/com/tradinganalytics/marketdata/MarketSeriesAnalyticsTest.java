@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class MarketSeriesAnalyticsTest {
@@ -35,6 +36,50 @@ class MarketSeriesAnalyticsTest {
         assertThat(output.path("canonical").isNull()).isTrue();
         assertThat(output.path("low_confidence").asBoolean()).isTrue();
         assertThat(output.path("warning").asText()).isEqualTo("no usable spot quotes");
+    }
+
+    @Test
+    void spotPanelExcludesNullAndNonPositiveQuotes() throws Exception {
+        ArrayNode quotes = (ArrayNode) JSON.readTree("""
+                [{"source":"valid","value":100,"ts":1000000,"ts_kind":"venue"},
+                 {"source":"null","value":null,"ts":1000000,"ts_kind":"venue"},
+                 {"source":"zero","value":0,"ts":1000000,"ts_kind":"venue"}]
+                """);
+
+        var output = MarketSeriesAnalytics.spotPanel(quotes, 1_000_000L, 120, 0.5);
+
+        assertThat(output.path("canonical").asDouble()).isEqualTo(100.0);
+        assertThat(output.path("n_synchronized").asInt()).isEqualTo(1);
+        assertThat(output.path("spread_pct").asDouble()).isZero();
+        assertThat(output.path("excluded")).hasSize(2);
+        assertThat(output.path("excluded").get(0).path("reason").asText()).contains("finite and positive");
+    }
+
+    @Test
+    void spotPanelExcludesQuotesBeyondFutureClockSkew() throws Exception {
+        ArrayNode quotes = (ArrayNode) JSON.readTree("""
+                [{"source":"future","value":999,"ts":9000000,"ts_kind":"venue"}]
+                """);
+
+        var output = MarketSeriesAnalytics.spotPanel(quotes, 1_000_000L, 120, 0.5);
+
+        assertThat(output.path("canonical").isNull()).isTrue();
+        assertThat(output.path("n_synchronized").asInt()).isZero();
+        assertThat(output.path("excluded").get(0).path("reason").asText()).contains("in the future");
+    }
+
+    @Test
+    void spotAssemblerDoesNotFallBackToANonPositiveSource() throws Exception {
+        var coinGecko = JSON.readTree("""
+                {"bitcoin":{"usd":0,"last_updated_at":1800000000}}
+                """);
+        var output = new SpotSnapshotAssembler(JSON).assemble(
+                MarketFetchSupport.ASSETS.get("btc"), coinGecko,
+                JSON.createArrayNode(), JSON.createArrayNode(), Map.of(), 1_800_000_000_000L);
+
+        assertThat(output.path("canonical").isNull()).isTrue();
+        assertThat(output.path("sources")).isEmpty();
+        assertThat(output.path("canonical_source").asText()).isEqualTo("unavailable");
     }
 
     @Test

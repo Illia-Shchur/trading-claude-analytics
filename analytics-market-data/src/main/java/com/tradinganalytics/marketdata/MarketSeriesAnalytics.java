@@ -13,6 +13,7 @@ import java.util.function.Predicate;
 /** Pure completed-bar series and spot-panel contracts from {@code tools/lib.mjs}. */
 public final class MarketSeriesAnalytics {
     private static final JsonNodeFactory NODES = JsonNodeFactory.instance;
+    private static final long MAX_FUTURE_CLOCK_SKEW_MILLIS = 5L * 60_000L;
 
     private MarketSeriesAnalytics() {
     }
@@ -42,16 +43,30 @@ public final class MarketSeriesAnalytics {
         List<JsonNode> fresh = new ArrayList<>();
         List<JsonNode> stale = new ArrayList<>();
         List<JsonNode> barCloses = new ArrayList<>();
+        List<ObjectNode> rejected = new ArrayList<>();
         for (JsonNode quote : quotes) {
+            if (!validQuoteValue(quote)) {
+                rejected.add(excludedQuote(quote, "EXCLUDED — quote value must be finite and positive"));
+                continue;
+            }
             if ("bar_close".equals(quote.path("ts_kind").asText())) {
                 barCloses.add(quote);
                 continue;
             }
             JsonNode timestamp = quote.get("ts");
-            if (timestamp == null || timestamp.isNull() || nowMillis - timestamp.longValue() <= windowMillis) {
+            if (timestamp == null || timestamp.isNull()) {
                 fresh.add(quote);
+            } else if (!timestamp.isNumber() || !Double.isFinite(timestamp.doubleValue())) {
+                rejected.add(excludedQuote(quote, "EXCLUDED — quote timestamp must be numeric or null"));
             } else {
-                stale.add(quote);
+                double ageMillis = (double) nowMillis - timestamp.doubleValue();
+                if (ageMillis < -MAX_FUTURE_CLOCK_SKEW_MILLIS) {
+                    rejected.add(excludedQuote(quote, "EXCLUDED — quote timestamp is in the future"));
+                } else if (ageMillis <= windowMillis) {
+                    fresh.add(quote);
+                } else {
+                    stale.add(quote);
+                }
             }
         }
 
@@ -59,11 +74,12 @@ public final class MarketSeriesAnalytics {
         ArrayNode included = NODES.arrayNode();
         fresh.forEach(value -> included.add(value.deepCopy()));
         ArrayNode excluded = NODES.arrayNode();
+        rejected.forEach(excluded::add);
         for (JsonNode quote : stale) {
             long ageMinutes = Math.round((nowMillis - quote.path("ts").doubleValue()) / 60_000.0);
             Double deltaPercent = provisionalMedian != null && provisionalMedian != 0.0
                     ? Math.abs(quote.path("value").doubleValue() / provisionalMedian - 1.0) * 100.0 : null;
-            ObjectNode row = ((ObjectNode) quote).deepCopy();
+            ObjectNode row = excludedQuote(quote, null);
             row.put("age_min", ageMinutes);
             if (deltaPercent != null && deltaPercent <= spreadFlagPercent) {
                 row.set("reason", NullNode.instance);
@@ -74,9 +90,8 @@ public final class MarketSeriesAnalytics {
             excluded.add(row);
         }
         for (JsonNode quote : barCloses) {
-            ObjectNode row = ((ObjectNode) quote).deepCopy();
+            ObjectNode row = excludedQuote(quote, "frozen bar close — never enters the median");
             row.set("age_min", NullNode.instance);
-            row.put("reason", "frozen bar close — never enters the median");
             excluded.add(row);
         }
 
@@ -92,8 +107,7 @@ public final class MarketSeriesAnalytics {
             spreadPercent = 0.0;
         }
         Boolean spreadGreater = spreadPercent == null ? null : spreadPercent > spreadFlagPercent;
-        JsonNode firstValue = quotes.get(0).get("value");
-        Double priorityFirst = firstValue != null && firstValue.isNumber() ? firstValue.doubleValue() : null;
+        Double priorityFirst = quoteValue(quotes.get(0));
         Double priorityDelta = canonical != null && priorityFirst != null
                 ? round3((priorityFirst / canonical - 1.0) * 100.0) : null;
         boolean lowConfidence = values.size() < 2;
@@ -225,6 +239,30 @@ public final class MarketSeriesAnalytics {
         List<Double> values = new ArrayList<>();
         quotes.forEach(value -> values.add(value.path("value").doubleValue()));
         return ComputeMath.median(values);
+    }
+
+    private static boolean validQuoteValue(JsonNode quote) {
+        return quoteValue(quote) != null;
+    }
+
+    private static Double quoteValue(JsonNode quote) {
+        JsonNode value = quote == null ? null : quote.get("value");
+        if (value == null || !value.isNumber()) return null;
+        double parsed = value.doubleValue();
+        return Double.isFinite(parsed) && parsed > 0.0 ? parsed : null;
+    }
+
+    private static ObjectNode excludedQuote(JsonNode quote, String reason) {
+        ObjectNode row;
+        if (quote instanceof ObjectNode object) {
+            row = object.deepCopy();
+        } else {
+            row = NODES.objectNode();
+            if (quote != null) row.set("quote", quote.deepCopy());
+        }
+        row.set("age_min", NullNode.instance);
+        if (reason == null) row.set("reason", NullNode.instance); else row.put("reason", reason);
+        return row;
     }
 
     private static double round3(double value) {

@@ -47,6 +47,22 @@ class MarketFetchSupportTest {
     }
 
     @Test
+    void weeklyBlockKeepsGateUnknownWhenCanonicalSpotIsMissing() {
+        ArrayNode candles = JSON.createArrayNode();
+        long week = 7L * 86_400_000L;
+        for (int index = 0; index < 200; index++) {
+            candles.addObject().put("t", index * week).put("date", "w" + index).put("close", 100.0);
+        }
+
+        var sma = MarketFetchSupport.weeklyBlock(candles, null, 201 * week).path("sma_200w");
+
+        assertThat(sma.path("value").asDouble()).isEqualTo(100.0);
+        assertThat(sma.path("pct_vs_spot").isNull()).isTrue();
+        assertThat(sma.path("within_8pct").isNull()).isTrue();
+        assertThat(sma.path("note").asText()).contains("canonical spot is missing or invalid");
+    }
+
+    @Test
     void dailyFundingSeriesUsesUtcCalendarDaysAndAnnualizedConvention() throws Exception {
         ArrayNode intervals = (ArrayNode) JSON.readTree("""
                 [{"fundingTime":0,"fundingRate":"0.0001"},
