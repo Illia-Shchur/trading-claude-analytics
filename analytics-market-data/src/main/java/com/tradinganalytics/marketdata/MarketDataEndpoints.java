@@ -11,36 +11,24 @@ import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
-import java.util.function.Predicate;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /** Verified live endpoint adapters used by the Java {@code fetch} command. */
 public final class MarketDataEndpoints {
-    private static final Set<String> BINANCE_USD_QUOTES = Set.of("USDT", "USDC", "FDUSD", "TUSD", "BUSD", "USDP");
-    private static final Pattern SHARED_STRING = Pattern.compile("<si(?:\\s[^>]*)?>([\\s\\S]*?)</si>");
-    private static final Pattern ROW = Pattern.compile("<row(?:\\s[^>]*)?>([\\s\\S]*?)</row>");
-    private static final Pattern CELL = Pattern.compile("<c\\s+([^>]*)>([\\s\\S]*?)</c>");
-    private static final Pattern REFERENCE = Pattern.compile("r=\"([A-Z]+)\\d+\"");
-    private static final Pattern VALUE = Pattern.compile("<v>([\\s\\S]*?)</v>");
     private final MarketHttpClient http;
     private final ObjectMapper json;
     private final java.util.function.LongSupplier clock;
     private final String coinglassApiKey;
+    private final BinanceAggregateFlowBuilder binanceAggregateFlow;
+    private final MacroDataEndpoints macroEndpoints;
 
     public MarketDataEndpoints(MarketHttpClient http, ObjectMapper json,
                                java.util.function.LongSupplier clock, String coinglassApiKey) {
@@ -48,6 +36,8 @@ public final class MarketDataEndpoints {
         this.json = json == null ? new ObjectMapper() : json;
         this.clock = clock == null ? System::currentTimeMillis : clock;
         this.coinglassApiKey = coinglassApiKey;
+        this.binanceAggregateFlow = new BinanceAggregateFlowBuilder(this, this.json, this.clock);
+        this.macroEndpoints = new MacroDataEndpoints(this.http, this.json, this.clock);
     }
 
     public JsonNode rawJson(String url) throws IOException {
@@ -289,88 +279,7 @@ public final class MarketDataEndpoints {
 
     public ObjectNode binanceAggregateMarketFlow(String baseAsset, String preferredSpot,
                                                   String preferredPerpetual, int maxBars) {
-        List<String> errors = new ArrayList<>();
-        JsonNode spotInfo = safe("spot exchangeInfo", this::binanceSpotExchangeInfo, null, errors);
-        JsonNode futuresInfo = safe("USD-M exchangeInfo", this::binanceFuturesExchangeInfo, null, errors);
-        String base = baseAsset == null ? "" : baseAsset.toUpperCase(Locale.ROOT);
-        List<String> spotSymbols = symbols(spotInfo, symbol -> "TRADING".equals(symbol.path("status").asText())
-                && symbol.path("isSpotTradingAllowed").asBoolean(true), base, false);
-        List<String> perpetualSymbols = symbols(futuresInfo,
-                symbol -> "TRADING".equals(symbol.path("status").asText())
-                        && "PERPETUAL".equals(symbol.path("contractType").asText()), base, true);
-        if (spotSymbols.isEmpty() && preferredSpot != null) {
-            spotSymbols = new ArrayList<>(List.of(preferredSpot));
-            errors.add("spot symbol discovery empty; used configured primary pair");
-        }
-        if (perpetualSymbols.isEmpty() && preferredPerpetual != null) {
-            perpetualSymbols = new ArrayList<>(List.of(preferredPerpetual));
-            errors.add("perpetual symbol discovery empty; used configured primary contract");
-        }
-
-        ArrayNode spotGroups = groups(spotSymbols, false, maxBars, errors);
-        ArrayNode futuresGroups = groups(perpetualSymbols, true, maxBars, errors);
-        ArrayNode oiGroups = json.createArrayNode();
-        for (String symbol : perpetualSymbols) {
-            ArrayNode raw = safe("30m OI " + symbol,
-                    () -> binanceOpenInterestHistory(symbol, 500, "30m"), json.createArrayNode(), errors);
-            ArrayNode rows = json.createArrayNode();
-            for (JsonNode row : raw) {
-                ObjectNode mapped = rows.addObject();
-                putNumber(mapped, "time", number(row.get("timestamp")));
-                putNumber(mapped, "value", number(row.get("sumOpenInterestValue")));
-            }
-            if (!rows.isEmpty()) {
-                ObjectNode group = oiGroups.addObject(); group.put("symbol", symbol); group.set("rows", rows);
-            }
-        }
-        ArrayNode fundingGroups = json.createArrayNode();
-        for (String symbol : perpetualSymbols) {
-            ArrayNode raw = safe("funding history " + symbol,
-                    () -> binanceFundingHistory(symbol, 1_000), json.createArrayNode(), errors);
-            ArrayNode rows = json.createArrayNode();
-            for (JsonNode row : raw) {
-                ObjectNode mapped = rows.addObject();
-                putNumber(mapped, "time", number(row.get("fundingTime")));
-                putNumber(mapped, "rate", number(row.get("fundingRate")));
-            }
-            if (!rows.isEmpty()) {
-                ObjectNode group = fundingGroups.addObject(); group.put("symbol", symbol); group.set("rows", rows);
-            }
-        }
-        ArrayNode oiSnapshots = MarketFlowAggregation.aggregateValueSnapshots(oiGroups, 30L * 60_000L);
-        ArrayNode fundingSnapshots = MarketFlowAggregation.oiWeightedFundingSnapshots(
-                oiGroups, fundingGroups, 30L * 60_000L);
-        List<String> futuresFlowSymbols = groupSymbols(futuresGroups);
-        List<String> oiSymbols = groupSymbols(oiGroups);
-        List<String> fundingSymbols = groupSymbols(fundingGroups).stream().filter(oiSymbols::contains).toList();
-
-        ObjectNode output = json.createObjectNode();
-        output.set("spotRows", MarketFlowAggregation.aggregateFlowRows(spotGroups));
-        output.set("futuresRows", MarketFlowAggregation.aggregateFlowRows(futuresGroups));
-        output.set("openInterestRows", MarketFlowAggregation.resampleSnapshotsToCandles(
-                oiSnapshots, 4, 30, maxBars, clock.getAsLong()));
-        output.set("oiWeightedFundingRows", MarketFlowAggregation.resampleSnapshotsToCandles(
-                fundingSnapshots, 4, 30, maxBars, clock.getAsLong()));
-        ObjectNode metadata = output.putObject("metadata");
-        metadata.put("venue", "Binance");
-        metadata.put("scope", "single venue, aggregated across active stable-USD spot pairs and USD-M perpetuals");
-        metadata.set("spot_symbols_discovered", json.valueToTree(spotSymbols));
-        metadata.set("spot_symbols_included", json.valueToTree(groupSymbols(spotGroups)));
-        metadata.set("perpetual_symbols_discovered", json.valueToTree(perpetualSymbols));
-        metadata.set("perpetual_symbols_included", json.valueToTree(perpetualSymbols.stream()
-                .filter(symbol -> futuresFlowSymbols.contains(symbol) && oiSymbols.contains(symbol)
-                        && fundingSymbols.contains(symbol)).toList()));
-        metadata.set("futures_flow_symbols_included", json.valueToTree(futuresFlowSymbols));
-        metadata.set("oi_symbols_included", json.valueToTree(oiSymbols));
-        metadata.set("funding_symbols_included", json.valueToTree(fundingSymbols));
-        metadata.set("quote_assets_treated_as_nominal_usd", json.valueToTree(
-                List.of("USDT", "USDC", "FDUSD", "TUSD", "BUSD", "USDP")));
-        metadata.put("oi_sampling", "30-minute sumOpenInterestValue snapshots resampled to completed 4h OHLC; highs/lows are sampled, not continuous");
-        metadata.put("funding_method", "latest settled fundingRate per contract, weighted by contemporaneous 30-minute USD OI, then resampled to completed 4h OHLC");
-        metadata.put("funding_unit", "raw Binance funding-rate fraction per contract funding interval (0.0001 = 0.01%)");
-        metadata.put("funding_interval_caveat", "Compare sign and relative history. Do not annualize the aggregate unless each included contract funding interval is separately verified.");
-        metadata.set("errors", json.valueToTree(errors));
-        return output;
+        return binanceAggregateFlow.build(baseAsset, preferredSpot, preferredPerpetual, maxBars);
     }
 
     public ObjectNode binanceMetricsDay(String symbol, String date) throws IOException {
@@ -409,140 +318,23 @@ public final class MarketDataEndpoints {
     }
 
     public ObjectNode stateStreetHoldings(byte[] workbook) {
-        Map<String, byte[]> entries = new LinkedHashMap<>();
-        for (PublicDataAdapters.ZipMember member : PublicDataAdapters.parseZipArchive(workbook)) {
-            entries.put(member.name(), member.bytes());
-        }
-        String sharedXml = new String(entries.getOrDefault("xl/sharedStrings.xml", new byte[0]), StandardCharsets.UTF_8);
-        List<String> shared = matches(SHARED_STRING, sharedXml).stream().map(MarketDataEndpoints::xmlText).toList();
-        String sheet = new String(entries.getOrDefault("xl/worksheets/sheet1.xml", new byte[0]), StandardCharsets.UTF_8);
-        if (sheet.isEmpty()) throw new IllegalArgumentException("State Street XLSX: sheet1.xml missing");
-        List<Map<String, String>> rows = new ArrayList<>();
-        for (String rowXml : matches(ROW, sheet)) {
-            Map<String, String> cells = new LinkedHashMap<>();
-            Matcher cell = CELL.matcher(rowXml);
-            while (cell.find()) {
-                Matcher reference = REFERENCE.matcher(cell.group(1)); Matcher value = VALUE.matcher(cell.group(2));
-                if (!reference.find() || !value.find()) continue;
-                int sharedIndex = Integer.parseInt(value.group(1));
-                String text = cell.group(1).contains("t=\"s\"") ? shared.get(sharedIndex) : xmlText(value.group(1));
-                cells.put(reference.group(1), text);
-            }
-            rows.add(cells);
-        }
-        int headerIndex = -1;
-        for (int index = 0; index < rows.size(); index++) {
-            if (rows.get(index).values().stream().anyMatch(value -> "Ticker".equals(value.trim()))) {
-                headerIndex = index; break;
-            }
-        }
-        if (headerIndex < 0) throw new IllegalArgumentException("State Street XLSX: Ticker header missing");
-        String tickerColumn = rows.get(headerIndex).entrySet().stream()
-                .filter(entry -> "Ticker".equals(entry.getValue().trim())).findFirst().orElseThrow().getKey();
-        LinkedHashSet<String> tickers = new LinkedHashSet<>();
-        for (int index = headerIndex + 1; index < rows.size(); index++) {
-            String ticker = rows.get(index).getOrDefault(tickerColumn, "").trim();
-            if (ticker.matches("[A-Z0-9.\\-]+")) tickers.add(ticker);
-        }
-        String asOf = null;
-        for (Map<String, String> row : rows) {
-            String found = row.values().stream().filter(value -> value.startsWith("As of")).findFirst().orElse(null);
-            if (found != null) { asOf = found.replaceFirst("^As of\\s+", ""); break; }
-        }
-        ObjectNode output = json.createObjectNode(); output.set("tickers", json.valueToTree(tickers));
-        if (asOf == null) output.putNull("asOf"); else output.put("asOf", asOf);
-        return output;
+        return macroEndpoints.stateStreetHoldings(workbook);
     }
 
     public ObjectNode equityBreadth200() throws IOException {
-        ObjectNode universe = stateStreetHoldings(http.getBytes(uri(
-                "https://www.ssga.com/library-content/products/fund-data/etfs/us/holdings-daily-us-en-spy.xlsx"), 2, Map.of()));
-        if (universe.path("tickers").isEmpty()) throw new IllegalArgumentException("State Street SPY holdings: no tickers parsed");
-        ObjectNode request = json.createObjectNode();
-        ObjectNode filter = request.putArray("filter").addObject();
-        filter.put("left", "name"); filter.put("operation", "in_range"); filter.set("right", universe.path("tickers").deepCopy());
-        request.putObject("options").put("lang", "en"); request.putArray("markets").add("america");
-        ObjectNode symbols = request.putObject("symbols");
-        symbols.putObject("query").putArray("types").add("stock"); symbols.putArray("tickers");
-        request.putArray("columns").add("name").add("close").add("SMA200");
-        request.putArray("range").add(0).add(universe.path("tickers").size() + 20);
-        JsonNode response = http.postJson(uri("https://scanner.tradingview.com/america/scan"), request);
-        ArrayNode rows = json.createArrayNode();
-        for (JsonNode row : response.path("data")) {
-            JsonNode data = row.path("d"); ObjectNode mapped = rows.addObject();
-            mapped.put("ticker", data.path(0).asText()); putNumber(mapped, "close", number(data.get(1)));
-            putNumber(mapped, "sma200", number(data.get(2)));
-        }
-        ObjectNode output = json.createObjectNode(); output.set("rows", rows);
-        output.put("universeSize", universe.path("tickers").size());
-        output.set("universeAsOf", universe.get("asOf").deepCopy());
-        return output;
+        return macroEndpoints.equityBreadth200();
     }
 
     public ArrayNode stablecoinCharts() throws IOException {
-        return arrayOrEmpty(http.getJson(uri("https://stablecoins.llama.fi/stablecoincharts/all?stablecoin=1")));
+        return macroEndpoints.stablecoinCharts();
     }
 
     public ArrayNode fredCsv(String seriesId) throws IOException {
-        String text = http.getText(uri("https://fred.stlouisfed.org/graph/fredgraph.csv?id=" + encode(seriesId)));
-        String[] lines = text.trim().split("\\r?\\n");
-        ArrayNode output = json.createArrayNode();
-        for (int index = Math.max(1, lines.length - 10); index < lines.length; index++) {
-            String[] cells = lines[index].split(",", -1);
-            if (cells.length < 2 || ".".equals(cells[1])) continue;
-            ObjectNode row = output.addObject(); row.put("date", cells[0]); putNumber(row, "value", Double.parseDouble(cells[1]));
-        }
-        return output;
+        return macroEndpoints.fredCsv(seriesId);
     }
 
     public String isoDayOffset(int days) {
-        return Instant.ofEpochMilli(clock.getAsLong()).atZone(ZoneOffset.UTC).toLocalDate().plusDays(days).toString();
-    }
-
-    private List<String> symbols(JsonNode exchangeInfo, Predicate<JsonNode> predicate,
-                                 String baseAsset, boolean futures) {
-        if (exchangeInfo == null || !exchangeInfo.path("symbols").isArray()) return new ArrayList<>();
-        List<String> output = new ArrayList<>();
-        for (JsonNode symbol : exchangeInfo.path("symbols")) {
-            if (!predicate.test(symbol) || !baseAsset.equals(symbol.path("baseAsset").asText())
-                    || !BINANCE_USD_QUOTES.contains(symbol.path("quoteAsset").asText())) continue;
-            output.add(symbol.path("symbol").asText());
-        }
-        output.sort(String::compareTo);
-        return output;
-    }
-
-    private ArrayNode groups(List<String> symbols, boolean futures, int maxBars, List<String> errors) {
-        ArrayNode output = json.createArrayNode();
-        for (String symbol : symbols) {
-            String label = (futures ? "futures" : "spot") + " klines " + symbol;
-            ArrayNode rows = safe(label, () -> binanceFlowKlines(symbol, futures, "4h", maxBars),
-                    json.createArrayNode(), errors);
-            if (!rows.isEmpty()) {
-                ObjectNode group = output.addObject(); group.put("symbol", symbol); group.set("rows", rows);
-            }
-        }
-        return output;
-    }
-
-    private static List<String> groupSymbols(ArrayNode groups) {
-        List<String> output = new ArrayList<>();
-        for (JsonNode group : groups) output.add(group.path("symbol").asText());
-        return output;
-    }
-
-    private static <T> T safe(String label, ThrowingSupplier<T> supplier, T fallback, List<String> errors) {
-        try {
-            return supplier.get();
-        } catch (Exception exception) {
-            errors.add(label + ": " + exception.getMessage());
-            return fallback;
-        }
-    }
-
-    @FunctionalInterface
-    private interface ThrowingSupplier<T> {
-        T get() throws Exception;
+        return macroEndpoints.isoDayOffset(days);
     }
 
     private static List<Map<String, String>> parseCsv(String text) {
@@ -561,18 +353,6 @@ public final class MarketDataEndpoints {
         return rows;
     }
 
-    private static List<String> matches(Pattern pattern, String value) {
-        List<String> output = new ArrayList<>();
-        Matcher matcher = pattern.matcher(value);
-        while (matcher.find()) output.add(matcher.group(1));
-        return output;
-    }
-
-    private static String xmlText(String value) {
-        return value.replaceAll("<[^>]+>", "").replace("&amp;", "&").replace("&lt;", "<")
-                .replace("&gt;", ">").replace("&quot;", "\"").replace("&#39;", "'");
-    }
-
     private static ArrayNode arrayOrEmpty(JsonNode value) {
         return value != null && value.isArray() ? (ArrayNode) value.deepCopy() : new ObjectMapper().createArrayNode();
     }
@@ -585,11 +365,11 @@ public final class MarketDataEndpoints {
         target.set(key, com.tradinganalytics.core.compute.ComputeMath.normalizedNumberNode(value));
     }
 
-    private static URI uri(String value) {
+    static URI uri(String value) {
         return URI.create(value);
     }
 
-    private static String encode(String value) {
+    static String encode(String value) {
         return URLEncoder.encode(value, StandardCharsets.UTF_8).replace("+", "%20")
                 .replace("%21", "!").replace("%27", "'").replace("%28", "(")
                 .replace("%29", ")").replace("%2A", "*");

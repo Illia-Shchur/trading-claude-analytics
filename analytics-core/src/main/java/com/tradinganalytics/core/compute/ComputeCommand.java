@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.MissingNode;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.tradinganalytics.core.swing.SwingScore;
@@ -18,20 +17,19 @@ import com.tradinganalytics.core.swing.SwingScore.TriggerInput;
 import com.tradinganalytics.core.swing.SwingScore.Veto;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+
+import static com.tradinganalytics.core.compute.ComputeJsonSupport.putNumber;
 
 /**
  * Command-facing Java port of {@code tools/compute.mjs}.
@@ -67,9 +65,9 @@ public final class ComputeCommand {
 
     public Result execute(String... argv) {
         try {
-            Parsed parsed = parse(argv == null ? new String[0] : argv);
+            ComputeCommandInput.Parsed parsed = parse(argv == null ? new String[0] : argv);
             JsonNode output = dispatch(parsed.command(), parsed.args(), parsed.flags());
-            return new Result(0, pretty(output) + "\n", "");
+            return new Result(0, pretty(output), "");
         } catch (CommandFailure failure) {
             return new Result(1, "", "error: " + failure.getMessage() + "\n");
         } catch (ComputeMath.ComputeValidationException | SwingScore.SwingRangeException
@@ -85,7 +83,7 @@ public final class ComputeCommand {
     }
 
     public JsonNode compute(String... argv) throws IOException {
-        Parsed parsed = parse(argv == null ? new String[0] : argv);
+        ComputeCommandInput.Parsed parsed = parse(argv == null ? new String[0] : argv);
         return dispatch(parsed.command(), parsed.args(), parsed.flags());
     }
 
@@ -612,38 +610,16 @@ public final class ComputeCommand {
         return out;
     }
 
-    private Parsed parse(String[] argv) {
-        String command = argv.length == 0 ? null : argv[0];
-        List<String> args = new ArrayList<>();
-        LinkedHashMap<String, Object> flags = new LinkedHashMap<>();
-        for (int i = 1; i < argv.length; i++) {
-            String token = argv[i];
-            if (token.startsWith("--")) {
-                String key = token.substring(2);
-                if (i + 1 < argv.length && !argv[i + 1].startsWith("--")) {
-                    flags.put(key, argv[++i]);
-                } else {
-                    flags.put(key, true);
-                }
-            } else {
-                args.add(token);
-            }
-        }
-        return new Parsed(command, args, flags);
+    private ComputeCommandInput.Parsed parse(String[] argv) {
+        return ComputeCommandInput.parse(argv);
     }
 
     private JsonNode json(Object input) throws IOException {
-        String text = string(input);
-        if (text.startsWith("@")) {
-            Path path = workspaceRoot.resolve(text.substring(1)).normalize();
-            text = Files.readString(path, StandardCharsets.UTF_8);
-        }
-        return json.readTree(text);
+        return ComputeCommandInput.readJson(input, json, workspaceRoot);
     }
 
     private JsonNode readDataFile(String name) throws IOException {
-        Path direct = workspaceRoot.resolve("tools").resolve(name).normalize();
-        return json.readTree(Files.readString(direct, StandardCharsets.UTF_8));
+        return ComputeCommandInput.readDataFile(name, json, workspaceRoot);
     }
 
     private double ageDays(String verifiedOn) {
@@ -653,9 +629,9 @@ public final class ComputeCommand {
 
     private List<Double> nums(Object value) {
         String[] pieces = string(value).split(",", -1);
-        List<Double> out = new ArrayList<>(pieces.length);
-        for (String piece : pieces) out.add(num(piece));
-        return out;
+        List<Double> output = new ArrayList<>(pieces.length);
+        for (String piece : pieces) output.add(num(piece));
+        return output;
     }
 
     private double num(Object value) {
@@ -701,75 +677,16 @@ public final class ComputeCommand {
         return json.convertValue(node, Object.class);
     }
 
-    private String pretty(JsonNode value) throws JsonProcessingException {
-        StringBuilder out = new StringBuilder();
-        appendPretty(normalizeNumbers(value), out, 0);
-        return out.toString();
-    }
-
-    private JsonNode normalizeNumbers(JsonNode value) {
-        if (value == null || value.isMissingNode()) return NullNode.getInstance();
-        if (value.isNumber()) return ComputeMath.normalizedNumberNode(value.doubleValue());
-        if (value.isArray()) {
-            ArrayNode out = array();
-            value.forEach(item -> out.add(normalizeNumbers(item)));
-            return out;
-        }
-        if (value.isObject()) {
-            ObjectNode out = object();
-            value.fields().forEachRemaining(entry -> out.set(entry.getKey(), normalizeNumbers(entry.getValue())));
-            return out;
-        }
-        return value.deepCopy();
-    }
-
-    private void appendPretty(JsonNode value, StringBuilder out, int depth) throws JsonProcessingException {
-        if (value.isObject()) {
-            if (value.isEmpty()) {
-                out.append("{}");
-                return;
-            }
-            out.append("{\n");
-            List<Map.Entry<String, JsonNode>> fields = new ArrayList<>();
-            value.fields().forEachRemaining(fields::add);
-            for (int i = 0; i < fields.size(); i++) {
-                indent(out, depth + 1);
-                out.append(json.writeValueAsString(fields.get(i).getKey())).append(": ");
-                appendPretty(fields.get(i).getValue(), out, depth + 1);
-                if (i + 1 < fields.size()) out.append(',');
-                out.append('\n');
-            }
-            indent(out, depth);
-            out.append('}');
-        } else if (value.isArray()) {
-            if (value.isEmpty()) {
-                out.append("[]");
-                return;
-            }
-            out.append("[\n");
-            for (int i = 0; i < value.size(); i++) {
-                indent(out, depth + 1);
-                appendPretty(value.get(i), out, depth + 1);
-                if (i + 1 < value.size()) out.append(',');
-                out.append('\n');
-            }
-            indent(out, depth);
-            out.append(']');
-        } else {
-            out.append(value.toString());
-        }
-    }
-
-    private static void indent(StringBuilder target, int depth) {
-        target.append("  ".repeat(Math.max(0, depth)));
+    private String pretty(JsonNode value) {
+        return ComputeCommandOutput.pretty(value);
     }
 
     private static ObjectNode object() {
-        return com.fasterxml.jackson.databind.node.JsonNodeFactory.instance.objectNode();
+        return ComputeJsonSupport.object();
     }
 
     private static ArrayNode array() {
-        return com.fasterxml.jackson.databind.node.JsonNodeFactory.instance.arrayNode();
+        return ComputeJsonSupport.array();
     }
 
     private static ObjectNode object(JsonNode value, String name) {
@@ -780,10 +697,6 @@ public final class ComputeCommand {
     private static ArrayNode array(JsonNode value, String name) {
         if (value == null || !value.isArray()) throw new IllegalArgumentException(name + " must be a JSON array");
         return (ArrayNode) value;
-    }
-
-    private static void putNumber(ObjectNode target, String key, Number value) {
-        target.set(key, value == null ? NullNode.getInstance() : ComputeMath.normalizedNumberNode(value.doubleValue()));
     }
 
     private static CommandFailure fail(String message) {
@@ -797,9 +710,6 @@ public final class ComputeCommand {
     }
 
     public record Result(int exitCode, String stdout, String stderr) {
-    }
-
-    private record Parsed(String command, List<String> args, Map<String, Object> flags) {
     }
 
     private static final class CommandFailure extends IllegalArgumentException {

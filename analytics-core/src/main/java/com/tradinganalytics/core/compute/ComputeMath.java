@@ -3,22 +3,16 @@ package com.tradinganalytics.core.compute;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.MissingNode;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -29,6 +23,11 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static com.tradinganalytics.core.compute.ComputeJsonSupport.array;
+import static com.tradinganalytics.core.compute.ComputeJsonSupport.object;
+import static com.tradinganalytics.core.compute.ComputeJsonSupport.putBoolean;
+import static com.tradinganalytics.core.compute.ComputeJsonSupport.putNumber;
 
 /** Pure computation and validation primitives used by {@link ComputeCommand}. */
 public final class ComputeMath {
@@ -53,7 +52,6 @@ public final class ComputeMath {
     );
 
     private static final ObjectMapper JSON = new ObjectMapper();
-    private static final JsonNodeFactory NODES = JsonNodeFactory.instance;
     private static final Pattern DERIBIT_INSTRUMENT = Pattern.compile(
             "^([A-Z]+)-(\\d{1,2})([A-Z]{3})(\\d{2})-(\\d+)-([CP])$");
     private static final Map<String, Integer> MONTHS = Map.ofEntries(
@@ -65,50 +63,11 @@ public final class ComputeMath {
     }
 
     public static ObjectNode wilderRsi(List<Double> closes, int period) {
-        int count = closes == null ? 0 : closes.size();
-        ObjectNode out = object();
-        if (closes == null || closes.size() < period + 1) {
-            out.set("rsi", NullNode.getInstance());
-            out.put("closes_used", count);
-            out.put("confidence", "insufficient");
-            out.put("note", "need ≥" + (period + 1)
-                    + " closes for a seed, ≥15 for a low-confidence read, ≥30 for unflagged (FK momentum input rule)");
-            return out;
-        }
-        double gain = 0.0;
-        double loss = 0.0;
-        for (int i = 1; i <= period; i++) {
-            double difference = closes.get(i) - closes.get(i - 1);
-            if (difference >= 0.0) {
-                gain += difference;
-            } else {
-                loss -= difference;
-            }
-        }
-        double averageGain = gain / period;
-        double averageLoss = loss / period;
-        for (int i = period + 1; i < closes.size(); i++) {
-            double difference = closes.get(i) - closes.get(i - 1);
-            averageGain = (averageGain * (period - 1) + Math.max(difference, 0.0)) / period;
-            averageLoss = (averageLoss * (period - 1) + Math.max(-difference, 0.0)) / period;
-        }
-        double rsi = averageLoss == 0.0 ? 100.0 : 100.0 - 100.0 / (1.0 + averageGain / averageLoss);
-        putNumber(out, "rsi", round2(rsi));
-        out.put("closes_used", closes.size());
-        out.put("period", period);
-        out.put("confidence", closes.size() >= 30 ? "ok" : "low");
-        return out;
+        return ComputeTimeSeries.wilderRsi(closes, period);
     }
 
     public static Double sma(List<Double> values, int n) {
-        if (values == null || values.size() < n || n <= 0) {
-            return null;
-        }
-        double sum = 0.0;
-        for (int i = values.size() - n; i < values.size(); i++) {
-            sum += values.get(i);
-        }
-        return sum / n;
+        return ComputeTimeSeries.sma(values, n);
     }
 
     public static double drawdownPct(double spot, double ath) {
@@ -116,123 +75,35 @@ public final class ComputeMath {
     }
 
     public static Double median(List<Double> values) {
-        if (values == null || values.isEmpty()) {
-            return null;
-        }
-        List<Double> sorted = new ArrayList<>(values);
-        sorted.sort(Double::compare);
-        int middle = sorted.size() / 2;
-        return sorted.size() % 2 == 1
-                ? sorted.get(middle)
-                : (sorted.get(middle - 1) + sorted.get(middle)) / 2.0;
+        return ComputeTimeSeries.median(values);
     }
 
     public static Double sampleStdev(List<Double> values) {
-        if (values == null || values.size() < 2) {
-            return null;
-        }
-        // Deliberately use a plain left-to-right sum. DoubleStream.sum uses a
-        // compensated algorithm and can differ from Array.reduce by one ULP;
-        // the JavaScript implementation uses reduce and its result is part of
-        // the JSON contract.
-        double total = 0.0;
-        for (double value : values) total += value;
-        double mean = total / values.size();
-        double squares = 0.0;
-        for (double value : values) squares += Math.pow(value - mean, 2);
-        return Math.sqrt(squares / (values.size() - 1));
+        return ComputeTimeSeries.sampleStdev(values);
     }
 
     public static Double percentileRank(List<Double> values, double x) {
-        List<Double> clean = finiteValues(values);
-        if (clean.isEmpty() || !Double.isFinite(x)) {
-            return null;
-        }
-        int below = 0;
-        int equal = 0;
-        for (double value : clean) {
-            if (value < x) {
-                below++;
-            } else if (value == x) {
-                equal++;
-            }
-        }
-        return jsRound(((below + equal / 2.0) / clean.size()) * 10_000.0) / 100.0;
+        return ComputeTimeSeries.percentileRank(values, x);
     }
 
     public static ObjectNode distributionStats(List<Double> values) {
-        List<Double> clean = finiteValues(values);
-        ObjectNode out = object();
-        out.put("n", clean.size());
-        if (clean.isEmpty()) {
-            out.set("min", NullNode.getInstance());
-            out.set("max", NullNode.getInstance());
-            out.set("median", NullNode.getInstance());
-            out.set("mean", NullNode.getInstance());
-            out.set("stdev", NullNode.getInstance());
-            return out;
-        }
-        double total = 0.0;
-        for (double value : clean) total += value;
-        double mean = total / clean.size();
-        putNumber(out, "min", clean.stream().mapToDouble(Double::doubleValue).min().orElseThrow());
-        putNumber(out, "max", clean.stream().mapToDouble(Double::doubleValue).max().orElseThrow());
-        putNumber(out, "median", median(clean));
-        putNumber(out, "mean", jsRound(mean * 10_000.0) / 10_000.0);
-        putNumber(out, "stdev", sampleStdev(clean));
-        return out;
+        return ComputeTimeSeries.distributionStats(values);
     }
 
     public static List<Double> logReturns(List<Double> closes) {
-        List<Double> out = new ArrayList<>();
-        if (closes == null) {
-            return out;
-        }
-        for (int i = 1; i < closes.size(); i++) {
-            Double first = closes.get(i - 1);
-            Double second = closes.get(i);
-            if (first == null || second == null || first <= 0.0 || second <= 0.0) {
-                continue;
-            }
-            out.add(Math.log(second / first));
-        }
-        return out;
+        return ComputeTimeSeries.logReturns(closes);
     }
 
     public static Double realizedVol(List<Double> closes, int window, int annualize) {
-        if (closes == null || closes.size() <= window) {
-            return null;
-        }
-        List<Double> returns = logReturns(closes.subList(closes.size() - window - 1, closes.size()));
-        if (returns.size() < 2) {
-            return null;
-        }
-        Double standardDeviation = sampleStdev(returns);
-        return standardDeviation == null ? null
-                : jsRound(standardDeviation * Math.sqrt(annualize) * 10_000.0) / 100.0;
+        return ComputeTimeSeries.realizedVol(closes, window, annualize);
     }
 
     public static ObjectNode realizedVolBlock(List<Double> closes, int annualize) {
-        ObjectNode out = object();
-        putNumber(out, "rv10", realizedVol(closes, 10, annualize));
-        putNumber(out, "rv30", realizedVol(closes, 30, annualize));
-        putNumber(out, "rv90", realizedVol(closes, 90, annualize));
-        out.put("annualize_convention", annualize);
-        return out;
+        return ComputeTimeSeries.realizedVolBlock(closes, annualize);
     }
 
     public static List<Double> rollingRealizedVol(List<Double> closes, int window, int annualize) {
-        List<Double> out = new ArrayList<>();
-        if (closes == null) {
-            return out;
-        }
-        for (int i = window + 1; i <= closes.size(); i++) {
-            Double value = realizedVol(closes.subList(0, i), window, annualize);
-            if (value != null) {
-                out.add(value);
-            }
-        }
-        return out;
+        return ComputeTimeSeries.rollingRealizedVol(closes, window, annualize);
     }
 
     public static ObjectNode ceilThresholds(int active) {
@@ -484,82 +355,7 @@ public final class ComputeMath {
     }
 
     public static ObjectNode dailyTrend(ArrayNode sessions, Double spot, int fast, int slow, int slopeN, int lowN) {
-        int needed = slow + slopeN;
-        if (sessions == null || sessions.size() < needed) {
-            ObjectNode insufficient = object();
-            insufficient.put("insufficient", "need ≥" + needed + " daily sessions for a " + slow
-                    + "dma + " + slopeN + "-session slope, got " + (sessions == null ? 0 : sessions.size()));
-            return insufficient;
-        }
-        List<Double> closes = new ArrayList<>();
-        sessions.forEach(session -> closes.add(jsNumber(session.get("close"))));
-        double price = spot != null ? spot : closes.get(closes.size() - 1);
-        ObjectNode rsi = wilderRsi(closes, 14);
-        Double movingFast = sma(closes, fast);
-        Double movingSlow = sma(closes, slow);
-        Double slope = smaSlope(closes, slow, slopeN);
-        Boolean slowFalling = slope == null ? null : slope < 0.0;
-        Boolean belowSlow = movingSlow == null ? null : price < movingSlow;
-        Boolean fastBelowSlow = movingFast == null || movingSlow == null ? null : movingFast < movingSlow;
-
-        List<Double> past = closes.subList(0, closes.size() - slopeN);
-        Double pastFast = sma(past, fast);
-        Double pastSlow = sma(past, slow);
-        Double gapNow = movingFast == null || movingSlow == null || movingSlow == 0.0
-                ? null : Math.abs(movingFast - movingSlow) / movingSlow * 100.0;
-        Double gapPast = pastFast == null || pastSlow == null || pastSlow == 0.0
-                ? null : Math.abs(pastFast - pastSlow) / pastSlow * 100.0;
-        Boolean gapNarrowed = gapNow == null || gapPast == null ? null : gapNow < gapPast;
-        boolean structureB = Boolean.TRUE.equals(fastBelowSlow) && Boolean.TRUE.equals(gapNarrowed);
-        Boolean withinSlow = withinPercent(price, movingSlow, 3.0);
-        Boolean withinFastFromBelow = movingFast == null ? null
-                : price <= movingFast && Boolean.TRUE.equals(withinPercent(price, movingFast, 3.0));
-
-        int start = Math.max(0, sessions.size() - lowN);
-        List<JsonNode> lowWindow = new ArrayList<>();
-        for (int i = start; i < sessions.size(); i++) {
-            lowWindow.add(sessions.get(i));
-        }
-        double low = lowWindow.stream().mapToDouble(row -> jsNumber(row.get("low"))).min().orElse(Double.POSITIVE_INFINITY);
-        int lowIndex = 0;
-        for (int i = 0; i < lowWindow.size(); i++) {
-            if (jsNumber(lowWindow.get(i).get("low")) == low) {
-                lowIndex = i;
-                break;
-            }
-        }
-        Double bounce = low == 0.0 ? null : round2((price / low - 1.0) * 100.0);
-        int bounceAge = lowWindow.size() - 1 - lowIndex;
-        int sessionsLowToHigh = 0;
-        double highAfterLow = Double.NEGATIVE_INFINITY;
-        for (int i = lowIndex; i < lowWindow.size(); i++) {
-            double high = jsNumber(lowWindow.get(i).get("high"));
-            if (high > highAfterLow) {
-                highAfterLow = high;
-                sessionsLowToHigh = i - lowIndex;
-            }
-        }
-
-        ObjectNode out = object();
-        out.set("insufficient", NullNode.getInstance());
-        out.set("rsi14", rsi.get("rsi"));
-        out.set("rsi14_confidence", rsi.get("confidence"));
-        putNumber(out, "ma50", roundedNullable(movingFast));
-        putNumber(out, "ma200", roundedNullable(movingSlow));
-        putNumber(out, "ma200_slope20_pct", slope);
-        putBoolean(out, "ma200_falling", slowFalling);
-        putBoolean(out, "price_below_ma200", belowSlow);
-        putBoolean(out, "ma50_below_ma200", fastBelowSlow);
-        putNumber(out, "gap_now_pct", roundedNullable(gapNow));
-        putBoolean(out, "gap_narrowed_20", gapNarrowed);
-        out.put("structure_b", structureB);
-        putBoolean(out, "within_3pct_of_ma200", withinSlow);
-        putBoolean(out, "within_3pct_of_ma50_from_below", withinFastFromBelow);
-        putNumber(out, "low_40s", round2(low));
-        putNumber(out, "bounce_pct", bounce);
-        out.put("bounce_age_sessions", bounceAge);
-        out.put("sessions_low_to_high", sessionsLowToHigh);
-        return out;
+        return ComputeTimeSeries.dailyTrend(sessions, spot, fast, slow, slopeN, lowN);
     }
 
     public static ObjectNode frStallConfirmation(Double close, Double priorClose, Double high, Double bounceHigh) {
@@ -1019,71 +815,27 @@ public final class ComputeMath {
     }
 
     public static double round2(double value) {
-        return jsRound(value * 100.0) / 100.0;
+        return ComputeNumericSupport.round2(value);
     }
 
     public static double jsNumber(JsonNode value) {
-        if (value == null || value.isMissingNode()) return Double.NaN;
-        if (value.isNull()) return 0.0;
-        if (value.isNumber()) return value.doubleValue();
-        if (value.isBoolean()) return value.booleanValue() ? 1.0 : 0.0;
-        if (value.isTextual()) return jsNumber(value.textValue());
-        if (value.isArray()) {
-            if (value.isEmpty()) return 0.0;
-            if (value.size() == 1) {
-                JsonNode only = value.get(0);
-                return jsNumber(only == null || only.isNull() ? "" : jsString(only));
-            }
-            return Double.NaN;
-        }
-        return Double.NaN;
+        return ComputeNumericSupport.jsNumber(value);
     }
 
     public static double jsNumber(Object value) {
-        if (value == null) return Double.NaN;
-        if (value instanceof Number number) return number.doubleValue();
-        if (value instanceof Boolean bool) return bool ? 1.0 : 0.0;
-        if (value instanceof JsonNode node) return jsNumber(node);
-        return jsNumber(String.valueOf(value));
+        return ComputeNumericSupport.jsNumber(value);
     }
 
     public static double jsNumber(String raw) {
-        String text = raw == null ? "undefined" : raw.trim();
-        if (text.isEmpty()) return 0.0;
-        if ("Infinity".equals(text) || "+Infinity".equals(text)) return Double.POSITIVE_INFINITY;
-        if ("-Infinity".equals(text)) return Double.NEGATIVE_INFINITY;
-        try {
-            if (text.matches("0[xX][0-9a-fA-F]+")) return new BigInteger(text.substring(2), 16).doubleValue();
-            if (text.matches("0[bB][01]+")) return new BigInteger(text.substring(2), 2).doubleValue();
-            if (text.matches("0[oO][0-7]+")) return new BigInteger(text.substring(2), 8).doubleValue();
-            return Double.parseDouble(text);
-        } catch (NumberFormatException ignored) {
-            return Double.NaN;
-        }
+        return ComputeNumericSupport.jsNumber(raw);
     }
 
     public static boolean truthy(Object value) {
-        if (value == null || value instanceof MissingNode || value instanceof NullNode) return false;
-        if (value instanceof Boolean bool) return bool;
-        if (value instanceof Number number) return number.doubleValue() != 0.0 && !Double.isNaN(number.doubleValue());
-        if (value instanceof String text) return !text.isEmpty();
-        if (value instanceof JsonNode node) {
-            if (node.isMissingNode() || node.isNull()) return false;
-            if (node.isBoolean()) return node.booleanValue();
-            if (node.isNumber()) return node.doubleValue() != 0.0 && !Double.isNaN(node.doubleValue());
-            if (node.isTextual()) return !node.textValue().isEmpty();
-            return true;
-        }
-        return true;
+        return ComputeNumericSupport.truthy(value);
     }
 
     public static JsonNode normalizedNumberNode(double value) {
-        if (!Double.isFinite(value)) return NullNode.getInstance();
-        if (value == 0.0) return NODES.numberNode(0);
-        if (value == Math.rint(value) && Math.abs(value) < 1e21) {
-            return NODES.numberNode(BigDecimal.valueOf(value).toBigIntegerExact());
-        }
-        return NODES.numberNode(BigDecimal.valueOf(value).stripTrailingZeros());
+        return ComputeNumericSupport.normalizedNumberNode(value);
     }
 
     private static ObjectNode companionLegs(
@@ -1315,11 +1067,6 @@ public final class ComputeMath {
         }
     }
 
-    private static List<Double> finiteValues(List<Double> values) {
-        if (values == null) return List.of();
-        return values.stream().filter(value -> value != null && Double.isFinite(value)).toList();
-    }
-
     private static Double roundedNullable(Double value) {
         return value == null ? null : round2(value);
     }
@@ -1332,43 +1079,8 @@ public final class ComputeMath {
         return node == null || node.isNull() ? Double.NaN : node.doubleValue();
     }
 
-    private static String jsString(JsonNode node) {
-        if (node == null || node.isMissingNode()) return "";
-        if (node.isNull()) return "null";
-        if (node.isTextual()) return node.textValue();
-        if (node.isBoolean()) return Boolean.toString(node.booleanValue());
-        if (node.isNumber()) return node.asText();
-        if (node.isArray()) {
-            List<String> values = new ArrayList<>();
-            node.forEach(value -> values.add(value.isNull() ? "" : jsString(value)));
-            return String.join(",", values);
-        }
-        return "[object Object]";
-    }
-
     private static boolean isDefined(JsonNode node) {
         return node != null && !node.isMissingNode() && !node.isNull();
-    }
-
-    private static ObjectNode object() {
-        return NODES.objectNode();
-    }
-
-    private static ArrayNode array() {
-        return NODES.arrayNode();
-    }
-
-    private static void putNumber(ObjectNode target, String key, Number value) {
-        if (value == null || !Double.isFinite(value.doubleValue())) {
-            target.set(key, NullNode.getInstance());
-        } else {
-            target.set(key, normalizedNumberNode(value.doubleValue()));
-        }
-    }
-
-    private static void putBoolean(ObjectNode target, String key, Boolean value) {
-        if (value == null) target.set(key, NullNode.getInstance());
-        else target.put(key, value);
     }
 
     private static void putString(ObjectNode target, String key, String value) {
@@ -1381,10 +1093,7 @@ public final class ComputeMath {
     }
 
     private static double jsRound(double value) {
-        if (Double.isNaN(value) || Double.isInfinite(value) || value == 0.0) return value;
-        double floor = Math.floor(value);
-        double result = value - floor < 0.5 ? floor : floor + 1.0;
-        return result == 0.0 && value < 0.0 ? -0.0 : result;
+        return ComputeNumericSupport.jsRound(value);
     }
 
     private record StablecoinPoint(JsonNode date, double value) {

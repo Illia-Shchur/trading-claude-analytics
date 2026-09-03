@@ -9,13 +9,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.tradinganalytics.contracts.json.CanonicalJson;
 import com.tradinganalytics.contracts.json.PrettyCanonicalJson;
 import com.tradinganalytics.core.compute.ComputeMath;
-import java.time.DateTimeException;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -52,13 +45,7 @@ public final class ToolchainSupport {
     public static final String REPORT_ZONE = "America/New_York";
     public static final Pattern REPORT_FILE_RE = Pattern.compile(
             "^([a-z0-9]+)_(fallen_knives|flying_rocket)_(\\d{4})(\\d{2})(\\d{2})_(\\d{2})(\\d{2})\\.md$");
-    public static final Set<String> US_MARKET_HOLIDAYS = Set.of(
-            "2025-01-01", "2025-01-20", "2025-02-17", "2025-04-18", "2025-05-26", "2025-06-19",
-            "2025-07-04", "2025-09-01", "2025-11-27", "2025-12-25",
-            "2026-01-01", "2026-01-19", "2026-02-16", "2026-04-03", "2026-05-25", "2026-06-19",
-            "2026-07-03", "2026-09-07", "2026-11-26", "2026-12-25",
-            "2027-01-01", "2027-01-18", "2027-02-15", "2027-03-26", "2027-05-31", "2027-06-18",
-            "2027-07-05", "2027-09-06", "2027-11-25", "2027-12-24");
+    public static final Set<String> US_MARKET_HOLIDAYS = ComputeMath.US_MARKET_HOLIDAYS;
 
     public static final Map<String, String> ROUNDING = ComputeMath.ROUNDING;
     public static final List<Integer> FK_V_GATES = List.of(1, 2, 3, 4, 7, 8);
@@ -116,8 +103,6 @@ public final class ToolchainSupport {
 
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final JsonNodeFactory NODES = JsonNodeFactory.instance;
-    private static final Pattern DATE = Pattern.compile("^(\\d{4})-(\\d{2})-(\\d{2})$");
-    private static final Pattern TIME = Pattern.compile("^(\\d{2}):(\\d{2})$");
     private static final Map<String, List<LegSpec>> LEG_SPECS = legSpecs();
     private static final Pattern FILL_NEGATIVE = Pattern.compile(
             "\\b(unfilled|dry|frozen|prospective|armed|staged|not filled|no fill)\\b",
@@ -130,35 +115,12 @@ public final class ToolchainSupport {
     }
 
     public static String localToUtcISO(String date, String time) {
-        return localToUtcISO(date, time, REPORT_ZONE);
+        return ToolchainCalendar.localToUtcISO(date, time, REPORT_ZONE);
     }
 
     /** Exact fixed-point conversion used by the Node implementation. */
     public static String localToUtcISO(String date, String time, String zone) {
-        Matcher dateMatch = DATE.matcher(String.valueOf(date));
-        Matcher timeMatch = TIME.matcher(String.valueOf(time));
-        if (!dateMatch.matches() || !timeMatch.matches()) return null;
-        try {
-            int year = Integer.parseInt(dateMatch.group(1));
-            int month = Integer.parseInt(dateMatch.group(2));
-            int day = Integer.parseInt(dateMatch.group(3));
-            int hour = Integer.parseInt(timeMatch.group(1));
-            int minute = Integer.parseInt(timeMatch.group(2));
-            if (hour > 23 || minute > 59) return null;
-            LocalDateTime local = LocalDateTime.of(year, month, day, hour, minute);
-            Instant target = local.toInstant(java.time.ZoneOffset.UTC);
-            Instant cursor = target;
-            ZoneId zoneId = ZoneId.of(zone);
-            for (int iteration = 0; iteration < 3; iteration++) {
-                int offsetSeconds = zoneId.getRules().getOffset(cursor).getTotalSeconds();
-                Instant next = target.minusSeconds(offsetSeconds);
-                if (next.equals(cursor)) break;
-                cursor = next;
-            }
-            return DateTimeFormatter.ISO_INSTANT.format(cursor);
-        } catch (DateTimeException | NumberFormatException exception) {
-            return null;
-        }
+        return ToolchainCalendar.localToUtcISO(date, time, zone);
     }
 
     public static String schemaEpochOf(String date) {
@@ -169,38 +131,7 @@ public final class ToolchainSupport {
     }
 
     public static ObjectNode reportFileMeta(String name) {
-        String file = String.valueOf(name);
-        Matcher matcher = REPORT_FILE_RE.matcher(file);
-        if (!matcher.matches()) {
-            ObjectNode failed = NODES.objectNode();
-            failed.put("ok", false);
-            failed.put("file", file);
-            failed.put("reason", "filename does not match <asset>_<framework>_YYYYMMDD_HHMM.md");
-            return failed;
-        }
-        String asset = matcher.group(1);
-        String framework = matcher.group(2);
-        String date = matcher.group(3) + "-" + matcher.group(4) + "-" + matcher.group(5);
-        String localTime = matcher.group(6) + ":" + matcher.group(7);
-        String atUtc = localToUtcISO(date, localTime);
-        if (atUtc == null) {
-            ObjectNode failed = NODES.objectNode();
-            failed.put("ok", false);
-            failed.put("file", file);
-            failed.put("reason", "filename encodes an impossible date/time (" + date + " " + localTime + ")");
-            return failed;
-        }
-        ObjectNode output = NODES.objectNode();
-        output.put("ok", true);
-        output.put("file", file);
-        output.put("asset", asset.toUpperCase(Locale.ROOT));
-        output.put("framework", framework);
-        output.put("date", date);
-        output.put("local_time", localTime);
-        output.put("zone", REPORT_ZONE);
-        output.put("at_utc", atUtc);
-        output.put("schema_epoch", schemaEpochOf(date));
-        return output;
+        return ToolchainCalendar.reportFileMeta(name);
     }
 
     public static String signalRubric(String framework, String channel) {
@@ -569,40 +500,19 @@ public final class ToolchainSupport {
     }
 
     public static String weekdayOf(String date) {
-        return LocalDate.parse(date).getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.US);
+        return ComputeMath.weekdayOf(date);
     }
 
     public static boolean isTradingDay(String date, String assetClass) {
-        if ("crypto".equals(assetClass)) return true;
-        LocalDate parsed = LocalDate.parse(date);
-        switch (parsed.getDayOfWeek()) {
-            case SATURDAY, SUNDAY -> { return false; }
-            default -> { return !US_MARKET_HOLIDAYS.contains(date); }
-        }
+        return ComputeMath.isTradingDay(date, assetClass);
     }
 
     public static List<String> nextNTradingDays(String fromDate, int count, String assetClass) {
-        List<String> output = new ArrayList<>();
-        LocalDate cursor = LocalDate.parse(fromDate);
-        while (output.size() < count) {
-            cursor = cursor.plusDays(1);
-            String value = cursor.toString();
-            if (isTradingDay(value, assetClass)) output.add(value);
-        }
-        return output;
+        return ComputeMath.nextNTradingDays(fromDate, count, assetClass);
     }
 
     public static int tradingDaysBetween(String fromDate, String toDate, String assetClass) {
-        if (toDate.compareTo(fromDate) <= 0) return 0;
-        int count = 0;
-        LocalDate cursor = LocalDate.parse(fromDate);
-        LocalDate end = LocalDate.parse(toDate);
-        while (true) {
-            cursor = cursor.plusDays(1);
-            if (!cursor.isBefore(end)) break;
-            if (isTradingDay(cursor.toString(), assetClass)) count++;
-        }
-        return count;
+        return ToolchainCalendar.tradingDaysBetween(fromDate, toDate, assetClass);
     }
 
     public static final class FkBands {
