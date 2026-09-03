@@ -659,6 +659,12 @@ final class StrategyStatisticalV5NodeOracleTest {
         ObjectNode nodeAppend = javaAppend.deepCopy(); nodeAppend.put("filePath", nodePath.toString());
         assertJson(StrategyStatisticalV5.appendExposureHeadFile(javaAppend),
                 oracle(request("appendExposureFile").set("options", nodeAppend)).path("value"));
+        Path javaLock = Path.of(javaPath + ".lock");
+        Files.writeString(javaLock, "active-writer");
+        assertThatThrownBy(() -> StrategyStatisticalV5.appendExposureHeadFile(javaAppend))
+                .hasMessage("competing exposure head writer is active");
+        assertThat(Files.readString(javaLock)).isEqualTo("active-writer");
+        Files.delete(javaLock);
         assertThatThrownBy(() -> StrategyStatisticalV5.appendExposureHeadFile(javaAppend))
                 .hasMessage("stale or competing exposure head predecessor");
         assertThatThrownBy(() -> StrategyStatisticalV5.initializeExposureHeadFile(javaInit))
@@ -686,6 +692,12 @@ final class StrategyStatisticalV5NodeOracleTest {
         ObjectNode registry = StrategyStatisticalV5.appendBehaviorDefinitionRegistryFile(javaAppend);
         assertJson(registry, oracle(request("appendRegistryFile").set("options", nodeAppend)).path("value"));
         assertJson(StrategyStatisticalV5.readBehaviorDefinitionRegistryFile(javaState), registry);
+        Path javaLock = Path.of(javaState + ".lock");
+        Files.writeString(javaLock, "active-writer");
+        assertThatThrownBy(() -> StrategyStatisticalV5.appendBehaviorDefinitionRegistryFile(javaAppend))
+                .hasMessage("competing behavior-definition registry writer is active");
+        assertThat(Files.readString(javaLock)).isEqualTo("active-writer");
+        Files.delete(javaLock);
 
         Path javaSnapshot = javaState.getParent().resolve("snapshot.json");
         Path nodeSnapshot = nodeState.getParent().resolve("snapshot.json");
@@ -696,6 +708,11 @@ final class StrategyStatisticalV5NodeOracleTest {
                 .put("snapshotPath", javaSnapshot.toString()).set("snapshot", registry);
         ObjectNode nodeBind = javaBind.deepCopy().put("filePath", nodeState.toString())
                 .put("snapshotPath", nodeSnapshot.toString());
+        Files.writeString(javaLock, "active-writer");
+        assertThatThrownBy(() -> StrategyStatisticalV5.bindBehaviorDefinitionRegistrySnapshotFile(javaBind))
+                .hasMessage("competing behavior-definition registry state writer is active");
+        assertThat(Files.readString(javaLock)).isEqualTo("active-writer");
+        Files.delete(javaLock);
         ObjectNode bound = StrategyStatisticalV5.bindBehaviorDefinitionRegistrySnapshotFile(javaBind);
         assertJson(bound, oracle(request("bindRegistrySnapshot").set("options", nodeBind)).path("value"));
         ObjectNode javaResolve = MAPPER.createObjectNode().put("filePath", javaState.toString());
@@ -806,6 +823,9 @@ final class StrategyStatisticalV5NodeOracleTest {
 
         Path javaLock = Path.of(javaPath + ".lock"); Path nodeLock = Path.of(nodePath + ".lock");
         Files.writeString(javaLock, "lock"); Files.writeString(nodeLock, "lock");
+        assertThatThrownBy(() -> StrategyStatisticalV5.writeGeneticCheckpointFile(javaWrite))
+                .hasMessage("competing checkpoint writer is active");
+        assertThat(Files.readString(javaLock)).isEqualTo("lock");
         ObjectNode javaRecover = MAPPER.createObjectNode().put("filePath", javaPath.toString())
                 .put("force", true).put("maxAgeMs", -1);
         ObjectNode nodeRecover = javaRecover.deepCopy().put("filePath", nodePath.toString());

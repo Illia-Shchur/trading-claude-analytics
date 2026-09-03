@@ -13,6 +13,7 @@ import com.tradinganalytics.infrastructure.security.JsonHashes;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Objects;
@@ -211,11 +212,16 @@ final class StrategyEvaluatorV5NodeOracleTest {
         ObjectNode oracle = frozenPhysicalNullFixture();
         ObjectNode fixture = (ObjectNode) oracle.path("fixture");
         Path parquetRoot = Path.of(fixture.path("root").asText()).toAbsolutePath().normalize();
+        ObjectNode metadata = ((ObjectNode) fixture.path("metadata")).deepCopy();
+        Path metadataRoot = Path.of(metadata.path("source_root").asText()).toAbsolutePath().normalize();
         // The frozen oracle was produced from a local, temporary Node parquet lake. The lake is
         // intentionally not checked in, so retain the differential when it is available locally
         // and skip it on clean CI checkouts instead of resolving a stale machine-specific path.
-        assumeTrue(Files.isDirectory(parquetRoot),
-                "frozen physical-null parquet lake is not available: " + parquetRoot);
+        assumeTrue(Files.isDirectory(parquetRoot, LinkOption.NOFOLLOW_LINKS)
+                        && Files.isDirectory(metadataRoot, LinkOption.NOFOLLOW_LINKS)
+                        && allReferencedFilesExist(fixture.path("manifest"), parquetRoot)
+                        && allReferencedFilesExist(metadata, metadataRoot),
+                "frozen physical-null fixture is incomplete: " + parquetRoot);
         ObjectNode load = MAPPER.createObjectNode()
                 .put("root", parquetRoot.toString())
                 .put("cacheRoot", temporary.resolve("java-worker-cache").toString())
@@ -225,8 +231,6 @@ final class StrategyEvaluatorV5NodeOracleTest {
         load.set("evaluatorSpec", fixture.path("evaluatorSpec"));
         load.set("geneSpace", fixture.path("geneSpace"));
         load.set("predictorRegistry", fixture.path("predictorRegistry"));
-        ObjectNode metadata = ((ObjectNode) fixture.path("metadata")).deepCopy();
-        Path metadataRoot = Path.of(metadata.path("source_root").asText()).toAbsolutePath().normalize();
         String javaRootReference = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize()
                 .relativize(metadataRoot).toString().replace(java.io.File.separatorChar, '/');
         for (String key : new String[] {"contract_spec", "fee_schedule", "execution_model"}) {
@@ -291,6 +295,26 @@ final class StrategyEvaluatorV5NodeOracleTest {
             assertThatThrownBy(() -> runner.run(direct))
                     .hasMessage("physical null checkpoint/reference bytes are tampered");
         }
+    }
+
+    private static boolean allReferencedFilesExist(JsonNode value, Path root) {
+        if (value == null || value.isNull() || value.isMissingNode()) return true;
+        if (value.isArray()) {
+            for (JsonNode child : value) if (!allReferencedFilesExist(child, root)) return false;
+            return true;
+        }
+        if (!value.isObject()) return true;
+        var fields = value.fields();
+        while (fields.hasNext()) {
+            var field = fields.next();
+            JsonNode child = field.getValue();
+            if (("path".equals(field.getKey()) || field.getKey().endsWith("_path")) && child.isTextual()) {
+                Path referenced = root.resolve(child.asText()).normalize();
+                if (!referenced.startsWith(root) || Files.isSymbolicLink(referenced)
+                        || !Files.isRegularFile(referenced, LinkOption.NOFOLLOW_LINKS)) return false;
+            } else if (!allReferencedFilesExist(child, root)) return false;
+        }
+        return true;
     }
 
     @Test

@@ -201,8 +201,10 @@ final class StrategyExposureRegistryV5 {
         String dataset = requireHash(field(options, "datasetSha256"), "dataset_sha256");
         Path lock = Path.of(target.toString() + ".lock");
         FileChannel lockChannel = null;
+        boolean ownsLock = false;
         try {
             ensureParent(target); lockChannel = FileChannel.open(lock, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
+            ownsLock = true;
             ObjectNode prior = readExposureHeadFile(target);
             if (!expected.equals(text(field(prior, "content_sha256")))) {
                 throw failure("stale or competing exposure head predecessor");
@@ -232,7 +234,7 @@ final class StrategyExposureRegistryV5 {
             throw failure(error.getMessage());
         } finally {
             if (lockChannel != null) try { lockChannel.close(); } catch (IOException ignored) {}
-            try { Files.deleteIfExists(lock); } catch (IOException ignored) {}
+            if (ownsLock) try { Files.deleteIfExists(lock); } catch (IOException ignored) {}
         }
     }
 
@@ -463,8 +465,10 @@ final class StrategyExposureRegistryV5 {
         Path target = requiredFilePath(text(field(options, "filePath")), "behavior-definition registry path");
         ObjectNode exposure = validateExposureHead(field(options, "exposureHead"));
         Path lock = Path.of(target + ".lock"); FileChannel lockChannel = null;
+        boolean ownsLock = false;
         try {
             ensureParent(target); lockChannel = FileChannel.open(lock, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
+            ownsLock = true;
             ObjectNode existing = Files.exists(target) ? readBehaviorDefinitionRegistryFile(target) : null;
             if (existing != null && truthy(field(options, "expectedRegistrySha256"))
                     && !text(field(options, "expectedRegistrySha256")).equals(text(field(existing, "content_sha256")))) {
@@ -503,7 +507,7 @@ final class StrategyExposureRegistryV5 {
             throw failure(error.getMessage());
         } finally {
             if (lockChannel != null) try { lockChannel.close(); } catch (IOException ignored) {}
-            try { Files.deleteIfExists(lock); } catch (IOException ignored) {}
+            if (ownsLock) try { Files.deleteIfExists(lock); } catch (IOException ignored) {}
         }
     }
 
@@ -534,8 +538,10 @@ final class StrategyExposureRegistryV5 {
             throw failure("behavior-definition registry immutable snapshot content changed");
         }
         Path lock = Path.of(state + ".lock"); FileChannel lockChannel = null;
+        boolean ownsLock = false;
         try {
             lockChannel = FileChannel.open(lock, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
+            ownsLock = true;
             if (!Files.exists(state, LinkOption.NOFOLLOW_LINKS)) {
                 throw failure("behavior-definition registry state is missing before snapshot bind");
             }
@@ -572,7 +578,7 @@ final class StrategyExposureRegistryV5 {
             throw failure(error.getMessage());
         } finally {
             if (lockChannel != null) try { lockChannel.close(); } catch (IOException ignored) {}
-            try { Files.deleteIfExists(lock); } catch (IOException ignored) {}
+            if (ownsLock) try { Files.deleteIfExists(lock); } catch (IOException ignored) {}
         }
     }
 

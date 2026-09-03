@@ -6719,6 +6719,7 @@ public final class StrategyStatisticalV5 {
         Path target = requiredFilePath(text(field(options, "filePath")), "genetic checkpoint path");
         Path directory = target.getParent(); assertConfinedPath(target, "genetic checkpoint path", false, directory);
         Path lock = Path.of(target + ".lock"); Path journal = Path.of(target + ".jsonl"); FileChannel channel = null;
+        boolean ownsLock = false;
         try {
             ensureParent(target); assertConfinedPath(lock, "genetic checkpoint lock path", false, directory);
             assertConfinedPath(journal, "genetic checkpoint journal path", false, directory);
@@ -6726,6 +6727,7 @@ public final class StrategyStatisticalV5 {
                 assertConfinedPath(journal, "genetic checkpoint journal path", true, directory);
             }
             channel = FileChannel.open(lock, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
+            ownsLock = true;
             ObjectNode existing = null;
             if (Files.exists(target, LinkOption.NOFOLLOW_LINKS)) {
                 assertConfinedPath(target, "genetic checkpoint path", true, directory);
@@ -6765,7 +6767,7 @@ public final class StrategyStatisticalV5 {
         } catch (Exception error) { throw failure(error.getMessage()); }
         finally {
             if (channel != null) try { channel.close(); } catch (IOException ignored) {}
-            try { Files.deleteIfExists(lock); } catch (IOException ignored) {}
+            if (ownsLock) try { Files.deleteIfExists(lock); } catch (IOException ignored) {}
         }
     }
 

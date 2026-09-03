@@ -4566,7 +4566,16 @@ public final class StrategyResearchDataV5 {
         return object().put("complete", true).put("expected_rows", times.size()).put("observed_rows", rows.size()).put("min_event_time", iso(start)).put("max_event_time", iso(end)).put("captured_at", iso(capture));
     }
 
-    private static String latestCaptureFromCaptures(List<ObjectNode> captures, String fallback) { return fallback; }
+    private static String latestCaptureFromCaptures(List<ObjectNode> captures, String fallback) {
+        long latest = Long.MIN_VALUE;
+        for (ObjectNode capture : captures) {
+            for (String key : List.of("coverage", "mark_coverage")) {
+                JsonNode capturedAt = capture.path(key).get("captured_at");
+                if (capturedAt != null && !capturedAt.isNull()) latest = Math.max(latest, time(capturedAt));
+            }
+        }
+        return latest == Long.MIN_VALUE ? fallback : iso(latest);
+    }
 
     private record HydrationLock(Path path, String token) { }
 
@@ -4660,12 +4669,21 @@ public final class StrategyResearchDataV5 {
                 actual = text(prior, "content_sha256");
             }
             if (!Objects.equals(expectedPrior, actual)) throw failure("checkpoint compare-and-swap predecessor hash mismatch");
-            byte[] bytes = prettyBytes(value);
-            Path temporary = target.resolveSibling(target.getFileName() + ".tmp-" + Thread.currentThread().threadId());
-            Files.write(temporary, bytes, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
+            replaceCheckpointAtomically(target, prettyBytes(value));
+        } catch (IOException error) { throw failure("hydration checkpoint write failed: " + error.getMessage()); }
+    }
+
+    private static void replaceCheckpointAtomically(Path target, byte[] bytes) throws IOException {
+        Path parent = target.getParent();
+        if (parent == null) throw new IOException("checkpoint path has no parent");
+        Path temporary = Files.createTempFile(parent, target.getFileName() + ".tmp-", ".json");
+        try {
+            Files.write(temporary, bytes, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
             try { Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING); }
             catch (AtomicMoveNotSupportedException error) { Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING); }
-        } catch (IOException error) { throw failure("hydration checkpoint write failed: " + error.getMessage()); }
+        } finally {
+            Files.deleteIfExists(temporary);
+        }
     }
 
     private static long quarterlyExpiry(String symbol) {
@@ -4680,11 +4698,10 @@ public final class StrategyResearchDataV5 {
         try (FileChannel channel = FileChannel.open(lockPath, StandardOpenOption.CREATE, StandardOpenOption.WRITE); FileLock ignored = channel.tryLock()) {
             if (ignored == null) throw failure("checkpoint lock is already held"); String actual = null;
             if (Files.exists(target, LinkOption.NOFOLLOW_LINKS)) { ObjectNode prior = readObject(target, "checkpoint"); assertOwnHash(prior, DATA_V5.get("checkpoint"), "checkpoint"); actual = text(prior, "content_sha256"); }
-            if (expectedPrior != null && !expectedPrior.equals(actual)) throw failure("checkpoint compare-and-swap mismatch"); byte[] bytes = prettyBytes(value); Path temporary = target.resolveSibling(target.getFileName() + ".tmp-" + Thread.currentThread().threadId()); Files.write(temporary, bytes, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
-            try { Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING); } catch (AtomicMoveNotSupportedException error) { Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING); }
+            if (expectedPrior != null && !expectedPrior.equals(actual)) throw failure("checkpoint compare-and-swap mismatch");
+            replaceCheckpointAtomically(target, prettyBytes(value));
         } catch (java.nio.channels.OverlappingFileLockException error) { throw failure("checkpoint lock is already held"); }
         catch (IOException error) { throw failure("checkpoint write failed: " + error.getMessage()); }
-        finally { try { Files.deleteIfExists(lockPath); } catch (IOException ignored) { } }
     }
 
     private static void writeCheckpointCasStrict(Path root, String relative, ObjectNode value, String expectedPrior) {
@@ -4693,13 +4710,9 @@ public final class StrategyResearchDataV5 {
             if (ignored == null) throw failure("checkpoint lock is already held"); String actual = null;
             if (Files.exists(target, LinkOption.NOFOLLOW_LINKS)) { ObjectNode prior = readObject(target, "checkpoint"); assertOwnHash(prior, DATA_V5.get("checkpoint"), "checkpoint"); actual = text(prior, "content_sha256"); }
             if (!Objects.equals(expectedPrior, actual)) throw failure("checkpoint compare-and-swap predecessor hash mismatch");
-            byte[] bytes = prettyBytes(value); Path temporary = target.resolveSibling(target.getFileName() + ".tmp-" + Thread.currentThread().threadId());
-            Files.write(temporary, bytes, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
-            try { Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING); }
-            catch (AtomicMoveNotSupportedException error) { Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING); }
+            replaceCheckpointAtomically(target, prettyBytes(value));
         } catch (java.nio.channels.OverlappingFileLockException error) { throw failure("checkpoint lock is already held"); }
         catch (IOException error) { throw failure("checkpoint write failed: " + error.getMessage()); }
-        finally { try { Files.deleteIfExists(lockPath); } catch (IOException ignored) { } }
     }
 
     /* ------------------------------------------------------------------ */
