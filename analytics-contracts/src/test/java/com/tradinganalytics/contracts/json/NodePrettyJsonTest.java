@@ -1,6 +1,7 @@
 package com.tradinganalytics.contracts.json;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -44,5 +45,20 @@ class NodePrettyJsonTest {
                           "escaped": "a\\\"b\\n"
                         }
                         """);
+    }
+
+    @Test
+    void escapesLoneSurrogatesLikeJsonStringifyWithoutWeakeningCanonicalJson() {
+        String loneHigh = "high-" + '\ud800';
+        String loneLow = "low-" + '\udc00';
+        var value = JSON.createObjectNode()
+                .put(loneHigh, loneLow)
+                .put("paired", "face-\ud83d\ude00");
+
+        assertThat(NodePrettyJson.write(value)).isEqualTo(
+                "{\n  \"high-\\ud800\": \"low-\\udc00\",\n  \"paired\": \"face-😀\"\n}\n");
+        assertThatThrownBy(() -> CanonicalJson.canonicalize(value))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Lone surrogate");
     }
 }

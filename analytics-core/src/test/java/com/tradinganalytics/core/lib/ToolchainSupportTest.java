@@ -88,5 +88,8 @@ class ToolchainSupportTest {
                 .isEqualTo(List.of("2026-07-03", "2026-07-04", "2026-07-05"));
         assertThat(ToolchainSupport.tradingDaysBetween("2026-07-01", "2026-07-06", "equity")).isEqualTo(1);
         assertThat(ToolchainSupport.tradingDaysBetween("2026-07-10", "2026-07-01", "equity")).isZero();
+        assertThat(ToolchainSupport.isTradingDay("2028-01-17", "equity")).isFalse();
+        assertThat(ToolchainSupport.isTradingDay("2028-01-01", "equity")).isFalse();
+        assertThat(ToolchainSupport.isTradingDay("2027-12-31", "equity")).isTrue();
     }
 }

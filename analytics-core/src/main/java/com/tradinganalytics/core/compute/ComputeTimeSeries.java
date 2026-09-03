@@ -19,13 +19,16 @@ final class ComputeTimeSeries {
     }
 
     static ObjectNode wilderRsi(List<Double> closes, int period) {
+        if (period <= 0) {
+            throw new ComputeMath.ComputeValidationException("RSI period must be a positive integer");
+        }
         int count = closes == null ? 0 : closes.size();
         ObjectNode output = object();
-        if (closes == null || closes.size() < period + 1) {
+        if (closes == null || closes.size() <= period) {
             output.set("rsi", NullNode.getInstance());
             output.put("closes_used", count);
             output.put("confidence", "insufficient");
-            output.put("note", "need ≥" + (period + 1)
+            output.put("note", "need ≥" + ((long) period + 1L)
                     + " closes for a seed, ≥15 for a low-confidence read, ≥30 for unflagged (FK momentum input rule)");
             return output;
         }

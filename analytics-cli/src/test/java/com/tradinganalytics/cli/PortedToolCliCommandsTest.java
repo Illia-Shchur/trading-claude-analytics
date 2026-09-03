@@ -158,7 +158,8 @@ class PortedToolCliCommandsTest {
                 "usage: strategy-research-v5.mjs data-backfill|data-raw-replay|feature-build|"
                         + "metadata-build|opportunity-envelope|artifact-build|research-init|"
                         + "experiment-freeze|search-genetic|research-run|overfit-audit|"
-                        + "prospective-runner|readiness-audit|deployment-audit|validate|index [options]\n");
+                        + "prospective-runner|readiness-audit|deployment-audit|validate|index|"
+                        + "presentation-export [options]\n");
         assertThat(error).hasToString("");
     }
 

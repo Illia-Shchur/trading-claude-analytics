@@ -178,6 +178,14 @@ final class SwingPhaseRisk {
                     "portfolio equity and a valid stop are required"
             );
         }
+        if (!validRemainingRisk(source.remainingAssetRiskPct())
+                || !validRemainingRisk(source.remainingPortfolioRiskPct())) {
+            return new SwingScore.DataLimitedRiskBudget(
+                    "DATA_LIMITED",
+                    null,
+                    "remaining asset and portfolio risk must be finite and non-negative"
+            );
+        }
 
         double equity = source.equityUsd().doubleValue();
         double stopDistance = source.stopDistancePct().doubleValue();
@@ -246,6 +254,10 @@ final class SwingPhaseRisk {
             throw new SwingScore.SwingTypeException("expectancy inputs must be finite");
         }
         return value.doubleValue();
+    }
+
+    private static boolean validRemainingRisk(Number value) {
+        return value == null || (finiteNumber(value) && value.doubleValue() >= 0.0);
     }
 
     private static boolean isActiveVeto(Object value) {

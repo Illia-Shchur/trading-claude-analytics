@@ -558,6 +558,25 @@ class SwingScoreTest {
         );
     }
 
+    @ParameterizedTest
+    @MethodSource("invalidRemainingRiskBudgets")
+    void invalidRemainingRiskInputsFailClosed(RiskBudgetInput input) {
+        DataLimitedRiskBudget result = (DataLimitedRiskBudget) SwingScore.riskBudget(input);
+        assertThat(result.status()).isEqualTo("DATA_LIMITED");
+        assertThat(result.notional_usd()).isNull();
+        assertThat(result.reason()).isEqualTo(
+                "remaining asset and portfolio risk must be finite and non-negative");
+    }
+
+    static Stream<RiskBudgetInput> invalidRemainingRiskBudgets() {
+        return Stream.of(
+                new RiskBudgetInput(10, 10_000, 5, Double.NaN, 1),
+                new RiskBudgetInput(10, 10_000, 5, 1, Double.POSITIVE_INFINITY),
+                new RiskBudgetInput(10, 10_000, 5, -0.01, 1),
+                new RiskBudgetInput(10, 10_000, 5, 1, -0.01)
+        );
+    }
+
     @Test
     void expectancyComputesAfterCostRAndRejectsEveryNonFiniteInput() {
         SwingScore.ExpectancyResult result = SwingScore.expectancyR(

@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.FutureTask;
 
 /** Shared process execution for CLI commands that invoke the local Git client. */
 final class CliProcessSupport {
@@ -14,9 +15,16 @@ final class CliProcessSupport {
         command.add("git");
         command.addAll(List.of(arguments));
         Process process = new ProcessBuilder(command).directory(directory.toFile()).start();
-        String stdout = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-        String stderr = new String(process.getErrorStream().readAllBytes(), StandardCharsets.UTF_8);
-        if (process.waitFor() != 0) throw new GitCommandFailure(stderr.trim());
+        FutureTask<String> stdoutReader = new FutureTask<>(
+                () -> new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8));
+        FutureTask<String> stderrReader = new FutureTask<>(
+                () -> new String(process.getErrorStream().readAllBytes(), StandardCharsets.UTF_8));
+        Thread.ofVirtual().start(stdoutReader);
+        Thread.ofVirtual().start(stderrReader);
+        int status = process.waitFor();
+        String stdout = stdoutReader.get();
+        String stderr = stderrReader.get();
+        if (status != 0) throw new GitCommandFailure(stderr.trim());
         return stdout;
     }
 

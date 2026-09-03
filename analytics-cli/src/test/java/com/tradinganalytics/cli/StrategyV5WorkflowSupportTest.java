@@ -63,4 +63,30 @@ class StrategyV5WorkflowSupportTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("immutable output collision");
     }
+
+    @Test
+    void firstSettingsComparisonEstablishesBaselineInsteadOfReportingDrift() {
+        StrategyV5SettingsWorkflow.DriftComparison comparison =
+                StrategyV5SettingsWorkflow.comparePolicies(
+                        false, "current-settings", null, "current-api", null);
+
+        assertThat(comparison.status()).isEqualTo("BASELINE_ESTABLISHED");
+        assertThat(comparison.changedFields()).containsExactly("BASELINE_ESTABLISHED");
+    }
+
+    @Test
+    void subsequentSettingsComparisonDistinguishesClearFromDrifted() {
+        assertThat(StrategyV5SettingsWorkflow.comparePolicies(
+                true, "settings", "settings", "api", "api").status()).isEqualTo("CLEAR");
+        assertThat(StrategyV5SettingsWorkflow.comparePolicies(
+                true, "settings-v2", "settings-v1", "api", "api").status()).isEqualTo("DRIFTED");
+    }
+
+    @Test
+    void missingHistoricalWriterReceiptRemainsOptional() {
+        Path capture = temporary.resolve("github-deployment-settings-capture.json");
+
+        assertThat(StrategyV5SettingsWorkflow.verifiedOptionalWriterReceipt(
+                capture, StrategyV5WorkflowJson.object())).isNull();
+    }
 }

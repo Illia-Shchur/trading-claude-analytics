@@ -798,7 +798,8 @@ public final class ComputeMath {
         LocalDate parsed = LocalDate.parse(date);
         return parsed.getDayOfWeek() != DayOfWeek.SATURDAY
                 && parsed.getDayOfWeek() != DayOfWeek.SUNDAY
-                && !US_MARKET_HOLIDAYS.contains(date);
+                && !US_MARKET_HOLIDAYS.contains(date)
+                && !UsEquityMarketCalendar.isRecurringHoliday(parsed);
     }
 
     public static List<String> nextNTradingDays(String fromDate, int count, String assetClass) {

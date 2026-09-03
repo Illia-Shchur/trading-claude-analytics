@@ -11,6 +11,8 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.PosixFileAttributeView;
+import java.nio.file.attribute.PosixFilePermission;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -52,6 +54,10 @@ class StrategyAttestationCliCommandTest {
         assertThat(Files.readString(privateKey)).startsWith("-----BEGIN PRIVATE KEY-----");
         assertThat(Files.readString(publicKey)).startsWith("-----BEGIN PUBLIC KEY-----");
         assertThat(result.stdout()).doesNotContain("BEGIN PRIVATE KEY");
+        if (Files.getFileStore(privateKey).supportsFileAttributeView(PosixFileAttributeView.class)) {
+            assertThat(Files.getPosixFilePermissions(privateKey)).containsExactlyInAnyOrder(
+                    PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE);
+        }
     }
 
     @Test

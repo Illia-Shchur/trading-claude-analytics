@@ -143,18 +143,7 @@ final class StrategyV5SettingsWorkflow {
                                     "settings/API baseline hash or schema is invalid");
                         ResearchSchemaRegistry.defaultRegistry().validateContractSchema(capture);
                         ResearchSchemaRegistry.defaultRegistry().validateContractSchema(receipt);
-                        Path writer = candidate.resolveSibling("github-writer-installation-receipt.json");
-                        if (Files.exists(writer, LinkOption.NOFOLLOW_LINKS)) {
-                            ObjectNode value = readObject(writer);
-                            if (!WriterInstallationReceipts.verifyWriterInstallationReceipt(value,
-                                    new WriterInstallationReceipts.Verification(
-                                            text(capture.get("repository")), capture.get("repository_id"),
-                                            WriterInstallationReceipts.WRITER_APP_ID,
-                                            WriterInstallationReceipts.WRITER_INSTALLATION_ID,
-                                            WriterInstallationReceipts.WRITER_APP_SLUG)))
-                                throw new IllegalArgumentException(
-                                        "historical writer-App installation receipt is invalid or not capture-bound");
-                        }
+                        Path writer = verifiedOptionalWriterReceipt(candidate, capture);
                         baselines.add(new SettingsBaseline(candidate, api, writer,
                                 parseInstant(capture.get("captured_at")),
                                 text(capture.get("content_sha256")),
@@ -247,14 +236,10 @@ final class StrategyV5SettingsWorkflow {
         String currentApiPolicy = StrategyV5WorkflowDeployment.settingsApiPolicyHash(api);
         String previousApiPolicy = previousValid && previousApi != null
                 ? StrategyV5WorkflowDeployment.settingsApiPolicyHash(previousApi) : null;
-        List<String> changed = new ArrayList<>();
-        if (!previousValid) changed.add("BASELINE_ESTABLISHED");
-        else {
-            if (!currentPolicy.equals(previousPolicy)) changed.add("settings_policy");
-            if (!currentApiPolicy.equals(previousApiPolicy)) changed.add("api_receipt");
-        }
-        String status = !previousValid ? "BASELINE_ESTABLISHED"
-                : changed.isEmpty() ? "CLEAR" : "DRIFTED";
+        DriftComparison comparison = comparePolicies(
+                hasPrevious, currentPolicy, previousPolicy, currentApiPolicy, previousApiPolicy);
+        List<String> changed = comparison.changedFields();
+        String status = comparison.status();
         ObjectNode evidence = object().put("schema", DRIFT_SCHEMA).put("version", 1)
                 .put("repository", text(current.get("repository")))
                 .set("repository_id", current.get("repository_id") == null
@@ -276,6 +261,39 @@ final class StrategyV5SettingsWorkflow {
         out.println(pretty(evidence));
         return "DRIFTED".equals(status) ? 1 : 0;
     }
+
+    static Path verifiedOptionalWriterReceipt(Path capture, ObjectNode captureValue) {
+        Path writer = capture.resolveSibling("github-writer-installation-receipt.json");
+        if (!Files.exists(writer, LinkOption.NOFOLLOW_LINKS)) return null;
+        ObjectNode value = readObject(writer);
+        if (!WriterInstallationReceipts.verifyWriterInstallationReceipt(value,
+                new WriterInstallationReceipts.Verification(
+                        text(captureValue.get("repository")), captureValue.get("repository_id"),
+                        WriterInstallationReceipts.WRITER_APP_ID,
+                        WriterInstallationReceipts.WRITER_INSTALLATION_ID,
+                        WriterInstallationReceipts.WRITER_APP_SLUG))) {
+            throw new IllegalArgumentException(
+                    "historical writer-App installation receipt is invalid or not capture-bound");
+        }
+        return writer;
+    }
+
+    static DriftComparison comparePolicies(
+            boolean hasPrevious,
+            String currentPolicy,
+            String previousPolicy,
+            String currentApiPolicy,
+            String previousApiPolicy) {
+        if (!hasPrevious) {
+            return new DriftComparison("BASELINE_ESTABLISHED", List.of("BASELINE_ESTABLISHED"));
+        }
+        List<String> changed = new ArrayList<>();
+        if (!currentPolicy.equals(previousPolicy)) changed.add("settings_policy");
+        if (!currentApiPolicy.equals(previousApiPolicy)) changed.add("api_receipt");
+        return new DriftComparison(changed.isEmpty() ? "CLEAR" : "DRIFTED", List.copyOf(changed));
+    }
+
+    record DriftComparison(String status, List<String> changedFields) {}
 
     private record SettingsBaseline(Path capture, Path api, Path writer, Instant capturedAt,
                                     String captureSha, String apiSha) {}

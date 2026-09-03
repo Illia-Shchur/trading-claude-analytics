@@ -7,11 +7,14 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.tradinganalytics.contracts.json.NodePrettyJson;
 import com.tradinganalytics.research.legacy.LegacyResearchV3;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
@@ -253,9 +256,18 @@ public class StrategyAttestationCliCommand implements Callable<Integer> {
 
     private static void writeExclusive(Path path, String text, Set<PosixFilePermission> mode) throws IOException {
         Files.createDirectories(path.getParent());
-        Files.writeString(path, text, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
-        try { Files.setPosixFilePermissions(path, mode); }
-        catch (UnsupportedOperationException ignored) { /* Windows */ }
+        byte[] bytes = text.getBytes(StandardCharsets.UTF_8);
+        boolean posix = Files.getFileStore(path.getParent())
+                .supportsFileAttributeView(PosixFileAttributeView.class);
+        try (var channel = posix
+                ? Files.newByteChannel(path,
+                        Set.of(StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE),
+                        PosixFilePermissions.asFileAttribute(mode))
+                : Files.newByteChannel(path,
+                        Set.of(StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE))) {
+            ByteBuffer buffer = ByteBuffer.wrap(bytes);
+            while (buffer.hasRemaining()) channel.write(buffer);
+        }
     }
 
     private static String runGit(Path directory, String... arguments) throws Exception {

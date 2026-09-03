@@ -54,6 +54,21 @@ class ComputeMathTest {
         assertThat(full.path("confidence").asText()).isEqualTo("ok");
     }
 
+    @Test
+    void wilderRsiRejectsNonPositivePeriodsAtBothPublicBoundaries() {
+        assertThatThrownBy(() -> ComputeMath.wilderRsi(List.of(1.0, 2.0, 3.0), 0))
+                .isInstanceOf(ComputeMath.ComputeValidationException.class)
+                .hasMessage("RSI period must be a positive integer");
+
+        ComputeCommand command = new ComputeCommand();
+        for (String period : List.of("0", "-1", "1.5", "NaN", "Infinity")) {
+            ComputeCommand.Result result = command.execute("rsi", "1,2,3", "--period", period);
+            assertThat(result.exitCode()).as("period %s", period).isEqualTo(1);
+            assertThat(result.stdout()).isEmpty();
+            assertThat(result.stderr()).isEqualTo("Error: RSI period must be a positive integer\n");
+        }
+    }
+
     @ParameterizedTest
     @MethodSource("roundingCases")
     void scoreRoundingMatchesPinnedTieConventions(double raw, String convention, int expected) {
@@ -244,6 +259,11 @@ class ComputeMathTest {
                 .containsExactly("2026-07-06", "2026-07-07", "2026-07-08");
         assertThat(ComputeMath.nextNTradingDays("2026-07-02", 3, "crypto"))
                 .containsExactly("2026-07-03", "2026-07-04", "2026-07-05");
+        assertThat(ComputeMath.isTradingDay("2028-01-17", "equity")).isFalse();
+        assertThat(ComputeMath.isTradingDay("2028-04-14", "equity")).isFalse();
+        assertThat(ComputeMath.isTradingDay("2028-01-17", "crypto")).isTrue();
+        assertThat(ComputeMath.nextNTradingDays("2028-01-14", 2, "equity"))
+                .containsExactly("2028-01-18", "2028-01-19");
     }
 
     @Test
@@ -274,6 +294,17 @@ class ComputeMathTest {
         assertThat(malformed.exitCode()).isEqualTo(1);
         assertThat(malformed.stdout()).isEmpty();
         assertThat(malformed.stderr()).startsWith("SyntaxError:").endsWith("\n");
+    }
+
+    @Test
+    void commandOutputEscapesLoneSurrogatesLikeNodeJsonStringify() {
+        String scenarios = "[{\"name\":\"\\u" + "d800\",\"p\":100,\"mid\":1}]";
+
+        ComputeCommand.Result result = new ComputeCommand().execute("ev", "--scenarios", scenarios);
+
+        assertThat(result.exitCode()).isZero();
+        assertThat(result.stderr()).isEmpty();
+        assertThat(result.stdout()).contains("\"name\": \"\\ud800\"");
     }
 
     @Test

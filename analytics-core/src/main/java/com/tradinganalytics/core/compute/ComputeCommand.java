@@ -130,6 +130,12 @@ public final class ComputeCommand {
         }
         List<Double> closes = nums(args.get(0));
         double rawPeriod = jsNumber(or(flags.get("period"), 14));
+        if (!Double.isFinite(rawPeriod)
+                || rawPeriod < 1.0
+                || rawPeriod != Math.rint(rawPeriod)
+                || rawPeriod > Integer.MAX_VALUE) {
+            throw new ComputeMath.ComputeValidationException("RSI period must be a positive integer");
+        }
         int period = (int) rawPeriod;
         ObjectNode input = object();
         input.put("closes", closes.size());

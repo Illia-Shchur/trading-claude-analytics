@@ -1,7 +1,6 @@
 package com.tradinganalytics.contracts.json;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.TextNode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -56,14 +55,60 @@ public final class NodePrettyJson {
             output.append(']');
             return;
         }
-        // RFC 8785 deliberately adopts ECMAScript's JSON number and string
-        // serialization.  Reuse it for scalar leaves so values such as 300000
-        // never leak Jackson's BigDecimal scientific notation ("3E+5").
+        if (value.isTextual()) {
+            output.append(quote(value.textValue()));
+            return;
+        }
+        // RFC 8785 deliberately adopts ECMAScript's JSON number serialization.
+        // Reuse it for non-string scalar leaves so values such as 300000 never
+        // leak Jackson's BigDecimal scientific notation ("3E+5"). Strings use
+        // the serializer below because JSON.stringify escapes lone surrogates,
+        // while the stricter I-JSON canonicalizer correctly rejects them.
         output.append(CanonicalJson.canonicalize(value));
     }
 
     private static String quote(String value) {
-        return CanonicalJson.canonicalize(TextNode.valueOf(value));
+        StringBuilder output = new StringBuilder(value.length() + 2).append('"');
+        for (int index = 0; index < value.length(); index++) {
+            char current = value.charAt(index);
+            switch (current) {
+                case '"' -> output.append("\\\"");
+                case '\\' -> output.append("\\\\");
+                case '\b' -> output.append("\\b");
+                case '\f' -> output.append("\\f");
+                case '\n' -> output.append("\\n");
+                case '\r' -> output.append("\\r");
+                case '\t' -> output.append("\\t");
+                default -> appendUnescapedOrUnicodeEscape(value, index, current, output);
+            }
+            if (Character.isHighSurrogate(current)
+                    && index + 1 < value.length()
+                    && Character.isLowSurrogate(value.charAt(index + 1))) {
+                output.append(value.charAt(++index));
+            }
+        }
+        return output.append('"').toString();
+    }
+
+    private static void appendUnescapedOrUnicodeEscape(
+            String value,
+            int index,
+            char current,
+            StringBuilder output) {
+        boolean loneHighSurrogate = Character.isHighSurrogate(current)
+                && (index + 1 >= value.length() || !Character.isLowSurrogate(value.charAt(index + 1)));
+        if (current <= 0x1f || loneHighSurrogate || Character.isLowSurrogate(current)) {
+            appendUnicodeEscape(current, output);
+        } else {
+            output.append(current);
+        }
+    }
+
+    private static void appendUnicodeEscape(char value, StringBuilder output) {
+        output.append("\\u");
+        for (int shift = 12; shift >= 0; shift -= 4) {
+            output.append(Character.forDigit((value >> shift) & 0xf, 16));
+        }
     }
 
     private static void indent(int depth, StringBuilder output) {
