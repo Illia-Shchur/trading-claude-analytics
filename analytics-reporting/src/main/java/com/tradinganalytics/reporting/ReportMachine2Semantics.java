@@ -30,6 +30,14 @@ final class ReportMachine2Semantics {
             "p1a", 11, "p1b", 13, "p2", 15, "p3", 19);
     private static final Map<String, Integer> FR_SCORE_UNLOCK_B = Map.of(
             "p1a", 13, "p1b", 15, "p2", 17);
+    private static final List<String> FK_LEGS = List.of(
+            "sentiment", "momentum", "valuation", "capitulation", "holder");
+    private static final List<String> FR_LEGS = List.of(
+            "euphoria", "momentum", "valuation", "distribution", "vulnerability");
+    private static final Map<String, Integer> FK_LEG_MAXES = Map.of(
+            "sentiment", 5, "momentum", 4, "valuation", 5, "capitulation", 3, "holder", 3);
+    private static final Map<String, Integer> FR_LEG_MAXES = Map.of(
+            "euphoria", 5, "momentum", 4, "valuation", 5, "distribution", 3, "vulnerability", 3);
 
     private ReportMachine2Semantics() {
     }
@@ -171,12 +179,8 @@ final class ReportMachine2Semantics {
             }
         }
 
-        List<String> legNames = "fallen_knives".equals(framework)
-                ? List.of("sentiment", "momentum", "valuation", "capitulation", "holder")
-                : List.of("euphoria", "momentum", "valuation", "distribution", "vulnerability");
-        Map<String, Integer> maxes = "fallen_knives".equals(framework)
-                ? Map.of("sentiment", 5, "momentum", 4, "valuation", 5, "capitulation", 3, "holder", 3)
-                : Map.of("euphoria", 5, "momentum", 4, "valuation", 5, "distribution", 3, "vulnerability", 3);
+        List<String> legNames = legNamesFor(framework);
+        Map<String, Integer> maxes = legMaxesFor(framework);
         ObjectNode score = object(report, "score");
         ObjectNode legs = object(score, "legs");
         if (legs.size() != legNames.size() || !fieldNames(legs).equals(new LinkedHashSet<>(legNames))) {
@@ -304,9 +308,7 @@ final class ReportMachine2Semantics {
         double deployed = 0;
         double dry = 0;
         List<String> filledTags = new ArrayList<>();
-        Map<String, Integer> scoreUnlock = "fallen_knives".equals(framework)
-                ? FK_SCORE_UNLOCK
-                : ("B".equals(channel) ? FR_SCORE_UNLOCK_B : FR_SCORE_UNLOCK_A);
+        Map<String, Integer> scoreUnlock = scoreUnlockFor(framework, channel);
         ObjectNode deployment = object(report, "deployment");
         ArrayNode tranches = array(deployment, "tranches");
         for (int index = 0; index < tranches.size(); index++) {
@@ -501,8 +503,7 @@ final class ReportMachine2Semantics {
                 }
             }
         }
-        List<String> expectedPhases = "flying_rocket".equals(framework) && "B".equals(channel)
-                ? List.of("1A", "1B", "2") : List.of("1A", "1B", "2", "3");
+        List<String> expectedPhases = expectedPhasesFor(framework, channel);
         List<String> entryPhases = new ArrayList<>();
         tagEntries.forEach(entry -> entryPhases.add(text(entry, "phase")));
         entryPhases.sort(Comparator.comparingInt(expectedPhases::indexOf));
@@ -633,5 +634,25 @@ final class ReportMachine2Semantics {
 
     private static boolean sameNullable(String left, String right) {
         return left == null ? right == null : left.equals(right);
+    }
+
+    private static List<String> legNamesFor(String framework) {
+        return "fallen_knives".equals(framework) ? FK_LEGS : FR_LEGS;
+    }
+
+    private static Map<String, Integer> legMaxesFor(String framework) {
+        return "fallen_knives".equals(framework) ? FK_LEG_MAXES : FR_LEG_MAXES;
+    }
+
+    private static Map<String, Integer> scoreUnlockFor(String framework, String channel) {
+        if ("fallen_knives".equals(framework)) {
+            return FK_SCORE_UNLOCK;
+        }
+        return "B".equals(channel) ? FR_SCORE_UNLOCK_B : FR_SCORE_UNLOCK_A;
+    }
+
+    private static List<String> expectedPhasesFor(String framework, String channel) {
+        return "flying_rocket".equals(framework) && "B".equals(channel)
+                ? List.of("1A", "1B", "2") : List.of("1A", "1B", "2", "3");
     }
 }

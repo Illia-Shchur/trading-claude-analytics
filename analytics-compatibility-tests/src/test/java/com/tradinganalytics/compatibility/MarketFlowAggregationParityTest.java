@@ -1,25 +1,17 @@
 package com.tradinganalytics.compatibility;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.tradinganalytics.contracts.json.NodePrettyJson;
 import com.tradinganalytics.marketdata.MarketFlowAggregation;
-import java.io.InputStream;
 import org.junit.jupiter.api.Test;
 
 class MarketFlowAggregationParityTest {
     private static final ObjectMapper JSON = new ObjectMapper();
     @Test
     void aggregationAndResamplingMatchFrozenWireContract() throws Exception {
-        JsonNode expected;
-        try (InputStream stream = getClass().getResourceAsStream("/oracles/market-flow-aggregation-v1.json")) {
-            assertThat(stream).isNotNull();
-            expected = JSON.readTree(stream);
-        }
+        JsonNode expected = CompatibilityFixtures.readJson(JSON, "market-flow-aggregation-v1.json");
         ArrayNode flows = (ArrayNode) JSON.readTree("""
                 [
                   {"symbol":"BTCUSDT","rows":[{"time":1000,"buy_usd":100,"sell_usd":50,"close":10},{"time":"bad","buy_usd":1,"sell_usd":1}]},
@@ -34,6 +26,6 @@ class MarketFlowAggregationParityTest {
         actual.set("values", MarketFlowAggregation.aggregateValueSnapshots(values, 1_800_000));
         actual.set("weighted", MarketFlowAggregation.oiWeightedFundingSnapshots(values, funding, 1_800_000));
         actual.set("candles", MarketFlowAggregation.resampleSnapshotsToCandles(samples, 1, 30, 10, 7_200_000));
-        assertThat(NodePrettyJson.write(actual)).isEqualTo(NodePrettyJson.write(expected));
+        CompatibilityFixtures.assertWireEqual(expected, actual);
     }
 }

@@ -66,6 +66,7 @@ final class ProspectiveSnapshotVerifierV5 {
             List<String> eventHeads, List<JsonNode> events) {}
     private record TrustedDelta(
             String root, Path path, JsonNode index, List<String> eventHeads) {}
+    private record TrustedRegistry(Path base, byte[] bytes) {}
 
     private ProspectiveSnapshotVerifierV5() {}
 
@@ -97,6 +98,53 @@ final class ProspectiveSnapshotVerifierV5 {
         JsonNode writer = files.get("github-writer-installation-receipt.json").value();
         JsonNode attestation = files.get("v5-actions-attestation.json").value();
         JsonNode registry = files.get("v5-attestation-key-registry.json").value();
+        validateSettingsArtifacts(cycle, capture, api, drift, writer);
+
+        TrustedRegistry trustedRegistry = loadTrustedRegistry(options);
+        exactSnapshotRegistry(registry,
+                files.get("v5-attestation-key-registry.json").bytes(), trustedRegistry.bytes());
+        ActionsAttestationVerifierV5.verify(new ActionsAttestationVerifierV5.Request(
+                attestation,
+                capture,
+                null,
+                JsonHashes.sha256(files.get("github-deployment-settings-capture.json").bytes()),
+                options.nowAt(),
+                options.pinnedAttestationFingerprint(),
+                JsonHashes.sha256(files.get("github-settings-api-receipt.json").bytes()),
+                JsonHashes.sha256(files.get("v5-shadow-cycle-receipt.json").bytes()),
+                null,
+                null,
+                null,
+                registry,
+                registry.path("content_sha256").asText(),
+                JsonHashes.sha256(files.get("v5-attestation-key-registry.json").bytes())));
+
+        Path snapshotBase = trustedRegistry.base()
+                .resolve("evidence/prospective-v5").toAbsolutePath().normalize();
+        LedgerSnapshot proposedLedger = readProspectiveLedger(
+                ledgerRoot, options.nowAt(), true, snapshotBase, new HashSet<>());
+        List<TrustedDelta> candidates = readTrustedDeltas(snapshotBase);
+        validateTrustedSnapshotGraph(candidates);
+        TrustedDelta tip = candidates.stream()
+                .max(Comparator.comparingInt(row -> row.index().path("sequence").asInt())).orElse(null);
+        WorkflowSecurityV5.LedgerCandidate base = null;
+        if (tip != null) {
+            LedgerSnapshot ledger = readProspectiveLedger(
+                    tip.path(), options.nowAt(), true, snapshotBase, new HashSet<>());
+            base = new WorkflowSecurityV5.LedgerCandidate(
+                    tip.path().toString(), ledger.sequence(), ledger.currentHead(), ledger.lineage(),
+                    ledger.eventHeads());
+        }
+        WorkflowSecurityV5.LedgerCandidate proposed = new WorkflowSecurityV5.LedgerCandidate(
+                ledgerRoot.toString(), proposedLedger.sequence(), proposedLedger.currentHead(),
+                proposedLedger.lineage(), proposedLedger.eventHeads());
+        WorkflowSecurityV5.assertProspectiveLedgerSuccessorV5(base, proposed);
+        return new Verification(true, proposed.sequence(), proposed.head(),
+                base == null ? null : base.sequence());
+    }
+
+    private static void validateSettingsArtifacts(
+            JsonNode cycle, JsonNode capture, JsonNode api, JsonNode drift, JsonNode writer) {
         if (!"strategy-v5-authoritative-command-receipt/1".equals(cycle.path("schema").asText())
                 || !"COMPLETE".equals(cycle.path("status").asText())
                 || !cycle.path("details").has("active")
@@ -104,7 +152,7 @@ final class ProspectiveSnapshotVerifierV5 {
                 || "ACTIVE".equals(cycle.path("decision").asText())
                 || "ACTIVE".equals(cycle.path("details").path("decision").asText())) {
             throw new CustodyException(
-                "prospective cycle receipt is not a completed inactive non-active receipt");
+                    "prospective cycle receipt is not a completed inactive non-active receipt");
         }
         ResearchSchemaRegistry.defaultRegistry().validateContractSchema(cycle);
         if (!"github-settings-api-receipt/1".equals(api.path("schema").asText())
@@ -138,7 +186,7 @@ final class ProspectiveSnapshotVerifierV5 {
                         .equals(api.path("content_sha256").asText())
                 || !Set.of("BASELINE_ESTABLISHED", "CLEAR").contains(drift.path("status").asText())) {
             throw new CustodyException(
-                "settings drift evidence is not bound to the capture/API bytes");
+                    "settings drift evidence is not bound to the capture/API bytes");
         }
 
         String tokenKind = capture.path("settings_token_identity").path("token_kind").asText();
@@ -152,9 +200,12 @@ final class ProspectiveSnapshotVerifierV5 {
                 || !exactAuditorInstallation(api.get("settings_auditor_installation"),
                         capture.path("repository").asText(), capture.get("repository_id"), tokenKind)
                 || !sameCanonical(capture.get("settings_auditor_installation"),
-                        api.get("settings_auditor_installation"))))
+                        api.get("settings_auditor_installation")))) {
             throw new CustodyException("settings auditor installation proof is not exact");
+        }
+    }
 
+    private static TrustedRegistry loadTrustedRegistry(Options options) {
         Path trustedBaseCandidate = options.trustedBaseRoot() == null
                 ? Path.of("").toAbsolutePath() : options.trustedBaseRoot().toAbsolutePath().normalize();
         Path trustedBase = PathConfinement.requireRealDirectory(
@@ -162,8 +213,9 @@ final class ProspectiveSnapshotVerifierV5 {
         Path registryCandidate = options.trustedRegistryPath() == null
                 ? trustedBase.resolve("strategy-research/config/v5-attestation-key-registry.json")
                 : options.trustedRegistryPath().toAbsolutePath().normalize();
-        if (!registryCandidate.startsWith(trustedBase))
+        if (!registryCandidate.startsWith(trustedBase)) {
             throw new CustodyException("trusted attestation registry escapes the trusted verifier base");
+        }
         String registryRelative = trustedBase.relativize(registryCandidate).toString()
                 .replace(registryCandidate.getFileSystem().getSeparator(), "/");
         Path trustedRegistry = PathConfinement.resolve(trustedBase, registryRelative,
@@ -171,45 +223,7 @@ final class ProspectiveSnapshotVerifierV5 {
         byte[] trustedRegistryBytes = PathConfinement.readSinglyLinkedFile(
                 trustedRegistry, "trusted-base attestation registry");
         requireGitHeadRegistry(trustedBase, registryRelative, trustedRegistryBytes);
-        exactSnapshotRegistry(registry,
-                files.get("v5-attestation-key-registry.json").bytes(), trustedRegistryBytes);
-        ActionsAttestationVerifierV5.verify(new ActionsAttestationVerifierV5.Request(
-                attestation,
-                capture,
-                null,
-                JsonHashes.sha256(files.get("github-deployment-settings-capture.json").bytes()),
-                options.nowAt(),
-                options.pinnedAttestationFingerprint(),
-                JsonHashes.sha256(files.get("github-settings-api-receipt.json").bytes()),
-                JsonHashes.sha256(files.get("v5-shadow-cycle-receipt.json").bytes()),
-                null,
-                null,
-                null,
-                registry,
-                registry.path("content_sha256").asText(),
-                JsonHashes.sha256(files.get("v5-attestation-key-registry.json").bytes())));
-
-        Path snapshotBase = trustedBase.resolve("evidence/prospective-v5").toAbsolutePath().normalize();
-        LedgerSnapshot proposedLedger = readProspectiveLedger(
-                ledgerRoot, options.nowAt(), true, snapshotBase, new HashSet<>());
-        List<TrustedDelta> candidates = readTrustedDeltas(snapshotBase);
-        validateTrustedSnapshotGraph(candidates);
-        TrustedDelta tip = candidates.stream()
-                .max(Comparator.comparingInt(row -> row.index().path("sequence").asInt())).orElse(null);
-        WorkflowSecurityV5.LedgerCandidate base = null;
-        if (tip != null) {
-            LedgerSnapshot ledger = readProspectiveLedger(
-                    tip.path(), options.nowAt(), true, snapshotBase, new HashSet<>());
-            base = new WorkflowSecurityV5.LedgerCandidate(
-                    tip.path().toString(), ledger.sequence(), ledger.currentHead(), ledger.lineage(),
-                    ledger.eventHeads());
-        }
-        WorkflowSecurityV5.LedgerCandidate proposed = new WorkflowSecurityV5.LedgerCandidate(
-                ledgerRoot.toString(), proposedLedger.sequence(), proposedLedger.currentHead(),
-                proposedLedger.lineage(), proposedLedger.eventHeads());
-        WorkflowSecurityV5.assertProspectiveLedgerSuccessorV5(base, proposed);
-        return new Verification(true, proposed.sequence(), proposed.head(),
-                base == null ? null : base.sequence());
+        return new TrustedRegistry(trustedBase, trustedRegistryBytes);
     }
 
     private static void exactTopLevelInventory(Path root) {

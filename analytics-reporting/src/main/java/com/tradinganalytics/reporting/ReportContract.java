@@ -47,14 +47,7 @@ public final class ReportContract {
     }
 
     public static ValidationResult validateReportMachine3(JsonNode report, ValidationOptions options) {
-        List<String> errors = new ArrayList<>(ReportSchemaValidator.validateV3(report));
-        List<String> warnings = new ArrayList<>();
-        if (errors.isEmpty()) {
-            SemanticIssues issues = ReportSemanticValidator.semanticIssues3(report, normalize(options));
-            errors.addAll(issues.errors());
-            warnings.addAll(issues.warnings());
-        }
-        return new ValidationResult(errors.isEmpty(), errors, warnings, REPORT_MACHINE_V3);
+        return validate(report, options, REPORT_MACHINE_V3);
     }
 
     public static ValidationResult validateReportMachine2(JsonNode report) {
@@ -62,14 +55,21 @@ public final class ReportContract {
     }
 
     public static ValidationResult validateReportMachine2(JsonNode report, ValidationOptions options) {
-        List<String> errors = new ArrayList<>(ReportSchemaValidator.validateV2(report));
+        return validate(report, options, REPORT_MACHINE_V2);
+    }
+
+    private static ValidationResult validate(JsonNode report, ValidationOptions options, String schema) {
+        List<String> errors = new ArrayList<>(REPORT_MACHINE_V3.equals(schema)
+                ? ReportSchemaValidator.validateV3(report) : ReportSchemaValidator.validateV2(report));
         List<String> warnings = new ArrayList<>();
         if (errors.isEmpty()) {
-            SemanticIssues issues = ReportSemanticValidator.semanticIssues2(report, normalize(options));
+            SemanticIssues issues = REPORT_MACHINE_V3.equals(schema)
+                    ? ReportSemanticValidator.semanticIssues3(report, normalize(options))
+                    : ReportSemanticValidator.semanticIssues2(report, normalize(options));
             errors.addAll(issues.errors());
             warnings.addAll(issues.warnings());
         }
-        return new ValidationResult(errors.isEmpty(), errors, warnings, REPORT_MACHINE_V2);
+        return new ValidationResult(errors.isEmpty(), errors, warnings, schema);
     }
 
     public static LoadedReport loadAndValidateReport(Path path) throws IOException {

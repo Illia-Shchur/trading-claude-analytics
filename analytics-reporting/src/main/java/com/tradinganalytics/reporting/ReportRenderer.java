@@ -31,6 +31,12 @@ public final class ReportRenderer {
     private static final Pattern DECIMAL = Pattern.compile("^-?\\d+(?:\\.\\d+)?$");
     private static final Pattern CAMEL = Pattern.compile("([a-z])([A-Z])");
     private static final Pattern FIRST = Pattern.compile("^.", Pattern.DOTALL);
+    private static final Pattern PERCENT_UNIT = Pattern.compile("percent", Pattern.CASE_INSENSITIVE);
+
+    private static final Map<String, Integer> FK_LEG_MAXES = Map.of(
+            "sentiment", 5, "momentum", 4, "valuation", 5, "capitulation", 3, "holder", 3);
+    private static final Map<String, Integer> FR_LEG_MAXES = Map.of(
+            "euphoria", 5, "momentum", 4, "valuation", 5, "distribution", 3, "vulnerability", 3);
 
     private static final Map<String, String> MARKS = orderedMap(
             "AVAILABLE", "✅", "PASS", "✅", "PASSED", "✅", "AUTHORIZED", "✅",
@@ -644,8 +650,7 @@ public final class ReportRenderer {
         if (!hasValue(value)) return DASH;
         if (value.isObject() || value.isArray()) return friendlyValue(value);
         String number = formatNumber(value), normalized = truthy(unit) ? string(unit) : "";
-        if (Pattern.compile("^percent(?:\\s|$)", Pattern.CASE_INSENSITIVE).matcher(normalized).find()
-                || Pattern.compile("percent", Pattern.CASE_INSENSITIVE).matcher(normalized).find()) return number + "%";
+        if (PERCENT_UNIT.matcher(normalized).find()) return number + "%";
         if ("USD".equalsIgnoreCase(normalized)) return moneyValue(value);
         if (normalized.regionMatches(true, 0, "USD/", 0, 4)) return moneyValue(value) + "/" + normalized.substring(4);
         return normalized.isEmpty() ? number : number + " " + normalized;
@@ -675,12 +680,15 @@ public final class ReportRenderer {
         if (!hasValue(value)) return DASH;
         if (value.isArray()) {
             if (value.isEmpty()) return "None";
-            List<String> values = new ArrayList<>(); value.forEach(item -> values.add(friendlyValue(item)));
+            List<String> values = new ArrayList<>();
+            value.forEach(item -> values.add(friendlyValue(item)));
             return String.join("; ", values);
         }
         if (value.isObject()) {
             List<String> values = new ArrayList<>();
-            for (Map.Entry<String, JsonNode> field : entries(value)) values.add(fieldName(field.getKey()) + ": " + friendlyValue(field.getValue(), field.getKey()));
+            for (Map.Entry<String, JsonNode> field : entries(value)) {
+                values.add(fieldName(field.getKey()) + ": " + friendlyValue(field.getValue(), field.getKey()));
+            }
             return String.join("; ", values);
         }
         return scalar(value, key);
@@ -734,35 +742,66 @@ public final class ReportRenderer {
     }
 
     private static Object maxForLeg(String framework, String key) {
-        Map<String, Integer> values = "flying_rocket".equals(framework)
-                ? Map.of("euphoria", 5, "momentum", 4, "valuation", 5, "distribution", 3, "vulnerability", 3)
-                : Map.of("sentiment", 5, "momentum", 4, "valuation", 5, "capitulation", 3, "holder", 3);
+        Map<String, Integer> values = "flying_rocket".equals(framework) ? FR_LEG_MAXES : FK_LEG_MAXES;
         return values.getOrDefault(key, null) == null ? DASH : values.get(key);
     }
 
-    private static int countActive(ArrayNode values) { int count = 0; for (JsonNode value : values) if (bool(get(value, "active"))) count++; return count; }
+    private static int countActive(ArrayNode values) {
+        int count = 0;
+        for (JsonNode value : values) {
+            if (bool(get(value, "active"))) count++;
+        }
+        return count;
+    }
     private static boolean bool(JsonNode value) { return value != null && value.isBoolean() && value.booleanValue(); }
     private static String orDash(JsonNode value) { return stringOr(value, DASH); }
     private static JsonNode textNode(String value) { return value == null ? MissingNode.getInstance() : ReportingJson.NODES.textNode(value); }
 
-    private static JsonNode firstPresent(JsonNode... values) { for (JsonNode value : values) if (present(value)) return value; return MissingNode.getInstance(); }
-    private static JsonNode firstTruthyNode(JsonNode... values) { for (JsonNode value : values) if (truthy(value)) return value; return MissingNode.getInstance(); }
+    private static JsonNode firstPresent(JsonNode... values) {
+        for (JsonNode value : values) {
+            if (present(value)) return value;
+        }
+        return MissingNode.getInstance();
+    }
+
+    private static JsonNode firstTruthyNode(JsonNode... values) {
+        for (JsonNode value : values) {
+            if (truthy(value)) return value;
+        }
+        return MissingNode.getInstance();
+    }
+
     private static String firstTruthy(JsonNode... values) { JsonNode found = firstTruthyNode(values); return present(found) ? string(found) : "undefined"; }
-    private static ObjectNode firstTruthyObject(JsonNode... values) { JsonNode found = firstTruthyNode(values); return found.isObject() ? (ObjectNode) found : ReportingJson.NODES.objectNode(); }
-    private static ObjectNode asObject(JsonNode value) { return value != null && value.isObject() ? (ObjectNode) value : ReportingJson.NODES.objectNode(); }
+    private static ObjectNode firstTruthyObject(JsonNode... values) {
+        JsonNode found = firstTruthyNode(values);
+        return found.isObject() ? (ObjectNode) found : ReportingJson.NODES.objectNode();
+    }
+
+    private static ObjectNode asObject(JsonNode value) {
+        return value != null && value.isObject() ? (ObjectNode) value : ReportingJson.NODES.objectNode();
+    }
 
     private static ObjectNode selectedObject(JsonNode source, String... fields) {
         ObjectNode output = ReportingJson.NODES.objectNode();
-        for (String field : fields) output.set(field, present(get(source, field)) ? get(source, field).deepCopy() : MissingNode.getInstance());
+        for (String field : fields) {
+            JsonNode value = get(source, field);
+            output.set(field, present(value) ? value.deepCopy() : MissingNode.getInstance());
+        }
         return output;
     }
 
     private static List<List<?>> rows(ArrayNode values, Function<JsonNode, List<?>> mapper) {
-        List<List<?>> rows = new ArrayList<>(); for (JsonNode value : values) rows.add(mapper.apply(value)); return rows;
+        List<List<?>> rows = new ArrayList<>();
+        for (JsonNode value : values) {
+            rows.add(mapper.apply(value));
+        }
+        return rows;
     }
 
     private static String joinRaw(ArrayNode values, String delimiter) {
-        List<String> strings = new ArrayList<>(); values.forEach(value -> strings.add(string(value))); return String.join(delimiter, strings);
+        List<String> strings = new ArrayList<>();
+        values.forEach(value -> strings.add(string(value)));
+        return String.join(delimiter, strings);
     }
 
     private static List<String> lines(String... values) { return new ArrayList<>(List.of(values)); }

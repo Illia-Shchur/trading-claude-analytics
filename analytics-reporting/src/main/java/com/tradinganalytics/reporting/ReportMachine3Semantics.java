@@ -11,8 +11,10 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.tradinganalytics.reporting.ReportJsonSupport.array;
 import static com.tradinganalytics.reporting.ReportJsonSupport.basename;
@@ -29,6 +31,7 @@ import static com.tradinganalytics.reporting.ReportJsonSupport.object;
 import static com.tradinganalytics.reporting.ReportJsonSupport.parseDateMillis;
 import static com.tradinganalytics.reporting.ReportJsonSupport.stringList;
 import static com.tradinganalytics.reporting.ReportJsonSupport.text;
+import static com.tradinganalytics.reporting.ReportingJson.truthy;
 import static com.tradinganalytics.reporting.ReportJsonSupport.upper;
 
 /** Semantic half of the {@code report-machine/3} contract. */
@@ -49,6 +52,7 @@ final class ReportMachine3Semantics {
             "NARRATIVE_EXIT", "CARRY", "FUNDING", "MACRO_SHOCK");
     private static final Map<String, Integer> CLOCK_DAYS = orderedMap(
             Map.entry("1A", 7), Map.entry("1B", 14), Map.entry("2", 21), Map.entry("3", 30));
+    private static final Pattern SHA256 = Pattern.compile("^[0-9a-f]{64}$");
 
     private ReportMachine3Semantics() {
     }
@@ -92,7 +96,7 @@ final class ReportMachine3Semantics {
 
         JsonNode identity = field(report, "identity");
         JsonNode timestamps = field(report, "timestamps");
-        if (!java.util.Objects.equals(text(timestamps, "timezone"), text(identity, "timezone"))) {
+        if (!Objects.equals(text(timestamps, "timezone"), text(identity, "timezone"))) {
             errors.add("timestamps.timezone and identity.timezone differ");
         }
         for (String key : List.of("generated_at", "report_at", "data_as_of")) {
@@ -118,7 +122,7 @@ final class ReportMachine3Semantics {
 
         JsonNode setup = field(report, "setup");
         String setupFramework = text(setup, "framework");
-        if (!java.util.Objects.equals(setupFramework, text(identity, "framework"))) {
+        if (!Objects.equals(setupFramework, text(identity, "framework"))) {
             errors.add("setup.framework and identity.framework differ");
         }
         JsonNode horizon = field(setup, "horizon_days");
@@ -345,14 +349,7 @@ final class ReportMachine3Semantics {
             if (!flowComplete) {
                 errors.add("entry authorization requires COMPLETE, error-free two-horizon flow coverage");
             }
-            boolean freshTrigger = "VALID".equals(text(trigger, "status"))
-                    && "4h".equals(text(trigger, "timeframe"))
-                    && field(trigger, "completed_bar_required").isBoolean()
-                    && field(trigger, "completed_bar_required").booleanValue()
-                    && !(field(trigger, "completed_bar").isBoolean() && !field(trigger, "completed_bar").booleanValue())
-                    && jsNumberConversion(field(trigger, "window_bars")) <= 2
-                    && (field(trigger, "age_bars").isNull() || field(trigger, "age_bars").isMissingNode()
-                    || jsNumberConversion(field(trigger, "age_bars")) <= jsNumberConversion(field(trigger, "window_bars")));
+            boolean freshTrigger = isFreshCompletedTrigger(trigger);
             if (!freshTrigger) {
                 errors.add("entry authorization requires a VALID fresh completed 4h trigger within two bars");
             }
@@ -568,24 +565,22 @@ final class ReportMachine3Semantics {
 
     private static boolean matchesSha256(JsonNode value) {
         String text = text(value);
-        return text != null && text.matches("^[0-9a-f]{64}$");
+        return text != null && SHA256.matcher(text).matches();
     }
 
-    /** JavaScript truthiness for the JSON-domain values accepted by this contract. */
-    private static boolean truthy(JsonNode value) {
-        if (value == null || value.isMissingNode() || value.isNull()) {
-            return false;
-        }
-        if (value.isBoolean()) {
-            return value.booleanValue();
-        }
-        if (value.isNumber()) {
-            return value.doubleValue() != 0 && !Double.isNaN(value.doubleValue());
-        }
-        if (value.isTextual()) {
-            return !value.textValue().isEmpty();
-        }
-        return true;
+    private static boolean isFreshCompletedTrigger(JsonNode trigger) {
+        JsonNode completedBarRequired = field(trigger, "completed_bar_required");
+        JsonNode completedBar = field(trigger, "completed_bar");
+        JsonNode ageBars = field(trigger, "age_bars");
+        JsonNode windowBars = field(trigger, "window_bars");
+        return "VALID".equals(text(trigger, "status"))
+                && "4h".equals(text(trigger, "timeframe"))
+                && completedBarRequired.isBoolean()
+                && completedBarRequired.booleanValue()
+                && !(completedBar.isBoolean() && !completedBar.booleanValue())
+                && jsNumberConversion(windowBars) <= 2
+                && (ageBars.isNull() || ageBars.isMissingNode()
+                || jsNumberConversion(ageBars) <= jsNumberConversion(windowBars));
     }
 
     private static String jsValue(JsonNode value) {

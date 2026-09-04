@@ -11,7 +11,6 @@ import com.tradinganalytics.marketdata.LiveMarketFetchService;
 import com.tradinganalytics.marketdata.MarketDataEndpoints;
 import com.tradinganalytics.marketdata.http.MarketHttpClient;
 import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Base64;
@@ -37,11 +36,7 @@ class LiveMarketFetchAssetParityTest {
     private static void assertParity(ObjectNode fixture) throws Exception {
         String name = fixture.path("coinglass").asBoolean()
                 ? "live-fetch-btc-coinglass-v1.json" : "live-fetch-btc-public-v1.json";
-        JsonNode expected;
-        try (InputStream stream = LiveMarketFetchAssetParityTest.class
-                .getResourceAsStream("/oracles/" + name)) {
-            assertThat(stream).as(name).isNotNull(); expected = JSON.readTree(stream);
-        }
+        JsonNode expected = CompatibilityFixtures.readJson(JSON, name);
 
         PublicDataAdapters.InjectableHttpClient getter = (uri, headers) -> route(uri.toString(), fixture);
         MarketHttpClient http = new MarketHttpClient(getter, null, millis -> { }, JSON);

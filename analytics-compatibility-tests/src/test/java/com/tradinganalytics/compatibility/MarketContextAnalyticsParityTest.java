@@ -1,14 +1,10 @@
 package com.tradinganalytics.compatibility;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.tradinganalytics.contracts.json.NodePrettyJson;
 import com.tradinganalytics.marketdata.MarketContextAnalytics;
-import java.io.InputStream;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,10 +14,7 @@ class MarketContextAnalyticsParityTest {
     private static final ObjectMapper JSON = new ObjectMapper();
     @Test
     void contextPanelsMatchFrozenWireOutput() throws Exception {
-        JsonNode expected;
-        try (InputStream stream = getClass().getResourceAsStream("/oracles/market-context-v1.json")) {
-            assertThat(stream).isNotNull(); expected = JSON.readTree(stream);
-        }
+        JsonNode expected = CompatibilityFixtures.readJson(JSON, "market-context-v1.json");
 
         ArrayNode onchain = JSON.createArrayNode();
         for (int index = 0; index < 31; index++) {
@@ -56,6 +49,6 @@ class MarketContextAnalyticsParityTest {
         actual.set("breadth", MarketContextAnalytics.breadth200Block(breadth, 3.0, "2026-01-01", 95));
         actual.set("breadth_low", MarketContextAnalytics.breadth200Block(breadth, 10.0, "2026-01-01", 95));
         actual.set("sentiment", MarketContextAnalytics.sentimentProxyBlock(vol, cef, reference, 5, 10));
-        assertThat(NodePrettyJson.write(actual)).isEqualTo(NodePrettyJson.write(expected));
+        CompatibilityFixtures.assertWireEqual(expected, actual);
     }
 }

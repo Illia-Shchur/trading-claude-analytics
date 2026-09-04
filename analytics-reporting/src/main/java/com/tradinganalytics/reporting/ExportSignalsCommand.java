@@ -237,7 +237,7 @@ public final class ExportSignalsCommand {
 
     private static void comparePair(Path markdownPath, String mdFile, String jsonFile, JsonNode report, ArrayNode mismatched) throws Exception {
         String view = Files.readString(markdownPath, StandardCharsets.UTF_8);
-        Matcher matcher = PAIR_BLOCK.matcher(view); List<String> blocks = new ArrayList<>(); while (matcher.find()) blocks.add(matcher.group(1));
+        List<String> blocks = machineBlocks(view);
         if ("report-machine/3".equals(report.path("schema").asText())) {
             if (!blocks.isEmpty()) mismatched.add(pair(jsonFile, mdFile, "report-machine/3 must not embed a machine block"));
             String hash = Sha256.hex(ReportContract.canonicalReportPayload(report)).substring(0, 16);
@@ -349,8 +349,10 @@ public final class ExportSignalsCommand {
             ObjectNode leg = legs.addObject(); copy(leg, spec, "ordinal", "block_key", "rubric_name");
             putTextOrNull(leg, "value", dec(scoreSource.path("legs").get(spec.path("block_key").asText()))); copy(leg, spec, "min", "max");
         }
-        int filledCount = 0; for (JsonNode tranche : tranches) if (tranche.path("deployed").asBoolean(false)
-                || tranche.has("entry_price") && !tranche.get("entry_price").isNull() || tranche.path("entry").isNumber()) filledCount++;
+        int filledCount = 0;
+        for (JsonNode tranche : tranches) {
+            if (isFilled(tranche)) filledCount++;
+        }
         ObjectNode signal = ReportingJson.NODES.objectNode();
         copyRenamed(signal, meta, "file", "report_file", "date", "report_date", "local_time", "report_local_time", "zone", "report_zone", "at_utc", "report_at_utc");
         signal.put("report_at_derivation", AT_UTC_NOTE); signal.put("content_sha256", contentSha);
@@ -386,7 +388,7 @@ public final class ExportSignalsCommand {
             if (source.path("entry").isNumber()) tranche.set("entry", NullNode.instance); else setNullable(tranche, "entry", source.get("entry"));
             JsonNode entryPrice = source.path("entry_price").isNumber() ? source.get("entry_price") : source.path("entry").isNumber() ? source.get("entry") : null;
             putTextOrNull(tranche, "entry_price", dec(entryPrice)); boolean deployed = source.path("deployed").asBoolean(false); tranche.put("deployed", deployed);
-            tranche.put("filled", deployed || source.path("entry_price").isNumber() || source.path("entry").isNumber());
+            tranche.put("filled", isProjectedFill(source));
             for (String field : List.of("stop", "prior_stop")) putTextOrNull(tranche, field, dec(source.get(field)));
             for (String field : List.of("time_stop", "prior_time_stop", "channel", "channel_regime")) setNullable(tranche, field, source.get(field));
             tranche.put("discretionary", source.path("discretionary").asBoolean(false));
@@ -410,10 +412,55 @@ public final class ExportSignalsCommand {
         return null;
     }
 
-    private static String option(List<String> args, String name, String fallback) { int index = args.indexOf(name); return index >= 0 && index + 1 < args.size() ? args.get(index + 1) : fallback; }
-    private static ObjectNode skip(String file, String date, String reason, String detail) { ObjectNode value = ReportingJson.NODES.objectNode(); value.put("file", file); if (date != null) value.put("date", date); value.put("reason", reason); value.put("detail", detail); return value; }
-    private static ObjectNode pair(String json, String markdown, String reason) { ObjectNode value = ReportingJson.NODES.objectNode(); value.put("json", json); value.put("markdown", markdown); value.put("reason", reason); return value; }
-    private static ObjectNode two(String k1, String v1, String k2, String v2) { ObjectNode value = ReportingJson.NODES.objectNode(); value.put(k1, v1); value.put(k2, v2); return value; }
+    private static String option(List<String> args, String name, String fallback) {
+        int index = args.indexOf(name);
+        return index >= 0 && index + 1 < args.size() ? args.get(index + 1) : fallback;
+    }
+
+    private static ObjectNode skip(String file, String date, String reason, String detail) {
+        ObjectNode value = ReportingJson.NODES.objectNode();
+        value.put("file", file);
+        if (date != null) value.put("date", date);
+        value.put("reason", reason);
+        value.put("detail", detail);
+        return value;
+    }
+
+    private static ObjectNode pair(String json, String markdown, String reason) {
+        ObjectNode value = ReportingJson.NODES.objectNode();
+        value.put("json", json);
+        value.put("markdown", markdown);
+        value.put("reason", reason);
+        return value;
+    }
+
+    private static ObjectNode two(String k1, String v1, String k2, String v2) {
+        ObjectNode value = ReportingJson.NODES.objectNode();
+        value.put(k1, v1);
+        value.put(k2, v2);
+        return value;
+    }
+
+    private static List<String> machineBlocks(String text) {
+        Matcher matcher = PAIR_BLOCK.matcher(text);
+        List<String> blocks = new ArrayList<>();
+        while (matcher.find()) {
+            blocks.add(matcher.group(1));
+        }
+        return blocks;
+    }
+
+    private static boolean isFilled(JsonNode tranche) {
+        return tranche.path("deployed").asBoolean(false)
+                || (tranche.has("entry_price") && !tranche.get("entry_price").isNull())
+                || tranche.path("entry").isNumber();
+    }
+
+    private static boolean isProjectedFill(JsonNode tranche) {
+        return tranche.path("deployed").asBoolean(false)
+                || tranche.path("entry_price").isNumber()
+                || tranche.path("entry").isNumber();
+    }
     private static void sortByFile(ArrayNode values) { List<JsonNode> list = ReportingJson.elements(values); list.sort(Comparator.comparing(value -> value.path("file").asText())); values.removeAll(); list.forEach(values::add); }
     private static int countReason(ArrayNode values, String reason) { int count = 0; for (JsonNode value : values) if (reason.equals(value.path("reason").asText())) count++; return count; }
     private static int countField(ArrayNode values, String field, String expected) { int count = 0; for (JsonNode value : values) if (expected.equals(value.path(field).asText())) count++; return count; }

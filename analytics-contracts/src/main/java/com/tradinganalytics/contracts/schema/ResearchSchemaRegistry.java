@@ -56,52 +56,10 @@ public final class ResearchSchemaRegistry {
     public ResearchSchemaRegistry(ClassLoader classLoader) {
         Objects.requireNonNull(classLoader, "classLoader");
         try {
-            List<String> resourceNames = discoverSchemaResources(classLoader);
-            if (resourceNames.isEmpty()) {
-                throw new IllegalStateException("schema registry found no classpath resources under " + SCHEMA_ROOT);
-            }
-
-            Map<String, String> sourceById = new TreeMap<>();
-            List<SchemaDocument> loadedDocuments = new ArrayList<>(resourceNames.size());
-            for (String resourceName : resourceNames) {
-                JsonNode document = readDocument(classLoader, resourceName);
-                if (!document.isObject()) {
-                    throw new IllegalStateException(resourceName + " must contain a JSON Schema object");
-                }
-                TreeSet<String> documentIds = new TreeSet<>();
-                collectSchemaIds(document, resourceName, sourceById, documentIds);
-                String topLevelId = textId(document);
-                if (topLevelId == null) {
-                    throw new IllegalStateException(resourceName + " has no top-level $id");
-                }
-                loadedDocuments.add(new SchemaDocument(
-                        resourceName.substring((SCHEMA_ROOT + "/").length()),
-                        topLevelId,
-                        List.copyOf(documentIds)));
-            }
-
-            SchemaRegistryConfig configuration = SchemaRegistryConfig.builder()
-                    .failFast(false)
-                    .formatAssertionsEnabled(true)
-                    // The repository intentionally uses stable relative contract IDs such as
-                    // strategy-run/3; AJV accepts them and they are the public lookup keys.
-                    .schemaIdValidator((id, root, schemaLocation, evaluationPath, context) -> true)
-                    .build();
-            SchemaRegistry registry = SchemaRegistry.withDefaultDialect(
-                    SpecificationVersion.DRAFT_2020_12,
-                    builder -> builder.schemaRegistryConfig(configuration).schemas(sourceById));
-
-            Map<String, Schema> compiled = new LinkedHashMap<>();
-            for (String schemaId : sourceById.keySet()) {
-                try {
-                    compiled.put(schemaId, registry.getSchema(SchemaLocation.of(schemaId)));
-                } catch (RuntimeException exception) {
-                    throw new IllegalStateException("schema registry cannot compile " + schemaId, exception);
-                }
-            }
-            this.documents = List.copyOf(loadedDocuments);
-            this.schemasById = Collections.unmodifiableMap(compiled);
-            this.schemaIds = List.copyOf(compiled.keySet());
+            SchemaCorpus corpus = loadSchemaCorpus(classLoader);
+            this.documents = corpus.documents();
+            this.schemasById = compileSchemas(corpus.sourcesById());
+            this.schemaIds = List.copyOf(schemasById.keySet());
         } catch (IOException | URISyntaxException exception) {
             throw new IllegalStateException("cannot initialize research schema registry", exception);
         }
@@ -179,6 +137,57 @@ public final class ResearchSchemaRegistry {
         } catch (IllegalArgumentException exception) {
             throw new IllegalArgumentException("contract value cannot be represented as JSON", exception);
         }
+    }
+
+    private static SchemaCorpus loadSchemaCorpus(ClassLoader classLoader)
+            throws IOException, URISyntaxException {
+        List<String> resourceNames = discoverSchemaResources(classLoader);
+        if (resourceNames.isEmpty()) {
+            throw new IllegalStateException("schema registry found no classpath resources under " + SCHEMA_ROOT);
+        }
+
+        Map<String, String> sourcesById = new TreeMap<>();
+        List<SchemaDocument> documents = new ArrayList<>(resourceNames.size());
+        for (String resourceName : resourceNames) {
+            JsonNode document = readDocument(classLoader, resourceName);
+            if (!document.isObject()) {
+                throw new IllegalStateException(resourceName + " must contain a JSON Schema object");
+            }
+            TreeSet<String> documentIds = new TreeSet<>();
+            collectSchemaIds(document, resourceName, sourcesById, documentIds);
+            String topLevelId = textId(document);
+            if (topLevelId == null) {
+                throw new IllegalStateException(resourceName + " has no top-level $id");
+            }
+            documents.add(new SchemaDocument(
+                    resourceName.substring((SCHEMA_ROOT + "/").length()),
+                    topLevelId,
+                    List.copyOf(documentIds)));
+        }
+        return new SchemaCorpus(List.copyOf(documents), sourcesById);
+    }
+
+    private static Map<String, Schema> compileSchemas(Map<String, String> sourcesById) {
+        SchemaRegistryConfig configuration = SchemaRegistryConfig.builder()
+                .failFast(false)
+                .formatAssertionsEnabled(true)
+                // The repository intentionally uses stable relative contract IDs such as
+                // strategy-run/3; AJV accepts them and they are the public lookup keys.
+                .schemaIdValidator((id, root, schemaLocation, evaluationPath, context) -> true)
+                .build();
+        SchemaRegistry registry = SchemaRegistry.withDefaultDialect(
+                SpecificationVersion.DRAFT_2020_12,
+                builder -> builder.schemaRegistryConfig(configuration).schemas(sourcesById));
+
+        Map<String, Schema> compiled = new LinkedHashMap<>();
+        for (String schemaId : sourcesById.keySet()) {
+            try {
+                compiled.put(schemaId, registry.getSchema(SchemaLocation.of(schemaId)));
+            } catch (RuntimeException exception) {
+                throw new IllegalStateException("schema registry cannot compile " + schemaId, exception);
+            }
+        }
+        return Collections.unmodifiableMap(compiled);
     }
 
     private static String schemaId(JsonNode value) {
@@ -266,6 +275,9 @@ public final class ResearchSchemaRegistry {
     private static ClassLoader defaultClassLoader() {
         ClassLoader context = Thread.currentThread().getContextClassLoader();
         return context == null ? ResearchSchemaRegistry.class.getClassLoader() : context;
+    }
+
+    private record SchemaCorpus(List<SchemaDocument> documents, Map<String, String> sourcesById) {
     }
 
     public record SchemaDocument(String filename, String topLevelId, List<String> schemaIds) {

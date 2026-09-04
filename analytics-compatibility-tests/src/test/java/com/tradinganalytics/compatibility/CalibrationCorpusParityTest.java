@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.tradinganalytics.research.calibration.CalibrationCorpus;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -85,8 +84,6 @@ class CalibrationCorpusParityTest {
     }
 
     private JsonNode frozen() throws Exception {
-        try (InputStream stream = getClass().getResourceAsStream("/oracles/calibration-corpus-v1.json")) {
-            assertThat(stream).isNotNull(); return JSON.readTree(stream);
-        }
+        return CompatibilityFixtures.readJson(JSON, "calibration-corpus-v1.json");
     }
 }

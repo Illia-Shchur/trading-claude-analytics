@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tradinganalytics.research.calibration.CalibrationRegistry;
-import java.io.InputStream;
 import org.junit.jupiter.api.Test;
 
 class CalibrationRegistryParityTest {
@@ -41,9 +40,6 @@ class CalibrationRegistryParityTest {
     }
 
     private JsonNode frozen() throws Exception {
-        try (InputStream stream = getClass().getResourceAsStream("/oracles/calibration-registry-v1.json")) {
-            assertThat(stream).isNotNull();
-            return JSON.readTree(stream);
-        }
+        return CompatibilityFixtures.readJson(JSON, "calibration-registry-v1.json");
     }
 }

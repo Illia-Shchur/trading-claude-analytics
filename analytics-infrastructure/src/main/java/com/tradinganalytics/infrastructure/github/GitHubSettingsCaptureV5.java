@@ -226,12 +226,41 @@ public final class GitHubSettingsCaptureV5 {
         String encodedRepository = encodePath(repositoryParts[0]) + "/" + encodePath(repositoryParts[1]);
         String encodedBranch = encodePath(evidenceBranch);
 
-        ApiResponse repositoryApi = transport.github("repos/" + encodedRepository, bootstrapToken, AuthMode.TOKEN);
+        CapturedEvidence evidence = fetchEvidence(new CaptureRequest(
+                env, repository, tokenKind, bootstrapToken, repositoryParts[0],
+                encodedRepository, encodedBranch, auditorIdentityConfigured, auditorPem),
+                transport, clock);
+        Instant capturedAt = clock.instant();
+
+        return assemble(new AssemblyInputs(
+                env, repository, tokenKind, evidenceBranch, declaredVisibility, capturedAt,
+                evidence.repository(), evidence.branch(), evidence.branchHead(), evidence.prospectiveEnvironment(),
+                evidence.writerEnvironment(), evidence.rulesets(), evidence.rawRulesetRows(),
+                evidence.rulesetIds(), evidence.rulesetResponses(), evidence.oidcPolicy(),
+                evidence.actionsPermissions(), evidence.selectedPermissions(), evidence.workflowPermissions(),
+                evidence.actionsSecretName(), evidence.actionsSecret(), evidence.repositorySecret(),
+                evidence.organizationSecret(), evidence.settingsSecretName(), evidence.settingsSecret(),
+                evidence.settingsRepositorySecret(), evidence.settingsOrganizationSecret(),
+                evidence.writerSecretName(), evidence.writerSecret(), evidence.writerRepositorySecret(),
+                evidence.writerOrganizationSecret(), evidence.installation(), evidence.installedApp(),
+                evidence.auditorProof(), evidence.settingsIdentity(), evidence.oidcIdentity()));
+    }
+
+    /** Fetches the complete evidence set in the fixed request order used by the capture oracle. */
+    private static CapturedEvidence fetchEvidence(
+            CaptureRequest request, Transport transport, Clock clock) {
+        String repository = request.repository();
+        String tokenKind = request.tokenKind();
+        String bootstrapToken = request.bootstrapToken();
+        String encodedRepository = request.encodedRepository();
+
+        ApiResponse repositoryApi = transport.github(
+                "repos/" + encodedRepository, bootstrapToken, AuthMode.TOKEN);
         ApiResponse branch = transport.github(
-                "repos/" + encodedRepository + "/branches/" + encodedBranch + "/protection",
+                "repos/" + encodedRepository + "/branches/" + request.encodedBranch() + "/protection",
                 bootstrapToken, AuthMode.TOKEN);
         ApiResponse branchHead = transport.github(
-                "repos/" + encodedRepository + "/branches/" + encodedBranch,
+                "repos/" + encodedRepository + "/branches/" + request.encodedBranch(),
                 bootstrapToken, AuthMode.TOKEN);
         ApiResponse prospectiveEnvironment = transport.github(
                 "repos/" + encodedRepository + "/environments/" + PROSPECTIVE_ENVIRONMENT,
@@ -268,10 +297,10 @@ public final class GitHubSettingsCaptureV5 {
                 "repos/" + encodedRepository + "/actions/permissions/workflow",
                 bootstrapToken, AuthMode.TOKEN);
 
-        String actionsSecretName = env.or(
+        String actionsSecretName = request.env().or(
                 "V5_ACTIONS_ATTESTATION_SECRET_NAME",
                 "PROD_V5_ACTIONS_ATTESTATION_PRIVATE_KEY_B64");
-        String organization = repositoryParts[0];
+        String organization = request.repositoryOwner();
         ApiResponse actionsSecret = transport.github(
                 "repos/" + encodedRepository + "/environments/" + PROSPECTIVE_ENVIRONMENT
                         + "/secrets/" + encodePath(actionsSecretName),
@@ -287,14 +316,14 @@ public final class GitHubSettingsCaptureV5 {
                 ? "V5_GITHUB_SETTINGS_AUDITOR_APP_PRIVATE_KEY_PEM"
                 : "V5_GITHUB_SETTINGS_PAT";
         if ("APP".equals(tokenKind)
-                && !env.get("V5_SETTINGS_TOKEN_SECRET_NAME").isBlank()
-                && !defaultSettingsSecret.equals(env.get("V5_SETTINGS_TOKEN_SECRET_NAME"))) {
+                && !request.env().get("V5_SETTINGS_TOKEN_SECRET_NAME").isBlank()
+                && !defaultSettingsSecret.equals(request.env().get("V5_SETTINGS_TOKEN_SECRET_NAME"))) {
             throw new IllegalArgumentException(
                     "APP settings custody must use the protected auditor secret " + defaultSettingsSecret);
         }
         String settingsSecretName = "APP".equals(tokenKind)
                 ? defaultSettingsSecret
-                : env.or("V5_SETTINGS_TOKEN_SECRET_NAME", defaultSettingsSecret);
+                : request.env().or("V5_SETTINGS_TOKEN_SECRET_NAME", defaultSettingsSecret);
         ApiResponse settingsSecret = transport.github(
                 "repos/" + encodedRepository + "/environments/" + PROSPECTIVE_ENVIRONMENT
                         + "/secrets/" + encodePath(settingsSecretName),
@@ -306,7 +335,7 @@ public final class GitHubSettingsCaptureV5 {
                 "orgs/" + encodePath(organization) + "/actions/secrets/" + encodePath(settingsSecretName),
                 bootstrapToken, AuthMode.TOKEN);
 
-        String writerSecretName = env.or(
+        String writerSecretName = request.env().or(
                 "V5_EVIDENCE_WRITER_APP_PRIVATE_KEY_SECRET_NAME",
                 "V5_EVIDENCE_WRITER_APP_PRIVATE_KEY_PEM");
         ApiResponse writerSecret = transport.github(
@@ -323,9 +352,11 @@ public final class GitHubSettingsCaptureV5 {
         ApiResponse installation = new ApiResponse(0, object(
                 "skipped_for", "PAT", "installation_proof", "UNPROVEN"));
         InstalledApp installedApp = parseInstalledApp(installation, tokenKind);
-        ObjectNode auditorProof = auditorProofBase(tokenKind, auditorIdentityConfigured);
-        if ("APP".equals(tokenKind) && auditorIdentityConfigured && !auditorPem.isBlank()) {
-            String jwt = auditorAppJwt(SETTINGS_AUDITOR_APP_ID, auditorPem, clock.instant());
+        ObjectNode auditorProof = auditorProofBase(
+                tokenKind, request.auditorIdentityConfigured());
+        if ("APP".equals(tokenKind)
+                && request.auditorIdentityConfigured() && !request.auditorPem().isBlank()) {
+            String jwt = auditorAppJwt(SETTINGS_AUDITOR_APP_ID, request.auditorPem(), clock.instant());
             installation = transport.github(
                     "repos/" + encodedRepository + "/installation", jwt, AuthMode.APP_JWT);
             installedApp = parseInstalledApp(installation, tokenKind);
@@ -336,25 +367,22 @@ public final class GitHubSettingsCaptureV5 {
             ApiResponse accessibleRepositories = transport.github(
                     "installation/repositories", bootstrapToken, AuthMode.TOKEN);
             auditorProof = buildAuditorProof(
-                    tokenKind, auditorIdentityConfigured, repository, repositoryApi,
+                    tokenKind, request.auditorIdentityConfigured(), repository, repositoryApi,
                     installedApp, appMetadata, installationMetadata, accessibleRepositories);
         }
 
         ApiResponse settingsIdentity = "PAT".equals(tokenKind)
                 ? transport.github("user", bootstrapToken, AuthMode.TOKEN)
                 : installation;
-        OidcIdentity oidcIdentity = requestOidcIdentity(env, transport);
-        Instant capturedAt = clock.instant();
-
-        return assemble(new AssemblyInputs(
-                env, repository, tokenKind, evidenceBranch, declaredVisibility, capturedAt,
+        OidcIdentity oidcIdentity = requestOidcIdentity(request.env(), transport);
+        return new CapturedEvidence(
                 repositoryApi, branch, branchHead, prospectiveEnvironment, writerEnvironment,
-                rulesets, rawRulesetRows, rulesetIdsInRequestOrder, rulesetResponses,
-                oidcPolicy, actionsPermissions, selectedPermissions, workflowPermissions,
-                actionsSecretName, actionsSecret, repositorySecret, organizationSecret,
-                settingsSecretName, settingsSecret, settingsRepositorySecret, settingsOrganizationSecret,
-                writerSecretName, writerSecret, writerRepositorySecret, writerOrganizationSecret,
-                installation, installedApp, auditorProof, settingsIdentity, oidcIdentity));
+                rulesets, rawRulesetRows, rulesetIdsInRequestOrder, rulesetResponses, oidcPolicy,
+                actionsPermissions, selectedPermissions, workflowPermissions, actionsSecretName,
+                actionsSecret, repositorySecret, organizationSecret, settingsSecretName, settingsSecret,
+                settingsRepositorySecret, settingsOrganizationSecret, writerSecretName, writerSecret,
+                writerRepositorySecret, writerOrganizationSecret, installation, installedApp,
+                auditorProof, settingsIdentity, oidcIdentity);
     }
 
     private static Result assemble(AssemblyInputs in) {
@@ -2235,6 +2263,49 @@ public final class GitHubSettingsCaptureV5 {
         writeJson(receiptPath, result.receipt());
         writeJson(capturePath, result.capture());
     }
+
+    private record CaptureRequest(
+            Env env,
+            String repository,
+            String tokenKind,
+            String bootstrapToken,
+            String repositoryOwner,
+            String encodedRepository,
+            String encodedBranch,
+            boolean auditorIdentityConfigured,
+            String auditorPem) {}
+
+    private record CapturedEvidence(
+            ApiResponse repository,
+            ApiResponse branch,
+            ApiResponse branchHead,
+            ApiResponse prospectiveEnvironment,
+            ApiResponse writerEnvironment,
+            ApiResponse rulesets,
+            List<JsonNode> rawRulesetRows,
+            List<Long> rulesetIds,
+            List<ApiResponse> rulesetResponses,
+            ApiResponse oidcPolicy,
+            ApiResponse actionsPermissions,
+            ApiResponse selectedPermissions,
+            ApiResponse workflowPermissions,
+            String actionsSecretName,
+            ApiResponse actionsSecret,
+            ApiResponse repositorySecret,
+            ApiResponse organizationSecret,
+            String settingsSecretName,
+            ApiResponse settingsSecret,
+            ApiResponse settingsRepositorySecret,
+            ApiResponse settingsOrganizationSecret,
+            String writerSecretName,
+            ApiResponse writerSecret,
+            ApiResponse writerRepositorySecret,
+            ApiResponse writerOrganizationSecret,
+            ApiResponse installation,
+            InstalledApp installedApp,
+            ObjectNode auditorProof,
+            ApiResponse settingsIdentity,
+            OidcIdentity oidcIdentity) {}
 
     private record AssemblyInputs(
             Env env,

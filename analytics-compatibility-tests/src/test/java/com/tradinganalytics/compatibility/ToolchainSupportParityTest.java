@@ -11,7 +11,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.tradinganalytics.core.lib.ToolchainSelftestContract;
 import com.tradinganalytics.core.lib.ToolchainSupport;
 import java.nio.charset.StandardCharsets;
-import java.io.InputStream;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +25,7 @@ class ToolchainSupportParityTest {
 
     @Test
     void pureToolchainTailMatchesNodeOracle() throws Exception {
-        JsonNode expected = frozen("/oracles/toolchain-support-main-v1.json");
+        JsonNode expected = frozen("toolchain-support-main-v1.json");
 
         ObjectNode actual = JSON.createObjectNode();
         ArrayNode metadata = actual.putArray("metadata");
@@ -81,7 +80,7 @@ class ToolchainSupportParityTest {
 
     @Test
     void scoringStopsAndFillDetectionMatchNodeOracle() throws Exception {
-        JsonNode expected = frozen("/oracles/toolchain-support-tail-v1.json");
+        JsonNode expected = frozen("toolchain-support-tail-v1.json");
         ObjectNode actual = JSON.createObjectNode();
 
         ObjectNode constants = actual.putObject("constants");
@@ -192,7 +191,7 @@ class ToolchainSupportParityTest {
 
     @Test
     void deterministicPropertyGridMatchesNodeForEveryScoreAndStopBoundary() throws Exception {
-        String expectedDigest = frozen("/oracles/toolchain-support-property-digest-v1.json").asText();
+        String expectedDigest = frozen("toolchain-support-property-digest-v1.json").asText();
         ArrayNode actual = JSON.createArrayNode();
         String[] phases = {"1a", "1b", "2", "3", "x"};
         String[] channels = {"A", "B", "X"};
@@ -242,7 +241,7 @@ class ToolchainSupportParityTest {
 
     @Test
     void dynamicallyInventoriesEveryLibExportAndEveryExecutedSelftestVector() throws Exception {
-        JsonNode surface = frozen("/oracles/toolchain-support-surface-v1.json");
+        JsonNode surface = frozen("toolchain-support-surface-v1.json");
         Set<String> names = new java.util.LinkedHashSet<>();
         int functions = 0;
         for (JsonNode entry : surface) {
@@ -256,7 +255,7 @@ class ToolchainSupportParityTest {
         assertThat(ToolchainSelftestContract.EXPLICIT_FACADE_ALIASES.keySet()).isSubsetOf(names);
         assertThat(ToolchainSelftestContract.REPOSITORY_FACADE_OWNERS).hasSize(10).doesNotHaveDuplicates();
 
-        JsonNode inventory = frozen("/oracles/toolchain-selftest-inventory-v1.json");
+        JsonNode inventory = frozen("toolchain-selftest-inventory-v1.json");
         assertThat(inventory.path("eq").asInt()).isEqualTo(ToolchainSelftestContract.SELFTEST_EQ_COUNT);
         assertThat(inventory.path("ok").asInt()).isEqualTo(ToolchainSelftestContract.SELFTEST_OK_COUNT);
         assertThat(inventory.path("total").asInt()).isEqualTo(ToolchainSelftestContract.SELFTEST_VECTOR_COUNT);
@@ -269,10 +268,7 @@ class ToolchainSupportParityTest {
     }
 
     private static JsonNode frozen(String resource) throws Exception {
-        try (InputStream stream = ToolchainSupportParityTest.class.getResourceAsStream(resource)) {
-            assertThat(stream).as(resource).isNotNull();
-            return JSON.readTree(stream);
-        }
+        return CompatibilityFixtures.readJson(JSON, resource);
     }
 
     private static void putJsNumber(ObjectNode object, String key, double value) {

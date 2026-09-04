@@ -1,17 +1,13 @@
 package com.tradinganalytics.compatibility;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.tradinganalytics.contracts.json.NodePrettyJson;
 import com.tradinganalytics.infrastructure.marketdata.PublicDataAdapters;
 import com.tradinganalytics.marketdata.LiveMarketFetchService;
 import com.tradinganalytics.marketdata.MarketDataEndpoints;
 import com.tradinganalytics.marketdata.http.MarketHttpClient;
 import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Base64;
@@ -36,7 +32,7 @@ class LiveMarketFetchMacroParityTest {
         ObjectNode input = JSON.createObjectNode();
         input.put("fred", fredCsv()); input.set("yahoo", yahoo); input.set("stablecoins", stablecoins);
         input.put("workbook", Base64.getEncoder().encodeToString(workbook)); input.set("scanner", scanner);
-        JsonNode expected = frozen("live-fetch-macro-v1.json");
+        JsonNode expected = CompatibilityFixtures.readJson(JSON, "live-fetch-macro-v1.json");
 
         PublicDataAdapters.InjectableHttpClient getter = (uri, headers) -> {
             String value = uri.toString();
@@ -53,14 +49,14 @@ class LiveMarketFetchMacroParityTest {
                 new MarketDataEndpoints(http, JSON, () -> NOW, null), JSON, () -> NOW, false).fetchMacro();
         actual.remove("fetched_at");
 
-        assertThat(NodePrettyJson.write(actual)).isEqualTo(NodePrettyJson.write(expected));
+        CompatibilityFixtures.assertWireEqual(expected, actual);
     }
 
     @Test
     void completeGoldFixtureMatchesNodeExactly() throws Exception {
         JsonNode yahoo = JSON.readTree(yahooChart(240));
         ObjectNode input = JSON.createObjectNode(); input.put("now", NOW); input.set("yahoo", yahoo);
-        JsonNode expected = frozen("live-fetch-gold-v1.json");
+        JsonNode expected = CompatibilityFixtures.readJson(JSON, "live-fetch-gold-v1.json");
 
         PublicDataAdapters.InjectableHttpClient getter = (uri, headers) -> uri.toString().contains("finance/chart")
                 ? response(200, JSON.writeValueAsBytes(yahoo)) : response(404, new byte[0]);
@@ -70,7 +66,7 @@ class LiveMarketFetchMacroParityTest {
                 .fetchAsset("gold", true);
         actual.remove("fetched_at");
 
-        assertThat(NodePrettyJson.write(actual)).isEqualTo(NodePrettyJson.write(expected));
+        CompatibilityFixtures.assertWireEqual(expected, actual);
     }
 
     private static String fredCsv() {
@@ -140,11 +136,4 @@ class LiveMarketFetchMacroParityTest {
         return new PublicDataAdapters.FetchResponse(status, body, Map.of());
     }
 
-    private static JsonNode frozen(String name) throws Exception {
-        try (InputStream stream = LiveMarketFetchMacroParityTest.class
-                .getResourceAsStream("/oracles/" + name)) {
-            assertThat(stream).as(name).isNotNull();
-            return JSON.readTree(stream);
-        }
-    }
 }

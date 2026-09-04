@@ -220,7 +220,7 @@ public final class PositionSnapshots {
 
     public ObjectNode custodyForPosition(JsonNode position, String asset) {
         ObjectNode result = json.createObjectNode();
-        if (position == null || position.isNull() || position.isMissingNode()) {
+        if (isAbsent(position)) {
             result.put("status", "NO_POSITION_ROW");
             result.set("on_venue", NullNode.instance);
             result.set("off_venue_qty", NullNode.instance);
@@ -261,7 +261,7 @@ public final class PositionSnapshots {
 
     public ObjectNode basisForPosition(JsonNode position, String asset) {
         ObjectNode result = json.createObjectNode();
-        if (position == null || position.isNull() || position.isMissingNode()) {
+        if (isAbsent(position)) {
             result.set("reliable", NullNode.instance);
             result.set("oversold_qty", NullNode.instance);
             result.put("note", "NO POSITION ROW for " + asset + " — cost-basis reliability is UNKNOWN, not confirmed. Do not read this as a reliable basis, and do not quote average cost, cost basis, unrealized PnL or ROI on the strength of it.");
@@ -290,7 +290,7 @@ public final class PositionSnapshots {
 
     public ObjectNode shortForPosition(JsonNode position, String asset) {
         ObjectNode result = json.createObjectNode();
-        if (position == null || position.isNull() || position.isMissingNode()) {
+        if (isAbsent(position)) {
             result.set("short", NullNode.instance);
             result.set("short_qty", NullNode.instance);
             result.set("avg_entry_usd", NullNode.instance);
@@ -340,13 +340,8 @@ public final class PositionSnapshots {
             }
         }
         if (notTracked.contains(asset)) {
-            ObjectNode result = json.createObjectNode();
-            result.put("asset", asset);
-            result.setAll(aliasFields);
-            result.put("covered", false);
-            result.put("reason", "not_tracked");
-            result.put("note", "This asset has no counterpart in the ledger and never will. Carry position state forward from the prior report; do NOT read a zero position from this response.");
-            return result;
+            return uncovered(asset, aliasFields, "not_tracked",
+                    "This asset has no counterpart in the ledger and never will. Carry position state forward from the prior report; do NOT read a zero position from this response.");
         }
 
         JsonNode position = find(arrayAt(snapshot, "positions"), row -> asset.equals(upper(row.path("asset").asText())));
@@ -373,13 +368,8 @@ public final class PositionSnapshots {
                 : fundingRows.size() > 1 ? json.valueToTree(fundingRows) : legacyFunding;
 
         if (position == null && openDeals.isEmpty() && closedDeals.isEmpty() && futures.isEmpty()) {
-            ObjectNode result = json.createObjectNode();
-            result.put("asset", asset);
-            result.setAll(aliasFields);
-            result.put("covered", false);
-            result.put("reason", "no_ledger_history");
-            result.put("note", "The ledger tracks this asset but holds no position row, no round trip and no open future in it. That is a genuine flat, not a gap — but it is stated, not inferred from an absent row. It holds only for a snapshot generated on or after 2026-07-30, when the exporter began emitting a row for every replayed asset including those with a zero live balance; on an older file an absent row may simply be an asset that was sold to exactly zero.");
-            return result;
+            return uncovered(asset, aliasFields, "no_ledger_history",
+                    "The ledger tracks this asset but holds no position row, no round trip and no open future in it. That is a genuine flat, not a gap — but it is stated, not inferred from an absent row. It holds only for a snapshot generated on or after 2026-07-30, when the exporter began emitting a row for every replayed asset including those with a zero live balance; on an older file an absent row may simply be an asset that was sold to exactly zero.");
         }
 
         LinkedHashSet<String> tags = new LinkedHashSet<>();
@@ -439,7 +429,7 @@ public final class PositionSnapshots {
     }
 
     private static Long toMillis(JsonNode value) {
-        if (value == null || value.isMissingNode() || value.isNull()) {
+        if (isAbsent(value)) {
             return null;
         }
         if (value.isNumber()) {
@@ -476,6 +466,20 @@ public final class PositionSnapshots {
 
     private static boolean defined(JsonNode parent, String name) {
         return parent != null && parent.isObject() && parent.has(name) && !parent.get(name).isNull();
+    }
+
+    private static boolean isAbsent(JsonNode value) {
+        return value == null || value.isMissingNode() || value.isNull();
+    }
+
+    private ObjectNode uncovered(String asset, ObjectNode aliasFields, String reason, String note) {
+        ObjectNode result = json.createObjectNode();
+        result.put("asset", asset);
+        result.setAll(aliasFields);
+        result.put("covered", false);
+        result.put("reason", reason);
+        result.put("note", note);
+        return result;
     }
 
     private static String upper(String value) {

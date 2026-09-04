@@ -3,10 +3,8 @@ package com.tradinganalytics.compatibility;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.tradinganalytics.cli.TripwireCommand;
-import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
@@ -24,11 +22,7 @@ class TripwireCommandParityTest {
             writeRun(temporary, "20260828-1000-aaaaaaaa", "old", 49, 6, 80);
             writeRun(temporary, "20260828-1100-bbbbbbbb", "new", 61, 7, 87);
             String checkpoints = "{\"btc\":{\"line\":90}}";
-            String expected;
-            try (InputStream input = getClass().getResourceAsStream("/oracles/tripwire-v1.json")) {
-                assertThat(input).as("frozen tripwire oracle").isNotNull();
-                expected = new String(input.readAllBytes(), StandardCharsets.UTF_8);
-            }
+            String expected = CompatibilityFixtures.readText("tripwire-v1.json");
 
             StringWriter stdout = new StringWriter();
             StringWriter stderr = new StringWriter();

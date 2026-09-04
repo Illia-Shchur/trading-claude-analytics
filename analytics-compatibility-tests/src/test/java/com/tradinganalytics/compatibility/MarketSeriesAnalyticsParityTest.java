@@ -1,14 +1,10 @@
 package com.tradinganalytics.compatibility;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.tradinganalytics.contracts.json.NodePrettyJson;
 import com.tradinganalytics.marketdata.MarketSeriesAnalytics;
-import java.io.InputStream;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -16,10 +12,7 @@ class MarketSeriesAnalyticsParityTest {
     private static final ObjectMapper JSON = new ObjectMapper();
     @Test
     void completedBarSeriesAndSpotPanelMatchNode() throws Exception {
-        JsonNode expected;
-        try (InputStream stream = getClass().getResourceAsStream("/oracles/market-series-analytics-v1.json")) {
-            assertThat(stream).isNotNull(); expected = JSON.readTree(stream);
-        }
+        JsonNode expected = CompatibilityFixtures.readJson(JSON, "market-series-analytics-v1.json");
         ArrayNode quotes = (ArrayNode) JSON.readTree("""
                 [
                   {"source":"primary","value":100,"ts":1799999700000,"ts_kind":"venue"},
@@ -49,7 +42,7 @@ class MarketSeriesAnalyticsParityTest {
         actual.set("high", JSON.valueToTree(MarketSeriesAnalytics.rollingTrailingHighDistance(closes, 5)));
         // Jackson distinguishes IntNode(1) from DoubleNode(1.0), while
         // ECMAScript JSON has one number type. Compare the actual wire form.
-        assertThat(NodePrettyJson.write(actual)).isEqualTo(NodePrettyJson.write(expected));
+        CompatibilityFixtures.assertWireEqual(expected, actual);
     }
 
     private static void addNullable(ArrayNode target, Double value) {

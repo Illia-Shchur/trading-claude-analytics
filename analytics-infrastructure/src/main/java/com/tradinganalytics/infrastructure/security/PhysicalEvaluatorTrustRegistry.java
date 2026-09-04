@@ -486,147 +486,163 @@ public final class PhysicalEvaluatorTrustRegistry {
     }
 
     private static Runnable makeMetadataReopener(JsonNode binding, String expectedDigest) {
-        if (binding == null || !binding.isObject() || !binding.path("root").isTextual()
-                || !binding.path("receipts").isObject()
-                || !expectedDigest.equals(binding.path("digest").asText())) {
-            throw new CustodyException(
-                    "scope-independent outcome capability lacks the physically reopened metadata binding");
-        }
-        Path root;
-        try {
-            root = PathConfinement.requireRealDirectory(
-                    Path.of(binding.path("root").asText()), "scope-independent outcome metadata root");
-        } catch (RuntimeException error) {
-            throw new CustodyException(
-                    "scope-independent outcome capability lacks the physically reopened metadata binding",
-                    error);
-        }
-        JsonNode receipts = binding.path("receipts").deepCopy();
-        ObjectNode digestPayload = JsonHashes.mapper().createObjectNode();
-        receipts.fields().forEachRemaining(entry -> {
-            JsonNode source = entry.getValue();
-            ObjectNode target = digestPayload.putObject(entry.getKey());
-            copyNullable(target, "receipt_content_sha256", source.get("receipt_content_sha256"));
-            copyNullable(target, "receipt_byte_sha256", source.get("receipt_byte_sha256"));
-            ArrayNode normalized = target.putArray("normalized");
-            JsonNode rows = source.path("normalized");
-            if (rows.isArray()) {
-                rows.forEach(row -> {
-                    ObjectNode copy = normalized.addObject();
-                    copyNullable(copy, "summary", row.get("summary"));
-                    copyNullable(copy, "content_sha256", row.get("content_sha256"));
-                    copyNullable(copy, "byte_sha256", row.get("byte_sha256"));
-                    copyNullable(copy, "raw_byte_sha256", row.get("raw_byte_sha256"));
-                    copy.set("raw_receipts", row.path("raw_receipts").isArray()
-                            ? row.path("raw_receipts").deepCopy()
-                            : JsonHashes.mapper().createArrayNode());
-                });
-            }
-        });
-        if (!JsonHashes.canonicalSha256(digestPayload).equals(expectedDigest)) {
-            throw new CustodyException("scope-independent outcome metadata binding digest is invalid");
-        }
-        return () -> reopenMetadata(root, receipts);
+        return MetadataBindingReopener.create(binding, expectedDigest);
     }
 
-    private static void reopenMetadata(Path root, JsonNode receipts) {
-        var kinds = receipts.fields();
-        while (kinds.hasNext()) {
-            Map.Entry<String, JsonNode> kindEntry = kinds.next();
-            String kind = kindEntry.getKey();
-            JsonNode normalizedRows = kindEntry.getValue().path("normalized");
-            if (!normalizedRows.isArray() || normalizedRows.isEmpty()) {
+    /** Reopens normalized and raw metadata receipts at every evaluation boundary. */
+    private static final class MetadataBindingReopener {
+        private final Path root;
+        private final JsonNode receipts;
+
+        private MetadataBindingReopener(Path root, JsonNode receipts) {
+            this.root = root;
+            this.receipts = receipts;
+        }
+
+        private static Runnable create(JsonNode binding, String expectedDigest) {
+            if (binding == null || !binding.isObject() || !binding.path("root").isTextual()
+                    || !binding.path("receipts").isObject()
+                    || !expectedDigest.equals(binding.path("digest").asText())) {
                 throw new CustodyException(
-                        "scope-independent outcome metadata " + kind + " normalized custody is missing");
+                        "scope-independent outcome capability lacks the physically reopened metadata binding");
             }
-            for (JsonNode normalized : normalizedRows) {
-                JsonNode summary = normalized.path("summary");
-                Path path = safeArtifactPath(root, summary.path("path").asText(null),
-                        kind + " metadata");
-                byte[] bytes = PathConfinement.readSinglyLinkedFile(
-                        path, "scope-independent outcome " + kind + " normalized metadata");
-                if (!JsonHashes.sha256(bytes).equals(normalized.path("byte_sha256").asText())
-                        || (summary.has("bytes") && summary.path("bytes").asLong(Long.MIN_VALUE) != bytes.length)) {
-                    throw new CustodyException("scope-independent outcome metadata " + kind
-                            + " bytes are missing or tampered");
+            Path root;
+            try {
+                root = PathConfinement.requireRealDirectory(
+                        Path.of(binding.path("root").asText()), "scope-independent outcome metadata root");
+            } catch (RuntimeException error) {
+                throw new CustodyException(
+                        "scope-independent outcome capability lacks the physically reopened metadata binding",
+                        error);
+            }
+            JsonNode receipts = binding.path("receipts").deepCopy();
+            ObjectNode digestPayload = JsonHashes.mapper().createObjectNode();
+            receipts.fields().forEachRemaining(entry -> {
+                JsonNode source = entry.getValue();
+                ObjectNode target = digestPayload.putObject(entry.getKey());
+                copyNullable(target, "receipt_content_sha256", source.get("receipt_content_sha256"));
+                copyNullable(target, "receipt_byte_sha256", source.get("receipt_byte_sha256"));
+                ArrayNode normalized = target.putArray("normalized");
+                JsonNode rows = source.path("normalized");
+                if (rows.isArray()) {
+                    rows.forEach(row -> {
+                        ObjectNode copy = normalized.addObject();
+                        copyNullable(copy, "summary", row.get("summary"));
+                        copyNullable(copy, "content_sha256", row.get("content_sha256"));
+                        copyNullable(copy, "byte_sha256", row.get("byte_sha256"));
+                        copyNullable(copy, "raw_byte_sha256", row.get("raw_byte_sha256"));
+                        copy.set("raw_receipts", row.path("raw_receipts").isArray()
+                                ? row.path("raw_receipts").deepCopy()
+                                : JsonHashes.mapper().createArrayNode());
+                    });
                 }
-                JsonNode parsed;
-                try {
-                    parsed = JsonHashes.parse(bytes,
-                            "scope-independent outcome metadata " + kind + " normalized receipt");
-                } catch (CustodyException error) {
-                    throw new CustodyException("scope-independent outcome metadata " + kind
-                            + " normalized receipt is invalid: " + rootCauseMessage(error), error);
+            });
+            if (!JsonHashes.canonicalSha256(digestPayload).equals(expectedDigest)) {
+                throw new CustodyException("scope-independent outcome metadata binding digest is invalid");
+            }
+            return new MetadataBindingReopener(root, receipts)::reopen;
+        }
+
+        private void reopen() {
+            var kinds = receipts.fields();
+            while (kinds.hasNext()) {
+                Map.Entry<String, JsonNode> kindEntry = kinds.next();
+                String kind = kindEntry.getKey();
+                JsonNode normalizedRows = kindEntry.getValue().path("normalized");
+                if (!normalizedRows.isArray() || normalizedRows.isEmpty()) {
+                    throw new CustodyException(
+                            "scope-independent outcome metadata " + kind + " normalized custody is missing");
                 }
-                if (!parsed.isObject()
-                        || !parsed.path("content_sha256").asText()
-                                .equals(normalized.path("content_sha256").asText())
-                        || !parsed.path("content_sha256").asText().equals(JsonHashes.ownHash(parsed))) {
-                    throw new CustodyException("scope-independent outcome metadata " + kind
-                            + " normalized receipt content binding is invalid");
-                }
-                JsonNode rawReceipts = parsed.path("raw_receipts").isArray()
-                        ? parsed.path("raw_receipts") : JsonHashes.mapper().createArrayNode();
-                JsonNode boundRaw = normalized.path("raw_receipts").isArray()
-                        ? normalized.path("raw_receipts") : JsonHashes.mapper().createArrayNode();
-                if (!rawInventory(rawReceipts).equals(rawInventory(boundRaw))) {
-                    throw new CustodyException("scope-independent outcome metadata " + kind
-                            + " raw receipt inventory binding is invalid");
-                }
-                List<String> actualHashes = new ArrayList<>();
-                for (JsonNode raw : rawReceipts) {
-                    if (!raw.isObject() || !raw.path("path").isTextual()
-                            || !JsonHashes.isSha256(raw.path("byte_sha256").asText())
-                            || !raw.path("bytes").canConvertToLong()
-                            || raw.path("bytes").asLong() < 0) {
+                for (JsonNode normalized : normalizedRows) {
+                    JsonNode summary = normalized.path("summary");
+                    Path path = safeArtifactPath(root, summary.path("path").asText(null),
+                            kind + " metadata");
+                    byte[] bytes = PathConfinement.readSinglyLinkedFile(
+                            path, "scope-independent outcome " + kind + " normalized metadata");
+                    if (!JsonHashes.sha256(bytes).equals(normalized.path("byte_sha256").asText())
+                            || (summary.has("bytes")
+                            && summary.path("bytes").asLong(Long.MIN_VALUE) != bytes.length)) {
                         throw new CustodyException("scope-independent outcome metadata " + kind
-                                + " raw receipt binding is invalid");
+                                + " bytes are missing or tampered");
                     }
-                    Path rawPath = safeArtifactPath(root, raw.path("path").asText(),
-                            kind + " raw metadata bytes");
-                    byte[] rawBytes = PathConfinement.readSinglyLinkedFile(
-                            rawPath, "scope-independent outcome " + kind + " raw metadata");
-                    if (rawBytes.length != raw.path("bytes").asLong()
-                            || !JsonHashes.sha256(rawBytes).equals(raw.path("byte_sha256").asText())) {
-                        throw new CustodyException(
-                                "scope-independent outcome raw metadata bytes are missing or tampered: "
-                                        + kind);
-                    }
-                    if (raw.hasNonNull("content_sha256")
-                            && !raw.path("content_sha256").asText().equals(JsonHashes.ownHash(raw))) {
+                    JsonNode parsed;
+                    try {
+                        parsed = JsonHashes.parse(bytes,
+                                "scope-independent outcome metadata " + kind + " normalized receipt");
+                    } catch (CustodyException error) {
                         throw new CustodyException("scope-independent outcome metadata " + kind
-                                + " raw receipt content binding is invalid");
+                                + " normalized receipt is invalid: " + rootCauseMessage(error), error);
                     }
-                    actualHashes.add(raw.path("byte_sha256").asText());
-                }
-                actualHashes.sort(String::compareTo);
-                List<String> expectedHashes = new ArrayList<>();
-                JsonNode rawHashes = normalized.path("raw_byte_sha256");
-                if (rawHashes.isArray()) rawHashes.forEach(row -> expectedHashes.add(row.asText()));
-                expectedHashes.sort(String::compareTo);
-                if (!actualHashes.equals(expectedHashes)) {
-                    throw new CustodyException("scope-independent outcome metadata " + kind
-                            + " raw byte inventory binding is invalid");
+                    if (!parsed.isObject()
+                            || !parsed.path("content_sha256").asText()
+                                    .equals(normalized.path("content_sha256").asText())
+                            || !parsed.path("content_sha256").asText().equals(JsonHashes.ownHash(parsed))) {
+                        throw new CustodyException("scope-independent outcome metadata " + kind
+                                + " normalized receipt content binding is invalid");
+                    }
+                    JsonNode rawReceipts = parsed.path("raw_receipts").isArray()
+                            ? parsed.path("raw_receipts") : JsonHashes.mapper().createArrayNode();
+                    JsonNode boundRaw = normalized.path("raw_receipts").isArray()
+                            ? normalized.path("raw_receipts") : JsonHashes.mapper().createArrayNode();
+                    if (!rawInventory(rawReceipts).equals(rawInventory(boundRaw))) {
+                        throw new CustodyException("scope-independent outcome metadata " + kind
+                                + " raw receipt inventory binding is invalid");
+                    }
+                    List<String> actualHashes = new ArrayList<>();
+                    for (JsonNode raw : rawReceipts) {
+                        if (!raw.isObject() || !raw.path("path").isTextual()
+                                || !JsonHashes.isSha256(raw.path("byte_sha256").asText())
+                                || !raw.path("bytes").canConvertToLong()
+                                || raw.path("bytes").asLong() < 0) {
+                            throw new CustodyException("scope-independent outcome metadata " + kind
+                                    + " raw receipt binding is invalid");
+                        }
+                        Path rawPath = safeArtifactPath(root, raw.path("path").asText(),
+                                kind + " raw metadata bytes");
+                        byte[] rawBytes = PathConfinement.readSinglyLinkedFile(
+                                rawPath, "scope-independent outcome " + kind + " raw metadata");
+                        if (rawBytes.length != raw.path("bytes").asLong()
+                                || !JsonHashes.sha256(rawBytes).equals(raw.path("byte_sha256").asText())) {
+                            throw new CustodyException(
+                                    "scope-independent outcome raw metadata bytes are missing or tampered: "
+                                            + kind);
+                        }
+                        if (raw.hasNonNull("content_sha256")
+                                && !raw.path("content_sha256").asText().equals(JsonHashes.ownHash(raw))) {
+                            throw new CustodyException("scope-independent outcome metadata " + kind
+                                    + " raw receipt content binding is invalid");
+                        }
+                        actualHashes.add(raw.path("byte_sha256").asText());
+                    }
+                    actualHashes.sort(String::compareTo);
+                    List<String> expectedHashes = new ArrayList<>();
+                    JsonNode rawHashes = normalized.path("raw_byte_sha256");
+                    if (rawHashes.isArray()) rawHashes.forEach(row -> expectedHashes.add(row.asText()));
+                    expectedHashes.sort(String::compareTo);
+                    if (!actualHashes.equals(expectedHashes)) {
+                        throw new CustodyException("scope-independent outcome metadata " + kind
+                                + " raw byte inventory binding is invalid");
+                    }
                 }
             }
         }
-    }
 
-    private static List<String> rawInventory(JsonNode rows) {
-        List<JsonNode> normalized = new ArrayList<>();
-        rows.forEach(value -> {
-            ObjectNode row = JsonHashes.mapper().createObjectNode();
-            if (value.has("path")) row.set("path", value.get("path")); else row.putNull("path");
-            if (value.path("bytes").isNumber()) row.set("bytes", value.path("bytes"));
-            else row.putNull("bytes");
-            if (value.has("byte_sha256")) row.set("byte_sha256", value.get("byte_sha256"));
-            else row.putNull("byte_sha256");
-            if (value.hasNonNull("content_sha256")) row.set("content_sha256", value.get("content_sha256"));
-            else row.putNull("content_sha256");
-            normalized.add(row);
-        });
-        normalized.sort(Comparator.comparing(row -> row.path("path").asText()));
-        return normalized.stream().map(JsonHashes::canonicalString).toList();
+        private static List<String> rawInventory(JsonNode rows) {
+            List<JsonNode> normalized = new ArrayList<>();
+            rows.forEach(value -> {
+                ObjectNode row = JsonHashes.mapper().createObjectNode();
+                if (value.has("path")) row.set("path", value.get("path")); else row.putNull("path");
+                if (value.path("bytes").isNumber()) row.set("bytes", value.path("bytes"));
+                else row.putNull("bytes");
+                if (value.has("byte_sha256")) row.set("byte_sha256", value.get("byte_sha256"));
+                else row.putNull("byte_sha256");
+                if (value.hasNonNull("content_sha256")) row.set("content_sha256", value.get("content_sha256"));
+                else row.putNull("content_sha256");
+                normalized.add(row);
+            });
+            normalized.sort(Comparator.comparing(row -> row.path("path").asText()));
+            return normalized.stream().map(JsonHashes::canonicalString).toList();
+        }
     }
 
     private static Path safeArtifactPath(Path root, String child, String label) {

@@ -55,16 +55,24 @@ final class ReportingFiles {
         Path temp = Path.of(target.toString() + tempSuffix);
         try {
             Files.writeString(temp, text, StandardCharsets.UTF_8);
-            try { Files.setPosixFilePermissions(temp, MODE_0644); }
-            catch (UnsupportedOperationException ignored) { /* Windows/non-POSIX */ }
-            try {
-                Files.move(temp, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
-            } catch (AtomicMoveNotSupportedException exception) {
-                Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING);
-            }
+            setPortablePermissions(temp);
+            moveReplacing(temp, target);
         } catch (IOException exception) {
             try { Files.deleteIfExists(temp); } catch (IOException ignored) { /* best effort, as in Node */ }
             throw exception;
+        }
+    }
+
+    private static void setPortablePermissions(Path path) throws IOException {
+        try { Files.setPosixFilePermissions(path, MODE_0644); }
+        catch (UnsupportedOperationException ignored) { /* Windows/non-POSIX */ }
+    }
+
+    private static void moveReplacing(Path source, Path target) throws IOException {
+        try {
+            Files.move(source, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+        } catch (AtomicMoveNotSupportedException exception) {
+            Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
         }
     }
 

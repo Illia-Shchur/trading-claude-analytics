@@ -1,25 +1,17 @@
 package com.tradinganalytics.compatibility;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.tradinganalytics.contracts.json.NodePrettyJson;
 import com.tradinganalytics.marketdata.MarketFlowPanel;
-import java.io.InputStream;
 import org.junit.jupiter.api.Test;
 
 class MarketFlowPanelParityTest {
     private static final ObjectMapper JSON = new ObjectMapper();
     @Test
     void composedPanelMatchesFrozenWireContractForCompleteAndUnavailableInputs() throws Exception {
-        JsonNode expected;
-        try (InputStream stream = getClass().getResourceAsStream("/oracles/market-flow-panel-v1.json")) {
-            assertThat(stream).isNotNull();
-            expected = JSON.readTree(stream);
-        }
+        JsonNode expected = CompatibilityFixtures.readJson(JSON, "market-flow-panel-v1.json");
 
         long start = java.time.Instant.parse("2026-08-20T00:00:00Z").toEpochMilli();
         ArrayNode spot = JSON.createArrayNode();
@@ -47,6 +39,6 @@ class MarketFlowPanelParityTest {
         actual.set("full", MarketFlowPanel.build(spot, futures, openInterest, funding, 4, "BTC top-3"));
         actual.set("unavailable", MarketFlowPanel.build(JSON.createArrayNode(), JSON.createArrayNode(),
                 JSON.createArrayNode(), JSON.createArrayNode(), 4, "unknown"));
-        assertThat(NodePrettyJson.write(actual)).isEqualTo(NodePrettyJson.write(expected));
+        CompatibilityFixtures.assertWireEqual(expected, actual);
     }
 }

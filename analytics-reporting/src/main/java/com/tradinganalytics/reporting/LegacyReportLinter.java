@@ -36,6 +36,11 @@ final class LegacyReportLinter {
     private static final Pattern FILL_NEGATIVE = Pattern.compile("\\b(unfilled|dry|frozen|prospective|armed|staged|not filled|no fill)\\b", Pattern.CASE_INSENSITIVE);
     private static final Pattern FILL_BARE = Pattern.compile("^\\s*~?\\s*\\$?\\s*[\\d,]+(?:\\.\\d+)?\\s*(?:\\(|$)");
     private static final Pattern FILL_MTM = Pattern.compile("\\b(MTM|blended)\\b", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PHASE_KEY = Pattern.compile("1a|1b|2|3");
+    private static final Map<String, Double> FR_A_STOP_CEILINGS = Map.of(
+            "1a", 8d, "1b", 10d, "2", 12d, "3", 15d);
+    private static final Map<String, Double> FR_B_STOP_CEILINGS = Map.of(
+            "1a", 6d, "1b", 6d, "2", 8d);
 
     private LegacyReportLinter() {}
 
@@ -431,37 +436,136 @@ final class LegacyReportLinter {
     }
 
     private static Discretion discretionValid(JsonNode value) {
-        if (value == null || !value.isNumber() || !Double.isFinite(value.doubleValue())) return new Discretion(false, "missing or non-numeric (write 0 when no adjustment was taken)");
-        double number = value.doubleValue(); if (Math.abs(number) > 2) return new Discretion(false, "|" + raw(value) + "| exceeds the ±2 bound (D1)");
-        if (Math.abs(number / 0.5 - Math.round(number / 0.5)) > 1e-9) return new Discretion(false, raw(value) + " is not on the 0.5 step (D1)");
+        if (value == null || !value.isNumber() || !Double.isFinite(value.doubleValue())) {
+            return new Discretion(false, "missing or non-numeric (write 0 when no adjustment was taken)");
+        }
+        double number = value.doubleValue();
+        if (Math.abs(number) > 2) {
+            return new Discretion(false, "|" + raw(value) + "| exceeds the ±2 bound (D1)");
+        }
+        if (Math.abs(number / 0.5 - Math.round(number / 0.5)) > 1e-9) {
+            return new Discretion(false, raw(value) + " is not on the 0.5 step (D1)");
+        }
         return new Discretion(true, null);
     }
 
-    private static Double fillPrice(JsonNode tranche) { if (tranche == null) return null; JsonNode entryPrice = tranche.get("entry_price"), entry = tranche.get("entry"); if (entryPrice != null && entryPrice.isNumber() && Double.isFinite(entryPrice.doubleValue())) return entryPrice.doubleValue(); if (entry != null && entry.isNumber() && Double.isFinite(entry.doubleValue())) return entry.doubleValue(); return null; }
-    private static boolean trancheFilled(JsonNode tranche) { return tranche != null && tranche.path("deployed").asBoolean(false) || fillPrice(tranche) != null; }
-    private static FillLook entryLooksLikeFill(JsonNode entry) {
-        if (entry == null || !entry.isTextual()) return new FillLook(false, "entry is not prose"); String value = entry.textValue(); Matcher negative = FILL_NEGATIVE.matcher(value);
-        if (negative.find()) return new FillLook(false, "staged/placeholder language (\"" + negative.group(1) + "\")");
-        if (FILL_BARE.matcher(value).find()) return new FillLook(true, "entry opens with a single price, not a range"); Matcher mtm = FILL_MTM.matcher(value);
-        if (mtm.find()) return new FillLook(true, "entry says \"" + mtm.group(1) + "\", which only has meaning against a real position"); return new FillLook(false, "no fill signature");
+    private static Double fillPrice(JsonNode tranche) {
+        if (tranche == null) return null;
+        JsonNode entryPrice = tranche.get("entry_price");
+        JsonNode entry = tranche.get("entry");
+        if (entryPrice != null && entryPrice.isNumber() && Double.isFinite(entryPrice.doubleValue())) {
+            return entryPrice.doubleValue();
+        }
+        if (entry != null && entry.isNumber() && Double.isFinite(entry.doubleValue())) {
+            return entry.doubleValue();
+        }
+        return null;
     }
-    private static StopCheck d5StopCheck(double fill, double stop) { double floor = round2(fill * .85), distance = round2((1 - stop / fill) * 100); if (stop >= fill) return new StopCheck(false, floor, "stop is at or above the fill"); return new StopCheck(stop >= floor, floor, stop >= floor ? null : "stop sits " + num(distance) + "% below fill — deeper than the 15% D5 limit"); }
-    private static StopCheck s5StopCheck(double fill, double stop) { double ceiling = round2(fill * 1.06), distance = round2((stop / fill - 1) * 100); if (stop <= fill) return new StopCheck(false, ceiling, "stop is at or below the fill — a short stop sits ABOVE entry"); return new StopCheck(stop <= ceiling, ceiling, stop <= ceiling ? null : "stop sits " + num(distance) + "% above fill — wider than the 6% S5 limit"); }
+
+    private static boolean trancheFilled(JsonNode tranche) {
+        return tranche != null && (tranche.path("deployed").asBoolean(false) || fillPrice(tranche) != null);
+    }
+
+    private static FillLook entryLooksLikeFill(JsonNode entry) {
+        if (entry == null || !entry.isTextual()) return new FillLook(false, "entry is not prose");
+        String value = entry.textValue();
+        Matcher negative = FILL_NEGATIVE.matcher(value);
+        if (negative.find()) return new FillLook(false, "staged/placeholder language (\"" + negative.group(1) + "\")");
+        if (FILL_BARE.matcher(value).find()) return new FillLook(true, "entry opens with a single price, not a range");
+        Matcher mtm = FILL_MTM.matcher(value);
+        if (mtm.find()) return new FillLook(true, "entry says \"" + mtm.group(1) + "\", which only has meaning against a real position");
+        return new FillLook(false, "no fill signature");
+    }
+
+    private static StopCheck d5StopCheck(double fill, double stop) {
+        double floor = round2(fill * .85);
+        double distance = round2((1 - stop / fill) * 100);
+        if (stop >= fill) return new StopCheck(false, floor, "stop is at or above the fill");
+        boolean pass = stop >= floor;
+        return new StopCheck(pass, floor,
+                pass ? null : "stop sits " + num(distance) + "% below fill — deeper than the 15% D5 limit");
+    }
+
+    private static StopCheck s5StopCheck(double fill, double stop) {
+        double ceiling = round2(fill * 1.06);
+        double distance = round2((stop / fill - 1) * 100);
+        if (stop <= fill) return new StopCheck(false, ceiling, "stop is at or below the fill — a short stop sits ABOVE entry");
+        boolean pass = stop <= ceiling;
+        return new StopCheck(pass, ceiling,
+                pass ? null : "stop sits " + num(distance) + "% above fill — wider than the 6% S5 limit");
+    }
+
     private static StopBand frStopBand(double fill, Double adr, String channel, String phase) {
-        Map<String, Double> values = "B".equals(channel) ? Map.of("1a", 6d, "1b", 6d, "2", 8d) : Map.of("1a", 8d, "1b", 10d, "2", 12d, "3", 15d);
-        Double ceilingPct = values.get(phase); if (ceilingPct == null) return new StopBand(false, null, null, null, null, "phase " + phase + " is unreachable in Channel " + channel);
-        double ceiling = round2(fill * (1 + ceilingPct / 100)); if (adr == null) return new StopBand(true, ceiling, ceilingPct, null, null, "ADR(5) not supplied — minimum-distance rule not checkable");
-        double floorPct = round2(1.5 * adr / fill * 100); if (floorPct > ceilingPct) return new StopBand(false, ceiling, ceilingPct, null, floorPct, "1.5×ADR(5) = " + num(floorPct) + "% exceeds the " + num(ceilingPct) + "% phase ceiling — tape too volatile for this phase, no trade");
+        Map<String, Double> values = "B".equals(channel) ? FR_B_STOP_CEILINGS : FR_A_STOP_CEILINGS;
+        Double ceilingPct = values.get(phase);
+        if (ceilingPct == null) {
+            return new StopBand(false, null, null, null, null,
+                    "phase " + phase + " is unreachable in Channel " + channel);
+        }
+        double ceiling = round2(fill * (1 + ceilingPct / 100));
+        if (adr == null) {
+            return new StopBand(true, ceiling, ceilingPct, null, null,
+                    "ADR(5) not supplied — minimum-distance rule not checkable");
+        }
+        double floorPct = round2(1.5 * adr / fill * 100);
+        if (floorPct > ceilingPct) {
+            return new StopBand(false, ceiling, ceilingPct, null, floorPct,
+                    "1.5×ADR(5) = " + num(floorPct) + "% exceeds the " + num(ceilingPct) + "% phase ceiling — tape too volatile for this phase, no trade");
+        }
         return new StopBand(true, ceiling, ceilingPct, round2(fill * (1 + floorPct / 100)), floorPct, null);
     }
-    private static Ratchet frRatchet(double oldValue, double newValue, String tier) { return newValue <= oldValue ? new Ratchet(true, null) : new Ratchet(false, "S6 ratchet: " + tier + " " + num(oldValue) + " → " + num(newValue) + " widens the stop — prohibited, not merely disclosable"); }
-    private static Double daysOf(JsonNode value) { if (value == null || value.isNull()) return null; if (value.isNumber()) return Double.isFinite(value.doubleValue()) ? value.doubleValue() : null; Matcher matcher = DAY_COUNT.matcher(value.asText()); return matcher.matches() ? Double.valueOf(matcher.group(1)) : null; }
-    private static String phaseKey(JsonNode phase) { String value = phase == null || phase.isNull() ? "" : phase.asText().toLowerCase(Locale.ROOT).replace("phase", ""); Matcher matcher = Pattern.compile("1a|1b|2|3").matcher(value); return matcher.find() ? matcher.group() : null; }
-    private static double legSum(JsonNode legs, List<String> names) { double sum = 0; for (String name : names) sum += orZero(legs.get(name)); return sum; }
-    private static double orZero(JsonNode value) { return ReportingJson.truthy(value) && value.isNumber() ? value.doubleValue() : 0; }
-    private static boolean containsNumber(JsonNode array, int number) { if (array != null && array.isArray()) for (JsonNode value : array) if (value.isIntegralNumber() && value.intValue() == number) return true; return false; }
-    private static List<Integer> ints(JsonNode array) { List<Integer> values = new ArrayList<>(); if (array != null && array.isArray()) array.forEach(value -> values.add(value.intValue())); return values; }
-    private static String joinInts(List<Integer> values) { return String.join(", ", values.stream().map(String::valueOf).toList()); }
+
+    private static Ratchet frRatchet(double oldValue, double newValue, String tier) {
+        if (newValue <= oldValue) return new Ratchet(true, null);
+        return new Ratchet(false, "S6 ratchet: " + tier + " " + num(oldValue) + " → " + num(newValue)
+                + " widens the stop — prohibited, not merely disclosable");
+    }
+
+    private static Double daysOf(JsonNode value) {
+        if (value == null || value.isNull()) return null;
+        if (value.isNumber()) return Double.isFinite(value.doubleValue()) ? value.doubleValue() : null;
+        Matcher matcher = DAY_COUNT.matcher(value.asText());
+        return matcher.matches() ? Double.valueOf(matcher.group(1)) : null;
+    }
+
+    private static String phaseKey(JsonNode phase) {
+        String value = phase == null || phase.isNull()
+                ? "" : phase.asText().toLowerCase(Locale.ROOT).replace("phase", "");
+        Matcher matcher = PHASE_KEY.matcher(value);
+        return matcher.find() ? matcher.group() : null;
+    }
+
+    private static double legSum(JsonNode legs, List<String> names) {
+        double sum = 0;
+        for (String name : names) {
+            sum += orZero(legs.get(name));
+        }
+        return sum;
+    }
+
+    private static double orZero(JsonNode value) {
+        return ReportingJson.truthy(value) && value.isNumber() ? value.doubleValue() : 0;
+    }
+
+    private static boolean containsNumber(JsonNode array, int number) {
+        if (array == null || !array.isArray()) return false;
+        for (JsonNode value : array) {
+            if (value.isIntegralNumber() && value.intValue() == number) return true;
+        }
+        return false;
+    }
+
+    private static List<Integer> ints(JsonNode array) {
+        List<Integer> values = new ArrayList<>();
+        if (array != null && array.isArray()) {
+            array.forEach(value -> values.add(value.intValue()));
+        }
+        return values;
+    }
+
+    private static String joinInts(List<Integer> values) {
+        return String.join(", ", values.stream().map(String::valueOf).toList());
+    }
     private static String date(JsonNode body) { return body.path("date").asText("undefined"); }
     private static void addEpoch(JsonNode body, String epoch, List<String> errors, List<String> warnings, String message) { add(date(body).compareTo(epoch) >= 0, errors, warnings, message); }
     private static void add(boolean error, List<String> errors, List<String> warnings, String message) { (error ? errors : warnings).add(message); }

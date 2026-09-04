@@ -1,13 +1,9 @@
 package com.tradinganalytics.compatibility;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.tradinganalytics.contracts.json.NodePrettyJson;
 import com.tradinganalytics.marketdata.FundingAnalytics;
-import java.io.InputStream;
 import org.junit.jupiter.api.Test;
 
 class FundingAnalyticsParityTest {
@@ -24,9 +20,7 @@ class FundingAnalyticsParityTest {
                 """;
         JsonNode input = JSON.readTree(fixture);
         JsonNode actual = FundingAnalytics.fundingBlock((ArrayNode) input.path("rows"), input.path("n").asInt());
-        try (InputStream stream = getClass().getResourceAsStream("/oracles/funding-analytics-v1.json")) {
-            assertThat(stream).isNotNull();
-            assertThat(NodePrettyJson.write(actual)).isEqualTo(NodePrettyJson.write(JSON.readTree(stream)));
-        }
+        CompatibilityFixtures.assertWireEqual(
+                CompatibilityFixtures.readJson(JSON, "funding-analytics-v1.json"), actual);
     }
 }

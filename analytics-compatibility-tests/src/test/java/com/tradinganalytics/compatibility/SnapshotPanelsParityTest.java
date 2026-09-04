@@ -1,13 +1,9 @@
 package com.tradinganalytics.compatibility;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.tradinganalytics.contracts.json.NodePrettyJson;
 import com.tradinganalytics.marketdata.SnapshotPanels;
-import java.io.InputStream;
 import org.junit.jupiter.api.Test;
 
 class SnapshotPanelsParityTest {
@@ -64,11 +60,7 @@ class SnapshotPanelsParityTest {
 
     @Test
     void proximityAndTripwirePanelsMatchFrozenWireContract() throws Exception {
-        JsonNode expected;
-        try (InputStream stream = getClass().getResourceAsStream("/oracles/snapshot-panels-v1.json")) {
-            assertThat(stream).isNotNull();
-            expected = JSON.readTree(stream);
-        }
+        JsonNode expected = CompatibilityFixtures.readJson(JSON, "snapshot-panels-v1.json");
         JsonNode fixture = JSON.readTree(FIXTURE);
 
         ObjectNode actual = JSON.createObjectNode();
@@ -76,6 +68,6 @@ class SnapshotPanelsParityTest {
         actual.set("proximity_empty", SnapshotPanels.proximityPanel(null));
         actual.set("tripwire", SnapshotPanels.tripwireDiff((ObjectNode) fixture.get("previous"),
                 (ObjectNode) fixture.get("next"), (ObjectNode) fixture.get("checkpoints")));
-        assertThat(NodePrettyJson.write(actual)).isEqualTo(NodePrettyJson.write(expected));
+        CompatibilityFixtures.assertWireEqual(expected, actual);
     }
 }

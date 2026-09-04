@@ -18,6 +18,9 @@ import java.util.WeakHashMap;
 public final class LifecycleTrustService {
     public static final String SCHEMA = "strategy-v5-lifecycle-trust/1";
     public static final String LIFECYCLE_TRUST_SCHEMA = SCHEMA;
+    private static final List<String> VERIFIED_LOADER_ROLES =
+            List.of("contract_spec", "execution_model", "capacity", "bars");
+    private static final List<String> OPTIONAL_ROLES = List.of("funding", "marks", "hydration");
     public record ReceiptReference(
             String path,
             String contentSha256,
@@ -180,8 +183,7 @@ public final class LifecycleTrustService {
         if (rootReference != null && rootReference.isBlank()) {
             throw failure("verified loader rootReference must be a portable label or null");
         }
-        Map<String, JsonNode> initialValues = validateLoaderValues(
-                values, normalized, true, "verified loader ", "");
+        Map<String, JsonNode> initialValues = validateLoaderValues(values, normalized, true);
         JsonNode normalizedLineage = normalizeLineage(lineage);
         String bundle = bundleDigest(normalized, normalizedLineage);
         Token token = new Token(rootReference, normalized, normalizedLineage, bundle);
@@ -271,7 +273,7 @@ public final class LifecycleTrustService {
             currentReceipts.put(role, current);
         }
         Map<String, JsonNode> currentValues = validateLoaderValues(
-                reopened.values(), currentReceipts, false, "", " verified loader");
+                reopened.values(), currentReceipts, false);
         if (!bundleDigest(currentReceipts, token.lineage).equals(token.bundleSha256)) {
             throw failure("verified loader physical receipt set changed");
         }
@@ -374,7 +376,7 @@ public final class LifecycleTrustService {
             Map<String, ReceiptReference> receipts) {
         if (receipts == null) receipts = Map.of();
         Map<String, ReceiptReference> output = new LinkedHashMap<>();
-        for (String role : List.of("contract_spec", "execution_model", "capacity", "bars")) {
+        for (String role : VERIFIED_LOADER_ROLES) {
             ReceiptReference reference = receipts.get(role);
             if (reference == null) {
                 throw failure("verified loader " + role + " receipt is required");
@@ -384,7 +386,7 @@ public final class LifecycleTrustService {
             }
             output.put(role, reference);
         }
-        for (String role : List.of("funding", "marks", "hydration")) {
+        for (String role : OPTIONAL_ROLES) {
             if (receipts.get(role) != null) output.put(role, receipts.get(role));
         }
         return Map.copyOf(output);
@@ -393,9 +395,7 @@ public final class LifecycleTrustService {
     private static Map<String, JsonNode> validateLoaderValues(
             Map<String, JsonNode> values,
             Map<String, ReceiptReference> receipts,
-            boolean initial,
-            String prefix,
-            String infix) {
+            boolean initial) {
         if (values == null) {
             throw failure("verified loader values must be an object");
         }

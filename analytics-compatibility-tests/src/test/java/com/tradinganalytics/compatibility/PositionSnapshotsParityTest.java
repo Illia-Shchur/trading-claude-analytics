@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tradinganalytics.reporting.position.PositionSnapshots;
-import java.io.InputStream;
 import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -88,9 +87,6 @@ class PositionSnapshotsParityTest {
     }
 
     private JsonNode frozen() throws Exception {
-        try (InputStream stream = getClass().getResourceAsStream("/oracles/position-snapshots-v1.json")) {
-            assertThat(stream).isNotNull();
-            return JSON.readTree(stream);
-        }
+        return CompatibilityFixtures.readJson(JSON, "position-snapshots-v1.json");
     }
 }
