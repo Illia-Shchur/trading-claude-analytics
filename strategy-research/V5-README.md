@@ -5,6 +5,56 @@ are read-only and are not migrated by this implementation.
 
 ## Commands
 
+The supported v5 façade is the deterministic Java launcher. Run it from the
+repository root so build identity and resource paths are bound to this
+checkout:
+
+```sh
+./bin/analytics build-identity
+./bin/analytics strategy-research-v5 validate --input <v5-record.json>
+./bin/analytics strategy-research-v5 index --root <curated-registered-record-root>
+./bin/analytics strategy-research-v5 presentation-export \
+  --root <curated-registered-record-root> --output .report-run/strategy-research-ui.json
+./bin/analytics strategy-research-v5 prospective-runner \
+  --ledger <shadow-ledger-dir> --expected-head-sha256 <cas-head-hash> \
+  --reservation <frozen-reservation.json> --source-receipt <source-receipt.json> \
+  --bar <completed-bar.json> --feature-input <feature.json> \
+  --candidate-set <candidate-set.json> --evaluator-code <evaluator-code.json> \
+  --signal-decision <signal.json>
+```
+
+To resolve a mature completed bar, pass the typed outcome-resolution,
+outcome-receipt, label-source, execution-source and numeric-reconciliation
+path/SHA flags to the same Java `prospective-runner` command. It validates the
+signal bindings, reopens every numeric source before append or retry, and
+returns a no-op only for the exact committed outcome identity.
+
+Current new-research work uses this Java façade. The supported fixed diagnostic
+stage is `strategy-research-v5 fixed-baseline`; its three-member bounded
+refinement is `strategy-research-v5 fixed-baseline-refinement`, and the
+conditional synthetic operating-characteristics path is
+`strategy-research-v5 operating-characteristics-preflight` followed by
+`strategy-research-v5 operating-characteristics-run`. These paths share the
+fixed evaluator and are diagnostic; they do not invoke adaptive search, append
+`SHADOW`, or authorize promotion. The full adaptive implementation is the
+existing `research-run` path and remains subject to its physical WFO and
+custody gates.
+
+The frozen v004 synthetic operating-characteristics run is complete and retained
+as a conditional diagnostic. Its immutable executor completed all 200 planned
+repetitions; the raw result and the display-only all-200 projection are under
+`strategy-research/v5-records/evidence/fixed-baseline-full-declared-v004/`.
+The four cells produced 2/50, 0/50, 14/50 and 45/50 positive decisions, and
+none met its predeclared Wilson-bound target. This does not establish adaptive
+calibration, PIT validity, observed exchange fills or promotion. The terminal
+observation receipt records process termination without inventing an uncaptured
+child exit code.
+
+The Node commands below are retained as historical v5 data-pipeline wrappers
+and read-support references. They are not a substitute for the Java façade's
+typed custody, build-identity, and executable-source checks when producing new
+research evidence.
+
 ```sh
 node tools/strategy-research-v5.mjs data-backfill --as-of <ISO-UTC> --record-root strategy-research/v5-records --plan-out <plan.json> --coverage-out <coverage.json>
 node tools/strategy-research-v5.mjs data-backfill --catalog-only --as-of <ISO-UTC> --raw-root <ignored/raw> --record-root strategy-research/v5-records --plan-out <plan.json> --catalog-out <catalog.json> --coverage-out <coverage.json>
@@ -25,8 +75,38 @@ node tools/strategy-research-v5.mjs prospective-runner --ledger <shadow-ledger-d
 node tools/strategy-research-v5.mjs deployment-audit --out <deployment-audit.json>
 node tools/strategy-research-v5.mjs readiness-audit --evidence-manifest <frozen-evidence-manifest.json> --record-root strategy-research/v5-records --out <readiness-audit.json> --markdown <readiness-audit.md>
 node tools/strategy-research-v5.mjs validate --input <v5-record.json>
-node tools/strategy-research-v5.mjs index --root strategy-research/v5-records
+node tools/strategy-research-v5.mjs index --root <curated-registered-record-root>
 ```
+
+The authoritative index is strict outside an explicitly marked noncanonical
+retention archive. The committed
+`strategy-research/v5-records/index.json` covers the canonical tracked corpus.
+This working tree also contains the research-improvement evidence archive at
+`v5-records/evidence/`; its exact physical marker is `.retention-archive` with
+the bytes `strategy-research-retention-archive/1` followed by a newline. Raw
+role arrays, executable build-identity receipts, and historical errata below
+that marked directory are retained and preserved but are not index records.
+The Java index validates the marker before excluding that directory, rejects
+malformed, unmarked or symlink archives, and still validates publication
+control files inside it so a canonical artifact cannot be hidden. Canonical
+objects outside the archive must use registered schemas, including the legacy
+`strategy-fixed-attempt-ledger/1` sidecar.
+
+For a smaller review surface, assemble a separate root containing only
+registered object schemas, then run the Java command with that curated root
+and a receipt root outside the archive:
+
+```sh
+./bin/analytics strategy-research-v5 index \
+  --root <curated-registered-record-root> \
+  --out <curated-registered-record-root>/index.json \
+  --record-root <curated-receipt-root>
+```
+
+The fixed-baseline archive is validated through its registered compact
+`strategy-research-evidence-summary/1` projections and
+`RetainedFixedEvidenceSchemaTest`; its raw role files must not be copied into a
+curated index root merely to make them appear indexable.
 
 The read-only cockpit presentation is produced by the deterministic Java
 adapter after the v5 index and its listed physical records have been
@@ -64,10 +144,19 @@ captures refetch them and receive new, hash-bound adapter provenance. This
 keeps the first blocked attempt byte-stable while making the corrected attempt
 auditable.
 
-`strategy-research-v5.mjs` is the authoritative v5 boundary. Legacy entry
+The Java `strategy-research-v5` façade is the authoritative current v5
+boundary. The historical `strategy-research-v5.mjs` wrappers remain available
+for v1--v5 data-pipeline replay and read support, but do not substitute their
+looser input contracts for the Java façade's typed custody and executable
+identity checks. Legacy entry
 points remain available for v1--v4 read support, but do not substitute their
 loose input contracts for these commands. `generate --method GENETIC`
 continues to fail closed; only `search-genetic` has an adaptive evaluator.
+The fixed-baseline and synthetic operating-characteristics commands are
+diagnostic paths: `BLOCKED`, `COMPUTE_INCOMPLETE`, `DEVELOPMENT`, and
+`INSUFFICIENT_EVIDENCE` are valid evidence-limit outcomes and never mean
+`SHADOW` or promotion. A complete adaptive research decision still uses only
+`REJECTED`, `SHADOW`, or `CANDIDATE_REVIEW`.
 The opportunity command builds `strategy-v5-opportunity-envelope/2`: its
 frozen premise predicate is the conservative superset over the complete
 mutable gene domain, so an adaptive chromosome cannot create a signal outside

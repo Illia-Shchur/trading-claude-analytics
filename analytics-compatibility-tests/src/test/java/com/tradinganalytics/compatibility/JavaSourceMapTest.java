@@ -65,6 +65,9 @@ class JavaSourceMapTest {
             assertThat(registeredCommands.add(entry.path("spring_command").asText()))
                     .as("duplicate Spring command for " + source).isTrue();
         }
+        // Build identity is a first-class executable provenance command rather
+        // than a retired Node workflow, so it has no source-map row.
+        registeredCommands.add("build-identity");
         assertThat(springCommandNames(root)).containsExactlyElementsOf(registeredCommands);
 
         assertTestInventory(root, map.path("test_entries"));

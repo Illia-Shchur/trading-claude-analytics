@@ -159,6 +159,18 @@
         "entries": { "type": "array", "items": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/exposureEntry" } },
         "cumulative_k": { "type": "integer", "minimum": 0 },
         "exposure_attempt_k": { "type": "integer", "minimum": 0 },
+        "fixed_attempt_pairs": {
+          "type": "array", "uniqueItems": true,
+          "items": {
+            "type": "object", "required": ["behavior_sha256", "dataset_sha256"],
+            "properties": {
+              "behavior_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
+              "dataset_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "fixed_attempt_ledger_migration_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
         "head_pointer_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" },
         "content_sha256": { "$ref": "https://schemas.local/strategy-v5-statistical-contracts/1#/$defs/sha256" }
       },

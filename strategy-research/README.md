@@ -1,8 +1,20 @@
 # Durable strategy research registry
 
-## Canonical v3 foundation
+## Current entry point
 
-New research uses the additive v3 contracts and pinned DuckDB/Parquet lake:
+Use `./bin/analytics strategy-research-v5` for current research. The
+[operating guide](../docs/RESEARCH-OPERATING-GUIDE.md) documents the supported
+fixed baseline, frozen refinement, synthetic diagnostics and governed
+prospective commands; the [capability matrix](../docs/RESEARCH-CAPABILITY-MATRIX.md)
+distinguishes implementation from physical evidence and deployment.
+Fixed and synthetic diagnostics cannot promote a candidate. The adaptive
+WFO implementation is available, but a complete physical confirmation has
+not been established by this work. Historical commands below remain for
+their corresponding artifact generations.
+
+## Historical v3 foundation
+
+The v3 generation uses additive contracts and the pinned DuckDB/Parquet lake:
 `strategy-data-manifest/2`, `research-feature-set/1`, `research-label-set/1`,
 `strategy-experiment/3`, `strategy-evidence-bundle/2`, and
 `strategy-run/3`. Features and future labels are physically separate; only

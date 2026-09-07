@@ -12,6 +12,7 @@ import picocli.CommandLine.Spec;
         mixinStandardHelpOptions = true,
         versionProvider = AnalyticsVersionProvider.class,
         subcommands = {CalibrationRegistryCommand.class, PositionCommand.class, ComputeCliCommand.class,
+                BuildIdentityCommand.class,
                 FetchCommand.class, SnapshotCommand.class, TripwireCommand.class,
                 PublicDataSmokeCommand.class, FinalizeReportCliCommand.class,
                 RenderReportCliCommand.class, LintReportCliCommand.class,

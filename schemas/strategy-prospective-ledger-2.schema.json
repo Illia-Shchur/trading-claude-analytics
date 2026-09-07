@@ -51,7 +51,9 @@
               "outcome_resolution_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
               "outcome_resolution_source_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
               "label_source_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
-              "execution_source_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+              "execution_source_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+              "numeric_reconciliation_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+              "numeric_reconciliation_input_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
             },
             "additionalProperties": false
           }

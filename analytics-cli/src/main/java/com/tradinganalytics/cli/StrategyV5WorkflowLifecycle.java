@@ -111,7 +111,11 @@ final class StrategyV5WorkflowLifecycle {
                     .put("candidateSetSha256", StrategyProspectiveV5.hash(refs.get("candidate_set").bytes()))
                     .put("evaluatorCodeSha256", StrategyProspectiveV5.hash(refs.get("evaluator_code").bytes()))
                     .put("featureInputSha256", StrategyProspectiveV5.hash(refs.get("feature_input").bytes()));
-            if (StrategyProspectiveV5.verifyCompletedBarNoOp(noOpOptions)) {
+            boolean outcomeRequested = hasAny(flags, "outcome-resolution-path", "outcome_resolution_path",
+                    "outcome-resolution-sha256", "outcome_resolution_sha256", "numeric-reconciliation-path",
+                    "numeric_reconciliation_path", "numeric-reconciliation-input-path",
+                    "numeric_reconciliation_input_path");
+            if (!outcomeRequested && StrategyProspectiveV5.verifyCompletedBarNoOp(noOpOptions)) {
                 ObjectNode receipt = commandReceipt("prospective-runner", "COMPLETE",
                         sourceInputs(verified), List.of("NO_NEW_COMPLETED_BAR: exact latest completed 4h bar and all source/decision bindings already exist; no append or PR created"),
                         object().put("mode", "NO_NEW_COMPLETED_BAR")
@@ -139,6 +143,22 @@ final class StrategyV5WorkflowLifecycle {
                     .put("signalDecisionSha256", StrategyProspectiveV5.hash(refs.get("signal_decision").bytes()))
                     .put("expectedHeadSha256", expectedHead)
                     .put("nowAt", System.currentTimeMillis());
+            if (outcomeRequested) {
+                copyOutcomeFlags(flags, work, append);
+                append.put("outcomeOnly", true);
+                copyOutcomeFlags(flags, work, noOpOptions);
+                if (StrategyProspectiveV5.verifyCompletedOutcomeNoOp(noOpOptions)) {
+                    ObjectNode receipt = commandReceipt("prospective-runner", "COMPLETE",
+                            sourceInputs(verified), List.of("NO_NEW_MATURE_OUTCOME: typed outcome sources already exist; no append"),
+                            object().put("mode", "NO_NEW_MATURE_OUTCOME")
+                                    .put("ledger_head_sha256", text(ledgerBefore.get("current_head_sha256")))
+                                    .put("ledger_sequence", ledgerBefore.path("sequence").asInt()));
+                    writeExclusive(receiptPath, (pretty(receipt) + "\n").getBytes(StandardCharsets.UTF_8));
+                    ObjectNode output = object().putNull("result"); output.set("receipt", receipt);
+                    output.put("status", "NO_NEW_MATURE_OUTCOME").put("no_op", true);
+                    out.println(pretty(output)); return 0;
+                }
+            }
             append.set("bar", bar);
             ObjectNode result = StrategyProspectiveV5.appendCompletedBarCycle(append);
             ObjectNode ledgerAfter = StrategyProspectiveV5.readProspectiveLedger(ledger,
@@ -182,6 +202,39 @@ final class StrategyV5WorkflowLifecycle {
             return List.of(reference(physical, "source_bundle"));
         } catch (RuntimeException ignored) {
             return List.of();
+        }
+    }
+
+    private static boolean hasAny(Map<String, String> flags, String... names) {
+        for (String name : names) {
+            String value = flags.get(name);
+            if (value != null && !value.isBlank() && !"true".equals(value)) return true;
+        }
+        return false;
+    }
+
+    /** Preserve mature typed outcome arguments at the supported workflow boundary. */
+    private static void copyOutcomeFlags(Map<String, String> flags, Path work, ObjectNode target) {
+        String[][] names = {
+                {"outcome-resolution-path", "outcome_resolution_path", "outcomeResolutionPath"},
+                {"outcome-resolution-sha256", "outcome_resolution_sha256", "outcomeResolutionSha256"},
+                {"outcome-receipt-path", "outcome_receipt_path", "outcomeReceiptPath"},
+                {"outcome-receipt-sha256", "outcome_receipt_sha256", "outcomeReceiptSha256"},
+                {"outcome-resolution-source-path", "outcome_resolution_source_path", "outcomeResolutionSourcePath"},
+                {"outcome-resolution-source-sha256", "outcome_resolution_source_sha256", "outcomeResolutionSourceSha256"},
+                {"label-source-path", "label_source_path", "labelSourcePath"},
+                {"label-source-sha256", "label_source_sha256", "labelSourceSha256"},
+                {"execution-source-path", "execution_source_path", "executionSourcePath"},
+                {"execution-source-sha256", "execution_source_sha256", "executionSourceSha256"},
+                {"numeric-reconciliation-path", "numeric_reconciliation_path", "numericReconciliationPath"},
+                {"numeric-reconciliation-sha256", "numeric_reconciliation_sha256", "numericReconciliationSha256"},
+                {"numeric-reconciliation-input-path", "numeric_reconciliation_input_path", "numericReconciliationInputPath"},
+                {"numeric-reconciliation-input-sha256", "numeric_reconciliation_input_sha256", "numericReconciliationInputSha256"}
+        };
+        for (String[] row : names) {
+            String value = first(flags.get(row[0]), flags.get(row[1]));
+            if (value == null || value.isBlank()) continue;
+            target.put(row[2], row[0].endsWith("path") ? path(value, work).toString() : value);
         }
     }
 

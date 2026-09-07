@@ -18,6 +18,23 @@
   <build>
     <plugins>
       <plugin>
+        <groupId>org.codehaus.mojo</groupId><artifactId>exec-maven-plugin</artifactId><version>3.1.0</version>
+        <executions>
+          <execution>
+            <id>write-build-identity</id><phase>generate-resources</phase><goals><goal>exec</goal></goals>
+            <configuration>
+              <executable>sh</executable>
+              <arguments>
+                <argument>${session.executionRootDirectory}/tools/build-input-identity.sh</argument>
+                <argument>${session.executionRootDirectory}</argument>
+              </arguments>
+              <outputFile>${project.build.outputDirectory}/META-INF/build-identity.properties</outputFile>
+              <errorOutputFile>${project.build.directory}/build-identity.error.log</errorOutputFile>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>org.springframework.boot</groupId><artifactId>spring-boot-maven-plugin</artifactId>
         <executions>
           <execution>

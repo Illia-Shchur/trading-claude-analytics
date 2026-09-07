@@ -62,6 +62,12 @@ public final class PortedToolCliCommands {
             }
             spec.commandLine().getOut().print(stdout.toString(StandardCharsets.UTF_8));
             spec.commandLine().getErr().print(stderr.toString(StandardCharsets.UTF_8));
+            // Picocli's command streams are buffered PrintWriters.  Flush the
+            // complete adapter payload before Spring closes the context;
+            // otherwise large JSON results can be truncated at the writer's
+            // buffer boundary even though the durable output was committed.
+            spec.commandLine().getOut().flush();
+            spec.commandLine().getErr().flush();
             return status;
         }
     }

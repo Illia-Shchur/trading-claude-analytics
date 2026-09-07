@@ -181,10 +181,13 @@ fail-closed until a specialized authoritative adapter exists.
 
 ## Decision boundary
 
-Research may decide `REJECTED`, `SHADOW`, or `CANDIDATE_REVIEW`. It never
-decides `ACTIVE`, authorizes a live trade, or promotes a per-asset result into a
-portfolio pass. Activation is a separate governed decision after sufficient
-sealed and prospective evidence.
+Research decisions are `REJECTED`, `SHADOW`, or `CANDIDATE_REVIEW`. Operational
+boundaries may also report `BLOCKED` or `COMPUTE_INCOMPLETE`, and fixed or
+synthetic diagnostic work may report `DEVELOPMENT` or
+`INSUFFICIENT_EVIDENCE`; those labels describe limitations and cannot advance a
+family. Research never decides `ACTIVE`, authorizes a live trade, or promotes a
+per-asset result into a portfolio pass. Activation is a separate governed
+decision after sufficient sealed and prospective evidence.
 
 ## Additive strategy-research/5 implementation
 
@@ -196,6 +199,16 @@ immutable read-compatible history. `generate
 NSGA-II evaluator. Authoritative search also requires a persistent canonical
 exposure-head path; a process-local ledger is test-only evidence.
 
+The current bounded diagnostic commands are `fixed-baseline`,
+`fixed-baseline-refinement`, and `operating-characteristics-preflight` followed
+by `operating-characteristics-run`. They share the production fixed evaluator
+and lifecycle/portfolio/statistics path, preserve cumulative family exposure,
+and never authorize promotion. The first two consume governed physical inputs;
+the operating-characteristics path generates explicitly synthetic development
+inputs. Use the existing `research-run` command for adaptive WFO; its
+implementation is present and locally tested, but a physically complete WFO
+confirmation still requires the declared fold artifacts and custody gates.
+
 The v5 chromosome contract freezes typed continuous, ordered-discrete,
 categorical, and structural genes, population history, operators, parents,
 seeds, hard constraints, direct-neighbour confirmation, a simple baseline, and
@@ -204,6 +217,15 @@ generations, minimum 10 generations, five-generation no-new-Pareto-signature
 stopping, 0.90 crossover, and `1/gene_count` mutation. Three seeds are
 independent search exposure and never reduce cumulative K. A missing/stale/
 competing HEAD fails closed; genesis is explicit and one-time.
+
+The frozen v004 operating-characteristics diagnostic has completed all 200
+planned synthetic repetitions through the shared fixed evaluator. Its four
+cells produced 2/50, 0/50, 14/50 and 45/50 eligible decisions, and every
+predeclared Wilson-bound target was unmet. The retained raw result and its
+display-only all-200 projection are diagnostic evidence only: they do not
+establish adaptive WFO calibration, PIT validity, observed fills, promotion or
+activation. A complete adaptive WFO result remains `REJECTED` until its
+fold-level artifacts and custody gates are physically exercised and retained.
 
 The cumulative family namespace is not caller-selected. Its canonical ID is
 the lowercase frozen precommit `hypothesis_family`, falling back to
@@ -261,6 +283,9 @@ caller-supplied evidence cannot emit `SHADOW`.
 `overfit-audit` fails closed unless p20, cumulative max-statistic, search-
 adjusted expectancy, DSR/PBO, independent episodes, recent/earlier blocks,
 positive years/folds, connected plateau/neighbours, three-seed stability,
-stress, null/permutation/shift/baseline, and portfolio controls pass. V5 only
-returns `REJECTED`, `SHADOW`, or `CANDIDATE_REVIEW`; prospective custody and an
-offline activation root remain external deployment prerequisites.
+stress, null/permutation/shift/baseline, and portfolio controls pass. V5
+substantive decisions are `REJECTED`, `SHADOW`, or `CANDIDATE_REVIEW`;
+`BLOCKED`, `COMPUTE_INCOMPLETE`, `DEVELOPMENT`, and
+`INSUFFICIENT_EVIDENCE` remain non-promoting operational or diagnostic
+outcomes. Prospective custody and an offline activation root remain external
+deployment prerequisites.

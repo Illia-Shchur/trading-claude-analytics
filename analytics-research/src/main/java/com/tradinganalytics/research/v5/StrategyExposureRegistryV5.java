@@ -73,6 +73,25 @@ final class StrategyExposureRegistryV5 {
         if (!hash(pointerInput).equals(text(field(head, "head_pointer_sha256")))) {
             throw failure("exposure head pointer is invalid");
         }
+        if (defined(field(head, "fixed_attempt_pairs"))) {
+            ArrayNode pairs = requireArray(field(head, "fixed_attempt_pairs"), "fixed attempt pairs");
+            Set<String> pairKeys = new HashSet<>();
+            for (JsonNode pair : pairs) {
+                assertKnownKeys(pair, Set.of("behavior_sha256", "dataset_sha256"), "fixed attempt pair");
+                String behavior = requireHash(field(pair, "behavior_sha256"), "fixed attempt behavior");
+                String dataset = requireHash(field(pair, "dataset_sha256"), "fixed attempt dataset");
+                if (!seen.contains(behavior) || !pairKeys.add(behavior + ":" + dataset)) {
+                    throw failure("fixed attempt pair has unknown behavior or duplicate identity");
+                }
+            }
+            if (pairs.size() > integer(field(head, "exposure_attempt_k"), cumulative)) {
+                throw failure("fixed attempt pairs exceed recorded exposure attempts");
+            }
+        }
+        if (defined(field(head, "fixed_attempt_ledger_migration_sha256"))) {
+            requireHash(field(head, "fixed_attempt_ledger_migration_sha256"), "fixed attempt ledger migration");
+            requireArray(field(head, "fixed_attempt_pairs"), "migrated fixed attempt pairs");
+        }
         return head;
     }
 
@@ -123,6 +142,12 @@ final class StrategyExposureRegistryV5 {
         result.put("cumulative_k", rows.size());
         result.put("exposure_attempt_k", attempts);
         result.put("head_pointer_sha256", hash(pointerInput));
+        if (defined(field(options, "fixedAttemptPairs"))) {
+            result.set("fixed_attempt_pairs", cloneNode(field(options, "fixedAttemptPairs")));
+        }
+        if (defined(field(options, "fixedAttemptLedgerMigrationSha256"))) {
+            result.set("fixed_attempt_ledger_migration_sha256", cloneNode(field(options, "fixedAttemptLedgerMigrationSha256")));
+        }
         return finalizeExposureHead(result);
     }
 
@@ -138,6 +163,15 @@ final class StrategyExposureRegistryV5 {
         array(field(options, "behaviorAliases")).forEach(value -> distinct.add(jsString(value)));
         List<String> aliases = new ArrayList<>(distinct);
         aliases.sort(String::compareTo);
+        boolean fixedAttempt = field(options, "fixedAttempt").asBoolean(false);
+        if (fixedAttempt) {
+            if (aliases.size() != 1 || integer(field(options, "exposureAttemptCount"), 1) != 1) {
+                throw failure("a fixed attempt must identify exactly one behavior and one exposure");
+            }
+            String behavior = requireHash(JSON.textNode(aliases.get(0)), "fixed attempt behavior");
+            if (containsFixedPair(priorEntries, behavior, dataset)
+                    || containsFixedPair(field(prior, "fixed_attempt_pairs"), behavior, dataset)) return prior;
+        }
         JsonNode definitions = field(options, "behaviorDefinitions");
         JsonNode commitments = field(options, "vectorCommitments");
         for (String behavior : aliases) {
@@ -167,7 +201,50 @@ final class StrategyExposureRegistryV5 {
         next.put("datasetSha256", dataset);
         next.set("entries", rows);
         next.put("exposureAttemptK", priorAttempts + increment);
+        if (defined(field(prior, "fixed_attempt_pairs")) || fixedAttempt) {
+            ArrayNode pairs = defined(field(prior, "fixed_attempt_pairs"))
+                    ? requireArray(field(prior, "fixed_attempt_pairs"), "fixed attempt pairs").deepCopy() : array();
+            if (fixedAttempt) pairs.add(object().put("behavior_sha256", aliases.get(0)).put("dataset_sha256", dataset));
+            next.set("fixedAttemptPairs", pairs);
+        }
+        if (defined(field(prior, "fixed_attempt_ledger_migration_sha256"))) {
+            next.set("fixedAttemptLedgerMigrationSha256", cloneNode(field(prior, "fixed_attempt_ledger_migration_sha256")));
+        }
         return makeExposureHead(next);
+    }
+
+    private static boolean containsFixedPair(JsonNode pairs, String behavior, String dataset) {
+        if (pairs == null || !pairs.isArray()) return false;
+        for (JsonNode pair : pairs) {
+            if (behavior.equals(text(field(pair, "behavior_sha256")))
+                    && dataset.equals(text(field(pair, "dataset_sha256")))) return true;
+        }
+        return false;
+    }
+
+    /** Migrate the short-lived sidecar once, within the same HEAD lock and atomic write. */
+    private static ObjectNode migrateFixedAttemptLedger(Path target, ObjectNode prior) throws IOException {
+        if (defined(field(prior, "fixed_attempt_ledger_migration_sha256"))) return prior;
+        Path legacyPath = Path.of(target + ".fixed-attempt-ledger.json");
+        if (!Files.exists(legacyPath, LinkOption.NOFOLLOW_LINKS)) return prior;
+        if (Files.isSymbolicLink(legacyPath)) throw failure("fixed attempt ledger cannot be a symbolic link");
+        ObjectNode legacy = objectOrEmpty(MAPPER.readTree(Files.readString(legacyPath, StandardCharsets.UTF_8)));
+        assertOwnHash(legacy, "strategy-fixed-attempt-ledger/1", "legacy fixed attempt ledger");
+        if (!text(field(prior, "hypothesis_family")).equals(text(field(legacy, "family")))
+                || !text(field(prior, "content_sha256")).equals(text(field(legacy, "head_sha256")))) {
+            throw failure("legacy fixed attempt ledger requires reconciliation with its bound HEAD before migration");
+        }
+        ArrayNode pairs = defined(field(prior, "fixed_attempt_pairs"))
+                ? requireArray(field(prior, "fixed_attempt_pairs"), "fixed attempt pairs").deepCopy() : array();
+        for (JsonNode pair : requireArray(field(legacy, "pairs"), "legacy fixed attempt pairs")) {
+            if (!containsFixedPair(pairs, text(field(pair, "behavior_sha256")), text(field(pair, "dataset_sha256")))) {
+                pairs.add(pair.deepCopy());
+            }
+        }
+        ObjectNode migrated = prior.deepCopy();
+        migrated.set("fixed_attempt_pairs", pairs);
+        migrated.set("fixed_attempt_ledger_migration_sha256", cloneNode(field(legacy, "content_sha256")));
+        return finalizeExposureHead(migrated);
     }
 
     static ObjectNode readExposureHeadFile(String filePath) {
@@ -209,7 +286,11 @@ final class StrategyExposureRegistryV5 {
             if (!expected.equals(text(field(prior, "content_sha256")))) {
                 throw failure("stale or competing exposure head predecessor");
             }
-            ObjectNode append = object(); append.set("prior", prior); append.put("datasetSha256", dataset);
+            ObjectNode append = object();
+            boolean fixedAttempt = field(options, "fixedAttempt").asBoolean(false);
+            append.set("prior", fixedAttempt ? migrateFixedAttemptLedger(target, prior) : prior);
+            append.put("datasetSha256", dataset);
+            if (fixedAttempt) append.put("fixedAttempt", true);
             append.set("behaviorAliases", cloneNode(field(options, "behaviorAliases")));
             append.set("behaviorDefinitions", cloneNode(field(options, "behaviorDefinitions")));
             append.set("vectorCommitments", cloneNode(field(options, "vectorCommitments")));

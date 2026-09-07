@@ -52,9 +52,12 @@ hash-chain event. The fast review floor is 60 calendar days, 25 completed
 portfolio trades, and 8 per proposed asset; these are not substitutes for
 expectancy, confidence, cost, stress, and portfolio gates. Activation is a
 separate Ed25519-signed 90-day lease requiring both asset and portfolio
-approval. A research result can only be `REJECTED`, `SHADOW`, or
+approval. A complete research decision can only be `REJECTED`, `SHADOW`, or
 `CANDIDATE_REVIEW`; actual `ACTIVE` status requires signature verification and
-is never emitted by a research run.
+is never emitted by a research run. Operational failures may instead be
+`BLOCKED` or `COMPUTE_INCOMPLETE`, while fixed and synthetic diagnostics may
+be labelled `DEVELOPMENT` or `INSUFFICIENT_EVIDENCE`; those are evidence
+limitations, not decision labels and cannot advance a family.
 
 The tradable universe is crypto infrastructure only: crypto spot, perpetuals,
 dated futures, options, basis, funding, carry, and other explicitly described
@@ -354,19 +357,26 @@ may continue gathering evidence but cannot authorize a trade.
 `CANDIDATE_REVIEW` means the frozen research evidence is ready for the separate
 human/governance activation process. No `strategy-research/3` definition,
 experiment, run, per-asset result, portfolio result, or prospective monitor can
-set `ACTIVE` or authorize a live trade.
+set `ACTIVE` or authorize a live trade. `BLOCKED` and `COMPUTE_INCOMPLETE`
+describe missing or failed computation, while `DEVELOPMENT` and
+`INSUFFICIENT_EVIDENCE` describe diagnostic scope or sample limitations; none
+of those labels is a promotion decision.
 
 The v1 registry and historical imports remain read-compatible and retain their
-original evidence labels. New research uses v3 (`evaluate-v3`); old evidence is
-never rewritten to appear stronger than it was.
+original evidence labels. The current additive research entry point is the
+typed Java v5 façade, `./bin/analytics strategy-research-v5`; `evaluate-v3`
+remains the compatibility evaluator for v3 artifacts and is not the default
+for new work. Old evidence is never rewritten to appear stronger than it was.
 
 ## 11. Additive v5 path
 
-The v5 implementation in `tools/strategy-research-v5.mjs` is an additive
-research path; it does not rewrite v1--v4 artifacts. The `search-genetic`
-command is the only adaptive genetic entry point. Static `generate --method
-GENETIC` remains rejected so a deterministic sample cannot be described as an
-evolutionary search.
+The v5 implementation is an additive research path exposed by
+`./bin/analytics strategy-research-v5`; it does not rewrite v1--v4 artifacts.
+The historical `tools/strategy-research-v5.mjs` wrappers remain available for
+read and data-pipeline support. The `search-genetic` command is the only
+adaptive genetic entry point. Static `generate --method GENETIC` remains
+rejected so a deterministic sample cannot be described as an evolutionary
+search.
 
 V5 freezes typed chromosomes, NSGA-II operators and objectives, hard
 constraints, population history, three seeds, a simple baseline, direct
@@ -390,14 +400,21 @@ read by signal predicates. Its episode return vector is market-wide with
 explicit internal zeros. The WFO contract freezes eight quarterly outer folds,
 a 30-day purge, and a seven-day embargo. Eighteen-month decay is a train-only
 objective; OOS, portfolio, and prospective evidence remain unweighted. The
-public WFO runner stays `REJECTED` until fold-level statistical artifacts are
-authoritatively retained and hash-bound.
+public Java WFO implementation invokes the production nested evaluator and is
+locally covered by regression tests, but no complete adaptive WFO result has
+been physically exercised, authoritatively retained, and hash-bound in this
+checkout; its current evidence boundary therefore remains `REJECTED`. The
+completed v004 operating-characteristics run is a separate fixed-stage,
+conditional synthetic diagnostic through the shared evaluator. It supplies no
+adaptive WFO confirmation and cannot satisfy the fold-level custody gates.
 
 The v5 overfit audit requires the cumulative candidate-set max statistic,
 bootstrap p20, search-adjusted expectancy, DSR/PBO when supported, episode and
 year/fold minimums, recent/earlier blocks, connected plateau/neighbour
 robustness, seed stability, doubled-cost and execution/liquidation stresses,
 and null/permutation/shift/random-baseline/winner's-curse controls. Missing
-inputs fail closed. Prospective workflows are preflight-only until independent
-GitHub branch protection, OIDC custody, separate approvals, and an offline
-activation trust root are deployed; research never emits ACTIVE.
+inputs fail closed. Prospective live workflows are preflight-only until
+independent GitHub branch protection, OIDC custody, separate approvals, and an
+offline activation trust root are deployed. The local typed outcome
+reconciliation command is a diagnostic paper-outcome boundary, not a live
+prospective cycle, and research never emits ACTIVE.

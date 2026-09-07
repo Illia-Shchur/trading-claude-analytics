@@ -10,7 +10,8 @@ import java.io.PrintStream;
 public final class StrategyResearchV5CommandAdapter {
     public static final String COMMANDS = "data-backfill|data-raw-replay|feature-build|metadata-build|"
             + "opportunity-envelope|artifact-build|research-init|experiment-freeze|search-genetic|"
-            + "research-run|overfit-audit|prospective-runner|readiness-audit|deployment-audit|validate|index|presentation-export";
+            + "research-run|overfit-audit|prospective-runner|readiness-audit|deployment-audit|"
+            + "fixed-baseline|fixed-baseline-refinement|fixed-baseline-produce-signal-bars|operating-characteristics-preflight|operating-characteristics-run|freeze-refinement|portfolio-reconcile|prospective-outcome-reconcile|evidence-disposition|canonical-hash-batch|validate|index|presentation-export";
     public static final String USAGE = "usage: strategy-research-v5.mjs " + COMMANDS;
     public static final String HELP_USAGE = USAGE + " [options]";
 
@@ -40,6 +41,26 @@ public final class StrategyResearchV5CommandAdapter {
                 java.time.Instant asOf = options.has("as_of")
                         ? java.time.Instant.parse(options.path("as_of").asText()) : null;
                 result = StrategyResearchUiExportV5.write(root, output, fixture, asOf);
+            } else if ("fixed-baseline".equals(command)) {
+                result = StrategyFixedBaselineV5.run(options);
+            } else if ("fixed-baseline-refinement".equals(command)) {
+                result = StrategyFixedBaselineV5.runRefinement(options);
+            } else if ("fixed-baseline-produce-signal-bars".equals(command)) {
+                result = StrategyFixedBaselineV5.buildSignalBarsFromVerifiedParquet(options);
+            } else if ("operating-characteristics-preflight".equals(command)) {
+                result = StrategyOperatingCharacteristicsV4.preflight(readObjectOption(options, "plan"));
+            } else if ("operating-characteristics-run".equals(command)) {
+                result = StrategyOperatingCharacteristicsV4.run(options);
+            } else if ("portfolio-reconcile".equals(command)) {
+                result = StrategyResearchImprovementV1.reconcilePortfolio(readArrayOption(options, "trades"));
+            } else if ("prospective-outcome-reconcile".equals(command)) {
+                result = StrategyProspectiveOutcomeReconciliationV1.reconcile(readObjectOption(options, "input"));
+            } else if ("freeze-refinement".equals(command)) {
+                result = StrategyResearchImprovementV1.freezeRefinementInventory(readObjectOption(options, "input"));
+            } else if ("evidence-disposition".equals(command)) {
+                result = StrategyResearchImprovementV1.disposition(options);
+            } else if ("canonical-hash-batch".equals(command)) {
+                result = StrategyResearchImprovementV1.canonicalHashBatch(options);
             } else {
                 result = StrategyResearchV5.runAuthoritativeV5Cli(command, options);
             }
@@ -50,6 +71,31 @@ public final class StrategyResearchV5CommandAdapter {
             stderr.println(USAGE); return 1;
         } catch (RuntimeException error) {
             stderr.println(message(error)); return 1;
+        }
+    }
+
+    private static ObjectNode readObjectOption(ObjectNode options, String key) {
+        JsonNode value = readOption(options, key);
+        if (!value.isObject()) throw new IllegalArgumentException("--" + key + " must point to a JSON object");
+        return (ObjectNode) value;
+    }
+
+    private static com.fasterxml.jackson.databind.node.ArrayNode readArrayOption(ObjectNode options, String key) {
+        JsonNode value = readOption(options, key);
+        if (!value.isArray()) throw new IllegalArgumentException("--" + key + " must point to a JSON array");
+        return (com.fasterxml.jackson.databind.node.ArrayNode) value;
+    }
+
+    private static JsonNode readOption(ObjectNode options, String key) {
+        JsonNode raw = options.get(key);
+        if (raw == null || !raw.isTextual()) {
+            throw new IllegalArgumentException("--" + key + " requires a JSON file path");
+        }
+        try {
+            return new com.fasterxml.jackson.databind.ObjectMapper()
+                    .readTree(java.nio.file.Files.readString(java.nio.file.Path.of(raw.asText())));
+        } catch (java.io.IOException error) {
+            throw new IllegalArgumentException("cannot read --" + key + ": " + error.getMessage(), error);
         }
     }
 

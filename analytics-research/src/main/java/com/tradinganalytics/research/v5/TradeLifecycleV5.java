@@ -20,6 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /** Exact Java port of the normalized, PIT-safe strategy-research/5 trade lifecycle. */
@@ -124,6 +125,8 @@ public final class TradeLifecycleV5 {
         ArrayNode marks = arrayOrEmpty(first(source, "marks"));
         ObjectNode execution = objectOrEmpty(first(source, "execution"));
         long interval = Math.max(1L, truncate(number(or(first(source, "interval_ms"), numberNode(60_000)), "interval_ms")));
+        ArrayNode declaredNonTradingIntervals = arrayOrEmpty(
+                first(execution, "allowed_non_trading_intervals"));
 
         String side = direction(intent);
         String type = instrumentType(intent);
@@ -162,6 +165,30 @@ public final class TradeLifecycleV5 {
             contract = trust.values().get("contract_spec");
             model = trust.values().get("execution_model");
             capacityBound = trust.values().get("capacity");
+            JsonNode boundNonTrading = trust.values().get("non_trading_intervals");
+            if (boundNonTrading != null) {
+                boolean typedV1 = "strategy-fixed-baseline-non-trading/1".equals(boundNonTrading.path("schema").asText())
+                        && boundNonTrading.path("version").asInt(-1) == 1
+                        && "NON_TRADING_CLOSURE_V001".equals(boundNonTrading.path("policy_id").asText());
+                boolean typedV2 = "strategy-fixed-baseline-non-trading/2".equals(boundNonTrading.path("schema").asText())
+                        && boundNonTrading.path("version").asInt(-1) == 2
+                        && "NON_TRADING_CLOSURE_V002_ERRATUM".equals(boundNonTrading.path("policy_id").asText());
+                if (!boundNonTrading.isObject() || !(typedV1 || typedV2)
+                        || !"FROZEN".equals(boundNonTrading.path("status").asText())
+                        || !"OFFICIAL_BINANCE_NOTICE_AND_PUBLIC_MONTHLY_ARCHIVE_CHECKSUMS"
+                                .equals(boundNonTrading.path("provenance").asText())
+                        || !boundNonTrading.path("content_sha256").asText().equals(JsonHashes.ownHash(boundNonTrading))
+                        || !boundNonTrading.path("intervals").isArray()) {
+                    throw failure("physical non-trading receipt is not the typed frozen policy");
+                }
+                JsonNode expected = boundNonTrading.path("intervals");
+                if (!JsonHashes.canonicalSha256(expected)
+                        .equals(JsonHashes.canonicalSha256(declaredNonTradingIntervals))) {
+                    throw failure("declared non-trading intervals conflict with the physical trust receipt");
+                }
+            } else if (!declaredNonTradingIntervals.isEmpty()) {
+                throw failure("non-trading intervals require a physical trust receipt");
+            }
         } else {
             contract = or(first(intent, "contract"), at(intent, "instrument", "contract"), first(intent, "instrument"), MAPPER.createObjectNode());
             model = or(first(execution, "execution_model"), first(execution, "model"));
@@ -208,7 +235,11 @@ public final class TradeLifecycleV5 {
         }
 
         long decision = time(nullish(first(intent, "decision_time"), first(intent, "event_time"), first(intent, "entry_time")));
-        List<ObjectNode> sorted = validateBars(bars, interval);
+        validateNonTradingScope(declaredNonTradingIntervals, intent, contract, type);
+        String expectedAsset = jsString(first(intent, "asset"));
+        String expectedSymbol = jsString(first(intent, "symbol"));
+        List<ObjectNode> sorted = validateBars(bars, interval, declaredNonTradingIntervals,
+                expectedAsset, expectedSymbol);
         long entryTime = decision;
         int entryIndex = -1;
         for (int index = 0; index < sorted.size(); index++) {
@@ -268,6 +299,18 @@ public final class TradeLifecycleV5 {
         String gapPolicy = jsString(or(first(lifecycle, "gap_policy"), first(execution, "gap_policy"), textNode("OPEN")))
                 .toUpperCase(Locale.ROOT);
         if (!List.of("OPEN", "FAIL").contains(gapPolicy)) throw failure("gap_policy must be OPEN or FAIL");
+        String fillAvailabilityPolicy = jsString(first(lifecycle, "fill_availability_policy"));
+        boolean explicitFillAvailability = !fillAvailabilityPolicy.isBlank()
+                && !"undefined".equals(fillAvailabilityPolicy) && !"null".equals(fillAvailabilityPolicy);
+        // The historical evaluator name is retained for compatibility.  The fixed
+        // baseline's typed amendment is the same causal rule with a source-bound
+        // policy identity; it is accepted only after StrategyFixedBaselineV5 has
+        // validated that amendment against the frozen v002 definition.
+        if (explicitFillAvailability
+                && !Set.of("FINAL_IN_HORIZON_BAR_CLOSE_V001", "FIXED_LIFECYCLE_TIMING_V001")
+                        .contains(fillAvailabilityPolicy)) {
+            throw failure("unsupported fill_availability_policy " + fillAvailabilityPolicy);
+        }
 
         JsonNode modelFee = nullish(first(model, "taker_fee_rate"), first(model, "fee_rate"), at(model, "fees", "taker"));
         JsonNode modelSlippage = nullish(first(model, "slippage_bps"), at(model, "slippage", "bps"));
@@ -313,9 +356,16 @@ public final class TradeLifecycleV5 {
                     .put("capacity_debit_usd", costs.capacityDebitUsd)
                     .put("funding_usd", fundingResult.amount)
                     .put("net_pnl_usd", grossPnl - costs.feesUsd - costs.slippageUsd - costs.capacityDebitUsd + fundingResult.amount);
+            if (explicitFillAvailability) {
+                exit.put("availability_time", iso(fillAvailabilityTime(bar, fillType, interval)));
+            }
             exit.set("funding_settlements", fundingResult.settlements);
             exits.add(exit);
-            costRecords.add(costNode(costs).put("stage", "EXIT").put("time", iso(bar.path("__time").asLong())));
+            ObjectNode costRecord = costNode(costs).put("stage", "EXIT").put("time", iso(bar.path("__time").asLong()));
+            if (explicitFillAvailability) {
+                costRecord.put("availability_time", iso(fillAvailabilityTime(bar, fillType, interval)));
+            }
+            costRecords.add(costRecord);
             remaining.value -= exitQuantity;
         };
 
@@ -446,8 +496,13 @@ public final class TradeLifecycleV5 {
                 .put("net_pnl_usd", gross - fees - slip - capacity + fundingUsd);
         result.set("cost_records", costRecords);
         result.set("entry_costs", costNode(entryCosts));
-        result.set("entry_fill", MAPPER.createObjectNode().put("time", iso(entryTime)).put("price", entry)
-                .put("quantity", quantity).put("fill_type", "DECISION_BOUNDARY_OPEN"));
+        ObjectNode entryFill = MAPPER.createObjectNode().put("time", iso(entryTime)).put("price", entry)
+                .put("quantity", quantity).put("fill_type", "DECISION_BOUNDARY_OPEN");
+        if (explicitFillAvailability) {
+            entryFill.put("availability_time", iso(entryTime));
+            result.put("fill_availability_policy", fillAvailabilityPolicy);
+        }
+        result.set("entry_fill", entryFill);
         if (truthy(trailing)) result.put("effective_trailing_from", iso(entryTime + interval));
         else result.putNull("effective_trailing_from");
         if (production) result.set("physical_execution_lineage", physicalLineage(trust, lifecycleSpecSha256));
@@ -509,7 +564,8 @@ public final class TradeLifecycleV5 {
         return receipt != null && HASH.matcher(receipt.contentSha256()).matches();
     }
 
-    private static List<ObjectNode> validateBars(ArrayNode bars, long intervalMs) {
+    private static List<ObjectNode> validateBars(ArrayNode bars, long intervalMs,
+            ArrayNode allowedNonTradingIntervals, String expectedAsset, String expectedSymbol) {
         if (bars == null || bars.isEmpty()) throw failure("lifecycle requires physical 1m bars");
         List<ObjectNode> sorted = new ArrayList<>();
         for (JsonNode row : bars) {
@@ -523,11 +579,120 @@ public final class TradeLifecycleV5 {
             ObjectNode row = sorted.get(index);
             double open = price(row, "open"), high = price(row, "high"), low = price(row, "low"), close = price(row, "close");
             if (high < Math.max(open, close) || low > Math.min(open, close)) throw failure("bar OHLC is inconsistent");
-            if (index > 0 && row.path("__time").asLong() != sorted.get(index - 1).path("__time").asLong() + intervalMs) {
-                throw failure("lifecycle bars are not contiguous");
+            if (insideNonTradingInterval(row.path("__time").asLong(), allowedNonTradingIntervals,
+                    expectedAsset, expectedSymbol)) {
+                throw failure("physical bars contradict the declared non-trading interval");
+            }
+            if (index > 0) {
+                long previous = sorted.get(index - 1).path("__time").asLong();
+                long current = row.path("__time").asLong();
+                if (current != previous + intervalMs
+                        && !coveredByNonTradingInterval(previous + intervalMs, current,
+                                allowedNonTradingIntervals, intervalMs, expectedAsset, expectedSymbol)) {
+                    throw failure("lifecycle bars are not contiguous");
+                }
             }
         }
         return sorted;
+    }
+
+    /**
+     * A physical exchange closure may explain a missing contiguous run. It
+     * never creates a candle: the lifecycle simply resumes at the first
+     * reopening bar, where ordinary adverse open/barrier rules still apply.
+     */
+    static boolean coveredByNonTradingInterval(long missingStart, long reopeningTime,
+            ArrayNode intervals, long intervalMs) {
+        return coveredByNonTradingInterval(missingStart, reopeningTime, intervals, intervalMs, "", "");
+    }
+
+    private static boolean coveredByNonTradingInterval(long missingStart, long reopeningTime,
+            ArrayNode intervals, long intervalMs, String expectedAsset, String expectedSymbol) {
+        if (reopeningTime <= missingStart || (reopeningTime - missingStart) % intervalMs != 0) return false;
+        for (JsonNode interval : intervals) {
+            if (!interval.isObject()) continue;
+            long start = interval.path("start_ms").asLong(Long.MIN_VALUE);
+            long end = interval.path("end_ms").asLong(Long.MIN_VALUE);
+            if (start == missingStart && end == reopeningTime
+                    && start % intervalMs == 0 && end % intervalMs == 0
+                    && "NON_TRADING".equals(interval.path("reason").asText())
+                    && "BINANCE".equals(interval.path("venue").asText())
+                    && "BINANCE_SPOT".equals(interval.path("instrument").asText())
+                    && (expectedAsset.isBlank() || expectedAsset.equalsIgnoreCase(interval.path("asset").asText()))
+                    && (expectedSymbol.isBlank() || expectedSymbol.equalsIgnoreCase(interval.path("symbol").asText()))) return true;
+        }
+        return false;
+    }
+
+    private static boolean insideNonTradingInterval(long time, ArrayNode intervals,
+            String expectedAsset, String expectedSymbol) {
+        for (JsonNode interval : intervals) {
+            if (!interval.isObject()) continue;
+            if (time >= interval.path("start_ms").asLong(Long.MAX_VALUE)
+                    && time < interval.path("end_ms").asLong(Long.MIN_VALUE)
+                    && "NON_TRADING".equals(interval.path("reason").asText())
+                    && "BINANCE".equals(interval.path("venue").asText())
+                    && "BINANCE_SPOT".equals(interval.path("instrument").asText())
+                    && (expectedAsset.isBlank() || interval.path("asset").asText().equalsIgnoreCase(expectedAsset))
+                    && (expectedSymbol.isBlank() || interval.path("symbol").asText().equalsIgnoreCase(expectedSymbol))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static void validateNonTradingScope(ArrayNode intervals, ObjectNode intent,
+            JsonNode contract, String type) {
+        if (intervals.isEmpty()) return;
+        String venue = jsString(first(intent, "venue"));
+        String instrument = jsString(first(intent, "instrument"));
+        String asset = jsString(first(intent, "asset"));
+        String symbol = jsString(first(intent, "symbol"));
+        if (!"BINANCE".equalsIgnoreCase(venue) || !"BINANCE_SPOT".equalsIgnoreCase(instrument)
+                || !"SPOT".equalsIgnoreCase(type) || asset.isBlank() || symbol.isBlank()) {
+            throw failure("non-trading policy is restricted to a bound Binance spot asset");
+        }
+        if (!matchesContext(contract, asset, symbol, venue, instrument)) {
+            throw failure("non-trading policy conflicts with the bound contract context");
+        }
+        for (JsonNode interval : intervals) {
+            if (!interval.isObject() || !"NON_TRADING".equals(interval.path("reason").asText())
+                    || !"BINANCE".equalsIgnoreCase(interval.path("venue").asText())
+                    || !"BINANCE_SPOT".equalsIgnoreCase(interval.path("instrument").asText())
+                    || interval.path("asset").asText("").isBlank()
+                    || interval.path("symbol").asText("").isBlank()
+                    || interval.path("start_ms").asLong(Long.MIN_VALUE) >= interval.path("end_ms").asLong(Long.MIN_VALUE)
+                    || interval.path("start_ms").asLong() % 60_000L != 0
+                    || interval.path("end_ms").asLong() % 60_000L != 0) {
+                throw failure("non-trading policy interval is not a typed minute-aligned Binance spot interval");
+            }
+        }
+    }
+
+    private static boolean matchesContext(JsonNode contract, String asset, String symbol,
+            String venue, String instrument) {
+        return contract != null && contract.isObject()
+                && asset.equalsIgnoreCase(contract.path("asset").asText())
+                && symbol.equalsIgnoreCase(contract.path("symbol").asText())
+                && venue.equalsIgnoreCase(contract.path("venue").asText())
+                && instrument.equalsIgnoreCase(contract.path("instrument").asText());
+    }
+
+    /**
+     * A lifecycle's {@code time} is the bar identifier used for replay.  A
+     * barrier inferred from a completed OHLC bar becomes knowable only at its
+     * close; an adverse open gap is executable at the bar open.  The fixed
+     * baseline opts into this additive policy so admission and account cash do
+     * not observe a close-derived fill before the minute has closed.
+     */
+    private static long fillAvailabilityTime(ObjectNode bar, String fillType, long intervalMs) {
+        long barAt = bar.path("__time").asLong();
+        if ("GAP_OPEN".equals(fillType) || "DECISION_BOUNDARY_OPEN".equals(fillType)) return barAt;
+        JsonNode declared = nullish(first(bar, "availability_time"), first(bar, "close_time"));
+        long available = defined(declared) ? time(declared) : barAt + intervalMs;
+        long closeBoundary = barAt + intervalMs;
+        if (available < closeBoundary) return closeBoundary;
+        return available;
     }
 
     private static Fill fillOnBarrier(ObjectNode bar, Double barrier, String side, String kind, String gapPolicy) {

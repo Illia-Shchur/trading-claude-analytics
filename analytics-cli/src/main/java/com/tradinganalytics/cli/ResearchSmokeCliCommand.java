@@ -1,6 +1,7 @@
 package com.tradinganalytics.cli;
 
 import com.tradinganalytics.contracts.json.NodePrettyJson;
+import com.tradinganalytics.infrastructure.repository.RepositoryLayout;
 import com.tradinganalytics.research.legacy.ResearchSmokeV3;
 import java.nio.file.Path;
 import java.time.Clock;
@@ -21,7 +22,7 @@ public class ResearchSmokeCliCommand implements Callable<Integer> {
     private final Clock clock;
 
     public ResearchSmokeCliCommand() {
-        this(ResearchSmokeV3.repositoryRoot(Path.of("")), Clock.systemUTC());
+        this(RepositoryLayout.locate(), Clock.systemUTC());
     }
 
     ResearchSmokeCliCommand(Path repositoryRoot, Clock clock) {

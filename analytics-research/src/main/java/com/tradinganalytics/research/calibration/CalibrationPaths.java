@@ -2,6 +2,7 @@ package com.tradinganalytics.research.calibration;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.net.URI;
 
 public final class CalibrationPaths {
     private CalibrationPaths() {}
@@ -18,7 +19,12 @@ public final class CalibrationPaths {
             current = current.getParent();
         }
         try {
-            current = Path.of(CalibrationPaths.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+            String raw = CalibrationPaths.class.getProtectionDomain().getCodeSource().getLocation().toURI().toString();
+            int bang = raw.indexOf('!');
+            if (bang >= 0) raw = raw.substring(0, bang);
+            if (raw.startsWith("jar:")) raw = raw.substring("jar:".length());
+            if (raw.startsWith("nested:")) raw = "file:" + raw.substring("nested:".length());
+            current = Path.of(URI.create(raw));
             while (current != null) {
                 if (isRepositoryRoot(current)) return current;
                 current = current.getParent();

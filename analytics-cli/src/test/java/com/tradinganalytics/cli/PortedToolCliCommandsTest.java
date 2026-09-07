@@ -19,7 +19,7 @@ import picocli.spring.PicocliSpringFactory;
 
 class PortedToolCliCommandsTest {
     private static final Set<String> REGISTERED_COMMANDS = Set.of(
-            "backfill-report-phase-registry", "calib-corpus", "calib-registry", "calib-run",
+            "backfill-report-phase-registry", "build-identity", "version", "calib-corpus", "calib-registry", "calib-run",
             "capture-github-settings", "ci-burn-tag", "ci-confirmation", "compute",
             "export-signals", "fetch", "finalize-report", "lint-report",
             "lint-swing-calibration", "migrate-research-v3", "position", "public-data-adapters",
@@ -158,7 +158,10 @@ class PortedToolCliCommandsTest {
                 "usage: strategy-research-v5.mjs data-backfill|data-raw-replay|feature-build|"
                         + "metadata-build|opportunity-envelope|artifact-build|research-init|"
                         + "experiment-freeze|search-genetic|research-run|overfit-audit|"
-                        + "prospective-runner|readiness-audit|deployment-audit|validate|index|"
+                        + "prospective-runner|readiness-audit|deployment-audit|fixed-baseline|"
+                        + "fixed-baseline-refinement|fixed-baseline-produce-signal-bars|"
+                        + "operating-characteristics-preflight|operating-characteristics-run|freeze-refinement|portfolio-reconcile|prospective-outcome-reconcile|"
+                        + "evidence-disposition|canonical-hash-batch|validate|index|"
                         + "presentation-export [options]\n");
         assertThat(error).hasToString("");
     }

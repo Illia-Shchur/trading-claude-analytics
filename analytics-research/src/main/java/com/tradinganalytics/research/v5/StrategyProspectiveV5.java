@@ -233,7 +233,13 @@ public final class StrategyProspectiveV5 {
     }
     public static ObjectNode readProspectiveLedger(String path, ObjectNode options) { return readProspectiveLedger(Path.of(path), options); }
 
-    public static boolean verifyCompletedBarNoOp(ObjectNode options) {
+    /**
+     * Verify the exact signal identity already committed for a completed bar.
+     * The latest-bar rule belongs only to the polling/no-new-signal path: a
+     * mature outcome may arrive after later signals have been recorded, so it
+     * must still bind to the original SIGNAL without requiring it to be latest.
+     */
+    private static boolean verifySignalIdentity(ObjectNode options, boolean requireLatest) {
         ObjectNode o = options == null ? JSON.objectNode() : options;
         JsonNode ledger = o.get("ledger"), bar = o.get("bar");
         if (ledger == null || !barOrEmpty(bar).hasNonNull("completed_bar_id")) return false;
@@ -249,11 +255,83 @@ public final class StrategyProspectiveV5 {
                 || !text(payload.get("feature_input_sha256")).equals(text(o.get("featureInputSha256")))
                 || !text(event.get("decision_time")).equals(iso(time(bar.get("availability_time"))))
                 || !text(event.get("availability_time")).equals(iso(time(bar.get("availability_time"))))) throw new IllegalArgumentException("same completed-bar identity has divergent source or signal payload");
-        for (JsonNode row : rows(ledger.path("events"))) if ("SIGNAL".equals(text(row.get("kind"))) && asset.equals(text(row.get("asset")).toLowerCase(Locale.ROOT)) && time(row.get("decision_time")) > time(bar.get("availability_time"))) throw new IllegalArgumentException("same completed-bar identity is not the latest ledger bar");
+        if (requireLatest) for (JsonNode row : rows(ledger.path("events"))) if ("SIGNAL".equals(text(row.get("kind"))) && asset.equals(text(row.get("asset")).toLowerCase(Locale.ROOT)) && time(row.get("decision_time")) > time(bar.get("availability_time"))) throw new IllegalArgumentException("same completed-bar identity is not the latest ledger bar");
         return true;
     }
 
+    public static boolean verifyCompletedBarNoOp(ObjectNode options) {
+        return verifySignalIdentity(options, true);
+    }
+
     public static boolean verifyCompletedBarNoOp(JsonNode options) { return verifyCompletedBarNoOp((ObjectNode) options); }
+
+    /**
+     * Checks the mature outcome half of a previously recorded cycle.  A signal
+     * no-op is insufficient here: a completed signal may legitimately receive
+     * its typed outcome on a later run.  Reuse is allowed only when every
+     * supplied outcome source digest, including the numeric input/result pair,
+     * is identical; a changed outcome is a custody collision.
+     */
+    public static boolean verifyCompletedOutcomeNoOp(ObjectNode options) {
+        ObjectNode o = options == null ? JSON.objectNode() : options;
+        JsonNode ledger = o.get("ledger"), bar = o.get("bar");
+        if (ledger == null || !barOrEmpty(bar).hasNonNull("completed_bar_id")) return false;
+        String asset = text(bar.get("asset")).toLowerCase(Locale.ROOT), id = text(bar.get("completed_bar_id"));
+        // Outcome-only retries must bind to the exact previously committed
+        // signal even when a newer signal exists.  Do this before comparing
+        // outcome files so a rehashed candidate/decision cannot attach a
+        // mature outcome to the wrong original cycle.
+        if (!verifySignalIdentity(o, false)) {
+            throw new IllegalArgumentException("mature outcome requires exactly one previously recorded SIGNAL");
+        }
+        List<JsonNode> matches = new ArrayList<>();
+        for (JsonNode row : rows(ledger.path("events"))) {
+            if ("OUTCOME".equals(text(row.get("kind")))
+                    && asset.equals(text(row.get("asset")).toLowerCase(Locale.ROOT))
+                    && id.equals(text(row.get("completed_bar_id")))) matches.add(row);
+        }
+        if (matches.isEmpty()) return false;
+        if (matches.size() != 1) throw new IllegalArgumentException("duplicate completed outcome identity is not a valid no-op");
+        JsonNode event = matches.get(0), payload = event.path("payload");
+        // A digest-only comparison is not a safe no-op.  Reopen every typed
+        // outcome dependency before declaring reuse so an advertised digest
+        // cannot hide a tampered file.  The event lineage is the authoritative
+        // binding for this already committed cycle.
+        if (o.hasNonNull("outcomeResolutionPath") || o.hasNonNull("outcome_resolution_path")) {
+            String lineage = text(event.get("lineage_sha256"));
+            if (lineage.isEmpty()) throw new IllegalArgumentException("completed outcome is missing its lineage binding");
+            validateOutcomeArtifacts(o, (ObjectNode) bar, lineage);
+            if (o.hasNonNull("numericReconciliationPath") || o.hasNonNull("numeric_reconciliation_path")) {
+                validateNumericReconciliation(o, (ObjectNode) bar, lineage,
+                        requiredHash(o, "outcomeResolutionSourceSha256", "outcome_resolution_source_sha256"),
+                        requiredHash(o, "labelSourceSha256", "label_source_sha256"),
+                        requiredHash(o, "executionSourceSha256", "execution_source_sha256"),
+                        requiredHash(o, "outcomeResolutionSha256", "outcome_resolution_sha256"));
+            }
+        }
+        String expectedReceipt = text(first(o, "outcomeReceiptSha256", "outcome_receipt_sha256"));
+        if (expectedReceipt.isEmpty() || !expectedReceipt.equals(text(event.get("source_receipt_sha256")))) {
+            throw new IllegalArgumentException("same completed outcome identity has divergent outcome receipt binding");
+        }
+        for (String[] pair : List.of(
+                new String[]{"resolution_sha256", "outcomeResolutionSha256", "outcome_resolution_sha256"},
+                new String[]{"outcome_resolution_source_sha256", "outcomeResolutionSourceSha256", "outcome_resolution_source_sha256"},
+                new String[]{"label_source_sha256", "labelSourceSha256", "label_source_sha256"},
+                new String[]{"execution_source_sha256", "executionSourceSha256", "execution_source_sha256"},
+                new String[]{"numeric_reconciliation_sha256", "numericReconciliationSha256", "numeric_reconciliation_sha256"},
+                new String[]{"numeric_reconciliation_input_sha256", "numericReconciliationInputSha256", "numeric_reconciliation_input_sha256"})) {
+            String expected = text(first(o, pair[1], pair[2]));
+            String recorded = text(payload.get(pair[0]));
+            if (!expected.equals(recorded)) {
+                throw new IllegalArgumentException("same completed outcome identity has divergent source bindings");
+            }
+        }
+        return true;
+    }
+
+    public static boolean verifyCompletedOutcomeNoOp(JsonNode options) {
+        return verifyCompletedOutcomeNoOp((ObjectNode) options);
+    }
 
     public static ArrayNode appendProspectiveEventsAtomically(ObjectNode options) {
         ObjectNode o = options == null ? JSON.objectNode() : options; JsonNode eventRows = o.get("events");
@@ -306,20 +384,58 @@ public final class StrategyProspectiveV5 {
         if (time(bar.get("availability_time")) > nowAt(o.get("nowAt")) || !bar.hasNonNull("completed_bar_id")) throw new IllegalArgumentException("bar is not completed"); if (reservation.hasNonNull("frozen_start") && time(bar.get("availability_time")) < time(reservation.get("frozen_start"))) throw new IllegalArgumentException("bar precedes reservation freeze");
         Path ledgerPath = Path.of(text(o.get("path"))); long cycleNow = nowAt(o.get("nowAt")); ObjectNode ledger = readProspectiveLedger(ledgerPath, JSON.objectNode().put("nowAt", cycleNow)); String expected = o.hasNonNull("expectedHeadSha256") ? text(o.get("expectedHeadSha256")) : text(ledger.get("current_head_sha256")); ObjectNode receipt = validateSourceReceipt(Path.of(text(o.get("sourceReceiptPath"))), requiredHash(o, "sourceReceiptSha256", "source_receipt_sha256"), text(bar.get("asset")).toLowerCase(Locale.ROOT), text(bar.get("completed_bar_id")), lineage, cycleNow);
         recomputeSignalDecision(decision, bar, receipt, candidate, evaluator, requiredHash(o, "featureInputSha256", "feature_input_sha256"), requiredHash(o, "sourceReceiptSha256", "source_receipt_sha256"), requiredHash(o, "reservationSha256", "reservation_sha256"), requiredHash(o, "candidateSetSha256", "candidate_set_sha256"), requiredHash(o, "evaluatorCodeSha256", "evaluator_code_sha256"), lineage);
-        boolean outcomeRequested = List.of("outcomeResolutionPath", "outcomeResolutionSha256", "outcomeReceiptPath", "outcomeReceiptSha256", "outcomeResolutionSourcePath", "outcomeResolutionSourceSha256", "labelSourcePath", "labelSourceSha256", "executionSourcePath", "executionSourceSha256").stream().anyMatch(o::hasNonNull);
+        boolean numericReconciliationRequested = List.of("numericReconciliationPath", "numericReconciliationSha256", "numeric_reconciliation_path", "numeric_reconciliation_sha256").stream().anyMatch(o::hasNonNull);
+        boolean outcomeRequested = List.of("outcomeResolutionPath", "outcomeResolutionSha256", "outcomeReceiptPath", "outcomeReceiptSha256", "outcomeResolutionSourcePath", "outcomeResolutionSourceSha256", "labelSourcePath", "labelSourceSha256", "executionSourcePath", "executionSourceSha256").stream().anyMatch(o::hasNonNull) || numericReconciliationRequested;
+        boolean outcomeOnly = o.path("outcomeOnly").asBoolean(o.path("outcome_only").asBoolean(false));
+        if (outcomeOnly && !outcomeRequested) {
+            throw new IllegalArgumentException("outcome-only cycle requires complete physical outcome artifacts");
+        }
         if (outcomeRequested) {
             for (String key : List.of("outcomeResolutionPath", "outcomeResolutionSha256", "outcomeReceiptPath", "outcomeReceiptSha256", "outcomeResolutionSourcePath", "outcomeResolutionSourceSha256", "labelSourcePath", "labelSourceSha256", "executionSourcePath", "executionSourceSha256")) {
                 if (!o.hasNonNull(key)) throw new IllegalArgumentException("complete physical outcome artifacts are required");
             }
+            // A mature outcome is an append to an already recorded SIGNAL.
+            // Verify that supplied signal bindings are the committed original
+            // cycle before any outcome artifacts can be attached.  This path
+            // deliberately omits the latest-bar restriction.
+            ObjectNode signalIdentity = o.deepCopy();
+            signalIdentity.set("ledger", ledger);
+            signalIdentity.set("bar", bar);
+            if (outcomeOnly && !verifySignalIdentity(signalIdentity, false)) {
+                throw new IllegalArgumentException("mature outcome requires exactly one previously recorded SIGNAL");
+            }
             validateOutcomeArtifacts(o, bar, lineage);
+            if (numericReconciliationRequested) {
+                validateNumericReconciliation(o, bar, lineage,
+                        requiredHash(o, "outcomeResolutionSourceSha256", "outcome_resolution_source_sha256"),
+                        requiredHash(o, "labelSourceSha256", "label_source_sha256"),
+                        requiredHash(o, "executionSourceSha256", "execution_source_sha256"),
+                        requiredHash(o, "outcomeResolutionSha256", "outcome_resolution_sha256"));
+            }
         }
         ObjectNode signal = JSON.objectNode().put("event_id", text(bar.get("asset")) + ":" + text(bar.get("completed_bar_id")) + ":SIGNAL").put("kind", "SIGNAL").put("asset", text(bar.get("asset"))).put("completed_bar_id", text(bar.get("completed_bar_id"))).put("decision_time", iso(time(bar.get("availability_time")))).put("availability_time", iso(time(bar.get("availability_time")))).put("source_receipt_path", text(o.get("sourceReceiptPath"))).put("source_receipt_sha256", requiredHash(o, "sourceReceiptSha256", "source_receipt_sha256")).put("source_receipt_ref", text(receipt.get("completed_bar_id"))).put("lineage_sha256", lineage);
         signal.set("payload", JSON.objectNode().put("signal_state", text(decision.get("signal_state"))).put("signal_intent", decision.path("signal_intent").asBoolean()).put("signal_decision_sha256", signalSha).put("reservation_sha256", requiredHash(o, "reservationSha256", "reservation_sha256")).put("candidate_set_sha256", text(decision.get("candidate_set_sha256"))).put("evaluator_code_sha256", text(decision.get("evaluator_code_sha256"))).put("feature_input_sha256", text(decision.get("feature_input_sha256"))).put("feature_row_sha256", text(decision.get("feature_row_sha256"))).put("availability_cutoff_time", text(decision.get("availability_cutoff_time"))));
         if (!outcomeRequested) { ObjectNode appendOptions = JSON.objectNode().put("path", ledgerPath.toString()).put("expected_head_sha256", expected).put("nowAt", cycleNow); appendOptions.set("event", signal); ObjectNode result = JSON.objectNode(); result.set("signal", appendProspectiveEvent(appendOptions)); result.set("outcome", NullNode.instance); result.put("activated", false); return result; }
         ObjectNode resolution = physicalJson(Path.of(text(o.get("outcomeResolutionPath"))), requiredHash(o, "outcomeResolutionSha256", "outcome_resolution_sha256"), Set.of("strategy-prospective-outcome-resolution/1")); validateSchema(resolution); ObjectNode outcomeReceipt = validateSourceReceipt(Path.of(text(o.get("outcomeReceiptPath"))), requiredHash(o, "outcomeReceiptSha256", "outcome_receipt_sha256"), text(bar.get("asset")).toLowerCase(Locale.ROOT), text(bar.get("completed_bar_id")), lineage, nowAt(o.get("nowAt")));
         ObjectNode outcome = JSON.objectNode().put("event_id", text(bar.get("asset")) + ":" + text(bar.get("completed_bar_id")) + ":OUTCOME").put("kind", "OUTCOME").put("asset", text(bar.get("asset"))).put("completed_bar_id", text(bar.get("completed_bar_id"))).put("decision_time", text(outcomeReceipt.get("availability_time"))).put("availability_time", text(outcomeReceipt.get("availability_time"))).put("source_receipt_path", text(o.get("outcomeReceiptPath"))).put("source_receipt_sha256", requiredHash(o, "outcomeReceiptSha256", "outcome_receipt_sha256")).put("source_receipt_ref", text(outcomeReceipt.get("completed_bar_id"))).put("lineage_sha256", lineage);
-        outcome.set("payload", JSON.objectNode().put("resolution", text(resolution.get("resolution"))).put("resolution_sha256", requiredHash(o, "outcomeResolutionSha256", "outcome_resolution_sha256")).put("outcome_resolution_sha256", requiredHash(o, "outcomeResolutionSha256", "outcome_resolution_sha256")).put("outcome_resolution_source_sha256", requiredHash(o, "outcomeResolutionSourceSha256", "outcome_resolution_source_sha256")).put("reservation_sha256", requiredHash(o, "reservationSha256", "reservation_sha256")).put("label_source_sha256", text(resolution.get("label_source_sha256"))).put("execution_source_sha256", text(resolution.get("execution_source_sha256"))));
-        ArrayNode events = JSON.arrayNode().add(signal).add(outcome); ObjectNode appendOptions = JSON.objectNode().put("path", ledgerPath.toString()).put("expected_head_sha256", expected).put("nowAt", cycleNow); appendOptions.set("events", events); ArrayNode appended = appendProspectiveEventsAtomically(appendOptions); ObjectNode result = JSON.objectNode(); result.set("signal", appended.get(0)); result.set("outcome", appended.get(1)); result.put("activated", false); return result;
+        ObjectNode outcomePayload = JSON.objectNode().put("resolution", text(resolution.get("resolution"))).put("resolution_sha256", requiredHash(o, "outcomeResolutionSha256", "outcome_resolution_sha256")).put("outcome_resolution_sha256", requiredHash(o, "outcomeResolutionSha256", "outcome_resolution_sha256")).put("outcome_resolution_source_sha256", requiredHash(o, "outcomeResolutionSourceSha256", "outcome_resolution_source_sha256")).put("reservation_sha256", requiredHash(o, "reservationSha256", "reservation_sha256")).put("label_source_sha256", text(resolution.get("label_source_sha256"))).put("execution_source_sha256", text(resolution.get("execution_source_sha256")));
+        if (numericReconciliationRequested) {
+            outcomePayload.put("numeric_reconciliation_sha256", requiredHash(o, "numericReconciliationSha256", "numeric_reconciliation_sha256"));
+            outcomePayload.put("numeric_reconciliation_input_sha256",
+                    requiredHash(o, "numericReconciliationInputSha256", "numeric_reconciliation_input_sha256"));
+        }
+        outcome.set("payload", outcomePayload);
+        ArrayNode events = JSON.arrayNode();
+        if (!outcomeOnly) events.add(signal);
+        events.add(outcome);
+        ObjectNode appendOptions = JSON.objectNode().put("path", ledgerPath.toString()).put("expected_head_sha256", expected).put("nowAt", cycleNow);
+        appendOptions.set("events", events);
+        ArrayNode appended = appendProspectiveEventsAtomically(appendOptions);
+        ObjectNode result = JSON.objectNode();
+        result.set("signal", outcomeOnly ? NullNode.instance : appended.get(0));
+        result.set("outcome", outcomeOnly ? appended.get(0) : appended.get(1));
+        result.put("activated", false);
+        return result;
     }
     public static ObjectNode appendCompletedBarCycle(JsonNode options) { return appendCompletedBarCycle((ObjectNode) options); }
 
@@ -379,8 +495,108 @@ public final class StrategyProspectiveV5 {
     private static ObjectNode appendReplayEntry(Path path, ObjectNode raw, String expected) { return withLock(path, () -> { ObjectNode registry = readReplayRegistry(path), entry = raw.deepCopy(); if (!isHash(expected) || !expected.equals(text(registry.get("current_head_sha256")))) throw new IllegalArgumentException("replay registry CAS head mismatch"); List<JsonNode> same = rows(registry.get("entries")).stream().filter(r -> text(r.get("nonce")).equals(text(entry.get("nonce")))).toList(); if (same.stream().anyMatch(r -> text(r.get("action")).equals(text(entry.get("action")))) || ("USE".equals(text(entry.get("action"))) && !same.isEmpty())) throw new IllegalArgumentException("replay nonce already used or revoked"); entry.put("sequence", registry.path("sequence").asInt() + 1).put("previous_head_sha256", text(registry.get("current_head_sha256"))).put("entry_sha256", ownHash(entry, "entry_sha256")); String rel = String.format(Locale.ROOT, "entries/%012d-%s.json", entry.path("sequence").asInt(), text(entry.get("entry_sha256"))); Path absolute = path.resolve(rel); secureParents(absolute.getParent()); writeExclusive(absolute, pretty(entry)); ObjectNode index = readRegistryIndex(path), updated = index.deepCopy(); updated.put("sequence", entry.path("sequence").asInt()).put("head_sha256", text(entry.get("entry_sha256"))).set("entry_refs", concat(index.get("entry_refs"), JSON.arrayNode().add(JSON.objectNode().put("sequence", entry.path("sequence").asInt()).put("entry_sha256", text(entry.get("entry_sha256"))).put("byte_sha256", hash(readBytes(absolute))).put("path", rel)))); atomic(path.resolve("HEAD.json"), withHash(updated)); return entry; }); }
 
     private static ObjectNode prepareEvent(ObjectNode ledger, ObjectNode event, long now) { String id = text(event.get("event_id")); if (id.isEmpty()) throw new IllegalArgumentException("event id is required"); ObjectNode receipt = validateSourceReceipt(Path.of(text(event.get("source_receipt_path"))), text(event.get("source_receipt_sha256")), text(event.get("asset")).toLowerCase(Locale.ROOT), text(event.get("completed_bar_id")), text(ledger.get("lineage_sha256")), now); if (rows(ledger.get("events")).stream().anyMatch(r -> id.equals(text(r.get("event_id"))))) throw new IllegalArgumentException("duplicate event id"); String identity = text(event.get("asset")) + "|" + text(event.get("completed_bar_id")) + "|" + text(event.get("kind")); if (rows(ledger.get("events")).stream().anyMatch(r -> (text(r.get("asset")) + "|" + text(r.get("completed_bar_id")) + "|" + text(r.get("kind"))).equals(identity))) throw new IllegalArgumentException("duplicate completed-bar identity"); if ("OUTCOME".equals(text(event.get("kind")))) { JsonNode signal = rows(ledger.get("events")).stream().filter(r -> text(r.get("asset")).equals(text(event.get("asset")).toLowerCase(Locale.ROOT)) && text(r.get("completed_bar_id")).equals(text(event.get("completed_bar_id"))) && "SIGNAL".equals(text(r.get("kind")))).findFirst().orElse(null); if (signal == null || text(signal.get("source_receipt_sha256")).equals(text(event.get("source_receipt_sha256"))) || time(event.get("decision_time")) <= time(signal.get("decision_time"))) throw new IllegalArgumentException("outcome requires a later separate resolution receipt"); }
-        validateEventInput(ledger, event, now); Set<String> allowed = "SIGNAL".equals(text(event.get("kind"))) ? Set.of("signal_state", "signal_intent", "signal_decision_sha256", "reservation_sha256", "candidate_set_sha256", "evaluator_code_sha256", "feature_input_sha256", "feature_row_sha256", "availability_cutoff_time") : Set.of("resolution", "resolution_sha256", "outcome_resolution_sha256", "outcome_resolution_source_sha256", "reservation_sha256", "label_source_sha256", "execution_source_sha256"); for (String key : fieldNames(event.get("payload"))) if (!allowed.contains(key)) throw new IllegalArgumentException("event payload schema contains an unsupported field"); ObjectNode out = JSON.objectNode().put("event_id", id).put("kind", text(event.get("kind"))).put("asset", text(event.get("asset")).toLowerCase(Locale.ROOT)).put("completed_bar_id", text(event.get("completed_bar_id"))).put("decision_time", iso(time(event.get("decision_time")))).put("availability_time", iso(time(event.get("availability_time")))).put("source_receipt_sha256", text(event.get("source_receipt_sha256"))).put("source_receipt_schema", text(receipt.get("schema"))).put("source_receipt_ref", text(event.hasNonNull("source_receipt_ref") ? event.get("source_receipt_ref") : JSON.textNode(Path.of(text(event.get("source_receipt_path"))).getFileName().toString()))).put("lineage_sha256", text(ledger.get("lineage_sha256"))); out.set("payload", event.get("payload") == null ? JSON.objectNode() : event.get("payload").deepCopy()); return out; }
+        validateEventInput(ledger, event, now); Set<String> allowed = "SIGNAL".equals(text(event.get("kind"))) ? Set.of("signal_state", "signal_intent", "signal_decision_sha256", "reservation_sha256", "candidate_set_sha256", "evaluator_code_sha256", "feature_input_sha256", "feature_row_sha256", "availability_cutoff_time") : Set.of("resolution", "resolution_sha256", "outcome_resolution_sha256", "outcome_resolution_source_sha256", "reservation_sha256", "label_source_sha256", "execution_source_sha256", "numeric_reconciliation_sha256", "numeric_reconciliation_input_sha256"); for (String key : fieldNames(event.get("payload"))) if (!allowed.contains(key)) throw new IllegalArgumentException("event payload schema contains an unsupported field"); ObjectNode out = JSON.objectNode().put("event_id", id).put("kind", text(event.get("kind"))).put("asset", text(event.get("asset")).toLowerCase(Locale.ROOT)).put("completed_bar_id", text(event.get("completed_bar_id"))).put("decision_time", iso(time(event.get("decision_time")))).put("availability_time", iso(time(event.get("availability_time")))).put("source_receipt_sha256", text(event.get("source_receipt_sha256"))).put("source_receipt_schema", text(receipt.get("schema"))).put("source_receipt_ref", text(event.hasNonNull("source_receipt_ref") ? event.get("source_receipt_ref") : JSON.textNode(Path.of(text(event.get("source_receipt_path"))).getFileName().toString()))).put("lineage_sha256", text(ledger.get("lineage_sha256"))); out.set("payload", event.get("payload") == null ? JSON.objectNode() : event.get("payload").deepCopy()); return out; }
     private static void validateEventInput(ObjectNode ledger, ObjectNode event, long now) { String kind = text(event.get("kind")), asset = text(event.get("asset")).toLowerCase(Locale.ROOT); if (!EVENTS.contains(kind)) throw new IllegalArgumentException("event kind is not allowed"); if (!rows(ledger.get("assets")).stream().map(StrategyProspectiveV5::text).anyMatch(asset::equals) || !ASSETS.contains(asset)) throw new IllegalArgumentException("event asset is not in frozen crypto universe"); if (!event.hasNonNull("completed_bar_id")) throw new IllegalArgumentException("completed_bar_id is required"); if (event.hasNonNull("lineage_sha256") && !text(event.get("lineage_sha256")).equals(text(ledger.get("lineage_sha256")))) throw new IllegalArgumentException("event lineage mismatch"); ObjectNode payload = event.hasNonNull("payload") && event.get("payload").isObject() ? (ObjectNode) event.get("payload") : JSON.objectNode(); if ("OUTCOME".equals(kind) && (!payload.hasNonNull("resolution") && !payload.has("outcome") || fieldNames(payload).stream().anyMatch(Set.of("signal_state", "active", "pnl", "net_r", "metrics")::contains))) throw new IllegalArgumentException("outcome event lacks a closed resolution payload"); if ("SIGNAL".equals(kind) && (!"SHADOW".equals(text(payload.get("signal_state"))) || fieldNames(payload).stream().anyMatch(Set.of("outcome", "resolution", "active", "pnl", "net_r", "metrics", "trade", "execution")::contains))) throw new IllegalArgumentException("signal event requires closed SHADOW signal payload"); long decision = time(event.get("decision_time")), available = time(event.get("availability_time")); if (decision > now || available > decision) throw new IllegalArgumentException("event is not completed and available"); if (ledger.hasNonNull("frozen_start") && decision < time(ledger.get("frozen_start"))) throw new IllegalArgumentException("event precedes prospective frozen window"); if (ledger.hasNonNull("frozen_end") && decision > time(ledger.get("frozen_end"))) throw new IllegalArgumentException("event exceeds prospective frozen window"); }
+
+    private static void validateNumericReconciliation(ObjectNode o, ObjectNode bar, String lineage,
+            String outcomeSourceSha, String labelSha, String executionSha, String resolutionSha) {
+        String path = text(first(o, "numericReconciliationPath", "numeric_reconciliation_path"));
+        String sha = requiredHash(o, "numericReconciliationSha256", "numeric_reconciliation_sha256");
+        if (path.isEmpty()) throw new IllegalArgumentException("numeric reconciliation path is required");
+        ObjectNode result = physicalJson(Path.of(path), sha, Set.of("strategy-prospective-outcome-reconciliation/1"));
+        validateSchema(result);
+        String inputPath = path(o, "numericReconciliationInputPath", "numeric_reconciliation_input_path");
+        String inputSha = requiredHash(o, "numericReconciliationInputSha256", "numeric_reconciliation_input_sha256");
+        ObjectNode input = physicalNumericInput(Path.of(inputPath), inputSha);
+        validateSchema(input);
+        ObjectNode label = physicalJson(Path.of(path(o, "labelSourcePath", "label_source_path")), labelSha,
+                Set.of(StrategyProspectiveOutcomeReconciliationV1.LABEL_SOURCE_SCHEMA));
+        ObjectNode execution = physicalJson(Path.of(path(o, "executionSourcePath", "execution_source_path")), executionSha,
+                Set.of(StrategyProspectiveOutcomeReconciliationV1.EXECUTION_SOURCE_SCHEMA));
+        validateSchema(label);
+        validateSchema(execution);
+        StrategyProspectiveOutcomeReconciliationV1.validateTypedSources(input, label, execution);
+        if (!text(input.path("source_bindings").path("outcome_resolution_source_sha256")).equals(outcomeSourceSha)
+                || !text(input.path("source_bindings").path("label_source_sha256")).equals(labelSha)
+                || !text(input.path("source_bindings").path("execution_source_sha256")).equals(executionSha)
+                || !text(input.path("completed_bar_id")).equals(text(bar.path("completed_bar_id")))
+                || !text(input.path("decision_lineage_sha256")).equals(lineage)
+                || !text(input.path("asset")).equals(text(bar.path("asset")).toLowerCase(Locale.ROOT))) {
+            throw new IllegalArgumentException("numeric input is not bound to the reopened outcome sources/bar/lineage");
+        }
+        if (input.path("observed_fills").isArray() && !input.path("observed_fills").isEmpty()
+                && !input.hasNonNull("observed_price_convention")) {
+            throw new IllegalArgumentException("observed price convention is required for physical numeric evidence");
+        }
+        ObjectNode recomputed = StrategyProspectiveOutcomeReconciliationV1.reconcile(input);
+        if (!LegacyResearchNext.stable(withoutContentHash(recomputed))
+                .equals(LegacyResearchNext.stable(withoutContentHash(result)))) {
+            throw new IllegalArgumentException("numeric reconciliation result differs from recomputed typed input");
+        }
+        if (!"NUMERICALLY_RECONCILED".equals(text(result.get("paper_status")))
+                || !text(result.get("completed_bar_id")).equals(text(bar.get("completed_bar_id")))
+                || !text(result.get("decision_lineage_sha256")).equals(lineage)
+                || !text(result.get("asset")).equals(text(bar.get("asset")).toLowerCase(Locale.ROOT))
+                || !"USDT".equals(text(result.get("account_currency")))
+                || !text(result.get("source_bindings").path("outcome_resolution_source_sha256")).equals(outcomeSourceSha)
+                || !text(result.get("source_bindings").path("label_source_sha256")).equals(labelSha)
+                || !text(result.get("source_bindings").path("execution_source_sha256")).equals(executionSha)) {
+            throw new IllegalArgumentException("numeric reconciliation is not bound to the reopened outcome sources/bar/lineage");
+        }
+        ObjectNode resolution = physicalJson(Path.of(path(o, "outcomeResolutionPath", "outcome_resolution_path")),
+                resolutionSha, Set.of("strategy-prospective-outcome-resolution/1"));
+        if (!text(resolution.get("completed_bar_id")).equals(text(bar.get("completed_bar_id")))
+                || !text(resolution.get("decision_lineage_sha256")).equals(lineage)
+                || resolution.hasNonNull("asset") && !text(resolution.get("asset")).equals(text(bar.get("asset")).toLowerCase(Locale.ROOT))
+                || !text(resolution.get("label_source_sha256")).equals(labelSha)
+                || !text(resolution.get("execution_source_sha256")).equals(executionSha)) {
+            throw new IllegalArgumentException("numeric reconciliation resolution binding is invalid");
+        }
+        long decisionAvailable = time(bar.get("availability_time"));
+        long publishedResolution = time(resolution.get("resolution_time"));
+        long receiptAvailable = time(outcomeReceipt(o, bar, lineage).get("availability_time"));
+        if (publishedResolution > receiptAvailable) {
+            throw new IllegalArgumentException("outcome resolution is published before its declared resolution time");
+        }
+        validateNumericTimeline(input, rows(execution.get("trades")), decisionAvailable,
+                publishedResolution, receiptAvailable);
+        long now = nowAt(o.get("nowAt"));
+        if (time(result.get("maturity_as_of")) > now) {
+            throw new IllegalArgumentException("numeric reconciliation maturity is not available yet");
+        }
+    }
+
+    private static ObjectNode outcomeReceipt(ObjectNode options, ObjectNode bar, String lineage) {
+        return validateSourceReceipt(
+                Path.of(path(options, "outcomeReceiptPath", "outcome_receipt_path")),
+                requiredHash(options, "outcomeReceiptSha256", "outcome_receipt_sha256"),
+                text(bar.get("asset")).toLowerCase(Locale.ROOT),
+                text(bar.get("completed_bar_id")), lineage, nowAt(options.get("nowAt")));
+    }
+
+    private static void validateNumericTimeline(ObjectNode input, List<JsonNode> execution,
+            long decisionAvailable, long publishedResolution, long receiptAvailable) {
+        List<JsonNode> paper = rows(input.path("paper_trades"));
+        if (paper.size() != execution.size()) {
+            throw new IllegalArgumentException("numeric execution source count changed during timeline validation");
+        }
+        for (int i = 0; i < paper.size(); i++) {
+            JsonNode paperTrade = paper.get(i), executionTrade = execution.get(i);
+            long entry = time(paperTrade.get("entry_time"));
+            long resolved = time(paperTrade.get("resolution_time"));
+            if (entry < decisionAvailable) {
+                throw new IllegalArgumentException("numeric trade entry precedes completed-bar availability: "
+                        + text(paperTrade.get("trade_id")));
+            }
+            if (resolved > publishedResolution || resolved > receiptAvailable) {
+                throw new IllegalArgumentException("numeric trade resolution is later than the governed outcome receipt: "
+                        + text(paperTrade.get("trade_id")));
+            }
+            if (time(executionTrade.get("resolution_time")) != resolved) {
+                throw new IllegalArgumentException("typed execution resolution time differs from paper trade");
+            }
+        }
+    }
 
     private static void validateOutcomeArtifacts(ObjectNode o, ObjectNode bar, String lineage) {
         String asset = text(bar.get("asset")).toLowerCase(Locale.ROOT);
@@ -438,7 +654,7 @@ public final class StrategyProspectiveV5 {
     private static ObjectNode decisionArtifact(Path path, String sha, String role, String lineage) { ObjectNode value = physicalJson(path, sha, Set.of("strategy-prospective-decision/1")); validateSchema(value); if (!role.equals(text(value.get("role"))) || !"PASS".equals(text(value.get("decision"))) || !lineage.equals(text(value.get("lineage_sha256"))) || !value.path("evidence_sha256").isArray() || value.path("evidence_sha256").isEmpty() || rows(value.get("evidence_sha256")).stream().anyMatch(r -> !isHash(r)) || !isHash(value.get("workflow_attestation_sha256"))) throw new IllegalArgumentException(role + " decision artifact must bind exact PASS evidence and workflow attestation"); if ("portfolio".equals(role) && !"portfolio".equals(text(value.get("asset")))) throw new IllegalArgumentException("portfolio decision must identify portfolio"); if ("asset".equals(role) && !ASSETS.contains(text(value.get("asset")).toLowerCase(Locale.ROOT))) throw new IllegalArgumentException("asset decision must identify one supported crypto asset"); return value; }
     private static void requireDecisionEvidence(List<Evidence> inventory, ObjectNode a, ObjectNode ad, ObjectNode p, ObjectNode pd) { Set<String> hashes = inventory.stream().map(e -> e.sha256).collect(java.util.stream.Collectors.toSet()); if (!hashes.contains(text(a.get("decision_sha256"))) || !hashes.contains(text(p.get("decision_sha256"))) || rows(ad.get("evidence_sha256")).stream().anyMatch(h -> !hashes.contains(text(h))) || rows(pd.get("evidence_sha256")).stream().anyMatch(h -> !hashes.contains(text(h))) || !hashes.contains(text(ad.get("workflow_attestation_sha256"))) || !hashes.contains(text(pd.get("workflow_attestation_sha256")))) throw new IllegalArgumentException("decision dependencies must be physical evidence digests"); }
     private static List<Evidence> digestEvidence(JsonNode value) { if (value == null || !value.isArray() || value.isEmpty()) throw new IllegalArgumentException("evidence digest cannot be empty"); List<Evidence> out = new ArrayList<>(); for (JsonNode row : value) { String id = text(row.get("id")), sha = text(row.get("sha256")), path = text(row.get("path")); if (id.isEmpty() || path.isEmpty() || !isValidHash(sha)) throw new IllegalArgumentException("evidence requires id/path/sha256"); if (!sha.equals(hash(readBytes(Path.of(path))))) throw new IllegalArgumentException("evidence hash mismatch for " + id); out.add(new Evidence(id, sha)); } out.sort(Comparator.comparing(e -> e.id)); if (new HashSet<>(out.stream().map(e -> e.id).toList()).size() != out.size()) throw new IllegalArgumentException("duplicate publication evidence id"); if (new HashSet<>(out.stream().map(e -> e.sha256).toList()).size() != out.size()) throw new IllegalArgumentException("duplicate publication evidence hash is ambiguous"); return out; }
-    private static List<String> requiredEvidence(JsonNode events) { Set<String> out = new LinkedHashSet<>(); List<String> source = List.of("source_receipt_sha256"), signal = List.of("signal_decision_sha256", "reservation_sha256", "candidate_set_sha256", "evaluator_code_sha256", "feature_input_sha256"), outcome = List.of("resolution_sha256", "outcome_resolution_sha256", "outcome_resolution_source_sha256", "reservation_sha256", "label_source_sha256", "execution_source_sha256"); for (JsonNode event : rows(events)) { for (String key : source) if (isValidHash(text(event.get(key)))) out.add(text(event.get(key))); for (String key : "SIGNAL".equals(text(event.get("kind"))) ? signal : outcome) if (isValidHash(text(event.path("payload").get(key)))) out.add(text(event.path("payload").get(key))); } List<String> result = new ArrayList<>(out); result.sort(String::compareTo); return result; }
+    private static List<String> requiredEvidence(JsonNode events) { Set<String> out = new LinkedHashSet<>(); List<String> source = List.of("source_receipt_sha256"), signal = List.of("signal_decision_sha256", "reservation_sha256", "candidate_set_sha256", "evaluator_code_sha256", "feature_input_sha256"), outcome = List.of("resolution_sha256", "outcome_resolution_sha256", "outcome_resolution_source_sha256", "reservation_sha256", "label_source_sha256", "execution_source_sha256", "numeric_reconciliation_sha256", "numeric_reconciliation_input_sha256"); for (JsonNode event : rows(events)) { for (String key : source) if (isValidHash(text(event.get(key)))) out.add(text(event.get(key))); for (String key : "SIGNAL".equals(text(event.get("kind"))) ? signal : outcome) if (isValidHash(text(event.path("payload").get(key)))) out.add(text(event.path("payload").get(key))); } List<String> result = new ArrayList<>(out); result.sort(String::compareTo); return result; }
     private static ObjectNode publicationPayload(ObjectNode value) { ObjectNode out = value.deepCopy(); out.remove(List.of("asset_approval", "portfolio_approval", "content_sha256")); return out; }
     private static ObjectNode replayPayload(ObjectNode value) { ObjectNode out = publicationPayload(value); out.remove(List.of("replay_new_head_sha256", "replay_entry_sha256")); return out; }
     private static ObjectNode rootPayload(ObjectNode root) { ObjectNode out = root.deepCopy(); out.remove(List.of("root_signature", "content_sha256")); return out; }
@@ -465,6 +681,23 @@ public final class StrategyProspectiveV5 {
     private static void promoteNoOverwrite(Path staged, Path target, String sha) { if (exists(target)) { if (!sha.equals(hash(readBytes(target)))) throw new IllegalArgumentException("content-addressed event collision at " + target); if (exists(staged)) { if (!sha.equals(hash(readBytes(staged)))) throw new IllegalArgumentException("staged event bytes are tampered: " + staged); deleteFile(staged); } return; } if (!exists(staged)) throw new IllegalArgumentException("staged event is missing: " + staged); if (!sha.equals(hash(readBytes(staged)))) throw new IllegalArgumentException("staged event bytes are tampered: " + staged); secureParents(target.getParent()); move(staged, target); }
     private static ObjectNode physicalJson(Path path, String sha, Set<String> schemas) { return physicalJson(path, sha, schemas, "content_sha256"); }
     private static ObjectNode physicalJson(Path path, String sha, Set<String> schemas, String field) { if (path == null || !exists(path)) throw new IllegalArgumentException("physical source artifact is missing"); requireHash(sha, "physical source byte hash"); byte[] bytes = readBytes(path); if (!sha.equals(hash(bytes))) throw new IllegalArgumentException("physical source byte hash mismatch"); ObjectNode value = parseObject(bytes); if (schemas != null && !schemas.isEmpty() && !schemas.contains(text(value.get("schema")))) throw new IllegalArgumentException("physical source artifact schema is unsupported"); if (!isValidHash(text(value.get(field))) || !text(value.get(field)).equals(ownHash(value, field))) throw new IllegalArgumentException("physical source " + field + " is invalid"); return value; }
+    private static ObjectNode physicalNumericInput(Path path, String sha) {
+        if (path == null || !exists(path)) throw new IllegalArgumentException("numeric reconciliation input is missing");
+        requireHash(sha, "numeric reconciliation input byte hash");
+        byte[] bytes = readBytes(path);
+        if (!sha.equals(hash(bytes))) throw new IllegalArgumentException("numeric reconciliation input byte hash mismatch");
+        ObjectNode value = parseObject(bytes);
+        if (!StrategyProspectiveOutcomeReconciliationV1.INPUT_SCHEMA.equals(text(value.get("schema")))
+                || value.path("version").asInt(-1) != 1) {
+            throw new IllegalArgumentException("numeric reconciliation input schema is unsupported");
+        }
+        return value;
+    }
+    private static ObjectNode withoutContentHash(ObjectNode value) {
+        ObjectNode copy = value.deepCopy();
+        copy.remove("content_sha256");
+        return copy;
+    }
     private static ObjectNode physicalBytes(Path path, String sha, String name) { if (path == null || !exists(path)) throw new IllegalArgumentException(name + " source artifact is missing"); requireHash(sha, name + " source byte hash"); String actual = hash(readBytes(path)); if (!sha.equals(actual)) throw new IllegalArgumentException(name + " source byte hash mismatch"); return JSON.objectNode().put("byte_sha256", actual); }
     private static boolean validCandidateSet(ObjectNode v) { if (Set.of("strategy-candidate-set/4", "strategy-candidate-set/5").contains(text(v.get("schema")))) return v.path("candidates").isArray() && !v.path("candidates").isEmpty() && v.path("declared_k").asDouble() >= v.path("effective_k").asDouble() && rows(v.get("candidates")).stream().allMatch(r -> r.hasNonNull("candidate_id") && isValidHash(text(r.get("behavior_sha256")))); return "strategy-v5-statistical-input/1".equals(text(v.get("schema"))) && v.path("candidates").isArray() && !v.path("candidates").isEmpty() && v.path("episodes").isArray() && !v.path("episodes").isEmpty() && v.hasNonNull("lineage") && isValidHash(text(v.get("exposure_head_sha256"))); }
     private static boolean validFeatureInput(ObjectNode v) { return "research-feature-set/1".equals(text(v.get("schema"))) ? !v.path("labels_allowed").asBoolean(true) && isValidHash(text(v.get("data_manifest_sha256"))) && isValidHash(text(v.get("feature_code_sha256"))) : "strategy-v5-source-receipt/1".equals(text(v.get("schema"))) && v.path("authoritative").asBoolean(false) && "PUBLIC_OBSERVED".equals(text(v.get("status"))) && v.has("series") && v.path("coverage").path("complete").asBoolean(false) && !v.has("labels") && !v.has("outcomes"); }

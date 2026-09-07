@@ -36,6 +36,22 @@ public final class RepositoryLayout {
         if (codeLocation != null && "file".equalsIgnoreCase(codeLocation.getScheme())) {
             Path codePath = Path.of(codeLocation).toAbsolutePath().normalize();
             starts.add(Files.isDirectory(codePath) ? codePath : codePath.getParent());
+        } else if (codeLocation != null) {
+            // Spring Boot's executable JAR class loader reports a nested URL
+            // such as jar:nested:/repo/app.jar/!BOOT-INF/classes/!/. Resolve
+            // the outer archive so commands can locate the repository even
+            // when java -jar is launched from an unrelated working directory.
+            String raw = codeLocation.toString();
+            int bang = raw.indexOf('!');
+            if (bang >= 0) raw = raw.substring(0, bang);
+            if (raw.startsWith("jar:")) raw = raw.substring("jar:".length());
+            if (raw.startsWith("nested:")) raw = "file:" + raw.substring("nested:".length());
+            try {
+                Path codePath = Path.of(URI.create(raw)).toAbsolutePath().normalize();
+                starts.add(Files.isDirectory(codePath) ? codePath : codePath.getParent());
+            } catch (RuntimeException ignored) {
+                // The working-directory search below remains the fallback.
+            }
         }
         starts.add(workingDirectory.toAbsolutePath().normalize());
 

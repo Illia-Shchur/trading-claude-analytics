@@ -20,7 +20,8 @@ public final class LifecycleTrustService {
     public static final String LIFECYCLE_TRUST_SCHEMA = SCHEMA;
     private static final List<String> VERIFIED_LOADER_ROLES =
             List.of("contract_spec", "execution_model", "capacity", "bars");
-    private static final List<String> OPTIONAL_ROLES = List.of("funding", "marks", "hydration");
+    private static final List<String> OPTIONAL_ROLES =
+            List.of("funding", "marks", "hydration", "non_trading_intervals");
     public record ReceiptReference(
             String path,
             String contentSha256,
@@ -369,6 +370,8 @@ public final class LifecycleTrustService {
         if (funding != null) output.put("funding", funding);
         if (marks != null) output.put("marks", marks);
         if (hydration != null) output.put("hydration", hydration);
+        ReceiptReference nonTrading = firstOptional(receipts, "non_trading_intervals", "non_trading_policy");
+        if (nonTrading != null) output.put("non_trading_intervals", nonTrading);
         return output;
     }
 

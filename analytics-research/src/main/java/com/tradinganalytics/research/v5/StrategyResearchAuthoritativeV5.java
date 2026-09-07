@@ -74,6 +74,9 @@ public final class StrategyResearchAuthoritativeV5 {
     private static final Pattern HASH = Pattern.compile("^[a-f0-9]{64}$");
     private static final Pattern FAMILY = Pattern.compile("^[a-z0-9][a-z0-9._-]*$");
     private static final Pattern SNAPSHOT = Pattern.compile("^registry-[a-f0-9]{64}\\.json$");
+    private static final String RETENTION_ARCHIVE_MARKER_NAME = ".retention-archive";
+    private static final byte[] RETENTION_ARCHIVE_MARKER =
+            "strategy-research-retention-archive/1\n".getBytes(StandardCharsets.UTF_8);
     private static final java.time.format.DateTimeFormatter ISO_MILLIS =
             new java.time.format.DateTimeFormatterBuilder().appendInstant(3).toFormatter();
     private static final Set<String> RECEIPT_STATUSES =
@@ -4922,6 +4925,22 @@ public final class StrategyResearchAuthoritativeV5 {
         if (!text(ledgerHead.value(), "head_sha256").equals(head)) {
             throw failure("prospective ledger CAS head differs from --expected-head-sha256");
         }
+        boolean outcomeRequested = hasAny(effective, "outcome_resolution_path", "outcomeResolutionPath",
+                "outcome_resolution_sha256", "outcomeResolutionSha256", "numeric_reconciliation_path",
+                "numericReconciliationPath", "numeric_reconciliation_input_path",
+                "numericReconciliationInputPath");
+        if (outcomeRequested) {
+            for (String key : List.of("outcome_resolution_path", "outcome_resolution_sha256",
+                    "outcome_receipt_path", "outcome_receipt_sha256", "outcome_resolution_source_path",
+                    "outcome_resolution_source_sha256", "label_source_path", "label_source_sha256",
+                    "execution_source_path", "execution_source_sha256", "numeric_reconciliation_path",
+                    "numeric_reconciliation_sha256", "numeric_reconciliation_input_path",
+                    "numeric_reconciliation_input_sha256")) {
+                if (text(effective, key).isEmpty() && text(effective, camel(key)).isEmpty()) {
+                    throw failure("mature outcome requires complete typed outcome inputs: missing " + key);
+                }
+            }
+        }
         ArrayNode inputs = array();
         if (!text(effective, "source_bundle").isEmpty()) {
             inputs.add(reference(Path.of(text(effective, "source_bundle")), "source_bundle"));
@@ -4933,6 +4952,30 @@ public final class StrategyResearchAuthoritativeV5 {
         long nowAt = defined(field(effective, "now_at"))
                 ? timestamp(field(effective, "now_at"), "prospective now_at") : System.currentTimeMillis();
         try {
+            if (outcomeRequested) {
+                // Keep the complete mature-outcome dependency inventory in the
+                // durable command receipt.  The raw resolution source may be
+                // opaque bytes, so use a byte reference rather than requiring
+                // it to parse as JSON; the governed validator below still
+                // reopens and checks every advertised digest before append or
+                // retry.
+                String[][] outcomeInputs = {
+                        {"outcome_resolution_path", "outcome_resolution"},
+                        {"outcome_receipt_path", "outcome_receipt"},
+                        {"outcome_resolution_source_path", "outcome_resolution_source"},
+                        {"label_source_path", "label_source"},
+                        {"execution_source_path", "execution_source"},
+                        {"numeric_reconciliation_path", "numeric_reconciliation"},
+                        {"numeric_reconciliation_input_path", "numeric_reconciliation_input"}
+                };
+                for (String[] item : outcomeInputs) {
+                    String rawPath = text(effective, item[0]);
+                    if (rawPath.isEmpty()) rawPath = text(effective, camel(item[0]));
+                    ObjectNode reference = bestEffortPhysicalReference(absolute(Path.of(rawPath)), item[1]);
+                    if (reference == null) throw failure("mature outcome dependency is missing: " + item[1]);
+                    inputs.add(reference);
+                }
+            }
             ObjectNode read = object().put("nowAt", nowAt).put("allowFuture", true);
             ObjectNode before = StrategyProspectiveV5.readProspectiveLedger(ledgerPath, read);
             ObjectNode noOp = object(); noOp.set("ledger", before); noOp.set("bar", bar.value());
@@ -4942,7 +4985,7 @@ public final class StrategyResearchAuthoritativeV5 {
             noOp.put("candidateSetSha256", candidate.byteSha256());
             noOp.put("evaluatorCodeSha256", evaluator.byteSha256());
             noOp.put("featureInputSha256", feature.byteSha256());
-            if (StrategyProspectiveV5.verifyCompletedBarNoOp(noOp)) {
+            if (!outcomeRequested && StrategyProspectiveV5.verifyCompletedBarNoOp(noOp)) {
                 ObjectNode details = object().put("mode", "NO_NEW_COMPLETED_BAR")
                         .put("no_new_completed_bar", true)
                         .put("ledger_head_sha256", text(before, "current_head_sha256"))
@@ -4961,6 +5004,28 @@ public final class StrategyResearchAuthoritativeV5 {
                     .put("evaluatorCodePath", evaluator.path().toString()).put("evaluatorCodeSha256", evaluator.byteSha256())
                     .put("signalDecisionPath", signal.path().toString()).put("signalDecisionSha256", signal.byteSha256())
                     .put("expectedHeadSha256", head).put("nowAt", nowAt);
+            if (outcomeRequested) {
+                copyProspectiveOutcomeOptions(effective, append);
+                append.put("outcomeOnly", true);
+                ObjectNode outcomeNoOp = noOp.deepCopy();
+                copyProspectiveOutcomeOptions(effective, outcomeNoOp);
+                ObjectNode outcomeNoOpRequest = object();
+                outcomeNoOpRequest.set("ledger", before);
+                outcomeNoOpRequest.set("bar", bar.value());
+                outcomeNoOpRequest.setAll(outcomeNoOp);
+                if (StrategyProspectiveV5.verifyCompletedOutcomeNoOp(outcomeNoOpRequest)) {
+                    ObjectNode details = object().put("mode", "NO_NEW_MATURE_OUTCOME")
+                            .put("no_new_outcome", true)
+                            .put("ledger_head_sha256", text(before, "current_head_sha256"))
+                            .put("ledger_sequence", before.path("sequence").asInt());
+                    ObjectNode commandReceipt = receipt("prospective-runner", "COMPLETE", inputs, array(),
+                            strings(List.of("NO_NEW_MATURE_OUTCOME: typed outcome sources already exist; no append")), details);
+                    Path receiptPath = writeDurableReceipt(commandReceipt, effective); ObjectNode result = object();
+                    result.putNull("result"); result.set("receipt", commandReceipt);
+                    result.put("status", "NO_NEW_MATURE_OUTCOME").put("no_op", true);
+                    result.put("receipt_path", receiptPath.toString()); return result;
+                }
+            }
             append.set("bar", bar.value()); ObjectNode cycle = StrategyProspectiveV5.appendCompletedBarCycle(append);
             ObjectNode after = StrategyProspectiveV5.readProspectiveLedger(ledgerPath, read);
             Path headPath = ledgerPath.resolve("HEAD.json");
@@ -5160,9 +5225,13 @@ public final class StrategyResearchAuthoritativeV5 {
 
     private static ObjectNode deterministicIndex(Path root, Path output) {
         ArrayNode records = array(); Map<String, String> byteByContent = new HashMap<>();
-        PublicationInventory publication = publicationIndexInventory(root);
+        Path retentionArchive = retentionArchiveRoot(root);
+        PublicationInventory publication = publicationIndexInventory(root, retentionArchive);
+        rejectRetentionPublicationOverlap(retentionArchive, publication);
         if (Files.exists(root, LinkOption.NOFOLLOW_LINKS)) walkJson(root, path -> {
             Path relative = root.relativize(path); List<String> components = components(relative);
+            if (retentionArchive != null && path.toAbsolutePath().normalize()
+                    .startsWith(retentionArchive.toAbsolutePath().normalize())) return;
             if (components.contains("receipts") || components.stream().anyMatch(part -> part.equals("transactions")
                     || part.equals(".transactions") || part.equals("stage") || part.endsWith(".stage") || part.endsWith(".lock"))
                     || path.equals(output)) return;
@@ -5196,16 +5265,76 @@ public final class StrategyResearchAuthoritativeV5 {
         index.set("records", array(sorted)); index = withHash(index); SCHEMAS.validateKnownContractSchema(index); return index;
     }
 
+    private static Path retentionArchiveRoot(Path rawRoot) {
+        Path root = absolute(rawRoot).normalize();
+        Path rootMarker = root.resolve(RETENTION_ARCHIVE_MARKER_NAME);
+        if (Files.isSymbolicLink(rootMarker) || Files.exists(rootMarker, LinkOption.NOFOLLOW_LINKS)) {
+            throw failure("index root cannot itself be marked as a retention archive; pass its curated parent root");
+        }
+        Path evidence = root.resolve("evidence");
+        if (Files.isSymbolicLink(evidence)) {
+            throw failure("retention archive directory must be a physical directory: " + evidence);
+        }
+        if (!Files.exists(evidence, LinkOption.NOFOLLOW_LINKS)) return null;
+        if (!Files.isDirectory(evidence, LinkOption.NOFOLLOW_LINKS)) {
+            throw failure("retention archive path is not a physical directory: " + evidence);
+        }
+        Path marker = evidence.resolve(RETENTION_ARCHIVE_MARKER_NAME);
+        if (Files.isSymbolicLink(marker)) {
+            throw failure("retention archive marker must be a physical regular file: " + marker);
+        }
+        if (!Files.exists(marker, LinkOption.NOFOLLOW_LINKS)) {
+            try (var children = Files.list(evidence)) {
+                if (children.findAny().isPresent()) {
+                    throw failure("evidence directory is an unmarked retention archive; add the exact ".concat(
+                            RETENTION_ARCHIVE_MARKER_NAME).concat(" marker or use a curated record root"));
+                }
+            } catch (IOException error) {
+                throw failure("retention archive directory cannot be inspected: " + evidence + ": " + error.getMessage());
+            }
+            return null;
+        }
+        if (!Files.isRegularFile(marker, LinkOption.NOFOLLOW_LINKS)) {
+            throw failure("retention archive marker must be a physical regular file: " + marker);
+        }
+        byte[] actual;
+        try { actual = readSinglyLinked(marker, "retention archive marker"); }
+        catch (RuntimeException error) { throw failure("retention archive marker cannot be verified: " + marker); }
+        if (!java.util.Arrays.equals(RETENTION_ARCHIVE_MARKER, actual)) {
+            throw failure("retention archive marker has invalid versioned content: " + marker);
+        }
+        return evidence;
+    }
+
+    private static void rejectRetentionPublicationOverlap(Path retentionArchive,
+                                                           PublicationInventory publication) {
+        if (retentionArchive == null) return;
+        Path archive = retentionArchive.toAbsolutePath().normalize();
+        for (Path path : publication.owned()) {
+            if (path.toAbsolutePath().normalize().startsWith(archive)) {
+                throw failure("retention archive overlaps a canonical publication artifact and cannot hide it: " + path);
+            }
+        }
+        for (Path path : publication.committed()) {
+            if (path.toAbsolutePath().normalize().startsWith(archive)) {
+                throw failure("retention archive overlaps a committed canonical publication artifact and cannot hide it: " + path);
+            }
+        }
+    }
+
     private record PublicationInventory(Set<Path> owned, Set<Path> committed) {}
     private record PublicationJournal(ObjectNode value, Path path) {}
 
     /** Reopens publication journals before making WFO/run bytes visible to the index. */
-    private static PublicationInventory publicationIndexInventory(Path rawRoot) {
+    private static PublicationInventory publicationIndexInventory(Path rawRoot, Path retentionArchive) {
         Path root = absolute(rawRoot); Set<Path> owned = new HashSet<>(); Set<Path> committed = new HashSet<>();
         List<PublicationJournal> journals = new ArrayList<>();
         if (!Files.exists(root, LinkOption.NOFOLLOW_LINKS)) return new PublicationInventory(owned, committed);
         walkJson(root, path -> {
             Path relative = root.relativize(path); List<String> components = components(relative);
+            if (retentionArchive != null && path.toAbsolutePath().normalize()
+                    .startsWith(retentionArchive.toAbsolutePath().normalize())
+                    && !retentionPublicationControlPath(path, retentionArchive)) return;
             if (components.stream().anyMatch(part -> part.equals("stage")
                     || part.endsWith(".stage") || part.endsWith(".lock"))) return;
             boolean transactionDirectory = components.contains("transactions")
@@ -5259,6 +5388,14 @@ public final class StrategyResearchAuthoritativeV5 {
             }
         }
         return new PublicationInventory(Set.copyOf(owned), Set.copyOf(committed));
+    }
+
+    private static boolean retentionPublicationControlPath(Path path, Path retentionArchive) {
+        if (retentionArchive == null) return false;
+        Path relative = retentionArchive.toAbsolutePath().normalize()
+                .relativize(path.toAbsolutePath().normalize());
+        List<String> components = components(relative);
+        return components.contains("transactions") || components.contains(".transactions");
     }
 
     private static boolean publicationArtifact(JsonNode value) {
@@ -6902,6 +7039,37 @@ public final class StrategyResearchAuthoritativeV5 {
         String direct = firstText(value, names); if (!direct.isEmpty()) return direct;
         JsonNode lineage = value == null ? NODES.missingNode() : value.path("lineage");
         direct = firstText(lineage, names); return nullIfEmpty(direct);
+    }
+
+    private static boolean hasAny(ObjectNode value, String... names) {
+        for (String name : names) if (!firstText(value, name).isEmpty()) return true;
+        return false;
+    }
+
+    private static String camel(String snake) {
+        StringBuilder result = new StringBuilder(); boolean upper = false;
+        for (char character : snake.toCharArray()) {
+            if (character == '_') { upper = true; continue; }
+            result.append(upper ? Character.toUpperCase(character) : character);
+            upper = false;
+        }
+        return result.toString();
+    }
+
+    /** Copy the governed mature-outcome inputs without dropping them at the CLI boundary. */
+    private static void copyProspectiveOutcomeOptions(ObjectNode source, ObjectNode target) {
+        for (String snake : List.of("outcome_resolution_path", "outcome_resolution_sha256",
+                "outcome_receipt_path", "outcome_receipt_sha256", "outcome_resolution_source_path",
+                "outcome_resolution_source_sha256", "label_source_path", "label_source_sha256",
+                "execution_source_path", "execution_source_sha256", "numeric_reconciliation_path",
+                "numeric_reconciliation_sha256", "numeric_reconciliation_input_path",
+                "numeric_reconciliation_input_sha256")) {
+            String value = firstText(source, snake, camel(snake));
+            if (!value.isEmpty()) {
+                String key = camel(snake);
+                target.put(key, snake.endsWith("_path") ? absolute(Path.of(value)).toString() : value);
+            }
+        }
     }
 
     private static boolean defined(JsonNode value) { return value != null && !value.isNull() && !value.isMissingNode(); }
