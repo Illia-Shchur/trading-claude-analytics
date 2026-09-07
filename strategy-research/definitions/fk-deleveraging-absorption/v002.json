@@ -1,0 +1,140 @@
+{
+  "schema" : "strategy-baseline-spec/1",
+  "baseline_id" : "fk-deleveraging-absorption-baseline-v002",
+  "hypothesis_family" : "fk-deleveraging-absorption",
+  "predecessor" : {
+    "path" : "precommits/fk-deleveraging-absorption.json",
+    "sha256" : "96aafcc9d007a775d0df44c5a391bfc89043b6aee457b988f25019533c5f2ea8"
+  },
+  "status" : "FROZEN",
+  "evidence_phase" : "DEVELOPMENT",
+  "purpose" : "Executable fixed score-free baseline for a research-only long spot test; no activation authority.",
+  "mechanism_rationale" : "A completed-bar shock, unusual volume, and elevated trailing volatility are observable proxies for urgent selling. The thresholds are deliberately simple mechanism-linked starting values selected before any baseline outcome inspection; they are not optimized estimates of a profitable boundary.",
+  "data_contract" : {
+    "venue" : "BINANCE",
+    "instrument" : "BINANCE_SPOT",
+    "signal_timeframe" : "4h",
+    "execution_timeframe" : "1m",
+    "completed_bar_only" : true,
+    "decision_time" : "signal_bar_close_time",
+    "warmup_completed_signal_bars" : 31,
+    "required_fields" : [ "open", "high", "low", "close", "volume", "event_time", "close_time", "availability_time" ],
+    "availability_rule" : "Every setup field must have availability_time <= decision_time. Missing, duplicated, irregular, or later rows fail closed.",
+    "proxy_limit" : "Price and volume are proxies for forced selling; this baseline does not claim direct liquidation observations."
+  },
+  "shock_rule" : {
+    "return" : {
+      "name" : "completed_bar_close_to_close_return",
+      "formula" : "close_t / close_(t-1) - 1",
+      "threshold" : -0.08,
+      "operator" : "<=",
+      "denominator" : "previous_completed_signal_bar_close"
+    },
+    "volume" : {
+      "name" : "trailing_volume_multiple_excluding_current_bar",
+      "formula" : "volume_t / mean(volume_(t-30)..volume_(t-1))",
+      "threshold" : 2.0,
+      "operator" : ">=",
+      "lookback_completed_bars" : 30,
+      "current_bar_excluded" : true
+    },
+    "volatility" : {
+      "name" : "trailing_realized_volatility",
+      "formula" : "sqrt(sum(log(close_i / close_(i-1))^2 for i=t-30..t-1) / 30) * sqrt(6)",
+      "threshold" : 0.015,
+      "operator" : ">=",
+      "lookback_completed_bars" : 30,
+      "annualization" : "none; sqrt(6) converts four-hour observations to a 24-hour proxy",
+      "current_bar_excluded" : true
+    },
+    "all_predicates_required" : true
+  },
+  "execution" : {
+    "entry" : "First executable 1-minute child bar at or after the signal close; use that child bar open plus declared two-sided slippage. If the child bar is unavailable, stale, or a gap is detected, record an unresolved execution and fail the run; do not silently skip it.",
+    "entry_price" : "child_open; TradeLifecycleV5 records the raw executable open and debits declared entry slippage separately.",
+    "direction" : "long",
+    "risk_budget" : "fixed_notional_usd",
+    "stop" : {
+      "type" : "hard_price_stop",
+      "distance" : 0.06,
+      "price" : "raw_entry_price * (1 - 0.06); entry slippage is a separate cost debit.",
+      "same_bar_order" : "STOP_FIRST",
+      "trigger_field" : "child_low",
+      "adverse_executable_price" : "min(child_open, stop_price); TradeLifecycleV5 debits declared exit slippage separately.",
+      "gap_rule" : "The child low triggers the stop, but the fill is the adverse executable child open when it gaps through the stop, otherwise stop_price, each with exit slippage. Child low is never itself a fill.",
+      "pessimistic_low_fill" : "stress_only",
+      "no_averaging_down" : true,
+      "engine_convention" : "The lifecycle engine never folds slippage into the stop anchor; it records fee and slippage cost rows independently."
+    },
+    "timeout" : {
+      "type" : "maximum_holding_time",
+      "bars" : 14400,
+      "unit" : "1m",
+      "horizon_hours" : 240,
+      "exit" : "next executable child open after the horizon; if unavailable, fail closed"
+    },
+    "target" : null,
+    "partial_exits" : false,
+    "fees" : {
+      "entry_rate" : 0.001,
+      "exit_rate" : 0.001,
+      "application" : "notional-side-specific"
+    },
+    "slippage" : {
+      "entry_rate" : 5.0E-4,
+      "exit_rate" : 5.0E-4,
+      "application" : "adverse-side executable price"
+    },
+    "sizing" : {
+      "mode" : "FIXED_NOTIONAL_USDT",
+      "notional_usdt" : 1000,
+      "quantity_formula" : "floor((notional_usdt / entry_price) / lot_step) * lot_step",
+      "exchange_filters" : "physical decision-time Binance symbol filters are required; missing or changed filters fail closed",
+      "minimum_notional" : "decision-time exchange minimum; reject below it",
+      "rounding" : "round quantity down to the declared lot_step; never round up"
+    },
+    "overlap" : {
+      "per_asset" : "one_open_position; later qualifying events while open are recorded as skipped and never replace the open event",
+      "market_wide" : "events within 24 hours across assets share one episode_id and are treated as dependent"
+    }
+  },
+  "market_episode_clustering" : {
+    "episode_id" : "UTC floor of the earliest qualifying event in a 24-hour rolling cluster",
+    "cluster_window_hours" : 24,
+    "all_assets_share_episode" : true,
+    "uncertainty_unit" : "market_episode_id",
+    "minimum_independent_episodes" : 30
+  },
+  "controls" : {
+    "type" : "matched_downside_control",
+    "selection_time" : "event_decision_time",
+    "pool" : "same asset and venue, prior completed signal bars in the historical window with a pre-decision downside return in [-0.08, -0.02], no qualifying shock, and position state FLAT at the candidate decision time",
+    "matching_variables" : [ "prior_30_bar_return", "prior_30_bar_realized_volatility", "prior_30_bar_volume_zscore", "hour_of_day", "day_of_week" ],
+    "calipers" : {
+      "prior_30_bar_return_abs" : 0.02,
+      "prior_30_bar_realized_volatility_abs" : 0.005,
+      "prior_30_bar_volume_zscore_abs" : 0.5,
+      "minimum_prior_lag_hours" : 480,
+      "maximum_prior_lookback_days" : 365
+    },
+    "reuse" : "without_replacement_within_asset_and_calendar_year",
+    "exclusion" : "exclude any candidate with data unavailable at decision time, any qualifying shock, any non-downside return, any future outcome field, or an event_time outside the prior 365 days. Candidate event_time + 240h must be <= treated event_time - 240h so scheduled lifecycles cannot overlap. Position state is the as-of decision snapshot, never a future outcome.",
+    "tie_break" : "minimum standardized matching distance, then earliest event_time, then lexical episode_id",
+    "outcome_blind" : true,
+    "execution_and_lifecycle" : "identical to the event, including child entry, stop-first collision, gap handling, timeout, fees, slippage, quantity rounding, and symbol filters. Resolve future child bars only after the control is selected; missing coverage is an explicit unresolved-control disposition.",
+    "estimands" : [ "unconditional_event_net_r", "unconditional_control_net_r", "paired_event_minus_control_net_r" ]
+  },
+  "falsifier" : {
+    "null" : "paired event-minus-control expectancy <= 0 or event expectancy <= 0 after costs",
+    "bootstrap" : "seeded market-episode block bootstrap with shared draws across event and control pairs",
+    "p20_expectancy_r_min" : 0.05,
+    "max_statistic_p_value" : 0.1,
+    "failure_disposition" : "ECONOMIC_FAILURE when inputs are valid and the frozen null is not rejected; INSUFFICIENT_EVIDENCE when episode or trade minimums are unmet; INVALID_EVIDENCE when PIT/physical contracts fail; COMPUTE_INCOMPLETE when a declared budget ends before evaluation."
+  },
+  "activation" : {
+    "authorized" : false,
+    "promotion_eligibility" : "NONE_FROM_BASELINE_ALONE",
+    "research_decisions" : [ "REJECTED", "SHADOW", "CANDIDATE_REVIEW" ]
+  },
+  "content_sha256" : "4d2563ed94eae50e076f75f010adea3232b66ef5bd058f0cd1967051f1f16176"
+}

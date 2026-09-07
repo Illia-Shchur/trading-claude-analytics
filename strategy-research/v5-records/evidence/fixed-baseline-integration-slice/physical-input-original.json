@@ -1,0 +1,63 @@
+{
+  "schema" : "strategy-fixed-baseline-input/1",
+  "version" : 1,
+  "status" : "AUTHORITATIVE_PHYSICAL",
+  "root" : "/tmp/fixed-physical",
+  "root_reference" : "verified-binance-spot-4h-plus-public-1m-attempt",
+  "roles" : {
+    "signal_bars" : {
+      "path" : "signal_bars.json",
+      "byte_sha256" : "1858c99acfbc259f72df3619772f16678e1e0df4884afb13076c8da42de28f74",
+      "bytes" : 116873,
+      "content_sha256" : "e0fff2293b99b56ecd45218e981820700a44946385affd667c69e808a23f1db4",
+      "rows_sha256" : "e0fff2293b99b56ecd45218e981820700a44946385affd667c69e808a23f1db4"
+    },
+    "features" : {
+      "path" : "features.json",
+      "byte_sha256" : "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "bytes" : 3,
+      "content_sha256" : "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "rows_sha256" : "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "labels" : {
+      "path" : "labels.json",
+      "byte_sha256" : "d48574e8261d3a745d69745ca41b0df7def2cc956856c17e07f715423c15f1e1",
+      "bytes" : 506,
+      "content_sha256" : "4468b13fea663c9013e22dd14838381b03d5cb4ff153c39e3d5913fc3513b168",
+      "rows_sha256" : "4468b13fea663c9013e22dd14838381b03d5cb4ff153c39e3d5913fc3513b168"
+    },
+    "executions" : {
+      "path" : "executions.json",
+      "byte_sha256" : "9791867be569e679c12a65682650149406631e5bd8c2c1074393f42d49b7989f",
+      "bytes" : 382,
+      "content_sha256" : "80ec4cd92e28663c3e6ef1cc57a6b272900ef921bcf7c119da9fcb8134c97100",
+      "rows_sha256" : "80ec4cd92e28663c3e6ef1cc57a6b272900ef921bcf7c119da9fcb8134c97100"
+    },
+    "bars_1m" : {
+      "path" : "bars_1m.json",
+      "byte_sha256" : "1226b1384b86df692a87d36621e63d4e78d3b7d499a526490ca43a175f57f100",
+      "bytes" : 3833031,
+      "content_sha256" : "680b6129f5cb4492e5c23a235de35df7883ad266e68195df2340e8b3aab7e3e6",
+      "rows_sha256" : "680b6129f5cb4492e5c23a235de35df7883ad266e68195df2340e8b3aab7e3e6"
+    },
+    "contract_spec" : {
+      "path" : "contract_spec.json",
+      "byte_sha256" : "122c1779e1c78ac29921ad0521953f2a816c4cffdfa74df94fb3ccb13ecb04ae",
+      "bytes" : 348,
+      "content_sha256" : "18e8f64aa666954416ad243a275c36dbdeac4a938c1876fa751ac86dab23e23d"
+    },
+    "execution_model" : {
+      "path" : "execution_model.json",
+      "byte_sha256" : "f27e27248e9173cae56e124b6dce4944e49aa35e2b310a53763a9bee9f93b2ad",
+      "bytes" : 232,
+      "content_sha256" : "503b64acf15237e152c1a6d00dda594ea67c94a211d74f0e3186f492e01e5467"
+    },
+    "capacity" : {
+      "path" : "capacity.json",
+      "byte_sha256" : "4c10f670cf1070a1a25264657e1f32daf602353bea251416215d408fc442604c",
+      "bytes" : 224,
+      "content_sha256" : "8e6cabdd87e4b571f314267cce2f5d2b9b6a4f629ec64bcb3060f068ad42ea18"
+    }
+  },
+  "content_sha256" : "0d7dae775c87bba5ad18cfe44ad2e16097ef2009536ded0829a49e7310fcea2a"
+}

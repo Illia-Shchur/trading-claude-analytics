@@ -1,0 +1,7 @@
+# Repository default; explicit task/CLI model choices take precedence.
+# Reviewed against official OpenAI guidance on 2026-09-07.
+model = "gpt-6-astra"
+model_reasoning_effort = "medium"
+
+[mcp_servers.openaiDeveloperDocs]
+url = "https://developers.openai.com/mcp"

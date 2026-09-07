@@ -1,0 +1,21 @@
+{
+  "schema" : "strategy-fixed-baseline-public-hydration-receipt/1",
+  "version" : 1,
+  "status" : "COMPLETE",
+  "source" : "BINANCE_PUBLIC_REST_KLINES",
+  "endpoint" : "https://api.binance.com/api/v3/klines",
+  "symbol" : "BTCUSDT",
+  "interval" : "1m",
+  "start_at" : "2021-09-07T16:00:00Z",
+  "end_at_exclusive" : "2021-09-17T16:00:00Z",
+  "requested_rows" : 14400,
+  "observed_rows" : 14400,
+  "request_count" : 15,
+  "transport_status" : "HTTP_200",
+  "captured_at" : "2026-09-05T20:40:09.234687Z",
+  "pit_status" : "UNVERIFIED_DEVELOPMENT_ONLY",
+  "historical_filter_status" : "USER_BOUND_RETROSPECTIVE",
+  "bar_role_sha256" : "680b6129f5cb4492e5c23a235de35df7883ad266e68195df2340e8b3aab7e3e6",
+  "limitations" : [ "The public endpoint supplied bars but no historical exchange-filter receipt for the decision date.", "No forward prospective authorization or activation evidence is claimed.", "The row capture is bound to the fixed diagnostic role and TradeLifecycleV5, not to a promoted strategy." ],
+  "content_sha256" : "8942b85eaad63c4dd84dbb3c09a5dd12424ff5aec74cc38b773d80d8248e841d"
+}

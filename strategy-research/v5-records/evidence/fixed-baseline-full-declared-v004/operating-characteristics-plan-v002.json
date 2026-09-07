@@ -1,0 +1,195 @@
+{
+  "schema": "strategy-evaluator-operating-characteristics-plan/2",
+  "version": 2,
+  "stage_scope": "FIXED_BASELINE_DIAGNOSTIC",
+  "evidence_phase": "DEVELOPMENT",
+  "decision": "DIAGNOSTIC_ONLY",
+  "promotion_eligible": false,
+  "outcomes_opened": false,
+  "binding_predecessor_sha256": "a54cef41b51e9c56e033f66673b9d3904454481cdebc571298cf2c4fd614796e",
+  "binding_baseline_sha256": "4d2563ed94eae50e076f75f010adea3232b66ef5bd058f0cd1967051f1f16176",
+  "binding_control_spec_sha256": "e2e874b216b86bb6479c3f14f1aab7844b27e05b2eae3da2eb93b7870f525468",
+  "binding_experiment_sha256": "07d36bf08c88b7366a546bddc4bc30ad2103368a3017aeb68a8020a097460452",
+  "binding_fixed_evaluator": "StrategyFixedBaselineV5+TradeLifecycleV5+StrategyResearchImprovementV1.disposition",
+  "generator": {
+    "schema": "synthetic-ohlc-episode-generator/2",
+    "frequency": "1m",
+    "setup_frequency": "4h",
+    "warmup_completed_4h_bars": 31,
+    "holding_horizon_minutes": 14400,
+    "assets": [
+      "BTC",
+      "ETH",
+      "SOL",
+      "BNB",
+      "XRP",
+      "ADA",
+      "LINK",
+      "AAVE"
+    ],
+    "episodes_per_replication": 50,
+    "episode_assignment": "round_robin_assets_then_uniform_start_offset_on_frozen_4h_grid",
+    "four_hour_grid": "UTC, complete bars, no duplicate timestamps, setup decision after close and availability",
+    "common_market_shocks": {
+      "enabled": true,
+      "factor_weight": 0.35,
+      "innovation": "standard_normal",
+      "scale_by_regime": {
+        "CALM": 0.00055,
+        "STRESSED": 0.0012
+      },
+      "regime_transition": {
+        "CALM_TO_STRESSED": 0.003,
+        "STRESSED_TO_CALM": 0.08
+      },
+      "initial_regime": "CALM"
+    },
+    "asset_specific_noise": {
+      "enabled": true,
+      "weight": 0.65,
+      "innovation": "standard_normal_ar1",
+      "ar1_phi": 0.2,
+      "scale_multiplier_by_asset": {
+        "BTC": 1.0,
+        "ETH": 1.15,
+        "SOL": 1.4,
+        "BNB": 1.1,
+        "XRP": 1.35,
+        "ADA": 1.4,
+        "LINK": 1.25,
+        "AAVE": 1.55
+      }
+    },
+    "shock_clusters": {
+      "cluster_start_process": "bernoulli_per_4h_bar",
+      "start_probability": 0.012,
+      "duration_4h_bars": [
+        6,
+        12,
+        24
+      ],
+      "duration_weights": [
+        0.55,
+        0.3,
+        0.15
+      ],
+      "shared_market_window_minutes": 14400,
+      "merge_rule": "merge_intervals_only_when_actual_asset_or_common_market_lifecycle_windows_overlap",
+      "independent_unit": "merged_lifecycle_cluster_id",
+      "minimum_independent_units": 30
+    },
+    "ohlc_construction": {
+      "open": "previous_close",
+      "close": "open*exp(log_return)",
+      "high": "max(open,close)*exp(abs(intrabar_noise))",
+      "low": "min(open,close)*exp(-abs(intrabar_noise))",
+      "intrabar_noise_scale": 0.00035,
+      "volume": "lognormal(base_by_asset, sigma=0.35) with shock multiplier when cluster active",
+      "no_zero_or_negative_prices": true
+    },
+    "fees_slippage_capacity": "Use frozen per_asset contract/model/capacity receipts from the baseline bundle; no synthetic zero-cost shortcut.",
+    "execution": "Reopen the generated role through the same setup producer, select controls outcome-blind, execute TradeLifecycleV5, reconcile the account-currency portfolio, and map through the same disposition contract.",
+    "no_toy_statistic": true,
+    "fixture_boundary": "Synthetic source is DEVELOPMENT diagnostic input only; it cannot mint PIT, SHADOW, confirmation, activation, or trading evidence."
+  },
+  "effect_definition": {
+    "field": "post_decision_log_return_shift",
+    "units": "total log-return shift over the frozen 14400-minute lifecycle",
+    "values": [
+      0.0,
+      0.02,
+      0.04
+    ],
+    "application": "For PLANTED_EDGE only, add the predeclared shift linearly across post-decision minute returns after setup and before OHLC construction; the selector, controls, stops, costs and portfolio see only resulting OHLC.",
+    "direction": "positive adverse-reversion benefit for the long fixed baseline after a qualifying downside shock",
+    "no_edge": "NO_EDGE always uses 0.0 and never applies a predicate-dependent shift."
+  },
+  "scenarios": [
+    {
+      "scenario": "NO_EDGE",
+      "effect_sizes": [
+        0.0
+      ],
+      "description": "Common shocks, asset noise and lifecycle clustering are independent of the frozen evaluator predicate; no planted relation."
+    },
+    {
+      "scenario": "PLANTED_EDGE",
+      "effect_sizes": [
+        0.0,
+        0.02,
+        0.04
+      ],
+      "description": "The predeclared total post-decision log-return shift is applied before execution; no selection or outcome-dependent tuning."
+    }
+  ],
+  "replications": 50,
+  "episodes_per_replication": 50,
+  "cell_count": 4,
+  "replicate_seed_mapping": {
+    "base_seeds": [
+      2026090601,
+      2026090602,
+      2026090603,
+      2026090604,
+      2026090605
+    ],
+    "seed_stream": "seed=base_seed + scenario_index*1000000 + effect_index*10000 + replicate_index; replicate_index is 0-based",
+    "base_seed_assignment": "replicate_index modulo 5 selects base_seed; all five streams are required before a cell is complete."
+  },
+  "preflight_benchmark": {
+    "status": "REQUIRED_BEFORE_FULL_CELLS",
+    "replications": 2,
+    "episodes_per_replication": 20,
+    "scenarios": [
+      "NO_EDGE"
+    ],
+    "effect_sizes": [
+      0.0
+    ],
+    "seed_indices": [
+      0,
+      1
+    ],
+    "evidence_use": "performance_and_memory_only; excluded from FPR, power, disposition and promotion statistics",
+    "max_wall_minutes": 20,
+    "max_rss_gb": 6.0,
+    "must_stream_bars": true,
+    "must_not_reduce_full_budget_after_observation": true
+  },
+  "resource_budget": {
+    "full_cells": 4,
+    "expected_generated_minute_bars": 144000000,
+    "max_wall_minutes": 720,
+    "max_rss_gb": 8.0,
+    "execution": "stream one replication/cell at a time; retain compact result rows and hashes, not bulk synthetic bars",
+    "abort_disposition": "COMPUTE_INCOMPLETE"
+  },
+  "targets": {
+    "false_positive_rate_max": 0.1,
+    "power_reporting_threshold": 0.8,
+    "interval": "WILSON_95_PERCENT",
+    "uncertainty_unit": "REPLICATION_DECISION",
+    "fpr_acceptance": "upper_wilson_95 <= 0.10; otherwise TARGET_UNMET",
+    "power_acceptance": "lower_wilson_95 >= 0.80 at each PLANTED_EDGE effect cell; otherwise TARGET_UNMET",
+    "minimum_independent_units_per_replication": 30,
+    "minimum_paired_units_per_replication": 30,
+    "decision_rule": "A replication is a success only when event and paired fixed-stage falsifiers both satisfy the frozen thresholds; missing paired units is INSUFFICIENT_EVIDENCE, never a zero."
+  },
+  "disposition_rules": {
+    "INVALID_EVIDENCE": "source generation, role re-open, PIT boundary, or economic reconciliation fails",
+    "COMPUTE_INCOMPLETE": "predeclared cell/replication/budget is incomplete or resource limit aborts",
+    "INSUFFICIENT_EVIDENCE": "independent event or paired lifecycle units below 30, or uncertainty cannot be computed",
+    "ECONOMIC_FAILURE": "complete fixed-stage evidence fails the joint event/paired falsifier",
+    "TARGET_UNMET": "operating-characteristic point estimate does not meet its predeclared Wilson bound",
+    "DIAGNOSTIC_ONLY": "all complete outputs remain non-promotable regardless of measured target"
+  },
+  "reproducibility": {
+    "economic_hash": "hash frozen generator/spec/source identities, selected episodes, trades, cluster statistics and dispositions; exclude runtime/custody paths",
+    "custody_hash": "retain executor JAR, build input, runtime, exposure attempt and observed_at separately",
+    "repeat_rule": "rerun each complete cell with a new immutable output; compare economic hash before any interpretation",
+    "resume_rule": "changed generator/evaluator/build identity or existing output collision fails closed."
+  },
+  "frozen_before_outcomes": true,
+  "adaptive_confirmation_claim": false,
+  "content_sha256": "b2ea826bc795f7f9129d4f939417f8e28b41f3b2927e4d0a8aec44ccf8081820"
+}

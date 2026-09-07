@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-fixed-refinement-member-result/1",
+  "type": "object",
+  "required": [
+    "schema", "version", "status", "stage", "evidence_phase",
+    "promotion_eligible", "activation_authorized", "optimizer_invoked",
+    "max_attempts", "hypothesis_family", "baseline_sha256",
+    "control_spec_sha256", "experiment_sha256", "physical_input_sha256",
+    "executor_identity_sha256", "attempt_identity_sha256",
+    "behavior_definition_sha256", "refinement_member_id",
+    "refinement_shock_threshold", "refinement_plan_sha256",
+    "economic_semantic_sha256", "semantic_sha256", "content_sha256"
+  ],
+  "properties": {
+    "schema": {"const": "strategy-fixed-refinement-member-result/1"},
+    "version": {"const": 1},
+    "status": {"enum": ["COMPLETE", "BLOCKED"]},
+    "stage": {"const": "FROZEN_REFINEMENT"},
+    "evidence_phase": {"const": "DEVELOPMENT"},
+    "promotion_eligible": {"const": false},
+    "activation_authorized": {"const": false},
+    "optimizer_invoked": {"const": false},
+    "max_attempts": {"const": 1},
+    "refinement_member_id": {"enum": ["FK-DELEVERAGING-V002-R1", "FK-DELEVERAGING-V002-R2", "FK-DELEVERAGING-V002-R3"]},
+    "refinement_shock_threshold": {"enum": [-0.08, -0.1, -0.12]},
+    "refinement_plan_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "hypothesis_family": {"type": "string"},
+    "baseline_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "control_spec_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "experiment_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "physical_input_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "executor_identity_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "attempt_identity_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "behavior_definition_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "economic_semantic_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "semantic_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": true
+}

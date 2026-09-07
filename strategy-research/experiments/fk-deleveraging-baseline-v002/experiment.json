@@ -1,0 +1,33 @@
+{
+  "schema" : "strategy-fixed-baseline-experiment/1",
+  "experiment_id" : "fk-deleveraging-baseline-v002",
+  "baseline_path" : "../../definitions/fk-deleveraging-absorption/v002.json",
+  "controls_path" : "controls.json",
+  "precommit_path" : "../../precommits/fk-deleveraging-absorption.json",
+  "hypothesis_family" : "fk-deleveraging-absorption",
+  "stage" : "FIXED_BASELINE",
+  "evidence_phase" : "DEVELOPMENT",
+  "selection" : "NO_SELECTION_SEARCH",
+  "declared_budget" : {
+    "candidate_count" : 1,
+    "optimizer" : "NONE",
+    "max_attempts" : 1,
+    "resume_key" : "baseline_id + dataset_root_sha256 + executor_identity_sha256"
+  },
+  "required_assets" : [ "btc", "eth", "sol", "bnb", "xrp", "ada", "link", "aave" ],
+  "data_roles" : [ "feature", "label", "execution", "mark" ],
+  "accounting" : {
+    "trade_count" : "raw trades and skipped events both retained",
+    "independent_episode_count" : "market_episode_id distinct count",
+    "portfolio_reconciliation" : "account-currency quantity * executable prices minus side-specific fees and slippage; no R summation"
+  },
+  "promotion" : {
+    "diagnostic_result_can_promote" : false,
+    "requires_next_stage" : "FIXED_REFINEMENT",
+    "activation_authorized" : false
+  },
+  "status" : "FROZEN",
+  "baseline_sha256" : "4d2563ed94eae50e076f75f010adea3232b66ef5bd058f0cd1967051f1f16176",
+  "controls_sha256" : "e2e874b216b86bb6479c3f14f1aab7844b27e05b2eae3da2eb93b7870f525468",
+  "content_sha256" : "07d36bf08c88b7366a546bddc4bc30ad2103368a3017aeb68a8020a097460452"
+}

@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-fixed-baseline-signal-bars/1",
+  "type": "array",
+  "minItems": 1,
+  "items": {"type": "object", "required": ["asset", "symbol", "event_time", "close_time", "availability_time", "open", "high", "low", "close", "volume"]}
+}

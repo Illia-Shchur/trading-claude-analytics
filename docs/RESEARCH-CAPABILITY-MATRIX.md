@@ -1,0 +1,20 @@
+# Research capability and evidence matrix
+
+| Capability | Code path | Local tests | Physical exercise | Evidence / present boundary |
+|---|---|---:|---:|---|
+| Build freshness and executable identity | `bin/analytics`, `BuildIdentity`, build-input helper | Passed A reviewer and launcher regressions | Packaged outer-JAR SHA checked from another cwd | A accepted; identity bound into new evidence |
+| Fixed baseline setup and control selection | `StrategyFixedBaselineV5` | Focused baseline/PIT/control tests pass | 87,656 verified 4h rows; 130 events; 3 controls; fresh e11 assembly hydrated 133/133 windows and 1,914,720 rows; e11 evaluated as attempt K=37 | Diagnostic only; control and paired evidence insufficient; e11 source-role drift is provenance-bound and does not change independently reconciled economics |
+| Production lifecycle and account portfolio | `TradeLifecycleV5`, fixed portfolio reconciler | Lifecycle closure, timing, cash, capacity, drawdown tests pass | 129 trades and Decimal arithmetic reconciliation | Paper OHLC lifecycle; no observed exchange fills; close-derived fills use explicit availability timing |
+| Source custody and producer rederivation | `readBoundProducerReceipt`, Parquet producer | Rehashed-role negative test passes | Canonical manifest and all eight partitions reopened | Caller-rehashed signal role rejected |
+| Legacy exposure lineage | `auditExposureLineage`, append-only exposure | Alias and existing-head boundary tests pass | 28 recoverable legacy matches; historical B result records canonical K=1/attempt K=32; current authoritative HEAD is K=3/attempt K=37 with fixed-pair custody | `UNRESOLVED_LEGACY_HISTORY`; promotion blocked |
+| Closure-aware gap handling | typed v1 policy plus v2 erratum generator | Four production-token closure tests pass | Binance 2021 closure receipt retained; no synthetic bars | Amendment applies only to covered held spot positions |
+| Fixed diagnostic stage | `fixed-baseline` CLI | No optimizer path exercised | Full v004 result and v20/v21 economic hash equality | `BLOCKED`, `INVALID_EVIDENCE` + `INSUFFICIENT_EVIDENCE` |
+| Frozen refinement inventory | `freeze-refinement` | Inventory validation and atomic pair-custody tests pass | Three members run through the shared evaluator; run-9 outcomes are post-baseline DEVELOPMENT diagnostics | All members remain `BLOCKED`; no promotion or family advancement |
+| Operating-characteristics generator/evaluator | `StrategyOperatingCharacteristicsV4` + `StrategyFixedBaselineV5.evaluate` | Setup/geometry/Wilson/effect-unit/resource tests pass; RSS parser/throttle/deadline/limit tests pass | Full v004 run completed 200/200 repetitions from frozen JAR; 800 representative trade checks independently reconciled; 2/50, 0/50, 14/50 and 45/50 positive decisions across the four cells, with every target unmet | Synthetic conditional diagnostic only; PIT/observed fills/promotion remain false. Raw result and all-200 display-only projection are retained; any failed future replication is `COMPUTE_INCOMPLETE` |
+| Numeric prospective outcome reconciliation | `StrategyProspectiveOutcomeReconciliationV1`, `prospective-outcome-reconcile` | Arithmetic, typed-source, rehash, maturity, unavailable-fill and convention negatives pass | Supported runner command path is covered by signal→matured-outcome and retry tests; no live forward cycle is claimed | Governed cycle reopens typed input/label/execution sources and recomputes; missing observed fills remain `UNAVAILABLE` |
+| Adaptive confirmation / WFO | Existing v5 adaptive path | Existing regression suite retained | No new confirmation evidence | Thresholds and custody gates unchanged |
+| Prospective operation | Existing protected workflow and runner | Existing local prospective tests retained | No active forward cycle observed | Deployment prerequisites remain external/dormant |
+
+The matrix separates implementation capability from evidence. A local test or
+retrospective computation cannot be relabelled as PIT, SHADOW, confirmation,
+activation, or an observed exchange fill.

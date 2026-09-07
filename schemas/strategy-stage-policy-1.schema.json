@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-stage-policy/1",
+  "type": "object",
+  "required": ["schema", "version", "stage", "hypothesis_family", "predecessor_sha256", "exposure_head_sha256", "max_attempts", "optimizer", "evidence_phase", "promotion_eligible", "activation_authorized", "cumulative_exposure", "content_sha256"],
+  "properties": {
+    "schema": {"const": "strategy-stage-policy/1"},
+    "version": {"const": 1},
+    "stage": {"enum": ["FIXED_BASELINE", "FROZEN_REFINEMENT", "ADAPTIVE_CONFIRMATION"]},
+    "hypothesis_family": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*$"},
+    "predecessor_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "exposure_head_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "max_attempts": {"type": "integer", "minimum": 1},
+    "optimizer": {"type": "string", "minLength": 1},
+    "evidence_phase": {"const": "DIAGNOSTIC"},
+    "promotion_eligible": {"const": false},
+    "activation_authorized": {"const": false},
+    "cumulative_exposure": {"const": "APPEND_ONLY"},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": true
+}

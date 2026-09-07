@@ -1,0 +1,16 @@
+{
+  "schema" : "strategy-fixed-baseline-lifecycle-timing/1",
+  "version" : 1,
+  "status" : "FROZEN",
+  "policy_id" : "FIXED_LIFECYCLE_TIMING_V001",
+  "baseline_id" : "fk-deleveraging-absorption-baseline-v002",
+  "raw_definition_sha256" : "4d2563ed94eae50e076f75f010adea3232b66ef5bd058f0cd1967051f1f16176",
+  "amendment_scope" : "POST_INITIAL_EXPOSURE_BEFORE_NEW_LIFECYCLE_RESOLUTION",
+  "exit_time_semantics" : "BAR_OPEN_IDENTIFIER;NOT_A_CLOSE_AVAILABILITY_TIME",
+  "availability_semantics" : {
+    "gap_open" : "BAR_OPEN_TIME",
+    "barrier_or_timeout_close" : "CLOSE_TIME_OR_EXPLICIT_AVAILABILITY_TIME"
+  },
+  "accounting_and_admission_field" : "availability_time",
+  "content_sha256" : "c08f9b4e2fcdf1252bb6ba403996254f442111e7628c966df546deff21a2e010"
+}

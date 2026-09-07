@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-fixed-baseline-input/1",
+  "type": "object",
+  "required": ["schema", "version", "status", "root", "root_reference", "roles", "content_sha256"],
+  "properties": {
+    "schema": {"const": "strategy-fixed-baseline-input/1"},
+    "version": {"const": 1},
+    "status": {"const": "AUTHORITATIVE_PHYSICAL"},
+    "root": {"type": "string", "minLength": 1},
+    "root_reference": {"type": "string", "minLength": 1},
+    "roles": {"type": "object", "minProperties": 7},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,22 @@
+{
+  "schema": "strategy-operating-characteristics-historical-hash-erratum/1",
+  "version": 1,
+  "status": "HISTORICAL_INVALID_METADATA",
+  "purpose": "Preserve earlier D design bytes while preventing their declared hashes from being treated as valid frozen bindings.",
+  "records": [
+    {
+      "path": "operating-characteristics-plan-v002.json",
+      "declared_content_sha256": "b2ea826bc795f7f9129d4f939417f8e28b41f3b2927e4d0a8aec44ccf8081820",
+      "recomputed_content_sha256": "73bf0e0d1148b281d26b9387d5120ff7b520371c9d8a8d678354ee5a1389cbd3"
+    },
+    {
+      "path": "operating-characteristics-plan-v003.json",
+      "declared_content_sha256": "f9c7866b448f1e06bbd68fa6f84241cd28ae3215a7fd94618262d07ad586ccda",
+      "recomputed_content_sha256": "52135b34b6447dcb24818b418e9b2cde467695ff28a9794fa6c5b8e4a7e672d1"
+    }
+  ],
+  "disposition": "INVALID_FOR_FREEZE_BINDING",
+  "preservation": "Historical bytes remain unchanged. Binding design is operating-characteristics-plan-v004.json and its own validated content hash.",
+  "detected_by": "parent-retained-hash-audit-summary.json",
+  "content_sha256": "995a2e4b0f85f0a92007eea580f52956986c9c0566dea665f5339baac4f93c23"
+}

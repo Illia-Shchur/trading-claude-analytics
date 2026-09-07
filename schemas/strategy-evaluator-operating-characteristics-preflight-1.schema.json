@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-evaluator-operating-characteristics-preflight/1",
+  "type": "object",
+  "required": ["schema", "version", "status", "plan_sha256", "binding_fixed_evaluator", "shared_physical_evaluator", "toy_statistic", "series_per_replication", "preflight_replications", "preflight_minute_bars", "full_expected_minute_bars", "outcomes_opened", "promotion_eligible", "build_identity", "content_sha256"],
+  "properties": {
+    "schema": {"const": "strategy-evaluator-operating-characteristics-preflight/1"},
+    "version": {"const": 1},
+    "status": {"const": "READY_PRE_OUTCOME"},
+    "plan_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "binding_fixed_evaluator": {"const": "StrategyFixedBaselineV5+TradeLifecycleV5+StrategyResearchImprovementV1.disposition"},
+    "shared_physical_evaluator": {"const": true},
+    "toy_statistic": {"const": false},
+    "outcomes_opened": {"const": false},
+    "promotion_eligible": {"const": false},
+    "build_identity": {"type": "object", "required": ["schema", "status", "executable", "compiled", "runtime"]},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": false
+}

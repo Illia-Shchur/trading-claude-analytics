@@ -1,0 +1,121 @@
+{
+  "schema" : "strategy-research-evidence-summary/1",
+  "version" : 1,
+  "status" : "COMPLETE",
+  "summary_kind" : "OPERATING_CHARACTERISTICS_RESULT",
+  "display_only" : true,
+  "promotion_eligible" : false,
+  "activation_authorized" : false,
+  "source_result" : {
+    "path" : "strategy-research/v5-records/evidence/fixed-baseline-full-declared-v004/operating-characteristics-full-v004-dec4470d.json",
+    "byte_sha256" : "1156b5e34e2dca2fec545f5059b61ceac2e066a7c824959d0fc603f08794a8cb",
+    "content_sha256" : "36ecb2be8690c9bb1bd5f0cf14817df98aeaf7c5a86e53690f0b40e98a4b0a71",
+    "bytes" : 79657531,
+    "original_schema" : "strategy-evaluator-operating-characteristics-result/1"
+  },
+  "summary" : {
+    "receipt_kind" : "FROZEN_FULL_RUN_TERMINAL_OBSERVATION",
+    "run_status" : "COMPLETE",
+    "executor_identity_sha256" : "dec4470d815d05f4eb56b871d4b07657745c06952ac802991e7b6b7a11e9d20c",
+    "process_id" : 21084,
+    "terminal_observation" : "PROCESS_ENDED_OR_CHANGED",
+    "exit_code_captured" : false,
+    "exit_code" : "NOT_CAPTURED_BY_MONITOR",
+    "observation_note" : "The foreground monitor observed the frozen process end and the raw result was independently audited and schema-validated. The monitor did not retain the child exit integer; this receipt intentionally does not invent one.",
+    "raw_result" : {
+      "path" : "strategy-research/v5-records/evidence/fixed-baseline-full-declared-v004/operating-characteristics-full-v004-dec4470d.json",
+      "byte_sha256" : "1156b5e34e2dca2fec545f5059b61ceac2e066a7c824959d0fc603f08794a8cb",
+      "bytes" : 79657531,
+      "content_sha256" : "36ecb2be8690c9bb1bd5f0cf14817df98aeaf7c5a86e53690f0b40e98a4b0a71",
+      "schema" : "strategy-evaluator-operating-characteristics-result/1"
+    },
+    "independent_audit" : {
+      "path" : ".report-run/parent-d-full-independent-audit.json",
+      "status" : "PASS",
+      "rows" : 200,
+      "complete_row_decisions_checked" : 200,
+      "representative_trades_checked" : 800,
+      "maximum_decimal_net_residual" : "1.3441744201100E-13"
+    },
+    "rss_monitor" : {
+      "path" : ".report-run/parent-d-full-rss-summary.json",
+      "samples" : 3876,
+      "maximum_sampled_rss_bytes" : 6649184256,
+      "elapsed_monitor_seconds" : 19431.483,
+      "status" : "PROCESS_ENDED_OR_CHANGED"
+    },
+    "schema_validation" : {
+      "path" : ".report-run/parent-d-full-schema-validation.json",
+      "valid" : true,
+      "schema" : "strategy-evaluator-operating-characteristics-result/1",
+      "receipt_content_sha256" : "404ea9bc645ab81d7c904069cffd61327bbc0c4646fa55c6363345ae151f1bfa"
+    },
+    "decision_summary" : {
+      "NO_EDGE:0.0" : {
+        "planned" : 50,
+        "decisions" : 2,
+        "incomplete" : 0,
+        "insufficient" : 0,
+        "invalid" : 0,
+        "denominator_includes_all_planned_replications" : true,
+        "measured" : true,
+        "target_met" : false,
+        "target_rule" : "upper_wilson_95<=0.10",
+        "uncertainty_scope" : "WILSON_95_REPLICATION_DECISIONS",
+        "success_rate" : 0.04,
+        "wilson95_lower" : 0.011038884327619809,
+        "wilson95_upper" : 0.1346009068750702
+      },
+      "PLANTED_EDGE:0.0" : {
+        "planned" : 50,
+        "decisions" : 0,
+        "incomplete" : 0,
+        "insufficient" : 0,
+        "invalid" : 0,
+        "denominator_includes_all_planned_replications" : true,
+        "measured" : true,
+        "target_met" : false,
+        "target_rule" : "NULL_CHECK_ONLY",
+        "uncertainty_scope" : "WILSON_95_REPLICATION_DECISIONS",
+        "success_rate" : 0.0,
+        "wilson95_lower" : 6.4438204832223495E-18,
+        "wilson95_upper" : 0.07134759913335872
+      },
+      "PLANTED_EDGE:0.02" : {
+        "planned" : 50,
+        "decisions" : 14,
+        "incomplete" : 0,
+        "insufficient" : 0,
+        "invalid" : 0,
+        "denominator_includes_all_planned_replications" : true,
+        "measured" : true,
+        "target_met" : false,
+        "target_rule" : "lower_wilson_95>=0.80",
+        "uncertainty_scope" : "WILSON_95_REPLICATION_DECISIONS",
+        "success_rate" : 0.28,
+        "wilson95_lower" : 0.1747417066591123,
+        "wilson95_upper" : 0.41665123695956563
+      },
+      "PLANTED_EDGE:0.04" : {
+        "planned" : 50,
+        "decisions" : 45,
+        "incomplete" : 0,
+        "insufficient" : 0,
+        "invalid" : 0,
+        "denominator_includes_all_planned_replications" : true,
+        "measured" : true,
+        "target_met" : false,
+        "target_rule" : "lower_wilson_95>=0.80",
+        "uncertainty_scope" : "WILSON_95_REPLICATION_DECISIONS",
+        "success_rate" : 0.9,
+        "wilson95_lower" : 0.7863976856252035,
+        "wilson95_upper" : 0.9565242350681097
+      }
+    },
+    "scope" : "CONDITIONAL_FIXED_BASELINE_SYNTHETIC_DIAGNOSTIC",
+    "promotion_eligible" : false,
+    "pit_valid" : false,
+    "observed_exchange_fills" : false
+  },
+  "content_sha256" : "5802d0d6a99c73af8d38412a6744446555001c9c7b79cd3c2694b5ea64c327c7"
+}

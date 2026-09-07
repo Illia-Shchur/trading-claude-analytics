@@ -1,0 +1,55 @@
+{
+  "schema": "strategy-evaluator-operating-characteristics-plan/1",
+  "version": 1,
+  "stage_scope": "FIXED_BASELINE_DIAGNOSTIC",
+  "evidence_phase": "DEVELOPMENT",
+  "decision": "DIAGNOSTIC_ONLY",
+  "promotion_eligible": false,
+  "outcomes_opened": false,
+  "generator": {
+    "schema": "synthetic-ohlc-episode-generator/1",
+    "frequency": "1m",
+    "setup_frequency": "4h",
+    "warmup_completed_4h_bars": 31,
+    "holding_horizon_minutes": 14400,
+    "common_market_shocks": true,
+    "asset_specific_noise": true,
+    "clustered_lifecycle_intervals": true,
+    "fees_slippage_and_capacity": "frozen baseline receipts",
+    "execution": "TradeLifecycleV5 through the same fixed evaluator and disposition path",
+    "no_toy_statistic": true
+  },
+  "scenarios": [
+    {
+      "scenario": "NO_EDGE",
+      "description": "common shocks and asset noise independent of the evaluator predicate; no planted relation after setup"
+    },
+    {
+      "scenario": "PLANTED_EDGE",
+      "description": "predeclared adverse-reversion effect applied to eligible post-decision paths before lifecycle execution"
+    }
+  ],
+  "replications": 200,
+  "episodes_per_replication": 130,
+  "seeds": [
+    2026090601,
+    2026090602,
+    2026090603,
+    2026090604,
+    2026090605
+  ],
+  "effect_sizes": [
+    0,
+    0.02,
+    0.04
+  ],
+  "targets": {
+    "false_positive_rate_max": 0.1,
+    "power_reporting_threshold": 0.8,
+    "interval": "WILSON_95_PERCENT",
+    "uncertainty_unit": "REPLICATION_DECISION"
+  },
+  "frozen_before_outcomes": true,
+  "adaptive_confirmation_claim": false,
+  "content_sha256": "51b5af4586e9fdf667b61d9346dbe45b980aae814af53bc4fcf5b67f49614eb5"
+}

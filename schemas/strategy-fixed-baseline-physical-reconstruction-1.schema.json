@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-fixed-baseline-physical-reconstruction/1",
+  "type": "object",
+  "required": [
+    "schema", "version", "status", "scope", "inventory_sha256",
+    "event_count", "control_count", "window_count", "hydrated_row_count",
+    "hydration_manifest", "physical_input", "producer_receipt_sha256",
+    "source_manifest_sha256", "non_trading_policy_sha256", "assembly_log",
+    "transport", "pit_status", "historical_filter_status", "fresh_root",
+    "evaluation_deferred", "content_sha256"
+  ],
+  "properties": {
+    "schema": { "const": "strategy-fixed-baseline-physical-reconstruction/1" },
+    "version": { "const": 1 },
+    "status": { "const": "COMPLETE" },
+    "scope": { "const": "FULL_DECLARED_SCOPE" },
+    "inventory_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "event_count": { "const": 130 },
+    "control_count": { "const": 3 },
+    "window_count": { "const": 133 },
+    "hydrated_row_count": { "type": "integer", "minimum": 1 },
+    "hydration_manifest": {
+      "type": "object",
+      "required": ["path", "byte_sha256"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "byte_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      },
+      "additionalProperties": false
+    },
+    "physical_input": {
+      "type": "object",
+      "required": ["path", "byte_sha256", "content_sha256"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "byte_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "content_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      },
+      "additionalProperties": false
+    },
+    "producer_receipt_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "source_manifest_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "non_trading_policy_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "assembly_log": {
+      "type": "object",
+      "required": ["path", "byte_sha256"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "byte_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      },
+      "additionalProperties": false
+    },
+    "transport": { "const": "HTTPS_BINANCE_PUBLIC_REST" },
+    "pit_status": { "const": "UNVERIFIED_DEVELOPMENT_ONLY" },
+    "historical_filter_status": { "const": "USER_BOUND_RETROSPECTIVE" },
+    "fresh_root": { "type": "string", "minLength": 1 },
+    "evaluation_deferred": { "const": true },
+    "content_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  },
+  "additionalProperties": false
+}

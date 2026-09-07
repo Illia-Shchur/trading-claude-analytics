@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-fixed-refinement-input/1",
+  "type": "object",
+  "required": ["schema", "version", "stage", "hypothesis_family", "baseline_sha256", "control_spec_sha256", "experiment_sha256", "predecessor_sha256", "exposure_head_sha256", "members", "budget", "outcomes_opened", "content_sha256"],
+  "properties": {
+    "schema": {"const": "strategy-fixed-refinement-input/1"},
+    "version": {"const": 1},
+    "stage": {"const": "FROZEN_REFINEMENT"},
+    "hypothesis_family": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*$"},
+    "baseline_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "control_spec_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "experiment_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "predecessor_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "exposure_head_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "members": {"type": "array", "minItems": 3},
+    "budget": {"type": "object", "required": ["candidate_count", "max_attempts", "optimizer"]},
+    "outcomes_opened": {"const": false},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": true
+}

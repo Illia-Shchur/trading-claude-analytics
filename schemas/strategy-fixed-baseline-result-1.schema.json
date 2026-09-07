@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-fixed-baseline-result/1",
+  "type": "object",
+  "required": ["schema", "version", "status", "stage", "evidence_phase", "promotion_eligible", "activation_authorized", "content_sha256"],
+  "properties": {
+    "schema": {"const": "strategy-fixed-baseline-result/1"},
+    "version": {"const": 1},
+    "status": {"enum": ["COMPLETE", "BLOCKED"]},
+    "stage": {"const": "FIXED_BASELINE"},
+    "evidence_phase": {"const": "DEVELOPMENT"},
+    "promotion_eligible": {"const": false},
+    "activation_authorized": {"const": false},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,33 @@
+{
+  "schema": "strategy-fixed-baseline-physical-reconstruction/1",
+  "version": 1,
+  "status": "COMPLETE",
+  "scope": "FULL_DECLARED_SCOPE",
+  "inventory_sha256": "b4a5c33682559e663bae245d8098f9c5b81c145512acd28b45c9443f2bbaa498",
+  "event_count": 130,
+  "control_count": 3,
+  "window_count": 133,
+  "hydrated_row_count": 1914720,
+  "hydration_manifest": {
+    "path": ".report-run/fixed-all-physical-replay-e11/hydration-manifest.json",
+    "byte_sha256": "7bd2ecd159e089fad9e4539ba2d9e4db2b372c74025526a2ce2d413513bf615b"
+  },
+  "physical_input": {
+    "path": ".report-run/fixed-all-physical-replay-e11/physical-input-replay.json",
+    "byte_sha256": "aea1eeaa4b090414e308d980cdbd189f1a9fb189e959c46c76d51d690f6e0dac",
+    "content_sha256": "2407e9957ee38ca789483ee49b8120941956c939fedd75af129399b44f01a883"
+  },
+  "producer_receipt_sha256": "3153bed3a6c5ea1de720e886ad53030b53aeade6c61b0624a5ffecbf7db5f481",
+  "source_manifest_sha256": "31f85e351861f05edc66794ec57369c0a7fafe67e236676aab5c6cc7bec4cfc6",
+  "non_trading_policy_sha256": "17bdfaaa9e6705745007693373a8d30a7a99240c5e83935a3c38c5bdca66dd97",
+  "assembly_log": {
+    "path": ".report-run/fresh-physical-assembly-e11.log",
+    "byte_sha256": "a5e0d79dd1d18dd7652c31e4e909e161b1da674a2f6472cf86aa88bccd5de82e"
+  },
+  "transport": "HTTPS_BINANCE_PUBLIC_REST",
+  "pit_status": "UNVERIFIED_DEVELOPMENT_ONLY",
+  "historical_filter_status": "USER_BOUND_RETROSPECTIVE",
+  "fresh_root": ".report-run/fixed-all-physical-replay-e11",
+  "evaluation_deferred": true,
+  "content_sha256": "3f992a50b1289d1fa03b924b997427c8151deb81387c824f7e93c70a4d7fb054"
+}

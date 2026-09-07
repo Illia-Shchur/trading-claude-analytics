@@ -1,0 +1,10 @@
+{
+  "venue": "BINANCE",
+  "instrument": "BINANCE_SPOT",
+  "taker_fee_rate": 0.001,
+  "slippage_bps": 5,
+  "cost_provenance": "USER_BOUND_RETROSPECTIVE",
+  "fee_source": "frozen baseline assumption; historical receipt unavailable",
+  "asset": "sol",
+  "symbol": "SOLUSDT"
+}

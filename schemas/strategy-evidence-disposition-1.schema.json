@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-evidence-disposition/1",
+  "type": "object",
+  "required": ["schema", "reasons", "primary_reason", "next_action", "promotion_eligible", "content_sha256"],
+  "properties": {
+    "schema": {"const": "strategy-evidence-disposition/1"},
+    "reasons": {"type": "array", "minItems": 1, "items": {"enum": ["INVALID_EVIDENCE", "INSUFFICIENT_EVIDENCE", "ECONOMIC_FAILURE", "COMPUTE_INCOMPLETE", "ELIGIBLE"]}},
+    "primary_reason": {"enum": ["INVALID_EVIDENCE", "INSUFFICIENT_EVIDENCE", "ECONOMIC_FAILURE", "COMPUTE_INCOMPLETE", "ELIGIBLE"]},
+    "next_action": {"type": "string", "minLength": 1},
+    "promotion_eligible": {"type": "boolean"},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": true
+}

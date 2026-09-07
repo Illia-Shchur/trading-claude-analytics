@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-fixed-baseline-lifecycle-timing/1",
+  "type": "object",
+  "required": [
+    "schema",
+    "version",
+    "status",
+    "policy_id",
+    "baseline_id",
+    "raw_definition_sha256",
+    "amendment_scope",
+    "exit_time_semantics",
+    "availability_semantics",
+    "accounting_and_admission_field",
+    "content_sha256"
+  ],
+  "properties": {
+    "schema": {"const": "strategy-fixed-baseline-lifecycle-timing/1"},
+    "version": {"const": 1},
+    "status": {"const": "FROZEN"},
+    "policy_id": {"const": "FIXED_LIFECYCLE_TIMING_V001"},
+    "baseline_id": {"const": "fk-deleveraging-absorption-baseline-v002"},
+    "raw_definition_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "amendment_scope": {"const": "POST_INITIAL_EXPOSURE_BEFORE_NEW_LIFECYCLE_RESOLUTION"},
+    "exit_time_semantics": {"const": "BAR_OPEN_IDENTIFIER;NOT_A_CLOSE_AVAILABILITY_TIME"},
+    "availability_semantics": {
+      "type": "object",
+      "required": ["gap_open", "barrier_or_timeout_close"],
+      "properties": {
+        "gap_open": {"const": "BAR_OPEN_TIME"},
+        "barrier_or_timeout_close": {"const": "CLOSE_TIME_OR_EXPLICIT_AVAILABILITY_TIME"}
+      },
+      "additionalProperties": false
+    },
+    "accounting_and_admission_field": {"const": "availability_time"},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": false
+}

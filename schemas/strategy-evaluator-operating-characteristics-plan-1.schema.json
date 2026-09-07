@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-evaluator-operating-characteristics-plan/1",
+  "type": "object",
+  "required": ["schema", "version", "stage_scope", "evidence_phase", "decision", "promotion_eligible", "outcomes_opened", "generator", "scenarios", "replications", "episodes_per_replication", "seeds", "effect_sizes", "targets", "frozen_before_outcomes", "content_sha256"],
+  "properties": {
+    "schema": {"const": "strategy-evaluator-operating-characteristics-plan/1"},
+    "version": {"const": 1},
+    "stage_scope": {"const": "FIXED_BASELINE_DIAGNOSTIC"},
+    "evidence_phase": {"const": "DEVELOPMENT"},
+    "decision": {"const": "DIAGNOSTIC_ONLY"},
+    "promotion_eligible": {"const": false},
+    "outcomes_opened": {"const": false},
+    "replications": {"const": 200},
+    "episodes_per_replication": {"const": 130},
+    "frozen_before_outcomes": {"const": true},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": true
+}

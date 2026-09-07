@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-prospective-outcome-reconciliation/1",
+  "type": "object",
+  "required": ["schema", "version", "paper_status", "observed_fill_status", "account_currency", "trade_count", "expected_gross_pnl_usdt", "expected_fees_usdt", "expected_slippage_usdt", "expected_capacity_debit_usdt", "expected_net_pnl_usdt", "paper_claim_is_observed_fill", "completed_bar_id", "decision_lineage_sha256", "maturity_as_of", "source_bindings", "trades", "errors", "content_sha256"],
+  "properties": {
+    "schema": {"const": "strategy-prospective-outcome-reconciliation/1"},
+    "version": {"const": 1},
+    "asset": {"type": "string", "pattern": "^[a-z0-9]+$"},
+    "paper_status": {"enum": ["NUMERICALLY_RECONCILED", "INVALID"]},
+    "observed_fill_status": {"enum": ["AVAILABLE", "UNAVAILABLE"]},
+    "paper_price_convention": {"const": "REFERENCE_PRICES_PLUS_EXECUTION_DEBITS"},
+    "observed_price_convention": {"enum": ["REFERENCE_PRICES_PLUS_EXECUTION_DEBITS", "ACTUAL_FILL_PRICES"]},
+    "account_currency": {"const": "USDT"},
+    "completed_bar_id": {"type": ["string", "null"], "minLength": 1},
+    "decision_lineage_sha256": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+    "trade_count": {"type": "integer", "minimum": 1},
+    "expected_gross_pnl_usdt": {"type": "number"},
+    "expected_fees_usdt": {"type": "number", "minimum": 0},
+    "expected_slippage_usdt": {"type": "number", "minimum": 0},
+    "expected_capacity_debit_usdt": {"type": "number", "minimum": 0},
+    "expected_net_pnl_usdt": {"type": "number"},
+    "paper_claim_is_observed_fill": {"const": false},
+    "maturity_as_of": {"type": "string", "minLength": 1},
+    "source_bindings": {"type": "object", "required": ["outcome_resolution_source_sha256", "label_source_sha256", "execution_source_sha256"], "properties": {"outcome_resolution_source_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "label_source_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "execution_source_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}}, "additionalProperties": true},
+    "trades": {"type": "array", "minItems": 1, "items": {"type": "object", "required": ["trade_id", "expected_gross_pnl_usdt", "expected_fees_usdt", "expected_slippage_usdt", "expected_capacity_debit_usdt", "expected_net_pnl_usdt", "observed_status"], "properties": {"trade_id": {"type": "string", "minLength": 1}, "expected_gross_pnl_usdt": {"type": "number"}, "expected_fees_usdt": {"type": "number", "minimum": 0}, "expected_slippage_usdt": {"type": "number", "minimum": 0}, "expected_capacity_debit_usdt": {"type": "number", "minimum": 0}, "expected_net_pnl_usdt": {"type": "number"}, "observed_status": {"enum": ["AVAILABLE", "UNAVAILABLE"]}, "observed_unavailable_reason": {"type": "string", "minLength": 1}, "observed_gross_pnl_usdt": {"type": "number"}, "observed_fees_usdt": {"type": "number", "minimum": 0}, "observed_slippage_usdt": {"type": "number", "minimum": 0}, "observed_capacity_debit_usdt": {"type": "number", "minimum": 0}, "observed_net_pnl_usdt": {"type": "number"}, "observed_minus_expected_net_pnl_usdt": {"type": "number"}}, "additionalProperties": false}},
+    "errors": {"type": "array", "items": {"type": "string"}},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": false
+}

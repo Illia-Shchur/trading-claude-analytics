@@ -1,0 +1,2467 @@
+{
+  "schema" : "strategy-fixed-baseline-result/1",
+  "version" : 1,
+  "status" : "COMPLETE",
+  "stage" : "FIXED_BASELINE",
+  "evidence_phase" : "DEVELOPMENT",
+  "promotion_eligible" : false,
+  "activation_authorized" : false,
+  "optimizer_invoked" : false,
+  "max_attempts" : 1,
+  "hypothesis_family" : "fk-deleveraging-absorption",
+  "baseline_sha256" : "4d2563ed94eae50e076f75f010adea3232b66ef5bd058f0cd1967051f1f16176",
+  "control_spec_sha256" : "e2e874b216b86bb6479c3f14f1aab7844b27e05b2eae3da2eb93b7870f525468",
+  "experiment_sha256" : "07d36bf08c88b7366a546bddc4bc30ad2103368a3017aeb68a8020a097460452",
+  "physical_input_sha256" : "0d7dae775c87bba5ad18cfe44ad2e16097ef2009536ded0829a49e7310fcea2a",
+  "attempt_identity_sha256" : "b990fcb85571c9e45b7faa042d56f021cf137639fe9db0c56895a1edfeaf6a0a",
+  "portfolio_policy_sha256" : "f3dee179840c7ebb4445915d6b83bbb697d47ca32bc3e53b3e7ceb2a66387390",
+  "portfolio_policy_path" : "/Users/eternal/Desktop/Trading Claude Analytics/strategy-research/experiments/fk-deleveraging-baseline-v002/portfolio-policy-v001.json",
+  "portfolio_policy_post_slice_amendment" : true,
+  "exposure_head_sha256" : "e8b8356d839ecdd510afa2193ae1a2dc389b41bbe7239efdc3dec2f8b90a2d7d",
+  "exposure_head_path" : "/Users/eternal/Desktop/Trading Claude Analytics/strategy-research/v5-records/families/2afbe00fbdbb720a5c2fd1968c447dd1a0478d7670f3b9422b44f86169e3e38e/exposure-head.json",
+  "build_identity" : {
+    "schema" : "analytics-build-identity/1",
+    "status" : "KNOWN",
+    "executable" : {
+      "code_source" : "/private/tmp/fixed-runner.jar",
+      "kind" : "JAR",
+      "sha256" : "ed2989f9446994212f2d82c5c1df540194f486fe02cbb10008c15b1b5170dcea",
+      "bytes" : 2814762
+    },
+    "compiled" : {
+      "input_fingerprint" : "d7b1f79c9443d759e63d206c4a32957bf0416c15e8c720ff9cd2ff9cbd476045",
+      "revision" : "e54675065603ec8a578e482104a1ef15b7409807",
+      "dirty_source" : "true",
+      "java_version" : "openjdk version \"26.0.1\" 2026-04-21",
+      "java_vendor" : "Oracle Corporation",
+      "java_runtime" : "OpenJDK Runtime Environment",
+      "toolchain_fingerprint" : "277c0d2ab5a069bc4fabbb9a6bb581a452181a794c58b74ee640f1b958b50f01",
+      "maven_wrapper_sha256" : "cae96cef89ebea3531221f4ae17c23cf8edf67d00eae8306d4186ae1bbed4d02",
+      "root_pom_sha256" : "21fea44956bd42ea79951766f14624b0dba1e36226457c5babc341dbc37b7b11",
+      "marker_resource" : "META-INF/build-identity.properties"
+    },
+    "runtime" : {
+      "java" : "26.0.1",
+      "cwd" : "/Users/eternal/Desktop/Trading Claude Analytics",
+      "user_dir" : "/Users/eternal/Desktop/Trading Claude Analytics"
+    }
+  },
+  "evaluator" : {
+    "name" : "TradeLifecycleV5",
+    "production" : true,
+    "physical_receipt_custody" : true,
+    "shared_fixed_rules" : true
+  },
+  "frozen_parameters" : {
+    "shock_rule" : {
+      "return" : {
+        "name" : "completed_bar_close_to_close_return",
+        "formula" : "close_t / close_(t-1) - 1",
+        "threshold" : -0.08,
+        "operator" : "<=",
+        "denominator" : "previous_completed_signal_bar_close"
+      },
+      "volume" : {
+        "name" : "trailing_volume_multiple_excluding_current_bar",
+        "formula" : "volume_t / mean(volume_(t-30)..volume_(t-1))",
+        "threshold" : 2.0,
+        "operator" : ">=",
+        "lookback_completed_bars" : 30,
+        "current_bar_excluded" : true
+      },
+      "volatility" : {
+        "name" : "trailing_realized_volatility",
+        "formula" : "sqrt(sum(log(close_i / close_(i-1))^2 for i=t-30..t-1) / 30) * sqrt(6)",
+        "threshold" : 0.015,
+        "operator" : ">=",
+        "lookback_completed_bars" : 30,
+        "annualization" : "none; sqrt(6) converts four-hour observations to a 24-hour proxy",
+        "current_bar_excluded" : true
+      },
+      "all_predicates_required" : true
+    },
+    "execution" : {
+      "entry" : "First executable 1-minute child bar at or after the signal close; use that child bar open plus declared two-sided slippage. If the child bar is unavailable, stale, or a gap is detected, record an unresolved execution and fail the run; do not silently skip it.",
+      "entry_price" : "child_open; TradeLifecycleV5 records the raw executable open and debits declared entry slippage separately.",
+      "direction" : "long",
+      "risk_budget" : "fixed_notional_usd",
+      "stop" : {
+        "type" : "hard_price_stop",
+        "distance" : 0.06,
+        "price" : "raw_entry_price * (1 - 0.06); entry slippage is a separate cost debit.",
+        "same_bar_order" : "STOP_FIRST",
+        "trigger_field" : "child_low",
+        "adverse_executable_price" : "min(child_open, stop_price); TradeLifecycleV5 debits declared exit slippage separately.",
+        "gap_rule" : "The child low triggers the stop, but the fill is the adverse executable child open when it gaps through the stop, otherwise stop_price, each with exit slippage. Child low is never itself a fill.",
+        "pessimistic_low_fill" : "stress_only",
+        "no_averaging_down" : true,
+        "engine_convention" : "The lifecycle engine never folds slippage into the stop anchor; it records fee and slippage cost rows independently."
+      },
+      "timeout" : {
+        "type" : "maximum_holding_time",
+        "bars" : 14400,
+        "unit" : "1m",
+        "horizon_hours" : 240,
+        "exit" : "next executable child open after the horizon; if unavailable, fail closed"
+      },
+      "target" : null,
+      "partial_exits" : false,
+      "fees" : {
+        "entry_rate" : 0.001,
+        "exit_rate" : 0.001,
+        "application" : "notional-side-specific"
+      },
+      "slippage" : {
+        "entry_rate" : 5.0E-4,
+        "exit_rate" : 5.0E-4,
+        "application" : "adverse-side executable price"
+      },
+      "sizing" : {
+        "mode" : "FIXED_NOTIONAL_USDT",
+        "notional_usdt" : 1000,
+        "quantity_formula" : "floor((notional_usdt / entry_price) / lot_step) * lot_step",
+        "exchange_filters" : "physical decision-time Binance symbol filters are required; missing or changed filters fail closed",
+        "minimum_notional" : "decision-time exchange minimum; reject below it",
+        "rounding" : "round quantity down to the declared lot_step; never round up"
+      },
+      "overlap" : {
+        "per_asset" : "one_open_position; later qualifying events while open are recorded as skipped and never replace the open event",
+        "market_wide" : "events within 24 hours across assets share one episode_id and are treated as dependent"
+      }
+    },
+    "controls" : {
+      "schema" : "strategy-control-spec/1",
+      "control_id" : "fk-deleveraging-absorption-controls-v002",
+      "baseline_id" : "fk-deleveraging-absorption-baseline-v002",
+      "outcome_blind" : true,
+      "decision_time_only" : true,
+      "matching_variables" : [ "prior_30_bar_return", "prior_30_bar_realized_volatility", "prior_30_bar_volume_zscore", "hour_of_day", "day_of_week" ],
+      "pool" : {
+        "asset_scope" : "same_asset",
+        "venue" : "BINANCE",
+        "instrument" : "BINANCE_SPOT",
+        "signal_timeframe" : "4h",
+        "requires_complete_setup_at_decision" : true,
+        "requires_future_execution_resolution_after_selection" : true,
+        "position_state_at_decision" : "FLAT",
+        "excludes_qualifying_shocks" : true,
+        "requires_downside_return_range" : [ -0.08, -0.02 ],
+        "excludes_open_positions_as_of_decision" : true,
+        "historical_window" : "same five-year PIT dataset and only rows available at the event decision time"
+      },
+      "calipers" : {
+        "prior_30_bar_return_abs" : 0.02,
+        "prior_30_bar_realized_volatility_abs" : 0.005,
+        "prior_30_bar_volume_zscore_abs" : 0.5,
+        "minimum_prior_lag_hours" : 480,
+        "maximum_prior_lookback_days" : 365,
+        "downside_return_min" : -0.08,
+        "downside_return_max" : -0.02,
+        "maximum_lifecycle_hours" : 240
+      },
+      "reuse_policy" : "without_replacement_within_asset_and_calendar_year",
+      "tie_break" : [ "standardized_distance_ascending", "event_time_ascending", "episode_id_ascending" ],
+      "forbidden_fields" : [ "future_return", "label", "exit_price", "net_r", "pnl", "trade_outcome", "realized_volatility_after_decision" ],
+      "lifecycle_binding" : "Use the exact baseline execution contract and costs for both event and control. The candidate must satisfy candidate_event_time + 240h <= treated_event_time - 240h; future execution rows are resolved only after matching and missing rows fail explicitly.",
+      "proxy_disclosure" : "A matched downside bar controls observable price/volume state; it does not observe forced liquidations directly.",
+      "content_sha256" : "e2e874b216b86bb6479c3f14f1aab7844b27e05b2eae3da2eb93b7870f525468"
+    },
+    "frozen_before_outcome_read" : true,
+    "control_max_lifecycle_ms" : 864000000,
+    "selection_future_coverage_independent" : true
+  },
+  "required_assets" : [ "btc", "eth", "sol", "bnb", "xrp", "ada", "link", "aave" ],
+  "observed_assets" : [ "btc" ],
+  "missing_assets" : [ "eth", "sol", "bnb", "xrp", "ada", "link", "aave" ],
+  "evaluation_scope" : "INTEGRATION_SLICE",
+  "full_experiment_complete" : false,
+  "setup_events" : [ {
+    "episode_id" : "btc:2021-09-07T16:00:00Z",
+    "signal_id" : "btc:2021-09-07T16:00:00Z",
+    "asset" : "btc",
+    "venue" : "BINANCE",
+    "instrument" : "BINANCE_SPOT",
+    "symbol" : "BTCUSDT",
+    "decision_time" : "2021-09-07T16:00:00Z",
+    "event_time" : "2021-09-07T16:00:00Z",
+    "availability_time" : "2021-09-07T15:59:59.999Z",
+    "setup_bar_count" : 81,
+    "signal_eligible" : true,
+    "shock_return" : -0.08412417542639128,
+    "completed_return" : -0.08412417542639128,
+    "volume_multiple" : 6.349618505897487,
+    "realized_volatility" : 0.022492712591452746,
+    "prior_30_bar_return" : 0.017352201133513878,
+    "prior_30_bar_realized_volatility" : 0.022492712591452746,
+    "prior_30_bar_volume_zscore" : 4.650394984746012,
+    "hour_of_day" : 16,
+    "day_of_week" : 2,
+    "eligible" : true
+  } ],
+  "control_selections" : [ {
+    "schema" : "strategy-control-selection/1",
+    "outcome_blind" : true,
+    "candidate_count" : 0,
+    "control" : null,
+    "content_sha256" : "91045af7444befdd3fbc6d1157885506945fc5934b7c47d31547b78fc9a9a0aa",
+    "event_id" : "btc:2021-09-07T16:00:00Z"
+  } ],
+  "skipped_events" : [ ],
+  "attempts" : [ {
+    "event_id" : "btc:2021-09-07T16:00:00Z",
+    "status" : "EVENT_COMPLETE_CONTROL_UNRESOLVED"
+  } ],
+  "event_count" : 1,
+  "matched_control_count" : 0,
+  "admitted_event_count" : 1,
+  "skipped_open_position_count" : 0,
+  "unresolved_execution_count" : 0,
+  "trade_count" : 1,
+  "market_episode_count" : 1,
+  "independent_market_episode_count" : 1,
+  "independent_market_episodes" : [ {
+    "start_ms" : 1631030400000,
+    "end_ms" : 1631894400000,
+    "episode_id" : "btc:2021-09-07T16:00:00Z",
+    "source_episode_ids" : [ "btc:2021-09-07T16:00:00Z" ],
+    "cluster_id" : "9e9fff73e7f522244aace55fa2a219430b984b84f98a64d830ff27e69bab6393",
+    "uncertainty_unit" : "MERGED_LIFECYCLE_INTERVAL"
+  } ],
+  "portfolio" : {
+    "account_currency" : "USDT",
+    "event_book" : {
+      "account_currency" : "USDT",
+      "starting_equity_usdt" : 10000.0,
+      "starting_capital_policy" : "FIXED_INITIAL_CASH_USDT_10000_V001",
+      "trade_count" : 1,
+      "gross_pnl_usdt" : -59.990374806000084,
+      "fees_usdt" : 1.939688785394,
+      "slippage_usdt" : 0.969844392697,
+      "capacity_debit_usdt" : 0.0,
+      "net_pnl_usdt" : -62.89990798409108,
+      "realized_pnl_usdt" : -62.89990798409108,
+      "ending_equity_usdt" : 9937.100092015908,
+      "max_drawdown_usdt" : 76.93668431394144,
+      "mark_method" : "PHYSICAL_1M_CLOSES_AT_60M_SAMPLES;MAX_DRAWDOWN_IS_SAMPLED",
+      "realized_pnl_posted_at_exit" : true,
+      "negative_cash" : false,
+      "ending_minus_starting_equals_net" : true,
+      "sum_check" : true,
+      "raw_r_excluded_from_equity" : true,
+      "trades" : [ {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "entry_price" : 46656.07,
+        "exit_price" : 43856.705799999996,
+        "quantity" : 0.02143,
+        "gross_pnl_usdt" : -59.990374806000084,
+        "fees_usdt" : 1.939688785394,
+        "slippage_usdt" : 0.969844392697,
+        "capacity_debit_usdt" : 0.0,
+        "net_pnl_usdt" : -62.89990798409108,
+        "account_currency" : "USDT",
+        "lifecycle" : {
+          "schema" : "strategy-v5-trade-lifecycle/1",
+          "version" : 1,
+          "status" : "COMPLETE",
+          "fixture_only" : false,
+          "provenance" : "AUTHORITATIVE",
+          "decision_time" : "2021-09-07T16:00:00.000Z",
+          "entry_time" : "2021-09-07T16:00:00.000Z",
+          "entry_price" : 46656.07,
+          "direction" : "long",
+          "instrument_type" : "SPOT",
+          "quantity" : 0.02143,
+          "contract_multiplier" : 1.0,
+          "stop_price" : 43856.705799999996,
+          "target_price" : null,
+          "max_lifecycle_ms" : 864000000,
+          "lifecycle_end_exclusive" : "2021-09-17T16:00:00.000Z",
+          "exits" : [ {
+            "time" : "2021-09-13T14:18:00.000Z",
+            "price" : 43856.705799999996,
+            "quantity" : 0.02143,
+            "fraction" : 1.0,
+            "reason" : "STOP",
+            "fill_type" : "BARRIER",
+            "gross_pnl_usd" : -59.990374806000084,
+            "fees_usd" : 0.939849205294,
+            "slippage_usd" : 0.4699246026469999,
+            "capacity_debit_usd" : 0.0,
+            "funding_usd" : 0.0,
+            "net_pnl_usd" : -61.400148613941084,
+            "funding_settlements" : [ ]
+          } ],
+          "remaining_quantity" : 0.0,
+          "gross_pnl_usd" : -59.990374806000084,
+          "fees_usd" : 1.939688785394,
+          "slippage_usd" : 0.969844392697,
+          "funding_usd" : 0.0,
+          "capacity_debit_usd" : 0.0,
+          "net_pnl_usd" : -62.89990798409108,
+          "cost_records" : [ {
+            "notional" : 999.8395801,
+            "fees_usd" : 0.9998395801000001,
+            "slippage_usd" : 0.49991979005000003,
+            "capacity_debit_usd" : 0.0,
+            "signed_cost_usd" : 1.49975937015,
+            "stage" : "ENTRY"
+          }, {
+            "notional" : 939.849205294,
+            "fees_usd" : 0.939849205294,
+            "slippage_usd" : 0.4699246026469999,
+            "capacity_debit_usd" : 0.0,
+            "signed_cost_usd" : 1.4097738079409998,
+            "stage" : "EXIT",
+            "time" : "2021-09-13T14:18:00.000Z"
+          } ],
+          "entry_costs" : {
+            "notional" : 999.8395801,
+            "fees_usd" : 0.9998395801000001,
+            "slippage_usd" : 0.49991979005000003,
+            "capacity_debit_usd" : 0.0,
+            "signed_cost_usd" : 1.49975937015
+          },
+          "entry_fill" : {
+            "time" : "2021-09-07T16:00:00.000Z",
+            "price" : 46656.07,
+            "quantity" : 0.02143,
+            "fill_type" : "DECISION_BOUNDARY_OPEN"
+          },
+          "effective_trailing_from" : null,
+          "physical_execution_lineage" : {
+            "trust_schema" : "strategy-v5-lifecycle-trust/1",
+            "trust_bundle_sha256" : "ba734d4cfbdff970dcd78e8b7bc0e1f47b87e12585690307243a358c59974a71",
+            "lifecycle_trust_sha256" : "ba734d4cfbdff970dcd78e8b7bc0e1f47b87e12585690307243a358c59974a71",
+            "physical_root_reference" : "verified-binance-spot-4h-plus-public-1m-attempt",
+            "receipt_refs" : {
+              "contract_spec" : {
+                "path" : "contract_spec.json",
+                "content_sha256" : "18e8f64aa666954416ad243a275c36dbdeac4a938c1876fa751ac86dab23e23d",
+                "byte_sha256" : "122c1779e1c78ac29921ad0521953f2a816c4cffdfa74df94fb3ccb13ecb04ae",
+                "bytes" : 348,
+                "rows_sha256" : null,
+                "schema" : null
+              },
+              "bars" : {
+                "path" : "bars_1m.json",
+                "content_sha256" : "680b6129f5cb4492e5c23a235de35df7883ad266e68195df2340e8b3aab7e3e6",
+                "byte_sha256" : "1226b1384b86df692a87d36621e63d4e78d3b7d499a526490ca43a175f57f100",
+                "bytes" : 3833031,
+                "rows_sha256" : "680b6129f5cb4492e5c23a235de35df7883ad266e68195df2340e8b3aab7e3e6",
+                "schema" : null
+              },
+              "execution_model" : {
+                "path" : "execution_model.json",
+                "content_sha256" : "503b64acf15237e152c1a6d00dda594ea67c94a211d74f0e3186f492e01e5467",
+                "byte_sha256" : "f27e27248e9173cae56e124b6dce4944e49aa35e2b310a53763a9bee9f93b2ad",
+                "bytes" : 232,
+                "rows_sha256" : null,
+                "schema" : null
+              },
+              "capacity" : {
+                "path" : "capacity.json",
+                "content_sha256" : "8e6cabdd87e4b571f314267cce2f5d2b9b6a4f629ec64bcb3060f068ad42ea18",
+                "byte_sha256" : "4c10f670cf1070a1a25264657e1f32daf602353bea251416215d408fc442604c",
+                "bytes" : 224,
+                "rows_sha256" : null,
+                "schema" : null
+              }
+            },
+            "bars_content_sha256" : "680b6129f5cb4492e5c23a235de35df7883ad266e68195df2340e8b3aab7e3e6",
+            "bars_rows_sha256" : "680b6129f5cb4492e5c23a235de35df7883ad266e68195df2340e8b3aab7e3e6",
+            "funding_content_sha256" : null,
+            "marks_content_sha256" : null,
+            "hydration_content_sha256" : null,
+            "lifecycle_spec_sha256" : "4b7cfabb3d85a74fb746080c470d474a20adc16a57521db99b26901ce2223a5e",
+            "evaluator_spec_sha256" : null,
+            "precommit_sha256" : null,
+            "baseline_sha256" : "4d2563ed94eae50e076f75f010adea3232b66ef5bd058f0cd1967051f1f16176"
+          },
+          "content_sha256" : "37b9c9da37be7e447e5b2b01ae1f74e91e6a8e79772d154175532e00d2f67ea4"
+        },
+        "portfolio_mark_points" : [ {
+          "time" : "2021-09-07T16:00:59.999000Z",
+          "price" : 46627.83,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-07T17:00:59.999000Z",
+          "price" : 47381.06,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-07T18:00:59.999000Z",
+          "price" : 46649.0,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-07T19:00:59.999000Z",
+          "price" : 46847.11,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-07T20:00:59.999000Z",
+          "price" : 46737.78,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-07T21:00:59.999000Z",
+          "price" : 46899.99,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-07T22:00:59.999000Z",
+          "price" : 46457.07,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-07T23:00:59.999000Z",
+          "price" : 46676.73,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-08T00:00:59.999000Z",
+          "price" : 46893.02,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-08T01:00:59.999000Z",
+          "price" : 47073.07,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-08T02:00:59.999000Z",
+          "price" : 47173.88,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-08T03:00:59.999000Z",
+          "price" : 47113.64,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-08T04:00:59.999000Z",
+          "price" : 46532.83,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-08T05:00:59.999000Z",
+          "price" : 46487.31,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-08T06:00:59.999000Z",
+          "price" : 46157.7,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-08T07:00:59.999000Z",
+          "price" : 45315.25,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-08T08:00:59.999000Z",
+          "price" : 45119.14,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-08T09:00:59.999000Z",
+          "price" : 46021.19,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-08T10:00:59.999000Z",
+          "price" : 46195.3,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-08T11:00:59.999000Z",
+          "price" : 46418.35,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-08T12:00:59.999000Z",
+          "price" : 46523.08,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-08T13:00:59.999000Z",
+          "price" : 46318.89,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-08T14:00:59.999000Z",
+          "price" : 46309.0,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-08T15:00:59.999000Z",
+          "price" : 45942.58,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-08T16:00:59.999000Z",
+          "price" : 46053.92,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-08T17:00:59.999000Z",
+          "price" : 46380.0,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-08T18:00:59.999000Z",
+          "price" : 46130.05,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-08T19:00:59.999000Z",
+          "price" : 46432.78,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-08T20:00:59.999000Z",
+          "price" : 46330.73,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-08T21:00:59.999000Z",
+          "price" : 46138.73,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-08T22:00:59.999000Z",
+          "price" : 45979.9,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-08T23:00:59.999000Z",
+          "price" : 46569.19,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-09T00:00:59.999000Z",
+          "price" : 46005.1,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-09T01:00:59.999000Z",
+          "price" : 46285.69,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-09T02:00:59.999000Z",
+          "price" : 46146.52,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-09T03:00:59.999000Z",
+          "price" : 45811.68,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-09T04:00:59.999000Z",
+          "price" : 45955.14,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-09T05:00:59.999000Z",
+          "price" : 46136.08,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-09T06:00:59.999000Z",
+          "price" : 46333.36,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-09T07:00:59.999000Z",
+          "price" : 46074.17,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-09T08:00:59.999000Z",
+          "price" : 46300.01,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-09T09:00:59.999000Z",
+          "price" : 46240.95,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-09T10:00:59.999000Z",
+          "price" : 46179.73,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-09T11:00:59.999000Z",
+          "price" : 46090.0,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-09T12:00:59.999000Z",
+          "price" : 46387.99,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-09T13:00:59.999000Z",
+          "price" : 47032.32,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-09T14:00:59.999000Z",
+          "price" : 47040.15,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-09T15:00:59.999000Z",
+          "price" : 47010.0,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-09T16:00:59.999000Z",
+          "price" : 47031.09,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-09T17:00:59.999000Z",
+          "price" : 47189.44,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-09T18:00:59.999000Z",
+          "price" : 46820.19,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-09T19:00:59.999000Z",
+          "price" : 46636.09,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-09T20:00:59.999000Z",
+          "price" : 46549.16,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-09T21:00:59.999000Z",
+          "price" : 46216.69,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-09T22:00:59.999000Z",
+          "price" : 46469.99,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-09T23:00:59.999000Z",
+          "price" : 46480.58,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-10T00:00:59.999000Z",
+          "price" : 46413.05,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-10T01:00:59.999000Z",
+          "price" : 46585.01,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-10T02:00:59.999000Z",
+          "price" : 46866.23,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-10T03:00:59.999000Z",
+          "price" : 46697.64,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-10T04:00:59.999000Z",
+          "price" : 46719.51,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-10T05:00:59.999000Z",
+          "price" : 46480.12,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-10T06:00:59.999000Z",
+          "price" : 46685.75,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-10T07:00:59.999000Z",
+          "price" : 46440.0,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-10T08:00:59.999000Z",
+          "price" : 46247.98,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-10T09:00:59.999000Z",
+          "price" : 46077.38,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-10T10:00:59.999000Z",
+          "price" : 46205.6,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-10T11:00:59.999000Z",
+          "price" : 46184.31,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-10T12:00:59.999000Z",
+          "price" : 46272.99,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-10T13:00:59.999000Z",
+          "price" : 45941.14,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-10T14:00:59.999000Z",
+          "price" : 45779.74,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-10T15:00:59.999000Z",
+          "price" : 45280.24,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-10T16:00:59.999000Z",
+          "price" : 45390.66,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-10T17:00:59.999000Z",
+          "price" : 45514.37,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-10T18:00:59.999000Z",
+          "price" : 45707.99,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-10T19:00:59.999000Z",
+          "price" : 45722.0,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-10T20:00:59.999000Z",
+          "price" : 45688.0,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-10T21:00:59.999000Z",
+          "price" : 45040.48,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-10T22:00:59.999000Z",
+          "price" : 44609.05,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-10T23:00:59.999000Z",
+          "price" : 44298.0,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-11T00:00:59.999000Z",
+          "price" : 44897.86,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-11T01:00:59.999000Z",
+          "price" : 45176.28,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-11T02:00:59.999000Z",
+          "price" : 45380.69,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-11T03:00:59.999000Z",
+          "price" : 45300.26,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-11T04:00:59.999000Z",
+          "price" : 45270.2,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-11T05:00:59.999000Z",
+          "price" : 45365.48,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-11T06:00:59.999000Z",
+          "price" : 45427.77,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-11T07:00:59.999000Z",
+          "price" : 45218.12,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-11T08:00:59.999000Z",
+          "price" : 45053.01,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-11T09:00:59.999000Z",
+          "price" : 45139.4,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-11T10:00:59.999000Z",
+          "price" : 45633.54,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-11T11:00:59.999000Z",
+          "price" : 45680.01,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-11T12:00:59.999000Z",
+          "price" : 45609.43,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-11T13:00:59.999000Z",
+          "price" : 45556.36,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-11T14:00:59.999000Z",
+          "price" : 45654.26,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-11T15:00:59.999000Z",
+          "price" : 45686.46,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-11T16:00:59.999000Z",
+          "price" : 45609.48,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-11T17:00:59.999000Z",
+          "price" : 45832.99,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-11T18:00:59.999000Z",
+          "price" : 45603.44,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-11T19:00:59.999000Z",
+          "price" : 45632.96,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-11T20:00:59.999000Z",
+          "price" : 45398.05,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-11T21:00:59.999000Z",
+          "price" : 45273.02,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-11T22:00:59.999000Z",
+          "price" : 45303.04,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-11T23:00:59.999000Z",
+          "price" : 45030.05,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-12T00:00:59.999000Z",
+          "price" : 45125.62,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-12T01:00:59.999000Z",
+          "price" : 44922.4,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-12T02:00:59.999000Z",
+          "price" : 44916.06,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-12T03:00:59.999000Z",
+          "price" : 45276.38,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-12T04:00:59.999000Z",
+          "price" : 45290.11,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-12T05:00:59.999000Z",
+          "price" : 45290.3,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-12T06:00:59.999000Z",
+          "price" : 45393.07,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-12T07:00:59.999000Z",
+          "price" : 45192.54,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-12T08:00:59.999000Z",
+          "price" : 45341.33,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-12T09:00:59.999000Z",
+          "price" : 46086.77,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-12T10:00:59.999000Z",
+          "price" : 45867.3,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-12T11:00:59.999000Z",
+          "price" : 45977.55,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-12T12:00:59.999000Z",
+          "price" : 46134.28,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-12T13:00:59.999000Z",
+          "price" : 45986.82,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-12T14:00:59.999000Z",
+          "price" : 45978.24,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-12T15:00:59.999000Z",
+          "price" : 45914.38,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-12T16:00:59.999000Z",
+          "price" : 45893.53,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-12T17:00:59.999000Z",
+          "price" : 45900.01,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-12T18:00:59.999000Z",
+          "price" : 45952.31,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-12T19:00:59.999000Z",
+          "price" : 45928.85,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-12T20:00:59.999000Z",
+          "price" : 45865.44,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-12T21:00:59.999000Z",
+          "price" : 44949.98,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-12T22:00:59.999000Z",
+          "price" : 45312.09,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-12T23:00:59.999000Z",
+          "price" : 45970.24,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-13T00:00:59.999000Z",
+          "price" : 46006.3,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-13T01:00:59.999000Z",
+          "price" : 46044.97,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-13T02:00:59.999000Z",
+          "price" : 45082.31,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-13T03:00:59.999000Z",
+          "price" : 44838.46,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-13T04:00:59.999000Z",
+          "price" : 44687.29,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-13T05:00:59.999000Z",
+          "price" : 44722.1,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-13T06:00:59.999000Z",
+          "price" : 44693.28,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-13T07:00:59.999000Z",
+          "price" : 44763.41,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-13T08:00:59.999000Z",
+          "price" : 44420.22,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-13T09:00:59.999000Z",
+          "price" : 44455.65,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-13T10:00:59.999000Z",
+          "price" : 44468.59,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-13T11:00:59.999000Z",
+          "price" : 44612.67,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-13T12:00:59.999000Z",
+          "price" : 44818.52,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-13T13:00:59.999000Z",
+          "price" : 44590.32,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-13T14:00:59.999000Z",
+          "price" : 46071.99,
+          "source" : "PHYSICAL_1M_CLOSE"
+        }, {
+          "time" : "2021-09-13T14:17:59.999000Z",
+          "price" : 44200.0,
+          "source" : "PHYSICAL_1M_CLOSE"
+        } ]
+      } ],
+      "equity_curve" : [ {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-07T16:00:00.000Z",
+        "event_type" : "ENTRY",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9998.50024062985,
+        "drawdown_usdt" : 0.0,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-07T16:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9997.895057429849,
+        "drawdown_usdt" : 2.104942570151252,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-07T17:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 10014.036776329849,
+        "drawdown_usdt" : 0.0,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-07T18:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9998.34873052985,
+        "drawdown_usdt" : 15.6880457999996,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-07T19:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 10002.59422782985,
+        "drawdown_usdt" : 11.442548499999248,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-07T20:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 10000.25128592985,
+        "drawdown_usdt" : 13.785490399999617,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-07T21:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 10003.72744622985,
+        "drawdown_usdt" : 10.309330099998988,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-07T22:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9994.235670629849,
+        "drawdown_usdt" : 19.801105700000335,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-07T23:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9998.94298442985,
+        "drawdown_usdt" : 15.093791899998905,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-08T00:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 10003.57807912985,
+        "drawdown_usdt" : 10.458697199999733,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-08T01:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 10007.436550629849,
+        "drawdown_usdt" : 6.60022570000001,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-08T02:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 10009.596908929849,
+        "drawdown_usdt" : 4.439867400000367,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-08T03:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 10008.305965729849,
+        "drawdown_usdt" : 5.730810600000041,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-08T04:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9995.85920742985,
+        "drawdown_usdt" : 18.177568899998732,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-08T05:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9994.88371382985,
+        "drawdown_usdt" : 19.153062499999578,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-08T06:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9987.82017152985,
+        "drawdown_usdt" : 26.216604799999914,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-08T07:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9969.76646802985,
+        "drawdown_usdt" : 44.27030829999967,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-08T08:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9965.563830729849,
+        "drawdown_usdt" : 48.47294560000046,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-08T09:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9984.89476222985,
+        "drawdown_usdt" : 29.14201409999987,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-08T10:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9988.62593952985,
+        "drawdown_usdt" : 25.410836799999743,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-08T11:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9993.40590102985,
+        "drawdown_usdt" : 20.63087529999939,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-08T12:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9995.650264929849,
+        "drawdown_usdt" : 18.386511400000018,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-08T13:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9991.274473229849,
+        "drawdown_usdt" : 22.76230310000028,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-08T14:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9991.062530529849,
+        "drawdown_usdt" : 22.974245800000062,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-08T15:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9983.21014992985,
+        "drawdown_usdt" : 30.82662639999944,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-08T16:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9985.59616612985,
+        "drawdown_usdt" : 28.440610199999355,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-08T17:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9992.584060529849,
+        "drawdown_usdt" : 21.452715800000078,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-08T18:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9987.22763202985,
+        "drawdown_usdt" : 26.80914429999939,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-08T19:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9993.71513592985,
+        "drawdown_usdt" : 20.321640399999524,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-08T20:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9991.52820442985,
+        "drawdown_usdt" : 22.50857189999988,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-08T21:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9987.41364442985,
+        "drawdown_usdt" : 26.623131899999862,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-08T22:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9984.00991752985,
+        "drawdown_usdt" : 30.0268587999999,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-08T23:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9996.63840222985,
+        "drawdown_usdt" : 17.398374099999273,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-09T00:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9984.54995352985,
+        "drawdown_usdt" : 29.486822799999572,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-09T01:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9990.56299722985,
+        "drawdown_usdt" : 23.473779099998865,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-09T02:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9987.58058412985,
+        "drawdown_usdt" : 26.45619219999935,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-09T03:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9980.40496292985,
+        "drawdown_usdt" : 33.63181339999937,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-09T04:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9983.47931072985,
+        "drawdown_usdt" : 30.557465599998977,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-09T05:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9987.356854929849,
+        "drawdown_usdt" : 26.67992140000024,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-09T06:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9991.58456532985,
+        "drawdown_usdt" : 22.452210999999807,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-09T07:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9986.03012362985,
+        "drawdown_usdt" : 28.006652699999904,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-09T08:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9990.86987482985,
+        "drawdown_usdt" : 23.166901499998858,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-09T09:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9989.604219029849,
+        "drawdown_usdt" : 24.432557300000553,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-09T10:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9988.29227442985,
+        "drawdown_usdt" : 25.744501899998795,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-09T11:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9986.369360529849,
+        "drawdown_usdt" : 27.667415800000526,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-09T12:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9992.755286229849,
+        "drawdown_usdt" : 21.281490100000156,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-09T13:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 10006.56327812985,
+        "drawdown_usdt" : 7.473498199999085,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-09T14:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 10006.73107502985,
+        "drawdown_usdt" : 7.305701299999782,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-09T15:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 10006.08496052985,
+        "drawdown_usdt" : 7.951815799999167,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-09T16:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 10006.53691922985,
+        "drawdown_usdt" : 7.499857099999645,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-09T17:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 10009.93035972985,
+        "drawdown_usdt" : 4.106416599999648,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-09T18:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 10002.017332229849,
+        "drawdown_usdt" : 12.019444100000328,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-09T19:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9998.07206922985,
+        "drawdown_usdt" : 15.964707099999941,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-09T20:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9996.20915932985,
+        "drawdown_usdt" : 17.82761699999901,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-09T21:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9989.08432722985,
+        "drawdown_usdt" : 24.952449099999285,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-09T22:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9994.51254622985,
+        "drawdown_usdt" : 19.52423009999984,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-09T23:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9994.739489929849,
+        "drawdown_usdt" : 19.297286400000303,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-10T00:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9993.292322029849,
+        "drawdown_usdt" : 20.744454300000143,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-10T01:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9996.977424829849,
+        "drawdown_usdt" : 17.059351500000048,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-10T02:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 10003.00396942985,
+        "drawdown_usdt" : 11.032806899998832,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-10T03:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9999.391085729849,
+        "drawdown_usdt" : 14.645690600000307,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-10T04:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9999.85975982985,
+        "drawdown_usdt" : 14.177016499999809,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-10T05:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9994.729632129849,
+        "drawdown_usdt" : 19.30714420000004,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-10T06:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9999.13628302985,
+        "drawdown_usdt" : 14.900493299999653,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-10T07:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9993.869860529849,
+        "drawdown_usdt" : 20.166915800000424,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-10T08:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9989.75487192985,
+        "drawdown_usdt" : 24.281904399998893,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-10T09:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9986.098913929849,
+        "drawdown_usdt" : 27.937862400000085,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-10T10:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9988.84666852985,
+        "drawdown_usdt" : 25.19010779999917,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-10T11:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9988.39042382985,
+        "drawdown_usdt" : 25.64635249999992,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-10T12:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9990.29083622985,
+        "drawdown_usdt" : 23.745940099999643,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-10T13:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9983.17929072985,
+        "drawdown_usdt" : 30.857485599999563,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-10T14:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9979.720488729849,
+        "drawdown_usdt" : 34.31628760000058,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-10T15:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9969.016203729849,
+        "drawdown_usdt" : 45.02057260000038,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-10T16:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9971.38250432985,
+        "drawdown_usdt" : 42.654271999999764,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-10T17:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9974.033609629849,
+        "drawdown_usdt" : 40.00316670000029,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-10T18:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9978.18288622985,
+        "drawdown_usdt" : 35.85389009999926,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-10T19:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9978.483120529849,
+        "drawdown_usdt" : 35.55365580000034,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-10T20:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9977.754500529849,
+        "drawdown_usdt" : 36.28227580000021,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-10T21:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9963.87814692985,
+        "drawdown_usdt" : 50.15862939999897,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-10T22:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9954.63260202985,
+        "drawdown_usdt" : 59.404174299999795,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-10T23:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9947.96680052985,
+        "drawdown_usdt" : 66.06997579999916,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-11T00:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9960.82180032985,
+        "drawdown_usdt" : 53.2149759999993,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-11T01:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9966.78834092985,
+        "drawdown_usdt" : 47.248435399998925,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-11T02:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9971.16884722985,
+        "drawdown_usdt" : 42.867929099998946,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-11T03:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9969.44523232985,
+        "drawdown_usdt" : 44.591543999998976,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-11T04:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9968.80104652985,
+        "drawdown_usdt" : 45.23572979999881,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-11T05:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9970.84289692985,
+        "drawdown_usdt" : 43.19387939999979,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-11T06:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9972.17777162985,
+        "drawdown_usdt" : 41.85900469999979,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-11T07:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9967.68497212985,
+        "drawdown_usdt" : 46.351804199999606,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-11T08:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9964.14666482985,
+        "drawdown_usdt" : 49.890111499998966,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-11T09:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9965.99800252985,
+        "drawdown_usdt" : 48.038773799999035,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-11T10:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9976.58742272985,
+        "drawdown_usdt" : 37.449353599999085,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-11T11:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9977.583274829849,
+        "drawdown_usdt" : 36.45350150000013,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-11T12:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9976.07074542985,
+        "drawdown_usdt" : 37.96603089999917,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-11T13:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9974.933455329849,
+        "drawdown_usdt" : 39.103321000000506,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-11T14:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9977.03145232985,
+        "drawdown_usdt" : 37.005323999999746,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-11T15:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9977.721498329849,
+        "drawdown_usdt" : 36.315278000000035,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-11T16:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9976.071816929849,
+        "drawdown_usdt" : 37.964959400000225,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-11T17:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9980.861636229849,
+        "drawdown_usdt" : 33.175140100000135,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-11T18:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9975.94237972985,
+        "drawdown_usdt" : 38.09439659999953,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-11T19:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9976.57499332985,
+        "drawdown_usdt" : 37.46178299999883,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-11T20:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9971.54087202985,
+        "drawdown_usdt" : 42.49590429999989,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-11T21:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9968.86147912985,
+        "drawdown_usdt" : 45.17529719999948,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-11T22:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9969.504807729849,
+        "drawdown_usdt" : 44.531968600000255,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-11T23:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9963.65463202985,
+        "drawdown_usdt" : 50.38214429999971,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-12T00:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9965.70269712985,
+        "drawdown_usdt" : 48.334079199999906,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-12T01:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9961.34769252985,
+        "drawdown_usdt" : 52.689083799999935,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-12T02:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9961.211826329849,
+        "drawdown_usdt" : 52.82495000000017,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-12T03:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9968.93348392985,
+        "drawdown_usdt" : 45.10329239999919,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-12T04:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9969.22771782985,
+        "drawdown_usdt" : 44.80905849999908,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-12T05:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9969.23178952985,
+        "drawdown_usdt" : 44.804986799999824,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-12T06:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9971.43415062985,
+        "drawdown_usdt" : 42.60262569999941,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-12T07:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9967.136792729849,
+        "drawdown_usdt" : 46.89998360000027,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-12T08:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9970.325362429849,
+        "drawdown_usdt" : 43.71141390000048,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-12T09:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9986.30014162985,
+        "drawdown_usdt" : 27.73663469999883,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-12T10:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9981.59689952985,
+        "drawdown_usdt" : 32.43987679999918,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-12T11:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9983.95955702985,
+        "drawdown_usdt" : 30.077219299999342,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-12T12:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9987.318280929849,
+        "drawdown_usdt" : 26.718495400000393,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-12T13:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9984.15821312985,
+        "drawdown_usdt" : 29.878563199999917,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-12T14:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9983.97434372985,
+        "drawdown_usdt" : 30.062432599999738,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-12T15:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9982.605823929849,
+        "drawdown_usdt" : 31.430952400000024,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-12T16:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9982.15900842985,
+        "drawdown_usdt" : 31.877767899999526,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-12T17:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9982.29787482985,
+        "drawdown_usdt" : 31.738901499998974,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-12T18:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9983.418663829849,
+        "drawdown_usdt" : 30.61811250000028,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-12T19:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9982.91591602985,
+        "drawdown_usdt" : 31.12086029999955,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-12T20:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9981.557039729849,
+        "drawdown_usdt" : 32.47973660000025,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-12T21:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9961.93873192985,
+        "drawdown_usdt" : 52.09804439999971,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-12T22:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9969.698749229849,
+        "drawdown_usdt" : 44.338027100000545,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-12T23:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9983.80290372985,
+        "drawdown_usdt" : 30.233872599999813,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-13T00:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9984.57566952985,
+        "drawdown_usdt" : 29.46110679999947,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-13T01:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9985.40436762985,
+        "drawdown_usdt" : 28.63240869999936,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-13T02:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9964.77456382985,
+        "drawdown_usdt" : 49.262212499999805,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-13T03:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9959.54885832985,
+        "drawdown_usdt" : 54.4879179999989,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-13T04:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9956.309285229849,
+        "drawdown_usdt" : 57.72749110000041,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-13T05:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9957.05526352985,
+        "drawdown_usdt" : 56.98151279999911,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-13T06:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9956.437650929849,
+        "drawdown_usdt" : 57.59912540000005,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-13T07:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9957.94053682985,
+        "drawdown_usdt" : 56.096239499998774,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-13T08:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9950.585975129849,
+        "drawdown_usdt" : 63.45080120000057,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-13T09:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9951.34524002985,
+        "drawdown_usdt" : 62.691536299998916,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-13T10:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9951.62254422985,
+        "drawdown_usdt" : 62.414232099999936,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-13T11:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9954.71017862985,
+        "drawdown_usdt" : 59.32659769999918,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-13T12:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9959.12154412985,
+        "drawdown_usdt" : 54.91523219999908,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-13T13:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9954.23121812985,
+        "drawdown_usdt" : 59.80555819999972,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-13T14:00:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9985.983406229849,
+        "drawdown_usdt" : 28.053370100000393,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-13T14:17:59.999000Z",
+        "event_type" : "MARK",
+        "cash_usdt" : 8998.66066052985,
+        "holdings_at_entry_cost_usdt" : 999.8395801,
+        "equity_usdt" : 9945.86666052985,
+        "drawdown_usdt" : 68.17011579999962,
+        "realized_pnl_usdt" : 0.0,
+        "entry_notional_usdt" : 999.8395801
+      }, {
+        "episode_id" : "btc:2021-09-07T16:00:00Z",
+        "event_time" : "2021-09-13T14:18:00.000Z",
+        "event_type" : "EXIT",
+        "cash_usdt" : 9937.100092015908,
+        "holdings_at_entry_cost_usdt" : 0.0,
+        "equity_usdt" : 9937.100092015908,
+        "drawdown_usdt" : 76.93668431394144,
+        "realized_pnl_usdt" : -62.89990798409108,
+        "entry_notional_usdt" : 999.8395801
+      } ]
+    },
+    "control_book" : {
+      "account_currency" : "USDT",
+      "starting_equity_usdt" : 10000.0,
+      "starting_capital_policy" : "FIXED_INITIAL_CASH_USDT_10000_V001",
+      "trade_count" : 0,
+      "gross_pnl_usdt" : 0.0,
+      "fees_usdt" : 0.0,
+      "slippage_usdt" : 0.0,
+      "capacity_debit_usdt" : 0.0,
+      "net_pnl_usdt" : 0.0,
+      "realized_pnl_usdt" : 0.0,
+      "ending_equity_usdt" : 10000.0,
+      "max_drawdown_usdt" : 0.0,
+      "mark_method" : "PHYSICAL_1M_CLOSES_AT_60M_SAMPLES;MAX_DRAWDOWN_IS_SAMPLED",
+      "realized_pnl_posted_at_exit" : true,
+      "negative_cash" : false,
+      "ending_minus_starting_equals_net" : true,
+      "sum_check" : true,
+      "raw_r_excluded_from_equity" : true,
+      "trades" : [ ],
+      "equity_curve" : [ ]
+    },
+    "net_pnl_usdt" : -62.89990798409108,
+    "raw_r_excluded_from_equity" : true
+  },
+  "metrics" : {
+    "paired_count" : 0,
+    "paired_mean_net_pnl_usdt" : 0.0,
+    "independent_market_episode_count" : 1,
+    "uncertainty_unit" : "MERGED_LIFECYCLE_INTERVAL"
+  },
+  "disposition" : {
+    "schema" : "strategy-evidence-disposition/1",
+    "reasons" : [ "INSUFFICIENT_EVIDENCE" ],
+    "primary_reason" : "INSUFFICIENT_EVIDENCE",
+    "next_action" : "collect_independent_episodes_without_resetting_exposure",
+    "promotion_eligible" : false,
+    "content_sha256" : "495e9b40ce32ade4c7c296c28fcf8f87d20fdc1a025d391c341d133b59496908"
+  },
+  "diagnostic_only" : true,
+  "shared_physical_evaluator" : true,
+  "physical_limitations" : [ "USER_BOUND_HISTORICAL_FILTERS:contract_spec", "USER_BOUND_RETROSPECTIVE_COSTS:execution_model" ],
+  "economic_semantic_sha256" : "30ac95b1bab7a0430507886fa9eacc8b84b38586a364e6a4752adfa64b608c71",
+  "semantic_sha256" : "4cb3758ecf47363de46ea4c640bf03370007d7efa43fa9ab084dc4698153f703",
+  "content_sha256" : "b69c037af70d9bcf7c7d1b4b3cfb25e3da705ed4dca8cc1569c9db3653c88e73"
+}

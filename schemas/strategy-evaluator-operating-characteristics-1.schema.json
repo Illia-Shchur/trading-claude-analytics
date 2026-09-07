@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-evaluator-operating-characteristics/1",
+  "type": "object",
+  "required": ["schema", "scenario", "stage_scope", "synthetic", "evidence_phase", "seed", "replications", "episodes_per_replication", "decision", "promotion_eligible", "binomial_uncertainty", "content_sha256"],
+  "properties": {
+    "schema": {"const": "strategy-evaluator-operating-characteristics/1"},
+    "scenario": {"enum": ["NO_EDGE", "PLANTED_EDGE"]},
+    "stage_scope": {"const": "FIXED_BASELINE_DIAGNOSTIC"},
+    "synthetic": {"const": true},
+    "evidence_phase": {"const": "DEVELOPMENT"},
+    "seed": {"type": "integer"},
+    "replications": {"type": "integer", "minimum": 1},
+    "episodes_per_replication": {"type": "integer", "minimum": 1},
+    "decision": {"const": "DIAGNOSTIC_ONLY"},
+    "promotion_eligible": {"const": false},
+    "binomial_uncertainty": {"type": "object", "required": ["lower", "upper"]},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": true
+}

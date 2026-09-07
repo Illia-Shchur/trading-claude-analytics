@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-fixed-baseline-non-trading-erratum/1",
+  "type": "object",
+  "required": ["schema", "version", "status", "policy_id", "correction", "operational_interval", "historical_policy_bytes_preserved", "source_policy_sha256", "content_sha256"],
+  "properties": {
+    "schema": {"const": "strategy-fixed-baseline-non-trading-erratum/1"},
+    "version": {"const": 1},
+    "status": {"const": "ADDITIVE_ERRATUM"},
+    "policy_id": {"type": "string", "minLength": 1},
+    "supersedes_field": {"const": "notice_statement"},
+    "correction": {"type": "string", "minLength": 1},
+    "operational_interval": {"type": "string", "minLength": 1},
+    "historical_policy_bytes_preserved": {"const": true},
+    "source_policy_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": false
+}

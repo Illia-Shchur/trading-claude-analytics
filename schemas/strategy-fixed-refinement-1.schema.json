@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-fixed-refinement/1",
+  "type": "object",
+  "required": ["schema", "version", "stage", "hypothesis_family", "baseline_sha256", "control_spec_sha256", "experiment_sha256", "predecessor_sha256", "exposure_head_sha256", "candidate_count", "max_attempts", "optimizer", "outcomes_opened", "evidence_phase", "promotion_eligible", "activation_authorized", "shared_physical_evaluator", "members", "content_sha256"],
+  "properties": {
+    "schema": {"const": "strategy-fixed-refinement/1"},
+    "version": {"const": 1},
+    "stage": {"const": "FROZEN_REFINEMENT"},
+    "candidate_count": {"const": 3},
+    "max_attempts": {"const": 3},
+    "optimizer": {"const": "NONE"},
+    "outcomes_opened": {"const": false},
+    "evidence_phase": {"const": "DIAGNOSTIC"},
+    "promotion_eligible": {"const": false},
+    "activation_authorized": {"const": false},
+    "shared_physical_evaluator": {"const": true},
+    "members": {"type": "array", "minItems": 3, "maxItems": 3},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": true
+}

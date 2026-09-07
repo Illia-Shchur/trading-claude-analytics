@@ -1,0 +1,10 @@
+{
+  "schema" : "strategy-fixed-attempt-ledger/1",
+  "family" : "fk-deleveraging-absorption",
+  "head_sha256" : "f5a3cc246a86f2a80e8e66f329c094dcd2cbb695ee3f754b0095febf43dd7350",
+  "pairs" : [ {
+    "behavior_sha256" : "4d2563ed94eae50e076f75f010adea3232b66ef5bd058f0cd1967051f1f16176",
+    "dataset_sha256" : "4f5ac7a69e4543aa34c66fa7dcf215a1b0a1eaf9ebe5d7178f6da312a7ddfa40"
+  } ],
+  "content_sha256" : "1116666d402b6840a8294e31acffed2ba0b294ac171eda9140ba940d8534739d"
+}
