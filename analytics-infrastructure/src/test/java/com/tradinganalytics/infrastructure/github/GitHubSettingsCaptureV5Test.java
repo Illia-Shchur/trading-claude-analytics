@@ -22,6 +22,7 @@ import java.net.http.HttpClient;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.Signature;
@@ -433,6 +434,9 @@ final class GitHubSettingsCaptureV5Test {
     private record Request(String path, String token, AuthMode authMode) {}
 
     private static final class Fixture implements Transport {
+        private static final KeyPair SHARED_OIDC_KEYS = generateKeyPair();
+        private static final KeyPair SHARED_APP_KEYS = generateKeyPair();
+
         private final KeyPair oidcKeys;
         private final KeyPair appKeys;
         private final Map<String, JsonNode> overrides = new LinkedHashMap<>();
@@ -445,10 +449,21 @@ final class GitHubSettingsCaptureV5Test {
             this.appKeys = appKeys;
         }
 
-        static Fixture valid() throws Exception {
-            KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
-            generator.initialize(2048);
-            return new Fixture(generator.generateKeyPair(), generator.generateKeyPair());
+        static Fixture valid() {
+            // Key material is immutable and only supplies signatures/JWK data. Every
+            // fixture still receives fresh mutable overrides, statuses, request logs,
+            // and forgery state through the constructor/instance fields above.
+            return new Fixture(SHARED_OIDC_KEYS, SHARED_APP_KEYS);
+        }
+
+        private static KeyPair generateKeyPair() {
+            try {
+                KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+                generator.initialize(2048);
+                return generator.generateKeyPair();
+            } catch (GeneralSecurityException impossible) {
+                throw new AssertionError("test RSA provider is unavailable", impossible);
+            }
         }
 
         String privateKeyPem() {
