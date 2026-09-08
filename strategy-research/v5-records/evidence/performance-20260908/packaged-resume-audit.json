@@ -1,0 +1,23 @@
+[
+  {
+    "case": "resume",
+    "exit_code": 0,
+    "wall_seconds": 2.4670172499027103,
+    "output_tail": "de Analytics/.report-run/performance-20260908/executor-final.jar\",\n      \"kind\": \"JAR\",\n      \"sha256\": \"8c6e73508022f78b35bcbe3d59acb1e5e38707b48cf9a0c542ddf97133a4a549\",\n      \"bytes\": 107191304\n    },\n    \"compiled\": {\n      \"input_fingerprint\": \"b610e3d15fdde3a645bcdb7704963923de8eaf84c854702bb2070245c56c99f2\",\n      \"revision\": \"30262ac0f910bbec6471dbbd3132a476da04866f\",\n      \"dirty_source\": \"true\",\n      \"java_version\": \"openjdk version \\\"26.0.1\\\" 2026-04-21\",\n      \"java_vendor\": \"Oracle Corporation\",\n      \"java_runtime\": \"OpenJDK Runtime Environment\",\n      \"toolchain_fingerprint\": \"277c0d2ab5a069bc4fabbb9a6bb581a452181a794c58b74ee640f1b958b50f01\",\n      \"maven_wrapper_sha256\": \"cae96cef89ebea3531221f4ae17c23cf8edf67d00eae8306d4186ae1bbed4d02\",\n      \"root_pom_sha256\": \"21fea44956bd42ea79951766f14624b0dba1e36226457c5babc341dbc37b7b11\",\n      \"marker_resource\": \"META-INF/build-identity.properties\"\n    },\n    \"runtime\": {\n      \"java\": \"26.0.1\",\n      \"cwd\": \"/Users/eternal/Desktop/Trading Claude Analytics\",\n      \"user_dir\": \"/Users/eternal/Desktop/Trading Claude Analytics\"\n    }\n  },\n  \"content_sha256\": \"e0d64d3760439312494e20f42bd24b691bc3afc9ac6193765f2a248fbc294dee\"\n}\n",
+    "attempts_before": 4,
+    "attempts_after": 4,
+    "attempts_unchanged": true
+  },
+  {
+    "case": "corrupt-artifact",
+    "exit_code": 1,
+    "wall_seconds": 1.8046327501069754,
+    "output_tail": "parallel ledger result byte hash mismatch\n"
+  },
+  {
+    "case": "missing-artifact",
+    "exit_code": 1,
+    "wall_seconds": 1.8121267498936504,
+    "output_tail": "parallel ledger result reference is missing or escapes the ledger root\n"
+  }
+]

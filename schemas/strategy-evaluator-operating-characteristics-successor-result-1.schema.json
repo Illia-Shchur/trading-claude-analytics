@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-evaluator-operating-characteristics-successor-result/1",
+  "type": "object",
+  "required": ["schema", "version", "status", "scope", "plan_sha256", "preflight_sha256", "binding_fixed_evaluator", "shared_physical_evaluator", "toy_statistic", "promotion_eligible", "activation_authorized", "outcomes_opened", "prefix_only", "replications", "measured", "raw_replication_records_retained", "raw_replication_record_binding", "content_sha256"],
+  "properties": {
+    "schema": {"const": "strategy-evaluator-operating-characteristics-successor-result/1"},
+    "version": {"const": 1},
+    "scope": {"const": "CONDITIONAL_FIXED_BASELINE_SYNTHETIC_DIAGNOSTIC"},
+    "binding_fixed_evaluator": {"const": "StrategyFixedBaselineV5+TradeLifecycleV5+StrategyResearchImprovementV1.disposition"},
+    "shared_physical_evaluator": {"const": true},
+    "toy_statistic": {"const": false},
+    "promotion_eligible": {"const": false},
+    "activation_authorized": {"const": false},
+    "outcomes_opened": {"const": true},
+    "pit_valid": {"const": false},
+    "observed_exchange_fills": {"const": false},
+    "plan_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "preflight_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "replications": {"type": "array"},
+    "measured": {"type": "boolean"},
+    "raw_replication_records_retained": {"const": true},
+    "raw_replication_record_binding": {"const": "content_sha256+canonical_json_sha256+serialized_json_sha256"},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": true
+}

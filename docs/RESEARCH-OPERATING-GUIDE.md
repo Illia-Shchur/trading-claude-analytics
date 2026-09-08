@@ -293,3 +293,73 @@ and independent recomputation. Existing deployment configuration is audited in
 `docs/RESEARCH-DEPLOYMENT-AUDIT-20260905.md`; its green scheduled workflow is
 dormant configuration with no observed active forward cycle. No prospective
 operation or activation is claimed.
+
+## Successor operating-characteristics evaluation — 2026-09-07
+
+The additive successor commands are available through the packaged
+`strategy-research-v5` adapter:
+
+```sh
+./bin/analytics strategy-research-v5 operating-characteristics-diagnose \
+  --raw <retained-v004-raw.json> --compact <retained-v004-summary.json> \
+  --out <diagnosis.json>
+./bin/analytics strategy-research-v5 operating-characteristics-successor-preflight \
+  --plan <successor-plan.json> --out <preflight.json>
+./bin/analytics strategy-research-v5 operating-characteristics-successor-run \
+  --plan <successor-plan.json> --baseline <baseline.json> --controls <controls.json> \
+  --experiment <experiment.json> --prefix --ledger <ledger.json> --out <result.json>
+```
+
+`operating-characteristics-diagnose` requires exact raw/compact row projection,
+source byte/content binding, numeric cutoff recomputation, complete statuses,
+and the frozen four-cell inventory. The successor preflight is a fail-closed
+resource check. A prefix is an execution and retention check with
+`measured=false`; it cannot support Wilson acceptance or power claims. The full
+runner is the only measured path and cannot proceed while its immutable preflight
+is blocked. Its append-only ledger records `STARTED` reservations before
+evaluation, retains retries for the same statistical slot, and rejects
+caller-authored `COMPLETE` records. Result rows retain the complete authoritative
+evaluator output with content, canonical JSON, and serialized JSON hashes, so
+compact projections can be independently checked against raw output.
+
+The current corrected binding is
+`strategy-research/experiments/fk-deleveraging-baseline-v002/operating-characteristics-successor-plan-v004.json`;
+its packaged preflight receipt is
+`strategy-research/v5-records/evidence/research-evidence-20260907/successor-preflight-v004-20260908.json`.
+The receipt is `BLOCKED_RESOURCE_ESTIMATE` and has `outcomes_opened=false`.
+
+The corrected v004 precommit and durable evidence are recorded in
+`docs/RESEARCH-EVALUATION-20260907.md`; v003 remains a preserved historical
+checkpoint and its one truncated artifact-byte binding is documented by the
+additive v004 erratum. All successor outputs are synthetic,
+conditional, development diagnostics: they cannot promote a strategy, authorize
+activation, or stand in for PIT data or observed exchange fills.
+
+
+## Bounded parallel operating-characteristics execution — 2026-09-08
+
+The new `operating-characteristics-parallel-profile`, `-preflight` and `-run`
+commands use independent packaged JVM workers, lazy lifecycle inputs, compact
+ledger references, immutable raw artifacts and bounded retry/resource rules.
+`-worker` is an internal command requiring a frozen coordinator payload.
+The declared 28-core/32-GiB target envelope is 48 hours, 26 GiB aggregate RSS and
+128 GiB managed disk, with at most eight workers (2-GiB heap/3-GiB RSS each).
+Admission uses actual hardware; the connected 10-CPU/16-GiB host admits two.
+
+The accepted additive declaration and read-only preflight are retained under
+`strategy-research/v5-records/evidence/performance-20260908/` as
+`parallel-confirmation-plan-v002.json`, `final-execution-profile.json` and
+`parallel-confirmation-preflight-v002.json`. They bind the exact final packaged
+executor and frozen statistical plan v004. A changed executor or profile needs a
+new execution declaration; never edit a started plan or resume with different
+inputs. Profile creation writes JSON to stdout; redirect it explicitly.
+
+A full-size development repetition completed in 9.1 minutes at about 2.2 GiB RSS.
+Two prefix workers achieved 1.8× the one-worker throughput in one local timing
+pair, with exact portable economic equivalence. These are engineering checks.
+Full confirmation remains blocked by missing target qualification and a
+preexisting exit-boundary stale-mark defect in the frozen portfolio curve.
+The new qualification guard rejects that defect; correcting it requires a
+separately versioned evaluator. No held-out seed or strategy activation is
+implied. See `RESEARCH-PERFORMANCE-PLAN-20260908.md` and
+`RESEARCH-PERFORMANCE-REVIEW-20260908.md` for measurements, custody and limitations.

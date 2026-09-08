@@ -18,3 +18,28 @@
 The matrix separates implementation capability from evidence. A local test or
 retrospective computation cannot be relabelled as PIT, SHADOW, confirmation,
 activation, or an observed exchange fill.
+
+## Successor evaluation boundary — 2026-09-07
+
+| Capability | Code path | Physical exercise | Evidence / present boundary |
+|---|---|---|---|
+| Prior raw/compact diagnosis | `operating-characteristics-diagnose`, `StrategyOperatingCharacteristicsSuccessorV1` | All 200 retained rows and four cells reconciled; numeric falsifiers and joint decisions recomputed | Complete diagnostic receipt; 2/50, 0/50, 14/50, 45/50 remain below the declared Wilson targets where applicable |
+| Frozen successor precommit | `operating-characteristics-successor-plan-v004.json` | v002 froze its full design before its prefix; v003 preserved the post-prefix durable metadata checkpoint; v004 corrected one independently audited truncated artifact-byte hash before any full outcomes | Development and promotion-ineligible; +0.02/+0.04 are cumulative log-return shifts, not historical returns; v003 bytes remain preserved |
+| Resumable successor ledger | `operating-characteristics-successor-run`, `successor-record-attempt` | v002 two-replication prefix retained `STARTED` reservations, complete evaluator rows, full raw outputs, and independent trade arithmetic audit | Prefix is `measured=false`; raw result/ledger/audit are durable and cannot satisfy full acceptance |
+| Full successor feasibility | `operating-characteristics-successor-preflight` | 288 clusters, 450 event/control series and 75 reps estimated at 265,154 seconds and 59,742,388,224 bytes peak RSS; disk is reported but not estimated/enforced and the prefix is not exact geometry | `BLOCKED_RESOURCE_ESTIMATE` under 720-minute/8-GiB/20-GiB envelope; any future run needs complete disk and exact-geometry qualification |
+
+These rows describe implementation and evidence custody separately. A retained
+raw evaluator receipt does not become confirmation, and the resource-blocked
+full geometry is not replaced by an underpowered prefix.
+
+
+## Performance execution boundary — 2026-09-08
+
+| Capability | Implementation / exercise | Present boundary |
+|---|---|---|
+| Bounded lifecycle inputs and hashing | Lazy receipt-backed role loading, current-cluster paths, streaming SHA; eager/bounded packaged equivalence | Frozen trade and portfolio arithmetic preserved |
+| Memory/CPU-governed parallel runner | Independent JVM workers, compact immutable result references, STARTED-before-outcome ledger, bounded retry, resource abort and resume verification | Target 28 cores/32 GiB: maximum eight workers; local 10 CPUs/16 GiB: two |
+| Increased execution declaration | 48-hour / 26-GiB aggregate RSS / 128-GiB managed disk ceiling | Additive execution plan v002; statistical plan v004 and 300 held-out seeds unchanged |
+| Full-size development computation | 450 matched pairs / 288 units / 900 series; 546.218 seconds and 2.20 GiB sampled peak RSS | One development seed; no target qualification or operating-power claim |
+| Parallel equivalence and speed | Final package one/two-worker prefix: 34.376/19.058 seconds (1.804×); exact normalized results and portable digests | One local timing pair; historical digest remains path dependent |
+| Portfolio qualification | Rejects inactive/equal-exit marks and final-curve reconciliation defects | Preexisting frozen evaluator defect blocks confirmation; needs separately versioned correction |

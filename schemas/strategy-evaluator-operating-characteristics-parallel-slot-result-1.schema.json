@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-evaluator-operating-characteristics-parallel-slot-result/1",
+  "type": "object",
+  "required": [
+    "schema",
+    "version",
+    "status",
+    "slot_id",
+    "plan_sha256",
+    "mode",
+    "scenario",
+    "effect_size",
+    "replication",
+    "seed",
+    "attempt",
+    "fixed_evaluator",
+    "promotion_eligible",
+    "activation_authorized",
+    "row",
+    "executor_identity",
+    "content_sha256"
+  ],
+  "properties": {
+    "schema": {
+      "const": "strategy-evaluator-operating-characteristics-parallel-slot-result/1"
+    },
+    "version": {
+      "const": 1
+    },
+    "status": {
+      "enum": [
+        "COMPLETE",
+        "COMPUTE_INCOMPLETE"
+      ]
+    },
+    "slot_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "plan_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "mode": {
+      "enum": [
+        "FULL",
+        "PREFIX"
+      ]
+    },
+    "scenario": {
+      "type": "string",
+      "minLength": 1
+    },
+    "effect_size": {
+      "type": "number"
+    },
+    "replication": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "seed": {
+      "type": "integer"
+    },
+    "attempt": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "fixed_evaluator": {
+      "type": "string"
+    },
+    "promotion_eligible": {
+      "const": false
+    },
+    "activation_authorized": {
+      "const": false
+    },
+    "portable_economic_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "row": {
+      "type": "object",
+      "required": [
+        "status"
+      ]
+    },
+    "executor_identity": {
+      "type": "object"
+    },
+    "content_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+  },
+  "additionalProperties": true
+}

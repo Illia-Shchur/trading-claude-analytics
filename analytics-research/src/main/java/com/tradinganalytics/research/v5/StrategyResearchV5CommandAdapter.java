@@ -11,7 +11,7 @@ public final class StrategyResearchV5CommandAdapter {
     public static final String COMMANDS = "data-backfill|data-raw-replay|feature-build|metadata-build|"
             + "opportunity-envelope|artifact-build|research-init|experiment-freeze|search-genetic|"
             + "research-run|overfit-audit|prospective-runner|readiness-audit|deployment-audit|"
-            + "fixed-baseline|fixed-baseline-refinement|fixed-baseline-produce-signal-bars|operating-characteristics-preflight|operating-characteristics-run|freeze-refinement|portfolio-reconcile|prospective-outcome-reconcile|evidence-disposition|canonical-hash-batch|validate|index|presentation-export";
+            + "fixed-baseline|fixed-baseline-refinement|fixed-baseline-produce-signal-bars|operating-characteristics-preflight|operating-characteristics-run|operating-characteristics-diagnose|operating-characteristics-successor-preflight|operating-characteristics-successor-run|operating-characteristics-successor-record-attempt|operating-characteristics-parallel-profile|operating-characteristics-parallel-preflight|operating-characteristics-parallel-run|operating-characteristics-parallel-worker|freeze-refinement|portfolio-reconcile|prospective-outcome-reconcile|evidence-disposition|canonical-hash-batch|lineage-inventory|matching-attrition|freeze-successor-control|validate|index|presentation-export";
     public static final String USAGE = "usage: strategy-research-v5.mjs " + COMMANDS;
     public static final String HELP_USAGE = USAGE + " [options]";
 
@@ -51,6 +51,25 @@ public final class StrategyResearchV5CommandAdapter {
                 result = StrategyOperatingCharacteristicsV4.preflight(readObjectOption(options, "plan"));
             } else if ("operating-characteristics-run".equals(command)) {
                 result = StrategyOperatingCharacteristicsV4.run(options);
+            } else if ("operating-characteristics-diagnose".equals(command)) {
+                result = StrategyOperatingCharacteristicsSuccessorV1.diagnose(options);
+            } else if ("operating-characteristics-successor-preflight".equals(command)) {
+                result = StrategyOperatingCharacteristicsSuccessorV1.preflight(readObjectOption(options, "plan"));
+            } else if ("operating-characteristics-successor-run".equals(command)) {
+                result = StrategyOperatingCharacteristicsSuccessorV1.run(options);
+            } else if ("operating-characteristics-successor-record-attempt".equals(command)) {
+                result = StrategyOperatingCharacteristicsSuccessorV1.recordAttempt(options);
+            } else if ("operating-characteristics-parallel-profile".equals(command)) {
+                result = StrategyOperatingCharacteristicsParallelV1.executionProfile(options);
+            } else if ("operating-characteristics-parallel-preflight".equals(command)) {
+                result = StrategyOperatingCharacteristicsParallelV1.preflight(options);
+            } else if ("operating-characteristics-parallel-run".equals(command)) {
+                result = StrategyOperatingCharacteristicsParallelV1.run(options);
+            } else if ("operating-characteristics-parallel-worker".equals(command)) {
+                if (!options.path("internal").asBoolean(false) || !options.has("payload")) {
+                    throw new IllegalArgumentException("parallel worker is internal and requires --internal --payload");
+                }
+                result = StrategyOperatingCharacteristicsParallelV1.worker(options);
             } else if ("portfolio-reconcile".equals(command)) {
                 result = StrategyResearchImprovementV1.reconcilePortfolio(readArrayOption(options, "trades"));
             } else if ("prospective-outcome-reconcile".equals(command)) {
@@ -61,6 +80,12 @@ public final class StrategyResearchV5CommandAdapter {
                 result = StrategyResearchImprovementV1.disposition(options);
             } else if ("canonical-hash-batch".equals(command)) {
                 result = StrategyResearchImprovementV1.canonicalHashBatch(options);
+            } else if ("lineage-inventory".equals(command)) {
+                result = StrategyEvidenceV1.lineageInventory(options);
+            } else if ("matching-attrition".equals(command)) {
+                result = StrategyEvidenceV1.matchingAttrition(options);
+            } else if ("freeze-successor-control".equals(command)) {
+                result = StrategyEvidenceV1.freezeSuccessorControlDesign(options);
             } else {
                 result = StrategyResearchV5.runAuthoritativeV5Cli(command, options);
             }

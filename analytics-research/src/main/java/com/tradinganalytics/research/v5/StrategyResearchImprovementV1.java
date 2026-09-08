@@ -166,6 +166,18 @@ public final class StrategyResearchImprovementV1 {
 
     /** Selects the nearest eligible historical control using only pre-decision fields. */
     public static ObjectNode selectOutcomeBlindControl(ObjectNode event, ArrayNode pool, ObjectNode calipers) {
+        return selectOutcomeBlindControl(event, pool, calipers, null);
+    }
+
+    /**
+     * Same frozen selector as {@link #selectOutcomeBlindControl(ObjectNode, ArrayNode, ObjectNode)},
+     * with optional outcome-blind stage counters.  The counters are diagnostic
+     * only: passing them cannot change the candidate predicates, ordering, or
+     * selected row.  This keeps the attrition receipt on the authoritative
+     * matcher path instead of reconstructing it from selected outcomes.
+     */
+    public static ObjectNode selectOutcomeBlindControl(ObjectNode event, ArrayNode pool, ObjectNode calipers,
+            ObjectNode stageCounts) {
         if (event == null || pool == null) throw failure("event and control pool are required");
         Set<String> forbidden = Set.of("future_return", "label", "exit_price", "net_r", "pnl",
                 "trade_outcome", "realized_volatility_after_decision");
@@ -174,7 +186,6 @@ public final class StrategyResearchImprovementV1 {
             if (!(raw instanceof ObjectNode candidate)) continue;
             if (!candidate.path("eligible").asBoolean(true) || containsAny(candidate, forbidden)) continue;
             if (!text(event, "asset").equalsIgnoreCase(text(candidate, "asset"))) continue;
-            if (!timeEligible(event, candidate, calipers)) continue;
             if (candidate.path("qualifying_shock").asBoolean(false)
                     || candidate.path("open_position").asBoolean(false)
                     || !candidate.path("position_state").asText("").equalsIgnoreCase("FLAT")) continue;
@@ -184,6 +195,18 @@ public final class StrategyResearchImprovementV1 {
             if (!Double.isFinite(downside) || !Double.isFinite(minimumDownside)
                     || !Double.isFinite(maximumDownside)
                     || downside < minimumDownside || downside > maximumDownside) continue;
+            if (!timeEligible(event, candidate, calipers)) continue;
+            increment(stageCounts, "prior_20_to_365_days");
+            if (!sameDiscreteField(event, candidate, "hour_of_day")) continue;
+            increment(stageCounts, "same_hour");
+            if (!sameDiscreteField(event, candidate, "day_of_week")) continue;
+            increment(stageCounts, "same_weekday");
+            if (!withinCaliper(event, candidate, calipers, "prior_30_bar_return")) continue;
+            increment(stageCounts, "prior_30_bar_return");
+            if (!withinCaliper(event, candidate, calipers, "prior_30_bar_realized_volatility")) continue;
+            increment(stageCounts, "prior_30_bar_realized_volatility");
+            if (!withinCaliper(event, candidate, calipers, "prior_30_bar_volume_zscore")) continue;
+            increment(stageCounts, "prior_30_bar_volume_zscore");
             double distance = standardizedDistance(event, candidate, calipers);
             if (!Double.isFinite(distance)) continue;
             ObjectNode copy = candidate.deepCopy();
@@ -199,6 +222,20 @@ public final class StrategyResearchImprovementV1 {
         if (matches.isEmpty()) result.putNull("control");
         else result.set("control", matches.getFirst());
         return withHash(result);
+    }
+
+    private static void increment(ObjectNode counters, String field) {
+        if (counters != null) counters.put(field, counters.path(field).asLong(0) + 1L);
+    }
+
+    private static boolean sameDiscreteField(JsonNode left, JsonNode right, String field) {
+        return left.has(field) && right.has(field) && left.path(field).asInt() == right.path(field).asInt();
+    }
+
+    private static boolean withinCaliper(JsonNode left, JsonNode right, JsonNode calipers, String field) {
+        double a = numberOrNaN(left, field), b = numberOrNaN(right, field);
+        double cap = Math.abs(numberOrZero(calipers, field + "_abs"));
+        return Double.isFinite(a) && Double.isFinite(b) && cap > 0 && Math.abs(a - b) <= cap;
     }
 
     /** Reconciles account-currency PnL; raw R is diagnostic only and never added to equity. */

@@ -1,0 +1,14 @@
+/Users/eternal/Desktop/Trading Claude Analytics/strategy-research/v5-records/evidence/research-evidence-20260907/successor-prefix-v002-ledger-20260907.json
+/Users/eternal/Desktop/Trading Claude Analytics/strategy-research/v5-records/evidence/research-evidence-20260907/successor-preflight-v003-final-20260907.json
+/Users/eternal/Desktop/Trading Claude Analytics/strategy-research/v5-records/evidence/research-evidence-20260907/successor-preflight-v003-20260907.json
+/Users/eternal/Desktop/Trading Claude Analytics/strategy-research/v5-records/evidence/research-evidence-20260907/successor-predecessor-diagnosis-20260907.json
+/Users/eternal/Desktop/Trading Claude Analytics/strategy-research/v5-records/evidence/research-evidence-20260907/matching-attrition-v002.json
+/Users/eternal/Desktop/Trading Claude Analytics/strategy-research/v5-records/evidence/research-evidence-20260907/successor-preflight-v002-20260907.json
+/Users/eternal/Desktop/Trading Claude Analytics/strategy-research/v5-records/evidence/research-evidence-20260907/successor-preflight-v004-20260908.json
+/Users/eternal/Desktop/Trading Claude Analytics/strategy-research/v5-records/evidence/research-evidence-20260907/successor-prefix-v002-result-20260907.json
+/Users/eternal/Desktop/Trading Claude Analytics/strategy-research/v5-records/evidence/research-evidence-20260907/lineage-inventory-v002.json
+/Users/eternal/Desktop/Trading Claude Analytics/strategy-research/v5-records/evidence/research-evidence-20260907/successor-control-design-v001.json
+/Users/eternal/Desktop/Trading Claude Analytics/strategy-research/experiments/fk-deleveraging-baseline-v002/operating-characteristics-successor-plan-v002.json
+/Users/eternal/Desktop/Trading Claude Analytics/strategy-research/experiments/fk-deleveraging-baseline-v002/operating-characteristics-successor-plan-v003.json
+/Users/eternal/Desktop/Trading Claude Analytics/strategy-research/experiments/fk-deleveraging-baseline-v002/operating-characteristics-successor-plan-v004.json
+/Users/eternal/Desktop/Trading Claude Analytics/strategy-research/experiments/fk-deleveraging-baseline-v002/operating-characteristics-successor-plan-v001.json

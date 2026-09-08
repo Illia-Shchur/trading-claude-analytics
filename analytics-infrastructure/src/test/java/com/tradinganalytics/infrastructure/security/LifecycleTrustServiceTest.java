@@ -142,6 +142,40 @@ final class LifecycleTrustServiceTest {
     }
 
     @Test
+    void physicalRowsMutationIsRejectedAfterOpeningTrust() throws IOException {
+        Path root = Files.createDirectory(temporary.resolve("rows-tamper"));
+        Fixture fixture = fixture(root);
+        LifecycleTrustService service = new LifecycleTrustService();
+        LifecycleTrustService.Token token = service.open(root, null, fixture.receipts(), Map.of());
+
+        Files.writeString(root.resolve("bars.json"),
+                "[{\"event_time\":\"2026-01-01T00:00:00Z\",\"close\":100},"
+                        + "{\"event_time\":\"2026-01-01T00:01:00Z\",\"close\":999}]");
+        assertThat(Files.size(root.resolve("bars.json")))
+                .isEqualTo(fixture.receipts().get("bars").bytes());
+
+        assertThatThrownBy(() -> service.reopen(token))
+                .isInstanceOf(CustodyException.class)
+                .hasMessageContaining("tampered");
+    }
+
+    @Test
+    void rootArrayRowsHashMismatchIsRejectedWhenByteAndContentHashesMatch() throws IOException {
+        Path root = Files.createDirectory(temporary.resolve("rows-receipt"));
+        Fixture fixture = fixture(root);
+        Map<String, LifecycleTrustService.ReceiptReference> wrongRows =
+                new LinkedHashMap<>(fixture.receipts());
+        LifecycleTrustService.ReceiptReference bars = wrongRows.get("bars");
+        wrongRows.put("bars", new LifecycleTrustService.ReceiptReference(
+                bars.path(), bars.contentSha256(), bars.byteSha256(), bars.bytes(),
+                JsonHashes.sha256("wrong rows"), bars.schema()));
+
+        assertThatThrownBy(() -> new LifecycleTrustService().open(root, null, wrongRows, Map.of()))
+                .isInstanceOf(CustodyException.class)
+                .hasMessageContaining("row-set");
+    }
+
+    @Test
     void requiredRolesRootReferenceAndLineageFailClosed() throws IOException {
         Path root = Files.createDirectory(temporary.resolve("required"));
         Fixture fixture = fixture(root);

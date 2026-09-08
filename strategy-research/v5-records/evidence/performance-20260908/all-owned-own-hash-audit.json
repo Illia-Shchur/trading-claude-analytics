@@ -1,0 +1,241 @@
+{
+  "status": "PASS",
+  "count": 47,
+  "files": [
+    {
+      "path": "strategy-research/experiments/fk-deleveraging-baseline-v002/operating-characteristics-successor-plan-v001.json",
+      "byte_sha256": "358aa67bba559fd86ddd39b45ee5224b609efb931fef186beb649cbfa90345f9",
+      "content_sha256": "cab35bae44b541a9c44e0a110b37a79149d18a0c20c6bee1cbc54a52cf9ec949"
+    },
+    {
+      "path": "strategy-research/experiments/fk-deleveraging-baseline-v002/operating-characteristics-successor-plan-v002.json",
+      "byte_sha256": "1948ad02fd029ff4dca25327c9daced1b8c3df69a54e16490b8ab2de5b346b3e",
+      "content_sha256": "149fae2a8fbd5f8625f08fb9e4516456d9287f80cb6dd1a8f93cbaac8f6fa863"
+    },
+    {
+      "path": "strategy-research/experiments/fk-deleveraging-baseline-v002/operating-characteristics-successor-plan-v003.json",
+      "byte_sha256": "f87f89680e9fb0d0356613cb789c88aded64ed0c20115ff74660ef1343438bc1",
+      "content_sha256": "97fbf3c59290b977fe879cc09f55542e7c510c43baa4ef2e524039f5ee294abb"
+    },
+    {
+      "path": "strategy-research/experiments/fk-deleveraging-baseline-v002/operating-characteristics-successor-plan-v004.json",
+      "byte_sha256": "4859aabd63738aaae264fbd5a8fe67927b35f87c0c083fbf3c2dac3e8a688a42",
+      "content_sha256": "5bcc1b1a6884674e98fc7a4639c83e3a99aff3a96890b7dcbb23a6df057db94b"
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/fixed-baseline-full-declared-v004/successor-control-design-20260907-v003.json",
+      "byte_sha256": "2e04a5ec9710593b0f5ac277518c44c840c017bee49c9c192d0b2ca052243bd2",
+      "content_sha256": "4bb912ddfd1d4d2b04b2116da77b742376fe1a5aeb7caf7032cb022a61bffc4b"
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/fixed-baseline-full-declared-v004/successor-lineage-inventory-20260907-v002.json",
+      "byte_sha256": "b3d157ba829e6082271f0569cc2d326d8ee894fc84c21b43eb1ea0f20e040627",
+      "content_sha256": "2abef32d5b95e0f7faf6bf8f1fff5e7363ca1e480a609280cea4442242cd43a3"
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/fixed-baseline-full-declared-v004/successor-matching-attrition-20260907-v002.json",
+      "byte_sha256": "55db2907ca0cff476b69fe08da1fdf137575079097fad27356b3768b16a9b10b",
+      "content_sha256": "e69499ae2db3042dc6da7795e70d0fb3b970dc1451c07be0fe4dc653bb515ff9"
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/fixed-baseline-full-declared-v004/successor-prefix-v002-ledger-20260907.json",
+      "byte_sha256": "f7248f91d00eb6d7707d76ca8502ed38470a2c1db730bffa3b681e80debd3a50",
+      "content_sha256": "b7bda215806ea941dfc11dc3f2b1e4749d88cb6c3793a7e5514baf1ac8c760ec"
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/fixed-baseline-full-declared-v004/successor-prefix-v002-raw-audit-20260907.json",
+      "byte_sha256": "fa8fb8fce2bd786b039cc9fd48a7101575ee1530cb268a15db920451be5c3057",
+      "content_sha256": "43ccf940bed840cd573babdd6e519b164e443f1feda7c81f13269e9f2b9a2573"
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/fixed-baseline-full-declared-v004/successor-prefix-v002-result-20260907.json",
+      "byte_sha256": "a2a70438b1f2ec9e9967c5f59ec713499b0923c3fe2ed1bda766e633b3890598",
+      "content_sha256": "f919e687cfff97929c22b25165a8a13dc6c4ba1bef4a06afb312cf55c7633e25"
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/performance-20260908/benchmark-1-worker/ledger.json",
+      "byte_sha256": "7871671cd02d62ec26e228c087c0dfea3587fc8b1fd2a54cea7f8a72efdd17a6",
+      "content_sha256": "c3c0be6b19ee5b5d4b5f971997c4f09ff8a0fff2493d6d6e8e1740d0a3d5bb3f"
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/performance-20260908/benchmark-1-worker/ledger.json.results/PREFIX_NO_EDGE_0_0_910000000.json",
+      "byte_sha256": "e7504c5f87d0d53984d42e48de84946ff6f2a2fb48d2f43f5d558ee373fb015d",
+      "content_sha256": "bf58dd496c5737f666bb4c2309790ec5bee13c49736260b78b2db7441013b16b"
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/performance-20260908/benchmark-1-worker/ledger.json.results/PREFIX_NO_EDGE_0_1_910000001.json",
+      "byte_sha256": "f0d2b97f679f6186e7cc6a3811572377b34ed71f7b1549ec2d86785d76298ef0",
+      "content_sha256": "2bec1af22ae0264edb222e7bbb76406f1cbe0b1a2c1ad8c4cdecf2eea2aa9854"
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/performance-20260908/benchmark-1-worker/result.json",
+      "byte_sha256": "4fa6bc2a03a04ad9dfa65ccd7c436901fa4a585bcbcb0dfcbac21aea60f04479",
+      "content_sha256": "f27d56e9966dda8d2b80a24bfb3ced7cbbb829b37bf26fe88f8cb308f78e9ad9"
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/performance-20260908/benchmark-2-worker/ledger.json",
+      "byte_sha256": "40ce4226be275fcbca4c46c6c1ba334589ee40497299a41be75c506b001d5190",
+      "content_sha256": "e9cdfa41c908dd4ca70a405a9fa6420ee30b9b1cf0536cc3a5ba432b297b355d"
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/performance-20260908/benchmark-2-worker/ledger.json.results/PREFIX_NO_EDGE_0_0_910000000.json",
+      "byte_sha256": "941ddaf2e081ec60c05345162a4b813e741cb6d8a9624b132bfbdcda90753bd0",
+      "content_sha256": "c50f9b084226fbceb52bab11128bed34028d7e8a87dab234a935a9a056be21e7"
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/performance-20260908/benchmark-2-worker/ledger.json.results/PREFIX_NO_EDGE_0_1_910000001.json",
+      "byte_sha256": "c0c56a1e8f851d7e074aea7f359c5dc8f4acbcbd8463de61ac81b05500749dd5",
+      "content_sha256": "46068f87c63ab988bcd81bc2f24aa1881ce83bd541b7d4c910a4af505a403c59"
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/performance-20260908/benchmark-2-worker/result.json",
+      "byte_sha256": "a48ddd7a3edb15ce11f41b4e912ac3db55c34fe1b9118325387cb1b807bbb9ea",
+      "content_sha256": "e0d64d3760439312494e20f42bd24b691bc3afc9ac6193765f2a248fbc294dee"
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/performance-20260908/benchmark-plan-final.json",
+      "byte_sha256": "b226529d38a7cd1d1d7853bdd2e6d601f7d747ad2fd7d87cf3d3233773184c02",
+      "content_sha256": "4050edf4cdac92e5b7ebfea67dedddb6e209399b4990187b3ac87e04b9debbbf"
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/performance-20260908/bounded-parity-audit.json",
+      "byte_sha256": "94dd66248329e01d85636579d720533062d8d27815d18eae674aeebdb0c4adf6",
+      "content_sha256": "5b9ede41bdb46b745e46c0262c3e1fb580142638534def93605494a02988658b"
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/performance-20260908/bounded-parity-final/bounded-parity-audit.json",
+      "byte_sha256": "4a9b81a11f628b75ef08fd04b2adf4c46fb2d98ff39344becf476b864d4ca285",
+      "content_sha256": "de3fa32fe9b433551593612db7155f48b10e55a1d8ae88acb8684d86ede77b85"
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/performance-20260908/bounded-scale-started.json",
+      "byte_sha256": "bacd249ef5a8a57e1846dd71ea307c905e458da043af99d1f0d34af2e71eb14b",
+      "content_sha256": "4268f9f2b135e5ee23fdfffa29c11889bb3622923801ba4f25fbe373077b53f7"
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/performance-20260908/checkpoint-benchmark-plan-final.json",
+      "byte_sha256": "c8459f8df90c96cf186e62df0df3cb6299901591864cc89c3420da266427c63a",
+      "content_sha256": "d469eb076ef5bc7b17ea3369b043132a3215002f5f9c79ecf2443c816449ebae"
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/performance-20260908/checkpoint-final-execution-profile.json",
+      "byte_sha256": "34acdcdc6bf1309f9c53b4fd81458bd0f7c7d071badf10bab8b839dac906abb8",
+      "content_sha256": "c06f8f8226135a821a59f868cd2981dc7401dfa69592d32946ae341540ccc169"
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/performance-20260908/final-execution-profile.json",
+      "byte_sha256": "2d0090978598d9e40c6e6e2458d33963ea5e611dbbd65e7d4dd53698ed00e66b",
+      "content_sha256": "0dc75573a7f7d6eccb3c0f3cacd2dfe72616f379fc1838d4c8f87ed6b18ac415"
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/performance-20260908/full-geometry-probe-summary.json",
+      "byte_sha256": "950d2b76425bd62696227e089d03031a2f4de37460736bfbc984fda8b8b9a3a8",
+      "content_sha256": "35030a9fa24e10c8174920b642d60f7d9b5e2577de3e73e00796e910062ee961"
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/performance-20260908/parallel-confirmation-plan-v001.json",
+      "byte_sha256": "a30b09eba8b17789a5e7e1a140782b3aca5298fb9381d9d5e79f026b8e1f1ef4",
+      "content_sha256": "2cde0ec6be0d1c01a2e456dfc65ae4a3df5002b93edcdf49e6a31c56371ba652"
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/performance-20260908/parallel-confirmation-plan-v002.json",
+      "byte_sha256": "24d7517f8861f247ce8caee0304ccfd6ae171b5aa0c9afec87886ae7a33d7502",
+      "content_sha256": "50810b02d34e7df09aea663907576736dac5ed15fb5495d9376a72feeb51d33f"
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/performance-20260908/parallel-confirmation-preflight-v001.json",
+      "byte_sha256": "44f7cebf95f3b5ca3202b1d02264756dec51a008dd0dcfa317d7f128792ebc95",
+      "content_sha256": "b66957872419f202b153026df4f24ca2e880e2c18db0093f2921380b2eeaa129"
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/performance-20260908/parallel-confirmation-preflight-v002.json",
+      "byte_sha256": "7f09a34c989ce7f7676dcdeab520677db7022f6d4f26dd30c54493ad6423fea6",
+      "content_sha256": "8ab536e95f566f2d0289274e1037fd623e41dfb0035cd527019d279fe00132c0"
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/research-evidence-20260907/lineage-inventory-v001.json",
+      "byte_sha256": "c0c3a2cb8abf8037175be2a681003df6da83021537e0159088fc7df65c7a63f1",
+      "content_sha256": "2abef32d5b95e0f7faf6bf8f1fff5e7363ca1e480a609280cea4442242cd43a3"
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/research-evidence-20260907/lineage-inventory-v002.json",
+      "byte_sha256": "960de55a1782e70d9d2366c54fe5b66102d825b2f5e0c33b99d6957690557968",
+      "content_sha256": "7164fb97296dd8991b4b74c5d03ecd253e485adc709738aa5f797c7fde70edd6"
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/research-evidence-20260907/matching-attrition-v001.json",
+      "byte_sha256": "268810e97ca3b1c53a6c24da9448716d7006ecd0f7bae21fb628eea46507351b",
+      "content_sha256": "085cd84aff23c8290ba97f2d07050a37375d5a8b4386ae4dcdb7148d7b74d598"
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/research-evidence-20260907/matching-attrition-v002.json",
+      "byte_sha256": "43e3eac130ce0905bc743dee6001eadb1961d6cae99dff14382fce0d72beb00f",
+      "content_sha256": "83f502f7c5626b6bf34ff426fe30d26c5ec9cc436366fafb02bb8fdf93ad497d"
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/research-evidence-20260907/successor-control-design-v001.json",
+      "byte_sha256": "3c4138bc8ce308542f229cf49079a6fb2695f439bc7a125596ffd8430e617419",
+      "content_sha256": "f2a391fe27c18f50dc9e7df52f64330a5515ed5a2b315bb3caf20bb862948201"
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/research-evidence-20260907/successor-plan-v004-erratum-20260908.json",
+      "byte_sha256": "2d4aefc25126208d9e1b8ab05fe6465d3b1f4cf98060c81cb007ece14b159a47",
+      "content_sha256": "59a167bf0300683c8d4d60107390fd73e33c46cfb4aea62cd8e2539314f1b23c"
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/research-evidence-20260907/successor-predecessor-diagnosis-20260907.json",
+      "byte_sha256": "24f169c095af3ffc549bcb98328c63c16f7cdb8a41c306b99208766785e48a53",
+      "content_sha256": "69aaa16e9725e6ea4f57b2de57c24ffcf5eef4c294cbd54f24d867d9fd9f282b"
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/research-evidence-20260907/successor-prefix-v002-ledger-20260907.json",
+      "byte_sha256": "f7248f91d00eb6d7707d76ca8502ed38470a2c1db730bffa3b681e80debd3a50",
+      "content_sha256": "b7bda215806ea941dfc11dc3f2b1e4749d88cb6c3793a7e5514baf1ac8c760ec"
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/research-evidence-20260907/successor-prefix-v002-raw-audit-20260907.json",
+      "byte_sha256": "fa8fb8fce2bd786b039cc9fd48a7101575ee1530cb268a15db920451be5c3057",
+      "content_sha256": "43ccf940bed840cd573babdd6e519b164e443f1feda7c81f13269e9f2b9a2573"
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/research-evidence-20260907/successor-prefix-v002-result-20260907.json",
+      "byte_sha256": "a2a70438b1f2ec9e9967c5f59ec713499b0923c3fe2ed1bda766e633b3890598",
+      "content_sha256": "f919e687cfff97929c22b25165a8a13dc6c4ba1bef4a06afb312cf55c7633e25"
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/research-evidence-20260907/successor-preflight-v002-20260907.json",
+      "byte_sha256": "e64fd74aed43571aa7cb24b118776064cc72d2ede3b29c94cdf768f866633423",
+      "content_sha256": "3f86c1bf15d59553712a029881415e6f4d6cae5789cf1355277d752b0cd1e607"
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/research-evidence-20260907/successor-preflight-v003-20260907.json",
+      "byte_sha256": "72decd3f81bd47267e9339f8bf61955ae362fb40cf9fb33f62b01f6057c2a47e",
+      "content_sha256": "1a53409dd8336321b06b92bd2e3a4b734d050a808b81600451ea6ea124c03ac5"
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/research-evidence-20260907/successor-preflight-v003-final-20260907.json",
+      "byte_sha256": "62efec48d8a2cee325517876c1534823ad5651d612c7db789aceb7ac048ea23b",
+      "content_sha256": "e326622e52caf43db215b48b56439478bf2bd132da98694136cbfc0b9978ffd2"
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/research-evidence-20260907/successor-preflight-v004-20260908.json",
+      "byte_sha256": "5f776a5cc928bc48805501cdd132c289e7fef5bac8e4d822a9c8b174da14bf18",
+      "content_sha256": "14199e42c564fa05656e904a59d5753f21ff2915b6397fd39935eb1109e90020"
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/research-evidence-20260907/v002-raw-0.json",
+      "byte_sha256": "3dcf3170f296e973199663453351f435f2cf954db3b93bcd0ef0757f5b00d8c5",
+      "content_sha256": "6ee186ca7214e0f0b9c8ce27484ad4e11c38edb8154e1b80f0719e6c9c273d1d"
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/research-evidence-20260907/v002-raw-1.json",
+      "byte_sha256": "60013b5c9cddb4635e693b79fcf5775d7ef32c7f70ff5d977e6573339f4726f9",
+      "content_sha256": "13a7d84f745e6b60e8386b22e60c7b7de6802727002796a547ee9bff654ed1b9"
+    },
+    {
+      "path": "strategy-research/v5-records/receipts/43cd33ac5fb2e25c547db12f95d999fcfe7cde389188bd1a586aa75eb06c4302.json",
+      "byte_sha256": "9464c08b59f5cded4ceed0eb9b34230fdd4f9e524f81be62d4d301096cbbf7c6",
+      "content_sha256": "43cd33ac5fb2e25c547db12f95d999fcfe7cde389188bd1a586aa75eb06c4302"
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "schema" : "bounded-full-geometry-development-probe/1",
+  "status" : "STARTED",
+  "confirmation" : false,
+  "target_qualification" : false,
+  "no_strategy_promotion" : true,
+  "seed" : 202609080002,
+  "scenario" : "NO_EDGE",
+  "effect_size" : 0.0,
+  "episodes" : 450,
+  "event_control_series" : 900,
+  "minutes_per_series" : 14400,
+  "workers" : 1,
+  "worker_heap_bytes" : 2147483648,
+  "worker_rss_limit_bytes" : 3221225472,
+  "wall_limit_seconds" : 900,
+  "plan_path" : "/Users/eternal/Desktop/Trading Claude Analytics/.report-run/performance-20260908/full-geometry-development-probe-plan.json",
+  "plan_bytes_sha256" : "3a0edb1da35b2935395f0b895cee7e3c208e99b2b4b7b56930fa857f701a8648",
+  "plan_content_sha256" : "f2a7532b0b8a4c626e8fe69807ee9d45b2f47e15f7fd37513ca350ac4de1aa79",
+  "started_at_utc" : "2026-09-08T01:27:01.804325Z",
+  "executor_identity" : {
+    "schema" : "analytics-build-identity/1",
+    "status" : "KNOWN",
+    "executable" : {
+      "code_source" : "/Users/eternal/.codex/worktrees/research-performance-20260908/analytics-research/target/analytics-research-1.0.0-SNAPSHOT.jar",
+      "kind" : "JAR",
+      "sha256" : "828d45937dc1535c28e6b61f866e9857c938648f3b2b7842b27df3a03f42e863",
+      "bytes" : 2161180
+    },
+    "compiled" : {
+      "input_fingerprint" : "1d8f6e08448e0c7ba99eb81a26394d440cfeac44636e7111598c1927882f25ab",
+      "revision" : "30262ac0f910bbec6471dbbd3132a476da04866f",
+      "dirty_source" : "true",
+      "java_version" : "openjdk version \"26.0.1\" 2026-04-21",
+      "java_vendor" : "Oracle Corporation",
+      "java_runtime" : "OpenJDK Runtime Environment",
+      "toolchain_fingerprint" : "277c0d2ab5a069bc4fabbb9a6bb581a452181a794c58b74ee640f1b958b50f01",
+      "maven_wrapper_sha256" : "cae96cef89ebea3531221f4ae17c23cf8edf67d00eae8306d4186ae1bbed4d02",
+      "root_pom_sha256" : "21fea44956bd42ea79951766f14624b0dba1e36226457c5babc341dbc37b7b11",
+      "marker_resource" : "META-INF/build-identity.properties"
+    },
+    "runtime" : {
+      "java" : "26.0.1",
+      "cwd" : "/Users/eternal/Desktop/Trading Claude Analytics",
+      "user_dir" : "/Users/eternal/Desktop/Trading Claude Analytics"
+    }
+  },
+  "content_sha256" : "4268f9f2b135e5ee23fdfffa29c11889bb3622923801ba4f25fbe373077b53f7"
+}

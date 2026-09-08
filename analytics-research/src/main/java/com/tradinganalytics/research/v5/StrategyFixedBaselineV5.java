@@ -6,8 +6,11 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.tradinganalytics.marketdata.research.ResearchData;
 import com.tradinganalytics.contracts.schema.ResearchSchemaRegistry;
 import com.tradinganalytics.infrastructure.build.BuildIdentityService;
+import com.tradinganalytics.infrastructure.security.CustodyException;
 import com.tradinganalytics.infrastructure.security.JsonHashes;
 import com.tradinganalytics.infrastructure.security.LifecycleTrustService;
+import com.tradinganalytics.infrastructure.security.PathConfinement;
+import com.tradinganalytics.infrastructure.repository.RepositoryLayout;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
@@ -513,6 +516,31 @@ public final class StrategyFixedBaselineV5 {
             ObjectNode experiment, ObjectNode portfolioPolicy, PhysicalInput physical, ObjectNode exposure,
             Path exposurePath, ObjectNode exposureLineage, String refinementMember,
             double refinementThreshold) {
+        return evaluate(args, baseline, controls, experiment, portfolioPolicy, physical, exposure, exposurePath,
+                exposureLineage, refinementMember, refinementThreshold, currentExecutorIdentitySha256());
+    }
+
+    /**
+     * Test-only seam for local physical fixtures.  Production evaluation keeps
+     * the packaged-JAR identity guard through the existing entry point above;
+     * tests can provide a content-addressed stand-in while the
+     * lifecycle, physical roles, and policy reads remain unchanged.
+     */
+    static ObjectNode evaluateWithExecutorIdentityForTest(ObjectNode args, ObjectNode baseline, ObjectNode controls,
+            ObjectNode experiment, ObjectNode portfolioPolicy, PhysicalInput physical, ObjectNode exposure,
+            Path exposurePath, ObjectNode exposureLineage, String refinementMember,
+            double refinementThreshold, String executorIdentity) {
+        if (executorIdentity == null || !executorIdentity.matches("[a-f0-9]{64}")) {
+            throw new IllegalArgumentException("test executor identity must be a SHA-256 hash");
+        }
+        return evaluate(args, baseline, controls, experiment, portfolioPolicy, physical, exposure, exposurePath,
+                exposureLineage, refinementMember, refinementThreshold, executorIdentity);
+    }
+
+    private static ObjectNode evaluate(ObjectNode args, ObjectNode baseline, ObjectNode controls,
+            ObjectNode experiment, ObjectNode portfolioPolicy, PhysicalInput physical, ObjectNode exposure,
+            Path exposurePath, ObjectNode exposureLineage, String refinementMember,
+            double refinementThreshold, String executorIdentity) {
         int maxAttempts = experiment.path("declared_budget").path("max_attempts").asInt(-1);
         if (maxAttempts != 1 || experiment.path("declared_budget").path("candidate_count").asInt(-1) != 1
                 || !"NONE".equalsIgnoreCase(experiment.path("declared_budget").path("optimizer").asText())) {
@@ -538,7 +566,6 @@ public final class StrategyFixedBaselineV5 {
         body.put("behavior_definition_sha256",
                 behaviorDefinitionAlias(baseline.path("content_sha256").asText(), refinementMember,
                         refinementThreshold));
-        String executorIdentity = currentExecutorIdentitySha256();
         body.put("executor_identity_sha256", executorIdentity);
         body.put("attempt_identity_sha256", attemptIdentity(baseline.path("content_sha256").asText(),
                 controls.path("content_sha256").asText(), experiment.path("content_sha256").asText(),
@@ -605,6 +632,20 @@ public final class StrategyFixedBaselineV5 {
         List<ObjectNode> intervalRows = new ArrayList<>();
         int unresolved = 0;
         int controlsMatched = 0;
+        long sameAssetPoolRowsExamined = 0;
+        long candidatePoolRowsAfterReuseOverlap = 0;
+        long selectionRowsWithZeroCandidates = 0;
+        long selectionRowsWithCandidates = 0;
+        long sameAssetDownsideNonshock = 0;
+        long unusedNonoverlapping = 0;
+        ObjectNode stageCounts = JsonHashes.mapper().createObjectNode()
+                .put("prior_20_to_365_days", 0L)
+                .put("same_hour", 0L)
+                .put("same_weekday", 0L)
+                .put("prior_30_bar_return", 0L)
+                .put("prior_30_bar_realized_volatility", 0L)
+                .put("prior_30_bar_volume_zscore", 0L);
+        Map<Integer, Long> candidateCountHistogram = new LinkedHashMap<>();
         Set<String> usedControls = new HashSet<>();
         Map<String, List<long[]>> selectedControlIntervals = new HashMap<>();
         ArrayNode setupEvents = JsonHashes.mapper().createArrayNode();
@@ -651,19 +692,29 @@ public final class StrategyFixedBaselineV5 {
             calipers.put("maximum_lifecycle_hours", LIFECYCLE_MS / 3_600_000L);
             ArrayNode availablePool = JsonHashes.mapper().createArrayNode();
             for (ObjectNode candidate : poolByAsset.getOrDefault(event.path("asset").asText().toLowerCase(), List.of())) {
+                sameAssetPoolRowsExamined++;
+                boolean downsideNonshock = downsideNonshock(candidate, calipers);
+                if (downsideNonshock) sameAssetDownsideNonshock++;
                 String candidateAsset = candidate.path("asset").asText().toLowerCase();
                 long candidateTime = parseTime(candidate.path("event_time").asText());
                 List<long[]> controlWindows = selectedControlIntervals.getOrDefault(candidateAsset, List.of());
                 List<long[]> candidateWindow = List.of(new long[] {candidateTime, candidateTime + LIFECYCLE_MS});
-                if (!usedControls.contains(id(candidate)) && !windowsOverlap(candidateWindow, controlWindows)) {
+                boolean reusable = !usedControls.contains(id(candidate)) && !windowsOverlap(candidateWindow, controlWindows);
+                if (downsideNonshock && reusable) unusedNonoverlapping++;
+                if (reusable) {
                     ObjectNode counterfactual = ((ObjectNode) candidate).deepCopy()
                             .put("position_state", "FLAT")
                             .put("position_state_source", "FIXED_COUNTERFACTUAL_CONTROL_BOOK_INITIAL_FLAT_V001");
                     availablePool.add(counterfactual);
                 }
             }
+            candidatePoolRowsAfterReuseOverlap += availablePool.size();
             ObjectNode selected = StrategyResearchImprovementV1.selectOutcomeBlindControl(
-                    event, availablePool, calipers);
+                    event, availablePool, calipers, stageCounts);
+            int candidateCount = selected.path("candidate_count").asInt(0);
+            candidateCountHistogram.merge(candidateCount, 1L, Long::sum);
+            if (candidateCount == 0) selectionRowsWithZeroCandidates++;
+            else selectionRowsWithCandidates++;
             ObjectNode selection = selected.deepCopy();
             selection.put("event_id", eventId);
             // The event binding is part of the selection receipt. Recompute
@@ -764,6 +815,12 @@ public final class StrategyFixedBaselineV5 {
         body.set("portfolio", portfolio);
         ObjectNode metrics = metrics(attempts, independent, baseline);
         body.set("metrics", metrics);
+        body.set("matching_attrition", matchingAttritionReceipt(eventRows.size(), setupEvents.size(),
+                skippedEvents.size(), controlSelections.size(), sameAssetPoolRowsExamined,
+                candidatePoolRowsAfterReuseOverlap,
+                sameAssetDownsideNonshock, unusedNonoverlapping, stageCounts,
+                selectionRowsWithZeroCandidates, selectionRowsWithCandidates, controlsMatched,
+                controlSelections, attempts, independent.size(), metrics, candidateCountHistogram));
         boolean legacyExposureUnresolved = "UNRESOLVED_LEGACY_HISTORY"
                 .equals(exposureLineage.path("status").asText());
         boolean invalid = unresolved > 0 || legacyExposureUnresolved;
@@ -794,6 +851,187 @@ public final class StrategyFixedBaselineV5 {
         body.put("economic_semantic_sha256", economicSemanticHash(body));
         body.put("semantic_sha256", semanticHash(body));
         return withHash(body);
+    }
+
+    /**
+     * Replays only physical setup production and the frozen selector.  No
+     * labels, child bars, trades, or exit values are dereferenced by this
+     * diagnostic.  It exists so historical attrition can be regenerated from
+     * the authoritative producer rather than from a Python reconstruction or
+     * from selected outcomes.
+     */
+    static ObjectNode diagnosticMatchingStages(ObjectNode options) {
+        ObjectNode args = options == null ? JsonHashes.mapper().createObjectNode() : options;
+        Path baselinePath = requiredPath(args, "baseline", "baseline_spec");
+        Path controlsPath = requiredPath(args, "controls", "control_spec");
+        Path physicalPath = requiredPath(args, "physical_input", "input");
+        ObjectNode baseline = readDiagnosticContract(baselinePath, "baseline", "strategy-baseline-spec/1");
+        ObjectNode controls = readDiagnosticContract(controlsPath, "controls", "strategy-control-spec/1");
+        PhysicalInput physical = readPhysicalInputDiagnostic(physicalPath);
+
+        List<ObjectNode> qualifiedEvents = new ArrayList<>();
+        for (ObjectNode feature : physical.features) {
+            validateDecisionRow(feature, "feature");
+            if (containsFutureField(feature)) throw new IllegalArgumentException(
+                    "physical setup producer emitted an outcome field for " + id(feature));
+            if (qualifies(feature, baseline)) {
+                ObjectNode event = feature.deepCopy();
+                event.put("eligible", true).put("event_time", event.path("decision_time").asText());
+                qualifiedEvents.add(event);
+            }
+        }
+        qualifiedEvents.sort(Comparator.comparing((ObjectNode row) -> row.path("event_time").asText())
+                .thenComparing(StrategyFixedBaselineV5::id));
+        Path retainedResultPath = optionalPath(args, "result", "source_result");
+        ObjectNode retainedResult = null;
+        boolean retainedAdmission = retainedResultPath != null;
+        List<ObjectNode> events = new ArrayList<>(qualifiedEvents);
+        long sourceEventCount = qualifiedEvents.size();
+        int sourceSkippedCount = 0;
+        if (retainedAdmission) {
+            retainedResult = readObject(retainedResultPath, "retained fixed-baseline result");
+            String retainedSchema = retainedResult.path("schema").asText("");
+            if (!RESULT_SCHEMA.equals(retainedSchema) && !REFINEMENT_MEMBER_RESULT_SCHEMA.equals(retainedSchema)) {
+                throw new IllegalArgumentException("retained admission result is not a fixed-baseline result");
+            }
+            if (!retainedResult.path("content_sha256").asText().equals(JsonHashes.ownHash(retainedResult))) {
+                throw new IllegalArgumentException("retained admission result content hash is invalid");
+            }
+            if (!physical.contentSha256.equals(retainedResult.path("physical_input_sha256").asText())
+                    || !baseline.path("content_sha256").asText().equals(retainedResult.path("baseline_sha256").asText())
+                    || !controls.path("content_sha256").asText().equals(retainedResult.path("control_spec_sha256").asText())) {
+                throw new IllegalArgumentException("retained admission result is not bound to supplied physical/baseline/control bytes");
+            }
+            Map<String, ObjectNode> authoritativeById = new HashMap<>();
+            for (ObjectNode feature : qualifiedEvents) authoritativeById.put(id(feature), feature);
+            events.clear();
+            JsonNode rawSetup = retainedResult.path("setup_events");
+            if (!rawSetup.isArray()) throw new IllegalArgumentException("retained result lacks setup_events inventory");
+            for (JsonNode raw : rawSetup) {
+                if (!(raw instanceof ObjectNode setup)) throw new IllegalArgumentException("retained setup inventory has a non-object row");
+                if (containsFutureField(setup)) throw new IllegalArgumentException("retained setup inventory contains an outcome field");
+                ObjectNode authoritative = authoritativeById.get(id(setup));
+                if (authoritative == null) throw new IllegalArgumentException("retained setup row is absent from regenerated producer: " + id(setup));
+                for (String field : List.of("asset", "decision_time", "availability_time", "completed_return",
+                        "shock_return", "volume_multiple", "realized_volatility", "prior_30_bar_return",
+                        "prior_30_bar_realized_volatility", "prior_30_bar_volume_zscore", "hour_of_day", "day_of_week")) {
+                    if (!authoritative.path(field).equals(setup.path(field))) {
+                        throw new IllegalArgumentException("retained setup feature differs from regenerated producer at " + id(setup) + ":" + field);
+                    }
+                }
+                ObjectNode event = authoritative.deepCopy();
+                event.put("eligible", true).put("event_time", event.path("decision_time").asText());
+                events.add(event);
+            }
+            events.sort(Comparator.comparing((ObjectNode row) -> row.path("event_time").asText())
+                    .thenComparing(StrategyFixedBaselineV5::id));
+            sourceEventCount = retainedResult.path("event_count").asLong(events.size());
+            sourceSkippedCount = retainedResult.path("skipped_open_position_count").asInt(
+                    Math.max(0, (int) sourceEventCount - events.size()));
+        }
+        Map<String, List<ObjectNode>> poolByAsset = new HashMap<>();
+        for (ObjectNode feature : physical.features) {
+            ObjectNode candidate = feature.deepCopy();
+            candidate.put("event_time", candidate.path("decision_time").asText())
+                    .put("eligible", true).put("qualifying_shock", qualifies(candidate, baseline));
+            poolByAsset.computeIfAbsent(candidate.path("asset").asText().toLowerCase(), ignored -> new ArrayList<>())
+                    .add(candidate);
+        }
+        Map<String, Long> occupiedUntil = new HashMap<>();
+        Set<String> usedControls = new HashSet<>();
+        Map<String, List<long[]>> selectedControlIntervals = new HashMap<>();
+        ObjectNode stageCounts = JsonHashes.mapper().createObjectNode()
+                .put("same_asset_downside_nonshock", 0L).put("unused_nonoverlapping", 0L)
+                .put("prior_20_to_365_days", 0L).put("same_hour", 0L).put("same_weekday", 0L)
+                .put("prior_30_bar_return", 0L).put("prior_30_bar_realized_volatility", 0L)
+                .put("prior_30_bar_volume_zscore", 0L);
+        Map<Integer, Long> histogram = new LinkedHashMap<>();
+        int admitted = 0, skipped = 0, matched = 0;
+        for (ObjectNode event : events) {
+            String asset = event.path("asset").asText().toLowerCase();
+            long decision = parseTime(event.path("decision_time").asText());
+            long occupied = occupiedUntil.getOrDefault(asset, Long.MIN_VALUE);
+            if (!retainedAdmission && decision < occupied) { skipped++; continue; }
+            admitted++;
+            if (!retainedAdmission) occupiedUntil.put(asset, decision + LIFECYCLE_MS);
+            ObjectNode calipers = controls.path("calipers").deepCopy();
+            calipers.put("maximum_lifecycle_hours", LIFECYCLE_MS / 3_600_000L);
+            ArrayNode pool = JsonHashes.mapper().createArrayNode();
+            for (ObjectNode candidate : poolByAsset.getOrDefault(asset, List.of())) {
+                boolean reusable = !usedControls.contains(id(candidate));
+                long candidateTime = parseTime(candidate.path("event_time").asText());
+                List<long[]> windows = selectedControlIntervals.getOrDefault(asset, List.of());
+                reusable = reusable && !windowsOverlap(List.of(new long[] {candidateTime, candidateTime + LIFECYCLE_MS}), windows);
+                if (downsideNonshock(candidate, calipers)) increment(stageCounts, "same_asset_downside_nonshock");
+                if (reusable && downsideNonshock(candidate, calipers)) increment(stageCounts, "unused_nonoverlapping");
+                if (reusable) pool.add(candidate.deepCopy().put("position_state", "FLAT")
+                        .put("position_state_source", "FIXED_COUNTERFACTUAL_CONTROL_BOOK_INITIAL_FLAT_V001"));
+            }
+            ObjectNode selection = StrategyResearchImprovementV1.selectOutcomeBlindControl(event, pool, calipers, stageCounts);
+            int count = selection.path("candidate_count").asInt(0);
+            histogram.merge(count, 1L, Long::sum);
+            JsonNode control = selection.path("control");
+            if (control.isObject()) {
+                matched++;
+                String controlId = id((ObjectNode) control);
+                usedControls.add(controlId);
+                long controlStart = parseTime(control.path("event_time").asText());
+                selectedControlIntervals.computeIfAbsent(asset, ignored -> new ArrayList<>())
+                        .add(new long[] {controlStart, controlStart + LIFECYCLE_MS});
+            }
+        }
+        ObjectNode output = JsonHashes.mapper().createObjectNode()
+                .put("schema", "strategy-matching-attrition/1").put("version", 1)
+                .put("status", retainedAdmission ? "HISTORICAL_ADMITTED_INVENTORY_BOUND"
+                        : "PHYSICAL_PRODUCER_STAGE_REPLAY_SCHEDULED").put("outcome_blind", true)
+                .put("outcome_values_opened", false).put("diagnostic_only", true)
+                .put("promotion_eligible", false).put("physical_input_sha256", physical.contentSha256)
+                .put("baseline_sha256", baseline.path("content_sha256").asText())
+                .put("control_spec_sha256", controls.path("content_sha256").asText())
+                .put("event_count", sourceEventCount).put("admitted_event_count", admitted)
+                .put("skipped_open_position_count", retainedAdmission ? sourceSkippedCount : skipped).put("matched_control_count", matched)
+                .put("selection_rows", admitted)
+                .put("admission_basis", retainedAdmission
+                        ? "SOURCE_BOUND_RETAINED_SETUP_EVENTS;ADMISSION_REFLECTS_PRIOR_EVALUATED_LIFECYCLE_OUTCOMES"
+                        : "QUALIFYING_FEATURES_WITH_SCHEDULED_240H_EVENT_OCCUPANCY;NOT_HISTORICAL_ADMISSION")
+                .put("stage_order", "same_asset_downside_nonshock -> unused_nonoverlapping -> prior_20_to_365_days -> same_hour -> same_weekday -> prior_30_bar_return -> prior_30_bar_realized_volatility -> prior_30_bar_volume_zscore")
+                .put("authoritative_matcher", "StrategyResearchImprovementV1.selectOutcomeBlindControl")
+                .put("scheduled_lifecycle_window_definition", "No outcome exit is opened. Candidate reuse and overlap use the frozen scheduled 240h decision windows.");
+        if (retainedResult != null) {
+            output.set("retained_result_binding", JsonHashes.mapper().createObjectNode()
+                    .put("path", retainedResultPath.toAbsolutePath().normalize().toString())
+                    .put("byte_sha256", byteSha256(retainedResultPath))
+                    .put("content_sha256", retainedResult.path("content_sha256").asText())
+                    .put("setup_event_rows_validated", events.size()));
+        }
+        output.set("physical_stage_attrition", stageCounts);
+        output.putArray("physical_roles_reopened").add("signal_bars").add("features");
+        output.putArray("outcome_roles_reopened");
+        ArrayNode hist = JsonHashes.mapper().createArrayNode();
+        histogram.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry ->
+                hist.add(JsonHashes.mapper().createObjectNode().put("candidate_count", entry.getKey())
+                        .put("selection_rows", entry.getValue())));
+        output.set("candidate_count_histogram", hist);
+        return withHash(output);
+    }
+
+    private static ObjectNode readDiagnosticContract(Path path, String label, String schema) {
+        ObjectNode value = readObject(path, label);
+        if (!schema.equals(value.path("schema").asText())) throw new IllegalArgumentException(
+                label + " schema is not " + schema);
+        if (!value.path("content_sha256").asText().equals(JsonHashes.ownHash(value))) throw new IllegalArgumentException(
+                label + " content hash is invalid");
+        return value;
+    }
+
+    private static String byteSha256(Path path) {
+        try { return JsonHashes.sha256(path); }
+        catch (CustodyException error) {
+            if (error.getCause() instanceof IOException cause) {
+                throw new IllegalArgumentException("cannot hash retained result: " + cause.getMessage(), cause);
+            }
+            throw error;
+        }
     }
 
     private static ObjectNode resolveOutcome(ObjectNode row, ObjectNode label, ObjectNode execution,
@@ -832,7 +1070,11 @@ public final class StrategyFixedBaselineV5 {
                 return error.put("reason", "MISSING_ASSET_BOUND_COST_OR_FILTER_RECEIPT").put("episode_id", id);
             }
             validateResolvedPhysicalCosts(contractRole, modelRole, capacityRole, baseline);
-            JsonNode barsValue = barsRoleValue.value;
+            // A bounded repetition detaches child-bar JSON after its receipt is
+            // persisted.  Opening the role here performs the same byte/content/
+            // row-set checks as an eager role, and intentionally does not cache
+            // the reopened tree after this lifecycle completes.
+            JsonNode barsValue = barsRoleValue.open();
             if (!barsValue.isArray()) throw new IllegalArgumentException("bars receipt is not an array");
             for (JsonNode bar : barsValue) {
                 if (!bar.isObject()) throw new IllegalArgumentException("bars receipt contains a non-object row");
@@ -1032,6 +1274,91 @@ public final class StrategyFixedBaselineV5 {
                 .put("joint_p20_pass", p20Pass).put("joint_p_value_pass", pValuePass);
         putFinite(result, "p20_expectancy_r", p20);
         result.set("falsifier", falsifier);
+        return result;
+    }
+
+    /**
+     * Instrumentation receipt for the exact matcher path above.  These counts
+     * are emitted after selection but before any result is persisted; they do
+     * not alter the frozen selector, lifecycle, or clustering rules.
+     */
+    private static ObjectNode matchingAttritionReceipt(int eventCount, int admittedEventCount,
+            int skippedOpenPositionCount, int selectionCount, long sameAssetPoolRowsExamined,
+            long candidatePoolRowsAfterReuseOverlap,
+            long sameAssetDownsideNonshock, long unusedNonoverlapping, ObjectNode stageCounts,
+            long selectionRowsWithZeroCandidates, long selectionRowsWithCandidates,
+            int matchedControlCount, ArrayNode controlSelections, ArrayNode attempts, int independentClusterCount,
+            ObjectNode metrics, Map<Integer, Long> candidateCountHistogram) {
+        long completePairs = 0, unresolvedControls = 0, unresolvedEvents = 0;
+        Map<String, JsonNode> selectionByEvent = new HashMap<>();
+        for (JsonNode selection : controlSelections) {
+            String eventId = selection.path("event_id").asText("");
+            if (!eventId.isBlank()) selectionByEvent.put(eventId, selection);
+        }
+        long noControlSelected = 0, unresolvedSelectedControl = 0;
+        for (JsonNode attempt : attempts) {
+            JsonNode selection = selectionByEvent.get(attempt.path("event_id").asText(""));
+            boolean hasSelectedControl = selection != null && selection.path("control").isObject();
+            if (!hasSelectedControl) noControlSelected++;
+            else if (!"COMPLETE".equals(attempt.path("status").asText())) unresolvedSelectedControl++;
+            switch (attempt.path("status").asText()) {
+                case "COMPLETE" -> completePairs++;
+                case "EVENT_COMPLETE_CONTROL_UNRESOLVED" -> {
+                    if (hasSelectedControl) unresolvedControls++;
+                }
+                default -> unresolvedEvents++;
+            }
+        }
+        long admittedSelectionRows = Math.max(0, selectionCount - skippedOpenPositionCount);
+        ObjectNode sequential = JsonHashes.mapper().createObjectNode()
+                .put("feature_rows_to_setup_events", eventCount)
+                .put("setup_events_to_admitted_events", admittedEventCount)
+                .put("admitted_events_to_control_selections", admittedSelectionRows)
+                .put("control_selections_to_matched_controls", matchedControlCount)
+                .put("matched_controls_to_complete_pairs", completePairs)
+                .put("complete_pairs_to_paired_clusters", metrics.path("paired_tested_cluster_count").asInt(0))
+                .put("admitted_events_to_event_clusters", metrics.path("event_tested_cluster_count").asInt(independentClusterCount));
+        ObjectNode marginal = JsonHashes.mapper().createObjectNode()
+                .put("selection_rows", selectionCount)
+                .put("admitted_selection_rows", admittedSelectionRows)
+                .put("same_asset_pool_rows_examined_sum", sameAssetPoolRowsExamined)
+                .put("same_asset_downside_nonshock_sum", sameAssetDownsideNonshock)
+                .put("unused_nonoverlapping_sum", unusedNonoverlapping)
+                .put("candidate_pool_rows_after_reuse_overlap_sum", candidatePoolRowsAfterReuseOverlap)
+                .put("selection_candidate_count_sum", candidateCountHistogram.entrySet().stream()
+                        .mapToLong(entry -> entry.getKey().longValue() * entry.getValue()).sum())
+                .put("selection_rows_with_zero_candidates", selectionRowsWithZeroCandidates)
+                .put("selection_rows_with_one_or_more_candidates", selectionRowsWithCandidates)
+                .put("selection_rows_matched", matchedControlCount)
+                .put("selection_rows_unmatched", Math.max(0, selectionRowsWithZeroCandidates))
+                .put("no_control_selected", noControlSelected)
+                .put("skipped_open_position", skippedOpenPositionCount)
+                .put("unresolved_event_execution", unresolvedEvents)
+                .put("unresolved_control_execution", unresolvedControls)
+                .put("unresolved_selected_control_execution", unresolvedSelectedControl)
+                .put("merged_scheduled_lifecycle_clusters", independentClusterCount);
+        ArrayNode histogram = JsonHashes.mapper().createArrayNode();
+        candidateCountHistogram.entrySet().stream().sorted(Map.Entry.comparingByKey())
+                .forEach(entry -> histogram.add(JsonHashes.mapper().createObjectNode()
+                        .put("candidate_count", entry.getKey()).put("selection_rows", entry.getValue())));
+        ObjectNode result = JsonHashes.mapper().createObjectNode()
+                .put("schema", "strategy-matching-attrition/1").put("version", 1)
+                .put("diagnostic_only", true).put("outcome_blind", true)
+                .put("outcome_values_opened_after_selection", true)
+                .put("scheduled_lifecycle_window_definition",
+                        "EVENT and CONTROL start at decision time and each use the frozen 240h maximum window; clusters union overlapping scheduled windows.");
+        result.set("sequential_attrition", sequential);
+        result.set("marginal_attrition", marginal);
+        ObjectNode stages = JsonHashes.mapper().createObjectNode()
+                .put("same_asset_downside_nonshock", sameAssetDownsideNonshock)
+                .put("unused_nonoverlapping", unusedNonoverlapping);
+        if (stageCounts != null) stageCounts.fields().forEachRemaining(field -> stages.set(field.getKey(), field.getValue()));
+        stages.put("stage_order", "same_asset_downside_nonshock -> unused_nonoverlapping -> prior_20_to_365_days -> same_hour -> same_weekday -> prior_30_bar_return -> prior_30_bar_realized_volatility -> prior_30_bar_volume_zscore")
+                .put("authoritative_matcher", "StrategyResearchImprovementV1.selectOutcomeBlindControl")
+                .put("outcome_blind_stage_predicates", true)
+                .put("stage_counts_are_marginal", true);
+        result.set("physical_stage_attrition", stages);
+        result.set("candidate_count_histogram", histogram);
         return result;
     }
 
@@ -1315,13 +1642,13 @@ public final class StrategyFixedBaselineV5 {
     }
 
     private static Path portfolioPolicyPath() {
-        return Path.of("strategy-research", "experiments", "fk-deleveraging-baseline-v002",
-                "portfolio-policy-v001.json").toAbsolutePath().normalize();
+        return RepositoryLayout.locate().resolve(Path.of("strategy-research", "experiments",
+                "fk-deleveraging-baseline-v002", "portfolio-policy-v001.json")).toAbsolutePath().normalize();
     }
 
     private static Path lifecycleTimingPolicyPath() {
-        return Path.of("strategy-research", "experiments", "fk-deleveraging-baseline-v002",
-                "lifecycle-timing-v001.json").toAbsolutePath().normalize();
+        return RepositoryLayout.locate().resolve(Path.of("strategy-research", "experiments",
+                "fk-deleveraging-baseline-v002", "lifecycle-timing-v001.json")).toAbsolutePath().normalize();
     }
 
     private static ObjectNode readLifecycleTimingPolicy() {
@@ -1424,6 +1751,21 @@ public final class StrategyFixedBaselineV5 {
                 && ret <= returnThreshold
                 && vol >= baseline.path("shock_rule").path("volume").path("threshold").asDouble()
                 && realized >= baseline.path("shock_rule").path("volatility").path("threshold").asDouble();
+    }
+
+    /** The first physical pool stage: same asset, non-shock, downside caliper. */
+    private static boolean downsideNonshock(ObjectNode candidate, ObjectNode calipers) {
+        if (candidate.path("qualifying_shock").asBoolean(false)
+                || candidate.path("open_position").asBoolean(false)) return false;
+        double downside = number(candidate, "completed_return", Double.NaN);
+        double minimum = calipers.path("downside_return_min").asDouble(Double.NaN);
+        double maximum = calipers.path("downside_return_max").asDouble(Double.NaN);
+        return Double.isFinite(downside) && Double.isFinite(minimum) && Double.isFinite(maximum)
+                && downside >= minimum && downside <= maximum;
+    }
+
+    private static void increment(ObjectNode counters, String field) {
+        counters.put(field, counters.path(field).asLong(0) + 1L);
     }
 
     private static void validateDecisionRow(ObjectNode row, String role) {
@@ -1942,9 +2284,38 @@ public final class StrategyFixedBaselineV5 {
     }
 
     private static PhysicalInput readPhysicalInput(Path path) {
+        return readPhysicalInput(path, true);
+    }
+
+    /** Diagnostic replay reopens only setup producer roles, never labels or child executions. */
+    private static PhysicalInput readPhysicalInputDiagnostic(Path path) {
         try {
             ObjectNode input = readObject(path, "fixed baseline physical input");
-            ResearchSchemaRegistry.defaultRegistry().validateKnownContractSchema(input);
+            if (!INPUT_SCHEMA.equals(input.path("schema").asText())
+                    || !"AUTHORITATIVE_PHYSICAL".equals(input.path("status").asText())
+                    || !input.path("content_sha256").asText().equals(JsonHashes.ownHash(input))) {
+                throw new IllegalArgumentException("diagnostic physical input schema/status/hash is invalid");
+            }
+            Path root = Path.of(input.path("root").asText()).toAbsolutePath().normalize();
+            if (!Files.isDirectory(root, LinkOption.NOFOLLOW_LINKS)) throw new IOException("physical root is missing");
+            ObjectNode producerReceipt = readBoundProducerReceipt(input, root);
+            Map<String, Role> roles = new LinkedHashMap<>();
+            for (String name : List.of("signal_bars", "features")) {
+                JsonNode rawRole = input.path("roles").path(name);
+                if (!rawRole.isObject()) throw new IOException("diagnostic physical input lacks " + name + " role");
+                roles.put(name, readRole(root, rawRole, name));
+            }
+            List<ObjectNode> features = deriveFeatures(rows(roles, "signal_bars"), rows(roles, "features"));
+            return new PhysicalInput(root, input.path("root_reference").asText("fixed-baseline-input"),
+                    input.path("content_sha256").asText(), roles, features, List.of(), List.of(), producerReceipt);
+        } catch (ExternalPrerequisite error) { throw error;
+        } catch (Exception error) { throw new ExternalPrerequisite("PHYSICAL_INPUT_UNAVAILABLE", error.getMessage()); }
+    }
+
+    private static PhysicalInput readPhysicalInput(Path path, boolean validateRegistry) {
+        try {
+            ObjectNode input = readObject(path, "fixed baseline physical input");
+            if (validateRegistry) ResearchSchemaRegistry.defaultRegistry().validateKnownContractSchema(input);
             if (!INPUT_SCHEMA.equals(input.path("schema").asText())
                     || !"AUTHORITATIVE_PHYSICAL".equals(input.path("status").asText())) {
                 throw new IllegalArgumentException("physical input is not an authoritative fixed-baseline bundle");
@@ -2320,7 +2691,82 @@ public final class StrategyFixedBaselineV5 {
     private static long parseTime(String value) { try { return Instant.parse(value).toEpochMilli(); } catch (RuntimeException error) { try { return Long.parseLong(value); } catch (RuntimeException ignored) { throw new IllegalArgumentException("invalid timestamp " + value); } } }
     private static Path requiredPath(ObjectNode args, String... keys) { Path path = optionalPath(args, keys); if (path == null) throw new IllegalArgumentException("missing --" + keys[0]); return path; }
     private static Path optionalPath(ObjectNode args, String... keys) { for (String key : keys) if (args.has(key) && args.path(key).isTextual()) return Path.of(args.path(key).asText()).toAbsolutePath().normalize(); return null; }
-    record Role(JsonNode value, LifecycleTrustService.ReceiptReference reference) {}
+    /**
+     * Physical role compatibility for the fixed evaluator.  Ordinary inputs
+     * keep the eager value used by the legacy path.  Bounded repetitions may
+     * retain only the receipt and reopen the value on demand for one lifecycle.
+     */
+    static final class Role {
+        final JsonNode value;
+        final LifecycleTrustService.ReceiptReference reference;
+        private final Path root;
+        private final String name;
+
+        Role(JsonNode value, LifecycleTrustService.ReceiptReference reference) {
+            this(value, reference, null, "role");
+        }
+
+        private Role(JsonNode value, LifecycleTrustService.ReceiptReference reference,
+                Path root, String name) {
+            this.value = value;
+            this.reference = reference;
+            this.root = root;
+            this.name = name;
+        }
+
+        Role detached(Path physicalRoot, String roleName) {
+            if (value == null) return this;
+            return new Role(null, reference, physicalRoot.toAbsolutePath().normalize(), roleName);
+        }
+
+        JsonNode value() { return value; }
+
+        LifecycleTrustService.ReceiptReference reference() { return reference; }
+
+        JsonNode open() {
+            if (value != null) return value;
+            if (root == null) throw new CustodyException("lifecycle trust " + trustRole(name)
+                    + " role has no physical root");
+            return openBoundRole(root, reference, name);
+        }
+    }
+
+    private static String trustRole(String name) {
+        return name != null && name.startsWith("bars:") ? "bars" : name;
+    }
+
+    private static JsonNode openBoundRole(Path root, LifecycleTrustService.ReceiptReference reference,
+            String name) {
+        String trustRole = trustRole(name);
+        if (reference == null || reference.path() == null || reference.path().isBlank()) {
+            throw new CustodyException("lifecycle trust " + trustRole + " receipt path is required");
+        }
+        byte[] bytes;
+        bytes = PathConfinement.readSinglyLinkedFile(root, reference.path(), "lifecycle trust " + trustRole);
+        if (reference.bytes() != null && reference.bytes() != bytes.length) {
+            throw new CustodyException(trustRole + " byte length changed");
+        }
+        if (!JsonHashes.sha256(bytes).equals(reference.byteSha256())) {
+            throw new CustodyException(trustRole + " bytes are missing or tampered");
+        }
+        JsonNode parsed = JsonHashes.parse(bytes, "lifecycle trust " + trustRole);
+        if (parsed == null || !parsed.isContainerNode()) {
+            throw new CustodyException(trustRole + " JSON value must be an object or array");
+        }
+        String contentHash = JsonHashes.ownHash(parsed);
+        if (!contentHash.equals(reference.contentSha256())) {
+            throw new CustodyException(trustRole + " content hash is missing or tampered");
+        }
+        if (reference.schema() != null
+                && (!parsed.isObject() || !reference.schema().equals(parsed.path("schema").asText()))) {
+            throw new CustodyException(trustRole + " schema does not match its receipt");
+        }
+        if (reference.rowsSha256() != null
+                && (!parsed.isArray() || !contentHash.equals(reference.rowsSha256()))) {
+            throw new CustodyException(trustRole + " physical row-set hash is missing or tampered");
+        }
+        return parsed;
+    }
     private record SelectedPair(ObjectNode event, ObjectNode control) {}
     private record LedgerEvent(String time, int kind, ObjectNode trade, ObjectNode exit, double markPrice) {
         LedgerEvent(String time, int kind, ObjectNode trade, ObjectNode exit) {

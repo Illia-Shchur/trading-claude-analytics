@@ -1,0 +1,56 @@
+{
+  "status" : "PASS",
+  "seed" : 202609080001,
+  "episodes" : 10,
+  "mode" : "PREFIX",
+  "scenario" : "NO_EDGE",
+  "effect_size" : 0.0,
+  "research_jar_executable_sha256" : "d1e6683a46bddf0e1fa7385a6232e244725be28468ed45b022b979c7863c88ba",
+  "eager_elapsed_ns" : 11395825125,
+  "bounded_elapsed_ns" : 11804881750,
+  "eager_heap_before" : 9078248,
+  "eager_heap_after" : 1182411560,
+  "bounded_heap_before" : 1182858480,
+  "bounded_heap_after" : 1497682024,
+  "eager_rss_before_kb" : 73888,
+  "eager_rss_after_kb" : 1732672,
+  "bounded_rss_before_kb" : 1732672,
+  "bounded_rss_after_kb" : 1963120,
+  "eager_raw_content_sha256" : "ec2fffa3a815a43047d27e5e3b490d3ddc86e24c86bccf8d7af3ae2495bbdcb9",
+  "bounded_raw_content_sha256" : "54a8ecb7013f662f257d1b6e4ffc9ed24acb2503eef06fcfae10a3302cbe11c8",
+  "eager_raw_canonical_sha256" : "f72ba86d61506b84aa85a09f9517da1f864a9d5b8c2017c639ce938d54fa8848",
+  "bounded_raw_canonical_sha256" : "a0127ddd75250cd1d1a35e59204a75786d758005bda847f2a834a5ce6cbd69e7",
+  "eager_raw_byte_sha256" : "730aa5f48f751c4da9c26ba9d334607fc193d4def307cd920a76d8019db4d00b",
+  "bounded_raw_byte_sha256" : "f5547ed3eac10ed4ef8d42feedb3e32eff21bc870e8ecbc4ca9c442278c70126",
+  "control_selection_count" : 10,
+  "attempt_count" : 10,
+  "trade_count" : 20,
+  "build_identity" : {
+    "schema" : "analytics-build-identity/1",
+    "status" : "KNOWN",
+    "executable" : {
+      "code_source" : "/Users/eternal/.codex/worktrees/research-performance-20260908/analytics-research/target/analytics-research-1.0.0-SNAPSHOT.jar",
+      "kind" : "JAR",
+      "sha256" : "d1e6683a46bddf0e1fa7385a6232e244725be28468ed45b022b979c7863c88ba",
+      "bytes" : 2174365
+    },
+    "compiled" : {
+      "input_fingerprint" : "b610e3d15fdde3a645bcdb7704963923de8eaf84c854702bb2070245c56c99f2",
+      "revision" : "30262ac0f910bbec6471dbbd3132a476da04866f",
+      "dirty_source" : "true",
+      "java_version" : "openjdk version \"26.0.1\" 2026-04-21",
+      "java_vendor" : "Oracle Corporation",
+      "java_runtime" : "OpenJDK Runtime Environment",
+      "toolchain_fingerprint" : "277c0d2ab5a069bc4fabbb9a6bb581a452181a794c58b74ee640f1b958b50f01",
+      "maven_wrapper_sha256" : "cae96cef89ebea3531221f4ae17c23cf8edf67d00eae8306d4186ae1bbed4d02",
+      "root_pom_sha256" : "21fea44956bd42ea79951766f14624b0dba1e36226457c5babc341dbc37b7b11",
+      "marker_resource" : "META-INF/build-identity.properties"
+    },
+    "runtime" : {
+      "java" : "26.0.1",
+      "cwd" : "/Users/eternal/Desktop/Trading Claude Analytics",
+      "user_dir" : "/Users/eternal/Desktop/Trading Claude Analytics"
+    }
+  },
+  "content_sha256" : "de3fa32fe9b433551593612db7155f48b10e55a1d8ae88acb8684d86ede77b85"
+}

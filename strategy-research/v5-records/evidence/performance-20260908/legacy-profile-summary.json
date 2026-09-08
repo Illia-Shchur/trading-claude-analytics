@@ -1,0 +1,25 @@
+{
+  "kind": "DEVELOPMENT_REPLAY_PROFILE",
+  "profiling": true,
+  "observed_logical_cpus": 10,
+  "observed_ram_bytes": 17179869184,
+  "jvm_heap_bytes": 2147483648,
+  "jvm_active_processor_count": 2,
+  "replications": 2,
+  "episodes_per_replication": 10,
+  "seeds": [
+    910000000,
+    910000001
+  ],
+  "confirmation_seeds_opened": false,
+  "runner_wall_seconds": 36.220015083,
+  "runner_reported_peak_rss_bytes": 2309324800,
+  "execution_samples": 2768,
+  "overlapping_stack_categories": {
+    "canonicalization": 1259,
+    "JSON hashing helper": 108,
+    "Jackson copy": 153,
+    "lifecycle": 49
+  },
+  "interpretation": "Sampling categories overlap; profiling overhead and small geometry prevent a target-machine throughput forecast."
+}

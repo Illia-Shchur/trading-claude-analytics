@@ -1,0 +1,9 @@
+{
+  "event_count": 126,
+  "independent_event_scheduled_clusters": 28,
+  "matched_pairs": 3,
+  "independent_paired_scheduled_clusters": 3,
+  "window_seconds": 864000,
+  "market_wide_asset_agnostic": true,
+  "pair_gap_not_filled": true
+}

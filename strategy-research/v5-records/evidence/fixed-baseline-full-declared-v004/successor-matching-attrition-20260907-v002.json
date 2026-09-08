@@ -1,0 +1,115 @@
+{
+  "schema" : "strategy-matching-attrition/1",
+  "version" : 1,
+  "status" : "RECONCILED_RAW_RESULT",
+  "lower_bound" : true,
+  "promotion_eligible" : false,
+  "diagnostic_only" : true,
+  "source" : {
+    "source_result_content_sha256" : "a54cef41b51e9c56e033f66673b9d3904454481cdebc571298cf2c4fd614796e",
+    "source_result_byte_sha256" : "824174204a158826f14ce1101a9b95f477e63d84decf75d50c90a1f183e027e8",
+    "event_count" : 130,
+    "admitted_event_count" : 126,
+    "matched_control_count" : 3,
+    "event_independent_cluster_count" : 28,
+    "paired_independent_cluster_count" : 3,
+    "selection_rows_reconciled" : 130,
+    "actual_pair_count_reconciled" : 3,
+    "scheduled_lifecycle_window_definition" : "EVENT and CONTROL start at their decision times and each use the frozen 240h maximum window; clusters are unions of overlapping windows.",
+    "outcome_blind" : true,
+    "outcome_values_opened" : false
+  },
+  "sequential_attrition" : {
+    "feature_rows_to_setup_events" : 130,
+    "setup_events_to_admitted_events" : 126,
+    "admitted_events_to_control_selections" : 126,
+    "all_control_selection_rows_including_skips" : 130,
+    "control_selections_to_matched_controls" : 3,
+    "matched_controls_to_complete_pairs" : 3,
+    "complete_pairs_to_paired_clusters" : 3,
+    "admitted_events_to_event_clusters" : 28
+  },
+  "marginal_attrition" : {
+    "selection_rows" : 130,
+    "selection_candidate_count_sum" : 3,
+    "selection_rows_with_zero_candidates" : 127,
+    "selection_rows_with_one_or_more_candidates" : 3,
+    "selection_rows_matched" : 3,
+    "selection_rows_unmatched" : 123,
+    "skipped_open_position" : 4,
+    "unresolved_event_execution" : 0,
+    "unresolved_control_execution" : 123,
+    "merged_scheduled_lifecycle_clusters" : 28,
+    "candidate_pool_rows_examined_sum" : null,
+    "candidate_pool_reopen_required" : true
+  },
+  "physical_stage_receipt_status" : "UNAVAILABLE_IN_RETAINED_RESULT",
+  "physical_stage_replay_required" : true,
+  "physical_producer_replay" : {
+    "schema" : "strategy-matching-attrition/1",
+    "version" : 1,
+    "status" : "HISTORICAL_ADMITTED_INVENTORY_BOUND",
+    "outcome_blind" : true,
+    "outcome_values_opened" : false,
+    "diagnostic_only" : true,
+    "promotion_eligible" : false,
+    "physical_input_sha256" : "4f5ac7a69e4543aa34c66fa7dcf215a1b0a1eaf9ebe5d7178f6da312a7ddfa40",
+    "baseline_sha256" : "4d2563ed94eae50e076f75f010adea3232b66ef5bd058f0cd1967051f1f16176",
+    "control_spec_sha256" : "e2e874b216b86bb6479c3f14f1aab7844b27e05b2eae3da2eb93b7870f525468",
+    "event_count" : 130,
+    "admitted_event_count" : 126,
+    "skipped_open_position_count" : 4,
+    "matched_control_count" : 3,
+    "selection_rows" : 126,
+    "admission_basis" : "SOURCE_BOUND_RETAINED_SETUP_EVENTS;ADMISSION_REFLECTS_PRIOR_EVALUATED_LIFECYCLE_OUTCOMES",
+    "stage_order" : "same_asset_downside_nonshock -> unused_nonoverlapping -> prior_20_to_365_days -> same_hour -> same_weekday -> prior_30_bar_return -> prior_30_bar_realized_volatility -> prior_30_bar_volume_zscore",
+    "authoritative_matcher" : "StrategyResearchImprovementV1.selectOutcomeBlindControl",
+    "scheduled_lifecycle_window_definition" : "No outcome exit is opened. Candidate reuse and overlap use the frozen scheduled 240h decision windows.",
+    "retained_result_binding" : {
+      "path" : "/Users/eternal/Desktop/Trading Claude Analytics/strategy-research/v5-records/evidence/fixed-baseline-full-declared-v004/full-result-20260906-v20-final.json",
+      "byte_sha256" : "824174204a158826f14ce1101a9b95f477e63d84decf75d50c90a1f183e027e8",
+      "content_sha256" : "a54cef41b51e9c56e033f66673b9d3904454481cdebc571298cf2c4fd614796e",
+      "setup_event_rows_validated" : 126
+    },
+    "physical_stage_attrition" : {
+      "same_asset_downside_nonshock" : 123061,
+      "unused_nonoverlapping" : 122866,
+      "prior_20_to_365_days" : 19687,
+      "same_hour" : 3307,
+      "same_weekday" : 509,
+      "prior_30_bar_return" : 29,
+      "prior_30_bar_realized_volatility" : 9,
+      "prior_30_bar_volume_zscore" : 3
+    },
+    "physical_roles_reopened" : [ "signal_bars", "features" ],
+    "outcome_roles_reopened" : [ ],
+    "candidate_count_histogram" : [ {
+      "candidate_count" : 0,
+      "selection_rows" : 123
+    }, {
+      "candidate_count" : 1,
+      "selection_rows" : 3
+    } ],
+    "content_sha256" : "1291cb87776a05668ebd90a7166b1cdeb5be00b33bc30712bca9afd6350dfd4e"
+  },
+  "candidate_count_histogram" : [ {
+    "candidate_count" : 0,
+    "selection_rows" : 127
+  }, {
+    "candidate_count" : 1,
+    "selection_rows" : 3
+  } ],
+  "historical_reconciliation" : {
+    "expected_event_count" : 130,
+    "expected_admitted_event_count" : 126,
+    "expected_matched_control_count" : 3,
+    "expected_event_cluster_count" : 28,
+    "expected_paired_cluster_count" : 3,
+    "event_count_matches" : true,
+    "admitted_count_matches" : true,
+    "matched_count_matches" : true,
+    "event_cluster_count_matches" : true,
+    "paired_cluster_count_matches" : true
+  },
+  "content_sha256" : "e69499ae2db3042dc6da7795e70d0fb3b970dc1451c07be0fe4dc653bb515ff9"
+}

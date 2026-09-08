@@ -9,17 +9,20 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.tradinganalytics.contracts.json.CanonicalJson;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 /** Deterministic SHA-256 and canonical JSON helpers shared by custody records. */
 public final class JsonHashes {
     private static final Pattern SHA_256 = Pattern.compile("^[a-f0-9]{64}$");
+    private static final int FILE_HASH_BUFFER_SIZE = 16 * 1024;
     private static final ObjectMapper MAPPER = new ObjectMapper(
             JsonFactory.builder().enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION).build())
             .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
@@ -31,11 +34,7 @@ public final class JsonHashes {
     }
 
     public static String sha256(byte[] bytes) {
-        try {
-            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
-        } catch (NoSuchAlgorithmException impossible) {
-            throw new IllegalStateException("SHA-256 is unavailable", impossible);
-        }
+        return HexFormat.of().formatHex(sha256Digest().digest(bytes));
     }
 
     public static String sha256(String value) {
@@ -43,8 +42,14 @@ public final class JsonHashes {
     }
 
     public static String sha256(Path path) {
-        try {
-            return sha256(Files.readAllBytes(path));
+        try (InputStream input = Files.newInputStream(path)) {
+            MessageDigest digest = sha256Digest();
+            byte[] buffer = new byte[FILE_HASH_BUFFER_SIZE];
+            int read;
+            while ((read = input.read(buffer)) != -1) {
+                digest.update(buffer, 0, read);
+            }
+            return HexFormat.of().formatHex(digest.digest());
         } catch (IOException error) {
             throw new CustodyException("cannot hash file: " + path, error);
         }
@@ -68,10 +73,16 @@ public final class JsonHashes {
     }
 
     public static String ownHash(JsonNode value, String field) {
-        JsonNode copy = value.deepCopy();
-        if (copy instanceof ObjectNode object) {
-            object.remove(field);
+        Objects.requireNonNull(value);
+        if (!(value instanceof ObjectNode object)) {
+            return canonicalSha256(value);
         }
+        ObjectNode copy = MAPPER.createObjectNode();
+        object.fields().forEachRemaining(entry -> {
+            if (!Objects.equals(field, entry.getKey())) {
+                copy.set(entry.getKey(), entry.getValue());
+            }
+        });
         return canonicalSha256(copy);
     }
 
@@ -93,6 +104,14 @@ public final class JsonHashes {
 
     public static boolean isSha256(Object value) {
         return value != null && SHA_256.matcher(String.valueOf(value)).matches();
+    }
+
+    private static MessageDigest sha256Digest() {
+        try {
+            return MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException impossible) {
+            throw new IllegalStateException("SHA-256 is unavailable", impossible);
+        }
     }
 
 }

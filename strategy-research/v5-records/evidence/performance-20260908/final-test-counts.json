@@ -1,0 +1,30 @@
+{
+  "scope": "Full reactor v003 plus affected reruns on final source",
+  "totals": {
+    "tests": 1037,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 2
+  },
+  "skips": [
+    {
+      "class": "com.tradinganalytics.research.v5.StrategyOperatingCharacteristicsSuccessorV1Test",
+      "name": "optimizedReplicationMatchesTheEagerRawRowWhenPackagedExecutorIsAvailable",
+      "reason": ""
+    },
+    {
+      "class": "com.tradinganalytics.research.v5.StrategyEvaluatorV5NodeOracleTest",
+      "name": "verifiedPhysicalNullSelectionMatchesTheOriginalNodeEndToEndFixture(Path)",
+      "reason": ""
+    }
+  ],
+  "parallel_suite": [
+    {
+      "name": "com.tradinganalytics.research.v5.StrategyOperatingCharacteristicsParallelV1Test",
+      "tests": "10",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    }
+  ]
+}

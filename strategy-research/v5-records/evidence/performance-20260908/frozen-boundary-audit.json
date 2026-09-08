@@ -1,0 +1,8 @@
+{
+  "status": "PASS",
+  "baseline_commit": "30262ac0f910bbec6471dbbd3132a476da04866f",
+  "frozen_strategy_files_unchanged": 45,
+  "canonical_exposure_head_sha256": "6e5d6561ca53fefdfe30c27498ee989ca495c2d1decc6e2e39d6250e43aa9f6a",
+  "prior_v002_jar_sha256": "0d9cf9dcdfbee96e523dd60916d97dfc6463d2faec099d3b7b0477a5aa2d6757",
+  "confirmation_seeds_opened": false
+}

@@ -1,0 +1,7 @@
+{
+  "scope": "independent Decimal arithmetic over retained representative trades only; no observed-fill claim",
+  "trades_checked": 800,
+  "maximum_absolute_residual_usdt": "1.34052900055403245840E-13",
+  "fee_rate_per_side": ".001",
+  "slippage_rate_per_side": ".0005"
+}

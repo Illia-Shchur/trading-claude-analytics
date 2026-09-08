@@ -1,0 +1,224 @@
+{
+  "schema" : "strategy-evaluator-operating-characteristics-successor-plan/1",
+  "version" : 1,
+  "stage_scope" : "FIXED_BASELINE_OPERATING_CHARACTERISTICS_SUCCESSOR",
+  "evidence_phase" : "DEVELOPMENT",
+  "decision" : "DIAGNOSTIC_ONLY",
+  "development_exposure" : true,
+  "promotion_eligible" : false,
+  "activation_authorized" : false,
+  "outcomes_opened" : false,
+  "binding_fixed_evaluator" : "StrategyFixedBaselineV5+TradeLifecycleV5+StrategyResearchImprovementV1.disposition",
+  "predecessor_diagnosis_sha256" : "69aaa16e9725e6ea4f57b2de57c24ffcf5eef4c294cbd54f24d867d9fd9f282b",
+  "baseline_sha256" : "4d2563ed94eae50e076f75f010adea3232b66ef5bd058f0cd1967051f1f16176",
+  "control_spec_sha256" : "e2e874b216b86bb6479c3f14f1aab7844b27e05b2eae3da2eb93b7870f525468",
+  "experiment_sha256" : "07d36bf08c88b7366a546bddc4bc30ad2103368a3017aeb68a8020a097460452",
+  "lineage_inventory_sha256" : "5290668d26a91c6925bb94a757ce2cf57a75fc13c2a875bda8d261a55937dc63",
+  "control_design_sha256" : "4bb912ddfd1d4d2b04b2116da77b742376fe1a5aeb7caf7032cb022a61bffc4b",
+  "executor_source_sha256" : "63e8ef4d4325d47994763bd8dbe3251bd195112859246e51f2ccad7b549855eb",
+  "executor_identity_sha256" : "0d9cf9dcdfbee96e523dd60916d97dfc6463d2faec099d3b7b0477a5aa2d6757",
+  "executor_source_path" : "strategy-research/v5-records/evidence/fixed-baseline-full-declared-v004/executors/StrategyOperatingCharacteristicsSuccessorV1-v002.java",
+  "executor_identity_path" : "strategy-research/v5-records/evidence/fixed-baseline-full-declared-v004/executors/analytics-current-20260907-successor-v002.jar",
+  "predecessor_diagnosis_path" : ".report-run/research-evidence-review-20260907/successor-predecessor-diagnosis-final.json",
+  "lineage_inventory_path" : ".report-run/research-evidence-review-20260907/lineage-java-inventory.json",
+  "control_design_path" : ".report-run/research-evidence-review-20260907/successor-control-design-v003.json",
+  "cell_count" : 4,
+  "replications" : 75,
+  "episodes_per_replication" : 450,
+  "cluster_count" : 288,
+  "paired_cluster_count" : 162,
+  "lifecycle_series_per_replication" : 900,
+  "horizon_minutes" : 14400,
+  "raw_event_count" : 450,
+  "raw_control_count" : 450,
+  "cells" : [ {
+    "scenario" : "NO_EDGE",
+    "effect_size" : 0,
+    "seeds" : [ 110000000, 110000001, 110000002, 110000003, 110000004, 110000005, 110000006, 110000007, 110000008, 110000009, 110000010, 110000011, 110000012, 110000013, 110000014, 110000015, 110000016, 110000017, 110000018, 110000019, 110000020, 110000021, 110000022, 110000023, 110000024, 110000025, 110000026, 110000027, 110000028, 110000029, 110000030, 110000031, 110000032, 110000033, 110000034, 110000035, 110000036, 110000037, 110000038, 110000039, 110000040, 110000041, 110000042, 110000043, 110000044, 110000045, 110000046, 110000047, 110000048, 110000049, 110000050, 110000051, 110000052, 110000053, 110000054, 110000055, 110000056, 110000057, 110000058, 110000059, 110000060, 110000061, 110000062, 110000063, 110000064, 110000065, 110000066, 110000067, 110000068, 110000069, 110000070, 110000071, 110000072, 110000073, 110000074 ],
+    "prefix_seeds" : [ 910000000, 910000001 ]
+  }, {
+    "scenario" : "PLANTED_EDGE",
+    "effect_size" : 0,
+    "seeds" : [ 110100000, 110100001, 110100002, 110100003, 110100004, 110100005, 110100006, 110100007, 110100008, 110100009, 110100010, 110100011, 110100012, 110100013, 110100014, 110100015, 110100016, 110100017, 110100018, 110100019, 110100020, 110100021, 110100022, 110100023, 110100024, 110100025, 110100026, 110100027, 110100028, 110100029, 110100030, 110100031, 110100032, 110100033, 110100034, 110100035, 110100036, 110100037, 110100038, 110100039, 110100040, 110100041, 110100042, 110100043, 110100044, 110100045, 110100046, 110100047, 110100048, 110100049, 110100050, 110100051, 110100052, 110100053, 110100054, 110100055, 110100056, 110100057, 110100058, 110100059, 110100060, 110100061, 110100062, 110100063, 110100064, 110100065, 110100066, 110100067, 110100068, 110100069, 110100070, 110100071, 110100072, 110100073, 110100074 ],
+    "prefix_seeds" : [ 910001000, 910001001 ]
+  }, {
+    "scenario" : "PLANTED_EDGE",
+    "effect_size" : 0.02,
+    "seeds" : [ 110200000, 110200001, 110200002, 110200003, 110200004, 110200005, 110200006, 110200007, 110200008, 110200009, 110200010, 110200011, 110200012, 110200013, 110200014, 110200015, 110200016, 110200017, 110200018, 110200019, 110200020, 110200021, 110200022, 110200023, 110200024, 110200025, 110200026, 110200027, 110200028, 110200029, 110200030, 110200031, 110200032, 110200033, 110200034, 110200035, 110200036, 110200037, 110200038, 110200039, 110200040, 110200041, 110200042, 110200043, 110200044, 110200045, 110200046, 110200047, 110200048, 110200049, 110200050, 110200051, 110200052, 110200053, 110200054, 110200055, 110200056, 110200057, 110200058, 110200059, 110200060, 110200061, 110200062, 110200063, 110200064, 110200065, 110200066, 110200067, 110200068, 110200069, 110200070, 110200071, 110200072, 110200073, 110200074 ],
+    "prefix_seeds" : [ 910002000, 910002001 ]
+  }, {
+    "scenario" : "PLANTED_EDGE",
+    "effect_size" : 0.04,
+    "seeds" : [ 110300000, 110300001, 110300002, 110300003, 110300004, 110300005, 110300006, 110300007, 110300008, 110300009, 110300010, 110300011, 110300012, 110300013, 110300014, 110300015, 110300016, 110300017, 110300018, 110300019, 110300020, 110300021, 110300022, 110300023, 110300024, 110300025, 110300026, 110300027, 110300028, 110300029, 110300030, 110300031, 110300032, 110300033, 110300034, 110300035, 110300036, 110300037, 110300038, 110300039, 110300040, 110300041, 110300042, 110300043, 110300044, 110300045, 110300046, 110300047, 110300048, 110300049, 110300050, 110300051, 110300052, 110300053, 110300054, 110300055, 110300056, 110300057, 110300058, 110300059, 110300060, 110300061, 110300062, 110300063, 110300064, 110300065, 110300066, 110300067, 110300068, 110300069, 110300070, 110300071, 110300072, 110300073, 110300074 ],
+    "prefix_seeds" : [ 910003000, 910003001 ]
+  } ],
+  "analytical_planning" : {
+    "phase" : "DEVELOPMENT_ONLY",
+    "method" : "approximate Gaussian planning from observed prior component rates; ignores p20 floor, bootstrap dependence, and rate uncertainty",
+    "observed_joint_power_effect_0_02" : 0.28,
+    "event_component_rate" : 0.48,
+    "paired_component_rate" : 0.38,
+    "approx_marginal_0_90_clusters" : {
+      "event" : 139,
+      "paired" : 221
+    },
+    "approx_marginal_0_95_clusters" : {
+      "event" : 181,
+      "paired" : 288
+    },
+    "chosen_geometry_rationale" : "288 calendar clusters preserves 14 singleton plus 18 paired-cluster ratio from v004 scaled ninefold; all 4 cells use same geometry; no power claim from this approximation"
+  },
+  "resource_budget" : {
+    "max_wall_minutes" : 720,
+    "max_rss_bytes" : 8589934592,
+    "max_disk_bytes" : 21474836480,
+    "expected_generated_minute_bars" : 3888000000,
+    "baseline_runtime_seconds" : 19641,
+    "baseline_peak_rss_bytes" : 6638043136,
+    "estimate_method" : "linear conservative retained v004 full run; measured prefix required before any reconsideration"
+  },
+  "resource_preflight" : {
+    "replications" : 2,
+    "episodes_per_replication" : 10,
+    "mode" : "PREFIX_DEVELOPMENT_ONLY",
+    "disjoint_seed_namespace" : true
+  },
+  "acceptance" : {
+    "preserve_v004_standards" : true,
+    "confidence_interval" : "WILSON_95_PERCENT",
+    "false_positive_upper_bound" : 0.1,
+    "power_lower_bound" : 0.8,
+    "no_edge_target" : "Wilson upper <= 0.10",
+    "zero_effect_target" : null,
+    "planted_effect_targets" : "Wilson lower >= 0.80 for effects 0.02 and 0.04",
+    "all_planned_replications_denominator" : true,
+    "incomplete_or_inadequate_blocks_measured_claim" : true
+  },
+  "stopping" : {
+    "fixed_no_optional_stopping" : true,
+    "replications_fixed_before_outcomes" : true
+  },
+  "incomplete_run_policy" : {
+    "count_in_denominator" : true,
+    "retain_all_attempts" : true,
+    "started_reservation_is_durable" : true,
+    "retry_same_slot_without_duplicate_statistical_count" : true
+  },
+  "source_freeze" : {
+    "prior_outcomes_opened" : true,
+    "successor_outcomes_opened" : false,
+    "new_seeds_frozen" : true,
+    "prefix_is_development_only" : true,
+    "no_adaptive_selection" : true,
+    "frozen_executor_jar_path" : "strategy-research/v5-records/evidence/fixed-baseline-full-declared-v004/executors/analytics-current-20260907-successor-v002.jar",
+    "frozen_executor_jar_sha256" : "0d9cf9dcdfbee96e523dd60916d97dfc6463d2faec099d3b7b0477a5aa2d6757",
+    "frozen_generator_source_path" : "strategy-research/v5-records/evidence/fixed-baseline-full-declared-v004/executors/StrategyOperatingCharacteristicsSuccessorV1-v002.java",
+    "frozen_generator_source_sha256" : "63e8ef4d4325d47994763bd8dbe3251bd195112859246e51f2ccad7b549855eb",
+    "bound_v004_plan_path" : "strategy-research/experiments/fk-deleveraging-baseline-v002/operating-characteristics-plan-v004.json",
+    "bound_v004_source_path" : "analytics-research/src/main/java/com/tradinganalytics/research/v5/StrategyOperatingCharacteristicsV4.java",
+    "v002_precommit_created_before_v002_outcomes" : true,
+    "v001_prefix_not_reused_as_v002" : true
+  },
+  "frozen_before_outcomes" : true,
+  "plan_id" : "operating-characteristics-successor-v002-final",
+  "precommit_version" : "v002-final",
+  "v001_precommit_sha256" : "cab35bae44b541a9c44e0a110b37a79149d18a0c20c6bee1cbc54a52cf9ec949",
+  "v001_prefix_result_path" : ".report-run/research-evidence-review-20260907/successor-prefix-result-20260907.json",
+  "v001_prefix_ledger_path" : ".report-run/research-evidence-review-20260907/successor-prefix-ledger-20260907.json",
+  "v001_executor_identity_sha256" : "a7daad3626115e1c8e89f266f0ec76deae9bfad64666e9a0d8c56d51fb8eee67",
+  "v001_prefix_reuse" : "The v001 prefix is retained as development exposure only. v002 freezes a disjoint prefix namespace; no v002 result is inferred from v001 and v002 must be run before any v002 prefix interpretation.",
+  "seed_freeze" : {
+    "full_seed_set_sha256" : "ef4cbbc00bf6631d0651ecbacc58de9c5df4f516d1eb4dc209106d54975399db",
+    "prefix_seed_set_sha256" : "f2e1396a8290aa0f9574e8a630282f2b810cee770fe4c82a4c88c7e943d4473a",
+    "seed_encoding" : "canonical JSON sorted keys, compact UTF-8; arrays in cell order",
+    "full_seed_namespace" : "v002-full-110m",
+    "prefix_seed_namespace" : "v002-prefix-910m",
+    "disjoint_from_v001" : true,
+    "disjoint_from_prior_v004" : true,
+    "prior_v001_seed_set_sha256" : "d190f156be7b912fe4e80e971dd35e1d367366088493db8d81bd8454b4620803",
+    "heldout_before_outcomes" : true,
+    "no_seed_reuse_across_cells" : true
+  },
+  "effect_definition" : {
+    "unit" : "cumulative natural-log return (dimensionless)",
+    "application" : "For treated outcome episodes only, effect_size/HORIZON_MINUTES is added to each post-decision minute log return before OHLC construction; controls receive zero drift.",
+    "total_shift" : "0.02 or 0.04 is the total post-decision cumulative log-return shift over 14,400 minutes, not a per-bar percentage.",
+    "economic_interpretation" : {
+      ".02" : "exp(0.02)-1 = 2.0201% multiplicative endpoint move before evaluator costs, fees, slippage, and selection effects",
+      ".04" : "exp(0.04)-1 = 4.0811% multiplicative endpoint move before evaluator costs, fees, slippage, and selection effects"
+    },
+    "direction" : "positive treated drift is the planted edge; the production evaluator still applies its ordinary selector, matched controls, lifecycle, cost, and disposition logic.",
+    "scope" : "synthetic conditional operating-characteristics diagnostic; not a historical return or a claim about future performance."
+  },
+  "hypotheses" : {
+    "decision_event" : "The joint rule is true only when event p20, paired p20, event p-value, and paired p-value all pass the frozen V004 numeric cutoffs.",
+    "nulls" : [ {
+      "id" : "H0_NO_EDGE",
+      "cell" : "NO_EDGE:0",
+      "claim" : "No planted treated drift; this is a false-positive control cell.",
+      "criterion" : "Wilson 95% upper bound for joint decision rate <= 0.10.",
+      "interpretation" : "A failed criterion does not prove a nonzero market edge; it flags evaluator false-positive behavior."
+    }, {
+      "id" : "H0_ZERO_EFFECT",
+      "cell" : "PLANTED_EDGE:0",
+      "claim" : "The planted effect is exactly zero; this is a diagnostic zero-effect control.",
+      "criterion" : "No target is assigned; report its joint rate and intervals only.",
+      "interpretation" : "Zero-effect is not a second no-edge power claim and cannot be used to rescue an underpowered run."
+    } ],
+    "alternatives" : [ {
+      "id" : "H1_EFFECT_002",
+      "cell" : "PLANTED_EDGE:0.02",
+      "claim" : "A fixed +0.02 cumulative treated log-return shift is detectable by the joint rule.",
+      "criterion" : "Wilson 95% lower bound for joint decision rate >= 0.80."
+    }, {
+      "id" : "H1_EFFECT_004",
+      "cell" : "PLANTED_EDGE:0.04",
+      "claim" : "A fixed +0.04 cumulative treated log-return shift is detectable by the joint rule.",
+      "criterion" : "Wilson 95% lower bound for joint decision rate >= 0.80."
+    } ],
+    "promotion_rule" : "All four cells must be complete and adequate; NO_EDGE meets its upper-bound criterion and both positive-effect cells meet their lower-bound criteria. PLANTED_EDGE:0 has no pass/fail target."
+  },
+  "dependence_process_assumptions" : {
+    "bound_v004_plan_path" : "strategy-research/experiments/fk-deleveraging-baseline-v002/operating-characteristics-plan-v004.json",
+    "bound_v004_plan_content_sha256" : "63e17392714365810db25d52f382f5b9578a2cead9ee06b0335e4360b41eb235",
+    "bound_v004_plan_byte_sha256" : "6c961056d03201c29329ff9ef12f09db2b4e5c43d47d8be3b3e9bc2ffb94ddae",
+    "bound_v004_source_path" : "analytics-research/src/main/java/com/tradinganalytics/research/v5/StrategyOperatingCharacteristicsV4.java",
+    "bound_v004_source_byte_sha256" : "c804ca1405255c58195d3a06685a452c73188c9a58d275ec891a7741170befce",
+    "shared_common_shocks" : "Episodes in one cluster share the generated common path; each asset retains its V004 AR(1) innovation process and asset noise multiplier.",
+    "cluster_geometry" : "The 288 calendar clusters preserve the V004 14-singleton/18-double cluster ratio scaled ninefold: 126 singleton clusters and 162 paired clusters, yielding 450 event and 450 control lifecycle series per replication.",
+    "independence_unit" : "The planned replication is the statistical unit; within-replication cluster dependence is retained. The evaluator reports independent market episode and tested-cluster counts separately.",
+    "control_process" : "Controls are generated with the same setup process and a separate common-shock stream, with the V004 21-day decision lag and fixed matching/control policy bound by control_spec_sha256.",
+    "applicability" : "These assumptions apply only to the fixed synthetic conditional evaluator diagnostic. They do not transfer to PIT historical data, live fills, or a future strategy without a new precommit."
+  },
+  "replication_justification" : {
+    "replications" : 75,
+    "reason" : "The count is fixed before outcomes to make binomial Monte Carlo uncertainty explicit while preserving the attainable Wilson thresholds below; it does not convert the approximate planning calculation into validated power.",
+    "planning_basis" : "Observed prior component rates were event 0.48 and paired 0.38 for the +0.02 cell. A Gaussian approximation suggested about 181 event and 288 paired calendar clusters for marginal 0.95 component rates; the chosen 288-cluster geometry follows the stricter paired estimate and preserves dependence.",
+    "uncertainty_limits" : "The approximation ignores p20 floors, bootstrap behavior, within-replication dependence, uncertainty in observed rates, and the all-component intersection. No validated power guarantee is claimed.",
+    "wilson_attainability_n75" : {
+      "method" : "Wilson two-sided 95% interval on the 75 replication-level joint decisions.",
+      "no_edge_max_successes_for_upper_le_010" : 2,
+      "no_edge_upper_at_2_of_75" : 0.0921148819,
+      "no_edge_upper_at_3_of_75" : 0.1111298708,
+      "positive_effect_min_successes_for_lower_ge_080" : 67,
+      "positive_effect_lower_at_67_of_75" : 0.8033863715,
+      "positive_effect_lower_at_66_of_75" : 0.7874035979
+    }
+  },
+  "multiplicity" : {
+    "primary_rule" : "The all-target intersection is the predeclared joint rule: all four component falsifiers must pass within a replication.",
+    "component_intervals" : "Component pass counts and Wilson intervals are pointwise diagnostics; they are not multiplicity-adjusted claims and cannot replace the joint rule.",
+    "cell_interpretation" : "NO_EDGE, zero-effect, +0.02, and +0.04 are separate predeclared cells. No post hoc selection, pooling, or rescue is permitted.",
+    "optional_stopping" : "None; replication count, geometry, seeds, budget, and incomplete-run policy are frozen before execution."
+  },
+  "budget_stopping" : {
+    "max_wall_minutes" : 720,
+    "max_rss_bytes" : 8589934592,
+    "max_transient_disk_bytes" : 21474836480,
+    "preflight_policy" : "Fail closed before full outcomes when the frozen geometry estimate exceeds any envelope; a development prefix measures execution only.",
+    "full_preflight_status" : "BLOCKED_RESOURCE_ESTIMATE under the retained V004 linear estimate (approximately 73.65 hours, 55.7 GiB peak RSS, 59.7 GB generated minute bars).",
+    "stopping_behavior" : "No early success/failure stopping. All attempted slots and retries remain in the append-only ledger; incomplete or inadequate slots remain in the denominator and block measured claims.",
+    "prefix_policy" : "A two-replication NO_EDGE prefix uses disjoint v002 prefix seeds and is labeled DEVELOPMENT, measured=false, and promotion-ineligible."
+  },
+  "content_sha256" : "149fae2a8fbd5f8625f08fb9e4516456d9287f80cb6dd1a8f93cbaac8f6fa863"
+}

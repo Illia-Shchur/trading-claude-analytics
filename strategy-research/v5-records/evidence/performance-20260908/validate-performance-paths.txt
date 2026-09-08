@@ -1,0 +1,12 @@
+/Users/eternal/Desktop/Trading Claude Analytics/strategy-research/v5-records/evidence/performance-20260908/final-execution-profile.json
+/Users/eternal/Desktop/Trading Claude Analytics/strategy-research/v5-records/evidence/performance-20260908/benchmark-plan-final.json
+/Users/eternal/Desktop/Trading Claude Analytics/strategy-research/v5-records/evidence/performance-20260908/parallel-confirmation-plan-v002.json
+/Users/eternal/Desktop/Trading Claude Analytics/strategy-research/v5-records/evidence/performance-20260908/parallel-confirmation-preflight-v002.json
+/Users/eternal/Desktop/Trading Claude Analytics/strategy-research/v5-records/evidence/performance-20260908/benchmark-1-worker/ledger.json
+/Users/eternal/Desktop/Trading Claude Analytics/strategy-research/v5-records/evidence/performance-20260908/benchmark-1-worker/result.json
+/Users/eternal/Desktop/Trading Claude Analytics/strategy-research/v5-records/evidence/performance-20260908/benchmark-1-worker/ledger.json.results/PREFIX_NO_EDGE_0_1_910000001.json
+/Users/eternal/Desktop/Trading Claude Analytics/strategy-research/v5-records/evidence/performance-20260908/benchmark-1-worker/ledger.json.results/PREFIX_NO_EDGE_0_0_910000000.json
+/Users/eternal/Desktop/Trading Claude Analytics/strategy-research/v5-records/evidence/performance-20260908/benchmark-2-worker/ledger.json
+/Users/eternal/Desktop/Trading Claude Analytics/strategy-research/v5-records/evidence/performance-20260908/benchmark-2-worker/result.json
+/Users/eternal/Desktop/Trading Claude Analytics/strategy-research/v5-records/evidence/performance-20260908/benchmark-2-worker/ledger.json.results/PREFIX_NO_EDGE_0_1_910000001.json
+/Users/eternal/Desktop/Trading Claude Analytics/strategy-research/v5-records/evidence/performance-20260908/benchmark-2-worker/ledger.json.results/PREFIX_NO_EDGE_0_0_910000000.json

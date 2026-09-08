@@ -160,8 +160,14 @@ class PortedToolCliCommandsTest {
                         + "experiment-freeze|search-genetic|research-run|overfit-audit|"
                         + "prospective-runner|readiness-audit|deployment-audit|fixed-baseline|"
                         + "fixed-baseline-refinement|fixed-baseline-produce-signal-bars|"
-                        + "operating-characteristics-preflight|operating-characteristics-run|freeze-refinement|portfolio-reconcile|prospective-outcome-reconcile|"
-                        + "evidence-disposition|canonical-hash-batch|validate|index|"
+                        + "operating-characteristics-preflight|operating-characteristics-run|"
+                        + "operating-characteristics-diagnose|operating-characteristics-successor-preflight|"
+                        + "operating-characteristics-successor-run|operating-characteristics-successor-record-attempt|"
+                        + "operating-characteristics-parallel-profile|operating-characteristics-parallel-preflight|"
+                        + "operating-characteristics-parallel-run|operating-characteristics-parallel-worker|"
+                        + "freeze-refinement|portfolio-reconcile|prospective-outcome-reconcile|"
+                        + "evidence-disposition|canonical-hash-batch|lineage-inventory|matching-attrition|"
+                        + "freeze-successor-control|validate|index|"
                         + "presentation-export [options]\n");
         assertThat(error).hasToString("");
     }

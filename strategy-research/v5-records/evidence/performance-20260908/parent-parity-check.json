@@ -1,0 +1,17 @@
+{
+  "independent_parent_check": "PASS",
+  "checks": {
+    "metrics": true,
+    "control_selections": true,
+    "attempts": true,
+    "portfolio": true,
+    "economic_hash": true,
+    "complete": true
+  },
+  "files": {
+    "eager-row.json": "5534c881b06048c4711133706ac65629a4774d34099d04a4de5a6deab3a82e81",
+    "bounded-row.json": "fc06ac0ba1c7d3cccd9562154e8a6cdabcf50db23936e6fb2fda73bc58eedb38",
+    "bounded-parity-audit.json": "94dd66248329e01d85636579d720533062d8d27815d18eae674aeebdb0c4adf6"
+  },
+  "note": "Exact structured-field comparison; timing is a sequential single-JVM observation, not a controlled speedup benchmark."
+}

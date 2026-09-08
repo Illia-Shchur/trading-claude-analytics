@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-matching-attrition/1",
+  "type": "object",
+  "required": ["schema", "version", "status", "diagnostic_only", "outcome_blind", "promotion_eligible", "lower_bound", "content_sha256"],
+  "properties": {
+    "schema": {"const": "strategy-matching-attrition/1"},
+    "version": {"const": 1},
+    "status": {"type": "string", "minLength": 1},
+    "diagnostic_only": {"const": true},
+    "outcome_blind": {"const": true},
+    "promotion_eligible": {"const": false},
+    "lower_bound": {"const": true},
+    "physical_stage_replay_required": {"type": "boolean"},
+    "physical_stage_replay_completed": {"type": "boolean"},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": true
+}

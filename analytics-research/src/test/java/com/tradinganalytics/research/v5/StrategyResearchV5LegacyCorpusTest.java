@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.tradinganalytics.contracts.schema.ResearchSchemaRegistry;
 import com.tradinganalytics.infrastructure.security.JsonHashes;
 import com.tradinganalytics.research.legacy.LegacyResearchNext;
 import com.tradinganalytics.research.legacy.LegacyResearchV1;
@@ -25,6 +26,29 @@ import org.junit.jupiter.api.io.TempDir;
 
 final class StrategyResearchV5LegacyCorpusTest {
     private static final ObjectMapper JSON = JsonHashes.mapper();
+    private static final ResearchSchemaRegistry SCHEMAS = ResearchSchemaRegistry.defaultRegistry();
+    private static final Set<String> LEGACY_SCHEMAS = Set.of(
+            LegacyResearchV1.REGISTRY_SCHEMA, LegacyResearchV1.DEFINITION_SCHEMA,
+            LegacyResearchV1.EXPERIMENT_SCHEMA, LegacyResearchV1.CANDIDATE_SET_SCHEMA,
+            LegacyResearchV1.RUN_SCHEMA, LegacyResearchV2.PRECOMMIT_SCHEMA,
+            LegacyResearchV2.DEFINITION_V2_SCHEMA, LegacyResearchV2.EXPERIMENT_V2_SCHEMA,
+            LegacyResearchV2.CANDIDATE_SET_V2_SCHEMA, LegacyResearchV2.RUN_V2_SCHEMA,
+            LegacyResearchV2.DATA_MANIFEST_SCHEMA, LegacyResearchV2.EVIDENCE_BUNDLE_SCHEMA,
+            LegacyResearchV2.PORTFOLIO_MARK_PATH_SCHEMA, LegacyResearchV3.EXPERIMENT_V3_SCHEMA,
+            LegacyResearchV3.EVIDENCE_BUNDLE_V2_SCHEMA, LegacyResearchV3.RUN_V3_SCHEMA,
+            LegacyResearchV3.DATA_MANIFEST_V2_SCHEMA, LegacyResearchV3.ACCEPTANCE_CONTRACT_SCHEMA,
+            LegacyResearchV3.ATTESTATION_SCHEMA, LegacyResearchV3.RESERVATION_SCHEMA,
+            LegacyResearchV3.TRAINING_SELECTION_POLICY_SCHEMA, LegacyResearchNext.STACK_SCHEMA,
+            LegacyResearchNext.SOURCE_RECEIPT_SCHEMA, LegacyResearchNext.EXPOSURE_SCHEMA,
+            LegacyResearchNext.EXECUTION_SCHEMA, LegacyResearchNext.PORTFOLIO_SCHEMA,
+            LegacyResearchNext.PROSPECTIVE_SCHEMA, LegacyResearchNext.ACTIVATION_SCHEMA,
+            LegacyResearchNext.REVOCATION_SCHEMA, LegacyResearchNext.READINESS_SCHEMA,
+            LegacyResearchNext.RUN_SCHEMA, LegacyResearchNext.EVIDENCE_SCHEMA,
+            "strategy-source-registry/1", "strategy-candidate-set/4", "strategy-execution-result/1",
+            "strategy-portfolio-result/1", "strategy-wfo-result/1", "strategy-stress-result/1",
+            "strategy-prospective-attestation/1", "strategy-prospective-gate/1",
+            "prospective-monitoring/2", "strategy-research-index/4",
+            "research-feature-set/1", "research-label-set/1");
 
     @Test
     void everyTrackedLegacyArtifactValidatesIndexesAndLeavesSourceBytesUntouched(@TempDir Path temporary)
@@ -92,6 +116,12 @@ final class StrategyResearchV5LegacyCorpusTest {
     private static boolean validateLegacyArtifact(JsonNode value) {
         String schema = value.path("schema").asText();
         if (schema.startsWith("strategy-research-index/")) return true;
+        if (!LEGACY_SCHEMAS.contains(schema)) {
+            // Tracked definitions/experiments now include modern contracts alongside the
+            // historical corpus. Keep the legacy validator closed over its known schemas,
+            // and validate every other tracked contract through the authoritative registry.
+            return SCHEMAS.validateKnownContractSchema(value);
+        }
         if (schema.endsWith("/4")) return LegacyResearchNext.validateNextArtifact(value);
         if (schema.endsWith("/3")) {
             if (LegacyResearchV3.RUN_V3_SCHEMA.equals(schema)) return LegacyResearchV3.validateRunV3(value);
@@ -115,10 +145,19 @@ final class StrategyResearchV5LegacyCorpusTest {
         assertThat(process.waitFor()).isZero();
         List<Path> result = new ArrayList<>();
         for (String value : new String(output, java.nio.charset.StandardCharsets.UTF_8).split("\u0000")) {
-            if (value.matches(".*(?:^|/)(?:definitions|experiments|runs)/.*\\.json$")
-                    || value.matches(".*(?:^|/)index\\.json$")) result.add(Path.of(value));
+            if (!(value.matches(".*(?:^|/)(?:definitions|experiments|runs)/.*\\.json$")
+                    || value.matches(".*(?:^|/)index\\.json$"))) continue;
+            // The historical directories now also retain modern contract artifacts. This test
+            // owns only the v1-v4 corpus; modern contracts have their own schema-registry tests
+            // and must not be routed through a legacy validator merely because of their path.
+            JsonNode artifact = JSON.readTree(Files.readAllBytes(repository.resolve(value)));
+            if (isLegacySchema(artifact.path("schema").asText())) result.add(Path.of(value));
         }
         return result;
+    }
+
+    private static boolean isLegacySchema(String schema) {
+        return schema.startsWith("strategy-research-index/") || LEGACY_SCHEMAS.contains(schema);
     }
 
     private static Path repositoryRoot() {

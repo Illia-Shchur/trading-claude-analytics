@@ -1,0 +1,13 @@
+{
+  "status": "PASS",
+  "checks": [
+    {
+      "path": "full-geometry-row.json.gz",
+      "round_trip": "PASS"
+    },
+    {
+      "path": "full-geometry-producer-audit.json.gz",
+      "round_trip": "PASS"
+    }
+  ]
+}

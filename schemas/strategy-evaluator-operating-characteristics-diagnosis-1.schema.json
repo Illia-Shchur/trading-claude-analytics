@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-evaluator-operating-characteristics-diagnosis/1",
+  "type": "object",
+  "required": ["schema", "version", "status", "scope", "raw_result_content_sha256", "compact_result_content_sha256", "projection_exact", "replications_reconciled", "cells", "promotion_eligible", "activation_authorized", "content_sha256"],
+  "properties": {
+    "schema": {"const": "strategy-evaluator-operating-characteristics-diagnosis/1"},
+    "version": {"const": 1},
+    "status": {"const": "COMPLETE_RECONCILIATION"},
+    "scope": {"const": "CONDITIONAL_FIXED_BASELINE_SYNTHETIC_DIAGNOSTIC"},
+    "raw_result_content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "compact_result_content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "projection_exact": {"const": true},
+    "replications_reconciled": {"type": "integer", "minimum": 1},
+    "decision_mismatches": {"const": 0},
+    "joint_rule_recomputed": {"const": true},
+    "cells": {"type": "array", "minItems": 1},
+    "promotion_eligible": {"const": false},
+    "activation_authorized": {"const": false},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": true
+}

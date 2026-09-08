@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.tradinganalytics.infrastructure.security.LifecycleTrustService;
 import com.tradinganalytics.infrastructure.security.JsonHashes;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
@@ -13,6 +14,52 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class StrategyFixedBaselineV5Test {
+    @Test
+    void detachedRoleReopensTheSameVerifiedValueAsAnEagerRole(@org.junit.jupiter.api.io.TempDir Path temporary)
+            throws Exception {
+        ArrayNode value = JsonHashes.mapper().createArrayNode();
+        value.addObject().put("asset", "btc").put("close", 100D);
+        byte[] bytes = JsonHashes.mapper().writeValueAsBytes(value);
+        Path file = temporary.resolve("bars.json");
+        Files.write(file, bytes);
+        LifecycleTrustService.ReceiptReference receipt = new LifecycleTrustService.ReceiptReference(
+                "bars.json", JsonHashes.ownHash(value), JsonHashes.sha256(bytes), (long) bytes.length,
+                JsonHashes.canonicalSha256(value), null);
+
+        StrategyFixedBaselineV5.Role eager = new StrategyFixedBaselineV5.Role(value, receipt);
+        StrategyFixedBaselineV5.Role bounded = eager.detached(temporary, "bars:test");
+
+        assertThat(bounded.value()).isNull();
+        assertThat(bounded.open()).isEqualTo(eager.value());
+    }
+
+    @Test
+    void detachedRoleRejectsTamperedAndMissingChildBarsBeforeLifecycleUse(@org.junit.jupiter.api.io.TempDir Path temporary)
+            throws Exception {
+        ArrayNode value = JsonHashes.mapper().createArrayNode();
+        value.addObject().put("asset", "btc").put("close", 100D);
+        byte[] bytes = JsonHashes.mapper().writeValueAsBytes(value);
+        Path file = temporary.resolve("bars.json");
+        Files.write(file, bytes);
+        LifecycleTrustService.ReceiptReference receipt = new LifecycleTrustService.ReceiptReference(
+                "bars.json", JsonHashes.ownHash(value), JsonHashes.sha256(bytes), (long) bytes.length,
+                JsonHashes.canonicalSha256(value), null);
+        StrategyFixedBaselineV5.Role bounded = new StrategyFixedBaselineV5.Role(value, receipt)
+                .detached(temporary, "bars:test");
+
+        ArrayNode tampered = JsonHashes.mapper().createArrayNode();
+        tampered.addObject().put("asset", "btc").put("close", 101D);
+        byte[] tamperedBytes = JsonHashes.mapper().writeValueAsBytes(tampered);
+        assertThat(tamperedBytes).hasSize(bytes.length);
+        Files.write(file, tamperedBytes);
+        assertThatThrownBy(bounded::open)
+                .hasMessage("bars bytes are missing or tampered");
+
+        Files.delete(file);
+        assertThatThrownBy(bounded::open)
+                .hasMessage("lifecycle trust bars component bars.json is missing");
+    }
+
     @Test
     void controlSelectionUsesAvailabilityAndLifecycleBoundariesWithoutOutcomeFields() throws Exception {
         ObjectNode event = row("btc", "2021-09-10T00:00:00Z", "2021-09-10T00:00:00Z");

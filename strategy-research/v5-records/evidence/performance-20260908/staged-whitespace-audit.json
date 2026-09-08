@@ -1,0 +1,10 @@
+{
+  "status": "PASS_WITH_VERBATIM_EVIDENCE_EXCEPTIONS",
+  "source_docs_contracts_and_other_evidence": "PASS",
+  "exceptions": [
+    "strategy-research/v5-records/evidence/performance-20260908/final-package-v003.log",
+    "strategy-research/v5-records/evidence/research-evidence-20260907/final-build-identity.json",
+    "strategy-research/v5-records/evidence/research-evidence-20260907/final-package-with-tests.log"
+  ],
+  "reason": "Preserve exact original test-output and prior build-identity bytes; jqwik output includes trailing spaces and prior retained output ends with a blank line. No source whitespace findings."
+}

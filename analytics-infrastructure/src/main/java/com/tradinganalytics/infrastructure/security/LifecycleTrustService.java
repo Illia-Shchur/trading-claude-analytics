@@ -333,16 +333,21 @@ public final class LifecycleTrustService {
         if (!value.isContainerNode()) {
             throw failure(role + " JSON value must be an object or array");
         }
-        if (!JsonHashes.ownHash(value).equals(reference.contentSha256())) {
+        String contentHash = JsonHashes.ownHash(value);
+        if (!contentHash.equals(reference.contentSha256())) {
             throw failure(role + " content hash is missing or tampered");
         }
         if (reference.schema() != null
                 && (!value.isObject() || !reference.schema().equals(value.path("schema").asText()))) {
             throw failure(role + " schema does not match its receipt");
         }
-        if (reference.rowsSha256() != null
-                && !JsonHashes.canonicalSha256(requireRows(value, role)).equals(reference.rowsSha256())) {
-            throw failure(role + " physical row-set hash is missing or tampered");
+        if (reference.rowsSha256() != null) {
+            String rowsHash = value.isArray()
+                    ? contentHash
+                    : JsonHashes.canonicalSha256(requireRows(value, role));
+            if (!rowsHash.equals(reference.rowsSha256())) {
+                throw failure(role + " physical row-set hash is missing or tampered");
+            }
         }
         ReceiptReference receipt = new ReceiptReference(
                 physical.relative(), reference.contentSha256(), byteHash, (long) bytes.length,

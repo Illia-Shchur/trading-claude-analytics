@@ -12,6 +12,7 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 /** Proves the retired JavaScript inventory stays mapped and cannot return after cutover. */
 class JavaSourceMapTest {
@@ -90,6 +91,7 @@ class JavaSourceMapTest {
                                 && !relative.startsWith(".claude/worktrees/")
                                 && !relative.contains("/target/")
                                 && !relative.startsWith("node_modules/")
+                                && !isVerifiedPythonVenvDependency(root, path)
                                 && (relative.endsWith(".js")
                                         || relative.endsWith(".mjs")
                                         || relative.endsWith(".cjs"));
@@ -115,6 +117,24 @@ class JavaSourceMapTest {
         assertThat(activeRuntimeReferences).as("active Node/npm runtime references").isEmpty();
     }
 
+    @Test
+    void onlyVerifiedPythonVenvSitePackagesAreExcludedFromIgnoredInventory(@TempDir Path temp)
+            throws Exception {
+        Path venv = temp.resolve(".report-run/skill-validation-venv");
+        Files.createDirectories(venv.resolve("lib/python3.14/site-packages/vendor"));
+        Files.writeString(venv.resolve("pyvenv.cfg"), "home = /usr/bin\n");
+
+        Path dependency = venv.resolve("lib/python3.14/site-packages/vendor/worker.js");
+        Path firstParty = temp.resolve(".report-run/first-party.js");
+        Path nearMiss = venv.resolve("lib/python3.14/site-packages-extra/vendor.js");
+        Path outside = temp.resolve("outside/site-packages/vendor.js");
+
+        assertThat(isVerifiedPythonVenvDependency(temp, dependency)).isTrue();
+        assertThat(isVerifiedPythonVenvDependency(temp, firstParty)).isFalse();
+        assertThat(isVerifiedPythonVenvDependency(temp, nearMiss)).isFalse();
+        assertThat(isVerifiedPythonVenvDependency(temp, outside)).isFalse();
+    }
+
     private static void assertIgnoredInventory(Path root, JsonNode entries) throws Exception {
         Set<String> declared = new TreeSet<>();
         for (JsonNode entry : entries) {
@@ -136,12 +156,36 @@ class JavaSourceMapTest {
                         .filter(path -> path.toString().endsWith(".js")
                                 || path.toString().endsWith(".mjs")
                                 || path.toString().endsWith(".cjs"))
+                        .filter(path -> !isVerifiedPythonVenvDependency(root, path))
                         .map(path -> root.relativize(path).toString().replace('\\', '/'))
                         .forEach(actual::add);
             }
         }
         assertThat(actual).as("absorbed historical JavaScript is retired after Java cutover").isEmpty();
         assertThat(declared).hasSize(entries.size());
+    }
+
+    /**
+     * The ignored report-run tree may contain a tool-created Python virtual
+     * environment. Its third-party site-packages can include JavaScript
+     * workers, but first-party report-run files must remain visible to this
+     * retirement inventory. The pyvenv marker and exact path segments provide
+     * both the provenance and the path boundary for this narrow exception.
+     */
+    static boolean isVerifiedPythonVenvDependency(Path root, Path candidate) {
+        Path reportRun = root.resolve(".report-run").toAbsolutePath().normalize();
+        Path path = candidate.toAbsolutePath().normalize();
+        if (!path.startsWith(reportRun)) return false;
+        for (Path cursor = path.getParent(); cursor != null && cursor.startsWith(reportRun);
+                cursor = cursor.getParent()) {
+            if (!Files.isRegularFile(cursor.resolve("pyvenv.cfg"))) continue;
+            Path relative = cursor.relativize(path);
+            return relative.getNameCount() >= 4
+                    && "lib".equals(relative.getName(0).toString())
+                    && relative.getName(1).toString().startsWith("python")
+                    && "site-packages".equals(relative.getName(2).toString());
+        }
+        return false;
     }
 
     private static void assertTestInventory(Path root, JsonNode entries) throws Exception {

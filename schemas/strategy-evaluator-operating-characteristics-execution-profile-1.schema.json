@@ -1,0 +1,338 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-evaluator-operating-characteristics-execution-profile/1",
+  "type": "object",
+  "required": [
+    "schema",
+    "version",
+    "status",
+    "target_cpu_ceiling",
+    "target_memory_bytes",
+    "target_wall_minutes",
+    "max_wall_minutes",
+    "max_aggregate_rss_bytes",
+    "coordinator_rss_reservation_bytes",
+    "worker_rss_bytes",
+    "worker_heap_bytes",
+    "max_workers",
+    "max_cpu",
+    "max_disk_bytes",
+    "requested_workers",
+    "local_conservative_cap",
+    "effective_workers",
+    "target_qualified",
+    "qualified_for_confirmation",
+    "same_packaged_executor_required",
+    "fixed_process_pool",
+    "bounded_submission_queue",
+    "content_sha256",
+    "worker_cpu",
+    "available_cpus",
+    "available_memory_bytes",
+    "available_free_space_bytes",
+    "resource_probe_complete",
+    "retry_limit_per_slot",
+    "profile_envelope_sha256"
+  ],
+  "properties": {
+    "schema": {
+      "const": "strategy-evaluator-operating-characteristics-execution-profile/1"
+    },
+    "version": {
+      "const": 1
+    },
+    "status": {
+      "enum": [
+        "ADMISSIBLE",
+        "BLOCKED_RESOURCE"
+      ]
+    },
+    "max_wall_minutes": {
+      "const": 2880
+    },
+    "target_cpu_ceiling": {
+      "const": 28
+    },
+    "target_memory_bytes": {
+      "const": 34359738368
+    },
+    "target_wall_minutes": {
+      "const": 2880
+    },
+    "max_aggregate_rss_bytes": {
+      "const": 27917287424
+    },
+    "coordinator_rss_reservation_bytes": {
+      "const": 2147483648
+    },
+    "worker_rss_bytes": {
+      "const": 3221225472
+    },
+    "worker_heap_bytes": {
+      "const": 2147483648
+    },
+    "max_workers": {
+      "const": 8
+    },
+    "max_cpu": {
+      "const": 24
+    },
+    "max_disk_bytes": {
+      "const": 137438953472
+    },
+    "requested_workers": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 8
+    },
+    "local_conservative_cap": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 8
+    },
+    "effective_workers": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 8
+    },
+    "target_qualified": {
+      "type": "boolean"
+    },
+    "qualified_for_confirmation": {
+      "type": "boolean"
+    },
+    "same_packaged_executor_required": {
+      "const": true
+    },
+    "fixed_process_pool": {
+      "const": true
+    },
+    "bounded_submission_queue": {
+      "const": true
+    },
+    "content_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "worker_cpu": {
+      "const": 2
+    },
+    "available_cpus": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "available_memory_bytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "available_free_space_bytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "resource_probe_complete": {
+      "type": "boolean"
+    },
+    "retry_limit_per_slot": {
+      "const": 1
+    },
+    "qualification_receipt": {
+      "type": "object",
+      "required": [
+        "schema",
+        "version",
+        "status",
+        "mode",
+        "evidence_phase",
+        "measured",
+        "heldout_seed_disjoint",
+        "development_seed_disjoint",
+        "execution_profile_envelope_sha256",
+        "executor_identity_sha256",
+        "executor_source_sha256",
+        "statistical_plan_sha256",
+        "development_plan_sha256",
+        "full_geometry",
+        "development_plan_geometry",
+        "resource_envelope",
+        "completed_slot_count",
+        "completed_raw_worker_refs",
+        "content_sha256"
+      ],
+      "properties": {
+        "schema": {
+          "const": "strategy-evaluator-operating-characteristics-qualification/1"
+        },
+        "version": {
+          "const": 1
+        },
+        "status": {
+          "const": "QUALIFIED"
+        },
+        "mode": {
+          "const": "FULL"
+        },
+        "evidence_phase": {
+          "const": "DEVELOPMENT"
+        },
+        "measured": {
+          "const": true
+        },
+        "heldout_seed_disjoint": {
+          "const": true
+        },
+        "development_seed_disjoint": {
+          "const": true
+        },
+        "execution_profile_envelope_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "executor_identity_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "executor_source_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "statistical_plan_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "development_plan_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "full_geometry": {
+          "type": "object",
+          "required": [
+            "cell_count",
+            "replications",
+            "episodes_per_replication",
+            "cluster_count",
+            "paired_cluster_count",
+            "lifecycle_series_per_replication",
+            "horizon_minutes",
+            "content_sha256"
+          ],
+          "properties": {
+            "cell_count": {"const": 4},
+            "replications": {"const": 75},
+            "episodes_per_replication": {"const": 450},
+            "cluster_count": {"const": 288},
+            "paired_cluster_count": {"const": 162},
+            "lifecycle_series_per_replication": {"const": 900},
+            "horizon_minutes": {"const": 14400},
+            "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+          }
+        },
+        "development_plan_geometry": {
+          "type": "object",
+          "required": [
+            "cell_count",
+            "replications",
+            "episodes_per_replication",
+            "cluster_count",
+            "paired_cluster_count",
+            "lifecycle_series_per_replication",
+            "horizon_minutes",
+            "content_sha256"
+          ],
+          "properties": {
+            "cell_count": {"const": 4},
+            "replications": {"const": 75},
+            "episodes_per_replication": {"const": 450},
+            "cluster_count": {"const": 288},
+            "paired_cluster_count": {"const": 162},
+            "lifecycle_series_per_replication": {"const": 900},
+            "horizon_minutes": {"const": 14400},
+            "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+          }
+        },
+        "resource_envelope": {
+          "type": "object",
+          "required": [
+            "max_wall_minutes",
+            "max_aggregate_rss_bytes",
+            "coordinator_rss_reservation_bytes",
+            "worker_rss_bytes",
+            "worker_heap_bytes",
+            "worker_cpu",
+            "max_workers",
+            "max_cpu",
+            "max_disk_bytes",
+            "available_cpus",
+            "available_memory_bytes",
+            "measured_max_aggregate_rss_bytes",
+            "measured_max_disk_bytes",
+            "measured_wall_millis",
+            "content_sha256"
+          ],
+          "properties": {
+            "max_wall_minutes": {"const": 2880},
+            "max_aggregate_rss_bytes": {"const": 27917287424},
+            "coordinator_rss_reservation_bytes": {"const": 2147483648},
+            "worker_rss_bytes": {"const": 3221225472},
+            "worker_heap_bytes": {"const": 2147483648},
+            "worker_cpu": {"const": 2},
+            "max_workers": {"const": 8},
+            "max_cpu": {"const": 24},
+            "max_disk_bytes": {"const": 137438953472},
+            "available_cpus": {"type": "integer", "minimum": 28},
+            "available_memory_bytes": {"type": "integer", "minimum": 34359738368},
+            "measured_max_aggregate_rss_bytes": {"type": "integer", "minimum": 1},
+            "measured_max_disk_bytes": {"type": "integer", "minimum": 1},
+            "measured_wall_millis": {"type": "integer", "minimum": 1},
+            "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+          }
+        },
+        "completed_slot_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "completed_raw_worker_refs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "slot_id",
+              "plan_sha256",
+              "relative_path",
+              "mode",
+              "scenario",
+              "effect_size",
+              "replication",
+              "seed",
+              "bytes",
+              "content_sha256",
+              "byte_sha256"
+            ],
+            "properties": {
+              "slot_id": {"type": "string", "minLength": 1},
+              "plan_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+              "relative_path": {"type": "string", "minLength": 1},
+              "mode": {"const": "FULL"},
+              "scenario": {"type": "string", "minLength": 1},
+              "effect_size": {"type": "number"},
+              "replication": {"type": "integer", "minimum": 0},
+              "seed": {"type": "integer"},
+              "bytes": {"type": "integer", "minimum": 1},
+              "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+              "byte_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+            }
+          }
+        },
+        "content_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    },
+    "profile_envelope_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+  },
+  "additionalProperties": true
+}
