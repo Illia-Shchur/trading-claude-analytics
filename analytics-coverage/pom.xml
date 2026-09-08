@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.tradinganalytics</groupId>
+    <artifactId>trading-analytics-parent</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+  </parent>
+  <artifactId>analytics-coverage</artifactId>
+  <packaging>pom</packaging>
+  <name>Trading Analytics aggregate coverage</name>
+  <description>Reactor-wide JaCoCo report, including coverage recorded by downstream tests</description>
+
+  <!--
+    report-aggregate reads execution data from every reactor dependency. Keeping
+    this as the final reactor module means tests in analytics-cli and
+    analytics-compatibility-tests are credited against the production classes
+    they exercise in the upstream modules.
+  -->
+  <dependencies>
+    <dependency><groupId>com.tradinganalytics</groupId><artifactId>analytics-contracts</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>com.tradinganalytics</groupId><artifactId>analytics-core</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>com.tradinganalytics</groupId><artifactId>analytics-infrastructure</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>com.tradinganalytics</groupId><artifactId>analytics-market-data</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>com.tradinganalytics</groupId><artifactId>analytics-reporting</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>com.tradinganalytics</groupId><artifactId>analytics-research</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>com.tradinganalytics</groupId><artifactId>analytics-cli</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>com.tradinganalytics</groupId><artifactId>analytics-compatibility-tests</artifactId><version>${project.version}</version></dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>jacoco-reactor-aggregate</id>
+            <phase>verify</phase>
+            <goals><goal>report-aggregate</goal></goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/site/jacoco-aggregate</outputDirectory>
+              <includeCurrentProject>false</includeCurrentProject>
+              <formats>
+                <format>HTML</format>
+                <format>XML</format>
+              </formats>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

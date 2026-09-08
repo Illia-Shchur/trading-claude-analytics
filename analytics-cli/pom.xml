@@ -16,6 +16,18 @@
     <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-test</artifactId><scope>test</scope></dependency>
   </dependencies>
   <build>
+    <testResources>
+      <testResource>
+        <directory>src/test/resources</directory>
+      </testResource>
+      <testResource>
+        <directory>../analytics-research/src/test/resources</directory>
+        <includes>
+          <include>oracles/strategy-readiness-v5-activation.json</include>
+          <include>oracles/strategy-readiness-v5.json</include>
+        </includes>
+      </testResource>
+    </testResources>
     <plugins>
       <plugin>
         <groupId>org.codehaus.mojo</groupId><artifactId>exec-maven-plugin</artifactId><version>3.1.0</version>

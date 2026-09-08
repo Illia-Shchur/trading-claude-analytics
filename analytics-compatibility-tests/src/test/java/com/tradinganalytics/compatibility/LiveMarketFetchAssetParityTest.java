@@ -24,12 +24,12 @@ class LiveMarketFetchAssetParityTest {
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final long NOW = Instant.parse("2026-08-28T12:34:56.789Z").toEpochMilli();
     @Test
-    void completeBtcFixtureMatchesNodeExactly() throws Exception {
+    void completeBtcFixtureUsesVerifiedPanelAndExplicitNullFallback() throws Exception {
         assertParity(fixture(false));
     }
 
     @Test
-    void coinglassConfiguredBtcFixtureMatchesNodeExactly() throws Exception {
+    void coinglassConfiguredBtcFixtureUsesVerifiedPanelAndExplicitNullFallback() throws Exception {
         assertParity(fixture(true));
     }
 
@@ -46,8 +46,33 @@ class LiveMarketFetchAssetParityTest {
                 .fetchAsset("btc", true);
         actual.remove("fetched_at");
 
+        // The approved freshness contract carries an explicit null fallback on
+        // the verified synchronized path and excludes Kraken's unknown-age
+        // receipt. The resulting median and its dependent spot-derived values
+        // are updated in the oracle; all unrelated fields remain wire-compared.
+        assertThat(actual.path("spot").has("contextual_fallback")).isTrue();
+        assertThat(actual.path("spot").path("contextual_fallback").isNull()).isTrue();
+        JsonNode panel = actual.path("spot").path("panel");
+        assertThat(panel.path("n_synchronized").asInt()).isEqualTo(3);
+        assertThat(panel.path("canonical").asDouble()).isEqualTo(101.0);
+        assertThat(panel.path("sources").size()).isEqualTo(3);
+        assertThat(panel.path("sources").get(0).path("value").asDouble()).isEqualTo(100.0);
+        assertThat(panel.path("sources").get(1).path("value").asDouble()).isEqualTo(101.0);
+        assertThat(panel.path("sources").get(2).path("value").asDouble()).isEqualTo(102.0);
+        JsonNode kraken = null;
+        for (JsonNode quote : panel.path("excluded")) {
+            if ("Kraken".equals(quote.path("source").asText())) {
+                kraken = quote;
+                break;
+            }
+        }
+        assertThat(kraken).isNotNull();
+        assertThat(kraken.path("value").asDouble()).isEqualTo(103.0);
+        assertThat(kraken.path("reason").asText())
+                .isEqualTo("EXCLUDED — quote freshness is unknown (timestamp and recognized timestamp kind are required)");
+
         assertThat(firstDifference(expected, actual, "$"))
-                .as("Node/Java output must match field-for-field and in insertion order")
+                .as("approved fetch contract must match field-for-field and in insertion order")
                 .isNull();
     }
 

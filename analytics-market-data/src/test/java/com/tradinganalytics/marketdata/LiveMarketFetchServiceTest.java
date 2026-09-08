@@ -89,8 +89,10 @@ class LiveMarketFetchServiceTest {
 
         assertThat(result.path("asset").asText()).isEqualTo("GOLD");
         assertThat(result.path("errors")).isEmpty();
-        assertThat(result.path("spot").path("canonical").asDouble()).isEqualTo(339.0);
-        assertThat(result.path("spot").path("canonical_source").asText()).isEqualTo("priority_first_fallback");
+        assertThat(result.path("spot").path("canonical").isNull()).isTrue();
+        assertThat(result.path("spot").path("canonical_source").asText()).isEqualTo("unavailable");
+        assertThat(result.path("spot").path("contextual_fallback").path("value").asDouble()).isEqualTo(339.0);
+        assertThat(result.path("spot").path("contextual_fallback").path("eligible_for_scoring").asBoolean()).isFalse();
         assertThat(result.path("daily").path("series")).hasSize(240);
         assertThat(result.path("trend").path("ma200").isNumber()).isTrue();
         assertThat(result.path("context").path("sentiment_proxy").path("vol_index").isObject()).isTrue();

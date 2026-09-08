@@ -2,7 +2,7 @@
   "asset" : "GOLD",
   "errors" : [ ],
   "spot" : {
-    "canonical" : 339,
+    "canonical" : null,
     "sources" : [ {
       "source" : "Yahoo GC=F (last daily close)",
       "value" : 339
@@ -12,7 +12,7 @@
     } ],
     "divergence_pct" : 0,
     "warning" : null,
-    "canonical_source" : "priority_first_fallback",
+    "canonical_source" : "unavailable",
     "panel" : {
       "canonical" : null,
       "method" : "median",
@@ -47,20 +47,13 @@
       "warning" : null
     },
     "canonical_median" : null,
+    "contextual_fallback" : {
+      "value" : 339,
+      "source" : "priority_first_fallback",
+      "eligible_for_scoring" : false,
+      "reason" : "historical or insufficient-source price; verified synchronized spot is unavailable"
+    },
     "method_conflict" : null
-  },
-  "ath" : {
-    "value" : 340,
-    "date" : "2026-08-28",
-    "drawdown_pct" : 0.29,
-    "all_time_verified" : null,
-    "source" : "Yahoo GC=F 10y weekly high — NOT all-time (pre-window history unavailable); flag the window in the report"
-  },
-  "high_1y" : {
-    "value" : 340,
-    "date" : "2026-08-28",
-    "pct_below" : 0.29,
-    "source" : "Yahoo GC=F trailing-1y weekly highs"
   },
   "weekly" : {
     "source" : "Yahoo GC=F 5y 1wk (240 candles)",
@@ -76,9 +69,9 @@
     "rsi14_including_live_week" : 100,
     "sma_200w" : {
       "value" : 232.5,
-      "pct_vs_spot" : 45.81,
-      "within_8pct" : false,
-      "note" : "gate 6: price within ±8% of the 200-week MA, above OR below"
+      "pct_vs_spot" : null,
+      "within_8pct" : null,
+      "note" : "gate 6 unavailable: canonical spot is missing or invalid"
     }
   },
   "daily" : {
@@ -1639,8 +1632,6 @@
     "drawdown_pct_vs_2y_high" : 0,
     "drawdown_pct_vs_2y_high_percentile" : 50,
     "drawdown_note" : "running high WITHIN the fetched 2y daily window, not the true all-time high — see outp.ath for the ATH drawdown",
-    "distance_to_200dma_pct" : 41.54,
-    "distance_to_200dma_percentile" : 1.22,
     "daily_rsi14_percentile_vs_2y" : 50,
     "bounce_pct_percentile_vs_2y" : 4.48,
     "volume" : {
@@ -1683,58 +1674,6 @@
         "consequence" : "ma200_falling flips -> FR Channel B structure input, frChannel routing",
         "near" : false,
         "near_band" : 0.5
-      }, {
-        "id" : "fr_phase_cycle_cap_14_to_uncapped",
-        "metric" : "high_1y.pct_below",
-        "value" : 0.29,
-        "threshold" : 10,
-        "gap" : -9.71,
-        "gap_units" : "percentage points",
-        "direction" : "already past — currently on the far side",
-        "price_move_required_pct" : -9.73,
-        "crossed" : true,
-        "consequence" : "FR phase-of-cycle cap lifts entirely (fr.phaseCycleCap -> null)",
-        "near" : false,
-        "near_band" : 5
-      }, {
-        "id" : "fr_channel_A_eligibility",
-        "metric" : "high_1y.pct_below",
-        "value" : 0.29,
-        "threshold" : 20,
-        "gap" : -19.71,
-        "gap_units" : "percentage points",
-        "direction" : "already past — currently on the far side",
-        "price_move_required_pct" : -19.76,
-        "crossed" : true,
-        "consequence" : "FR routes Channel A instead of B/stand-down (frChannel)",
-        "near" : false,
-        "near_band" : 5
-      }, {
-        "id" : "fr_phase_cycle_cap_8_to_14",
-        "metric" : "high_1y.pct_below",
-        "value" : 0.29,
-        "threshold" : 20,
-        "gap" : -19.71,
-        "gap_units" : "percentage points",
-        "direction" : "already past — currently on the far side",
-        "price_move_required_pct" : -19.76,
-        "crossed" : true,
-        "consequence" : "FR phase-of-cycle cap loosens from 8% to 14% (fr.phaseCycleCap)",
-        "near" : false,
-        "near_band" : 5
-      }, {
-        "id" : "fk_gate6_200w_band",
-        "metric" : "weekly.sma_200w.pct_vs_spot",
-        "value" : 45.81,
-        "threshold" : 8,
-        "gap" : 37.81,
-        "gap_units" : "percentage points",
-        "direction" : "needs price DOWN",
-        "price_move_required_pct" : -25.93,
-        "crossed" : false,
-        "consequence" : "FK gate 6 (200-week MA proximity) lights",
-        "near" : false,
-        "near_band" : 5
       }, {
         "id" : "frb_weekly_rsi50_qualifier",
         "metric" : "weekly.rsi14.rsi",

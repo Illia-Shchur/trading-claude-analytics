@@ -201,19 +201,33 @@ final class WorkflowSecurityV5Test {
     }
 
     @Test
-    void fullSnapshotVerifierRejectsPublicPemBeforeSemanticReads() throws Exception {
-        Path fixtureRoot = Files.createDirectory(temporary.resolve("public-pem-snapshot"));
+    void evidenceTreeRejectsPrivatePemBeforeSemanticReads() throws Exception {
+        Path fixtureRoot = Files.createDirectory(temporary.resolve("private-pem-snapshot"));
         ObjectNode attestation = JsonHashes.mapper().createObjectNode();
-        attestation.put("public_key_pem",
-                "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEA" + "A".repeat(24)
-                        + "\n-----END PUBLIC KEY-----\n");
+        attestation.put("private_key_pem",
+                "-----BEGIN PRIVATE KEY-----\n" + "A".repeat(24)
+                        + "\n-----END PRIVATE KEY-----\n");
         Files.writeString(fixtureRoot.resolve("v5-actions-attestation.json"),
                 JsonHashes.mapper().writeValueAsString(attestation) + "\n");
 
-        assertThatThrownBy(() -> WorkflowSecurityV5.verifyProspectiveSnapshotV5(
-                new WorkflowSecurityV5.ProspectiveSnapshotOptions(
-                        fixtureRoot, temporary, null, "a".repeat(64),
-                        System.currentTimeMillis())))
+        assertThatThrownBy(() -> SafeTreeVerifier.verify(
+                fixtureRoot, "prospective evidence snapshot", SafeTreeVerifier.Options.EVIDENCE))
+                .hasMessage("prospective evidence snapshot contains key/PEM material: "
+                        + "v5-actions-attestation.json");
+    }
+
+    @Test
+    void evidenceTreeRejectsMalformedPublicPemInSchemaBoundField() throws Exception {
+        Path fixtureRoot = Files.createDirectory(temporary.resolve("malformed-public-pem-snapshot"));
+        ObjectNode attestation = JsonHashes.mapper().createObjectNode()
+                .put("schema", "strategy-github-prospective-attestation/1")
+                .put("public_key_pem", "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEA"
+                        + "A".repeat(24) + "\n-----END PUBLIC KEY-----\n");
+        Files.writeString(fixtureRoot.resolve("v5-actions-attestation.json"),
+                JsonHashes.mapper().writeValueAsString(attestation) + "\n");
+
+        assertThatThrownBy(() -> SafeTreeVerifier.verify(
+                fixtureRoot, "prospective evidence snapshot", SafeTreeVerifier.Options.EVIDENCE))
                 .hasMessage("prospective evidence snapshot contains key/PEM material: "
                         + "v5-actions-attestation.json");
     }

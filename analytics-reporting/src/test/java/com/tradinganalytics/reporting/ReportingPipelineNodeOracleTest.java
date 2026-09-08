@@ -107,6 +107,111 @@ class ReportingPipelineNodeOracleTest {
     }
 
     @Test
+    void strictFailuresPreserveExistingFeedBytesAndDoNotCreateNewFeed() throws Exception {
+        assertStrictFailurePreservesFeed("missing-machine-block", reports ->
+                Files.writeString(reports.resolve("btc_fallen_knives_20260828_0101.md"), "# prose-only\n"));
+        assertStrictFailurePreservesFeed("malformed-machine-block", reports ->
+                Files.writeString(reports.resolve("btc_fallen_knives_20260828_0102.md"),
+                        "```json machine\n{\n```\n"));
+        assertStrictFailurePreservesFeed("mismatched-canonical-pair", reports -> {
+            Path source = ROOT.resolve("reports/btc_fallen_knives_20260822_0346.json");
+            JsonNode canonical = ReportContract.parseStrictJSON(
+                    Files.readString(source), source.getFileName().toString());
+            String filename = canonical.path("identity").path("filename").asText();
+            Files.writeString(reports.resolve(filename), ReportContract.canonicalReportJSON(canonical));
+            JsonNode altered = canonical.deepCopy();
+            ((com.fasterxml.jackson.databind.node.ObjectNode) altered.path("narrative"))
+                    .put("summary", "strict publication must reject this sidecar mismatch");
+            Files.writeString(reports.resolve(filename.replace(".json", ".md")), ReportRenderer.renderFull(altered));
+        });
+    }
+
+    @Test
+    void strictSuccessPublishesCanonicalFeedBytes() throws Exception {
+        Path repository = temporaryDirectory.resolve("strict-success");
+        Path reports = repository.resolve("reports");
+        Path output = repository.resolve("exports/signal-feed.json");
+        Files.createDirectories(reports);
+        Path source = ROOT.resolve("reports/btc_fallen_knives_20260822_0346.json");
+        JsonNode canonical = ReportContract.parseStrictJSON(
+                Files.readString(source), source.getFileName().toString());
+        String filename = canonical.path("identity").path("filename").asText();
+        Files.writeString(reports.resolve(filename), ReportContract.canonicalReportJSON(canonical));
+        Files.writeString(reports.resolve(filename.replace(".json", ".md")), ReportRenderer.renderFull(canonical));
+
+        ReportingCommandResult result = ExportSignalsCommand.run(
+                List.of("--reports", reports.toString(), "--out", output.toString(), "--strict"),
+                repository, Instant.parse("2026-08-28T00:00:00Z"));
+
+        assertThat(result.exitCode()).isZero();
+        assertThat(result.stderr()).contains("wrote ");
+        assertThat(Files.isRegularFile(output)).isTrue();
+        JsonNode feed = ReportContract.parseStrictJSON(Files.readString(output), output.getFileName().toString());
+        assertThat(feed.path("schema").asText()).isEqualTo("signal-feed/1");
+        assertThat(feed.path("counts").path("signals").asInt()).isEqualTo(1);
+        assertThat(feed.path("counts").path("mismatched_v2_pairs").asInt()).isZero();
+    }
+
+    @Test
+    void strictPublicationReportsOutputDirectoryFailure() throws Exception {
+        Path repository = temporaryDirectory.resolve("strict-write-failure");
+        Path reports = repository.resolve("reports");
+        Path output = repository.resolve("exports/signal-feed.json");
+        Files.createDirectories(reports);
+        Path source = ROOT.resolve("reports/btc_fallen_knives_20260822_0346.json");
+        JsonNode canonical = ReportContract.parseStrictJSON(
+                Files.readString(source), source.getFileName().toString());
+        String filename = canonical.path("identity").path("filename").asText();
+        Files.writeString(reports.resolve(filename), ReportContract.canonicalReportJSON(canonical));
+        Files.writeString(reports.resolve(filename.replace(".json", ".md")), ReportRenderer.renderFull(canonical));
+        Files.createDirectories(output);
+
+        ReportingCommandResult result = ExportSignalsCommand.run(
+                List.of("--reports", reports.toString(), "--out", output.toString(), "--strict"),
+                repository, Instant.parse("2026-08-28T00:00:00Z"));
+
+        assertThat(result.exitCode()).isEqualTo(1);
+        assertThat(result.stderr()).contains("write failed:");
+        assertThat(Files.isDirectory(output)).isTrue();
+    }
+
+    private void assertStrictFailurePreservesFeed(String name, ReportFixture fixture) throws Exception {
+        Path repository = temporaryDirectory.resolve(name);
+        Path reports = repository.resolve("reports");
+        Path output = repository.resolve("exports/signal-feed.json");
+        Files.createDirectories(reports);
+        fixture.write(reports);
+
+        byte[] previous = "LAST_KNOWN_GOOD\n".getBytes(StandardCharsets.UTF_8);
+        Files.createDirectories(output.getParent());
+        Files.write(output, previous);
+        ReportingCommandResult seeded = ExportSignalsCommand.run(
+                List.of("--reports", reports.toString(), "--out", output.toString(), "--strict"),
+                repository, Instant.parse("2026-08-28T00:00:00Z"));
+
+        assertThat(seeded.exitCode()).as(name).isEqualTo(1);
+        assertThat(Files.readAllBytes(output)).as(name + " existing bytes").isEqualTo(previous);
+        assertThat(seeded.stderr()).as(name + " must not publish").doesNotContain("wrote ");
+
+        Path newRepository = temporaryDirectory.resolve(name + "-new-output");
+        Path newReports = newRepository.resolve("reports");
+        Path newOutput = newRepository.resolve("exports/signal-feed.json");
+        Files.createDirectories(newReports);
+        fixture.write(newReports);
+        ReportingCommandResult fresh = ExportSignalsCommand.run(
+                List.of("--reports", newReports.toString(), "--out", newOutput.toString(), "--strict"),
+                newRepository, Instant.parse("2026-08-28T00:00:00Z"));
+
+        assertThat(fresh.exitCode()).as(name + " fresh").isEqualTo(1);
+        assertThat(newOutput).as(name + " must not create feed").doesNotExist();
+    }
+
+    @FunctionalInterface
+    private interface ReportFixture {
+        void write(Path reports) throws Exception;
+    }
+
+    @Test
     void historicalBackfillCheckMatchesCurrentFailClosedNodeBehavior() throws Exception {
         OracleResult node = oracle("backfill-check");
         ReportingCommandResult actual = BackfillReportPhaseRegistryCommand.run(List.of("--check"), ROOT);

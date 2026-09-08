@@ -23,7 +23,63 @@ jobs:
           java-version: '21'
           cache: maven
       - name: Build Spring application and run Java compatibility tests
-        run: ./mvnw --batch-mode --no-transfer-progress install
+        # clean removes every module's prior exec file so stale coverage cannot
+        # inflate the reviewed-diff gate; analytics-coverage is the final
+        # reactor module and aggregates downstream test execution data.
+        run: ./mvnw --batch-mode --no-transfer-progress clean install
+      - name: Resolve the reviewed diff base
+        id: base
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          EVENT_BEFORE: ${{ github.event.before }}
+        run: |
+          # pull_request.base.sha is the reviewed merge base for GitHub's
+          # default synthetic merge checkout; push.before is the prior commit.
+          # Both are required to be present and reachable from this checkout.
+          base_sha="$PR_BASE_SHA"
+          if [ -z "$base_sha" ]; then
+            base_sha="$EVENT_BEFORE"
+          fi
+          if [ -z "$base_sha" ] || [ "$base_sha" = "0000000000000000000000000000000000000000" ]; then
+            echo "No usable reviewed diff base was supplied by the GitHub event" >&2
+            exit 1
+          fi
+          git cat-file -e "$base_sha^{tree}" || {
+            echo "Reviewed diff base is not present locally: $base_sha" >&2
+            exit 1
+          }
+          git merge-base --is-ancestor "$base_sha" HEAD || {
+            echo "Reviewed diff base is not an ancestor of the checked out revision: $base_sha" >&2
+            exit 1
+          }
+          printf 'base_sha=%s\n' "$base_sha" >> "$GITHUB_OUTPUT"
+      - name: Test coverage gate implementation
+        run: python3 -m unittest tools.test_new_code_coverage
+      - name: Enforce 80 percent coverage on changed production Java
+        env:
+          BASE_SHA: ${{ steps.base.outputs.base_sha }}
+        run: |
+          python3 tools/check_new_code_coverage.py \
+            --base "$BASE_SHA" \
+            --report analytics-coverage/target/site/jacoco-aggregate/jacoco.xml \
+            --summary-json coverage-gate-summary.json \
+            --summary-markdown coverage-gate-summary.md
+      - name: Publish aggregate coverage and gate summary
+        if: always()
+        run: |
+          if [ -f coverage-gate-summary.md ]; then
+            cat coverage-gate-summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload aggregate JaCoCo report and gate summary
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: java-aggregate-coverage
+          path: |
+            analytics-coverage/target/site/jacoco-aggregate
+            coverage-gate-summary.json
+            coverage-gate-summary.md
+          if-no-files-found: error
 
   mutation-parity:
     needs: java-parity
@@ -60,6 +116,20 @@ jobs:
             tests: com.tradinganalytics.infrastructure.github.GitHubSettingsCaptureV5Test
             mutation: 70
             strength: 80
+            coverage: 90
+          - name: phase-trigger-risk
+            module: analytics-core
+            classes: com.tradinganalytics.core.swing.SwingPhaseRisk
+            tests: com.tradinganalytics.core.swing.SwingScoreTest,com.tradinganalytics.core.swing.SwingScorePropertyTest
+            mutation: 95
+            strength: 95
+            coverage: 95
+          - name: strict-publication
+            module: analytics-reporting
+            classes: com.tradinganalytics.reporting.ExportSignalsCommand
+            tests: com.tradinganalytics.reporting.ReportingPipelineNodeOracleTest,com.tradinganalytics.reporting.ExportSignalsPublicationMutationTest
+            mutation: 80
+            strength: 85
             coverage: 90
     name: mutation-parity (${{ matrix.name }})
     steps:

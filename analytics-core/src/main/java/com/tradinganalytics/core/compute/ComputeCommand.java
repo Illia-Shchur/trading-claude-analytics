@@ -293,7 +293,7 @@ public final class ComputeCommand {
                 boolFlag(flags.get("trigger-valid")),
                 ComputeMath.truthy(flags.get("created-at")) ? string(flags.get("created-at")) : null,
                 ComputeMath.truthy(flags.get("level")) ? flags.get("level") : null,
-                null, null, null));
+                null, triggerAge(flags), null));
         boolean flowOpposes = flow.opposing_rows() > 0 || boolFlag(flags.get("flow-opposes"));
         List<Veto> vetoes = SwingScore.hardVetoes(new HardVetoInput(
                 coverage,
@@ -622,6 +622,13 @@ public final class ComputeCommand {
 
     private JsonNode json(Object input) throws IOException {
         return ComputeCommandInput.readJson(input, json, workspaceRoot);
+    }
+
+    private Object triggerAge(Map<String, Object> flags) throws IOException {
+        if (!flags.containsKey("trigger-age-bars")) {
+            return null;
+        }
+        return nodeValue(json.readTree(string(flags.get("trigger-age-bars"))));
     }
 
     private JsonNode readDataFile(String name) throws IOException {

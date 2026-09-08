@@ -245,9 +245,7 @@ final class ReportMachine3Semantics {
             }
         }
         JsonNode ageBars = field(trigger, "age_bars");
-        if (!ageBars.isMissingNode() && !ageBars.isNull()
-                && (!ageBars.isIntegralNumber() || ageBars.longValue() < 0
-                || ageBars.doubleValue() > jsNumberConversion(field(trigger, "window_bars")))) {
+        if (!SwingScore.isValidTriggerAge(ageBars, jsNumberConversion(field(trigger, "window_bars")))) {
             errors.add("trigger.age_bars must be a fresh completed-bar age within window_bars");
         }
 
@@ -579,8 +577,7 @@ final class ReportMachine3Semantics {
                 && completedBarRequired.booleanValue()
                 && !(completedBar.isBoolean() && !completedBar.booleanValue())
                 && jsNumberConversion(windowBars) <= 2
-                && (ageBars.isNull() || ageBars.isMissingNode()
-                || jsNumberConversion(ageBars) <= jsNumberConversion(windowBars));
+                && SwingScore.isValidTriggerAge(ageBars, jsNumberConversion(windowBars));
     }
 
     private static String jsValue(JsonNode value) {

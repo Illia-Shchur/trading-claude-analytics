@@ -245,7 +245,7 @@ public-unseen-data custody runner is not shipped. `CI_ATTESTED_CONFIRMATION`
 is a signed SHADOW result only; local code cannot mint SEALED or ACTIVE. Use
 `./bin/analytics strategy-attestation keygen --private-out ... --public-out ...`, a remote
 immutable burn tag/receipt, and append-only import records. v1/v2 remain
-read-only. Run `./mvnw -q -pl analytics-market-data -Dtest=ResearchDataTest#originalDockerParquetContractRunsLocallyAndIsIdempotent test` for the pinned DuckDB integration
+read-only. Run `./mvnw -q -pl analytics-market-data -Dtest=ResearchDataTest#embeddedDuckDbParquetContractRunsLocallyAndIsIdempotent test` for the embedded DuckDB JDBC integration
 test and `./bin/analytics migrate-research-v3` for the deterministic eight-asset legacy
 index (BTC, ETH, SOL, BNB, XRP, ADA, LINK, AAVE; DOGE excluded).
 

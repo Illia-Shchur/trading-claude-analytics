@@ -43,6 +43,7 @@ public final class MarketSeriesAnalytics {
         List<JsonNode> fresh = new ArrayList<>();
         List<JsonNode> stale = new ArrayList<>();
         List<JsonNode> barCloses = new ArrayList<>();
+        List<JsonNode> unknownAge = new ArrayList<>();
         List<ObjectNode> rejected = new ArrayList<>();
         for (JsonNode quote : quotes) {
             if (!validQuoteValue(quote)) {
@@ -53,9 +54,12 @@ public final class MarketSeriesAnalytics {
                 barCloses.add(quote);
                 continue;
             }
+            String timestampKind = quote.path("ts_kind").asText("");
             JsonNode timestamp = quote.get("ts");
             if (timestamp == null || timestamp.isNull()) {
-                fresh.add(quote);
+                unknownAge.add(quote);
+            } else if (!("venue".equals(timestampKind) || "receipt".equals(timestampKind))) {
+                unknownAge.add(quote);
             } else if (!timestamp.isNumber() || !Double.isFinite(timestamp.doubleValue())) {
                 rejected.add(excludedQuote(quote, "EXCLUDED — quote timestamp must be numeric or null"));
             } else {
@@ -92,6 +96,11 @@ public final class MarketSeriesAnalytics {
         for (JsonNode quote : barCloses) {
             ObjectNode row = excludedQuote(quote, "frozen bar close — never enters the median");
             row.set("age_min", NullNode.instance);
+            excluded.add(row);
+        }
+        for (JsonNode quote : unknownAge) {
+            ObjectNode row = excludedQuote(quote,
+                    "EXCLUDED — quote freshness is unknown (timestamp and recognized timestamp kind are required)");
             excluded.add(row);
         }
 

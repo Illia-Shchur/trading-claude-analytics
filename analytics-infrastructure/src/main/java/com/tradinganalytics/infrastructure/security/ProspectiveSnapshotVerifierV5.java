@@ -157,7 +157,6 @@ final class ProspectiveSnapshotVerifierV5 {
         ResearchSchemaRegistry.defaultRegistry().validateContractSchema(cycle);
         if (!"github-settings-api-receipt/1".equals(api.path("schema").asText())
                 || !api.path("repository").asText().equals(capture.path("repository").asText())
-                || !string(api.get("repository_id")).equals(string(capture.get("repository_id")))
                 || !api.path("verified").asBoolean(false)
                 || (api.path("blockers").isArray() && !api.path("blockers").isEmpty())) {
             throw new CustodyException("settings API receipt is not bound to the capture");

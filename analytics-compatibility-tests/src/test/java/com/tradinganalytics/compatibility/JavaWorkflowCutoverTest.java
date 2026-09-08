@@ -71,7 +71,7 @@ class JavaWorkflowCutoverTest {
                         "actions/setup-node@");
         assertThat(foundation)
                 .contains("./mvnw --batch-mode --no-transfer-progress verify")
-                .contains("ResearchDataTest#originalDockerParquetContractRunsLocallyAndIsIdempotent")
+                .contains("ResearchDataTest#embeddedDuckDbParquetContractRunsLocallyAndIsIdempotent")
                 .contains("actions/setup-java@")
                 .doesNotContain("node ", "npm ", "actions/setup-node@");
         assertThat(v5Prospective)

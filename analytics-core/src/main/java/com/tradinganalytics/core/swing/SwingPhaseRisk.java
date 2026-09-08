@@ -79,8 +79,7 @@ final class SwingPhaseRisk {
                 && Double.isFinite(trigger.window_bars())
                 && trigger.window_bars() >= 1.0
                 && trigger.window_bars() <= 2.0
-                && (trigger.age_bars() == null
-                    || number(trigger.age_bars()) <= trigger.window_bars());
+                && validTriggerAge(trigger.age_bars(), trigger.window_bars());
 
         boolean vetoPass = activeVetoes.isEmpty();
         return new SwingScore.ActivePhaseResult(
@@ -143,8 +142,10 @@ final class SwingPhaseRisk {
         }
 
         Object ageBars = source.ageBars();
-        double ageNumber = ageBars == null ? Double.NaN : number(ageBars);
-        boolean fresh = ageBars == null || Double.isFinite(ageNumber) && ageNumber <= windowBars;
+        // Missing/null age is an explicit legacy policy: it remains eligible
+        // for the caller's other freshness checks, while a supplied age must
+        // be a finite, integral completed-bar count in the window.
+        boolean fresh = validTriggerAge(ageBars, windowBars);
         String status = source.valid() && completedBar && fresh
                 ? "VALID"
                 : source.valid() && !fresh ? "EXPIRED" : "WAIT";
@@ -160,6 +161,30 @@ final class SwingPhaseRisk {
                 windowBars,
                 ageBars
         );
+    }
+
+    /**
+     * Returns whether a trigger age is admissible. A missing/null age is
+     * intentionally accepted for backwards-compatible reports that do not
+     * carry an age observation; supplied values are numeric, finite,
+     * integral, non-negative completed-bar counts.
+     */
+    static boolean validTriggerAge(Object ageBars, double windowBars) {
+        if (ageBars == null || ageBars instanceof JsonNode node && (node.isMissingNode() || node.isNull())) {
+            return true;
+        }
+        if (ageBars instanceof Boolean || ageBars instanceof CharSequence) {
+            return false;
+        }
+        if (ageBars instanceof JsonNode node && !node.isNumber()) {
+            return false;
+        }
+        double age = number(ageBars);
+        return Double.isFinite(windowBars)
+                && Double.isFinite(age)
+                && age >= 0.0
+                && age == Math.rint(age)
+                && age <= windowBars;
     }
 
     static SwingScore.RiskBudgetResult riskBudget(SwingScore.RiskBudgetInput input) {

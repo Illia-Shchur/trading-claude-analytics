@@ -25,9 +25,9 @@ jobs:
           cache: maven
       - name: Run the complete Java unit, contract, and integration reactor
         run: ./mvnw --batch-mode --no-transfer-progress verify
-      - name: Re-run the pinned DuckDB and immutable Parquet contract explicitly
+      - name: Re-run the embedded DuckDB and immutable Parquet contract explicitly
         run: >-
           ./mvnw --batch-mode --no-transfer-progress -pl analytics-market-data -am
-          -Dtest=ResearchDataTest#originalDockerParquetContractRunsLocallyAndIsIdempotent
+          -Dtest=ResearchDataTest#embeddedDuckDbParquetContractRunsLocallyAndIsIdempotent
           -Dsurefire.failIfNoSpecifiedTests=false
           test

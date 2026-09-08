@@ -64,11 +64,18 @@ JavaScript was retired after all of the following cutover gates were satisfied:
 4. Canonical bytes, SHA-256 values, signatures, time zones, and numeric edge
    behavior match frozen known-answer vectors.
 5. Unit, property, integration, security, concurrency, and transaction tests
-   pass, including required DuckDB/Parquet integration in CI.
+   pass, including required embedded DuckDB JDBC/Parquet integration in CI.
 6. GitHub workflows and operational documentation run only the Java commands.
 7. A repository search finds no remaining supported JavaScript runtime path,
    `package.json`/Node dependencies are gone, and the complete Maven build is
    green from a clean checkout.
+
+Research Parquet conversion and bounded queries run through the pinned
+`org.duckdb:duckdb_jdbc` dependency embedded in the Java process. Docker is not
+required at runtime or in CI. Existing `container_sha256` manifest fields and
+the legacy DuckDB image digest remain compatibility metadata so historical
+manifest hashes and schema/lineage contracts continue to validate; they are
+not runtime container attestations.
 
 JaCoCo and PIT measurements below are continuing hardening signals, not hidden
 cutover gates. They identify weakly exercised branches and mutation survivors

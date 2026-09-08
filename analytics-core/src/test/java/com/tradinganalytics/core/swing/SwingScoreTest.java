@@ -396,6 +396,17 @@ class SwingScoreTest {
         assertThat(vetoed.unlocked()).isFalse();
     }
 
+    @Test
+    void phaseUnlockAcceptsTheMinimumOneBarTriggerWindow() {
+        TriggerWindow oneBar = new TriggerWindow(
+                "VALID", "4h", true, true, 100, null, null, 1.0, 0);
+        ActivePhaseResult result = SwingScore.activePhase(new ActivePhaseInput(
+                "fallen_knives", "A", "1A", scoreAt(8.0, 0.0), oneBar, List.of()));
+
+        assertThat(result.trigger_pass()).isTrue();
+        assertThat(result.unlocked()).isTrue();
+    }
+
     @ParameterizedTest
     @MethodSource("invalidActivationTriggers")
     void phaseRejectsEveryInvalidTriggerContract(TriggerWindow trigger) {
@@ -476,11 +487,47 @@ class SwingScoreTest {
         assertThat(SwingScore.triggerWindow(null).window_bars()).isEqualTo(2.0);
     }
 
+    @Test
+    void triggerAgeRequiresFiniteIntegralNonNegativeCompletedBars() {
+        assertThat(SwingScore.isValidTriggerAge(null, 2.0)).isTrue();
+        assertThat(SwingScore.isValidTriggerAge(JSON.nullNode(), 2.0)).isTrue();
+        assertThat(SwingScore.isValidTriggerAge(0, 2.0)).isTrue();
+        assertThat(SwingScore.isValidTriggerAge(2, 2.0)).isTrue();
+        assertThat(SwingScore.isValidTriggerAge(JSON.getNodeFactory().numberNode(1), 2.0)).isTrue();
+        assertThat(SwingScore.isValidTriggerAge(JSON.createObjectNode(), 2.0)).isFalse();
+        assertThat(SwingScore.isValidTriggerAge(-1, 2.0)).isFalse();
+        assertThat(SwingScore.isValidTriggerAge(2.5, 2.0)).isFalse();
+        assertThat(SwingScore.isValidTriggerAge(Double.NaN, 2.0)).isFalse();
+        assertThat(SwingScore.isValidTriggerAge(Double.POSITIVE_INFINITY, 2.0)).isFalse();
+        assertThat(SwingScore.isValidTriggerAge(1, Double.NaN)).isFalse();
+        assertThat(SwingScore.isValidTriggerAge("1", 2.0)).isFalse();
+        assertThat(SwingScore.isValidTriggerAge(true, 2.0)).isFalse();
+
+        assertThat(SwingScore.triggerWindow(new TriggerInput("4h", true, null, null, 2, -1, true)).status())
+                .isEqualTo("EXPIRED");
+        assertThat(SwingScore.triggerWindow(new TriggerInput("4h", true, null, null, 2, 2.5, true)).status())
+                .isEqualTo("EXPIRED");
+        assertThat(SwingScore.triggerWindow(new TriggerInput("4h", true, null, null, 2, 2, true)).status())
+                .isEqualTo("VALID");
+    }
+
+    @Test
+    void activePhaseRejectsForgedValidTriggerWithInvalidAge() {
+        TriggerWindow forged = new TriggerWindow(
+                "VALID", "4h", true, true, 100, null, null, 2.0, -1);
+        ActivePhaseResult result = SwingScore.activePhase(new ActivePhaseInput(
+                "fallen_knives", "A", "1A", scoreAt(8, 0), forged, List.of()));
+
+        assertThat(result.score_pass()).isTrue();
+        assertThat(result.trigger_pass()).isFalse();
+        assertThat(result.unlocked()).isFalse();
+    }
+
     @ParameterizedTest
     @MethodSource("triggerBarWindows")
     void triggerBarsFollowNumberFallbackAndOneToTwoClamp(Object bars, double expected) {
         TriggerWindow result = SwingScore.triggerWindow(new TriggerInput(
-                "4h", true, "2026-08-22T00:00:00.125Z", null, bars, -1, true));
+                "4h", true, "2026-08-22T00:00:00.125Z", null, bars, 0, true));
         assertThat(result.window_bars()).isEqualTo(expected);
         assertThat(result.status()).isEqualTo("VALID");
         assertThat(result.expires_at()).isNotNull();

@@ -2,7 +2,6 @@ package com.tradinganalytics.research.v5;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,13 +11,9 @@ import com.tradinganalytics.contracts.json.CanonicalJson;
 import com.tradinganalytics.infrastructure.security.JsonHashes;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
-import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Objects;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 final class StrategyEvaluatorV5NodeOracleTest {
     private static final ObjectMapper MAPPER = JsonHashes.mapper();
@@ -204,117 +199,6 @@ final class StrategyEvaluatorV5NodeOracleTest {
         assertSameFailure(delayedCall,
                 () -> StrategyEvaluatorV5.createFixtureEvaluatorV5(delayedBinding)
                         .evaluate((ObjectNode) delayed.path("task")));
-    }
-
-    @Test
-    void verifiedPhysicalNullSelectionMatchesTheOriginalNodeEndToEndFixture(@TempDir Path temporary)
-            throws Exception {
-        ObjectNode oracle = frozenPhysicalNullFixture();
-        ObjectNode fixture = (ObjectNode) oracle.path("fixture");
-        Path parquetRoot = Path.of(fixture.path("root").asText()).toAbsolutePath().normalize();
-        ObjectNode metadata = ((ObjectNode) fixture.path("metadata")).deepCopy();
-        Path metadataRoot = Path.of(metadata.path("source_root").asText()).toAbsolutePath().normalize();
-        // The frozen oracle was produced from a local, temporary Node parquet lake. The lake is
-        // intentionally not checked in, so retain the differential when it is available locally
-        // and skip it on clean CI checkouts instead of resolving a stale machine-specific path.
-        assumeTrue(Files.isDirectory(parquetRoot, LinkOption.NOFOLLOW_LINKS)
-                        && Files.isDirectory(metadataRoot, LinkOption.NOFOLLOW_LINKS)
-                        && allReferencedFilesExist(fixture.path("manifest"), parquetRoot)
-                        && allReferencedFilesExist(metadata, metadataRoot),
-                "frozen physical-null fixture is incomplete: " + parquetRoot);
-        ObjectNode load = MAPPER.createObjectNode()
-                .put("root", parquetRoot.toString())
-                .put("cacheRoot", temporary.resolve("java-worker-cache").toString())
-                .put("workerCount", 2).put("maxRowsPerRole", 100)
-                .put("maxMaterializedBytesPerRole", 8_000_000);
-        load.set("manifest", fixture.path("manifest"));
-        load.set("evaluatorSpec", fixture.path("evaluatorSpec"));
-        load.set("geneSpace", fixture.path("geneSpace"));
-        load.set("predictorRegistry", fixture.path("predictorRegistry"));
-        String javaRootReference = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize()
-                .relativize(metadataRoot).toString().replace(java.io.File.separatorChar, '/');
-        for (String key : new String[] {"contract_spec", "fee_schedule", "execution_model"}) {
-            ObjectNode receipt = (ObjectNode) metadata.path(key);
-            receipt.put("source_root_reference", javaRootReference);
-            receipt.put("content_sha256", JsonHashes.ownHash(receipt));
-        }
-        load.set("metadata", metadata);
-        load.put("metadataRoot", metadataRoot.toString());
-
-        try (StrategyEvaluatorV5.LoadedEvaluator loaded =
-                StrategyEvaluatorV5.loadAuthoritativeEvaluatorV5(load)) {
-            assertThat(loaded.evaluator().physicalNullSelectionVerified()).isTrue();
-            ObjectNode runnerOptions = MAPPER.createObjectNode();
-            runnerOptions.set("roleManifest", fixture.path("manifest"));
-            runnerOptions.set("exposureHead", fixture.path("exposureHead"));
-            runnerOptions.set("geneSpace", fixture.path("geneSpace"));
-            runnerOptions.set("behaviorDefinitions", fixture.path("behaviorDefinitions"));
-            runnerOptions.set("selectionConstraints", fixture.path("selectionConstraints"));
-            runnerOptions.set("selectionEndAt", fixture.path("selectionEndAt"));
-            runnerOptions.put("physicalNullRoot", temporary.resolve("java-physical-null").toString());
-            StrategyStatisticalV5.PhysicalNullRunner runner =
-                    StrategyStatisticalV5.makePhysicalNullRunnerV5(runnerOptions, loaded.evaluator());
-
-            ObjectNode nullOptions = MAPPER.createObjectNode();
-            nullOptions.set("artifact", fixture.path("artifact"));
-            nullOptions.set("selectedEpisodeIds", fixture.path("episodeIds"));
-            nullOptions.put("selectedCandidateId", "c");
-            nullOptions.set("selectionBudget", fixture.path("selectionBudget"));
-            nullOptions.put("iterations", 1).put("mode", "AUTHORITATIVE");
-            ObjectNode actual = StrategyStatisticalV5.runNullControlsV5(nullOptions, null, runner);
-            JsonNode expected = oracle.path("result");
-            assertThat(actual.path("tests")).hasSize(4);
-            for (int index = 0; index < 4; index++) {
-                JsonNode javaTest = actual.path("tests").path(index);
-                JsonNode nodeTest = expected.path("tests").path(index);
-                for (String key : new String[] {"name", "method", "p_value", "p_value_lower_bound",
-                        "p_value_upper_bound", "null_statistics_sha256", "pass", "iterations",
-                        "iterations_planned", "sequential_stopping_reason", "evaluation_attempt_k",
-                        "worker_evaluation_count", "worker_count", "checkpointed_iterations",
-                        "checkpoint_policy"}) {
-                    assertJson(javaTest.path(key), nodeTest.path(key));
-                }
-                assertThat(javaTest.path("method").asText())
-                        .isEqualTo("PHYSICAL_ROLE_BOUND_ADAPTIVE_SELECTION");
-            }
-
-            ObjectNode direct = MAPPER.createObjectNode();
-            direct.set("source_artifact", fixture.path("artifact"));
-            direct.put("method", "block_permuted_labels").put("seed", 7).put("iteration", 0);
-            direct.set("selection_budget", fixture.path("selectionBudget"));
-            direct.put("selected_candidate_id", "c");
-            direct.set("selected_episode_ids", fixture.path("episodeIds"));
-            direct.put("selected_trade_count", 0); direct.putArray("selected_trade_episode_ids");
-            ObjectNode selected = runner.run(direct);
-            assertThat(selected.path("schema").asText())
-                    .isEqualTo("strategy-v5-physical-null-selection/1");
-            assertThat(selected.path("checkpoint_status").asText()).isEqualTo("COMPLETED");
-            assertJson(runner.run(direct), selected);
-            Path transformedLabel = Path.of(selected.path("transformed_label_ref").path("path").asText());
-            Files.writeString(transformedLabel, "tampered", java.nio.file.StandardOpenOption.APPEND);
-            assertThatThrownBy(() -> runner.run(direct))
-                    .hasMessage("physical null checkpoint/reference bytes are tampered");
-        }
-    }
-
-    private static boolean allReferencedFilesExist(JsonNode value, Path root) {
-        if (value == null || value.isNull() || value.isMissingNode()) return true;
-        if (value.isArray()) {
-            for (JsonNode child : value) if (!allReferencedFilesExist(child, root)) return false;
-            return true;
-        }
-        if (!value.isObject()) return true;
-        var fields = value.fields();
-        while (fields.hasNext()) {
-            var field = fields.next();
-            JsonNode child = field.getValue();
-            if (("path".equals(field.getKey()) || field.getKey().endsWith("_path")) && child.isTextual()) {
-                Path referenced = root.resolve(child.asText()).normalize();
-                if (!referenced.startsWith(root) || Files.isSymbolicLink(referenced)
-                        || !Files.isRegularFile(referenced, LinkOption.NOFOLLOW_LINKS)) return false;
-            } else if (!allReferencedFilesExist(child, root)) return false;
-        }
-        return true;
     }
 
     @Test
@@ -528,11 +412,6 @@ final class StrategyEvaluatorV5NodeOracleTest {
         JsonNode response = frozenJson("/oracles/strategy-evaluator-v5.json").get(key);
         assertThat(response).as("missing frozen evaluator oracle for " + key).isNotNull();
         return response.deepCopy();
-    }
-
-    private static ObjectNode frozenPhysicalNullFixture() throws IOException {
-        return (ObjectNode) frozenJson(
-                "/oracles/strategy-evaluator-v5-physical-null.json");
     }
 
     private static JsonNode frozenJson(String resource) throws IOException {

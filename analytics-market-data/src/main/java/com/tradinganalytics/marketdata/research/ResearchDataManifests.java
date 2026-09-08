@@ -294,7 +294,7 @@ final class ResearchDataManifests {
         lineage.put("adapter_sha256", ResearchDataJson.textOr(supplied.get("adapter_sha256"),
                 JsonHashes.sha256("adapter:" + source)));
         lineage.put("code_sha256", ResearchDataJson.textOr(supplied.get("code_sha256"), ResearchData.RESEARCH_DATA_CODE_SHA256));
-        lineage.put("container_sha256", ResearchDataJson.textOr(supplied.get("container_sha256"), ResearchData.DUCKDB_IMAGE_DIGEST));
+        lineage.put("container_sha256", ResearchDataJson.textOr(supplied.get("container_sha256"), ResearchData.LEGACY_DUCKDB_IMAGE_DIGEST));
         ObjectNode config = JsonHashes.mapper().createObjectNode();
         config.put("source", source);
         config.put("role", role);

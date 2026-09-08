@@ -38,7 +38,10 @@ public final class SnapshotPanels {
             empty.putArray("items");
             return empty;
         }
-        Double spot = firstPresentNumber(at(snapshot, "spot", "canonical"), at(snapshot, "spot", "canonical_median"));
+        // canonical_median is a legacy echo and may represent an
+        // insufficient-source panel. Only the verified canonical field may
+        // drive proximity or tripwire calculations.
+        Double spot = presentNumber(at(snapshot, "spot", "canonical"));
 
         Double percentBelow = presentNumber(at(snapshot, "high_1y", "pct_below"));
         Double high = presentNumber(at(snapshot, "high_1y", "value"));

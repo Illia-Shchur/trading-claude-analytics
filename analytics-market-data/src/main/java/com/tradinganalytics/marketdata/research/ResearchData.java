@@ -25,9 +25,13 @@ public final class ResearchData {
             "T3_REVISED_OR_PROXY", "UNVERIFIED");
     public static final List<String> CORE_CRYPTO_ASSETS = List.of(
             "btc", "eth", "sol", "bnb", "xrp", "ada", "link", "aave");
-    public static final String DUCKDB_IMAGE = "docker.io/duckdb/duckdb:1.4.4@sha256:"
+    /**
+     * Legacy manifest compatibility metadata. Runtime Parquet work uses the
+     * embedded DuckDB JDBC driver; this image is not pulled or executed.
+     */
+    public static final String LEGACY_DUCKDB_IMAGE = "docker.io/duckdb/duckdb:1.4.4@sha256:"
             + "2a5c5fb1bf8a7a93a43893b583cf15fcfebc0b8e02a39110593582907f96d8ad";
-    public static final String DUCKDB_IMAGE_DIGEST =
+    public static final String LEGACY_DUCKDB_IMAGE_DIGEST =
             "2a5c5fb1bf8a7a93a43893b583cf15fcfebc0b8e02a39110593582907f96d8ad";
 
     // Package-private because manifest/snapshot collaborators must preserve

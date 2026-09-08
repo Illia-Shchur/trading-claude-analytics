@@ -9,7 +9,8 @@
     "skipped_no_machine_block": 66,
     "skipped_post_epoch_missing_block": 0,
     "skipped_unparseable": 0,
-    "v2_signals": 10
+    "v2_signals": 10,
+    "v3_signals": 0
   },
   "encoding": "decimal quantities (prices, scores, percentages, EV) are JSON strings in plain decimal notation; counts, gate numbers, booleans and enums are native",
   "epochs": {
@@ -18,7 +19,7 @@
     "machine_block": "2026-07-11",
     "report_phase_registry": "report-phase-registry/1"
   },
-  "generated_at": "2026-08-22T07:53:34Z",
+  "generated_at": "2026-08-30T15:16:46Z",
   "generated_by": "tools/export-signals.mjs",
   "ignored_files": [
     {

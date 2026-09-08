@@ -13,4 +13,17 @@
     <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId><scope>test</scope></dependency>
     <dependency><groupId>org.assertj</groupId><artifactId>assertj-core</artifactId><scope>test</scope></dependency>
   </dependencies>
+  <build>
+    <testResources>
+      <testResource>
+        <directory>src/test/resources</directory>
+      </testResource>
+      <testResource>
+        <directory>../analytics-research/src/test/resources</directory>
+        <includes>
+          <include>oracles/strategy-readiness-v5-activation.json</include>
+        </includes>
+      </testResource>
+    </testResources>
+  </build>
 </project>

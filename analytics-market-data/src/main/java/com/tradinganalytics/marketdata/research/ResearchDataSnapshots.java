@@ -239,7 +239,7 @@ final class ResearchDataSnapshots {
         result.put("adapter_sha256", ResearchDataJson.firstNonNull(options.adapterSha256(), rowAdapter,
                 JsonHashes.sha256("adapter:" + options.source())));
         result.put("code_sha256", ResearchDataJson.firstNonNull(options.codeSha256(), ResearchData.RESEARCH_DATA_CODE_SHA256));
-        result.put("container_sha256", ResearchDataJson.firstNonNull(options.containerSha256(), ResearchData.DUCKDB_IMAGE_DIGEST));
+        result.put("container_sha256", ResearchDataJson.firstNonNull(options.containerSha256(), ResearchData.LEGACY_DUCKDB_IMAGE_DIGEST));
         ObjectNode config = JsonHashes.mapper().createObjectNode();
         config.put("datasetId", datasetId);
         ResearchDataJson.putNullable(config, "asset", options.asset());

@@ -1,5 +1,7 @@
 package com.tradinganalytics.compatibility;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -53,7 +55,7 @@ class LiveMarketFetchMacroParityTest {
     }
 
     @Test
-    void completeGoldFixtureMatchesNodeExactly() throws Exception {
+    void completeGoldFixtureUsesUnavailableSpotAndExplicitHistoricalFallback() throws Exception {
         JsonNode yahoo = JSON.readTree(yahooChart(240));
         ObjectNode input = JSON.createObjectNode(); input.put("now", NOW); input.set("yahoo", yahoo);
         JsonNode expected = CompatibilityFixtures.readJson(JSON, "live-fetch-gold-v1.json");
@@ -65,6 +67,28 @@ class LiveMarketFetchMacroParityTest {
                 new MarketDataEndpoints(http, JSON, () -> NOW, null), JSON, () -> NOW, false)
                 .fetchAsset("gold", true);
         actual.remove("fetched_at");
+
+        // Bar-close-only quotes are contextual evidence and cannot become
+        // canonical spot. Preserve their value only in the explicitly
+        // ineligible fallback block; dependent spot ratios are unavailable.
+        ObjectNode spot = (ObjectNode) actual.path("spot");
+        assertThat(spot.has("contextual_fallback")).isTrue();
+        assertThat(spot.path("canonical").isNull()).isTrue();
+        assertThat(spot.path("canonical_source").asText()).isEqualTo("unavailable");
+        assertThat(spot.path("canonical_median").isNull()).isTrue();
+        assertThat(spot.path("contextual_fallback").path("value").asInt()).isEqualTo(339);
+        assertThat(spot.path("contextual_fallback").path("source").asText())
+                .isEqualTo("priority_first_fallback");
+        assertThat(spot.path("contextual_fallback").path("eligible_for_scoring").asBoolean()).isFalse();
+        assertThat(spot.path("contextual_fallback").path("reason").asText())
+                .isEqualTo("historical or insufficient-source price; verified synchronized spot is unavailable");
+        assertThat(actual.has("ath")).isFalse();
+        assertThat(actual.has("high_1y")).isFalse();
+        assertThat(actual.path("weekly").path("sma_200w").path("pct_vs_spot").isNull()).isTrue();
+        assertThat(actual.path("weekly").path("sma_200w").path("within_8pct").isNull()).isTrue();
+        assertThat(actual.path("context").has("distance_to_200dma_pct")).isFalse();
+        assertThat(actual.path("context").has("distance_to_200dma_percentile")).isFalse();
+        assertThat(actual.path("context").path("proximity").path("items")).hasSize(2);
 
         CompatibilityFixtures.assertWireEqual(expected, actual);
     }

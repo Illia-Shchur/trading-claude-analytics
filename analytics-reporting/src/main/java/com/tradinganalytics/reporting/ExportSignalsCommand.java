@@ -71,10 +71,28 @@ public final class ExportSignalsCommand {
                 .append(ToolchainSupport.MACHINE_BLOCK_EPOCH).append(" carry NO machine block — a real gap\n");
         else stderr.append("  every skip predates the machine-block epoch (").append(ToolchainSupport.MACHINE_BLOCK_EPOCH)
                 .append(") — expected, not a failure\n");
+        String stdout = dryRun ? pretty(counts, 0) + "\n" : "";
 
-        String stdout = "";
-        if (dryRun) stdout = pretty(counts, 0) + "\n";
-        else {
+        // Strict mode is a validation operation. Do all of its checks before
+        // touching the published feed so a rejected projection cannot replace
+        // the last known good bytes (or create a new feed on a failed run).
+        int unparseable = counts.path("skipped_unparseable").asInt();
+        int mismatches = feed.withArray("mismatched_v2_pairs").size();
+        if (strict && postEpoch > 0) {
+            stderr.append("\nFAIL (--strict) — ").append(postEpoch).append(" report(s) on/after ")
+                    .append(ToolchainSupport.MACHINE_BLOCK_EPOCH).append(" lack a machine block\n");
+            return ReportingCommandResult.failure(stdout, stderr.toString());
+        }
+        if (strict && unparseable > 0) {
+            stderr.append("\nFAIL (--strict) — ").append(unparseable).append(" machine block(s) failed to parse or project\n");
+            return ReportingCommandResult.failure(stdout, stderr.toString());
+        }
+        if (strict && mismatches > 0) {
+            stderr.append("\nFAIL (--strict) — ").append(mismatches).append(" v2 JSON/Markdown pair(s) are not canonically equal\n");
+            return ReportingCommandResult.failure(stdout, stderr.toString());
+        }
+
+        if (!dryRun) {
             try {
                 Files.createDirectories(outPath.getParent());
                 String previous = Files.exists(outPath) ? Files.readString(outPath, StandardCharsets.UTF_8) : null;
@@ -95,21 +113,6 @@ public final class ExportSignalsCommand {
                 stderr.append("write failed: ").append(ReportingFiles.message(exception)).append('\n');
                 return ReportingCommandResult.failure(stdout, stderr.toString());
             }
-        }
-        if (strict && postEpoch > 0) {
-            stderr.append("\nFAIL (--strict) — ").append(postEpoch).append(" report(s) on/after ")
-                    .append(ToolchainSupport.MACHINE_BLOCK_EPOCH).append(" lack a machine block\n");
-            return ReportingCommandResult.failure(stdout, stderr.toString());
-        }
-        int unparseable = counts.path("skipped_unparseable").asInt();
-        if (strict && unparseable > 0) {
-            stderr.append("\nFAIL (--strict) — ").append(unparseable).append(" machine block(s) failed to parse or project\n");
-            return ReportingCommandResult.failure(stdout, stderr.toString());
-        }
-        int mismatches = feed.withArray("mismatched_v2_pairs").size();
-        if (strict && mismatches > 0) {
-            stderr.append("\nFAIL (--strict) — ").append(mismatches).append(" v2 JSON/Markdown pair(s) are not canonically equal\n");
-            return ReportingCommandResult.failure(stdout, stderr.toString());
         }
         return ReportingCommandResult.success(stdout, stderr.toString());
     }

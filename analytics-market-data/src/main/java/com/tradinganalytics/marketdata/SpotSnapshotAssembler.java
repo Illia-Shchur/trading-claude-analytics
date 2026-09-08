@@ -61,8 +61,10 @@ final class SpotSnapshotAssembler {
 
         ObjectNode panel = MarketSeriesAnalytics.spotPanel(quotes, now, 120, 0.5);
         Double panelMedian = nullablePositiveNumber(panel.get("canonical"));
+        boolean synchronizedPanel = panel.path("n_synchronized").asInt() >= 2 && panelMedian != null;
         Double priority = sources.isEmpty() ? null : sources.get(0).path("value").asDouble();
-        Double canonical = panelMedian != null ? panelMedian : priority;
+        Double canonical = synchronizedPanel ? panelMedian : null;
+        Double fallback = panelMedian != null ? panelMedian : priority;
         ObjectNode output = json.createObjectNode();
         putNullable(output, "canonical", canonical);
         output.set("sources", sources);
@@ -72,10 +74,21 @@ final class SpotSnapshotAssembler {
         } else {
             output.set("warning", NullNode.instance);
         }
-        output.put("canonical_source", panelMedian != null ? "panel_median"
-                : priority != null ? "priority_first_fallback" : "unavailable");
+        output.put("canonical_source", synchronizedPanel ? "panel_median" : "unavailable");
         output.set("panel", panel);
-        putNullable(output, "canonical_median", panelMedian);
+        putNullable(output, "canonical_median", synchronizedPanel ? panelMedian : null);
+        if (!synchronizedPanel) {
+            ObjectNode contextualFallback = output.putObject("contextual_fallback");
+            putNullable(contextualFallback, "value", fallback);
+            contextualFallback.put("source", fallback == null ? "unavailable"
+                    : panelMedian != null ? "panel_insufficient_sources" : "priority_first_fallback");
+            contextualFallback.put("eligible_for_scoring", false);
+            contextualFallback.put("reason", fallback == null
+                    ? "no positive historical or fallback price available"
+                    : "historical or insufficient-source price; verified synchronized spot is unavailable");
+        } else {
+            output.set("contextual_fallback", NullNode.instance);
+        }
         output.set("method_conflict", NullNode.instance);
         return output;
     }

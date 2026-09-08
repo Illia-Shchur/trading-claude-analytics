@@ -150,6 +150,15 @@ public final class SwingScore {
         return SwingPhaseRisk.triggerWindow(input);
     }
 
+    /**
+     * Shared completed-bar age policy used by calculation and report
+     * validation. Missing/null age is accepted by design; supplied ages must
+     * be finite, integral, non-negative, and no older than the window.
+     */
+    public static boolean isValidTriggerAge(Object ageBars, double windowBars) {
+        return SwingPhaseRisk.validTriggerAge(ageBars, windowBars);
+    }
+
     public static RiskBudgetResult riskBudget(RiskBudgetInput input) {
         return SwingPhaseRisk.riskBudget(input);
     }

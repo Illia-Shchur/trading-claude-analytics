@@ -297,6 +297,26 @@ class ComputeMathTest {
     }
 
     @Test
+    void swingScoreCommandUsesTheCompletedBarAgePolicy() throws Exception {
+        ComputeCommand command = new ComputeCommand();
+        String legs = "{\"flow\":1,\"technical\":1,\"macro\":1,\"sentiment\":1,\"valuation\":1,\"structure\":1}";
+
+        assertThat(JSON.readTree(command.execute("swing-score", "--legs", legs,
+                "--trigger-valid", "true", "--trigger-age-bars", "0").stdout())
+                .path("trigger").path("status").asText()).isEqualTo("VALID");
+        assertThat(JSON.readTree(command.execute("swing-score", "--legs", legs,
+                "--trigger-valid", "true", "--trigger-age-bars", "2").stdout())
+                .path("trigger").path("status").asText()).isEqualTo("VALID");
+        for (String age : List.of("-1", "2.5", "\"1\"", "true", "null")) {
+            ComputeCommand.Result result = command.execute("swing-score", "--legs", legs,
+                    "--trigger-valid", "true", "--trigger-age-bars", age);
+            assertThat(result.exitCode()).as(age).isZero();
+            String status = JSON.readTree(result.stdout()).path("trigger").path("status").asText();
+            assertThat(status).as(age).isEqualTo("null".equals(age) ? "VALID" : "EXPIRED");
+        }
+    }
+
+    @Test
     void commandOutputEscapesLoneSurrogatesLikeNodeJsonStringify() {
         String scenarios = "[{\"name\":\"\\u" + "d800\",\"p\":100,\"mid\":1}]";
 

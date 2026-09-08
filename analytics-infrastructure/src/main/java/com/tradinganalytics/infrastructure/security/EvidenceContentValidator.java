@@ -3,7 +3,6 @@ package com.tradinganalytics.infrastructure.security;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
@@ -53,26 +52,73 @@ final class EvidenceContentValidator {
                 throw new CustodyException(label + " contains raw/NUL bytes: " + path);
             }
         }
-        String text;
         try {
-            CharBuffer decoded = StandardCharsets.UTF_8.newDecoder()
+            StandardCharsets.UTF_8.newDecoder()
                     .onMalformedInput(CodingErrorAction.REPORT)
                     .onUnmappableCharacter(CodingErrorAction.REPORT)
                     .decode(ByteBuffer.wrap(bytes));
-            text = decoded.toString();
         } catch (CharacterCodingException error) {
             throw new CustodyException(label + " contains invalid UTF-8/raw evidence: " + path, error);
         }
         String normalized = path.replace('\\', '/');
-        boolean registry = normalized.substring(normalized.lastIndexOf('/') + 1).equals(PUBLIC_REGISTRY);
-        if (!registry && ANY_PEM_BEGIN.matcher(text).find()) {
-            throw new CustodyException(label + " contains key/PEM material: " + path);
-        }
+        String filename = normalized.substring(normalized.lastIndexOf('/') + 1);
+        boolean registry = filename.equals(PUBLIC_REGISTRY);
         JsonNode value = JsonHashes.parse(bytes, label + " artifact " + path);
         if (registry) {
             validateRegistry(value, label, path, new ArrayList<>());
+        } else {
+            boolean attestation = filename.equals("v5-actions-attestation.json")
+                    && "strategy-github-prospective-attestation/1"
+                            .equals(value.path("schema").asText());
+            validateEvidenceStrings(value, label, path, attestation, false, new ArrayList<>());
         }
         return value;
+    }
+
+    /**
+     * Public attestation keys are intentionally carried in the signed receipt so the
+     * verifier can bind them to the frozen registry.  Everything else that looks like
+     * PEM remains forbidden, including JSON-escaped markers.
+     */
+    private static void validateEvidenceStrings(JsonNode node, String label, String path,
+                                                boolean attestation,
+                                                boolean publicKeyField, List<Object> location) {
+        if (node == null) return;
+        if (node.isTextual() && ANY_PEM_BEGIN.matcher(node.textValue()).find()) {
+            boolean allowed = attestation && publicKeyField && isExactPublicPem(node.textValue());
+            if (!allowed) {
+                throw new CustodyException(label + " contains key/PEM material: " + path);
+            }
+            return;
+        }
+        if (node.isArray()) {
+            for (int index = 0; index < node.size(); index++) {
+                List<Object> next = new ArrayList<>(location);
+                next.add(index);
+                validateEvidenceStrings(node.get(index), label, path, attestation,
+                        false, next);
+            }
+        } else if (node.isObject()) {
+            node.fields().forEachRemaining(entry -> {
+                if (ANY_PEM_BEGIN.matcher(entry.getKey()).find()) {
+                    throw new CustodyException(label + " contains key/PEM material: " + path);
+                }
+                List<Object> next = new ArrayList<>(location);
+                next.add(entry.getKey());
+                validateEvidenceStrings(entry.getValue(), label, path, attestation,
+                        attestation && location.isEmpty() && "public_key_pem".equals(entry.getKey()), next);
+            });
+        }
+    }
+
+    private static boolean isExactPublicPem(String value) {
+        if (!EXACT_PUBLIC_PEM.matcher(value).matches()) return false;
+        try {
+            validateEd25519PublicPem(value, "evidence", "attestation");
+            return true;
+        } catch (CustodyException invalid) {
+            return false;
+        }
     }
 
     private static void validateRegistry(JsonNode node, String label, String path, List<Object> location) {
@@ -98,6 +144,10 @@ final class EvidenceContentValidator {
             }
         } else if (node.isObject()) {
             node.fields().forEachRemaining(entry -> {
+                if (FORBIDDEN_REGISTRY_MARKER.matcher(entry.getKey()).find()) {
+                    throw new CustodyException(label
+                            + " registry contains key/secret material outside public_key_pem: " + path);
+                }
                 List<Object> next = new ArrayList<>(location);
                 next.add(entry.getKey());
                 validateRegistry(entry.getValue(), label, path, next);

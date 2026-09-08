@@ -69,6 +69,54 @@ class MarketSeriesAnalyticsTest {
     }
 
     @Test
+    void spotPanelExcludesUnknownAgeFromSynchronizedMedian() throws Exception {
+        ArrayNode quotes = (ArrayNode) JSON.readTree("""
+                [{"source":"undated","value":99,"ts":null,"ts_kind":"receipt"},
+                 {"source":"missing","value":98,"ts_kind":"venue"},
+                 {"source":"known","value":100,"ts":1000000,"ts_kind":"venue"}]
+                """);
+
+        var output = MarketSeriesAnalytics.spotPanel(quotes, 1_000_000L, 120, 0.5);
+
+        assertThat(output.path("canonical").asDouble()).isEqualTo(100.0);
+        assertThat(output.path("n_synchronized").asInt()).isEqualTo(1);
+        assertThat(output.path("low_confidence").asBoolean()).isTrue();
+        assertThat(output.path("excluded").findValuesAsText("reason"))
+                .allMatch(reason -> reason.contains("freshness is unknown"));
+    }
+
+    @Test
+    void spotPanelFailsClosedWhenEveryQuoteIsStaleOrHistorical() throws Exception {
+        ArrayNode quotes = (ArrayNode) JSON.readTree("""
+                [{"source":"stale","value":99,"ts":-10000000,"ts_kind":"venue"},
+                 {"source":"daily","value":100,"ts":1000000,"ts_kind":"bar_close"}]
+                """);
+
+        var output = MarketSeriesAnalytics.spotPanel(quotes, 1_000_000L, 120, 0.5);
+
+        assertThat(output.path("canonical").isNull()).isTrue();
+        assertThat(output.path("n_synchronized").asInt()).isZero();
+        assertThat(output.path("low_confidence").asBoolean()).isTrue();
+        assertThat(output.path("excluded").findValuesAsText("reason"))
+                .contains("frozen bar close — never enters the median");
+    }
+
+    @Test
+    void spotPanelRequiresRecognizedTimestampKindEvenWhenTimestampExists() throws Exception {
+        ArrayNode quotes = (ArrayNode) JSON.readTree("""
+                [{"source":"unclassified","value":100,"ts":1000000},
+                 {"source":"venue","value":101,"ts":1000000,"ts_kind":"venue"}]
+                """);
+
+        var output = MarketSeriesAnalytics.spotPanel(quotes, 1_000_000L, 120, 0.5);
+
+        assertThat(output.path("n_synchronized").asInt()).isEqualTo(1);
+        assertThat(output.path("low_confidence").asBoolean()).isTrue();
+        assertThat(output.path("excluded").findValuesAsText("reason"))
+                .containsExactly("EXCLUDED — quote freshness is unknown (timestamp and recognized timestamp kind are required)");
+    }
+
+    @Test
     void spotAssemblerDoesNotFallBackToANonPositiveSource() throws Exception {
         var coinGecko = JSON.readTree("""
                 {"bitcoin":{"usd":0,"last_updated_at":1800000000}}
@@ -80,6 +128,53 @@ class MarketSeriesAnalyticsTest {
         assertThat(output.path("canonical").isNull()).isTrue();
         assertThat(output.path("sources")).isEmpty();
         assertThat(output.path("canonical_source").asText()).isEqualTo("unavailable");
+        assertThat(output.path("contextual_fallback").path("value").isNull()).isTrue();
+    }
+
+    @Test
+    void spotAssemblerKeepsHistoricalFallbackOutOfCanonicalWhenPanelIsUnavailable() throws Exception {
+        var coinGecko = JSON.readTree("""
+                {"bitcoin":{"usd":100,"last_updated_at":1}}
+                """);
+        var daily = (ArrayNode) JSON.readTree("""
+                [{"date":"2026-08-28","close":90}]
+                """);
+        var output = new SpotSnapshotAssembler(JSON).assemble(
+                MarketFetchSupport.ASSETS.get("btc"), coinGecko, daily,
+                JSON.createArrayNode(), Map.of(), 1_800_000_000_000L);
+
+        assertThat(output.path("canonical").isNull()).isTrue();
+        assertThat(output.path("canonical_source").asText()).isEqualTo("unavailable");
+        assertThat(output.path("contextual_fallback").path("value").asDouble()).isEqualTo(100.0);
+        assertThat(output.path("contextual_fallback").path("eligible_for_scoring").asBoolean()).isFalse();
+    }
+
+    @Test
+    void spotAssemblerUsesVerifiedMedianOnlyForCanonicalSpot() throws Exception {
+        var output = new SpotSnapshotAssembler(JSON).assemble(
+                MarketFetchSupport.ASSETS.get("btc"), null, JSON.createArrayNode(),
+                JSON.createArrayNode(), Map.of(
+                        "binanceQ", JSON.readTree("{\"source\":\"Binance\",\"value\":100,\"ts\":1800000000000,\"ts_kind\":\"venue\"}"),
+                        "coinbaseQ", JSON.readTree("{\"source\":\"Coinbase\",\"value\":101,\"ts\":1800000000000,\"ts_kind\":\"venue\"}")),
+                1_800_000_000_000L);
+
+        assertThat(output.path("canonical").asDouble()).isEqualTo(100.5);
+        assertThat(output.path("canonical_source").asText()).isEqualTo("panel_median");
+        assertThat(output.path("contextual_fallback").isNull()).isTrue();
+    }
+
+    @Test
+    void spotAssemblerLabelsSingleFreshVenueAsContextOnly() throws Exception {
+        var output = new SpotSnapshotAssembler(JSON).assemble(
+                MarketFetchSupport.ASSETS.get("btc"), null, JSON.createArrayNode(),
+                JSON.createArrayNode(), Map.of(
+                        "binanceQ", JSON.readTree("{\"source\":\"Binance\",\"value\":100,\"ts\":1800000000000,\"ts_kind\":\"venue\"}")),
+                1_800_000_000_000L);
+
+        assertThat(output.path("canonical").isNull()).isTrue();
+        assertThat(output.path("contextual_fallback").path("source").asText())
+                .isEqualTo("panel_insufficient_sources");
+        assertThat(output.path("contextual_fallback").path("value").asDouble()).isEqualTo(100.0);
     }
 
     @Test

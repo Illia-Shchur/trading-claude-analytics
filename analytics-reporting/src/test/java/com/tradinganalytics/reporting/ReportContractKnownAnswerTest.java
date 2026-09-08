@@ -3,6 +3,7 @@ package com.tradinganalytics.reporting;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -41,6 +42,33 @@ class ReportContractKnownAnswerTest {
                 .isEqualTo("c2d0364abef435064b29ccd24b1e58e1d90b863b5ebdfeb10328e874b20b3640");
         assertThat(ReportContract.canonicalReportJSON(report))
                 .isEqualTo(ReportContract.canonicalReportPayload(report) + "\n");
+    }
+
+    @Test
+    void reportAgeValidationSharesTheCompletedBarPolicy() throws IOException {
+        JsonNode sample = ReportContract.parseStrictJSON(Files.readString(
+                repositoryRoot().resolve("tools/fixtures/report-machine-3.sample.json")));
+        ObjectNode trigger = (ObjectNode) sample.path("trigger");
+
+        trigger.put("age_bars", 0);
+        assertThat(ReportContract.validateReportMachine3(sample).errors())
+                .doesNotContain("trigger.age_bars must be a fresh completed-bar age within window_bars");
+        trigger.put("age_bars", 2);
+        assertThat(ReportContract.validateReportMachine3(sample).errors())
+                .doesNotContain("trigger.age_bars must be a fresh completed-bar age within window_bars");
+        trigger.putNull("age_bars");
+        assertThat(ReportContract.validateReportMachine3(sample).errors())
+                .doesNotContain("trigger.age_bars must be a fresh completed-bar age within window_bars");
+
+        for (Object invalid : new Object[] {-1, 2.5, "1", true}) {
+            if (invalid instanceof Integer value) trigger.put("age_bars", value);
+            else if (invalid instanceof Double value) trigger.put("age_bars", value);
+            else if (invalid instanceof String value) trigger.put("age_bars", value);
+            else trigger.put("age_bars", (Boolean) invalid);
+            assertThat(ReportContract.validateReportMachine3(sample).errors())
+                    .as("invalid age %s", invalid)
+                    .isNotEmpty();
+        }
     }
 
     static Path repositoryRoot() {

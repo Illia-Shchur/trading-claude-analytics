@@ -73,7 +73,8 @@ public final class ResearchDataCommandAdapter {
         value.put("root", root.toString());
         value.set("layers", JsonHashes.mapper().valueToTree(LAYERS));
         value.put("authoritative_format", "parquet");
-        value.put("duckdb_image", ResearchData.DUCKDB_IMAGE);
+        value.put("duckdb_runtime", "embedded-jdbc");
+        value.put("legacy_duckdb_image", ResearchData.LEGACY_DUCKDB_IMAGE);
         print(out, value);
     }
 

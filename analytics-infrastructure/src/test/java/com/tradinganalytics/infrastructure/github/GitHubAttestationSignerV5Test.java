@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.tradinganalytics.contracts.json.NodePrettyJson;
 import com.tradinganalytics.contracts.schema.ResearchSchemaRegistry;
 import com.tradinganalytics.infrastructure.security.JsonHashes;
+import com.tradinganalytics.infrastructure.security.SafeTreeVerifier;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -69,6 +70,17 @@ class GitHubAttestationSignerV5Test {
             assertThat(Files.getPosixFilePermissions(output)).isEqualTo(Set.of(
                     PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE));
         }
+    }
+
+    @Test
+    void signerOutputIsAcceptedByEvidenceCustodyScanner() throws Exception {
+        Path output = temporary.resolve("java-attestation.json");
+        sign(output, fixedNonce((byte) 0x2a));
+        Path evidence = Files.createDirectory(temporary.resolve("evidence"));
+        Files.copy(output, evidence.resolve("v5-actions-attestation.json"));
+
+        assertThat(SafeTreeVerifier.verify(
+                evidence, "attestation", SafeTreeVerifier.Options.EVIDENCE).files()).isEqualTo(1);
     }
 
     @Test

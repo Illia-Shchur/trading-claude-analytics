@@ -2,7 +2,7 @@
   "asset" : "BTC",
   "errors" : [ ],
   "spot" : {
-    "canonical" : 101.5,
+    "canonical" : 101,
     "sources" : [ {
       "source" : "CoinGecko",
       "value" : 100
@@ -14,12 +14,12 @@
     "warning" : "inter-source spread 239% > 1.5% — reconcile before scoring",
     "canonical_source" : "panel_median",
     "panel" : {
-      "canonical" : 101.5,
+      "canonical" : 101,
       "method" : "median",
-      "median_kind" : "4-source",
+      "median_kind" : "3-source",
       "n_sources" : 5,
-      "n_synchronized" : 4,
-      "spread_pct" : 3,
+      "n_synchronized" : 3,
+      "spread_pct" : 2,
       "spread_gt_0_5pct" : true,
       "low_confidence" : false,
       "low_confidence_reason" : null,
@@ -42,12 +42,6 @@
         "value" : 102,
         "ts" : 1787920495000,
         "ts_kind" : "venue"
-      }, {
-        "source" : "Kraken",
-        "symbol" : "XBTUSD",
-        "value" : 103,
-        "ts" : null,
-        "ts_kind" : "receipt"
       } ],
       "excluded" : [ {
         "source" : "Yahoo BTC-USD",
@@ -57,24 +51,33 @@
         "ts_kind" : "bar_close",
         "age_min" : null,
         "reason" : "frozen bar close — never enters the median"
+      }, {
+        "source" : "Kraken",
+        "symbol" : "XBTUSD",
+        "value" : 103,
+        "ts" : null,
+        "ts_kind" : "receipt",
+        "age_min" : null,
+        "reason" : "EXCLUDED — quote freshness is unknown (timestamp and recognized timestamp kind are required)"
       } ],
       "priority_first" : 100,
-      "priority_first_delta_pct" : -1.478,
-      "warning" : "inter-source spread 3% > 0.5% — reconcile before scoring"
+      "priority_first_delta_pct" : -0.99,
+      "warning" : "inter-source spread 2% > 0.5% — reconcile before scoring"
     },
-    "canonical_median" : 101.5,
+    "canonical_median" : 101,
+    "contextual_fallback" : null,
     "method_conflict" : null
   },
   "ath" : {
     "value" : 200,
     "date" : "2025-01-01",
-    "drawdown_pct" : 49.25,
+    "drawdown_pct" : 49.5,
     "source" : "CoinGecko"
   },
   "high_1y" : {
     "value" : 340,
     "date" : "2026-08-28",
-    "pct_below" : 70.15,
+    "pct_below" : 70.29,
     "source" : "Yahoo BTC-USD trailing-1y weekly highs"
   },
   "weekly" : {
@@ -91,7 +94,7 @@
     "rsi14_including_live_week" : 100,
     "sma_200w" : {
       "value" : 232.5,
-      "pct_vs_spot" : -56.34,
+      "pct_vs_spot" : -56.56,
       "within_8pct" : false,
       "note" : "gate 6: price within ±8% of the 200-week MA, above OR below"
     }
@@ -1638,7 +1641,7 @@
     "within_3pct_of_ma200" : false,
     "within_3pct_of_ma50_from_below" : false,
     "low_40s" : 299,
-    "bounce_pct" : -66.05,
+    "bounce_pct" : -66.22,
     "bounce_age_sessions" : 39,
     "sessions_low_to_high" : 39
   },
@@ -1765,7 +1768,7 @@
     "drawdown_pct_vs_2y_high" : 0,
     "drawdown_pct_vs_2y_high_percentile" : 50,
     "drawdown_note" : "running high WITHIN the fetched 2y daily window, not the true all-time high — see outp.ath for the ATH drawdown",
-    "distance_to_200dma_pct" : -57.62,
+    "distance_to_200dma_pct" : -57.83,
     "distance_to_200dma_percentile" : 0,
     "daily_rsi14_percentile_vs_2y" : 50,
     "bounce_pct_percentile_vs_2y" : 0,
@@ -2449,12 +2452,12 @@
       }, {
         "id" : "fk_gate6_200w_band",
         "metric" : "weekly.sma_200w.pct_vs_spot",
-        "value" : -56.34,
+        "value" : -56.56,
         "threshold" : -8,
-        "gap" : 48.34,
+        "gap" : 48.56,
         "gap_units" : "percentage points",
         "direction" : "needs price UP",
-        "price_move_required_pct" : 110.74,
+        "price_move_required_pct" : 111.78,
         "crossed" : false,
         "consequence" : "FK gate 6 (200-week MA proximity) lights",
         "near" : false,
@@ -2475,12 +2478,12 @@
       }, {
         "id" : "fr_channel_A_eligibility",
         "metric" : "high_1y.pct_below",
-        "value" : 70.15,
+        "value" : 70.29,
         "threshold" : 20,
-        "gap" : 50.15,
+        "gap" : 50.29,
         "gap_units" : "percentage points",
         "direction" : "needs price UP",
-        "price_move_required_pct" : 167.98,
+        "price_move_required_pct" : 169.31,
         "crossed" : false,
         "consequence" : "FR routes Channel A instead of B/stand-down (frChannel)",
         "near" : false,
@@ -2488,12 +2491,12 @@
       }, {
         "id" : "fr_phase_cycle_cap_8_to_14",
         "metric" : "high_1y.pct_below",
-        "value" : 70.15,
+        "value" : 70.29,
         "threshold" : 20,
-        "gap" : 50.15,
+        "gap" : 50.29,
         "gap_units" : "percentage points",
         "direction" : "needs price UP",
-        "price_move_required_pct" : 167.98,
+        "price_move_required_pct" : 169.31,
         "crossed" : false,
         "consequence" : "FR phase-of-cycle cap loosens from 8% to 14% (fr.phaseCycleCap)",
         "near" : false,
@@ -2501,12 +2504,12 @@
       }, {
         "id" : "fr_phase_cycle_cap_14_to_uncapped",
         "metric" : "high_1y.pct_below",
-        "value" : 70.15,
+        "value" : 70.29,
         "threshold" : 10,
-        "gap" : 60.15,
+        "gap" : 60.29,
         "gap_units" : "percentage points",
         "direction" : "needs price UP",
-        "price_move_required_pct" : 201.48,
+        "price_move_required_pct" : 202.97,
         "crossed" : false,
         "consequence" : "FR phase-of-cycle cap lifts entirely (fr.phaseCycleCap -> null)",
         "near" : false,

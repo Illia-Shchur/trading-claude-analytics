@@ -78,4 +78,17 @@ class SnapshotPanelsTest {
         var result = SnapshotPanels.tripwireDiff(previous, next, JSON.createObjectNode());
         assertThat(result.path("n_crossings").asInt()).isZero();
     }
+
+    @Test
+    void legacyCanonicalMedianCannotDriveTripwireWithoutVerifiedCanonicalSpot() throws Exception {
+        ObjectNode previous = (ObjectNode) JSON.readTree(
+                "{\"btc\":{\"spot\":{\"canonical\":null,\"canonical_median\":80},\"daily\":{\"adr5\":{\"adr\":4}}}}");
+        ObjectNode next = (ObjectNode) JSON.readTree(
+                "{\"btc\":{\"spot\":{\"canonical\":null,\"canonical_median\":87},\"daily\":{\"adr5\":{\"adr\":4}}}}");
+
+        var result = SnapshotPanels.tripwireDiff(previous, next,
+                (ObjectNode) JSON.readTree("{\"btc\":{\"line\":90}}"));
+
+        assertThat(result.path("n_crossings").asInt()).isZero();
+    }
 }

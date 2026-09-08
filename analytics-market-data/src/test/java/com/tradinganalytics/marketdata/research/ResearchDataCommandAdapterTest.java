@@ -29,6 +29,10 @@ final class ResearchDataCommandAdapterTest {
         assertThat(initialized.status()).as(initialized.stderr()).isZero();
         assertThat(json(initialized.stdout()).path("authoritative_format").asText())
                 .isEqualTo("parquet");
+        assertThat(json(initialized.stdout()).path("duckdb_runtime").asText())
+                .isEqualTo("embedded-jdbc");
+        assertThat(json(initialized.stdout()).path("legacy_duckdb_image").asText())
+                .isEqualTo(ResearchData.LEGACY_DUCKDB_IMAGE);
 
         Invocation snapshot = invoke("snapshot", "--input", input.toString(), "--out",
                 temporary.resolve("lake").toString(), "--dataset", "core", "--asset", "btc",

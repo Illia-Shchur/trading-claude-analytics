@@ -21,15 +21,15 @@ final class ResearchDataTest {
     @TempDir Path temporary;
 
     @Test
-    void originalDockerParquetContractRunsLocallyAndIsIdempotent() throws Exception {
-        Path input = temporary.resolve("docker-contract-bars.jsonl");
+    void embeddedDuckDbParquetContractRunsLocallyAndIsIdempotent() throws Exception {
+        Path input = temporary.resolve("embedded-duckdb-contract-bars.jsonl");
         Files.writeString(input, """
                 {"asset":"btc","time":"2026-01-01T00:00:00Z","availability_time":"2026-01-01T04:00:00Z","open":100,"high":101,"low":99,"close":100,"timeframe":"4h"}
                 {"asset":"btc","time":"2026-01-01T04:00:00Z","availability_time":"2026-01-01T08:00:00Z","open":101,"high":102,"low":100,"close":101,"timeframe":"4h"}
                 {"asset":"btc","time":"2026-01-01T08:00:00Z","availability_time":"2026-01-01T12:00:00Z","open":102,"high":103,"low":101,"close":102,"timeframe":"4h"}
                 """, StandardCharsets.UTF_8);
         ResearchData.SnapshotOptions options = new ResearchData.SnapshotOptions(
-                input, temporary.resolve("docker-contract-lake"), "btc-bars", "btc",
+                input, temporary.resolve("embedded-duckdb-contract-lake"), "btc-bars", "btc",
                 "binance", "spot", "T0_IMMUTABLE_EVENT", "FEATURE", "parquet",
                 "public", true, null, null, null, null, null, null);
         ResearchData.SnapshotResult first = ResearchData.snapshot(options);
@@ -40,6 +40,8 @@ final class ResearchDataTest {
                 Files.readAllBytes(second.manifest()), "second manifest");
         assertThat(left.path("content_sha256").asText())
                 .isEqualTo(right.path("content_sha256").asText());
+        assertThat(left.path("lineage").path("container_sha256").asText())
+                .isEqualTo(ResearchData.LEGACY_DUCKDB_IMAGE_DIGEST);
         assertThat(ResearchData.validateManifest(left, new ResearchData.ValidationOptions(
                 "WALK_FORWARD_OOS", List.of("btc"), first.root()))).isTrue();
         Path parquet = first.root().resolve(first.feature().path("path").asText());
