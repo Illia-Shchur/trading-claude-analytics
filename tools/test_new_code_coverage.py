@@ -70,6 +70,56 @@ class NewCodeCoverageTest(unittest.TestCase):
         self.assertEqual(result.branch_total, 5)
         self.assertEqual(result.branch_covered, 4)
         self.assertEqual(result.branch_status, "passed")
+        self.assertEqual(result.branch_minimum, Decimal("80"))
+
+    def test_branch_minimum_can_be_lowered_without_lowering_line_minimum(self):
+        base = self._commit_base()
+        self._write_source().write_text(
+            "class Thing {\n  int value() { return 1; }\n  int changed() { return 2; }\n}\n",
+            encoding="utf-8",
+        )
+        report = self._write_report([(1, True, 9, 11), (2, True, 0, 0), (3, True, 0, 0)])
+        result = evaluate(self.workspace, base, report, minimum=Decimal("80"), branch_minimum=Decimal("55"))
+        self.assertEqual(result.minimum, Decimal("80"))
+        self.assertEqual(result.branch_minimum, Decimal("55"))
+        self.assertEqual(result.line_status, "passed")
+        self.assertEqual(result.branch_status, "passed")
+        self.assertEqual(result.as_dict()["minimum_percent"], "80")
+        self.assertEqual(result.as_dict()["branch_minimum_percent"], "55")
+
+        inherited = evaluate(self.workspace, base, report, minimum=Decimal("55"))
+        self.assertEqual(inherited.branch_minimum, Decimal("55"))
+        self.assertEqual(inherited.branch_status, "passed")
+
+    def test_just_below_custom_branch_boundary_fails(self):
+        base = self._commit_base()
+        self._write_source()
+        report = self._write_report([(1, True, 46, 54), (2, True, 0, 0), (3, True, 0, 0)])
+        result = evaluate(self.workspace, base, report, minimum=Decimal("80"), branch_minimum=Decimal("55"))
+        self.assertEqual(result.branch_total, 100)
+        self.assertEqual(result.branch_covered, 54)
+        self.assertEqual(result.branch_status, "failed")
+        self.assertFalse(result.passed)
+
+    def test_branch_minimum_does_not_mask_independent_line_failure(self):
+        base = self._commit_base()
+        self._write_source().write_text(
+            "class Thing {\n  int value() { return 1; }\n  int changed() { return 2; }\n}\n",
+            encoding="utf-8",
+        )
+        report = self._write_report([(1, True, 0, 20), (2, False, 0, 0), (3, True, 0, 0)])
+        result = evaluate(self.workspace, base, report, minimum=Decimal("80"), branch_minimum=Decimal("55"))
+        self.assertEqual(result.line_status, "failed")
+        self.assertEqual(result.branch_status, "passed")
+        self.assertFalse(result.passed)
+
+    def test_invalid_branch_minimum_fails_closed(self):
+        base = self._commit_base()
+        self._write_source()
+        report = self._write_report([(1, True, 0, 0)])
+        for invalid in (Decimal("-0.01"), Decimal("100.01"), Decimal("NaN"), Decimal("Infinity")):
+            with self.assertRaisesRegex(CoverageError, "branch minimum coverage"):
+                evaluate(self.workspace, base, report, branch_minimum=invalid)
 
     def test_zero_branch_and_empty_diff_are_not_applicable(self):
         self._write_source()

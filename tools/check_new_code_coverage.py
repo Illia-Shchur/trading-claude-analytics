@@ -66,6 +66,7 @@ class GateResult:
     line_status: str
     branch_status: str
     minimum: Decimal
+    branch_minimum: Decimal | None = None
 
     @property
     def passed(self) -> bool:
@@ -95,6 +96,9 @@ class GateResult:
             "line_status": self.line_status,
             "branch_status": self.branch_status,
             "minimum_percent": str(self.minimum),
+            "branch_minimum_percent": str(
+                self.branch_minimum if self.branch_minimum is not None else self.minimum
+            ),
             "passed": self.passed,
         }
 
@@ -363,10 +367,15 @@ def evaluate(
     report_path: Path,
     *,
     minimum: Decimal = Decimal("80"),
+    branch_minimum: Decimal | None = None,
     include_untracked: bool = True,
 ) -> GateResult:
     if not minimum.is_finite() or minimum < 0 or minimum > 100:
         raise CoverageError("minimum coverage must be a finite percentage from 0 through 100")
+    if branch_minimum is None:
+        branch_minimum = minimum
+    if not branch_minimum.is_finite() or branch_minimum < 0 or branch_minimum > 100:
+        raise CoverageError("branch minimum coverage must be a finite percentage from 0 through 100")
     changed_files = collect_changed_files(workspace, base, include_untracked=include_untracked)
     coverage = parse_coverage_report(report_path)
     line_total = line_covered = branch_total = branch_covered = 0
@@ -392,8 +401,9 @@ def evaluate(
         branch_total=branch_total,
         branch_covered=branch_covered,
         line_status=_passes(line_covered, line_total, minimum),
-        branch_status=_passes(branch_covered, branch_total, minimum),
+        branch_status=_passes(branch_covered, branch_total, branch_minimum),
         minimum=minimum,
+        branch_minimum=branch_minimum,
     )
 
 
@@ -407,7 +417,8 @@ def _markdown(result: GateResult) -> str:
         f"Changed production files: `{len(result.changed_files)}`",
         f"Lines: `{data['covered_lines']}/{data['executable_lines']}` ({data['line_coverage_percent'] or 'N/A'}%; {result.line_status})",
         f"Branches: `{data['branch_covered']}/{data['branch_total']}` ({data['branch_coverage_percent'] or 'N/A'}%; {result.branch_status})",
-        f"Minimum: `{result.minimum}%`",
+        f"Line minimum: `{result.minimum}%`",
+        f"Branch minimum: `{result.branch_minimum if result.branch_minimum is not None else result.minimum}%`",
         "",
     ]
     return "\n".join(lines)
@@ -428,6 +439,11 @@ def _argument_parser() -> argparse.ArgumentParser:
     parser.add_argument("--workspace", type=Path, default=Path("."))
     parser.add_argument("--report", type=Path, required=True, help="aggregate JaCoCo XML report")
     parser.add_argument("--minimum", type=Decimal, default=Decimal("80"))
+    parser.add_argument(
+        "--branch-minimum",
+        type=Decimal,
+        help="minimum branch coverage percentage; defaults to --minimum",
+    )
     parser.add_argument("--summary-json", type=Path)
     parser.add_argument("--summary-markdown", type=Path)
     parser.add_argument("--exclude-untracked", action="store_true")
@@ -445,6 +461,7 @@ def main(argv: Iterable[str] | None = None) -> int:
             args.base,
             (workspace / args.report).resolve() if not args.report.is_absolute() else args.report,
             minimum=args.minimum,
+            branch_minimum=args.branch_minimum,
             include_untracked=not args.exclude_untracked,
         )
         _write_outputs(result, args.summary_json, args.summary_markdown)
