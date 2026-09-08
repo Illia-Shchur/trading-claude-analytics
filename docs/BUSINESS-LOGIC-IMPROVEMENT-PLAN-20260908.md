@@ -73,4 +73,14 @@ python3 tools/check_new_code_coverage.py \
   --report analytics-coverage/target/site/jacoco-aggregate/jacoco.xml
 ```
 
-All seven acceptance criteria are complete. Changes remain uncommitted; no push or deployment was performed.
+All seven task-scoped acceptance criteria were complete at the review snapshot. The integration verification below supersedes its uncommitted status.
+
+
+## Main integration verification — 2026-09-08
+
+Committed all pending changes as `fe3f519` and integrated fetched `origin/main` (`05f4650`). Regenerated the conflicting signal feed from the combined report corpus. Frozen migration-oracle tests now select their explicit required historical inputs, retaining full output/hash comparisons without changing expected results when new reports arrive.
+
+- Actual combined working tree: `./mvnw --batch-mode --no-transfer-progress clean install` succeeded, **1,080 tests, zero failures/errors, one existing skip**. Log: `/tmp/main-merge-complete-verification.log`.
+- Changes since pre-task commit `2f493c8`: **96/97 executable lines (98.97%)**, **106/112 branches (94.64%)**; both 80% gates pass.
+- Entire combined diff against fetched remote `origin/main`: **50,792/64,773 executable lines (78.42%)**, **35,039/66,453 branches (52.73%)**; both 80% gates fail. This includes the earlier local Java migration absent from remote main. No gate was weakened or bypass added. The local merge does not establish that the eventual remote CI coverage check will pass.
+- Coverage gate unit tests: 14 passed. No remote push or deployment performed.

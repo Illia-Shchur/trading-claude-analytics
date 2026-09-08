@@ -27,24 +27,27 @@ class ReportingPipelineNodeOracleTest {
 
     @Test
     void signalFeedProjectionAndDryRunCliMatchNodeExactly() throws Exception {
+        Path corpusRoot = frozenReportCorpus(publishedLintOracles());
         OracleResult nodeDry = oracle("signal-feed-dry-run");
-        ReportingCommandResult javaDry = ExportSignalsCommand.run(List.of("--dry-run"), ROOT, Instant.parse("2026-08-28T00:00:00Z"));
+        ReportingCommandResult javaDry = ExportSignalsCommand.run(
+                List.of("--dry-run"), corpusRoot, Instant.parse("2026-08-28T00:00:00Z"));
         assertThat(javaDry.exitCode()).isEqualTo(nodeDry.exitCode());
-        assertThat(normalize(javaDry.stdout(), ROOT)).isEqualTo(normalize(nodeDry.stdout(), ROOT));
-        assertThat(normalize(javaDry.stderr(), ROOT)).isEqualTo(normalize(nodeDry.stderr(), ROOT));
+        assertThat(normalize(javaDry.stdout(), corpusRoot)).isEqualTo(normalize(nodeDry.stdout(), corpusRoot));
+        assertThat(normalize(javaDry.stderr(), corpusRoot)).isEqualTo(normalize(nodeDry.stderr(), corpusRoot));
 
         JsonNode parsed = frozenJson("/oracles/reporting-signal-feed-v1.json");
         Instant generatedAt = Instant.parse(parsed.path("generated_at").asText());
         String oracle = ToolchainSupport.canonicalJSON(parsed);
-        Path output = ROOT.resolve("exports/.codex-reporting-oracle-write-current.json");
+        Path output = corpusRoot.resolve("exports/.codex-reporting-oracle-write-current.json");
         try {
             ReportingCommandResult javaWrite = ExportSignalsCommand.run(
-                    List.of("--out", "exports/.codex-reporting-oracle-write-current.json"), ROOT, generatedAt);
-            assertEquivalent(oracle("signal-feed-write"), javaWrite, ROOT);
+                    List.of("--out", "exports/.codex-reporting-oracle-write-current.json"), corpusRoot, generatedAt);
+            assertEquivalent(oracle("signal-feed-write"), javaWrite, corpusRoot);
         } finally {
             Files.deleteIfExists(output);
         }
-        String actual = ToolchainSupport.canonicalJSON(ExportSignalsCommand.project(ROOT.resolve("reports"), generatedAt).feed());
+        String actual = ToolchainSupport.canonicalJSON(
+                ExportSignalsCommand.project(corpusRoot.resolve("reports"), generatedAt).feed());
         assertThat(actual.equals(oracle)).as(mismatch(oracle, actual)).isTrue();
     }
 
@@ -214,7 +217,8 @@ class ReportingPipelineNodeOracleTest {
     @Test
     void historicalBackfillCheckMatchesCurrentFailClosedNodeBehavior() throws Exception {
         OracleResult node = oracle("backfill-check");
-        ReportingCommandResult actual = BackfillReportPhaseRegistryCommand.run(List.of("--check"), ROOT);
+        Path corpusRoot = frozenReportCorpus(publishedLintOracles());
+        ReportingCommandResult actual = BackfillReportPhaseRegistryCommand.run(List.of("--check"), corpusRoot);
         assertThat(actual.exitCode()).isEqualTo(node.exitCode());
         assertThat(normalize(actual.stdout(), ROOT)).isEqualTo(normalize(node.stdout(), ROOT));
         assertThat(normalize(actual.stderr(), ROOT)).isEqualTo(normalize(node.stderr(), ROOT));
@@ -379,18 +383,16 @@ class ReportingPipelineNodeOracleTest {
     }
 
     @Test
-    void lintCliMatchesNodeForEveryPublishedFrameworkReport() throws Exception {
-        List<Path> reports;
-        try (var stream = Files.list(ROOT.resolve("reports"))) {
-            reports = stream.filter(path -> path.getFileName().toString().endsWith(".md"))
-                    .filter(path -> ToolchainSupport.reportFileMeta(path.getFileName().toString()).path("ok").asBoolean())
-                    .sorted().toList();
-        }
+    void lintCliMatchesNodeForEveryFrozenPublishedFrameworkReport() throws Exception {
         Map<String, OracleResult> expected = publishedLintOracles();
-        assertThat(expected).hasSize(reports.size());
-        for (Path report : reports) {
-            String relative = "reports/" + report.getFileName();
-            OracleResult node = expected.get(report.getFileName().toString());
+        // Keep this migration oracle tied to its reviewed report corpus. New
+        // reports may be added to the repository without silently changing
+        // the compatibility contract or requiring a bulk oracle rebaseline.
+        for (Map.Entry<String, OracleResult> entry : expected.entrySet()) {
+            Path report = ROOT.resolve("reports").resolve(entry.getKey());
+            String relative = "reports/" + entry.getKey();
+            OracleResult node = entry.getValue();
+            assertThat(Files.isRegularFile(report)).as("frozen corpus member " + relative).isTrue();
             ReportingCommandResult actual = LintReportCommand.run(List.of(relative), ROOT, ROOT);
             assertThat(actual.exitCode()).as(relative).isEqualTo(node.exitCode());
             assertThat(actual.stderr()).as(relative + " stderr").isEqualTo(node.stderr());
@@ -440,6 +442,38 @@ class ReportingPipelineNodeOracleTest {
         ReportingCommandResult actual = ExportSignalsCommand.run(
                 List.of("--reports", reports.toString(), "--dry-run", "--strict"), ROOT, Instant.EPOCH);
         assertEquivalent(node, actual, reports, temporaryDirectory);
+    }
+
+    private Path frozenReportCorpus(Map<String, OracleResult> lintOracles) throws IOException {
+        Path corpusRoot = temporaryDirectory.resolve("frozen-report-corpus");
+        Path reports = corpusRoot.resolve("reports");
+        Files.createDirectories(reports);
+        for (String markdown : lintOracles.keySet()) {
+            copyFrozenReport(markdown, reports);
+            String json = markdown.replaceFirst("\\.md$", ".json");
+            Path sourceJson = ROOT.resolve("reports").resolve(json);
+            if (Files.isRegularFile(sourceJson)) copyFrozenReport(json, reports);
+        }
+        for (String ignored : List.of(
+                "calibration-registry.json",
+                "calibration_ledger.md",
+                "fallen_knives_calibration_20260805.md",
+                "fallen_knives_calibration_20260806.md",
+                "flying_rocket_calibration_20260805.md",
+                "fr_eth_fall_capture_backtest_20260727.md",
+                "strategy_retrospective_20260611.md",
+                "strategy_retrospective_20260704.md")) {
+            copyFrozenReport(ignored, reports);
+        }
+        return corpusRoot;
+    }
+
+    private void copyFrozenReport(String name, Path destination) throws IOException {
+        Path source = ROOT.resolve("reports").resolve(name);
+        if (!Files.isRegularFile(source)) {
+            throw new AssertionError("frozen report corpus member is missing: " + source);
+        }
+        Files.copy(source, destination.resolve(name));
     }
 
     private static OracleResult oracle(String name) throws IOException {

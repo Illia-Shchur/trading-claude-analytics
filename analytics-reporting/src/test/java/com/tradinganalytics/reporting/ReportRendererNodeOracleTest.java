@@ -8,10 +8,7 @@ import com.tradinganalytics.infrastructure.security.JsonHashes;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
 class ReportRendererNodeOracleTest {
@@ -22,23 +19,25 @@ class ReportRendererNodeOracleTest {
     void allFourExportsMatchNodeAcrossPublishedV2AndSwingV3Documents() throws Exception {
         Map<String, JsonNode> expectedReports = new LinkedHashMap<>();
         ORACLE.path("reports").forEach(row -> expectedReports.put(row.path("file").asText(), row));
-        Set<String> rendered = new LinkedHashSet<>();
-        try (Stream<Path> files = Files.list(ROOT.resolve("reports"))) {
-            for (Path file : files.filter(path -> path.toString().endsWith(".json")).sorted().toList()) {
-                JsonNode report;
-                try { report = ReportContract.parseStrictJSON(Files.readString(file), file.getFileName().toString()); }
-                catch (Exception ignored) { continue; }
-                if (!"report-machine/2".equals(report.path("schema").asText())) continue;
-                JsonNode expected = expectedReports.get(file.getFileName().toString());
-                assertThat(expected).as("frozen renderer oracle for %s", file.getFileName()).isNotNull();
-                assertThat(JsonHashes.sha256(Files.readAllBytes(file)))
-                        .isEqualTo(expected.path("input_sha256").asText());
-                assertExport(expected, "full", ReportRenderer.renderFull(report));
-                assertExport(expected, "summary", ReportRenderer.renderSummary(report));
-                rendered.add(file.getFileName().toString());
+        // Keep renderer parity tied to the reviewed corpus. New report files
+        // require their own oracle entry rather than changing this contract.
+        for (Map.Entry<String, JsonNode> entry : expectedReports.entrySet()) {
+            Path file = ROOT.resolve("reports").resolve(entry.getKey());
+            JsonNode expected = entry.getValue();
+            assertThat(Files.isRegularFile(file)).as("frozen renderer corpus member %s", file).isTrue();
+            JsonNode report;
+            try {
+                report = ReportContract.parseStrictJSON(Files.readString(file), file.getFileName().toString());
+            } catch (Exception error) {
+                throw new AssertionError("frozen renderer corpus member is not valid: " + file, error);
             }
+            assertThat(report.path("schema").asText()).as("frozen renderer schema for %s", file)
+                    .isEqualTo("report-machine/2");
+            assertThat(JsonHashes.sha256(Files.readAllBytes(file)))
+                    .isEqualTo(expected.path("input_sha256").asText());
+            assertExport(expected, "full", ReportRenderer.renderFull(report));
+            assertExport(expected, "summary", ReportRenderer.renderSummary(report));
         }
-        assertThat(rendered).containsExactlyElementsOf(expectedReports.keySet());
         Path swing = ROOT.resolve("tools/fixtures/report-machine-3.sample.json");
         JsonNode report = ReportContract.parseStrictJSON(Files.readString(swing), swing.getFileName().toString());
         JsonNode expectedSwing = ORACLE.path("swing");

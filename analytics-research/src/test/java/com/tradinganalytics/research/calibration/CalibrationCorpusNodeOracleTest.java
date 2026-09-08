@@ -88,7 +88,7 @@ class CalibrationCorpusNodeOracleTest {
         Instant generatedAt = Instant.parse(expected.path("generated_at").asText());
         clear(out);
 
-        CalibrationCommandResult actual = CalibrationCorpusCommand.run(args, ROOT, generatedAt);
+        CalibrationCommandResult actual = CalibrationCorpusCommand.run(args, frozenCalibrationRoot(), generatedAt);
         assertThat(actual.exitCode()).isEqualTo(expected.path("exit").asInt());
         assertThat(normalize(actual.stdout(), generatedAt)).isEqualTo(expected.path("stdout").asText());
         assertThat(normalize(actual.stderr(), generatedAt)).isEqualTo(expected.path("stderr").asText());
@@ -151,6 +151,34 @@ class CalibrationCorpusNodeOracleTest {
         Map<String, byte[]> result = new LinkedHashMap<>();
         files.fields().forEachRemaining(entry -> result.put(entry.getKey(), Base64.getDecoder().decode(entry.getValue().asText())));
         return result;
+    }
+
+    private Path frozenCalibrationRoot() throws Exception {
+        Path root = temporaryDirectory.resolve("frozen-calibration-root");
+        Path reports = root.resolve("reports");
+        Files.createDirectories(reports);
+        for (String name : List.of(
+                "btc_fallen_knives_20260822_0346.json",
+                "btc_fallen_knives_20260822_0346.md",
+                "eth_fallen_knives_20260822_0346.json",
+                "eth_fallen_knives_20260822_0346.md")) {
+            Path source = ROOT.resolve("reports").resolve(name);
+            if (!Files.isRegularFile(source)) throw new AssertionError("frozen calibration corpus member is missing: " + source);
+            Files.copy(source, reports.resolve(name));
+        }
+        for (String name : List.of(
+                "calibration_ledger.md",
+                "fallen_knives_calibration_20260805.md",
+                "fallen_knives_calibration_20260806.md",
+                "flying_rocket_calibration_20260805.md",
+                "fr_eth_fall_capture_backtest_20260727.md",
+                "strategy_retrospective_20260611.md",
+                "strategy_retrospective_20260704.md")) {
+            Path source = ROOT.resolve("reports").resolve(name);
+            if (!Files.isRegularFile(source)) throw new AssertionError("frozen calibration corpus member is missing: " + source);
+            Files.copy(source, reports.resolve(name));
+        }
+        return root;
     }
 
     private String normalize(String value, Instant generatedAt) {

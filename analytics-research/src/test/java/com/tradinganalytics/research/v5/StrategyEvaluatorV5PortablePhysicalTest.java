@@ -113,7 +113,7 @@ class StrategyEvaluatorV5PortablePhysicalTest {
                         .append(", '4h' AS decision_timeframe, 'BINANCE_SPOT' AS instrument")
                         .append(", 60000::BIGINT AS interval_ms, ")
                         .append(childBars(decision))
-                        .append(", {'available_liquidity_usd':1000000.0,'participation_cap':1.0," 
+                        .append(", {'available_liquidity_usd':1000000.0,'participation_cap':1.0,"
                                 + "'order_notional_usd':10.0} AS capacity_inputs")
                         .append(", 0.001::DOUBLE AS fee_rate")
                         .append(", 5.0::DOUBLE AS slippage_bps");
