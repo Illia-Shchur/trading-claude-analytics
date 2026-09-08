@@ -116,6 +116,27 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
         ObjectNode evaluate(Slot slot, Path scratchDirectory) throws Exception;
     }
 
+    /**
+     * A typed resource observation used by the coordinator's admission and
+     * monitoring checks.  This is package-private on purpose: tests can supply
+     * deterministic observations without putting probe values in command JSON,
+     * while public production entry points always use {@link #LIVE_RESOURCE_PROBE}.
+     */
+    record ResourceObservation(long availableProcessors, long totalMemoryBytes,
+                               long availableFreeSpaceBytes, long coordinatorRssBytes,
+                               long aggregateWorkerRssBytes) { }
+
+    /** Supplies one resource observation for the requested filesystem root. */
+    @FunctionalInterface
+    interface ResourceProbe {
+        ResourceObservation sample(Path resourceRoot);
+    }
+
+    private static final ResourceProbe LIVE_RESOURCE_PROBE = resourceRoot ->
+            new ResourceObservation(Runtime.getRuntime().availableProcessors(), detectedMemoryBytes(),
+                    detectedFreeSpaceBytes(resourceRoot), coordinatorRssBytes(),
+                    ProcessSlotExecutor.aggregateProcessRssBytes());
+
     /** Production executors return custody paths so the coordinator never retains raw rows. */
     private interface DurableSlotExecutor extends SlotExecutor {
         Path evaluateArtifact(Slot slot, Path scratchDirectory) throws Exception;
@@ -127,14 +148,18 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
 
     /** Computes the additive target profile and records local admission limits. */
     public static ObjectNode executionProfile(ObjectNode options) {
+        return executionProfile(options, LIVE_RESOURCE_PROBE);
+    }
+
+    /** Package-private deterministic seam for scheduler tests. */
+    static ObjectNode executionProfile(ObjectNode options, ResourceProbe resourceProbe) {
+        Objects.requireNonNull(resourceProbe, "resourceProbe");
         ObjectNode input = options == null ? JsonHashes.mapper().createObjectNode() : options;
-        boolean testProbeOverride = input.path("test_probe_override").asBoolean(false);
-        long cpus = testProbeOverride ? positiveOr(input, "available_cpus", Runtime.getRuntime().availableProcessors())
-                : Runtime.getRuntime().availableProcessors();
-        long memory = testProbeOverride ? positiveOr(input, "available_memory_bytes", detectedMemoryBytes())
-                : detectedMemoryBytes();
-        long free = testProbeOverride ? positiveOr(input, "available_free_space_bytes", detectedFreeSpaceBytes(input))
-                : detectedFreeSpaceBytes(input);
+        ResourceObservation observation = Objects.requireNonNull(
+                resourceProbe.sample(resourceRoot(input)), "resourceProbe observation");
+        long cpus = observation.availableProcessors();
+        long memory = observation.totalMemoryBytes();
+        long free = observation.availableFreeSpaceBytes();
         int requested = integerOr(input, "requested_workers", 8);
         int targetWorkers = 8;
         int cpuAllowance = 24;
@@ -250,7 +275,7 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
         if ("FULL".equals(requestedMode) && profile.path("qualified_for_confirmation").asBoolean(false)) {
             validateQualificationAgainstPlan(profile, plan);
         }
-        validateLiveProfile(profile, input, requestedMode);
+        validateLiveProfile(profile, input, requestedMode, LIVE_RESOURCE_PROBE);
         ObjectNode frozen = input.deepCopy();
         frozen.set("plan", plan.deepCopy());
         frozen.set("baseline", baseline.deepCopy());
@@ -266,7 +291,13 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
      * never shares mutable evaluator state between repetitions.
      */
     public static ObjectNode runWithExecutor(ObjectNode options, SlotExecutor executor) {
+        return runWithExecutor(options, executor, LIVE_RESOURCE_PROBE);
+    }
+
+    /** Package-private deterministic seam for scheduler tests. */
+    static ObjectNode runWithExecutor(ObjectNode options, SlotExecutor executor, ResourceProbe resourceProbe) {
         Objects.requireNonNull(executor, "executor");
+        Objects.requireNonNull(resourceProbe, "resourceProbe");
         ObjectNode input = options == null ? JsonHashes.mapper().createObjectNode() : options;
         ObjectNode plan = readObjectOption(input, "plan", "parallel plan");
         validatePlan(plan);
@@ -288,7 +319,7 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
                     ? readObjectOption(input, "profile", "execution profile")
                     : existingLedger != null && existingLedger.path("execution_profile").isObject()
                             ? (ObjectNode) existingLedger.path("execution_profile").deepCopy()
-                            : executionProfile(input);
+                            : executionProfile(input, resourceProbe);
             validateProfile(profile);
             if (profile.path("effective_workers").asInt(0) <= 0) {
                 throw new IllegalArgumentException("parallel run has no admitted workers");
@@ -357,7 +388,8 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
             Map<Future<AttemptOutcome>, Slot> active = new LinkedHashMap<>();
             try {
                 while ((!queue.isEmpty() || !active.isEmpty()) && !stop.get()) {
-                    String violation = monitor(input, profile, deadline, ledgerPath, artifactRoot, scratchRoot, logsRoot);
+                    String violation = monitor(input, profile, deadline, ledgerPath, artifactRoot, scratchRoot, logsRoot,
+                            resourceProbe);
                     if (violation != null) { stop.set(true); stopReason = violation; break; }
                     while (!queue.isEmpty() && active.size() < workers && !stop.get()) {
                         Slot slot = queue.removeFirst();
@@ -391,7 +423,7 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
                     } else {
                         try {
                             finishAttempt(ledger, slot, outcome, ledgerPath, artifactRoot, scratchRoot, logsRoot,
-                                    profile, deadline, plan, packagedStrict, input);
+                                    profile, deadline, plan, packagedStrict, input, resourceProbe);
                         } catch (ResourceViolation resource) {
                             stop.set(true); stopReason = resource.getMessage();
                             recordAttempt(ledger, slot, outcome.attempt(), "ABORTED", stopReason, null);
@@ -418,16 +450,18 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
                 persistLedger(ledgerPath, ledger);
             }
             if (!stop.get()) {
-                String finalViolation = monitor(input, profile, deadline, ledgerPath, artifactRoot, scratchRoot, logsRoot);
+                String finalViolation = monitor(input, profile, deadline, ledgerPath, artifactRoot, scratchRoot, logsRoot,
+                        resourceProbe);
                 if (finalViolation != null) { stop.set(true); stopReason = finalViolation; }
             }
-            String finalStageViolation = monitor(input, profile, deadline, ledgerPath, artifactRoot, scratchRoot, logsRoot);
+            String finalStageViolation = monitor(input, profile, deadline, ledgerPath, artifactRoot, scratchRoot, logsRoot,
+                    resourceProbe);
             if (finalStageViolation != null) {
                 stop.set(true);
                 stopReason = finalStageViolation;
             }
             ObjectNode result = resultFromLedger(plan, profile, mode, planned, ledger, ledgerPath, stopReason, deadline,
-                    packagedStrict);
+                    packagedStrict, resourceProbe);
             String out = input.path("out").asText("");
             if (!out.isBlank()) writeAtomic(Path.of(out).toAbsolutePath().normalize(), result, true);
             return result;
@@ -632,8 +666,8 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
 
     private static void finishAttempt(ObjectNode ledger, Slot slot, AttemptOutcome outcome,
             Path ledgerPath, Path artifactRoot, Path scratchRoot, Path logsRoot, ObjectNode profile, long deadline,
-            ObjectNode plan, boolean packagedStrict, ObjectNode options) throws IOException {
-        checkBudget(options, profile, deadline, ledgerPath, artifactRoot, scratchRoot, logsRoot);
+            ObjectNode plan, boolean packagedStrict, ObjectNode options, ResourceProbe resourceProbe) throws IOException {
+        checkBudget(options, profile, deadline, ledgerPath, artifactRoot, scratchRoot, logsRoot, resourceProbe);
         if (outcome.artifact() != null) {
             ObjectNode artifact = readObject(outcome.artifact(), "slot artifact");
             verifyArtifact(artifact, outcome.artifact(), slot, plan, packagedStrict);
@@ -646,13 +680,14 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
                     .put("status", "FAILED").put("attempt", outcome.attempt()).put("error", outcome.error());
             ledger.withArray("terminal").add(terminal);
         }
-        checkBudget(options, profile, deadline, ledgerPath, artifactRoot, scratchRoot, logsRoot);
+        checkBudget(options, profile, deadline, ledgerPath, artifactRoot, scratchRoot, logsRoot, resourceProbe);
         persistLedger(ledgerPath, ledger);
     }
 
     private static void checkBudget(ObjectNode options, ObjectNode profile, long deadline, Path ledgerPath,
-            Path artifactRoot, Path scratchRoot, Path logsRoot) {
-        String violation = monitor(options, profile, deadline, ledgerPath, artifactRoot, scratchRoot, logsRoot);
+            Path artifactRoot, Path scratchRoot, Path logsRoot, ResourceProbe resourceProbe) {
+        String violation = monitor(options, profile, deadline, ledgerPath, artifactRoot, scratchRoot, logsRoot,
+                resourceProbe);
         if (violation != null) throw new ResourceViolation(violation);
     }
 
@@ -689,7 +724,7 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
 
     private static ObjectNode resultFromLedger(ObjectNode plan, ObjectNode profile, String mode,
             List<Slot> planned, ObjectNode ledger, Path ledgerPath, String stopReason, long deadline,
-            boolean packagedStrict) {
+            boolean packagedStrict, ResourceProbe resourceProbe) {
         Map<String, ObjectNode> terminal = terminalBySlot(ledger);
         ArrayNode refs = JsonHashes.mapper().createArrayNode();
         ArrayNode missing = JsonHashes.mapper().createArrayNode();
@@ -714,7 +749,8 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
         result.set("result_refs", refs); result.set("missing", missing);
         result.set("build_identity", BuildIdentityService.describe(StrategyOperatingCharacteristicsParallelV1.class));
         if ("FULL".equals(mode) && missing.isEmpty() && !aborted) {
-            ObjectNode summaries = fullCellSummaries(plan, planned, refs, ledgerPath, profile, deadline, packagedStrict);
+            ObjectNode summaries = fullCellSummaries(plan, planned, refs, ledgerPath, profile, deadline, packagedStrict,
+                    resourceProbe);
             boolean adequate = true;
             for (JsonNode summary : summaries.path("cells")) if (!summary.path("adequate").asBoolean(false)) adequate = false;
             boolean measured = adequate && summaries.path("cell_count").asInt(0) == 4;
@@ -727,10 +763,10 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
     }
 
     private static ObjectNode fullCellSummaries(ObjectNode plan, List<Slot> planned, ArrayNode refs,
-            Path ledgerPath, ObjectNode profile, long deadline, boolean packagedStrict) {
+            Path ledgerPath, ObjectNode profile, long deadline, boolean packagedStrict, ResourceProbe resourceProbe) {
         Map<String, ObjectNode> byCell = new LinkedHashMap<>();
         for (Slot slot : planned) {
-            enforceCoordinatorBudget(profile, deadline);
+            enforceCoordinatorBudget(profile, deadline, resourceProbe);
             String key = slot.scenario() + ":" + slot.effectKey();
             byCell.computeIfAbsent(key, ignored -> JsonHashes.mapper().createObjectNode()
                     .put("scenario", slot.scenario()).put("effect_size", slot.effectSize())
@@ -770,9 +806,11 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
         result.set("cells", cells); return result;
     }
 
-    private static void enforceCoordinatorBudget(ObjectNode profile, long deadline) {
+    private static void enforceCoordinatorBudget(ObjectNode profile, long deadline, ResourceProbe resourceProbe) {
         if (System.nanoTime() >= deadline) throw new ResourceViolation("RESOURCE_WALL_DEADLINE_EXCEEDED");
-        long rss = coordinatorRssBytes();
+        ResourceObservation observation = Objects.requireNonNull(resourceProbe.sample(Path.of(".")),
+                "resourceProbe observation");
+        long rss = observation.coordinatorRssBytes();
         if (rss < 0) throw new ResourceViolation("RESOURCE_COORDINATOR_RSS_UNAVAILABLE");
         long limit = profile.path("coordinator_rss_reservation_bytes").asLong(0);
         if (limit > 0 && rss > limit) throw new ResourceViolation("RESOURCE_COORDINATOR_RSS_BUDGET_EXCEEDED");
@@ -1646,12 +1684,15 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
                 && geometry.path("horizon_minutes").asInt(-1) == 14_400;
     }
 
-    private static void validateLiveProfile(ObjectNode profile, ObjectNode options, String requestedMode) {
+    private static void validateLiveProfile(ObjectNode profile, ObjectNode options, String requestedMode,
+            ResourceProbe resourceProbe) {
         if (options.path("test_probe_override").asBoolean(false)) {
             throw new IllegalArgumentException("production parallel run rejects test_probe_override");
         }
-        long actualCpu = Runtime.getRuntime().availableProcessors();
-        long actualMemory = detectedMemoryBytes();
+        ResourceObservation observation = Objects.requireNonNull(resourceProbe.sample(resourceRoot(options)),
+                "resourceProbe observation");
+        long actualCpu = observation.availableProcessors();
+        long actualMemory = observation.totalMemoryBytes();
         if (actualCpu <= 0 || actualMemory <= 0) throw new IllegalArgumentException("live resource probe is unavailable");
         long usable = actualMemory > OS_MEMORY_RESERVE + profile.path("coordinator_rss_reservation_bytes").asLong(0)
                 ? actualMemory - OS_MEMORY_RESERVE - profile.path("coordinator_rss_reservation_bytes").asLong(0) : 0L;
@@ -1669,7 +1710,7 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
                         || actualMemory < profile.path("target_memory_bytes").asLong(32L * GIB))) {
             throw new IllegalArgumentException("FULL production run requires the qualified target hardware");
         }
-        long actualFree = detectedFreeSpaceBytes(options);
+        long actualFree = observation.availableFreeSpaceBytes();
         if (actualFree <= 0 || actualFree < profile.path("max_disk_bytes").asLong(Long.MAX_VALUE)) {
             throw new IllegalArgumentException("current host lacks the frozen disk headroom");
         }
@@ -1682,11 +1723,13 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
     }
 
     private static String monitor(ObjectNode options, ObjectNode profile, long deadline, Path ledger,
-            Path artifactRoot, Path scratchRoot, Path logsRoot) {
+            Path artifactRoot, Path scratchRoot, Path logsRoot, ResourceProbe resourceProbe) {
         if (System.nanoTime() >= deadline) return "RESOURCE_WALL_DEADLINE_EXCEEDED";
         String cancel = options.path("cancel_file").asText("");
         if (!cancel.isBlank() && Files.exists(Path.of(cancel))) return "CANCELLED";
-        long available = detectedFreeSpaceBytes(ledger);
+        ResourceObservation observation = Objects.requireNonNull(resourceProbe.sample(ledger),
+                "resourceProbe observation");
+        long available = observation.availableFreeSpaceBytes();
         long required = profile.path("max_disk_bytes").asLong(-1);
         if (available < 0) return "RESOURCE_DISK_UNAVAILABLE";
         long used = managedBytes(ledger, artifactRoot, scratchRoot, logsRoot);
@@ -1694,11 +1737,11 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
         if (required > 0 && used > required) return "RESOURCE_DISK_BUDGET_EXCEEDED";
         long remaining = required > used ? required - used : 0L;
         if (required > 0 && available < remaining) return "RESOURCE_DISK_HEADROOM_EXCEEDED";
-        long coordinator = coordinatorRssBytes();
+        long coordinator = observation.coordinatorRssBytes();
         if (coordinator < 0) return "RESOURCE_COORDINATOR_RSS_UNAVAILABLE";
         long coordinatorLimit = profile.path("coordinator_rss_reservation_bytes").asLong(0);
         if (coordinatorLimit > 0 && coordinator > coordinatorLimit) return "RESOURCE_COORDINATOR_RSS_BUDGET_EXCEEDED";
-        long workers = ProcessSlotExecutor.aggregateProcessRssBytes();
+        long workers = observation.aggregateWorkerRssBytes();
         if (workers < 0 && !ACTIVE_PROCESSES.isEmpty()) return "RESOURCE_RSS_UNAVAILABLE";
         long aggregateLimit = profile.path("max_aggregate_rss_bytes").asLong(0);
         if (aggregateLimit > 0 && workers >= 0 && coordinator + workers > aggregateLimit) {
@@ -1746,9 +1789,9 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
         return -1L;
     }
 
-    private static long detectedFreeSpaceBytes(ObjectNode options) {
+    private static Path resourceRoot(ObjectNode options) {
         String root = options.path("resource_root").asText("");
-        return detectedFreeSpaceBytes(root.isBlank() ? Path.of(".") : Path.of(root));
+        return root.isBlank() ? Path.of(".") : Path.of(root);
     }
 
     private static long detectedFreeSpaceBytes(Path root) {
@@ -1756,9 +1799,6 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
         catch (IOException | RuntimeException ignored) { return -1L; }
     }
 
-    private static long positiveOr(ObjectNode value, String field, long fallback) {
-        long candidate = value.path(field).asLong(fallback); return candidate > 0 ? candidate : fallback;
-    }
     private static long longOr(ObjectNode value, String field, long fallback) { return value.has(field) ? value.path(field).asLong(fallback) : fallback; }
     private static int integerOr(ObjectNode value, String field, int fallback) { return value.has(field) ? value.path(field).asInt(fallback) : fallback; }
     private static void requireSha(String value, String label) { if (value == null || !SHA256.matcher(value).matches()) throw new IllegalArgumentException(label + " must be SHA-256"); }

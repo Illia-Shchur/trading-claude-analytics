@@ -5,22 +5,27 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.tradinganalytics.infrastructure.security.JsonHashes;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 final class StrategyOperatingCharacteristicsParallelV1Test {
+    private static final long GIB = 1024L * 1024L * 1024L;
+    private static final StrategyOperatingCharacteristicsParallelV1.ResourceProbe TEST_RESOURCE_PROBE =
+            resourceProbe(28, 32L * GIB, 256L * GIB);
+
     @TempDir Path temporary;
 
     @Test
     void profileCapsAnUndersizedHostAndPreflightKeepsFullExecutionGated() {
         ObjectNode profile = StrategyOperatingCharacteristicsParallelV1.executionProfile(JsonHashes.mapper().createObjectNode()
-                .put("test_probe_override", true).put("available_cpus", 10).put("available_memory_bytes", 16L * 1024 * 1024 * 1024)
-                .put("available_free_space_bytes", 256L * 1024 * 1024 * 1024));
+                .put("requested_workers", 8), resourceProbe(10, 16L * GIB, 256L * GIB));
         assertThat(profile.path("target_qualified").asBoolean()).isFalse();
         assertThat(profile.path("effective_workers").asInt()).isEqualTo(2);
         ObjectNode plan = plan("FULL", 75, false);
@@ -33,26 +38,74 @@ final class StrategyOperatingCharacteristicsParallelV1Test {
     }
 
     @Test
-    void schedulerUsesBoundedConcurrencyAndDeterministicSlotOrdering() {
+    void schedulerUsesBoundedConcurrencyAndDeterministicSlotOrdering() throws Exception {
         ObjectNode plan = plan("PREFIX", 2, true);
         ObjectNode profile = profile(2);
         ObjectNode options = JsonHashes.mapper().createObjectNode(); options.set("plan", plan); options.set("profile", profile);
         options.put("mode", "PREFIX").put("ledger", temporary.resolve("one/ledger.json").toString());
         AtomicInteger active = new AtomicInteger(); AtomicInteger peak = new AtomicInteger();
-        ObjectNode result = StrategyOperatingCharacteristicsParallelV1.runWithExecutor(options, (slot, scratch) -> {
-            int now = active.incrementAndGet(); peak.accumulateAndGet(now, Math::max);
-            try { Thread.sleep(5L); } catch (InterruptedException interrupted) { Thread.currentThread().interrupt(); }
-            finally { active.decrementAndGet(); }
-            return row(slot);
-        });
-        assertThat(result.path("status").asText()).isEqualTo("COMPLETE");
-        assertThat(result.path("planned_slots").asInt()).isEqualTo(2);
-        assertThat(result.path("completed_slots").asInt()).isEqualTo(2);
-        assertThat(peak).hasValue(2);
-        assertThat(result.path("result_refs").get(0).path("slot_id").asText())
+        CountDownLatch started = new CountDownLatch(2);
+        CountDownLatch release = new CountDownLatch(1);
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+        AtomicReference<ObjectNode> result = new AtomicReference<>();
+        Thread runner = new Thread(() -> {
+            try {
+                result.set(StrategyOperatingCharacteristicsParallelV1.runWithExecutor(options, (slot, scratch) -> {
+                    int now = active.incrementAndGet(); peak.accumulateAndGet(now, Math::max);
+                    started.countDown();
+                    try {
+                        if (!started.await(5, TimeUnit.SECONDS)) throw new AssertionError("both workers did not start");
+                        if (!release.await(5, TimeUnit.SECONDS)) throw new AssertionError("workers were not released");
+                    } catch (InterruptedException interrupted) {
+                        Thread.currentThread().interrupt(); throw new AssertionError(interrupted);
+                    } finally { active.decrementAndGet(); }
+                    return row(slot);
+                }, TEST_RESOURCE_PROBE));
+            } catch (Throwable error) { failure.set(error); }
+        }, "parallel-scheduler-test");
+        runner.start();
+        try {
+            assertThat(started.await(5, TimeUnit.SECONDS)).isTrue();
+            assertThat(peak).hasValue(2);
+        } finally {
+            release.countDown();
+        }
+        runner.join(5_000L);
+        assertThat(runner.isAlive()).isFalse();
+        assertThat(failure.get()).isNull();
+        assertThat(result.get().path("status").asText()).isEqualTo("COMPLETE");
+        assertThat(result.get().path("planned_slots").asInt()).isEqualTo(2);
+        assertThat(result.get().path("completed_slots").asInt()).isEqualTo(2);
+        assertThat(result.get().path("result_refs").get(0).path("slot_id").asText())
                 .isEqualTo("PREFIX|NO_EDGE|0|0|11");
-        assertThat(result.path("result_refs").get(1).path("slot_id").asText())
+        assertThat(result.get().path("result_refs").get(1).path("slot_id").asText())
                 .isEqualTo("PREFIX|NO_EDGE|0|1|12");
+    }
+
+    @Test
+    void fullSchedulerUsesInjectedCoordinatorProbeForSummaryBudgetChecks() throws Exception {
+        ObjectNode plan = plan("FULL", 75, false);
+        ObjectNode profile = profile(1);
+        Path ledger = temporary.resolve("full/ledger.json");
+        Files.createDirectories(ledger.getParent().resolve("artifacts"));
+        @SuppressWarnings("unchecked")
+        var planned = (java.util.List<StrategyOperatingCharacteristicsParallelV1.Slot>) invoke(
+                declared("slots", ObjectNode.class, String.class), plan, "FULL");
+        var refs = JsonHashes.mapper().createArrayNode();
+        for (StrategyOperatingCharacteristicsParallelV1.Slot slot : planned) {
+            ObjectNode artifact = artifact(slot, row(slot));
+            Path path = ledger.getParent().resolve("artifacts").resolve(slot.ordinal() + ".json");
+            Files.writeString(path, JsonHashes.mapper().writeValueAsString(artifact));
+            refs.addObject().put("slot_id", slot.id()).put("relative_path", "artifacts/" + path.getFileName());
+        }
+
+        ObjectNode summary = (ObjectNode) invoke(declared("fullCellSummaries", ObjectNode.class, java.util.List.class,
+                com.fasterxml.jackson.databind.node.ArrayNode.class, Path.class, ObjectNode.class, long.class,
+                boolean.class, StrategyOperatingCharacteristicsParallelV1.ResourceProbe.class), plan, planned, refs,
+                ledger, profile, Long.MAX_VALUE, false, TEST_RESOURCE_PROBE);
+
+        assertThat(summary.path("cell_count").asInt()).isEqualTo(4);
+        assertThat(summary.path("cells")).allMatch(cell -> cell.path("adequate").asBoolean());
     }
 
     @Test
@@ -66,12 +119,12 @@ final class StrategyOperatingCharacteristicsParallelV1Test {
         ObjectNode first = StrategyOperatingCharacteristicsParallelV1.runWithExecutor(options, (slot, scratch) -> {
             if (calls.incrementAndGet() == 1) throw new IllegalStateException("synthetic worker failure");
             return row(slot);
-        });
+        }, TEST_RESOURCE_PROBE);
         assertThat(first.path("status").asText()).isEqualTo("COMPLETE");
         assertThat(calls).hasValue(3);
         ObjectNode second = StrategyOperatingCharacteristicsParallelV1.runWithExecutor(options, (slot, scratch) -> {
             throw new AssertionError("completed slot must be reused");
-        });
+        }, TEST_RESOURCE_PROBE);
         assertThat(second.path("status").asText()).isEqualTo("COMPLETE");
         assertThat(Files.readString(ledger)).contains("FAILED").contains("COMPLETE");
     }
@@ -83,11 +136,12 @@ final class StrategyOperatingCharacteristicsParallelV1Test {
         Path ledger = temporary.resolve("corrupt/ledger.json");
         ObjectNode options = JsonHashes.mapper().createObjectNode(); options.set("plan", plan); options.set("profile", profile);
         options.put("mode", "PREFIX").put("ledger", ledger.toString());
-        StrategyOperatingCharacteristicsParallelV1.runWithExecutor(options, (slot, scratch) -> row(slot));
+        StrategyOperatingCharacteristicsParallelV1.runWithExecutor(options, (slot, scratch) -> row(slot), TEST_RESOURCE_PROBE);
         ObjectNode saved = JsonHashes.mapper().readValue(Files.readString(ledger), ObjectNode.class);
         Path artifact = ledger.getParent().resolve(saved.path("terminal").get(0).path("relative_path").asText());
         Files.writeString(artifact, "{}\n");
-        assertThatThrownBy(() -> StrategyOperatingCharacteristicsParallelV1.runWithExecutor(options, (slot, scratch) -> row(slot)))
+        assertThatThrownBy(() -> StrategyOperatingCharacteristicsParallelV1.runWithExecutor(options,
+                (slot, scratch) -> row(slot), TEST_RESOURCE_PROBE))
                 .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("byte hash");
     }
 
@@ -99,13 +153,123 @@ final class StrategyOperatingCharacteristicsParallelV1Test {
         ObjectNode options = JsonHashes.mapper().createObjectNode(); options.set("plan", plan); options.set("profile", profile);
         options.put("mode", "PREFIX").put("ledger", ledger.toString());
         StrategyOperatingCharacteristicsParallelV1.runWithExecutor(options,
-                (slot, scratch) -> row(slot));
+                (slot, scratch) -> row(slot), TEST_RESOURCE_PROBE);
         ObjectNode saved = JsonHashes.mapper().readValue(Files.readString(ledger), ObjectNode.class);
         Path artifact = ledger.getParent().resolve(saved.path("terminal").get(0).path("relative_path").asText());
         Files.delete(artifact);
         assertThatThrownBy(() -> StrategyOperatingCharacteristicsParallelV1.runWithExecutor(options,
-                (slot, scratch) -> row(slot)))
+                (slot, scratch) -> row(slot), TEST_RESOURCE_PROBE))
                 .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("missing");
+    }
+
+    @Test
+    void lowDiskProbeAbortsBeforeLaunchingAWorker() {
+        ObjectNode plan = plan("PREFIX", 2, true);
+        ObjectNode profile = profile(1);
+        ObjectNode options = JsonHashes.mapper().createObjectNode(); options.set("plan", plan); options.set("profile", profile);
+        options.put("mode", "PREFIX").put("ledger", temporary.resolve("low-disk/ledger.json").toString());
+        AtomicInteger calls = new AtomicInteger();
+        ObjectNode result = StrategyOperatingCharacteristicsParallelV1.runWithExecutor(options, (slot, scratch) -> {
+            calls.incrementAndGet(); return row(slot);
+        }, resourceProbe(28, 32L * GIB, 127L * GIB));
+
+        assertThat(result.path("status").asText()).isEqualTo("COMPUTE_INCOMPLETE");
+        assertThat(result.path("stop_reason").asText()).isEqualTo("RESOURCE_DISK_HEADROOM_EXCEEDED");
+        assertThat(result.path("missing_slots").asInt()).isEqualTo(2);
+        assertThat(calls).hasValue(0);
+    }
+
+    @Test
+    void unavailableResourceProbeAbortsBeforeLaunchingAWorker() {
+        ObjectNode plan = plan("PREFIX", 2, true);
+        ObjectNode profile = profile(1);
+        ObjectNode options = JsonHashes.mapper().createObjectNode(); options.set("plan", plan); options.set("profile", profile);
+        options.put("mode", "PREFIX").put("ledger", temporary.resolve("unavailable/ledger.json").toString());
+        AtomicInteger calls = new AtomicInteger();
+        ObjectNode result = StrategyOperatingCharacteristicsParallelV1.runWithExecutor(options, (slot, scratch) -> {
+            calls.incrementAndGet(); return row(slot);
+        }, resourceProbe(28, 32L * GIB, -1L));
+
+        assertThat(result.path("status").asText()).isEqualTo("COMPUTE_INCOMPLETE");
+        assertThat(result.path("stop_reason").asText()).isEqualTo("RESOURCE_DISK_UNAVAILABLE");
+        assertThat(calls).hasValue(0);
+    }
+
+    @Test
+    void coordinatorResourceBudgetAbortsBeforeLaunchingAWorker() {
+        ObjectNode plan = plan("PREFIX", 2, true);
+        ObjectNode profile = profile(1);
+        ObjectNode options = JsonHashes.mapper().createObjectNode(); options.set("plan", plan); options.set("profile", profile);
+        options.put("mode", "PREFIX").put("ledger", temporary.resolve("coordinator/ledger.json").toString());
+        AtomicInteger calls = new AtomicInteger();
+        ObjectNode result = StrategyOperatingCharacteristicsParallelV1.runWithExecutor(options, (slot, scratch) -> {
+            calls.incrementAndGet(); return row(slot);
+        }, resourceProbe(28, 32L * GIB, 256L * GIB, 2L * GIB + 1L, 0L));
+
+        assertThat(result.path("status").asText()).isEqualTo("COMPUTE_INCOMPLETE");
+        assertThat(result.path("stop_reason").asText()).isEqualTo("RESOURCE_COORDINATOR_RSS_BUDGET_EXCEEDED");
+        assertThat(calls).hasValue(0);
+    }
+
+    @Test
+    void privateCoordinatorBudgetGuardRejectsUnavailableAndOverLimitObservations() {
+        Method method = declared("enforceCoordinatorBudget", ObjectNode.class, long.class,
+                StrategyOperatingCharacteristicsParallelV1.ResourceProbe.class);
+        ObjectNode profile = profile(1);
+
+        assertThatThrownBy(() -> invoke(method, profile, Long.MAX_VALUE,
+                resourceProbe(28, 32L * GIB, 256L * GIB, -1L, 0L)))
+                .hasCauseInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> invoke(method, profile, Long.MAX_VALUE,
+                resourceProbe(28, 32L * GIB, 256L * GIB, 2L * GIB + 1L, 0L)))
+                .hasCauseInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void liveAdmissionUsesInjectedCpuMemoryAndDiskObservations() throws Exception {
+        Method method = declared("validateLiveProfile", ObjectNode.class, ObjectNode.class,
+                String.class, StrategyOperatingCharacteristicsParallelV1.ResourceProbe.class);
+        ObjectNode profile = profile(1);
+        ObjectNode options = JsonHashes.mapper().createObjectNode();
+
+        invoke(method, profile, options, "PREFIX", resourceProbe(28, 32L * GIB, 256L * GIB));
+        assertThatThrownBy(() -> invoke(method, profile, options, "PREFIX",
+                resourceProbe(1, 32L * GIB, 256L * GIB)))
+                .hasCauseInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> invoke(method, profile, options, "PREFIX",
+                resourceProbe(28, 8L * GIB, 256L * GIB)))
+                .hasCauseInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> invoke(method, profile, options, "PREFIX",
+                resourceProbe(28, 32L * GIB, 127L * GIB)))
+                .hasCauseInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void resourceRootIsForwardedToTheTypedProbe() {
+        Path root = temporary.resolve("resource-root");
+        AtomicReference<Path> observed = new AtomicReference<>();
+        StrategyOperatingCharacteristicsParallelV1.ResourceProbe probe = resourceRoot -> {
+            observed.set(resourceRoot);
+            return new StrategyOperatingCharacteristicsParallelV1.ResourceObservation(
+                    28, 32L * GIB, 256L * GIB, 0L, 0L);
+        };
+
+        StrategyOperatingCharacteristicsParallelV1.executionProfile(JsonHashes.mapper().createObjectNode()
+                .put("resource_root", root.toString()), probe);
+
+        assertThat(observed).hasValue(root);
+    }
+
+    @Test
+    void publicProfileIgnoresJsonProbeValues() {
+        ObjectNode options = JsonHashes.mapper().createObjectNode()
+                .put("test_probe_override", true).put("available_cpus", 1)
+                .put("available_memory_bytes", 1L).put("available_free_space_bytes", 1L);
+
+        ObjectNode profile = StrategyOperatingCharacteristicsParallelV1.executionProfile(options);
+
+        assertThat(profile.path("available_cpus").asLong()).isEqualTo(Runtime.getRuntime().availableProcessors());
+        assertThat(profile.has("test_probe_override")).isFalse();
     }
 
     @Test
@@ -117,7 +281,7 @@ final class StrategyOperatingCharacteristicsParallelV1Test {
         AtomicInteger calls = new AtomicInteger();
         ObjectNode result = StrategyOperatingCharacteristicsParallelV1.runWithExecutor(options, (slot, scratch) -> {
             calls.incrementAndGet(); return row(slot).put("status", "RESOURCE_RSS_BUDGET_EXCEEDED");
-        });
+        }, TEST_RESOURCE_PROBE);
         assertThat(result.path("status").asText()).isEqualTo("COMPUTE_INCOMPLETE");
         assertThat(result.path("missing_slots").asInt()).isEqualTo(2);
         assertThat(calls).hasValue(1);
@@ -179,8 +343,32 @@ final class StrategyOperatingCharacteristicsParallelV1Test {
 
     private ObjectNode profile(int workers) {
         return StrategyOperatingCharacteristicsParallelV1.executionProfile(JsonHashes.mapper().createObjectNode()
-                .put("test_probe_override", true).put("available_cpus", 28).put("available_memory_bytes", 32L * 1024 * 1024 * 1024)
-                .put("available_free_space_bytes", 256L * 1024 * 1024 * 1024).put("requested_workers", workers));
+                .put("requested_workers", workers), TEST_RESOURCE_PROBE);
+    }
+
+    private static StrategyOperatingCharacteristicsParallelV1.ResourceProbe resourceProbe(
+            long cpus, long memoryBytes, long freeBytes) {
+        return resourceProbe(cpus, memoryBytes, freeBytes, 0L, 0L);
+    }
+
+    private static StrategyOperatingCharacteristicsParallelV1.ResourceProbe resourceProbe(
+            long cpus, long memoryBytes, long freeBytes, long coordinatorRssBytes, long aggregateWorkerRssBytes) {
+        return ignored -> new StrategyOperatingCharacteristicsParallelV1.ResourceObservation(
+                cpus, memoryBytes, freeBytes, coordinatorRssBytes, aggregateWorkerRssBytes);
+    }
+
+    private static Method declared(String name, Class<?>... parameterTypes) {
+        try {
+            Method method = StrategyOperatingCharacteristicsParallelV1.class.getDeclaredMethod(name, parameterTypes);
+            method.setAccessible(true);
+            return method;
+        } catch (ReflectiveOperationException error) {
+            throw new AssertionError(error);
+        }
+    }
+
+    private static Object invoke(Method method, Object... arguments) throws Exception {
+        return method.invoke(null, arguments);
     }
 
     private static ObjectNode plan(String mode, int repetitions, boolean prefixOnly) {
@@ -219,6 +407,19 @@ final class StrategyOperatingCharacteristicsParallelV1Test {
                 .put("decision", slot.replication() % 2 == 0).put("independent_units", 30).put("paired_count", 30);
         result.putObject("metrics").put("paired_tested_cluster_count", 30).put("paired_analysis_insufficient", false);
         return result;
+    }
+
+    private static ObjectNode artifact(StrategyOperatingCharacteristicsParallelV1.Slot slot, ObjectNode row) {
+        ObjectNode artifact = JsonHashes.mapper().createObjectNode()
+                .put("schema", "strategy-evaluator-operating-characteristics-parallel-slot-result/1")
+                .put("version", 1).put("status", "COMPLETE").put("slot_id", slot.id())
+                .put("plan_sha256", slot.planSha256()).put("mode", slot.mode())
+                .put("scenario", slot.scenario()).put("effect_size", slot.effectSize())
+                .put("replication", slot.replication()).put("seed", slot.seed()).put("attempt", 1);
+        artifact.set("row", row);
+        artifact.set("executor_identity", JsonHashes.mapper().createObjectNode());
+        artifact.put("content_sha256", JsonHashes.ownHash(artifact));
+        return artifact;
     }
 
     private static ObjectNode portableRaw(String portfolioPath, String lifecyclePath) {
