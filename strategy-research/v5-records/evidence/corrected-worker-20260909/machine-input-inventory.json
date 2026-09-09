@@ -1,0 +1,65 @@
+{
+  "observed_at": "2026-09-09T08:45:30.5475706Z",
+  "reviewed_base": "966b2758ff9e5e499c63d301e8f46bbbe0c423f7",
+  "cpu": {
+    "Name": "Intel(R) Core(TM) i7-14700KF",
+    "NumberOfCores": 20,
+    "NumberOfLogicalProcessors": 28
+  },
+  "system": {
+    "TotalPhysicalMemory": 34138472448
+  },
+  "os_memory": {
+    "TotalVisibleMemorySize": 33338352,
+    "FreePhysicalMemory": 20219892
+  },
+  "disk": {
+    "Used": 151254446080,
+    "Free": 798964072448
+  },
+  "required_total_memory_bytes": 34359738368,
+  "status": "BLOCKED_HARDWARE",
+  "missing_bytes": 221265920,
+  "qualification_issued": false,
+  "historical_replay_inputs": [
+    {
+      "path": "strategy-research/v5-data/backfill-20260825-v7-final-local/parquet",
+      "exists": false
+    },
+    {
+      "path": "/tmp/fixed-all-physical-v2",
+      "exists": false
+    },
+    {
+      "path": "strategy-research/v5-records/evidence/fixed-baseline-full-declared-v004/executors/analytics-current-20260907-successor-v002.jar",
+      "exists": false
+    }
+  ],
+  "generator_inputs": [
+    {
+      "exists": true,
+      "sha256": "319f25c98233a3216c42de8cce290e249d95d7970834d6ff68831471039321a1",
+      "path": "strategy-research/definitions/fk-deleveraging-absorption/v002.json"
+    },
+    {
+      "exists": true,
+      "sha256": "746d2469fcaf9c9c2a1d245d10debde3707f96c22134f9cc68269814c5e64195",
+      "path": "strategy-research/experiments/fk-deleveraging-baseline-v002/controls.json"
+    },
+    {
+      "exists": true,
+      "sha256": "6a5532911f264582e48a01cf1dda6c347338c010215cf8a61e3e72e37b9dcc78",
+      "path": "strategy-research/experiments/fk-deleveraging-baseline-v002/experiment.json"
+    },
+    {
+      "exists": true,
+      "sha256": "45327768aa3e358fded177d0003809a9db30d13b6952661151c255dc7a0ffdb7",
+      "path": "strategy-research/experiments/fk-deleveraging-baseline-v002/portfolio-policy-v001.json"
+    },
+    {
+      "exists": true,
+      "sha256": "f8ce6504cae215c3ef5558e68e247e6d4e51580a0165df38cae99615b569507d",
+      "path": "strategy-research/experiments/fk-deleveraging-baseline-v002/lifecycle-timing-v001.json"
+    }
+  ]
+}

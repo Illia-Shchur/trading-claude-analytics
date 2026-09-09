@@ -165,11 +165,45 @@ class PortedToolCliCommandsTest {
                         + "operating-characteristics-successor-run|operating-characteristics-successor-record-attempt|"
                         + "operating-characteristics-parallel-profile|operating-characteristics-parallel-preflight|"
                         + "operating-characteristics-parallel-run|operating-characteristics-parallel-worker|"
+                        + "operating-characteristics-corrected-successor-preflight|"
+                        + "operating-characteristics-corrected-successor-run|"
+                        + "operating-characteristics-corrected-parallel-profile|"
+                        + "operating-characteristics-corrected-parallel-plan|"
+                        + "operating-characteristics-corrected-parallel-preflight|"
+                        + "operating-characteristics-corrected-parallel-run|"
+                        + "operating-characteristics-corrected-parallel-worker|"
+                        + "operating-characteristics-corrected-parallel-qualify|"
+                        + "operating-characteristics-corrected-parallel-validate-qualification|"
                         + "freeze-refinement|portfolio-reconcile|prospective-outcome-reconcile|"
                         + "evidence-disposition|canonical-hash-batch|lineage-inventory|matching-attrition|"
                         + "freeze-successor-control|validate|index|"
                         + "presentation-export [options]\n");
         assertThat(error).hasToString("");
+    }
+
+    @Test
+    void correctedParallelProfileIsRoutableAndWorkerBoundaryFailsClosed() {
+        StringWriter output = new StringWriter();
+        StringWriter error = new StringWriter();
+        CommandLine profileCommand = new CommandLine(new StrategyResearchV5CliCommand());
+        profileCommand.setOut(new PrintWriter(output, true));
+        profileCommand.setErr(new PrintWriter(error, true));
+
+        assertThat(profileCommand.execute("operating-characteristics-corrected-parallel-profile",
+                "--requested-workers", "1")).isZero();
+        assertThat(output.toString()).contains("strategy-evaluator-operating-characteristics-execution-profile/1")
+                .contains("PORTFOLIO_ACCOUNTING_CORRECTION_V1")
+                .contains("StrategyFixedBaselineCorrectedV1");
+
+        output.getBuffer().setLength(0);
+        error.getBuffer().setLength(0);
+        CommandLine workerCommand = new CommandLine(new StrategyResearchV5CliCommand());
+        workerCommand.setOut(new PrintWriter(output, true));
+        workerCommand.setErr(new PrintWriter(error, true));
+        assertThat(workerCommand.execute("operating-characteristics-corrected-parallel-worker")).isOne();
+        assertThat(output.toString()).isEmpty();
+        assertThat(error.toString()).contains("corrected parallel worker is internal")
+                .doesNotContain("Exception");
     }
 
     @Test

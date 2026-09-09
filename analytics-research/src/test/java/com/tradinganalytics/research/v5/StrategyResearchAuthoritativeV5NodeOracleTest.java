@@ -1988,8 +1988,7 @@ public final class StrategyResearchAuthoritativeV5NodeOracleTest {
     }
 
     private static Path temporary(String prefix) throws IOException {
-        Path privateTmp = Path.of("/private/tmp");
-        Path base = Files.isDirectory(privateTmp, LinkOption.NOFOLLOW_LINKS) ? privateTmp : Path.of("/tmp");
+        Path base = Path.of(System.getProperty("java.io.tmpdir"));
         return Files.createTempDirectory(base, "auth-v5-" + prefix + "-").toAbsolutePath().normalize();
     }
 

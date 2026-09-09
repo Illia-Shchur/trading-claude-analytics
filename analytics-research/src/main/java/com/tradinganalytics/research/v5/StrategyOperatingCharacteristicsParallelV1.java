@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
@@ -70,6 +71,16 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
             "strategy-evaluator-operating-characteristics-parallel-worker-failure/1";
     private static final String FIXED_EVALUATOR =
             "StrategyFixedBaselineV5+TradeLifecycleV5+StrategyResearchImprovementV1.disposition";
+    /** Additive corrected worker identity; frozen V5 is never rewritten. */
+    static final String CORRECTED_EVALUATOR =
+            StrategyFixedBaselineCorrectedV1.EVALUATOR_ID;
+    static final String CORRECTED_PLAN_SCHEMA =
+            "strategy-evaluator-operating-characteristics-corrected-parallel-plan/1";
+    /** Outer coordinator result; the fixed evaluator schema is reserved for raw worker results. */
+    static final String CORRECTED_RESULT_SCHEMA =
+            "strategy-evaluator-operating-characteristics-corrected-parallel-result/1";
+    private static final String CORRECTED_SLOT_RESULT_SCHEMA =
+            "strategy-evaluator-operating-characteristics-corrected-parallel-slot-result/1";
     private static final Pattern SHA256 = Pattern.compile("[a-f0-9]{64}");
     private static final long GIB = 1024L * 1024L * 1024L;
     private static final long DEFAULT_POLL_MILLIS = 250L;
@@ -125,6 +136,102 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
     record ResourceObservation(long availableProcessors, long totalMemoryBytes,
                                long availableFreeSpaceBytes, long coordinatorRssBytes,
                                long aggregateWorkerRssBytes) { }
+
+    /**
+     * Run-owned resource evidence.  Qualification must consume this object
+     * from the completed result; command-line callers cannot provide measured
+     * wall time, RSS, or disk values.  Every field that can be sampled is
+     * fail-closed when a platform probe returns an unknown value.
+     */
+    private static final class RunMeasurement {
+        private final long startedNanos = System.nanoTime();
+        private final ObjectNode plan;
+        private final ObjectNode profile;
+        private final Path ledgerPath;
+        private final String mode;
+        private final int workers;
+        private final String runId;
+        private final Set<String> launchedSlots = ConcurrentHashMap.newKeySet();
+        private final Set<String> completedSlots = ConcurrentHashMap.newKeySet();
+        private long maxAggregateRssBytes = -1L;
+        private long maxCoordinatorRssBytes = -1L;
+        private long maxManagedDiskBytes = -1L;
+        private boolean complete = true;
+
+        private RunMeasurement(ObjectNode plan, ObjectNode profile, Path ledgerPath, String mode,
+                int workers, String runId) {
+            this.plan = plan;
+            this.profile = profile;
+            this.ledgerPath = ledgerPath;
+            this.mode = mode;
+            this.workers = workers;
+            this.runId = runId;
+        }
+
+        private void recordCompletion(String slotId) {
+            if (slotId != null && !slotId.isBlank()) completedSlots.add(slotId);
+        }
+
+        private void recordLaunch(String slotId) {
+            if (slotId != null && !slotId.isBlank()) launchedSlots.add(slotId);
+        }
+
+        private void sample(ResourceProbe probe, Path artifactRoot, Path scratchRoot, Path logsRoot) {
+            ResourceObservation observation;
+            try {
+                observation = probe.sample(ledgerPath);
+            } catch (RuntimeException error) {
+                complete = false;
+                return;
+            }
+            long coordinator = observation == null ? -1L : observation.coordinatorRssBytes();
+            long aggregateWorkers = observation == null ? -1L : observation.aggregateWorkerRssBytes();
+            long disk = managedBytes(ledgerPath, artifactRoot, scratchRoot, logsRoot);
+            if (coordinator < 0L || aggregateWorkers < 0L || disk < 0L) {
+                complete = false;
+                return;
+            }
+            long aggregate;
+            try {
+                aggregate = Math.addExact(coordinator, aggregateWorkers);
+            } catch (ArithmeticException overflow) {
+                complete = false;
+                return;
+            }
+            maxCoordinatorRssBytes = Math.max(maxCoordinatorRssBytes, coordinator);
+            maxAggregateRssBytes = Math.max(maxAggregateRssBytes, aggregate);
+            maxManagedDiskBytes = Math.max(maxManagedDiskBytes, disk);
+        }
+
+        private ObjectNode toJson(ObjectNode ledger) {
+            ObjectNode result = JsonHashes.mapper().createObjectNode()
+                    .put("schema", "strategy-evaluator-resource-measurement/1")
+                    .put("version", 1)
+                    .put("plan_sha256", plan.path("content_sha256").asText())
+                    .put("profile_sha256", profile.path("content_sha256").asText())
+                    .put("ledger_content_sha256", ledger.path("content_sha256").asText())
+                    .put("executor_identity_sha256", plan.path("executor_identity_sha256").asText())
+                    .put("executor_source_sha256", plan.path("executor_build_input_fingerprint").asText())
+                    .put("host_identity_sha256", measurementHostFingerprint(profile))
+                    .put("run_id", runId)
+                    .put("workers", workers)
+                    .put("launched_slot_count", launchedSlots.size())
+                    .put("completed_slot_count", completedSlots.size())
+                    .put("fresh_full_wave", "FULL".equals(mode)
+                            && launchedSlots.size() == 4 * profile.path("effective_workers").asInt(0)
+                            && completedSlots.size() == launchedSlots.size())
+                    .put("measured_wall_millis", Math.max(1L,
+                            TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedNanos)))
+                    .put("measured_max_aggregate_rss_bytes", maxAggregateRssBytes)
+                    .put("measured_max_coordinator_rss_bytes", maxCoordinatorRssBytes)
+                    .put("measured_max_disk_bytes", maxManagedDiskBytes)
+                    .put("resource_probe_complete", complete && maxAggregateRssBytes >= 0L
+                            && maxCoordinatorRssBytes >= 0L && maxManagedDiskBytes >= 0L)
+                    .put("content_sha256", "");
+            result.put("content_sha256", JsonHashes.ownHash(result));
+            return result;
+        }
+    }
 
     /** Supplies one resource observation for the requested filesystem root. */
     @FunctionalInterface
@@ -215,6 +322,7 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
         ObjectNode input = options == null ? JsonHashes.mapper().createObjectNode() : options;
         ObjectNode plan = readObjectOption(input, "plan", "parallel plan");
         validatePlan(plan);
+        boolean corrected = CORRECTED_PLAN_SCHEMA.equals(plan.path("schema").asText());
         String requestedMode = mode(input, plan);
         if (!input.path("internal_test_seam").asBoolean(false)) {
             if ("FULL".equals(requestedMode)) validateFullGeometry(plan);
@@ -233,22 +341,28 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
         long required = longOr(profile, "max_disk_bytes", 128L * GIB);
         long free = longOr(profile, "available_free_space_bytes", -1L);
         boolean diskPass = free > 0 && required <= free;
+        boolean developmentWave = corrected && plan.path("development_wave").asBoolean(false);
+        boolean fullReady = developmentWave
+                ? profile.path("target_qualified").asBoolean(false)
+                : profile.path("target_qualified").asBoolean(false)
+                        && profile.path("qualified_for_confirmation").asBoolean(false);
         boolean pass = profile.path("effective_workers").asInt(0) > 0 && diskPass
                 && profile.path("resource_probe_complete").asBoolean(false)
-                && (!"FULL".equals(mode(input, plan)) || (profile.path("target_qualified").asBoolean(false)
-                        && profile.path("qualified_for_confirmation").asBoolean(false)));
+                && (!"FULL".equals(mode(input, plan)) || fullReady);
         ObjectNode result = JsonHashes.mapper().createObjectNode()
                 .put("schema", PREFLIGHT_SCHEMA).put("version", 1)
                 .put("status", pass ? "READY_PRE_OUTCOME" : "BLOCKED_RESOURCE")
                 .put("plan_sha256", plan.path("content_sha256").asText())
                 .put("profile_sha256", profile.path("content_sha256").asText())
-                .put("fixed_evaluator", FIXED_EVALUATOR).put("shared_physical_evaluator", true)
+                .put("fixed_evaluator", corrected ? CORRECTED_EVALUATOR : FIXED_EVALUATOR).put("shared_physical_evaluator", true)
                 .put("toy_statistic", false).put("outcomes_opened", false)
                 .put("promotion_eligible", false).put("activation_authorized", false)
                 .put("mode", requestedMode).put("planned_slots", slots.size())
                 .put("disk_headroom_pass", diskPass).put("resource_probe_complete", profile.path("resource_probe_complete").asBoolean(false))
                 .put("measured", false).put("performance_claim", "NONE")
                 .put("full_confirmation_gate", "REQUIRES_APPLICABLE_RESOURCE_QUALIFICATION");
+        if (corrected) result.put("accounting_version", StrategyFixedBaselinePortfolioCorrectionV1.ACCOUNTING_VERSION)
+                .put("development_wave", developmentWave);
         result.set("profile", profile.deepCopy());
         result.set("build_identity", BuildIdentityService.describe(StrategyOperatingCharacteristicsParallelV1.class));
         result.put("content_sha256", JsonHashes.ownHash(result));
@@ -257,19 +371,33 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
 
     /** Runs using the packaged worker-process adapter. */
     public static ObjectNode run(ObjectNode options) {
+        return run(options, options != null && options.path("corrected_accounting").asBoolean(false));
+    }
+
+    /** Additive corrected coordinator route selected only by the versioned wrapper. */
+    static ObjectNode runCorrected(ObjectNode options) {
+        ObjectNode input = options == null ? JsonHashes.mapper().createObjectNode() : options.deepCopy();
+        input.put("corrected_accounting", true);
+        return run(input, true);
+    }
+
+    private static ObjectNode run(ObjectNode options, boolean corrected) {
         ObjectNode input = options == null ? JsonHashes.mapper().createObjectNode() : options;
         if (input.path("test_probe_override").asBoolean(false)) {
             throw new IllegalArgumentException("production parallel run rejects test_probe_override");
         }
         ObjectNode plan = readObjectOption(input, "plan", "parallel plan");
         String requestedMode = mode(input, plan);
-        validatePackagedPlan(plan, requestedMode);
+        validatePackagedPlan(plan, requestedMode, corrected);
         validateBoundInputs(input, plan, true);
         ObjectNode baseline = readObjectOption(input, "baseline", "baseline");
         ObjectNode controls = readObjectOption(input, "controls", "controls");
         ObjectNode experiment = readObjectOption(input, "experiment", "experiment");
         ObjectNode profile = input.has("profile")
                 ? readObjectOption(input, "profile", "execution profile") : executionProfile(input);
+        if (!input.has("profile") && corrected) {
+            profile = StrategyOperatingCharacteristicsCorrectedParallelV1.executionProfile(input);
+        }
         validateProfile(profile);
         requireProfileBinding(plan, profile);
         if ("FULL".equals(requestedMode) && profile.path("qualified_for_confirmation").asBoolean(false)) {
@@ -282,7 +410,10 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
         frozen.set("controls", controls.deepCopy());
         frozen.set("experiment", experiment.deepCopy());
         frozen.set("profile", profile.deepCopy());
-        return runWithExecutor(frozen, new ProcessSlotExecutor(frozen, plan, baseline, controls, experiment, profile));
+        return runWithExecutorInternal(frozen,
+                new ProcessSlotExecutor(frozen, plan, baseline, controls, experiment, profile, corrected,
+                        corrected ? frozen.path("run_id").asText("") : null),
+                LIVE_RESOURCE_PROBE, corrected);
     }
 
     /**
@@ -296,6 +427,17 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
 
     /** Package-private deterministic seam for scheduler tests. */
     static ObjectNode runWithExecutor(ObjectNode options, SlotExecutor executor, ResourceProbe resourceProbe) {
+        return runWithExecutorInternal(options, executor, resourceProbe, false);
+    }
+
+    /** Package-private corrected scheduler seam for self-contained integration tests. */
+    static ObjectNode runCorrectedWithExecutorForTest(ObjectNode options, SlotExecutor executor,
+            ResourceProbe resourceProbe) {
+        return runWithExecutorInternal(options, executor, resourceProbe, true);
+    }
+
+    private static ObjectNode runWithExecutorInternal(ObjectNode options, SlotExecutor executor,
+            ResourceProbe resourceProbe, boolean corrected) {
         Objects.requireNonNull(executor, "executor");
         Objects.requireNonNull(resourceProbe, "resourceProbe");
         ObjectNode input = options == null ? JsonHashes.mapper().createObjectNode() : options;
@@ -335,6 +477,9 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
             ObjectNode ledger = existingLedger != null ? existingLedger : newLedger(plan, profile, mode, planned);
             boolean packagedStrict = executor instanceof DurableSlotExecutor;
             validateLedger(ledger, plan, profile, mode, planned, ledgerPath, packagedStrict);
+            if (corrected && executor instanceof ProcessSlotExecutor processExecutor) {
+                processExecutor.bindRunId(ledger.path("run_id").asText(""));
+            }
             Path root = ledgerPath.getParent() == null ? Path.of(".") : ledgerPath.getParent();
             Path artifactRoot = root.resolve(ledgerPath.getFileName() + ".results");
             Path scratchRoot = root.resolve(ledgerPath.getFileName() + ".scratch");
@@ -354,6 +499,12 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
                 throw new IllegalArgumentException("workers cannot exceed the frozen effective worker admission");
             }
             workers = requestedWorkers;
+            RunMeasurement measurement = corrected
+                    ? new RunMeasurement(plan, profile, ledgerPath, mode, workers,
+                            ledger.path("run_id").asText("")) : null;
+            if (corrected && (measurement.runId == null || measurement.runId.isBlank())) {
+                throw new IllegalArgumentException("corrected ledger has no immutable run identity");
+            }
             AtomicBoolean stop = new AtomicBoolean(false);
             String stopReason = "";
             Map<String, ObjectNode> terminal = terminalBySlot(ledger);
@@ -363,7 +514,8 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
                 Path existingArtifact = artifactRoot.resolve(safe(slot.id()) + ".json");
                 if (Files.exists(existingArtifact)) {
                     ObjectNode artifact = readObject(existingArtifact, "orphan slot artifact");
-                    verifyArtifact(artifact, existingArtifact, slot, plan, packagedStrict);
+                    verifyArtifact(artifact, existingArtifact, slot, plan, packagedStrict,
+                            corrected ? ledger.path("run_id").asText("") : null);
                     ObjectNode reference = artifactReference(ledgerPath, existingArtifact, artifact, slot,
                             artifact.path("attempt").asInt(0));
                     String status = artifact.path("status").asText();
@@ -388,8 +540,8 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
             Map<Future<AttemptOutcome>, Slot> active = new LinkedHashMap<>();
             try {
                 while ((!queue.isEmpty() || !active.isEmpty()) && !stop.get()) {
-                    String violation = monitor(input, profile, deadline, ledgerPath, artifactRoot, scratchRoot, logsRoot,
-                            resourceProbe);
+                    String violation = monitorWithMeasurement(input, profile, deadline, ledgerPath, artifactRoot,
+                            scratchRoot, logsRoot, resourceProbe, measurement);
                     if (violation != null) { stop.set(true); stopReason = violation; break; }
                     while (!queue.isEmpty() && active.size() < workers && !stop.get()) {
                         Slot slot = queue.removeFirst();
@@ -397,7 +549,9 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
                         reserve(ledger, slot, attempt, ledgerPath);
                         retries.put(slot.id(), attempt);
                         Future<AttemptOutcome> future = completions.submit(() -> executeAttempt(
-                                executor, slot, attempt, scratchRoot, artifactRoot, logsRoot));
+                                executor, slot, attempt, scratchRoot, artifactRoot, logsRoot, corrected,
+                                corrected ? ledger.path("run_id").asText("") : null));
+                        if (measurement != null) measurement.recordLaunch(slot.id());
                         active.put(future, slot);
                     }
                     if (active.isEmpty()) continue;
@@ -423,7 +577,11 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
                     } else {
                         try {
                             finishAttempt(ledger, slot, outcome, ledgerPath, artifactRoot, scratchRoot, logsRoot,
-                                    profile, deadline, plan, packagedStrict, input, resourceProbe);
+                                    profile, deadline, plan, packagedStrict, input, resourceProbe,
+                                    corrected ? ledger.path("run_id").asText("") : null);
+                            if (measurement != null && outcome.artifact() != null) {
+                                measurement.recordCompletion(slot.id());
+                            }
                         } catch (ResourceViolation resource) {
                             stop.set(true); stopReason = resource.getMessage();
                             recordAttempt(ledger, slot, outcome.attempt(), "ABORTED", stopReason, null);
@@ -450,18 +608,21 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
                 persistLedger(ledgerPath, ledger);
             }
             if (!stop.get()) {
-                String finalViolation = monitor(input, profile, deadline, ledgerPath, artifactRoot, scratchRoot, logsRoot,
-                        resourceProbe);
+                String finalViolation = monitorWithMeasurement(input, profile, deadline, ledgerPath, artifactRoot,
+                        scratchRoot, logsRoot, resourceProbe, measurement);
                 if (finalViolation != null) { stop.set(true); stopReason = finalViolation; }
             }
-            String finalStageViolation = monitor(input, profile, deadline, ledgerPath, artifactRoot, scratchRoot, logsRoot,
-                    resourceProbe);
+            String finalStageViolation = monitorWithMeasurement(input, profile, deadline, ledgerPath, artifactRoot,
+                    scratchRoot, logsRoot, resourceProbe, measurement);
             if (finalStageViolation != null) {
                 stop.set(true);
                 stopReason = finalStageViolation;
             }
+            if (measurement != null) {
+                measurement.sample(resourceProbe, artifactRoot, scratchRoot, logsRoot);
+            }
             ObjectNode result = resultFromLedger(plan, profile, mode, planned, ledger, ledgerPath, stopReason, deadline,
-                    packagedStrict, resourceProbe);
+                    packagedStrict, resourceProbe, corrected, measurement, workers);
             String out = input.path("out").asText("");
             if (!out.isBlank()) writeAtomic(Path.of(out).toAbsolutePath().normalize(), result, true);
             return result;
@@ -475,6 +636,17 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
         Path payloadPath = requiredPath(options, "payload");
         ObjectNode payload = readObject(payloadPath, "worker payload");
         ObjectNode plan = readObjectOption(payload, "plan", "worker plan");
+        boolean corrected = payload.path("corrected_accounting").asBoolean(false);
+        boolean planCorrected = CORRECTED_PLAN_SCHEMA
+                .equals(plan.path("schema").asText());
+        if (corrected != planCorrected) {
+            throw new IllegalArgumentException("parallel worker corrected mode does not match the versioned plan");
+        }
+        String runId = payload.path("run_id").asText("");
+        if (corrected && !runId.matches(
+                "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}")) {
+            throw new IllegalArgumentException("corrected worker has no coordinator run identity");
+        }
         ObjectNode identity = BuildIdentityService.describe(StrategyOperatingCharacteristicsParallelV1.class);
         String expected = payload.path("executor_identity_sha256").asText("");
         String actual = identity.path("executable").path("sha256").asText("");
@@ -496,7 +668,7 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
         ObjectNode controls = readObjectOption(payload, "controls", "worker controls");
         ObjectNode experiment = readObjectOption(payload, "experiment", "worker experiment");
         validateBoundInputs(payload, plan, true);
-        validatePackagedPlan(plan, slot.mode());
+        validatePackagedPlan(plan, slot.mode(), corrected);
         verifyWorkerDependencies(payload);
         int episodes = payload.path("episodes_per_replication").asInt(-1);
         int boundEpisodes = episodesForMode(plan, slot.mode());
@@ -516,7 +688,7 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
         Path output = requiredPath(options, "out");
         ObjectNode row;
         try {
-            row = invokeOptimized(baseline, controls, experiment, plan, slot, episodes, deadline, maxRss);
+            row = invokeOptimized(baseline, controls, experiment, plan, slot, episodes, deadline, maxRss, corrected);
             validateRow(slot, row);
         } catch (RuntimeException error) {
             if (!isResourceMessage(error)) throw error;
@@ -528,7 +700,7 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
             }
             throw new ResourceViolation(error.getMessage());
         }
-        ObjectNode artifact = slotArtifact(slot, payload.path("attempt").asInt(1), row, identity);
+        ObjectNode artifact = slotArtifact(slot, payload.path("attempt").asInt(1), row, identity, corrected, runId);
         try {
             writeAtomic(output.toAbsolutePath().normalize(), artifact, false);
         } catch (IOException error) {
@@ -541,10 +713,13 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
     }
 
     private static ObjectNode invokeOptimized(ObjectNode baseline, ObjectNode controls, ObjectNode experiment,
-            ObjectNode plan, Slot slot, int episodes, long deadline, long maxRss) {
-        return StrategyOperatingCharacteristicsSuccessorV1.evaluateOptimizedReplication(
+            ObjectNode plan, Slot slot, int episodes, long deadline, long maxRss, boolean corrected) {
+        return corrected ? StrategyOperatingCharacteristicsSuccessorV1.evaluateCorrectedReplication(
                 baseline, controls, experiment, plan, slot.mode(), slot.scenario(),
-                slot.effectSize(), slot.replication(), slot.seed(), episodes, deadline, maxRss);
+                slot.effectSize(), slot.replication(), slot.seed(), episodes, deadline, maxRss)
+                : StrategyOperatingCharacteristicsSuccessorV1.evaluateOptimizedReplication(
+                        baseline, controls, experiment, plan, slot.mode(), slot.scenario(),
+                        slot.effectSize(), slot.replication(), slot.seed(), episodes, deadline, maxRss);
     }
 
     private static void verifyWorkerDependencies(ObjectNode payload) {
@@ -599,7 +774,7 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
     }
 
     private static AttemptOutcome executeAttempt(SlotExecutor executor, Slot slot, int attempt,
-            Path scratchRoot, Path artifactRoot, Path logsRoot) {
+            Path scratchRoot, Path artifactRoot, Path logsRoot, boolean corrected, String runId) {
         Path scratch = scratchRoot.resolve(safe(slot.id()) + "-a" + attempt);
         Path log = logsRoot.resolve(safe(slot.id()) + "-a" + attempt + ".log");
         try {
@@ -623,7 +798,7 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
             if (row == null) throw new IllegalArgumentException("worker returned null row");
             validateRow(slot, row);
             ObjectNode identity = BuildIdentityService.describe(StrategyOperatingCharacteristicsParallelV1.class);
-            ObjectNode artifact = slotArtifact(slot, attempt, row, identity);
+            ObjectNode artifact = slotArtifact(slot, attempt, row, identity, corrected, runId);
             Path temporary = target.resolveSibling(target.getFileName() + ".tmp-" + System.nanoTime());
             writeAtomic(temporary, artifact, false);
             try {
@@ -646,15 +821,31 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
     }
 
     private static ObjectNode slotArtifact(Slot slot, int attempt, ObjectNode row, ObjectNode identity) {
+        return slotArtifact(slot, attempt, row, identity, false);
+    }
+
+    private static ObjectNode slotArtifact(Slot slot, int attempt, ObjectNode row, ObjectNode identity,
+            boolean corrected) {
+        return slotArtifact(slot, attempt, row, identity, corrected, null);
+    }
+
+    private static ObjectNode slotArtifact(Slot slot, int attempt, ObjectNode row, ObjectNode identity,
+            boolean corrected, String runId) {
         String transportStatus = "COMPLETE".equals(row.path("status").asText()) ? "COMPLETE" : "COMPUTE_INCOMPLETE";
         ObjectNode artifact = JsonHashes.mapper().createObjectNode()
-                .put("schema", SLOT_RESULT_SCHEMA).put("version", 1).put("status", transportStatus)
+                .put("schema", corrected ? CORRECTED_SLOT_RESULT_SCHEMA : SLOT_RESULT_SCHEMA).put("version", 1)
+                .put("status", transportStatus)
                 .put("slot_id", slot.id()).put("plan_sha256", slot.planSha256()).put("mode", slot.mode())
                 .put("scenario", slot.scenario()).put("effect_size", slot.effectSize())
                 .put("replication", slot.replication()).put("seed", slot.seed()).put("attempt", attempt)
-                .put("fixed_evaluator", FIXED_EVALUATOR).put("promotion_eligible", false)
+                .put("fixed_evaluator", corrected ? CORRECTED_EVALUATOR : FIXED_EVALUATOR)
+                .put("promotion_eligible", false)
                 .put("activation_authorized", false).put("content_sha256", "");
         artifact.set("row", row.deepCopy());
+        if (corrected) {
+            artifact.put("accounting_version", StrategyFixedBaselinePortfolioCorrectionV1.ACCOUNTING_VERSION);
+            if (runId != null && !runId.isBlank()) artifact.put("run_id", runId);
+        }
         JsonNode raw = row.path("raw_evaluator_result");
         if ("COMPLETE".equals(transportStatus) && raw.isObject()) {
             artifact.put("portable_economic_sha256", portableEconomicSha256((ObjectNode) raw));
@@ -666,11 +857,12 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
 
     private static void finishAttempt(ObjectNode ledger, Slot slot, AttemptOutcome outcome,
             Path ledgerPath, Path artifactRoot, Path scratchRoot, Path logsRoot, ObjectNode profile, long deadline,
-            ObjectNode plan, boolean packagedStrict, ObjectNode options, ResourceProbe resourceProbe) throws IOException {
+            ObjectNode plan, boolean packagedStrict, ObjectNode options, ResourceProbe resourceProbe,
+            String runId) throws IOException {
         checkBudget(options, profile, deadline, ledgerPath, artifactRoot, scratchRoot, logsRoot, resourceProbe);
         if (outcome.artifact() != null) {
             ObjectNode artifact = readObject(outcome.artifact(), "slot artifact");
-            verifyArtifact(artifact, outcome.artifact(), slot, plan, packagedStrict);
+            verifyArtifact(artifact, outcome.artifact(), slot, plan, packagedStrict, runId);
             ObjectNode reference = artifactReference(ledgerPath, outcome.artifact(), artifact, slot, outcome.attempt());
             recordAttempt(ledger, slot, outcome.attempt(), reference.path("status").asText(), "", reference);
             ledger.withArray("terminal").add(reference);
@@ -724,7 +916,8 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
 
     private static ObjectNode resultFromLedger(ObjectNode plan, ObjectNode profile, String mode,
             List<Slot> planned, ObjectNode ledger, Path ledgerPath, String stopReason, long deadline,
-            boolean packagedStrict, ResourceProbe resourceProbe) {
+            boolean packagedStrict, ResourceProbe resourceProbe, boolean corrected,
+            RunMeasurement measurement, int workers) {
         Map<String, ObjectNode> terminal = terminalBySlot(ledger);
         ArrayNode refs = JsonHashes.mapper().createArrayNode();
         ArrayNode missing = JsonHashes.mapper().createArrayNode();
@@ -734,20 +927,27 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
             else refs.add(value.deepCopy());
         }
         boolean aborted = stopReason != null && !stopReason.isBlank();
-        ObjectNode result = JsonHashes.mapper().createObjectNode().put("schema", RESULT_SCHEMA).put("version", 1)
+        ObjectNode result = JsonHashes.mapper().createObjectNode().put("schema", corrected
+                ? "strategy-evaluator-operating-characteristics-corrected-parallel-result/1" : RESULT_SCHEMA).put("version", 1)
                 .put("status", missing.isEmpty() && !aborted ? "COMPLETE" : "COMPUTE_INCOMPLETE")
                 .put("mode", mode).put("plan_sha256", plan.path("content_sha256").asText())
                 .put("profile_sha256", profile.path("content_sha256").asText())
-                .put("fixed_evaluator", FIXED_EVALUATOR).put("shared_physical_evaluator", true)
+                .put("fixed_evaluator", corrected ? CORRECTED_EVALUATOR : FIXED_EVALUATOR)
+                .put("shared_physical_evaluator", true)
                 .put("toy_statistic", false).put("outcomes_opened", true)
                 .put("promotion_eligible", false).put("activation_authorized", false)
                 .put("evidence_phase", "DEVELOPMENT").put("measured", false)
                 .put("performance_claim", "NONE").put("planned_slots", planned.size())
                 .put("completed_slots", refs.size()).put("missing_slots", missing.size())
+                .put("requested_workers", workers)
+                .put("effective_workers", profile.path("effective_workers").asInt(0))
+                .put("ledger_content_sha256", ledger.path("content_sha256").asText())
                 .put("retry_limit_per_slot", MAX_RETRY)
                 .put("stop_reason", stopReason == null ? "" : stopReason);
         result.set("result_refs", refs); result.set("missing", missing);
+        if (corrected) result.put("accounting_version", StrategyFixedBaselinePortfolioCorrectionV1.ACCOUNTING_VERSION);
         result.set("build_identity", BuildIdentityService.describe(StrategyOperatingCharacteristicsParallelV1.class));
+        if (corrected && measurement != null) result.set("resource_measurement", measurement.toJson(ledger));
         if ("FULL".equals(mode) && missing.isEmpty() && !aborted) {
             ObjectNode summaries = fullCellSummaries(plan, planned, refs, ledgerPath, profile, deadline, packagedStrict,
                     resourceProbe);
@@ -827,15 +1027,22 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
     }
 
     private static ObjectNode newLedger(ObjectNode plan, ObjectNode profile, String mode, List<Slot> slots) {
+        boolean corrected = CORRECTED_PLAN_SCHEMA
+                .equals(plan.path("schema").asText());
         ArrayNode inventory = JsonHashes.mapper().createArrayNode(); slots.forEach(slot -> inventory.add(slot.toJson()));
         ObjectNode ledger = JsonHashes.mapper().createObjectNode().put("schema", LEDGER_SCHEMA).put("version", 1)
                 .put("status", "OPEN").put("plan_sha256", plan.path("content_sha256").asText())
                 .put("profile_sha256", profile.path("content_sha256").asText()).put("mode", mode)
-                .put("fixed_evaluator", FIXED_EVALUATOR).put("compact_references_only", true)
+                .put("fixed_evaluator", corrected ? CORRECTED_EVALUATOR : FIXED_EVALUATOR)
+                .put("compact_references_only", true)
                 .put("retain_abandoned_reservations", true).put("retry_limit_per_slot", MAX_RETRY)
                 .put("content_sha256", "");
         ledger.set("slot_inventory", inventory); ledger.putArray("attempts"); ledger.putArray("terminal");
         ledger.set("execution_profile", profile.deepCopy());
+        if (corrected) {
+            ledger.put("accounting_version", StrategyFixedBaselinePortfolioCorrectionV1.ACCOUNTING_VERSION)
+                    .put("run_id", UUID.randomUUID().toString());
+        }
         ledger.put("content_sha256", JsonHashes.ownHash(ledger));
         return ledger;
     }
@@ -847,9 +1054,17 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
                 || !plan.path("content_sha256").asText().equals(ledger.path("plan_sha256").asText())
                 || !profile.path("content_sha256").asText().equals(ledger.path("profile_sha256").asText())
                 || !mode.equals(ledger.path("mode").asText()) || !ledger.path("compact_references_only").asBoolean(false)
+                || !(CORRECTED_PLAN_SCHEMA
+                        .equals(plan.path("schema").asText()) ? CORRECTED_EVALUATOR : FIXED_EVALUATOR)
+                        .equals(ledger.path("fixed_evaluator").asText())
                 || !ledger.path("execution_profile").isObject()
                 || !profile.path("content_sha256").asText().equals(ledger.path("execution_profile").path("content_sha256").asText())) {
             throw new IllegalArgumentException("parallel ledger is not a self-bound compact ledger");
+        }
+        if (CORRECTED_PLAN_SCHEMA.equals(plan.path("schema").asText())
+                && !ledger.path("run_id").asText("").matches(
+                        "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}")) {
+            throw new IllegalArgumentException("corrected ledger has no immutable run identity");
         }
         Set<String> expected = new LinkedHashSet<>(); slots.forEach(slot -> expected.add(slot.id()));
         Set<String> actual = new LinkedHashSet<>();
@@ -871,8 +1086,18 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
                         : ledgerPath.getParent().toAbsolutePath().normalize();
                 Path artifact;
                 try {
-                    artifact = PathConfinement.resolve(base, relative, "parallel ledger result",
-                            PathConfinement.ExpectedType.FILE).absolute();
+                    Path relativePath = Path.of(relative);
+                    if (relative.isBlank() || relativePath.isAbsolute()) {
+                        throw new IllegalArgumentException("parallel ledger result must be relative");
+                    }
+                    artifact = base.resolve(relativePath).normalize();
+                    if (!artifact.startsWith(base)) {
+                        throw new IllegalArgumentException("parallel ledger result escapes the ledger root");
+                    }
+                    if (!Files.isRegularFile(artifact)) {
+                        throw new IllegalArgumentException("parallel ledger result is missing: " + artifact);
+                    }
+                    if (packagedStrict) PathConfinement.validateSinglyLinkedFile(artifact, "parallel ledger result");
                 } catch (RuntimeException error) {
                     throw new IllegalArgumentException("parallel ledger result reference is missing or escapes the ledger root", error);
                 }
@@ -885,7 +1110,9 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
                     throw new IllegalArgumentException("cannot inspect parallel result artifact", error);
                 }
                 ObjectNode stored = readObject(artifact, "parallel result artifact");
-                verifyArtifact(stored, artifact, slotsById.get(id), plan, packagedStrict);
+                verifyArtifact(stored, artifact, slotsById.get(id), plan, packagedStrict,
+                        CORRECTED_PLAN_SCHEMA.equals(plan.path("schema").asText())
+                                ? ledger.path("run_id").asText("") : null);
                 if (!stored.path("content_sha256").asText().equals(node.path("content_sha256").asText())
                         || !stored.path("status").asText().equals(node.path("status").asText())
                         || stored.path("attempt").asInt(-1) != node.path("attempt").asInt(-2)) {
@@ -916,7 +1143,14 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
 
     private static void verifyArtifact(ObjectNode artifact, Path path, Slot slot, ObjectNode plan,
             boolean packagedStrict) {
-        if (!SLOT_RESULT_SCHEMA.equals(artifact.path("schema").asText())
+        verifyArtifact(artifact, path, slot, plan, packagedStrict, null);
+    }
+
+    private static void verifyArtifact(ObjectNode artifact, Path path, Slot slot, ObjectNode plan,
+            boolean packagedStrict, String expectedRunId) {
+        boolean corrected = CORRECTED_PLAN_SCHEMA
+                .equals(plan.path("schema").asText());
+        if (!(corrected ? CORRECTED_SLOT_RESULT_SCHEMA : SLOT_RESULT_SCHEMA).equals(artifact.path("schema").asText())
                 || !artifact.path("content_sha256").asText().equals(JsonHashes.ownHash(artifact))
                 || !slot.id().equals(artifact.path("slot_id").asText())
                 || !slot.planSha256().equals(artifact.path("plan_sha256").asText())
@@ -927,7 +1161,15 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
                 || slot.seed() != artifact.path("seed").asLong(Long.MIN_VALUE)
                 || artifact.path("attempt").asInt(0) < 1
                 || artifact.path("attempt").asInt(0) > MAX_RETRY + 1
-                || !artifact.path("row").isObject()) throw new IllegalArgumentException("corrupt slot artifact: " + path);
+                || !artifact.path("row").isObject()
+                || (packagedStrict && !(corrected ? CORRECTED_EVALUATOR : FIXED_EVALUATOR)
+                        .equals(artifact.path("fixed_evaluator").asText()))
+                || (corrected && !StrategyFixedBaselinePortfolioCorrectionV1.ACCOUNTING_VERSION
+                        .equals(artifact.path("accounting_version").asText()))
+                || (corrected && expectedRunId != null && !expectedRunId.isBlank()
+                        && !expectedRunId.equals(artifact.path("run_id").asText()))) {
+            throw new IllegalArgumentException("corrupt slot artifact: " + path);
+        }
         String status = artifact.path("status").asText();
         if (!"COMPLETE".equals(status) && !"COMPUTE_INCOMPLETE".equals(status)) {
             throw new IllegalArgumentException("corrupt slot artifact status: " + path);
@@ -991,7 +1233,33 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
 
         ObjectNode receipt = object(row, "evaluator_receipt");
         requireOwnHash(receipt, "evaluator receipt");
-        if (!"strategy-evaluator-operating-characteristics-successor-evaluator-receipt/1"
+        boolean corrected = CORRECTED_SLOT_RESULT_SCHEMA.equals(artifact.path("schema").asText());
+        if (corrected) {
+            if (!StrategyFixedBaselineCorrectedV1.RESULT_SCHEMA.equals(raw.path("schema").asText())
+                    || !CORRECTED_EVALUATOR.equals(raw.path("evaluator_identity").asText())
+                    || !CORRECTED_EVALUATOR.equals(raw.path("corrected_evaluator_identity").asText())
+                    || !StrategyFixedBaselinePortfolioCorrectionV1.ACCOUNTING_VERSION
+                            .equals(raw.path("accounting_version").asText())
+                    || !StrategyFixedBaselinePortfolioCorrectionV1.ACCOUNTING_VERSION
+                            .equals(raw.path("evaluator").path("accounting_version").asText())
+                    || !SHA256.matcher(raw.path("corrected_economic_semantic_sha256").asText()).matches()
+                    || !SHA256.matcher(raw.path("algorithm_fingerprint").asText()).matches()
+                    || !raw.path("corrected_portfolio_metrics").isObject()
+                    || !raw.path("correction_receipt").isObject()
+                    || !raw.path("portfolio").path("corrected_metrics").isObject()
+                    || !raw.path("metrics").path("corrected_portfolio").isObject()
+                    || !raw.path("corrected_portfolio_metrics")
+                            .equals(raw.path("portfolio").path("corrected_metrics"))
+                    || !raw.path("metrics").path("corrected_portfolio")
+                            .equals(raw.path("corrected_portfolio_metrics"))) {
+                throw new IllegalArgumentException("corrected raw evaluator identity or accounting binding mismatch: " + path);
+            }
+            requireOwnHash((ObjectNode) raw.path("correction_receipt"), "corrected evaluator receipt");
+            validateCorrectedQualificationPortfolio(row,
+                    "FULL".equals(artifact.path("mode").asText()));
+        }
+        if (!(corrected ? StrategyOperatingCharacteristicsSuccessorV1.CORRECTED_RECEIPT_SCHEMA
+                : "strategy-evaluator-operating-characteristics-successor-evaluator-receipt/1")
                 .equals(receipt.path("schema").asText())
                 || receipt.path("version").asInt(-1) != 1
                 || !"SHARED_FIXED_EVALUATOR_IN_PROCESS".equals(receipt.path("origin").asText())) {
@@ -1001,12 +1269,15 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
         requireSha(receipt.path("economic_semantic_sha256").asText(), "evaluator receipt economic_semantic_sha256");
         requireSha(receipt.path("executor_identity_sha256").asText(), "evaluator receipt executor_identity_sha256");
         requireSha(receipt.path("source_input_sha256").asText(), "evaluator receipt source_input_sha256");
-        if (!rawContent.equals(receipt.path("result_content_sha256").asText())
+        String rawEconomic = corrected ? raw.path("corrected_economic_semantic_sha256").asText("")
+                : raw.path("economic_semantic_sha256").asText("");
+        if (!SHA256.matcher(rawEconomic).matches()
+                || !rawContent.equals(receipt.path("result_content_sha256").asText())
                 || !rawContent.equals(row.path("raw_evaluator_result_content_sha256").asText())
                 || !raw.path("schema").asText().equals(receipt.path("result_schema").asText())
                 || !raw.path("status").asText().equals(receipt.path("status").asText())
-                || !raw.path("economic_semantic_sha256").asText().equals(receipt.path("economic_semantic_sha256").asText())
-                || !raw.path("economic_semantic_sha256").asText().equals(row.path("economic_semantic_sha256").asText())
+                || !rawEconomic.equals(receipt.path("economic_semantic_sha256").asText())
+                || !rawEconomic.equals(row.path("economic_semantic_sha256").asText())
                 || !raw.path("physical_input_sha256").asText().equals(row.path("generator_input_sha256").asText())
                 || !raw.path("physical_input_sha256").asText().equals(receipt.path("source_input_sha256").asText())) {
             throw new IllegalArgumentException("evaluator receipt result binding mismatch: " + path);
@@ -1031,6 +1302,7 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
             throw new IllegalArgumentException("compact worker projection differs from raw evaluator result: " + path);
         }
     }
+
 
     private static void checkRawReceipt(ObjectNode row, String field, String expected, Path path, boolean required) {
         String actual = row.path(field).asText("");
@@ -1077,7 +1349,15 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
                         node.path("replication").asInt(-1), node.path("seed").asLong(Long.MIN_VALUE), ordinal++));
             }
         } else {
-            for (JsonNode cell : plan.path("cells")) {
+            JsonNode cellInventory = plan.path("development_wave").asBoolean(false)
+                    && (("FULL".equals(mode) && plan.path("development_seed_cells").isArray())
+                        || ("PREFIX".equals(mode) && plan.path("development_prefix_seed_cells").isArray()))
+                    ? plan.path("development_seed_cells") : plan.path("cells");
+            if ("PREFIX".equals(mode) && plan.path("development_wave").asBoolean(false)
+                    && plan.path("development_prefix_seed_cells").isArray()) {
+                cellInventory = plan.path("development_prefix_seed_cells");
+            }
+            for (JsonNode cell : cellInventory) {
                 String scenario = cell.path("scenario").asText(cell.path("name").asText(""));
                 double effect = cell.path("effect_size").asDouble(cell.path("effect").asDouble(Double.NaN));
                 JsonNode seeds;
@@ -1094,7 +1374,9 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
                     }
                     seeds = cell.path("prefix_seeds");
                 } else {
-                    seeds = cell.path("seeds");
+                    seeds = plan.path("development_wave").asBoolean(false)
+                            && "FULL".equals(mode) && cell.has("development_seeds")
+                            ? cell.path("development_seeds") : cell.path("seeds");
                 }
                 if (!seeds.isArray()) throw new IllegalArgumentException("parallel plan cell has no seeds: " + scenario);
                 for (int repetition = 0; repetition < seeds.size(); repetition++)
@@ -1146,6 +1428,39 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
             throw new IllegalArgumentException("FULL parallel plan must preserve four statistical cells");
         }
         if (plan.path("episodes_per_replication").asInt(1) <= 0) throw new IllegalArgumentException("parallel plan episodes are invalid");
+    }
+
+    /** Validates the retained frozen declaration before a corrected plan derives from it. */
+    static void validateBasePlanForCorrectedBuilder(ObjectNode plan) {
+        validatePlan(plan);
+        if (!PLAN_SCHEMA.equals(plan.path("schema").asText())) {
+            throw new IllegalArgumentException("corrected development builder requires the retained parallel plan schema");
+        }
+        validateFullGeometry(plan);
+        requireStatisticalBinding(plan, "FULL");
+        validateDependencyBindings(plan);
+    }
+
+    /** Structural corrected-plan checks usable by preflight without opening a process. */
+    static void validateCorrectedPlanForPreflight(ObjectNode plan) {
+        validatePlan(plan);
+        if (!CORRECTED_PLAN_SCHEMA.equals(plan.path("schema").asText())
+                || !CORRECTED_EVALUATOR.equals(plan.path("corrected_evaluator_identity").asText(
+                        plan.path("fixed_evaluator").asText("")))
+                || !StrategyFixedBaselinePortfolioCorrectionV1.ACCOUNTING_VERSION
+                        .equals(plan.path("accounting_version").asText())) {
+            throw new IllegalArgumentException("corrected parallel plan accounting binding is invalid");
+        }
+        validateFullGeometry(plan);
+        requireStatisticalBinding(plan, "FULL");
+        validateDependencyBindings(plan);
+        for (String field : List.of("baseline_sha256", "control_spec_sha256", "experiment_sha256",
+                "executor_source_sha256", "executor_build_input_fingerprint", "executor_identity_sha256",
+                "execution_profile_sha256")) {
+            if (!SHA256.matcher(plan.path(field).asText("")).matches()) {
+                throw new IllegalArgumentException("corrected parallel plan lacks " + field);
+            }
+        }
     }
 
     private static void validateFullGeometry(ObjectNode plan) {
@@ -1270,6 +1585,13 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
      * equivalent packaged workers can compare their economic output.
      */
     private static String portableEconomicSha256(ObjectNode raw) {
+        if (StrategyFixedBaselineCorrectedV1.RESULT_SCHEMA.equals(raw.path("schema").asText())) {
+            String expected = StrategyFixedBaselineCorrectedV1.correctedEconomicSha256ForValidation(raw);
+            if (!expected.equals(raw.path("corrected_economic_semantic_sha256").asText())) {
+                throw new IllegalArgumentException("corrected evaluator economic digest is not recomputed from its output");
+            }
+            return expected;
+        }
         ObjectNode copy = raw.deepCopy();
         copy.remove("content_sha256"); copy.remove("semantic_sha256"); copy.remove("economic_semantic_sha256");
         copy.remove("build_identity"); copy.remove("exposure_head_sha256"); copy.remove("exposure_head_path");
@@ -1310,11 +1632,24 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
     }
 
     private static void validatePackagedPlan(ObjectNode plan) {
-        validatePackagedPlan(plan, plan.path("mode").asText("FULL"));
+        validatePackagedPlan(plan, plan.path("mode").asText("FULL"), false);
     }
 
     private static void validatePackagedPlan(ObjectNode plan, String requestedMode) {
+        validatePackagedPlan(plan, requestedMode, false);
+    }
+
+    private static void validatePackagedPlan(ObjectNode plan, String requestedMode, boolean corrected) {
         validatePlan(plan);
+        boolean planCorrected = CORRECTED_PLAN_SCHEMA
+                .equals(plan.path("schema").asText());
+        if (corrected != planCorrected) {
+            throw new IllegalArgumentException("parallel packaged executor mode does not match the versioned plan");
+        }
+        if (corrected && !CORRECTED_EVALUATOR.equals(plan.path("corrected_evaluator_identity").asText(
+                plan.path("fixed_evaluator").asText("")))) {
+            throw new IllegalArgumentException("parallel plan is not bound to the corrected evaluator");
+        }
         if ("FULL".equals(requestedMode)) validateFullGeometry(plan);
         else validatePrefixGeometry(plan);
         ObjectNode identity = BuildIdentityService.describe(StrategyOperatingCharacteristicsParallelV1.class);
@@ -1446,6 +1781,7 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
         JsonNode value = profile.path("qualification_receipt");
         if (!value.isObject()) throw new IllegalArgumentException("qualified execution profile has no receipt");
         ObjectNode receipt = (ObjectNode) value;
+        boolean correctedReceipt = CORRECTED_EVALUATOR.equals(profile.path("fixed_evaluator").asText());
         if (!"strategy-evaluator-operating-characteristics-qualification/1".equals(receipt.path("schema").asText())
                 || receipt.path("version").asInt(-1) != 1
                 || !"QUALIFIED".equals(receipt.path("status").asText())
@@ -1459,6 +1795,30 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
                 || !receipt.path("execution_profile_envelope_sha256").asText()
                         .equals(profile.path("profile_envelope_sha256").asText())) {
             throw new IllegalArgumentException("qualification receipt does not prove a measured full development envelope");
+        }
+        if (correctedReceipt
+                && (!CORRECTED_EVALUATOR.equals(receipt.path("corrected_evaluator_identity").asText())
+                        || !StrategyFixedBaselinePortfolioCorrectionV1.ACCOUNTING_VERSION
+                                .equals(receipt.path("accounting_version").asText())
+                        || !receipt.path("serial_parallel_equivalent").asBoolean(false)
+                        || receipt.path("serial_completed_raw_worker_refs").isMissingNode()
+                        || receipt.path("serial_completed_slot_count").asInt(-1)
+                                != receipt.path("serial_completed_raw_worker_refs").size()
+                        || receipt.path("serial_completed_slot_count").asInt(-1)
+                                != receipt.path("completed_slot_count").asInt(-2)
+                        || !SHA256.matcher(receipt.path("parallel_resource_measurement_sha256").asText()).matches()
+                        || !SHA256.matcher(receipt.path("serial_resource_measurement_sha256").asText()).matches()
+                        || !SHA256.matcher(receipt.path("parallel_result_byte_sha256").asText()).matches()
+                        || !SHA256.matcher(receipt.path("parallel_ledger_byte_sha256").asText()).matches()
+                        || !SHA256.matcher(receipt.path("parallel_ledger_content_sha256").asText()).matches()
+                        || !SHA256.matcher(receipt.path("serial_result_byte_sha256").asText()).matches()
+                        || !SHA256.matcher(receipt.path("serial_ledger_byte_sha256").asText()).matches()
+                        || !SHA256.matcher(receipt.path("serial_ledger_content_sha256").asText()).matches()
+                        || receipt.path("parallel_result_relative_path").asText("").isBlank()
+                        || receipt.path("parallel_ledger_relative_path").asText("").isBlank()
+                        || receipt.path("serial_result_relative_path").asText("").isBlank()
+                        || receipt.path("serial_ledger_relative_path").asText("").isBlank())) {
+            throw new IllegalArgumentException("corrected qualification receipt lacks serial/parallel identity bindings");
         }
         ObjectNode geometry = object(receipt, "full_geometry");
         requireOwnHash(geometry, "qualification full geometry");
@@ -1477,6 +1837,13 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
         }
         ObjectNode resource = object(receipt, "resource_envelope");
         requireOwnHash(resource, "qualification resource envelope");
+        if (correctedReceipt
+                && (!resource.path("parallel_resource_measurement_sha256").asText()
+                        .equals(receipt.path("parallel_resource_measurement_sha256").asText())
+                        || !resource.path("serial_resource_measurement_sha256").asText()
+                                .equals(receipt.path("serial_resource_measurement_sha256").asText()))) {
+            throw new IllegalArgumentException("corrected qualification resource envelope measurement binding is invalid");
+        }
         if (!resourceEnvelopeMatches(resource, profile)) {
             throw new IllegalArgumentException("qualification receipt resource envelope differs from execution profile");
         }
@@ -1503,7 +1870,9 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
         }
         JsonNode refs = receipt.path("completed_raw_worker_refs");
         int completed = receipt.path("completed_slot_count").asInt(-1);
-        if (!refs.isArray() || completed < profile.path("effective_workers").asInt(1) || refs.size() != completed) {
+        int expectedWave = correctedReceipt ? 4 * profile.path("effective_workers").asInt(0)
+                : profile.path("effective_workers").asInt(1);
+        if (!refs.isArray() || completed != expectedWave || refs.size() != completed) {
             throw new IllegalArgumentException("qualification receipt lacks a complete development worker wave");
         }
         Set<String> ids = new HashSet<>();
@@ -1523,6 +1892,22 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
                 throw new IllegalArgumentException("qualification receipt has an invalid raw worker reference");
             }
         }
+        if (correctedReceipt) {
+            Set<String> serialIds = new HashSet<>();
+            for (JsonNode ref : receipt.path("serial_completed_raw_worker_refs")) {
+                if (!ref.isObject() || !serialIds.add(ref.path("slot_id").asText())
+                        || !"FULL".equals(ref.path("mode").asText())
+                        || !SHA256.matcher(ref.path("plan_sha256").asText()).matches()
+                        || ref.path("bytes").asLong(0) <= 0
+                        || !SHA256.matcher(ref.path("content_sha256").asText()).matches()
+                        || !SHA256.matcher(ref.path("byte_sha256").asText()).matches()) {
+                    throw new IllegalArgumentException("corrected qualification receipt has an invalid serial worker reference");
+                }
+            }
+            if (serialIds.size() != expectedWave) {
+                throw new IllegalArgumentException("corrected qualification receipt lacks a complete serial worker wave");
+            }
+        }
     }
 
     private static void validateQualificationAgainstPlan(ObjectNode profile, ObjectNode plan) {
@@ -1534,6 +1919,10 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
             throw new IllegalArgumentException("qualification receipt is bound to a different executor or statistical plan");
         }
         validateFullGeometry(plan);
+        if (CORRECTED_PLAN_SCHEMA.equals(plan.path("schema").asText())) {
+            validateCorrectedQualificationRefs(receipt, plan);
+            return;
+        }
         Set<Long> heldoutSeeds = new HashSet<>();
         for (JsonNode cell : plan.path("cells")) for (JsonNode seed : cell.path("seeds")) {
             if (seed.isIntegralNumber()) heldoutSeeds.add(seed.asLong());
@@ -1578,7 +1967,308 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
                     || !"COMPLETE".equals(row.path("status").asText())) {
                 throw new IllegalArgumentException("qualification raw worker artifact does not prove FULL generator geometry");
             }
-            validateQualificationPortfolio(row);
+            if (CORRECTED_PLAN_SCHEMA.equals(plan.path("schema").asText())) {
+                validateCorrectedQualificationPortfolio(row);
+            } else {
+                validateQualificationPortfolio(row);
+            }
+        }
+    }
+
+    private static void validateCorrectedQualificationRefs(ObjectNode receipt, ObjectNode plan) {
+        String developmentPlan = receipt.path("development_plan_sha256").asText("");
+        if (!developmentPlan.equals(plan.path("content_sha256").asText())) {
+            throw new IllegalArgumentException("corrected qualification receipt is bound to a different development plan");
+        }
+        List<Slot> expected = slots(plan, "FULL");
+        validateCorrectedQualificationRefSet(receipt.path("completed_raw_worker_refs"), expected,
+                "parallel");
+        validateCorrectedQualificationRefSet(receipt.path("serial_completed_raw_worker_refs"), expected,
+                "serial");
+    }
+
+    private static void validateCorrectedQualificationRefSet(JsonNode refs, List<Slot> expected,
+            String label) {
+        if (!refs.isArray() || refs.size() != expected.size()) {
+            throw new IllegalArgumentException("corrected qualification receipt lacks the complete " + label + " worker wave");
+        }
+        Map<String, Slot> expectedById = new HashMap<>();
+        for (Slot slot : expected) expectedById.put(slot.id(), slot);
+        Set<String> seen = new HashSet<>();
+        for (JsonNode ref : refs) {
+            String id = ref.path("slot_id").asText("");
+            Slot slot = expectedById.get(id);
+            if (!ref.isObject() || slot == null || !seen.add(id)
+                    || !"FULL".equals(ref.path("mode").asText())
+                    || !slot.planSha256().equals(ref.path("plan_sha256").asText())
+                    || !slot.scenario().equals(ref.path("scenario").asText())
+                    || Double.compare(slot.effectSize(), ref.path("effect_size").asDouble(Double.NaN)) != 0
+                    || slot.replication() != ref.path("replication").asInt(-1)
+                    || slot.seed() != ref.path("seed").asLong(Long.MIN_VALUE)
+                    || ref.path("relative_path").asText("").isBlank()) {
+                throw new IllegalArgumentException("corrected qualification " + label + " worker reference identity is invalid");
+            }
+        }
+        if (seen.size() != expected.size()) {
+            throw new IllegalArgumentException("corrected qualification " + label + " worker wave is incomplete");
+        }
+    }
+
+    /** Reopens both corrected books and checks their independent terminal invariants. */
+    private static void validateCorrectedQualificationPortfolio(ObjectNode row) {
+        validateCorrectedQualificationPortfolio(row, true);
+    }
+
+    private static void validateCorrectedQualificationPortfolio(ObjectNode row, boolean requireFullEvidence) {
+        JsonNode rawNode = row.path("raw_evaluator_result");
+        if (requireFullEvidence && rawNode.isObject()) {
+            validateCorrectedFullGeneratorEvidence((ObjectNode) rawNode);
+        }
+        JsonNode portfolio = row.path("portfolio_summary");
+        if (!portfolio.isObject()
+                || !StrategyFixedBaselinePortfolioCorrectionV1.ACCOUNTING_VERSION
+                        .equals(portfolio.path("accounting_version").asText())
+                || !portfolio.path("event_book").isObject()
+                || !portfolio.path("control_book").isObject()) {
+            throw new IllegalArgumentException("corrected qualification portfolio books are incomplete");
+        }
+        validateCorrectedBook((ObjectNode) portfolio.path("event_book"));
+        validateCorrectedBook((ObjectNode) portfolio.path("control_book"));
+        verifyCorrectionProjection((ObjectNode) portfolio.path("event_book"), "event_book");
+        verifyCorrectionProjection((ObjectNode) portfolio.path("control_book"), "control_book");
+        ObjectNode recomputedPortfolio = StrategyFixedBaselineCorrectedV1.correctedPortfolioForValidation(portfolio);
+        for (String field : List.of("starting_equity_usdt", "ending_equity_usdt", "net_pnl_usdt",
+                "gross_pnl_usdt", "fees_usdt", "slippage_usdt", "capacity_debit_usdt",
+                "realized_pnl_usdt", "max_drawdown_usdt", "final_marked_holdings_usdt",
+                "final_active_position_count", "final_curve_equity_usdt")) {
+            if (!closeEnough(portfolio.path(field).asDouble(Double.NaN),
+                    recomputedPortfolio.path(field).asDouble(Double.NaN))) {
+                throw new IllegalArgumentException("corrected portfolio aggregate differs from an independent correction replay");
+            }
+        }
+        if (!JsonHashes.canonicalSha256(portfolio.path("combined_equity_curve"))
+                .equals(JsonHashes.canonicalSha256(recomputedPortfolio.path("combined_equity_curve")))
+                || !JsonHashes.canonicalSha256(portfolio.path("corrected_metrics"))
+                        .equals(JsonHashes.canonicalSha256(recomputedPortfolio.path("corrected_metrics")))) {
+            throw new IllegalArgumentException("corrected portfolio aggregate projection differs from an independent correction replay");
+        }
+        double eventStart = portfolio.path("event_book").path("starting_equity_usdt").asDouble(Double.NaN);
+        double controlStart = portfolio.path("control_book").path("starting_equity_usdt").asDouble(Double.NaN);
+        double eventNet = portfolio.path("event_book").path("net_pnl_usdt").asDouble(Double.NaN);
+        double controlNet = portfolio.path("control_book").path("net_pnl_usdt").asDouble(Double.NaN);
+        double combinedStart = portfolio.path("starting_equity_usdt").asDouble(Double.NaN);
+        double combinedEnd = portfolio.path("ending_equity_usdt").asDouble(Double.NaN);
+        double combinedNet = portfolio.path("net_pnl_usdt").asDouble(Double.NaN);
+        if (!closeEnough(combinedStart, eventStart + controlStart)
+                || !closeEnough(combinedNet, eventNet + controlNet)
+                || !closeEnough(combinedEnd, combinedStart + combinedNet)
+                || !portfolio.path("ending_minus_starting_equals_net").asBoolean(false)
+                || !portfolio.path("final_curve_equity_reconciles_cash_plus_marked_holdings").asBoolean(false)) {
+            throw new IllegalArgumentException("corrected qualification portfolio aggregate does not reconcile");
+        }
+    }
+
+    /**
+     * A copied counter cannot certify the frozen FULL workload.  Require the
+     * evaluator's retained setup/control inventories, independent cluster
+     * projection, and matching metrics alongside the compact row counters.
+     */
+    private static void validateCorrectedFullGeneratorEvidence(ObjectNode raw) {
+        if (raw.path("event_count").asInt(-1) != 450
+                || raw.path("matched_control_count").asInt(-1) != 450
+                || raw.path("admitted_event_count").asInt(-1) != 450
+                || raw.path("trade_count").asInt(-1) != 900
+                || raw.path("market_episode_count").asInt(-1) != 450
+                || raw.path("independent_market_episode_count").asInt(-1) != 288
+                || !raw.path("setup_events").isArray() || raw.path("setup_events").size() != 450
+                || !raw.path("control_selections").isArray() || raw.path("control_selections").size() != 450
+                || !raw.path("independent_market_episodes").isArray()
+                || raw.path("independent_market_episodes").size() != 288
+                || !raw.path("attempts").isArray() || raw.path("attempts").size() != 450
+                || !raw.path("matching_attrition").isObject()) {
+            throw new IllegalArgumentException("corrected raw evaluator does not prove the frozen FULL generator geometry");
+        }
+        JsonNode portfolio = raw.path("portfolio");
+        if (!portfolio.isObject()
+                || !portfolio.path("event_book").path("trades").isArray()
+                || portfolio.path("event_book").path("trades").size() != 450
+                || !portfolio.path("control_book").path("trades").isArray()
+                || portfolio.path("control_book").path("trades").size() != 450) {
+            throw new IllegalArgumentException("corrected raw evaluator does not retain the complete event/control trade books");
+        }
+        Set<String> eventTradeIds = tradeIds(portfolio.path("event_book").path("trades"), "event book");
+        Set<String> controlTradeIds = tradeIds(portfolio.path("control_book").path("trades"), "control book");
+        Set<String> attemptIds = new HashSet<>();
+        Set<String> usedEventTradeIds = new HashSet<>();
+        Set<String> usedControlTradeIds = new HashSet<>();
+        for (JsonNode attempt : raw.path("attempts")) {
+            if (!attempt.isObject() || !"COMPLETE".equals(attempt.path("status").asText())
+                    || !attempt.path("event_trade").isObject() || !attempt.path("control_trade").isObject()) {
+                throw new IllegalArgumentException("corrected raw evaluator does not prove 450 complete paired lifecycles");
+            }
+            String id = attempt.path("event_id").asText("");
+            String eventId = tradeId(attempt.path("event_trade"));
+            String controlId = tradeId(attempt.path("control_trade"));
+            if (id.isBlank() || !attemptIds.add(id) || !eventTradeIds.contains(eventId)
+                    || !controlTradeIds.contains(controlId) || !usedEventTradeIds.add(eventId)
+                    || !usedControlTradeIds.add(controlId)) {
+                throw new IllegalArgumentException("corrected raw evaluator lifecycle trade binding is incomplete");
+            }
+        }
+        JsonNode metrics = raw.path("metrics");
+        if (!metrics.isObject()
+                || metrics.path("event_tested_cluster_count").asInt(-1) != 288
+                || metrics.path("paired_tested_cluster_count").asInt(-1) != 162
+                || metrics.path("independent_market_episode_count").asInt(-1) != 288
+                || metrics.path("paired_count").asInt(-1) != 450) {
+            throw new IllegalArgumentException("corrected raw evaluator does not prove FULL cluster/PIT geometry");
+        }
+        JsonNode attrition = raw.path("matching_attrition");
+        JsonNode sequential = attrition.path("sequential_attrition");
+        if (!"strategy-matching-attrition/1".equals(attrition.path("schema").asText())
+                || !attrition.path("outcome_blind").asBoolean(false)
+                || sequential.path("feature_rows_to_setup_events").asInt(-1) != 450
+                || sequential.path("setup_events_to_admitted_events").asInt(-1) != 450
+                || sequential.path("admitted_events_to_control_selections").asInt(-1) != 450
+                || sequential.path("control_selections_to_matched_controls").asInt(-1) != 450
+                || sequential.path("complete_pairs_to_paired_clusters").asInt(-1) != 162
+                || sequential.path("admitted_events_to_event_clusters").asInt(-1) != 288
+                || attrition.path("marginal_attrition").path("merged_scheduled_lifecycle_clusters").asInt(-1) != 288) {
+            throw new IllegalArgumentException("corrected raw evaluator does not prove FULL matching/PIT attrition geometry");
+        }
+        requireUniqueEvidenceIds(raw.path("setup_events"), "setup_events");
+        requireUniqueEvidenceIds(raw.path("control_selections"), "control_selections");
+        requireUniqueEvidenceIds(raw.path("independent_market_episodes"), "independent_market_episodes");
+    }
+
+    private static Set<String> tradeIds(JsonNode trades, String label) {
+        Set<String> ids = new HashSet<>();
+        for (JsonNode trade : trades) {
+            String id = tradeId(trade);
+            if (id.isBlank() || !ids.add(id)) {
+                throw new IllegalArgumentException("corrected raw " + label + " trade inventory is not unique");
+            }
+            if (!trade.path("lifecycle").path("exits").isArray()
+                    || trade.path("lifecycle").path("exits").size() != 1) {
+                throw new IllegalArgumentException("corrected raw " + label + " has an incomplete lifecycle trade");
+            }
+        }
+        return ids;
+    }
+
+    private static String tradeId(JsonNode trade) {
+        return trade.path("episode_id").asText(trade.path("id").asText(trade.path("event_id").asText("")));
+    }
+
+    private static void requireUniqueEvidenceIds(JsonNode values, String label) {
+        Set<String> ids = new HashSet<>();
+        for (JsonNode value : values) {
+            if (!value.isObject()) throw new IllegalArgumentException("corrected raw " + label + " contains a non-object row");
+            String id = value.path("id").asText(value.path("event_id").asText(
+                    value.path("episode_id").asText(value.path("market_episode_id").asText(""))));
+            if (id.isBlank() || !ids.add(id)) {
+                throw new IllegalArgumentException("corrected raw " + label + " inventory is not unique");
+            }
+        }
+    }
+
+    private static void verifyCorrectionProjection(ObjectNode book, String label) {
+        ObjectNode recomputed = StrategyFixedBaselinePortfolioCorrectionV1.correctLegacyBook(book);
+        for (String field : List.of("starting_equity_usdt", "ending_equity_usdt", "net_pnl_usdt",
+                "gross_pnl_usdt", "fees_usdt", "slippage_usdt", "capacity_debit_usdt",
+                "realized_pnl_usdt", "max_drawdown_usdt", "final_marked_holdings_usdt",
+                "final_active_position_count")) {
+            if (!closeEnough(book.path(field).asDouble(Double.NaN), recomputed.path(field).asDouble(Double.NaN))) {
+                throw new IllegalArgumentException("corrected " + label + " differs from an independent correction replay");
+            }
+        }
+        if (!JsonHashes.canonicalSha256(book.path("trades")).equals(JsonHashes.canonicalSha256(recomputed.path("trades")))
+                || !JsonHashes.canonicalSha256(book.path("equity_curve"))
+                        .equals(JsonHashes.canonicalSha256(recomputed.path("equity_curve")))) {
+            throw new IllegalArgumentException("corrected " + label + " trace differs from an independent correction replay");
+        }
+    }
+
+    private static void validateCorrectedBook(ObjectNode book) {
+        double finalMarked = book.path("final_marked_holdings_usdt").asDouble(Double.NaN);
+        if (!StrategyFixedBaselinePortfolioCorrectionV1.ACCOUNTING_VERSION
+                .equals(book.path("accounting_version").asText())
+                || !book.path("trades").isArray()
+                || !book.path("equity_curve").isArray()
+                || book.path("final_active_position_count").asInt(-1) != 0
+                || !Double.isFinite(finalMarked) || Math.abs(finalMarked) > 1e-8
+                || !book.path("ending_minus_starting_equals_net").asBoolean(false)
+                || !book.path("sum_check").asBoolean(false)) {
+            throw new IllegalArgumentException("corrected qualification book terminal invariant failed");
+        }
+        double start = book.path("starting_equity_usdt").asDouble(Double.NaN);
+        double end = book.path("ending_equity_usdt").asDouble(Double.NaN);
+        double net = book.path("net_pnl_usdt").asDouble(Double.NaN);
+        if (!Double.isFinite(start) || !Double.isFinite(end) || !Double.isFinite(net)
+                || book.path("trade_count").asInt(-1) != book.path("trades").size()
+                || !closeEnough(end, start + net)) {
+            throw new IllegalArgumentException("corrected qualification book equity does not reconcile");
+        }
+        Set<String> exited = new HashSet<>();
+        for (JsonNode trade : book.path("trades")) {
+            if (!trade.isObject()) throw new IllegalArgumentException("corrected qualification trade is not an object");
+            String id = trade.path("episode_id").asText(trade.path("signal_id").asText(""));
+            ObjectNode lifecycle = object(trade, "lifecycle");
+            JsonNode exits = lifecycle.path("exits");
+            if (id.isBlank() || !exits.isArray() || exits.size() != 1 || !exited.add(id)) {
+                throw new IllegalArgumentException("corrected qualification book has an active or duplicate trade");
+            }
+            Instant entry = parseQualificationInstant(lifecycle.path("entry_time").asText(""));
+            JsonNode exitNode = exits.get(0);
+            Instant exit = parseQualificationInstant(exitAvailabilityText(exitNode));
+            if (!entry.isBefore(exit)) throw new IllegalArgumentException("corrected qualification lifecycle ordering is invalid");
+            JsonNode marks = trade.path("portfolio_mark_points");
+            if (!marks.isArray()) throw new IllegalArgumentException("corrected qualification marks are not an array");
+            for (JsonNode mark : marks) {
+                Instant markTime = parseQualificationInstant(mark.path("time").asText(""));
+                if (markTime.isBefore(entry) || !markTime.isBefore(exit)) {
+                    throw new IllegalArgumentException("corrected qualification mark is outside its active interval");
+                }
+            }
+        }
+        if (exited.size() != book.path("trade_count").asInt(-1)) {
+            throw new IllegalArgumentException("corrected qualification book trade count does not reconcile");
+        }
+        JsonNode curve = book.path("equity_curve");
+        if (curve.isEmpty()) {
+            if (book.path("trade_count").asInt(-1) != 0 || !closeEnough(start, end)) {
+                throw new IllegalArgumentException("empty corrected book does not remain at starting capital");
+            }
+            return;
+        }
+        Instant priorTime = null;
+        for (JsonNode point : curve) {
+            if (!point.isObject()) throw new IllegalArgumentException("corrected qualification curve point is not an object");
+            Instant time = parseQualificationInstant(point.path("event_time").asText(""));
+            if (priorTime != null && time.isBefore(priorTime)) {
+                throw new IllegalArgumentException("corrected qualification curve is not chronological");
+            }
+            priorTime = time;
+            double pointCash = point.path("cash_usdt").asDouble(Double.NaN);
+            double pointMarked = point.path("marked_holdings_usdt").asDouble(Double.NaN);
+            double pointEquity = point.path("equity_usdt").asDouble(Double.NaN);
+            if (!Double.isFinite(pointCash) || !Double.isFinite(pointMarked) || !Double.isFinite(pointEquity)
+                    || point.path("active_position_count").asInt(-1) < 0
+                    || !closeEnough(pointEquity, pointCash + pointMarked)) {
+                throw new IllegalArgumentException("corrected qualification curve does not reconcile cash and marks");
+            }
+        }
+        JsonNode last = curve.get(curve.size() - 1);
+        double lastMarked = last.path("marked_holdings_usdt").asDouble(Double.NaN);
+        double lastEquity = last.path("equity_usdt").asDouble(Double.NaN);
+        double lastCash = last.path("cash_usdt").asDouble(Double.NaN);
+        if (!"EXIT".equals(last.path("event_type").asText())
+                || last.path("active_position_count").asInt(-1) != 0
+                || !Double.isFinite(lastMarked) || !Double.isFinite(lastEquity) || !Double.isFinite(lastCash)
+                || Math.abs(lastMarked) > 1e-8
+                || !closeEnough(lastEquity, end)
+                || !closeEnough(lastEquity, lastCash + lastMarked)) {
+            throw new IllegalArgumentException("corrected qualification book curve retains residual holdings");
         }
     }
 
@@ -1654,6 +2344,202 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
 
     static void validateQualificationPortfolioForTest(ObjectNode row) {
         validateQualificationPortfolio(row);
+    }
+
+    static void validateQualificationProfileForTest(ObjectNode profile) {
+        validateProfile(profile);
+    }
+
+    /** Production qualification always uses the live coordinator probe. */
+    static ResourceProbe liveResourceProbeForQualification() {
+        return LIVE_RESOURCE_PROBE;
+    }
+
+    static void validateQualificationAgainstPlanForTest(ObjectNode profile, ObjectNode plan) {
+        validateQualificationAgainstPlan(profile, plan);
+    }
+
+    /**
+     * Reopens a completed corrected DEVELOPMENT result and all of its durable
+     * worker artifacts.  The returned references are the only input accepted
+     * by the qualification receipt builder; caller supplied summary rows are
+     * never trusted.
+     */
+    static ArrayNode validateCorrectedDevelopmentArtifacts(Path resultPath, Path ledgerPath,
+            ObjectNode plan, ObjectNode profile) {
+        return validateCorrectedDevelopmentArtifacts(resultPath, ledgerPath, plan, profile, true);
+    }
+
+    /** Package seam for custody portability tests; raw evaluator bindings stay strict. */
+    static ArrayNode validateCorrectedDevelopmentArtifactsForTest(Path resultPath, Path ledgerPath,
+            ObjectNode plan, ObjectNode profile) {
+        return validateCorrectedDevelopmentArtifacts(resultPath, ledgerPath, plan, profile, false);
+    }
+
+    /**
+     * Package seam for the PREFIX integration contract.  PREFIX artifacts
+     * still require a corrected accounting replay, but they must not be
+     * mistaken for the retained FULL geometry.  This forwards to the exact
+     * production artifact validator so the test cannot certify a weaker copy.
+     */
+    static void validateCorrectedArtifactForTest(ObjectNode artifact, Path path, Slot slot,
+            ObjectNode plan, String expectedRunId) {
+        // This seam only relaxes filesystem custody for portable tests.  The
+        // corrected raw-result schema, evaluator receipt, and accounting
+        // replay remain under the same strict semantic validator as a
+        // packaged worker artifact.
+        verifyArtifact(artifact, path, slot, plan, true, expectedRunId);
+    }
+
+    private static ArrayNode validateCorrectedDevelopmentArtifacts(Path resultPath, Path ledgerPath,
+            ObjectNode plan, ObjectNode profile, boolean enforceCustody) {
+        validateCorrectedPlanForPreflight(plan);
+        if (!profile.path("content_sha256").asText().equals(plan.path("execution_profile_sha256").asText())) {
+            throw new IllegalArgumentException("corrected development result profile differs from plan");
+        }
+        ObjectNode ledger = readObject(ledgerPath.toAbsolutePath().normalize(), "corrected development ledger");
+        List<Slot> ledgerSlots = slots(plan, "FULL");
+        validateLedger(ledger, plan, profile, "FULL", ledgerSlots,
+                ledgerPath.toAbsolutePath().normalize(), enforceCustody);
+        String runId = ledger.path("run_id").asText("");
+        ObjectNode result = readObject(resultPath.toAbsolutePath().normalize(), "corrected development result");
+        if (!CORRECTED_RESULT_SCHEMA.equals(result.path("schema").asText())
+                || !"FULL".equals(result.path("mode").asText())
+                || !"COMPLETE".equals(result.path("status").asText())
+                || !result.path("plan_sha256").asText().equals(plan.path("content_sha256").asText())
+                || !result.path("profile_sha256").asText().equals(profile.path("content_sha256").asText())
+                || !CORRECTED_EVALUATOR.equals(result.path("fixed_evaluator").asText())
+                || !StrategyFixedBaselinePortfolioCorrectionV1.ACCOUNTING_VERSION
+                        .equals(result.path("accounting_version").asText())
+                || result.path("missing_slots").asInt(-1) != 0
+                || result.path("planned_slots").asInt(-1) != result.path("completed_slots").asInt(-2)
+                || !result.path("result_refs").isArray()
+                || !result.path("content_sha256").asText().equals(JsonHashes.ownHash(result))) {
+            throw new IllegalArgumentException("corrected development result is incomplete or unbound");
+        }
+        List<Slot> planned = slots(plan, "FULL");
+        if (plan.path("development_worker_count").asInt(-1) != profile.path("effective_workers").asInt(-2)
+                || result.path("planned_slots").asInt(-1) != planned.size()
+                || planned.size() != 4 * profile.path("effective_workers").asInt(0)) {
+            throw new IllegalArgumentException("corrected development result does not contain one full wave per cell");
+        }
+        Map<String, Slot> slotsById = new HashMap<>();
+        for (Slot slot : planned) slotsById.put(slot.id(), slot);
+        Set<String> seen = new HashSet<>();
+        ArrayNode refs = JsonHashes.mapper().createArrayNode();
+        Path ledgerRoot = ledgerPath.toAbsolutePath().normalize().getParent();
+        if (ledgerRoot == null) ledgerRoot = Path.of(".").toAbsolutePath().normalize();
+        for (JsonNode rawRef : result.path("result_refs")) {
+            String id = rawRef.path("slot_id").asText("");
+            Slot slot = slotsById.get(id);
+            if (slot == null || !seen.add(id) || !"COMPLETE".equals(rawRef.path("status").asText())) {
+                throw new IllegalArgumentException("corrected development result contains an unknown or duplicate slot");
+            }
+            Path artifact = PathConfinement.resolve(ledgerRoot, rawRef.path("relative_path").asText(""),
+                    "corrected development worker artifact", PathConfinement.ExpectedType.FILE).absolute();
+            ObjectNode value = readObject(artifact, "corrected development worker artifact");
+            verifyArtifact(value, artifact, slot, plan, true, runId);
+            try {
+                if (rawRef.path("bytes").asLong(-1) != Files.size(artifact)
+                        || !rawRef.path("byte_sha256").asText().equals(JsonHashes.sha256(artifact))
+                        || !rawRef.path("content_sha256").asText().equals(value.path("content_sha256").asText())) {
+                    throw new IllegalArgumentException("corrected development result reference hash mismatch");
+                }
+            } catch (IOException error) {
+                throw new IllegalArgumentException("cannot inspect corrected development artifact", error);
+            }
+            ObjectNode row = (ObjectNode) value.path("row");
+            if (!"COMPLETE".equals(row.path("status").asText())
+                    || row.path("event_count").asInt(-1) != 450
+                    || row.path("paired_count").asInt(-1) != 450
+                    || row.path("independent_units").asInt(-1) != 288) {
+                throw new IllegalArgumentException("corrected development artifact does not prove full generator geometry");
+            }
+            validateCorrectedQualificationPortfolio(row);
+            String portable = value.path("portable_economic_sha256").asText("");
+            if (!SHA256.matcher(portable).matches()) {
+                throw new IllegalArgumentException("corrected development artifact has no economic digest");
+            }
+            ObjectNode enriched = (ObjectNode) rawRef.deepCopy();
+            enriched.put("scenario", slot.scenario()).put("effect_size", slot.effectSize())
+                    .put("replication", slot.replication()).put("seed", slot.seed())
+                    .put("mode", slot.mode()).put("plan_sha256", slot.planSha256())
+                    .put("portable_economic_sha256", portable);
+            refs.add(enriched);
+        }
+        if (seen.size() != planned.size()) throw new IllegalArgumentException("corrected development result omits worker artifacts");
+        return refs;
+    }
+
+    /**
+     * Reopens the coordinator-owned measurement for one complete run.  This
+     * is deliberately separate from the caller's resource evidence so a
+     * positive number in a CLI JSON file can never mint a qualification.
+     */
+    static ObjectNode validateCorrectedRunMeasurement(Path resultPath, Path ledgerPath,
+            ObjectNode plan, ObjectNode profile, int expectedWorkers) {
+        return validateCorrectedRunMeasurement(resultPath, ledgerPath, plan, profile, expectedWorkers, true);
+    }
+
+    /** Package seam for self-contained custody portability tests. */
+    static ObjectNode validateCorrectedRunMeasurementForTest(Path resultPath, Path ledgerPath,
+            ObjectNode plan, ObjectNode profile, int expectedWorkers) {
+        return validateCorrectedRunMeasurement(resultPath, ledgerPath, plan, profile, expectedWorkers, false);
+    }
+
+    private static ObjectNode validateCorrectedRunMeasurement(Path resultPath, Path ledgerPath,
+            ObjectNode plan, ObjectNode profile, int expectedWorkers, boolean enforceCustody) {
+        ObjectNode result = readObject(resultPath.toAbsolutePath().normalize(), "corrected run result");
+        ObjectNode ledger = readObject(ledgerPath.toAbsolutePath().normalize(), "corrected run ledger");
+        List<Slot> planned = slots(plan, "FULL");
+        validateLedger(ledger, plan, profile, "FULL", planned, ledgerPath.toAbsolutePath().normalize(), enforceCustody);
+        if (!CORRECTED_RESULT_SCHEMA.equals(result.path("schema").asText())
+                || !"COMPLETE".equals(result.path("status").asText())
+                || !result.path("content_sha256").asText().equals(JsonHashes.ownHash(result))
+                || !result.path("plan_sha256").asText().equals(plan.path("content_sha256").asText())
+                || !result.path("profile_sha256").asText().equals(profile.path("content_sha256").asText())
+                || !result.path("ledger_content_sha256").asText().equals(ledger.path("content_sha256").asText())
+                || result.path("effective_workers").asInt(-1) != profile.path("effective_workers").asInt(-2)
+                || result.path("requested_workers").asInt(-1) != expectedWorkers) {
+            throw new IllegalArgumentException("corrected run result is not bound to its ledger and worker count");
+        }
+        JsonNode measurementNode = result.path("resource_measurement");
+        if (!measurementNode.isObject()) {
+            throw new IllegalArgumentException("corrected run has no coordinator-owned resource measurement");
+        }
+        ObjectNode measurement = (ObjectNode) measurementNode;
+        if (!"strategy-evaluator-resource-measurement/1".equals(measurement.path("schema").asText())
+                || measurement.path("version").asInt(-1) != 1
+                || !measurement.path("content_sha256").asText().equals(JsonHashes.ownHash(measurement))
+                || !measurement.path("plan_sha256").asText().equals(plan.path("content_sha256").asText())
+                || !measurement.path("profile_sha256").asText().equals(profile.path("content_sha256").asText())
+                || !measurement.path("ledger_content_sha256").asText().equals(ledger.path("content_sha256").asText())
+                || !measurement.path("executor_identity_sha256").asText()
+                        .equals(plan.path("executor_identity_sha256").asText())
+                || !measurement.path("executor_source_sha256").asText()
+                        .equals(plan.path("executor_build_input_fingerprint").asText())
+                || !SHA256.matcher(measurement.path("host_identity_sha256").asText()).matches()
+                || !measurement.path("host_identity_sha256").asText().equals(measurementHostFingerprint(profile))
+                || !measurement.path("run_id").asText().equals(ledger.path("run_id").asText())
+                || measurement.path("workers").asInt(-1) != expectedWorkers
+                || measurement.path("launched_slot_count").asInt(-1) != planned.size()
+                || measurement.path("completed_slot_count").asInt(-1) != planned.size()
+                || !measurement.path("fresh_full_wave").asBoolean(false)
+                || !measurement.path("resource_probe_complete").asBoolean(false)) {
+            throw new IllegalArgumentException("corrected run resource measurement is incomplete or unbound");
+        }
+        long wall = measurement.path("measured_wall_millis").asLong(-1L);
+        long aggregate = measurement.path("measured_max_aggregate_rss_bytes").asLong(-1L);
+        long coordinator = measurement.path("measured_max_coordinator_rss_bytes").asLong(-1L);
+        long disk = measurement.path("measured_max_disk_bytes").asLong(-1L);
+        if (wall <= 0L || aggregate <= 0L || coordinator <= 0L || disk <= 0L
+                || wall > profile.path("max_wall_minutes").asLong(0L) * 60_000L
+                || aggregate > profile.path("max_aggregate_rss_bytes").asLong(0L)
+                || coordinator > profile.path("coordinator_rss_reservation_bytes").asLong(0L)
+                || disk > profile.path("max_disk_bytes").asLong(0L)) {
+            throw new IllegalArgumentException("corrected run resource measurement exceeds its bound envelope");
+        }
+        return measurement.deepCopy();
     }
 
     private static ObjectNode object(JsonNode parent, String field) {
@@ -1750,6 +2636,15 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
         return null;
     }
 
+    private static String monitorWithMeasurement(ObjectNode options, ObjectNode profile, long deadline,
+            Path ledger, Path artifactRoot, Path scratchRoot, Path logsRoot, ResourceProbe resourceProbe,
+            RunMeasurement measurement) {
+        String violation = monitor(options, profile, deadline, ledger, artifactRoot, scratchRoot, logsRoot,
+                resourceProbe);
+        if (measurement != null) measurement.sample(resourceProbe, artifactRoot, scratchRoot, logsRoot);
+        return violation;
+    }
+
     private static long managedBytes(Path... roots) {
         long total = 0L;
         for (Path root : roots) {
@@ -1763,6 +2658,61 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
 
     private static long coordinatorRssBytes() {
         return ProcessSlotExecutor.processRssBytes(ProcessHandle.current().pid());
+    }
+
+    private static String measurementHostFingerprint(ObjectNode profile) {
+        String machineId = machineIdentity();
+        ObjectNode host = JsonHashes.mapper().createObjectNode()
+                .put("os_name", System.getProperty("os.name", ""))
+                .put("os_arch", System.getProperty("os.arch", ""))
+                .put("java_version", System.getProperty("java.version", ""))
+                .put("available_cpus", profile.path("available_cpus").asLong(-1L))
+                .put("available_memory_bytes", profile.path("available_memory_bytes").asLong(-1L));
+        if (machineId.isBlank()) return "";
+        host.put("machine_id_sha256", JsonHashes.sha256(machineId));
+        return JsonHashes.canonicalSha256(host);
+    }
+
+    /** Package seam shared by corrected profile construction and deterministic tests. */
+    static String hostFingerprintForProfile(ObjectNode profile) {
+        return measurementHostFingerprint(profile);
+    }
+
+    private static String machineIdentity() {
+        String os = System.getProperty("os.name", "").toLowerCase(java.util.Locale.ROOT);
+        if (os.contains("win")) {
+            try {
+                Process process = new ProcessBuilder("reg", "query",
+                        "HKLM\\SOFTWARE\\Microsoft\\Cryptography", "/v", "MachineGuid")
+                        .redirectErrorStream(true).start();
+                if (!process.waitFor(2L, TimeUnit.SECONDS)) {
+                    process.destroyForcibly();
+                    return "";
+                }
+                if (process.exitValue() != 0) return "";
+                String output;
+                try (InputStream stream = process.getInputStream()) {
+                    output = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
+                }
+                for (String line : output.split("\\R")) {
+                    String trimmed = line.trim();
+                    if (trimmed.startsWith("MachineGuid")) {
+                        String[] columns = trimmed.split("\\s+");
+                        if (columns.length >= 3 && !columns[2].isBlank()) return columns[2];
+                    }
+                }
+            } catch (IOException | InterruptedException error) {
+                if (error instanceof InterruptedException) Thread.currentThread().interrupt();
+            }
+            return "";
+        }
+        for (String candidate : List.of("/etc/machine-id", "/var/lib/dbus/machine-id")) {
+            try {
+                String value = Files.readString(Path.of(candidate)).trim();
+                if (!value.isBlank()) return value;
+            } catch (IOException | RuntimeException ignored) { }
+        }
+        return "";
     }
 
     private static long treeBytes(Path root) {
@@ -1889,15 +2839,20 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
         private final ObjectNode profile;
         private final ArrayNode supportingDependencies;
         private final long workerWallMillis;
+        private final boolean corrected;
+        private String runId;
 
         ProcessSlotExecutor(ObjectNode options, ObjectNode plan, ObjectNode baseline,
-                ObjectNode controls, ObjectNode experiment, ObjectNode profile) {
+                ObjectNode controls, ObjectNode experiment, ObjectNode profile, boolean corrected,
+                String runId) {
             this.options = options.deepCopy();
             this.plan = plan.deepCopy();
             this.baseline = baseline.deepCopy();
             this.controls = controls.deepCopy();
             this.experiment = experiment.deepCopy();
             this.profile = profile.deepCopy();
+            this.corrected = corrected;
+            this.runId = runId;
             this.supportingDependencies = freezeWorkerDependencies(plan);
             long declaredWall = profile.path("max_wall_minutes").asLong(48L * 60L) * 60_000L;
             long requestedWall = options.path("max_worker_wall_millis").asLong(declaredWall);
@@ -1914,6 +2869,8 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
             payload.set("baseline", baseline.deepCopy());
             payload.set("controls", controls.deepCopy());
             payload.set("experiment", experiment.deepCopy());
+            payload.put("corrected_accounting", corrected);
+            if (corrected) payload.put("run_id", runId == null ? "" : runId);
             ObjectNode identity = BuildIdentityService.describe(StrategyOperatingCharacteristicsParallelV1.class);
             if (!"JAR".equals(identity.path("executable").path("kind").asText())
                     || !SHA256.matcher(identity.path("executable").path("sha256").asText()).matches()) {
@@ -2004,6 +2961,10 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
                 if (process != null && process.isAlive()) terminate(process);
                 if (processHandle != null) ACTIVE_PROCESSES.remove(processHandle);
             }
+        }
+
+        private void bindRunId(String value) {
+            this.runId = value;
         }
 
         private static int attemptFromScratch(Path scratch) {
@@ -2141,18 +3102,7 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
         }
 
         static long processRssBytes(long pid) {
-            try {
-                Process probe = new ProcessBuilder("ps", "-o", "rss=", "-p", Long.toString(pid)).start();
-                if (!probe.waitFor(2, TimeUnit.SECONDS)) { probe.destroyForcibly(); return -1L; }
-                if (probe.exitValue() != 0) return -1L;
-                String value;
-                try (InputStream stream = probe.getInputStream()) { value = new String(stream.readAllBytes(), StandardCharsets.UTF_8).trim(); }
-                if (value.isBlank()) return -1L;
-                return Long.parseLong(value.split("\\s+")[0]) * 1024L;
-            } catch (IOException | InterruptedException | NumberFormatException error) {
-                if (error instanceof InterruptedException) Thread.currentThread().interrupt();
-                return -1L;
-            }
+            return StrategyProcessResourcesV1.processRssBytes(pid);
         }
     }
 }

@@ -171,6 +171,29 @@ class NewCodeCoverageTest(unittest.TestCase):
         self.assertEqual(result.changed_files, ())
         self.assertEqual(result.executable_lines, 0)
 
+    def test_untracked_source_with_windows_line_endings_matches_tree_baseline(self):
+        source = self._write_source()
+        base = self._commit_base()
+        subprocess.run(["git", "rm", "--cached", "-q", source.relative_to(self.workspace).as_posix()], cwd=self.workspace, check=True)
+        source.write_bytes(source.read_bytes().replace(b"\r\n", b"\n").replace(b"\n", b"\r\n"))
+        report = self._write_report([(1, True, 0, 0), (2, True, 0, 0), (3, True, 0, 0)])
+        result = evaluate(self.workspace, base, report)
+        self.assertEqual(result.changed_files, ())
+        self.assertEqual(result.executable_lines, 0)
+
+    def test_untracked_source_with_changed_content_and_windows_line_endings_is_included(self):
+        source = self._write_source()
+        base = self._commit_base()
+        subprocess.run(["git", "rm", "--cached", "-q", source.relative_to(self.workspace).as_posix()], cwd=self.workspace, check=True)
+        source.write_bytes(
+            b"class Thing {\r\n  int value() { return 2; }\r\n}\r\n"
+        )
+        report = self._write_report([(1, True, 0, 0), (2, True, 0, 0), (3, True, 0, 0)])
+        result = evaluate(self.workspace, base, report)
+        self.assertEqual([item.path for item in result.changed_files], [source.relative_to(self.workspace).as_posix()])
+        self.assertEqual(result.changed_files[0].line_numbers, frozenset({2}))
+        self.assertEqual(result.executable_lines, 1)
+
     def test_source_path_mismatch_fails_closed(self):
         self._write_source()
         base = self._commit_base()
