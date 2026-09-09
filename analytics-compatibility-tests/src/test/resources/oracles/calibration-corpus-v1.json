@@ -1,0 +1,158 @@
+{
+  "drops": [
+    {
+      "text": "# résumé\n\n## 7. Verified Live Data Points — BTC\nsecret\n\n## 8a. Fallen Knives Composite Score\nscore\n\n## 9. Verdict\nkeep\n\n",
+      "dropped": {
+        "bytes": 56,
+        "sha256": "c874b6172a8d4a6f270b169608e94005c104858a047339cd419bc9a276f8084e",
+        "raw": "{\"schema\":\"report-machine/1\"}\n"
+      }
+    },
+    {
+      "text": "# résumé\n\n## 9. Verdict\nkeep\n\n---\n\n```json machine\n{\"schema\":\"report-machine/1\"}\n```\n",
+      "dropped": {
+        "bytes": 92,
+        "heading": "## 7. Verified Live Data Points — BTC"
+      }
+    },
+    {
+      "text": "# résumé\n\n## 7. Verified Live Data Points — BTC\nsecret\n\n## 9. Verdict\nkeep\n\n---\n\n```json machine\n{\"schema\":\"report-machine/1\"}\n```\n",
+      "dropped": {
+        "bytes": 44,
+        "heading": "## 8a. Fallen Knives Composite Score"
+      }
+    },
+    {
+      "text": "no block",
+      "dropped": null
+    }
+  ],
+  "digests": [
+    {
+      "ok": true,
+      "schema": null,
+      "framework": null,
+      "asset": null,
+      "date": null,
+      "spot": null,
+      "score": {
+        "legs": null,
+        "discretionary": null,
+        "mechanical": null,
+        "raw": null,
+        "adjusted": null
+      },
+      "gates": {
+        "active": null,
+        "na": null,
+        "passed": null
+      },
+      "ev": {
+        "scenarios": [],
+        "stated_ev": null,
+        "vs_spot_pct": null
+      },
+      "deployment": {
+        "deployed_pct": null,
+        "dry_pct": null,
+        "tranches": []
+      },
+      "stops": {
+        "catastrophic": null,
+        "deepest_zone_floor": null,
+        "compound": null,
+        "checkpoint": null
+      },
+      "companion_fr": null,
+      "companion_fk": null,
+      "position": null
+    },
+    {
+      "ok": true,
+      "schema": "report-machine/1",
+      "framework": "fallen_knives",
+      "asset": "BTC",
+      "date": "2026-01-01",
+      "spot": 100,
+      "score": {
+        "legs": {
+          "flow": 5
+        },
+        "discretionary": null,
+        "mechanical": 11,
+        "raw": null,
+        "adjusted": 11.5
+      },
+      "gates": {
+        "active": null,
+        "na": null,
+        "passed": 5
+      },
+      "ev": {
+        "scenarios": [
+          {
+            "name": "base",
+            "p": 0.5,
+            "low": 90,
+            "high": 120
+          }
+        ],
+        "stated_ev": null,
+        "vs_spot_pct": null
+      },
+      "deployment": {
+        "deployed_pct": null,
+        "dry_pct": null,
+        "tranches": [
+          {
+            "phase": "1A",
+            "pct": 10,
+            "discretionary": null,
+            "deployed": true,
+            "entry_price": 99,
+            "entry_note": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee…[170ch, see slice prose]"
+          }
+        ]
+      },
+      "stops": {
+        "catastrophic": null,
+        "deepest_zone_floor": null,
+        "compound": null,
+        "checkpoint": {
+          "date": "2026-02-01",
+          "line": 80
+        }
+      },
+      "companion_fr": {
+        "score": 3,
+        "channel": "A"
+      },
+      "companion_fk": null,
+      "position": {
+        "band": "FRESH",
+        "cold_start": null
+      },
+      "verdict_note": "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv…[230ch, see slice prose]"
+    }
+  ],
+  "invalid": {
+    "ok": false,
+    "error": "unparseable machine block: Expected property name or '}' in JSON at position 1 (line 1 column 2)"
+  },
+  "event": false,
+  "selection": {
+    "keptIdx": [
+      0,
+      7,
+      1,
+      4
+    ],
+    "sampledOut": [
+      "r2",
+      "r3",
+      "r5",
+      "r6"
+    ],
+    "capExceededByEvents": false
+  }
+}

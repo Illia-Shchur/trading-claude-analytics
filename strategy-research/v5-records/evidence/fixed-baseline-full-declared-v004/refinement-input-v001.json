@@ -1,0 +1,42 @@
+{
+  "schema": "strategy-fixed-refinement-input/1",
+  "version": 1,
+  "stage": "FROZEN_REFINEMENT",
+  "hypothesis_family": "fk-deleveraging-absorption",
+  "baseline_sha256": "4d2563ed94eae50e076f75f010adea3232b66ef5bd058f0cd1967051f1f16176",
+  "control_spec_sha256": "e2e874b216b86bb6479c3f14f1aab7844b27e05b2eae3da2eb93b7870f525468",
+  "experiment_sha256": "07d36bf08c88b7366a546bddc4bc30ad2103368a3017aeb68a8020a097460452",
+  "predecessor_sha256": "a54cef41b51e9c56e033f66673b9d3904454481cdebc571298cf2c4fd614796e",
+  "exposure_head_sha256": "234f350701aa1a5335e247609c900d773f05a8cc774d66efaba10396f4c96699",
+  "members": [
+    {
+      "member_id": "FK-DELEVERAGING-V002-R1",
+      "shock_threshold": -0.08,
+      "volume_multiple_threshold": 2,
+      "volatility_threshold": 0.015,
+      "scope": "SUBSET_OF_FROZEN_BASELINE"
+    },
+    {
+      "member_id": "FK-DELEVERAGING-V002-R2",
+      "shock_threshold": -0.1,
+      "volume_multiple_threshold": 2,
+      "volatility_threshold": 0.015,
+      "scope": "STRICTER_SHOCK_SUBSET"
+    },
+    {
+      "member_id": "FK-DELEVERAGING-V002-R3",
+      "shock_threshold": -0.12,
+      "volume_multiple_threshold": 2,
+      "volatility_threshold": 0.015,
+      "scope": "STRICTER_SHOCK_SUBSET"
+    }
+  ],
+  "budget": {
+    "candidate_count": 3,
+    "max_attempts": 3,
+    "optimizer": "NONE"
+  },
+  "outcomes_opened": false,
+  "freeze_rationale": "Predeclared stricter shock-threshold subsets of the already hydrated fixed-baseline opportunity inventory; no newly exposed outcome is inspected here.",
+  "content_sha256": "cb714dfed8a5b0628654973981e9ea054e485a5fd25049bdf91b1ad6e4bb2898"
+}

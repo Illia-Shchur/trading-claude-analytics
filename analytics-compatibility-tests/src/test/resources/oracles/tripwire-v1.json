@@ -1,0 +1,40 @@
+{
+  "prev_run_id": "old",
+  "next_run_id": "new",
+  "prev_fetched_at": "2026-08-28T10:00:00.000Z",
+  "next_fetched_at": "2026-08-28T10:00:00.000Z",
+  "crossings": [
+    {
+      "asset": "BTC",
+      "type": "fk_sentiment_band",
+      "from": 1,
+      "to": 0,
+      "prev_value": 49,
+      "next_value": 61
+    },
+    {
+      "asset": "BTC",
+      "type": "fk_gate1_streak_le15_ge7",
+      "from": false,
+      "to": true,
+      "prev_value": 6,
+      "next_value": 7
+    },
+    {
+      "asset": "BTC",
+      "type": "fr_euphoria_band",
+      "from": 0,
+      "to": 2,
+      "prev_value": 49,
+      "next_value": 61
+    },
+    {
+      "asset": "BTC",
+      "type": "checkpoint_adr_distance",
+      "from": 2.5,
+      "to": 0.75,
+      "line": 90
+    }
+  ],
+  "n_crossings": 4
+}

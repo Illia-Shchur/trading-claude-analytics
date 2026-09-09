@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-fixed-baseline-experiment/1",
+  "type": "object",
+  "required": ["schema", "experiment_id", "baseline_path", "controls_path", "baseline_sha256", "controls_sha256", "precommit_path", "hypothesis_family", "stage", "evidence_phase", "selection", "declared_budget", "required_assets", "promotion", "status", "content_sha256"],
+  "properties": {
+    "schema": {"const": "strategy-fixed-baseline-experiment/1"},
+    "experiment_id": {"type": "string", "minLength": 1},
+    "baseline_path": {"type": "string", "minLength": 1},
+    "controls_path": {"type": "string", "minLength": 1},
+    "baseline_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "controls_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "precommit_path": {"type": "string", "minLength": 1},
+    "hypothesis_family": {"type": "string", "minLength": 1},
+    "stage": {"const": "FIXED_BASELINE"},
+    "evidence_phase": {"const": "DEVELOPMENT"},
+    "selection": {"const": "NO_SELECTION_SEARCH"},
+    "declared_budget": {"type": "object", "required": ["candidate_count", "optimizer", "max_attempts"]},
+    "required_assets": {"type": "array", "minItems": 1},
+    "promotion": {"type": "object", "required": ["diagnostic_result_can_promote", "activation_authorized"]},
+    "status": {"const": "FROZEN"},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,9 @@
+{
+  "venue": "BINANCE",
+  "instrument": "BINANCE_SPOT",
+  "order_notional_usd": 1000,
+  "impact_bps": 0,
+  "capacity_provenance": "FROZEN_FIXED_NOTIONAL",
+  "available_liquidity_usd": 100000000,
+  "participation_cap": 1.0
+}

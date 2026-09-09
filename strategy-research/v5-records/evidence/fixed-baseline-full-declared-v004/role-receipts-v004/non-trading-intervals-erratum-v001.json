@@ -1,0 +1,12 @@
+{
+  "schema": "strategy-fixed-baseline-non-trading-erratum/1",
+  "version": 1,
+  "status": "ADDITIVE_ERRATUM",
+  "policy_id": "NON_TRADING_CLOSURE_V001",
+  "supersedes_field": "notice_statement",
+  "correction": "The official notice states a 2021-09-29 07:00 UTC spot suspension with an estimated duration of about two hours; it does not independently certify an exact 09:00 UTC end.",
+  "operational_interval": "The frozen [start_ms,end_ms) interval remains 07:00 through the first public reopening bar at 09:00 UTC, supported by the four symbol-specific monthly archive checksum receipts.",
+  "historical_policy_bytes_preserved": true,
+  "source_policy_sha256": "17bdfaaa9e6705745007693373a8d30a7a99240c5e83935a3c38c5bdca66dd97",
+  "content_sha256": "3a8640dfafbab8bc31fcfc021b52ec822149439600a690a7ed89d5f96203bb4f"
+}

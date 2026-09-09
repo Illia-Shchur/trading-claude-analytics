@@ -1,0 +1,40 @@
+{
+  "schema": "github-writer-installation-receipt/1",
+  "version": 1,
+  "generated_at": "2026-08-25T00:00:00Z",
+  "repository": "Illia-Shchur/trading-claude-analytics",
+  "repository_id": 1238541043,
+  "app_id": 4716299,
+  "app_slug": "strategy-v5-evidence",
+  "installation_id": 156524819,
+  "app_endpoint": "app",
+  "app_endpoint_status": 200,
+  "app_endpoint_body_sha256": "fccb45b3ec5553869a35e1942c28b6a322bc36239135a3a3369f0e90ea9ab51a",
+  "installation_endpoint": "app/installations/156524819",
+  "installation_endpoint_status": 200,
+  "installation_endpoint_body_sha256": "3d0a8f2e25c656ee83aff94798608958cdd0ccaa3f16a2b55b0e3aec35dc8962",
+  "endpoint": "installation/repositories",
+  "endpoint_status": 200,
+  "endpoint_body_sha256": "60a54593863379388903eaa9e135d0336f0e4ca0338e57f1ef68d5bf02dd08c4",
+  "repository_selection": "selected",
+  "account": {
+    "id": 37546899,
+    "login": "Illia-Shchur",
+    "type": "User"
+  },
+  "permissions": {
+    "contents": "write",
+    "metadata": "read",
+    "pull_requests": "write"
+  },
+  "events": [],
+  "accessible_repository_count": 1,
+  "accessible_repositories": [
+    {
+      "id": 1238541043,
+      "full_name": "Illia-Shchur/trading-claude-analytics"
+    }
+  ],
+  "verified": true,
+  "content_sha256": "7520cab6676986160773b25bdbb3a3678265524bfb174e67d4a1604805d5c694"
+}

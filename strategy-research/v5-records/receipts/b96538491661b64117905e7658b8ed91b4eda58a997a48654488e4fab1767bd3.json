@@ -1,0 +1,23 @@
+{
+  "schema": "strategy-v5-authoritative-command-receipt/1",
+  "version": 1,
+  "command": "validate",
+  "status": "COMPLETE",
+  "inputs": [
+    {
+      "role": "artifact",
+      "storage": "PHYSICAL",
+      "path": "strategy-research/v5-records/evidence/fixed-baseline-full-declared-v004/operating-characteristics-historical-hash-erratum-v001.json",
+      "byte_sha256": "ecc0c9af9028e910430dafb20ce0404d86378e36ecf9bd156db6656fe78f50ec",
+      "content_sha256": "995a2e4b0f85f0a92007eea580f52956986c9c0566dea665f5339baac4f93c23",
+      "bytes": 1183
+    }
+  ],
+  "outputs": [],
+  "limitations": [],
+  "details": {
+    "mode": "STRICT_SCHEMA_AND_SEMANTIC",
+    "active": false
+  },
+  "content_sha256": "b96538491661b64117905e7658b8ed91b4eda58a997a48654488e4fab1767bd3"
+}

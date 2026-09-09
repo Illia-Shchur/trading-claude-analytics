@@ -1,0 +1,116 @@
+{
+  "schema" : "strategy-evaluator-operating-characteristics-successor-plan/1",
+  "version" : 1,
+  "stage_scope" : "FIXED_BASELINE_OPERATING_CHARACTERISTICS_SUCCESSOR",
+  "evidence_phase" : "DEVELOPMENT",
+  "decision" : "DIAGNOSTIC_ONLY",
+  "development_exposure" : true,
+  "promotion_eligible" : false,
+  "activation_authorized" : false,
+  "outcomes_opened" : false,
+  "binding_fixed_evaluator" : "StrategyFixedBaselineV5+TradeLifecycleV5+StrategyResearchImprovementV1.disposition",
+  "predecessor_diagnosis_sha256" : "69aaa16e9725e6ea4f57b2de57c24ffcf5eef4c294cbd54f24d867d9fd9f282b",
+  "baseline_sha256" : "4d2563ed94eae50e076f75f010adea3232b66ef5bd058f0cd1967051f1f16176",
+  "control_spec_sha256" : "e2e874b216b86bb6479c3f14f1aab7844b27e05b2eae3da2eb93b7870f525468",
+  "experiment_sha256" : "07d36bf08c88b7366a546bddc4bc30ad2103368a3017aeb68a8020a097460452",
+  "lineage_inventory_sha256" : "465aeee9d9b623224482414e10b7ee490bd7d13bca9405a5f55317e2e60a3468",
+  "control_design_sha256" : "4bb912ddfd1d4d2b04b2116da77b742376fe1a5aeb7caf7032cb022a61bffc4b",
+  "executor_source_sha256" : "12043968eac95e2547932b51e5cd893096660554f102abcf27407084ff9732de",
+  "executor_identity_sha256" : "a7daad3626115e1c8e89f266f0ec76deae9bfad64666e9a0d8c56d51fb8eee67",
+  "executor_source_path" : "analytics-research/src/main/java/com/tradinganalytics/research/v5/StrategyOperatingCharacteristicsSuccessorV1.java",
+  "executor_identity_path" : "analytics-cli/target/analytics-cli-1.0.0-SNAPSHOT-exec.jar",
+  "predecessor_diagnosis_path" : ".report-run/research-evidence-review-20260907/successor-predecessor-diagnosis-final.json",
+  "lineage_inventory_path" : ".report-run/research-evidence-review-20260907/lineage-inventory-successor.json",
+  "control_design_path" : ".report-run/research-evidence-review-20260907/successor-control-design.json",
+  "cell_count" : 4,
+  "replications" : 75,
+  "episodes_per_replication" : 450,
+  "cluster_count" : 288,
+  "paired_cluster_count" : 162,
+  "lifecycle_series_per_replication" : 900,
+  "horizon_minutes" : 14400,
+  "raw_event_count" : 450,
+  "raw_control_count" : 450,
+  "cells" : [ {
+    "scenario" : "NO_EDGE",
+    "effect_size" : 0,
+    "seeds" : [ 100000000, 100000001, 100000002, 100000003, 100000004, 100000005, 100000006, 100000007, 100000008, 100000009, 100000010, 100000011, 100000012, 100000013, 100000014, 100000015, 100000016, 100000017, 100000018, 100000019, 100000020, 100000021, 100000022, 100000023, 100000024, 100000025, 100000026, 100000027, 100000028, 100000029, 100000030, 100000031, 100000032, 100000033, 100000034, 100000035, 100000036, 100000037, 100000038, 100000039, 100000040, 100000041, 100000042, 100000043, 100000044, 100000045, 100000046, 100000047, 100000048, 100000049, 100000050, 100000051, 100000052, 100000053, 100000054, 100000055, 100000056, 100000057, 100000058, 100000059, 100000060, 100000061, 100000062, 100000063, 100000064, 100000065, 100000066, 100000067, 100000068, 100000069, 100000070, 100000071, 100000072, 100000073, 100000074 ],
+    "prefix_seeds" : [ 900000000, 900000001 ]
+  }, {
+    "scenario" : "PLANTED_EDGE",
+    "effect_size" : 0,
+    "seeds" : [ 100100000, 100100001, 100100002, 100100003, 100100004, 100100005, 100100006, 100100007, 100100008, 100100009, 100100010, 100100011, 100100012, 100100013, 100100014, 100100015, 100100016, 100100017, 100100018, 100100019, 100100020, 100100021, 100100022, 100100023, 100100024, 100100025, 100100026, 100100027, 100100028, 100100029, 100100030, 100100031, 100100032, 100100033, 100100034, 100100035, 100100036, 100100037, 100100038, 100100039, 100100040, 100100041, 100100042, 100100043, 100100044, 100100045, 100100046, 100100047, 100100048, 100100049, 100100050, 100100051, 100100052, 100100053, 100100054, 100100055, 100100056, 100100057, 100100058, 100100059, 100100060, 100100061, 100100062, 100100063, 100100064, 100100065, 100100066, 100100067, 100100068, 100100069, 100100070, 100100071, 100100072, 100100073, 100100074 ],
+    "prefix_seeds" : [ 900001000, 900001001 ]
+  }, {
+    "scenario" : "PLANTED_EDGE",
+    "effect_size" : 0.02,
+    "seeds" : [ 100200000, 100200001, 100200002, 100200003, 100200004, 100200005, 100200006, 100200007, 100200008, 100200009, 100200010, 100200011, 100200012, 100200013, 100200014, 100200015, 100200016, 100200017, 100200018, 100200019, 100200020, 100200021, 100200022, 100200023, 100200024, 100200025, 100200026, 100200027, 100200028, 100200029, 100200030, 100200031, 100200032, 100200033, 100200034, 100200035, 100200036, 100200037, 100200038, 100200039, 100200040, 100200041, 100200042, 100200043, 100200044, 100200045, 100200046, 100200047, 100200048, 100200049, 100200050, 100200051, 100200052, 100200053, 100200054, 100200055, 100200056, 100200057, 100200058, 100200059, 100200060, 100200061, 100200062, 100200063, 100200064, 100200065, 100200066, 100200067, 100200068, 100200069, 100200070, 100200071, 100200072, 100200073, 100200074 ],
+    "prefix_seeds" : [ 900002000, 900002001 ]
+  }, {
+    "scenario" : "PLANTED_EDGE",
+    "effect_size" : 0.04,
+    "seeds" : [ 100300000, 100300001, 100300002, 100300003, 100300004, 100300005, 100300006, 100300007, 100300008, 100300009, 100300010, 100300011, 100300012, 100300013, 100300014, 100300015, 100300016, 100300017, 100300018, 100300019, 100300020, 100300021, 100300022, 100300023, 100300024, 100300025, 100300026, 100300027, 100300028, 100300029, 100300030, 100300031, 100300032, 100300033, 100300034, 100300035, 100300036, 100300037, 100300038, 100300039, 100300040, 100300041, 100300042, 100300043, 100300044, 100300045, 100300046, 100300047, 100300048, 100300049, 100300050, 100300051, 100300052, 100300053, 100300054, 100300055, 100300056, 100300057, 100300058, 100300059, 100300060, 100300061, 100300062, 100300063, 100300064, 100300065, 100300066, 100300067, 100300068, 100300069, 100300070, 100300071, 100300072, 100300073, 100300074 ],
+    "prefix_seeds" : [ 900003000, 900003001 ]
+  } ],
+  "analytical_planning" : {
+    "phase" : "DEVELOPMENT_ONLY",
+    "method" : "approximate Gaussian planning from observed prior component rates; ignores p20 floor, bootstrap dependence, and rate uncertainty",
+    "observed_joint_power_effect_0_02" : 0.28,
+    "event_component_rate" : 0.48,
+    "paired_component_rate" : 0.38,
+    "approx_marginal_0_90_clusters" : {
+      "event" : 139,
+      "paired" : 221
+    },
+    "approx_marginal_0_95_clusters" : {
+      "event" : 181,
+      "paired" : 288
+    },
+    "chosen_geometry_rationale" : "288 calendar clusters preserves 14 singleton plus 18 paired-cluster ratio from v004 scaled ninefold; all 4 cells use same geometry; no power claim from this approximation"
+  },
+  "resource_budget" : {
+    "max_wall_minutes" : 720,
+    "max_rss_bytes" : 8589934592,
+    "max_disk_bytes" : 21474836480,
+    "expected_generated_minute_bars" : 3888000000,
+    "baseline_runtime_seconds" : 19641,
+    "baseline_peak_rss_bytes" : 6638043136,
+    "estimate_method" : "linear conservative retained v004 full run; measured prefix required before any reconsideration"
+  },
+  "resource_preflight" : {
+    "replications" : 2,
+    "episodes_per_replication" : 10,
+    "mode" : "PREFIX_DEVELOPMENT_ONLY",
+    "disjoint_seed_namespace" : true
+  },
+  "acceptance" : {
+    "preserve_v004_standards" : true,
+    "confidence_interval" : "WILSON_95_PERCENT",
+    "false_positive_upper_bound" : 0.1,
+    "power_lower_bound" : 0.8,
+    "no_edge_target" : "Wilson upper <= 0.10",
+    "zero_effect_target" : null,
+    "planted_effect_targets" : "Wilson lower >= 0.80 for effects 0.02 and 0.04",
+    "all_planned_replications_denominator" : true,
+    "incomplete_or_inadequate_blocks_measured_claim" : true
+  },
+  "stopping" : {
+    "fixed_no_optional_stopping" : true,
+    "replications_fixed_before_outcomes" : true
+  },
+  "incomplete_run_policy" : {
+    "count_in_denominator" : true,
+    "retain_all_attempts" : true,
+    "started_reservation_is_durable" : true,
+    "retry_same_slot_without_duplicate_statistical_count" : true
+  },
+  "source_freeze" : {
+    "prior_outcomes_opened" : true,
+    "successor_outcomes_opened" : false,
+    "new_seeds_frozen" : true,
+    "prefix_is_development_only" : true,
+    "no_adaptive_selection" : true
+  },
+  "frozen_before_outcomes" : true,
+  "content_sha256" : "cab35bae44b541a9c44e0a110b37a79149d18a0c20c6bee1cbc54a52cf9ec949"
+}

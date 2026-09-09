@@ -1,0 +1,8 @@
+test_closure_only_applies_when_horizon_overlaps (test_hydrate_binance_1m_windows.HydrationGridTest.test_closure_only_applies_when_horizon_overlaps) ... ok
+test_reused_role_is_reopened_before_acceptance (test_hydrate_binance_1m_windows.HydrationGridTest.test_reused_role_is_reopened_before_acceptance) ... ok
+test_unknown_gap_has_no_policy_exception (test_hydrate_binance_1m_windows.HydrationGridTest.test_unknown_gap_has_no_policy_exception) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.000s
+
+OK

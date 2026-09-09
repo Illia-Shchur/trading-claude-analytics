@@ -1,0 +1,324 @@
+{
+  "schema": "strategy-evaluator-operating-characteristics-plan/4",
+  "version": 4,
+  "stage_scope": "FIXED_BASELINE_DIAGNOSTIC",
+  "evidence_phase": "DEVELOPMENT",
+  "decision": "DIAGNOSTIC_ONLY",
+  "promotion_eligible": false,
+  "outcomes_opened": false,
+  "binding_predecessor_sha256": "a54cef41b51e9c56e033f66673b9d3904454481cdebc571298cf2c4fd614796e",
+  "binding_baseline_sha256": "4d2563ed94eae50e076f75f010adea3232b66ef5bd058f0cd1967051f1f16176",
+  "binding_control_spec_sha256": "e2e874b216b86bb6479c3f14f1aab7844b27e05b2eae3da2eb93b7870f525468",
+  "binding_experiment_sha256": "07d36bf08c88b7366a546bddc4bc30ad2103368a3017aeb68a8020a097460452",
+  "binding_fixed_evaluator": "StrategyFixedBaselineV5+TradeLifecycleV5+StrategyResearchImprovementV1.disposition",
+  "generator": {
+    "schema": "synthetic-ohlc-episode-generator/4",
+    "frequency": "1m",
+    "setup_frequency": "4h",
+    "warmup_completed_4h_bars": 31,
+    "holding_horizon_minutes": 14400,
+    "assets": [
+      "BTC",
+      "ETH",
+      "SOL",
+      "BNB",
+      "XRP",
+      "ADA",
+      "LINK",
+      "AAVE"
+    ],
+    "episodes_per_replication": 50,
+    "four_hour_grid": "UTC, complete bars, no duplicate timestamps, setup decision after close and availability",
+    "common_market_shocks": {
+      "enabled": true,
+      "factor_weight": 0.35,
+      "innovation": "standard_normal",
+      "scale_by_regime": {
+        "CALM": 0.00055,
+        "STRESSED": 0.0012
+      },
+      "regime_transition": {
+        "CALM_TO_STRESSED": 0.003,
+        "STRESSED_TO_CALM": 0.08
+      },
+      "initial_regime": "CALM"
+    },
+    "asset_specific_noise": {
+      "enabled": true,
+      "weight": 0.65,
+      "innovation": "standard_normal_ar1",
+      "ar1_phi": 0.2,
+      "scale_multiplier_by_asset": {
+        "BTC": 1.0,
+        "ETH": 1.15,
+        "SOL": 1.4,
+        "BNB": 1.1,
+        "XRP": 1.35,
+        "ADA": 1.4,
+        "LINK": 1.25,
+        "AAVE": 1.55
+      }
+    },
+    "ohlc_construction": {
+      "open": "previous_close",
+      "close": "open*exp(log_return)",
+      "high": "max(open,close)*exp(abs(intrabar_noise))",
+      "low": "min(open,close)*exp(-abs(intrabar_noise))",
+      "intrabar_noise_scale": 0.00035,
+      "volume": "lognormal(base_by_asset, sigma=0.35) with shock multiplier when cluster active",
+      "no_zero_or_negative_prices": true,
+      "volume_formula": "base_quote_volume_asset * exp(0.35*Z_volume); multiply by the predeclared shock multiplier only on the treated setup shock bar",
+      "intrabar_noise": "0.00035 * Z_intrabar absolute value, with Z_intrabar from the same stream after close return",
+      "aggregation": "4h OHLCV is the exact aggregation of its 240 generated 1m rows; generated roles are reopened by the same producer boundary before evaluator selection"
+    },
+    "fees_slippage_capacity": "Use frozen per_asset contract/model/capacity receipts from the baseline bundle; no synthetic zero-cost shortcut.",
+    "execution": "Reopen the generated role through the same setup producer, select controls outcome-blind, execute TradeLifecycleV5, reconcile the account-currency portfolio, and map through the same disposition contract.",
+    "no_toy_statistic": true,
+    "fixture_boundary": "Synthetic source is DEVELOPMENT diagnostic input only; it cannot mint PIT, SHADOW, confirmation, activation, or trading evidence.",
+    "timeline": {
+      "calendar_days": 3650,
+      "bar_grid": "UTC epoch-aligned 1m bars; each 4h setup bar is 240 contiguous 1m bars",
+      "eligible_setup_start_days": 30,
+      "event_schedule": "deterministic seeded 42-day cluster grid over the 3650-day timeline; cluster starts are at least 42 calendar days apart",
+      "event_slots_per_replication": 32,
+      "control_lag_days": 21,
+      "control_schedule": "one historical control window exactly 21 days before each event; for multi-event clusters the cloned prior setup state is shared by the declared asset pair, then the frozen selector chooses the eligible control rows",
+      "event_control_overlap": "forbidden by scheduled [decision, decision+240h) intervals before any outcome is read",
+      "time_origin": "2020-01-01T00:00:00Z plus a deterministic seed-derived year offset; no current or future data is read",
+      "conditional_scope": "CONDITIONALLY_ADEQUATE_FIXED_STAGE: 32 calendar clusters, 50 raw events, 50 raw controls; this measures evaluator behavior when the predeclared sample geometry is available and does not validate natural signal yield"
+    },
+    "raw_counts": {
+      "raw_event_count": 50,
+      "raw_control_target_count": 50,
+      "lifecycle_series_per_replication": 100,
+      "episodes_per_replication_means": "50 raw treated events arranged as 14 singleton clusters plus 18 two-event clusters; 50 controls are additional counterfactual series",
+      "expected_minute_rows_per_replication": 1440000,
+      "expected_minute_rows_all_four_cells": 288000000,
+      "setup_warmup_rows_per_series": 31,
+      "natural_yield_policy": "Never drop an event/control because a later lifecycle is missing; count it as unresolved or insufficient and retain the reason.",
+      "expected_independent_calendar_clusters": 32,
+      "expected_complete_paired_clusters": 32
+    },
+    "setup_shock": {
+      "treated_event_final_4h_return": "-0.09 exactly before minute expansion; this is a predeclared mechanism fixture above the frozen <=-0.08 threshold",
+      "treated_volume_multiple": 2.4,
+      "treated_realized_volatility": 0.02,
+      "control_return_range": [
+        -0.04,
+        -0.04
+      ],
+      "control_volume_multiple_range": [
+        1.2,
+        1.2
+      ],
+      "control_realized_volatility_range": [
+        0.02,
+        0.02
+      ],
+      "shock_profile": "Each cluster clones the prior 31 completed 4h setup state into the declared event/control pair before adding a -9% treated or -4% control setup shock and its volume path. Future 1m OHLC is generated independently after both setup rows exist; selection still uses only setup fields.",
+      "price_bases_usdt": {
+        "BTC": 30000.0,
+        "ETH": 2000.0,
+        "SOL": 30.0,
+        "BNB": 250.0,
+        "XRP": 0.5,
+        "ADA": 0.3,
+        "LINK": 7.0,
+        "AAVE": 70.0
+      },
+      "base_quote_volume": {
+        "BTC": 100000000.0,
+        "ETH": 50000000.0,
+        "SOL": 10000000.0,
+        "BNB": 12000000.0,
+        "XRP": 8000000.0,
+        "ADA": 6000000.0,
+        "LINK": 5000000.0,
+        "AAVE": 2500000.0
+      },
+      "volume_shock_multiplier": 2.4,
+      "eligible_event_requirement": "The generated treated setup is required to satisfy the frozen baseline predicate; if it does not, the replication records a setup-generation failure and cannot be silently repaired.",
+      "control_setup_state": "clone the exact prior 31-bar setup state before applying the -0.04 final setup return and 1.2 volume multiplier"
+    },
+    "cluster_geometry": {
+      "event_block_count": 32,
+      "event_block_assignment": "14 singleton clusters and 18 clusters with two events; the two-event clusters use BTC and ETH only, while singleton assets rotate round-robin over the eight declared assets",
+      "minimum_block_spacing_days": 42,
+      "control_blocks": "each event has one control exactly 21 days earlier; the control lifecycle ends before the event lifecycle begins, and selected same-asset windows cannot overlap",
+      "independent_unit": "merge only actual event/control lifecycle intervals that overlap in market time or same-asset time; pair endpoints count as one paired observation, and an empty gap between endpoints is never an interval",
+      "target_units": "32 generated calendar clusters; actual fixed-evaluator event and paired minima are 30. Missing units remain INSUFFICIENT_EVIDENCE."
+    },
+    "price_bases_usdt": {
+      "BTC": 30000.0,
+      "ETH": 2000.0,
+      "SOL": 30.0,
+      "BNB": 250.0,
+      "XRP": 0.5,
+      "ADA": 0.3,
+      "LINK": 7.0,
+      "AAVE": 70.0
+    },
+    "random_stream": {
+      "algorithm": "java.util.SplittableRandom",
+      "replicate_seed": "base_seed + scenario_index*1000000 + effect_index*10000 + replicate_index",
+      "uniform": "nextDouble() in [0,1)",
+      "normal": "Box-Muller from two successive nextDouble() values; retain deterministic pair order",
+      "asset_order": [
+        "BTC",
+        "ETH",
+        "SOL",
+        "BNB",
+        "XRP",
+        "ADA",
+        "LINK",
+        "AAVE"
+      ]
+    },
+    "setup_construction": {
+      "setup_bar_count": 31,
+      "minutes_per_setup_bar": 240,
+      "bar_return": "close_t / close_(t-1) - 1",
+      "trailing_volume_mean": "mean(volume[t-30:t]) excluding current setup bar",
+      "trailing_realized_volatility": "sqrt(mean(log_return^2 over the prior 30 completed 4h bars))*sqrt(6)",
+      "prior_matching_return": "close_(t-1) / close_(t-31) - 1",
+      "prior_matching_volume_zscore": "(volume[t-1] - mean(volume[t-31:t-1])) / stdev(volume[t-31:t-1])",
+      "availability": "every dependency close_time and availability_time <= decision_time",
+      "grid": "all 31 dependencies are contiguous UTC 4h bars; duplicate/gap/late rows fail the replication"
+    },
+    "minute_return_formula": "r_t = 0.35*sigma_regime*Z_common + 0.65*sigma_asset*(0.20*epsilon_previous + sqrt(1-0.20^2)*Z_asset); Z values are independent standard normals from the frozen stream; sigma_asset is the declared per-asset multiplier times the regime base."
+  },
+  "effect_definition": {
+    "field": "post_decision_log_return_shift",
+    "units": "total log-return shift over the frozen 14400-minute lifecycle",
+    "values": [
+      0.0,
+      0.02,
+      0.04
+    ],
+    "application": "For PLANTED_EDGE only, add the predeclared total shift linearly across post-decision minute log returns after the frozen setup and control selection inputs are materialized but before OHLC construction; the selector, controls, stops, costs and portfolio see only resulting OHLC. The NO_EDGE and PLANTED_EDGE effect=0 cells apply no shift.",
+    "direction": "positive adverse-reversion benefit for the long fixed baseline after a qualifying downside shock",
+    "no_edge": "NO_EDGE always uses 0.0 and never applies a predicate-dependent shift."
+  },
+  "scenarios": [
+    {
+      "scenario": "NO_EDGE",
+      "effect_sizes": [
+        0.0
+      ],
+      "description": "Common shocks, asset noise and lifecycle clustering are independent of the frozen evaluator predicate; no planted relation."
+    },
+    {
+      "scenario": "PLANTED_EDGE",
+      "effect_sizes": [
+        0.0,
+        0.02,
+        0.04
+      ],
+      "description": "The predeclared total post-decision log-return shift is applied before execution for positive effect cells; effect=0 is a null-check cell and has no power target."
+    }
+  ],
+  "replications": 50,
+  "episodes_per_replication": 50,
+  "cell_count": 4,
+  "replicate_seed_mapping": {
+    "base_seeds": [
+      2026090601,
+      2026090602,
+      2026090603,
+      2026090604,
+      2026090605
+    ],
+    "seed_stream": "seed=base_seed + scenario_index*1000000 + effect_index*10000 + replicate_index; replicate_index is 0-based",
+    "base_seed_assignment": "replicate_index modulo 5 selects base_seed; all five streams are required before a cell is complete."
+  },
+  "preflight_benchmark": {
+    "status": "REQUIRED_BEFORE_FULL_CELLS",
+    "replications": 2,
+    "episodes_per_replication": 10,
+    "scenarios": [
+      "NO_EDGE"
+    ],
+    "effect_sizes": [
+      0.0
+    ],
+    "seed_indices": [
+      0,
+      1
+    ],
+    "evidence_use": "performance, memory, and generator custody only; excluded from FPR, power, disposition and promotion statistics",
+    "max_wall_minutes": 20,
+    "max_rss_gb": 6.0,
+    "must_stream_bars": true,
+    "must_not_reduce_full_budget_after_observation": true,
+    "raw_control_target_count": 10,
+    "lifecycle_series_per_replication": 20,
+    "expected_minute_rows": 288000,
+    "cell": "NO_EDGE/0.0",
+    "must_record_setup_yield": true,
+    "raw_event_count": 10,
+    "expected_independent_calendar_clusters": 8,
+    "expected_total_minute_rows": 576000
+  },
+  "resource_budget": {
+    "full_cells": 4,
+    "expected_generated_minute_bars": 288000000,
+    "max_wall_minutes": 720,
+    "max_rss_gb": 8.0,
+    "execution": "stream one replication/cell at a time; retain compact result rows and hashes, not bulk synthetic bars",
+    "abort_disposition": "COMPUTE_INCOMPLETE",
+    "expected_generated_minute_rows_note": "Four cells × 50 replications × (50 treated + 50 control) lifecycle series × 14,400 minutes; 4h warmup rows are additional and are not used to lower the budget."
+  },
+  "targets": {
+    "false_positive_rate_max": 0.1,
+    "power_reporting_threshold": 0.8,
+    "interval": "WILSON_95_PERCENT",
+    "uncertainty_unit": "REPLICATION_DECISION",
+    "fpr_acceptance": "upper_wilson_95 <= 0.10 for NO_EDGE/0.0; otherwise TARGET_UNMET.",
+    "power_acceptance": "lower_wilson_95 >= 0.80 at PLANTED_EDGE effect cells 0.02 and 0.04; PLANTED_EDGE effect=0 is reported as a null-check only, never as a planted-power success.",
+    "minimum_independent_units_per_replication": 30,
+    "minimum_paired_units_per_replication": 30,
+    "decision_rule": "A cell is measured from all 50 planned replications. NO_EDGE/0.0 uses the FPR Wilson upper bound. PLANTED_EDGE/0.02 and /0.04 use the power Wilson lower bound. A replication needs at least 30 event and 30 paired units for a fixed-stage decision; inadequate replications remain visible, count as INSUFFICIENT_EVIDENCE and cannot be dropped.",
+    "replication_denominator": "All planned replications are in the denominator. A replication without 30 event and 30 paired units is not dropped or relabelled; it contributes no success and is separately counted as INSUFFICIENT_EVIDENCE.",
+    "natural_vs_conditional": "Report natural eligible/event/control/paired yields for every cell. A conditional adequate-sample sensitivity may be shown as a secondary descriptive quantity but cannot replace the all-replication decision denominator.",
+    "sampling_scope": "CONDITIONAL_ADEQUATE_SAMPLE",
+    "sampling_disclosure": "The 32-cluster/50-event geometry is deliberately constructed before outcomes to exercise the fixed evaluator. Natural eligible-event and accidental-opportunity yields are reported separately and cannot be inferred from this conditional benchmark.",
+    "conditional_geometry_target": 32,
+    "legacy_gate_scope": "Synthetic operating-characteristic rates evaluate the fixed-stage event/paired falsifier only; unresolved retrospective legacy exposure is excluded from this diagnostic denominator and the synthetic output can never promote, reset, or activate the real family."
+  },
+  "disposition_rules": {
+    "INVALID_EVIDENCE": "source generation, role re-open, PIT boundary, or economic reconciliation fails",
+    "COMPUTE_INCOMPLETE": "predeclared cell/replication/budget is incomplete or resource limit aborts",
+    "INSUFFICIENT_EVIDENCE": "independent event or paired lifecycle units below 30, or uncertainty cannot be computed",
+    "ECONOMIC_FAILURE": "complete fixed-stage evidence fails the joint event/paired falsifier",
+    "TARGET_UNMET": "operating-characteristic point estimate does not meet its predeclared Wilson bound",
+    "DIAGNOSTIC_ONLY": "all complete outputs remain non-promotable regardless of measured target",
+    "synthetic_legacy_scope": "Do not map retrospective legacy INVALID_EVIDENCE into a synthetic rate; retain it as a separate real-family custody gate."
+  },
+  "reproducibility": {
+    "economic_hash": "hash frozen generator/spec/source identities, selected episodes, trades, cluster statistics and dispositions; exclude runtime/custody paths",
+    "custody_hash": "retain executor JAR, build input, runtime, exposure attempt and observed_at separately",
+    "repeat_rule": "rerun each complete cell with a new immutable output; compare economic hash before any interpretation",
+    "resume_rule": "changed generator/evaluator/build identity or existing output collision fails closed."
+  },
+  "frozen_before_outcomes": true,
+  "adaptive_confirmation_claim": false,
+  "supersedes": [
+    "strategy-evaluator-operating-characteristics-plan/1",
+    "strategy-evaluator-operating-characteristics-plan/2",
+    "strategy-evaluator-operating-characteristics-plan/3"
+  ],
+  "decision_rule": "A cell is reported from all 50 planned replications. NO_EDGE/0.0 uses the FPR Wilson upper bound. PLANTED_EDGE/0.02 and /0.04 use the power Wilson lower bound. Any incomplete or inadequate replication remains visible and prevents a claim of measured adequacy; all outputs remain DIAGNOSTIC_ONLY.",
+  "raw_counts": {
+    "raw_event_count": 50,
+    "raw_control_target_count": 50,
+    "lifecycle_series_per_replication": 100,
+    "episodes_per_replication_means": "50 raw treated events arranged as 14 singleton clusters plus 18 two-event clusters; 50 controls are additional counterfactual series",
+    "expected_minute_rows_per_replication": 1440000,
+    "expected_minute_rows_all_four_cells": 288000000,
+    "setup_warmup_rows_per_series": 31,
+    "natural_yield_policy": "Never drop an event/control because a later lifecycle is missing; count it as unresolved or insufficient and retain the reason.",
+    "expected_independent_calendar_clusters": 32,
+    "expected_complete_paired_clusters": 32
+  },
+  "content_sha256": "63e17392714365810db25d52f382f5b9578a2cead9ee06b0335e4360b41eb235"
+}

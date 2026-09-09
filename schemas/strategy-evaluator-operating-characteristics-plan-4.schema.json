@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-evaluator-operating-characteristics-plan/4",
+  "type": "object",
+  "required": ["schema", "version", "stage_scope", "evidence_phase", "decision", "promotion_eligible", "outcomes_opened", "binding_fixed_evaluator", "generator", "scenarios", "replications", "episodes_per_replication", "cell_count", "replicate_seed_mapping", "preflight_benchmark", "resource_budget", "targets", "disposition_rules", "reproducibility", "frozen_before_outcomes", "content_sha256"],
+  "properties": {
+    "schema": {"const": "strategy-evaluator-operating-characteristics-plan/4"},
+    "version": {"const": 4},
+    "stage_scope": {"const": "FIXED_BASELINE_DIAGNOSTIC"},
+    "evidence_phase": {"const": "DEVELOPMENT"},
+    "decision": {"const": "DIAGNOSTIC_ONLY"},
+    "promotion_eligible": {"const": false},
+    "outcomes_opened": {"const": false},
+    "binding_fixed_evaluator": {"const": "StrategyFixedBaselineV5+TradeLifecycleV5+StrategyResearchImprovementV1.disposition"},
+    "replications": {"const": 50},
+    "episodes_per_replication": {"const": 50},
+    "cell_count": {"const": 4},
+    "frozen_before_outcomes": {"const": true},
+    "adaptive_confirmation_claim": {"const": false},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-research-ui/1",
+  "title": "Strategy Research Cockpit presentation export",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "version", "presentation_only", "fixture_only", "manifest", "readiness", "strategies", "content_sha256"],
+  "properties": {
+    "schema": { "const": "strategy-research-ui/1" },
+    "version": { "const": 1 },
+    "presentation_only": { "const": true },
+    "fixture_only": { "type": "boolean" },
+    "generated_at": { "type": "string" },
+    "content_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "manifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "source_root", "source_hashes", "record_count"],
+      "properties": {
+        "status": { "enum": ["READY", "BLOCKED", "EMPTY", "CORRUPT"] },
+        "source_root": { "type": "string" },
+        "source_hashes": { "type": "array", "items": { "type": "string", "pattern": "^[a-f0-9]{64}$" } },
+        "record_count": { "type": "integer", "minimum": 0 },
+        "limitations": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "readiness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "dimensions", "blockers"],
+      "properties": {
+        "status": { "enum": ["READY", "BLOCKED", "EMPTY", "CORRUPT"] },
+        "dimensions": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+        "blockers": { "type": "array", "items": { "type": "string" } },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["schema", "content_sha256"],
+          "properties": {
+            "schema": { "const": "strategy-readiness-audit/2" },
+            "content_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+            "generated_at": { "type": "string" }
+          }
+        },
+        "strategy_testing_readiness": { "type": "object", "additionalProperties": true },
+        "activation": { "type": "object", "additionalProperties": true },
+        "artifact_verification": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+        "limitations": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "strategies": { "type": "array", "items": { "$ref": "#/$defs/family" } }
+  },
+  "$defs": {
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["family_id", "strategy_version", "run_hash"],
+      "properties": {
+        "family_id": { "type": "string", "minLength": 1 },
+        "strategy_version": { "type": "string", "minLength": 1 },
+        "run_hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      }
+    },
+    "predictor": { "type": ["string", "object"], "minLength": 1 },
+    "signal": { "type": "object", "additionalProperties": true },
+    "market": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": { "completed_bars": { "type": "array", "items": { "type": "object", "additionalProperties": true } } }
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidate_id"],
+      "properties": {
+        "candidate_id": { "type": "string", "minLength": 1 },
+        "asset": { "type": "string" },
+        "fold_id": { "type": "string" },
+        "selected": { "type": "boolean" },
+        "finalist": { "type": "boolean" },
+        "evidence_phase": { "type": "string" },
+        "metric_phase": { "type": "string" },
+        "weighting": { "type": "string" },
+        "scope_episode_count": { "type": "integer", "minimum": 0 },
+        "trade_scope": { "type": "string" },
+        "market": { "$ref": "#/$defs/market" },
+        "signals": { "type": "array", "items": { "$ref": "#/$defs/signal" } },
+        "trades": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+        "performance": { "type": "object", "additionalProperties": true },
+        "robustness": { "type": "object", "additionalProperties": true },
+        "portfolio": { "type": "object", "additionalProperties": true }
+      }
+    },
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["run_hash", "identity", "candidates"],
+      "properties": {
+        "run_hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "status": { "type": "string" },
+        "stage": { "type": "string" },
+        "phase": { "type": "string" },
+        "evidence_phase": { "type": "string" },
+        "k": { "type": "integer", "minimum": 0 },
+        "gate_failures": { "type": "integer", "minimum": 0 },
+        "decision": { "type": "string" },
+        "gate_status": { "type": "object", "additionalProperties": true },
+        "wfo": { "type": "object", "additionalProperties": true },
+        "shadow": { "type": "object", "additionalProperties": true },
+        "lineage": { "type": "object", "additionalProperties": true },
+        "stage_artifacts": { "type": "object", "additionalProperties": true },
+        "stage_artifact_refs": { "type": "object", "additionalProperties": true },
+        "accounting": { "type": "object", "additionalProperties": true },
+        "identity": { "$ref": "#/$defs/identity" },
+        "candidates": { "type": "array", "items": { "$ref": "#/$defs/candidate" } }
+      }
+    },
+    "family": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["family_id", "strategy_version", "runs"],
+      "properties": {
+        "family_id": { "type": "string", "minLength": 1 },
+        "strategy_version": { "type": "string", "minLength": 1 },
+        "status": { "type": "string" },
+        "stage": { "type": "string" },
+        "phase": { "type": "string" },
+        "assets": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "premise": { "type": "string" },
+        "causal_premise": { "type": "string" },
+        "expected_vs_realized": { "type": "string" },
+        "declared_predictors": { "type": "array", "items": { "$ref": "#/$defs/predictor" } },
+        "lineage": { "type": "object", "additionalProperties": true },
+        "last_run": { "anyOf": [{ "$ref": "#/$defs/run" }, { "type": "null" }] },
+        "runs": { "type": "array", "items": { "$ref": "#/$defs/run" } }
+      }
+    }
+  }
+}

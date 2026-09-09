@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-control-spec/1",
+  "type": "object",
+  "required": ["schema", "control_id", "baseline_id", "outcome_blind", "decision_time_only", "matching_variables", "pool", "calipers", "reuse_policy", "tie_break", "forbidden_fields"],
+  "properties": {
+    "schema": {"const": "strategy-control-spec/1"},
+    "control_id": {"type": "string", "minLength": 1},
+    "baseline_id": {"type": "string", "minLength": 1},
+    "outcome_blind": {"const": true},
+    "decision_time_only": {"const": true},
+    "matching_variables": {"type": "array", "minItems": 1},
+    "pool": {"type": "object"},
+    "calipers": {"type": "object"},
+    "reuse_policy": {"type": "string", "minLength": 1},
+    "tie_break": {"type": "array", "minItems": 1},
+    "forbidden_fields": {"type": "array", "minItems": 1}
+  },
+  "additionalProperties": true
+}

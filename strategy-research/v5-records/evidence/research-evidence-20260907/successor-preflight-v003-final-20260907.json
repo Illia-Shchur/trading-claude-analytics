@@ -1,0 +1,53 @@
+{
+  "schema": "strategy-evaluator-operating-characteristics-successor-preflight/1",
+  "version": 1,
+  "status": "BLOCKED_RESOURCE_ESTIMATE",
+  "plan_sha256": "97fbf3c59290b977fe879cc09f55542e7c510c43baa4ef2e524039f5ee294abb",
+  "binding_fixed_evaluator": "StrategyFixedBaselineV5+TradeLifecycleV5+StrategyResearchImprovementV1.disposition",
+  "shared_physical_evaluator": true,
+  "toy_statistic": false,
+  "outcomes_opened": false,
+  "promotion_eligible": false,
+  "activation_authorized": false,
+  "planned_attempts": 300,
+  "expected_generated_minute_bars": 3888000000,
+  "max_wall_minutes": 720,
+  "max_rss_bytes": 8589934592,
+  "max_disk_bytes": 21474836480,
+  "baseline_runtime_seconds": 19641,
+  "baseline_peak_rss_bytes": 6638043136,
+  "workload_ratio": 13.5,
+  "estimated_wall_seconds": 265154,
+  "estimated_peak_rss_bytes": 59742388224,
+  "resource_budget_pass": false,
+  "resource_estimate_method": "conservative linear DEVELOPMENT estimate from retained v004 full run; must be replaced by a measured exact-geometry prefix before any full run",
+  "blocker": "SUCCESSOR_FULL_GEOMETRY_EXCEEDS_DECLARED_8GIB_12H_ENVELOPE",
+  "build_identity": {
+    "schema": "analytics-build-identity/1",
+    "status": "KNOWN",
+    "executable": {
+      "code_source": "/Users/eternal/Desktop/Trading Claude Analytics/strategy-research/v5-records/evidence/fixed-baseline-full-declared-v004/executors/analytics-current-20260907-successor-v002.jar",
+      "kind": "JAR",
+      "sha256": "0d9cf9dcdfbee96e523dd60916d97dfc6463d2faec099d3b7b0477a5aa2d6757",
+      "bytes": 107124621
+    },
+    "compiled": {
+      "input_fingerprint": "c1cd47b6d24e12801d99f0b5a32a9138de2840f752d1f21a684098ed889fca4f",
+      "revision": "30262ac0f910bbec6471dbbd3132a476da04866f",
+      "dirty_source": "true",
+      "java_version": "openjdk version \"26.0.1\" 2026-04-21",
+      "java_vendor": "Oracle Corporation",
+      "java_runtime": "OpenJDK Runtime Environment",
+      "toolchain_fingerprint": "277c0d2ab5a069bc4fabbb9a6bb581a452181a794c58b74ee640f1b958b50f01",
+      "maven_wrapper_sha256": "cae96cef89ebea3531221f4ae17c23cf8edf67d00eae8306d4186ae1bbed4d02",
+      "root_pom_sha256": "21fea44956bd42ea79951766f14624b0dba1e36226457c5babc341dbc37b7b11",
+      "marker_resource": "META-INF/build-identity.properties"
+    },
+    "runtime": {
+      "java": "26.0.1",
+      "cwd": "/Users/eternal/Desktop/Trading Claude Analytics",
+      "user_dir": "/Users/eternal/Desktop/Trading Claude Analytics"
+    }
+  },
+  "content_sha256": "e326622e52caf43db215b48b56439478bf2bd132da98694136cbfc0b9978ffd2"
+}

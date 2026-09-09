@@ -1,0 +1,17 @@
+{
+  "schema": "strategy-json-hash-batch/1",
+  "files": [
+    {
+      "path": "/Users/eternal/Desktop/Trading Claude Analytics/.report-run/research-evidence-review-20260907/v002-raw-0.json",
+      "byte_sha256": "3dcf3170f296e973199663453351f435f2cf954db3b93bcd0ef0757f5b00d8c5",
+      "bytes": 2018478,
+      "content_sha256": "6ee186ca7214e0f0b9c8ce27484ad4e11c38edb8154e1b80f0719e6c9c273d1d"
+    },
+    {
+      "path": "/Users/eternal/Desktop/Trading Claude Analytics/.report-run/research-evidence-review-20260907/v002-raw-1.json",
+      "byte_sha256": "60013b5c9cddb4635e693b79fcf5775d7ef32c7f70ff5d977e6573339f4726f9",
+      "bytes": 2192741,
+      "content_sha256": "13a7d84f745e6b60e8386b22e60c7b7de6802727002796a547ee9bff654ed1b9"
+    }
+  ]
+}

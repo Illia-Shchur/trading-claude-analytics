@@ -1,0 +1,167 @@
+{
+  "signal-feed-dry-run": {
+    "exitCode": 0,
+    "stdout": "{\n  \"files_in_reports_dir\": 152,\n  \"framework_reports\": 144,\n  \"non_framework_files_ignored\": 8,\n  \"signals\": 78,\n  \"skipped_no_machine_block\": 66,\n  \"skipped_unparseable\": 0,\n  \"skipped_post_epoch_missing_block\": 0,\n  \"v2_signals\": 10,\n  \"v3_signals\": 0,\n  \"orphaned_v2\": 0,\n  \"mismatched_v2_pairs\": 0\n}\n",
+    "stderr": "scanned 152 files in <ROOT>/reports\n  144 framework reports, 8 ignored by filename (calibration-registry.json, calibration_ledger.md, fallen_knives_calibration_20260805.md, fallen_knives_calibration_20260806.md, flying_rocket_calibration_20260805.md, fr_eth_fall_capture_backtest_20260727.md, strategy_retrospective_20260611.md, strategy_retrospective_20260704.md)\n  78 signals, 66 skipped (no machine block), 0 unparseable\n  every skip predates the machine-block epoch (2026-07-11) — expected, not a failure\n"
+  },
+  "signal-feed-boundary": {
+    "exitCode": 1,
+    "stdout": "",
+    "stderr": "refusing to write outside exports/: <ROOT>/reports/not-a-feed.json\n"
+  },
+  "signal-feed-write": {
+    "exitCode": 0,
+    "stdout": "",
+    "stderr": "scanned 152 files in <ROOT>/reports\n  144 framework reports, 8 ignored by filename (calibration-registry.json, calibration_ledger.md, fallen_knives_calibration_20260805.md, fallen_knives_calibration_20260806.md, flying_rocket_calibration_20260805.md, fr_eth_fall_capture_backtest_20260727.md, strategy_retrospective_20260611.md, strategy_retrospective_20260704.md)\n  78 signals, 66 skipped (no machine block), 0 unparseable\n  every skip predates the machine-block epoch (2026-07-11) — expected, not a failure\nwrote <ROOT>/exports/.codex-reporting-oracle-write-current.json (no existing feed)\n"
+  },
+  "signal-swing-feed-write": {
+    "exitCode": 0,
+    "stdout": "",
+    "stderr": "scanned 1 files in <ROOT>\n  1 framework reports, 0 ignored by filename (none)\n  1 signals, 0 skipped (no machine block), 0 unparseable\n  every skip predates the machine-block epoch (2026-07-11) — expected, not a failure\nwrote <ROOT>/exports/.codex-reporting-swing-feed-current.json (no existing feed)\n"
+  },
+  "signal-strict-missing": {
+    "exitCode": 1,
+    "stdout": "{\n  \"files_in_reports_dir\": 1,\n  \"framework_reports\": 1,\n  \"non_framework_files_ignored\": 0,\n  \"signals\": 0,\n  \"skipped_no_machine_block\": 1,\n  \"skipped_unparseable\": 0,\n  \"skipped_post_epoch_missing_block\": 1,\n  \"v2_signals\": 0,\n  \"v3_signals\": 0,\n  \"orphaned_v2\": 0,\n  \"mismatched_v2_pairs\": 0\n}\n",
+    "stderr": "scanned 1 files in <ROOT>\n  1 framework reports, 0 ignored by filename (none)\n  0 signals, 1 skipped (no machine block), 0 unparseable\n  1 report(s) dated ≥ 2026-07-11 carry NO machine block — a real gap\n\nFAIL (--strict) — 1 report(s) on/after 2026-07-11 lack a machine block\n"
+  },
+  "signal-strict-malformed": {
+    "exitCode": 1,
+    "stdout": "{\n  \"files_in_reports_dir\": 1,\n  \"framework_reports\": 1,\n  \"non_framework_files_ignored\": 0,\n  \"signals\": 0,\n  \"skipped_no_machine_block\": 0,\n  \"skipped_unparseable\": 1,\n  \"skipped_post_epoch_missing_block\": 0,\n  \"v2_signals\": 0,\n  \"v3_signals\": 0,\n  \"orphaned_v2\": 0,\n  \"mismatched_v2_pairs\": 0\n}\n",
+    "stderr": "scanned 1 files in <ROOT>\n  1 framework reports, 0 ignored by filename (none)\n  0 signals, 0 skipped (no machine block), 1 unparseable\n  every skip predates the machine-block epoch (2026-07-11) — expected, not a failure\n\nFAIL (--strict) — 1 machine block(s) failed to parse or project\n"
+  },
+  "signal-strict-mismatch": {
+    "exitCode": 1,
+    "stdout": "{\n  \"files_in_reports_dir\": 1,\n  \"framework_reports\": 1,\n  \"non_framework_files_ignored\": 0,\n  \"signals\": 1,\n  \"skipped_no_machine_block\": 0,\n  \"skipped_unparseable\": 0,\n  \"skipped_post_epoch_missing_block\": 0,\n  \"v2_signals\": 1,\n  \"v3_signals\": 0,\n  \"orphaned_v2\": 0,\n  \"mismatched_v2_pairs\": 1\n}\n",
+    "stderr": "scanned 1 files in <ROOT>\n  1 framework reports, 0 ignored by filename (none)\n  1 signals, 0 skipped (no machine block), 0 unparseable\n  every skip predates the machine-block epoch (2026-07-11) — expected, not a failure\n\nFAIL (--strict) — 1 v2 JSON/Markdown pair(s) are not canonically equal\n"
+  },
+  "backfill-check": {
+    "exitCode": 1,
+    "stdout": "",
+    "stderr": "would update 11 machine reports; 78 machine-block reports, 66 prose-only reports unchanged\nFAIL expected 67 machine + 66 prose-only reports, got 78 + 66\n"
+  },
+  "backfill-write": {
+    "exitCode": 1,
+    "stdout": "",
+    "stderr": "updated 1 machine reports; 1 machine-block reports, 0 prose-only reports unchanged\nFAIL expected 67 machine + 66 prose-only reports, got 1 + 0\n"
+  },
+  "backfill-success": {
+    "exitCode": 0,
+    "stdout": "",
+    "stderr": "updated 67 machine reports; 67 machine-block reports, 66 prose-only reports unchanged\n"
+  },
+  "finalize-v2": {
+    "exitCode": 0,
+    "stdout": "FINALIZED /private<ROOT>/reports/btc_fallen_knives_20260822_0346.json\n",
+    "stderr": ""
+  },
+  "render-v2-full": {
+    "exitCode": 0,
+    "stdout": "RENDERED /private<ROOT>/reports/btc_fallen_knives_20260822_0346.md\n",
+    "stderr": ""
+  },
+  "render-v2-summary": {
+    "exitCode": 0,
+    "stdout": "# BTC Fallen Knives — 2026-08-22 03:46\n\n**WAIT:** BTC is not an accumulation entry: adjusted 6/20, gates 3/9, and every phase remains locked. Do not add; reconcile the ledger and let leverage cool.\n\n- Score: **6/20** (mechanical 6)\n- Gates: **3/9** passed\n- Position: **DATA_LIMITED**; controls **DATA_LIMITED**\n- Primary action: **WAIT_NO_ADD** — Phase 1A score is two points short; no discretionary channel can bridge it.\n\nWAIT / NO ADD. BTC FK is 6/20 with 3/9 gates; the score is two points below Phase 1A. Spot demand is real, but this is a leveraged post-squeeze rally, not a fallen knife. Position controls are data-limited by an unexplained ledger mismatch.\n",
+    "stderr": ""
+  },
+  "finalize-v3": {
+    "exitCode": 0,
+    "stdout": "FINALIZED /private<ROOT>/reports/btc_fallen_knives_20260822_1200.json\n",
+    "stderr": ""
+  },
+  "render-v3-full": {
+    "exitCode": 0,
+    "stdout": "RENDERED /private<ROOT>/reports/btc_fallen_knives_20260822_1200.md\n",
+    "stderr": ""
+  },
+  "lint-v3": {
+    "exitCode": 0,
+    "stdout": "PASS — 0 errors, 0 warning(s): btc_fallen_knives_20260822_1200.json\n",
+    "stderr": ""
+  },
+  "finalize-usage": {
+    "exitCode": 1,
+    "stdout": "",
+    "stderr": "usage: node tools/finalize-report.mjs <draft.json> [--out reports/<report_id>.json]\n"
+  },
+  "finalize-missing": {
+    "exitCode": 1,
+    "stdout": "",
+    "stderr": "FAIL — ENOENT: no such file or directory, open '/private<ROOT>/missing.json'\n"
+  },
+  "render-usage": {
+    "exitCode": 1,
+    "stdout": "",
+    "stderr": "usage: node tools/render-report.mjs <report.json> --mode full|summary [--out reports/<stem>.md]\n"
+  },
+  "finalize-guard-0": {
+    "exitCode": 1,
+    "stdout": "",
+    "stderr": "FAIL — refusing to write outside reports/ or to a non-JSON path: /private<ROOT>/outside.json\n"
+  },
+  "finalize-guard-1": {
+    "exitCode": 1,
+    "stdout": "",
+    "stderr": "FAIL — output filename wrong_name.json does not match identity.filename btc_fallen_knives_20260822_0346.json\n"
+  },
+  "finalize-guard-2": {
+    "exitCode": 1,
+    "stdout": "",
+    "stderr": "FAIL — refusing to write outside reports/ or to a non-JSON path: /private<ROOT>/reports/btc_fallen_knives_20260822_0346.md\n"
+  },
+  "finalize-guard-3": {
+    "exitCode": 1,
+    "stdout": "",
+    "stderr": "FAIL — duplicate.json: invalid strict JSON at offset 0: duplicate key a\n"
+  },
+  "render-guard-0": {
+    "exitCode": 1,
+    "stdout": "",
+    "stderr": "usage: node tools/render-report.mjs <report.json> --mode full|summary [--out reports/<stem>.md]\n"
+  },
+  "render-guard-1": {
+    "exitCode": 1,
+    "stdout": "",
+    "stderr": "ERROR filename draft.json does not match identity.filename btc_fallen_knives_20260822_0346.json\nFAIL — 1 validation error(s)\n"
+  },
+  "render-guard-2": {
+    "exitCode": 1,
+    "stdout": "",
+    "stderr": "ERROR filename draft.json does not match identity.filename btc_fallen_knives_20260822_0346.json\nFAIL — 1 validation error(s)\n"
+  },
+  "render-guard-3": {
+    "exitCode": 1,
+    "stdout": "",
+    "stderr": "ERROR filename draft.json does not match identity.filename btc_fallen_knives_20260822_0346.json\nFAIL — 1 validation error(s)\n"
+  },
+  "render-guard-4": {
+    "exitCode": 1,
+    "stdout": "",
+    "stderr": "FAIL — duplicate.json: invalid strict JSON at offset 0: duplicate key a\n"
+  },
+  "lint-usage": {
+    "exitCode": 1,
+    "stdout": "",
+    "stderr": "usage: node tools/lint-report.mjs <report.md> [--legacy]\n"
+  },
+  "lint-legacy": {
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): btc_fallen_knives_20260828_0210.md\n",
+    "stderr": ""
+  },
+  "lint-legacy-flag": {
+    "exitCode": 0,
+    "stdout": "WARN  machine block missing (```json machine ... ``` with schema report-machine/1) — legacy report, skipping arithmetic checks\nPASS — 0 errors, 1 warning(s): btc_fallen_knives_20260828_0210.md\n",
+    "stderr": ""
+  },
+  "lint-malformed": {
+    "exitCode": 1,
+    "stdout": "ERROR machine block is not valid JSON: Expected property name or '}' in JSON at position 2 (line 2 column 1)\n\nFAIL — 1 error(s), 0 warning(s): btc_fallen_knives_20260828_0211.md\n",
+    "stderr": ""
+  },
+  "lint-mismatch": {
+    "exitCode": 1,
+    "stdout": "ERROR Markdown machine block is not canonically equal to the standalone JSON\n\nFAIL — 1 error(s), 0 warning(s): btc_fallen_knives_20260822_0346.md\n",
+    "stderr": ""
+  }
+}

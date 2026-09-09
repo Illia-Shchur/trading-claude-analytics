@@ -106,7 +106,10 @@
         "null_controls_sha256": { "$ref": "#/$defs/nullableHash" },
         "ledger_prior_head_sha256": { "$ref": "#/$defs/nullableHash" },
         "ledger_new_head_sha256": { "$ref": "#/$defs/nullableHash" },
+        "ledger_head_sha256": { "$ref": "#/$defs/nullableHash" },
         "ledger_sequence": { "type": ["integer", "null"], "minimum": 0 },
+        "no_new_completed_bar": { "type": "boolean" },
+        "no_new_outcome": { "type": "boolean" },
         "bound_hashes": {
           "type": "object",
           "additionalProperties": false,

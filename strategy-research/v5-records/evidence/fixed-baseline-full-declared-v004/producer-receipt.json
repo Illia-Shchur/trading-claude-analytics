@@ -1,0 +1,38 @@
+{
+  "schema": "strategy-fixed-baseline-signal-producer-receipt/1",
+  "version": 1,
+  "status": "VERIFIED_PHYSICAL",
+  "producer": "StrategyFixedBaselineV5.buildSignalBarsFromVerifiedParquet",
+  "producer_schema": "strategy-fixed-baseline-signal-bars/1",
+  "source_manifest_path": "parquet-conversion-manifest.json",
+  "source_manifest_sha256": "31f85e351861f05edc66794ec57369c0a7fafe67e236676aab5c6cc7bec4cfc6",
+  "signal_role_path": "signal_bars.json",
+  "signal_role_content_sha256": "3eeee5f714b73b00ce62969253566e5f04aa26a5a2cd00b17612344b34fd8500",
+  "signal_role_byte_sha256": "527d492050c116a41bb2d265d68dc0ced6e79f41aa00b3bea5cbed027184951b",
+  "signal_role_bytes": 68802948,
+  "declared_assets": [
+    "aave",
+    "ada",
+    "bnb",
+    "btc",
+    "eth",
+    "link",
+    "sol",
+    "xrp"
+  ],
+  "asset_counts": {
+    "aave": 10957,
+    "ada": 10957,
+    "bnb": 10957,
+    "btc": 10957,
+    "eth": 10957,
+    "link": 10957,
+    "sol": 10957,
+    "xrp": 10957
+  },
+  "coverage_start_ms": 1629864000000,
+  "coverage_end_ms": 1787630400000,
+  "coverage_interval_ms": 14400000,
+  "coverage_scope": "ALL_EIGHT_REQUIRED_SPOT_ASSETS_COMPLETE_FROZEN_4H_GRID",
+  "content_sha256": "3153bed3a6c5ea1de720e886ad53030b53aeade6c61b0624a5ffecbf7db5f481"
+}

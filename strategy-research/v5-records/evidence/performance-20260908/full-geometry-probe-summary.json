@@ -1,0 +1,132 @@
+{
+  "schema": "strategy-performance-development-probe-summary/1",
+  "status": "COMPLETE",
+  "confirmation": false,
+  "target_qualification": false,
+  "no_strategy_promotion": true,
+  "seed": 202609080002,
+  "scenario": "NO_EDGE",
+  "effect_size": 0.0,
+  "episodes": 450,
+  "event_control_series": 900,
+  "minutes_per_series": 14400,
+  "elapsed_nanos": 536040396042,
+  "elapsed_seconds": 536.040396042,
+  "raw_content_sha256": "1e5d5b9a1d9c1b9a2382c56074a37e1cbaa8ca8eb17b72b1e6034cd2900ba093",
+  "raw_canonical_sha256": "93752e669a59d45b90e45718ad3ba60bc0fe7b8ee2e766002593d1948e92c85b",
+  "raw_byte_sha256": "179922b28e20c33d2baf4ef0d15ef4ef20045c92922c0ba6f633a8c1a8dca7bb",
+  "economic_semantic_sha256": "9e39b85d54aab5e77f5685ab3f923709e5eb99dbeb55dcb89c439fb21ce1ea5a",
+  "event_count": 450,
+  "paired_count": 450,
+  "independent_units": 288,
+  "row_bytes": 171112473,
+  "metrics": {
+    "paired_count": 450,
+    "paired_mean_net_pnl_usdt": -0.7121435988720416,
+    "unconditional_event_count": 450,
+    "unconditional_event_mean_net_pnl_usdt": -0.2725664467576612,
+    "unmatched_control_or_control_unresolved_count": 0,
+    "tested_trade_count": 450,
+    "tested_cluster_count": 288,
+    "event_tested_cluster_count": 288,
+    "paired_tested_cluster_count": 288,
+    "independent_market_episode_count": 288,
+    "uncertainty_unit": "MERGED_LIFECYCLE_INTERVAL",
+    "paired_analysis_insufficient": false,
+    "p20_expectancy_r": -0.0615403595612049,
+    "falsifier": {
+      "null": "paired event-minus-control expectancy <= 0 or event expectancy <= 0 after costs",
+      "test_basis": "JOINT_EVENT_AND_PAIRED",
+      "estimand": "cluster-level net P&L divided by aggregate fixed-stop risk; bootstrap unit is one merged lifecycle cluster",
+      "p20_expectancy_r_min": 0.05,
+      "p20_pass": false,
+      "max_statistic_p_value": 0.1,
+      "p_value_pass": false,
+      "bootstrap_iterations": 10000,
+      "bootstrap_seed": 20260906,
+      "bootstrap_unit": "MERGED_LIFECYCLE_INTERVAL",
+      "minimum_independent_episodes": 30,
+      "minimum_tested_trades": 30,
+      "failure_disposition": "ECONOMIC_FAILURE only after valid full-scope minimums; otherwise INSUFFICIENT_EVIDENCE",
+      "p20_expectancy_r": -0.0615403595612049,
+      "statistic_p_value": 0.5002499750024998,
+      "event_p20_expectancy_r": -0.0531530895677743,
+      "paired_p20_expectancy_r": -0.0615403595612049,
+      "event_statistic_p_value": 0.5343465653434657,
+      "paired_statistic_p_value": 0.5002499750024998,
+      "event_p20_pass": false,
+      "paired_p20_pass": false,
+      "event_p_value_pass": false,
+      "paired_p_value_pass": false,
+      "joint_p20_pass": false,
+      "joint_p_value_pass": false
+    }
+  },
+  "executor_identity": {
+    "schema": "analytics-build-identity/1",
+    "status": "KNOWN",
+    "executable": {
+      "code_source": "/Users/eternal/.codex/worktrees/research-performance-20260908/analytics-research/target/analytics-research-1.0.0-SNAPSHOT.jar",
+      "kind": "JAR",
+      "sha256": "828d45937dc1535c28e6b61f866e9857c938648f3b2b7842b27df3a03f42e863",
+      "bytes": 2161180
+    },
+    "compiled": {
+      "input_fingerprint": "1d8f6e08448e0c7ba99eb81a26394d440cfeac44636e7111598c1927882f25ab",
+      "revision": "30262ac0f910bbec6471dbbd3132a476da04866f",
+      "dirty_source": "true",
+      "java_version": "openjdk version \"26.0.1\" 2026-04-21",
+      "java_vendor": "Oracle Corporation",
+      "java_runtime": "OpenJDK Runtime Environment",
+      "toolchain_fingerprint": "277c0d2ab5a069bc4fabbb9a6bb581a452181a794c58b74ee640f1b958b50f01",
+      "maven_wrapper_sha256": "cae96cef89ebea3531221f4ae17c23cf8edf67d00eae8306d4186ae1bbed4d02",
+      "root_pom_sha256": "21fea44956bd42ea79951766f14624b0dba1e36226457c5babc341dbc37b7b11",
+      "marker_resource": "META-INF/build-identity.properties"
+    },
+    "runtime": {
+      "java": "26.0.1",
+      "cwd": "/Users/eternal/Desktop/Trading Claude Analytics",
+      "user_dir": "/Users/eternal/Desktop/Trading Claude Analytics"
+    }
+  },
+  "portfolio_integrity": "FAILED_PREEXISTING_EXIT_BOUNDARY_MARK_DEFECT",
+  "books": {
+    "event_book": {
+      "trade_count": 450,
+      "net_pnl_usdt": -122.65490104094752,
+      "ending_equity_usdt": 9877.345098959224,
+      "max_drawdown_usdt": 223.36380158743123,
+      "last_curve_point": {
+        "episode_id": "aave:2054-01-13T00:00:00Z",
+        "event_time": "2054-01-23T00:00:00.000Z",
+        "event_type": "EXIT",
+        "cash_usdt": 9877.345098959224,
+        "holdings_at_entry_cost_usdt": 0.0,
+        "equity_usdt": 164981.75482620575,
+        "drawdown_usdt": 36.22307723661652,
+        "realized_pnl_usdt": 42.457335657753,
+        "entry_notional_usdt": 999.9999637177873
+      }
+    },
+    "control_book": {
+      "trade_count": 450,
+      "net_pnl_usdt": 197.80971845147252,
+      "ending_equity_usdt": 10197.809718451574,
+      "max_drawdown_usdt": 264.2132161959689,
+      "last_curve_point": {
+        "episode_id": "aave:2053-12-23T00:00:00Z",
+        "event_time": "2054-01-02T00:00:00.000Z",
+        "event_type": "EXIT",
+        "cash_usdt": 10197.809718451574,
+        "holdings_at_entry_cost_usdt": 0.0,
+        "equity_usdt": 155886.14914311006,
+        "drawdown_usdt": 6.300484827486798,
+        "realized_pnl_usdt": 32.174347531543205,
+        "entry_notional_usdt": 999.9999594833474
+      }
+    }
+  },
+  "diagnostic_limits": "Computational performance probe only; invalid legacy mark-to-market curves prevent scientific qualification.",
+  "producer_result_content_sha256": "7077068d6eb59291f2158a494adbc95262bd648afe2156cbe94491f9a1bcf797",
+  "content_sha256": "35030a9fa24e10c8174920b642d60f7d9b5e2577de3e73e00796e910062ee961"
+}

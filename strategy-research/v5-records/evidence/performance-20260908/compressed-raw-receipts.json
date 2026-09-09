@@ -1,0 +1,14 @@
+{
+  "full-geometry-row.json.gz": {
+    "uncompressed_bytes": 247352976,
+    "uncompressed_byte_sha256": "075fc394535ec4804225faeae4483a1a79840fe86def43d86751ace953c5fe30",
+    "gzip_bytes": 21500901,
+    "gzip_byte_sha256": "136f10687b7627e84721cc996d0e0035145900df1f6c31d89e705d679717a9fc"
+  },
+  "full-geometry-producer-audit.json.gz": {
+    "uncompressed_bytes": 105176600,
+    "uncompressed_byte_sha256": "4bbb406ba2d3393fbe0a2a8d61c9a974116f115786c9c0fb7c5418945e521f72",
+    "gzip_bytes": 8647304,
+    "gzip_byte_sha256": "182ac99311a50633aea20b79f0d6fb67e7174e3d83eea0a51b2ca7d2937af3e8"
+  }
+}

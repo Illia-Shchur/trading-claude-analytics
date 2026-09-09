@@ -1,0 +1,44 @@
+{
+  "scope": "parent independent audit of v002 DEVELOPMENT prefix; no full-power claim",
+  "source_byte_sha256": "a2a70438b1f2ec9e9967c5f59ec713499b0923c3fe2ed1bda766e633b3890598",
+  "replications": [
+    {
+      "seed": 910000000,
+      "event_count": 10,
+      "cluster_count": 8,
+      "metrics": {
+        "event": {
+          "p20": -0.48658443145898134,
+          "p_value": 0.5211478852114788
+        },
+        "paired": {
+          "p20": -0.45853556041860594,
+          "p_value": 0.5286471352864713
+        }
+      },
+      "event_net": "-120.4556256080603781537911072811287320",
+      "control_net": "83.290173664699335586391340747186935"
+    },
+    {
+      "seed": 910000001,
+      "event_count": 10,
+      "cluster_count": 8,
+      "metrics": {
+        "event": {
+          "p20": -0.6011072926813992,
+          "p_value": 0.791920807919208
+        },
+        "paired": {
+          "p20": -1.060193792472216,
+          "p_value": 0.9653034696530347
+        }
+      },
+      "event_net": "-174.3816697367831851960122451601166155",
+      "control_net": "212.434932801920687865079338797494740"
+    }
+  ],
+  "trades_checked": 40,
+  "maximum_decimal_residual_usdt": "1.3981198660E-13",
+  "raw_projection_reconciled": true,
+  "bootstrap_recomputed_in_python": true
+}

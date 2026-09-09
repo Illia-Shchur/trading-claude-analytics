@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-evaluator-operating-characteristics-source-freeze/1",
+  "type": "object",
+  "required": [
+    "schema", "version", "plan_sha256", "generator_schema", "generator_source_path",
+    "generator_source_sha256", "executor_identity_sha256", "build_input_fingerprint",
+    "frozen_before_outcomes", "prior_draft_outcomes_opened", "content_sha256"
+  ],
+  "properties": {
+    "schema": {"const": "strategy-evaluator-operating-characteristics-source-freeze/1"},
+    "version": {"const": 1},
+    "plan_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "generator_schema": {"const": "synthetic-ohlc-episode-generator/4"},
+    "generator_source_path": {"type": "string", "minLength": 1},
+    "generator_source_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "executor_identity_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "executor_path": {"type": "string", "minLength": 1},
+    "build_input_fingerprint": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "frozen_before_outcomes": {"const": true},
+    "prior_draft_outcomes_opened": {"const": true},
+    "prior_draft_result_content_sha256": {
+      "type": "array", "items": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+    },
+    "supersedes_source_freeze_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "source_freeze_note": {"type": "string", "minLength": 1},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": false
+}

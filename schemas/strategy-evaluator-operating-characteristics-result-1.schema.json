@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-evaluator-operating-characteristics-result/1",
+  "type": "object",
+  "required": ["schema", "version", "status", "scope", "plan_sha256", "binding_fixed_evaluator", "shared_physical_evaluator", "toy_statistic", "synthetic_source", "pit_valid", "observed_exchange_fills", "promotion_eligible", "activation_authorized", "outcomes_opened", "replications", "content_sha256"],
+  "properties": {
+    "schema": {"const": "strategy-evaluator-operating-characteristics-result/1"},
+    "version": {"const": 1},
+    "scope": {"const": "CONDITIONAL_FIXED_BASELINE_SYNTHETIC_DIAGNOSTIC"},
+    "binding_fixed_evaluator": {"const": "StrategyFixedBaselineV5+TradeLifecycleV5+StrategyResearchImprovementV1.disposition"},
+    "shared_physical_evaluator": {"const": true},
+    "toy_statistic": {"const": false},
+    "synthetic_source": {"const": "GENERATED_OHLCV_DEVELOPMENT_INPUT"},
+    "pit_valid": {"const": false},
+    "observed_exchange_fills": {"const": false},
+    "promotion_eligible": {"const": false},
+    "activation_authorized": {"const": false},
+    "outcomes_opened": {"const": true},
+    "plan_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "replications": {"type": "array"},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": true
+}

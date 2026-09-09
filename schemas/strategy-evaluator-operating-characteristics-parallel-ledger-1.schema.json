@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-evaluator-operating-characteristics-parallel-ledger/1",
+  "type": "object",
+  "required": [
+    "schema",
+    "version",
+    "status",
+    "plan_sha256",
+    "profile_sha256",
+    "mode",
+    "slot_inventory",
+    "attempts",
+    "terminal",
+    "compact_references_only",
+    "retain_abandoned_reservations",
+    "content_sha256",
+    "execution_profile"
+  ],
+  "properties": {
+    "schema": {
+      "const": "strategy-evaluator-operating-characteristics-parallel-ledger/1"
+    },
+    "version": {
+      "const": 1
+    },
+    "status": {
+      "const": "OPEN"
+    },
+    "plan_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "profile_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "mode": {
+      "enum": [
+        "FULL",
+        "PREFIX"
+      ]
+    },
+    "slot_inventory": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "attempts": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "terminal": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "compact_references_only": {
+      "const": true
+    },
+    "retain_abandoned_reservations": {
+      "const": true
+    },
+    "content_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "execution_profile": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": true
+}

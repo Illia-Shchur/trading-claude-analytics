@@ -1,0 +1,19 @@
+{
+  "schema": "strategy-evaluator-operating-characteristics-source-freeze/1",
+  "version": 1,
+  "plan_sha256": "63e17392714365810db25d52f382f5b9578a2cead9ee06b0335e4360b41eb235",
+  "generator_schema": "synthetic-ohlc-episode-generator/4",
+  "generator_source_path": "analytics-research/src/main/java/com/tradinganalytics/research/v5/StrategyOperatingCharacteristicsV4.java",
+  "generator_source_sha256": "c804ca1405255c58195d3a06685a452c73188c9a58d275ec891a7741170befce",
+  "executor_identity_sha256": "783e9ebef5a5e706d0ed7fbb5d30aaf21ae7d4cfcfbb934a69556e21a9c4bf35",
+  "executor_path": "strategy-research/v5-records/evidence/fixed-baseline-full-declared-v004/executors/analytics-current-20260906-e11-post-amendment.jar",
+  "build_input_fingerprint": "d119ab5448d8666e3d861a428165c4c33323446a0a666f0d2b8ffc26af956f5d",
+  "frozen_before_outcomes": true,
+  "prior_draft_outcomes_opened": true,
+  "prior_draft_result_content_sha256": [
+    "3e54472f8a94973a53a87de44c9363c87608421b69352ca1465b5e76191407a5"
+  ],
+  "supersedes_source_freeze_sha256": "2b7aea30f9867211cecd667ca49dfd5c53b89671c804767690df7009da43bb85",
+  "source_freeze_note": "Post-amendment prefix freeze for the unchanged v004 generator and shared evaluator after the earlier prefix exposed outcomes. The amendment adds bounded per-run RSS/deadline enforcement and uses a new packaged executable; this prefix is an additive diagnostic equivalence check, not calibration, promotion, or a claim that the earlier outcomes were unopened.",
+  "content_sha256": "9a5d1145191b346c901870af8acf81c6a2a04e4ccf77fcb4bc6f3f649b9bb5cc"
+}

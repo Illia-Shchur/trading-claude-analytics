@@ -1,0 +1,9 @@
+test_a_historical_closure_does_not_reduce_a_different_windows_row_count (test_fixed_baseline_hydration.FixedBaselineHydrationReview.test_a_historical_closure_does_not_reduce_a_different_windows_row_count) ... ok
+test_a_truncated_existing_file_cannot_be_reused_as_complete (test_fixed_baseline_hydration.FixedBaselineHydrationReview.test_a_truncated_existing_file_cannot_be_reused_as_complete) ... ok
+test_an_undeclared_gap_still_fails (test_fixed_baseline_hydration.FixedBaselineHydrationReview.test_an_undeclared_gap_still_fails) ... ok
+test_exact_declared_closure_removes_only_its_120_minutes (test_fixed_baseline_hydration.FixedBaselineHydrationReview.test_exact_declared_closure_removes_only_its_120_minutes) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.303s
+
+OK

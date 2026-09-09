@@ -1,0 +1,12 @@
+{
+  "venue": "BINANCE",
+  "instrument": "BINANCE_SPOT",
+  "symbol": "BTCUSDT",
+  "step_size": 1e-05,
+  "min_notional": 10.0,
+  "filter_status": "USER_BOUND_RETROSPECTIVE",
+  "filter_source": "current/public exchange metadata; historical filter validity not claimed",
+  "min_qty": 1e-05,
+  "max_notional": 1000000000,
+  "contract_multiplier": 1.0
+}

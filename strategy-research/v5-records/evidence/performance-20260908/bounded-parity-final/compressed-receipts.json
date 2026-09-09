@@ -1,0 +1,14 @@
+{
+  "eager-row.json.gz": {
+    "bytes": 467270,
+    "byte_sha256": "cdcdd609cf1ccbe277ab187436c8050b728b5ca7b3b9ad9da1d7e50755589431",
+    "uncompressed_bytes": 5424285,
+    "uncompressed_byte_sha256": "c6c87b48a42b7fba008113262395f088f2cb100651a49316ad1c9860b9bc0ebc"
+  },
+  "bounded-row.json.gz": {
+    "bytes": 467266,
+    "byte_sha256": "309bb9a2cf486176732f1e4b6b96646e138496cd685307e08c7835d512556a2b",
+    "uncompressed_bytes": 5424285,
+    "uncompressed_byte_sha256": "8df434e2ef219d6adcf395749ecb1ed1d51123ceea76d162c253ff78d3d5665b"
+  }
+}

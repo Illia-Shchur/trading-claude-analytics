@@ -1,0 +1,21 @@
+{
+  "schema": "strategy-v5-authoritative-command-receipt/1",
+  "version": 1,
+  "command": "overfit-audit",
+  "status": "BLOCKED",
+  "inputs": [],
+  "outputs": [],
+  "limitations": [
+    "WFO artifact: missing physical prerequisite",
+    "exposure head: missing physical prerequisite",
+    "genetic artifact: missing physical prerequisite",
+    "statistical artifact: missing physical prerequisite",
+    "vector inventory: missing physical prerequisite"
+  ],
+  "details": {
+    "mode": "BLOCKED_MISSING_PHYSICAL_PREREQUISITES",
+    "reason": "authoritative command requires every listed physical input before recomputation",
+    "active": false
+  },
+  "content_sha256": "a44d197c68dbe2e3c4839859044184b7bc5287908671aec006f809c3d84ebd8f"
+}

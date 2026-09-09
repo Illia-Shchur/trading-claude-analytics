@@ -1,0 +1,16 @@
+[
+  {
+    "path": "strategy-research/v5-records/evidence/performance-20260908/eager-row.json.gz",
+    "bytes": 467310,
+    "byte_sha256": "264cc0ea0c827e867207d28ea2cb3b5702ffe9e68f35817ae54e088879f590a7",
+    "uncompressed_bytes": 5424285,
+    "uncompressed_byte_sha256": "5534c881b06048c4711133706ac65629a4774d34099d04a4de5a6deab3a82e81"
+  },
+  {
+    "path": "strategy-research/v5-records/evidence/performance-20260908/bounded-row.json.gz",
+    "bytes": 467311,
+    "byte_sha256": "1076328db4e6144b5f7bbd826650f02f318eadbd1dc3a566ff096b52726f984b",
+    "uncompressed_bytes": 5424285,
+    "uncompressed_byte_sha256": "fc06ac0ba1c7d3cccd9562154e8a6cdabcf50db23936e6fb2fda73bc58eedb38"
+  }
+]

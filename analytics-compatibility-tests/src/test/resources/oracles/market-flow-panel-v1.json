@@ -1,0 +1,645 @@
+{
+  "full": {
+    "schema": "market-flow/1",
+    "available": true,
+    "scope": "BTC top-3",
+    "interval_hours": 4,
+    "as_of": "2026-08-23T04:00:00.000Z",
+    "completed_through": "2026-08-23T08:00:00.000Z",
+    "spot_cvd": {
+      "available": true,
+      "completed_bars": 20,
+      "from": "2026-08-20T00:00:00.000Z",
+      "as_of": "2026-08-23T04:00:00.000Z",
+      "completed_through": "2026-08-23T08:00:00.000Z",
+      "latest_delta_usd": -15,
+      "delta_24h_usd": -90,
+      "delta_3d_usd": -270,
+      "delta_window_usd": -300,
+      "imbalance_24h_pct": -6.579,
+      "imbalance_3d_pct": -6.944,
+      "imbalance_window_pct": -7.009,
+      "price_change_24h_pct": 5.31,
+      "price_change_window_pct": 19,
+      "direction_24h": "negative",
+      "direction_3d": "negative",
+      "direction_window": "negative",
+      "recent_bars": [
+        {
+          "time": "2026-08-21T08:00:00.000Z",
+          "delta_usd": -15,
+          "cumulative_delta_window_usd": -135,
+          "close": 108
+        },
+        {
+          "time": "2026-08-21T12:00:00.000Z",
+          "delta_usd": -15,
+          "cumulative_delta_window_usd": -150,
+          "close": 109
+        },
+        {
+          "time": "2026-08-21T16:00:00.000Z",
+          "delta_usd": -15,
+          "cumulative_delta_window_usd": -165,
+          "close": 110
+        },
+        {
+          "time": "2026-08-21T20:00:00.000Z",
+          "delta_usd": -15,
+          "cumulative_delta_window_usd": -180,
+          "close": 111
+        },
+        {
+          "time": "2026-08-22T00:00:00.000Z",
+          "delta_usd": -15,
+          "cumulative_delta_window_usd": -195,
+          "close": 112
+        },
+        {
+          "time": "2026-08-22T04:00:00.000Z",
+          "delta_usd": -15,
+          "cumulative_delta_window_usd": -210,
+          "close": 113
+        },
+        {
+          "time": "2026-08-22T08:00:00.000Z",
+          "delta_usd": -15,
+          "cumulative_delta_window_usd": -225,
+          "close": 114
+        },
+        {
+          "time": "2026-08-22T12:00:00.000Z",
+          "delta_usd": -15,
+          "cumulative_delta_window_usd": -240,
+          "close": 115
+        },
+        {
+          "time": "2026-08-22T16:00:00.000Z",
+          "delta_usd": -15,
+          "cumulative_delta_window_usd": -255,
+          "close": 116
+        },
+        {
+          "time": "2026-08-22T20:00:00.000Z",
+          "delta_usd": -15,
+          "cumulative_delta_window_usd": -270,
+          "close": 117
+        },
+        {
+          "time": "2026-08-23T00:00:00.000Z",
+          "delta_usd": -15,
+          "cumulative_delta_window_usd": -285,
+          "close": 118
+        },
+        {
+          "time": "2026-08-23T04:00:00.000Z",
+          "delta_usd": -15,
+          "cumulative_delta_window_usd": -300,
+          "close": 119
+        }
+      ],
+      "anchor_note": "CVD is rebased to zero at the first returned completed bar; compare slope/direction/divergence, never absolute level across runs"
+    },
+    "futures_cvd": {
+      "available": true,
+      "completed_bars": 20,
+      "from": "2026-08-20T00:00:00.000Z",
+      "as_of": "2026-08-23T04:00:00.000Z",
+      "completed_through": "2026-08-23T08:00:00.000Z",
+      "latest_delta_usd": 50,
+      "delta_24h_usd": 300,
+      "delta_3d_usd": 900,
+      "delta_window_usd": 1000,
+      "imbalance_24h_pct": 20.576,
+      "imbalance_3d_pct": 21.645,
+      "imbalance_window_pct": 21.834,
+      "price_change_24h_pct": 5.31,
+      "price_change_window_pct": 19,
+      "direction_24h": "positive",
+      "direction_3d": "positive",
+      "direction_window": "positive",
+      "recent_bars": [
+        {
+          "time": "2026-08-21T08:00:00.000Z",
+          "delta_usd": 50,
+          "cumulative_delta_window_usd": 450,
+          "close": 108
+        },
+        {
+          "time": "2026-08-21T12:00:00.000Z",
+          "delta_usd": 50,
+          "cumulative_delta_window_usd": 500,
+          "close": 109
+        },
+        {
+          "time": "2026-08-21T16:00:00.000Z",
+          "delta_usd": 50,
+          "cumulative_delta_window_usd": 550,
+          "close": 110
+        },
+        {
+          "time": "2026-08-21T20:00:00.000Z",
+          "delta_usd": 50,
+          "cumulative_delta_window_usd": 600,
+          "close": 111
+        },
+        {
+          "time": "2026-08-22T00:00:00.000Z",
+          "delta_usd": 50,
+          "cumulative_delta_window_usd": 650,
+          "close": 112
+        },
+        {
+          "time": "2026-08-22T04:00:00.000Z",
+          "delta_usd": 50,
+          "cumulative_delta_window_usd": 700,
+          "close": 113
+        },
+        {
+          "time": "2026-08-22T08:00:00.000Z",
+          "delta_usd": 50,
+          "cumulative_delta_window_usd": 750,
+          "close": 114
+        },
+        {
+          "time": "2026-08-22T12:00:00.000Z",
+          "delta_usd": 50,
+          "cumulative_delta_window_usd": 800,
+          "close": 115
+        },
+        {
+          "time": "2026-08-22T16:00:00.000Z",
+          "delta_usd": 50,
+          "cumulative_delta_window_usd": 850,
+          "close": 116
+        },
+        {
+          "time": "2026-08-22T20:00:00.000Z",
+          "delta_usd": 50,
+          "cumulative_delta_window_usd": 900,
+          "close": 117
+        },
+        {
+          "time": "2026-08-23T00:00:00.000Z",
+          "delta_usd": 50,
+          "cumulative_delta_window_usd": 950,
+          "close": 118
+        },
+        {
+          "time": "2026-08-23T04:00:00.000Z",
+          "delta_usd": 50,
+          "cumulative_delta_window_usd": 1000,
+          "close": 119
+        }
+      ],
+      "anchor_note": "CVD is rebased to zero at the first returned completed bar; compare slope/direction/divergence, never absolute level across runs"
+    },
+    "futures_bid_ask_delta": {
+      "latest_usd": 50,
+      "delta_24h_usd": 300,
+      "delta_3d_usd": 900,
+      "imbalance_24h_pct": 20.576,
+      "direction_24h": "positive",
+      "direction_3d": "positive",
+      "sign_convention": "positive = aggressive/taker buys exceed sells; negative = aggressive/taker sells exceed buys"
+    },
+    "open_interest": {
+      "available": true,
+      "completed_bars": 20,
+      "from": "2026-08-20T00:00:00.000Z",
+      "as_of": "2026-08-23T04:00:00.000Z",
+      "completed_through": "2026-08-23T08:00:00.000Z",
+      "latest": {
+        "time": "2026-08-23T04:00:00.000Z",
+        "open": 1095,
+        "high": 1097,
+        "low": 1093,
+        "close": 1095,
+        "samples": 8,
+        "expected_samples": 8,
+        "sampling_complete": true,
+        "min_contract_coverage": 3,
+        "expected_contracts": 3,
+        "contract_coverage_complete": true
+      },
+      "change_24h_pct": 2.817,
+      "change_3d_pct": 8.955,
+      "change_window_pct": 9.5,
+      "mean_close_24h": null,
+      "mean_close_3d": null,
+      "mean_close_window": null,
+      "latest_percentile_vs_prior_window": 100,
+      "direction_24h": "positive",
+      "direction_3d": "positive",
+      "direction_window": "positive",
+      "ohlc_available": true,
+      "ohlc_method": "resampled discrete snapshots; high/low are sampled observations, not continuous extrema",
+      "sampling_quality": {
+        "complete_bars": 20,
+        "incomplete_bars": 0,
+        "bars_with_full_contract_coverage": 19
+      },
+      "recent_candles": [
+        {
+          "time": "2026-08-21T08:00:00.000Z",
+          "open": 1040,
+          "high": 1042,
+          "low": 1038,
+          "close": 1040,
+          "samples": 8,
+          "expected_samples": 8,
+          "sampling_complete": true,
+          "min_contract_coverage": 3,
+          "expected_contracts": 3,
+          "contract_coverage_complete": true
+        },
+        {
+          "time": "2026-08-21T12:00:00.000Z",
+          "open": 1045,
+          "high": 1047,
+          "low": 1043,
+          "close": 1045,
+          "samples": 8,
+          "expected_samples": 8,
+          "sampling_complete": true,
+          "min_contract_coverage": 3,
+          "expected_contracts": 3,
+          "contract_coverage_complete": true
+        },
+        {
+          "time": "2026-08-21T16:00:00.000Z",
+          "open": 1050,
+          "high": 1052,
+          "low": 1048,
+          "close": 1050,
+          "samples": 8,
+          "expected_samples": 8,
+          "sampling_complete": true,
+          "min_contract_coverage": 3,
+          "expected_contracts": 3,
+          "contract_coverage_complete": true
+        },
+        {
+          "time": "2026-08-21T20:00:00.000Z",
+          "open": 1055,
+          "high": 1057,
+          "low": 1053,
+          "close": 1055,
+          "samples": 8,
+          "expected_samples": 8,
+          "sampling_complete": true,
+          "min_contract_coverage": 3,
+          "expected_contracts": 3,
+          "contract_coverage_complete": true
+        },
+        {
+          "time": "2026-08-22T00:00:00.000Z",
+          "open": 1060,
+          "high": 1062,
+          "low": 1058,
+          "close": 1060,
+          "samples": 8,
+          "expected_samples": 8,
+          "sampling_complete": true,
+          "min_contract_coverage": 3,
+          "expected_contracts": 3,
+          "contract_coverage_complete": true
+        },
+        {
+          "time": "2026-08-22T04:00:00.000Z",
+          "open": 1065,
+          "high": 1067,
+          "low": 1063,
+          "close": 1065,
+          "samples": 8,
+          "expected_samples": 8,
+          "sampling_complete": true,
+          "min_contract_coverage": 3,
+          "expected_contracts": 3,
+          "contract_coverage_complete": true
+        },
+        {
+          "time": "2026-08-22T08:00:00.000Z",
+          "open": 1070,
+          "high": 1072,
+          "low": 1068,
+          "close": 1070,
+          "samples": 8,
+          "expected_samples": 8,
+          "sampling_complete": true,
+          "min_contract_coverage": 3,
+          "expected_contracts": 3,
+          "contract_coverage_complete": true
+        },
+        {
+          "time": "2026-08-22T12:00:00.000Z",
+          "open": 1075,
+          "high": 1077,
+          "low": 1073,
+          "close": 1075,
+          "samples": 8,
+          "expected_samples": 8,
+          "sampling_complete": true,
+          "min_contract_coverage": 3,
+          "expected_contracts": 3,
+          "contract_coverage_complete": true
+        },
+        {
+          "time": "2026-08-22T16:00:00.000Z",
+          "open": 1080,
+          "high": 1082,
+          "low": 1078,
+          "close": 1080,
+          "samples": 8,
+          "expected_samples": 8,
+          "sampling_complete": true,
+          "min_contract_coverage": 3,
+          "expected_contracts": 3,
+          "contract_coverage_complete": true
+        },
+        {
+          "time": "2026-08-22T20:00:00.000Z",
+          "open": 1085,
+          "high": 1087,
+          "low": 1083,
+          "close": 1085,
+          "samples": 8,
+          "expected_samples": 8,
+          "sampling_complete": true,
+          "min_contract_coverage": 3,
+          "expected_contracts": 3,
+          "contract_coverage_complete": true
+        },
+        {
+          "time": "2026-08-23T00:00:00.000Z",
+          "open": 1090,
+          "high": 1092,
+          "low": 1088,
+          "close": 1090,
+          "samples": 8,
+          "expected_samples": 8,
+          "sampling_complete": true,
+          "min_contract_coverage": 3,
+          "expected_contracts": 3,
+          "contract_coverage_complete": true
+        },
+        {
+          "time": "2026-08-23T04:00:00.000Z",
+          "open": 1095,
+          "high": 1097,
+          "low": 1093,
+          "close": 1095,
+          "samples": 8,
+          "expected_samples": 8,
+          "sampling_complete": true,
+          "min_contract_coverage": 3,
+          "expected_contracts": 3,
+          "contract_coverage_complete": true
+        }
+      ]
+    },
+    "oi_weighted_funding": {
+      "available": true,
+      "completed_bars": 20,
+      "from": "2026-08-20T00:00:00.000Z",
+      "as_of": "2026-08-23T04:00:00.000Z",
+      "completed_through": "2026-08-23T08:00:00.000Z",
+      "latest": {
+        "time": "2026-08-23T04:00:00.000Z",
+        "open": 0.000029,
+        "high": 0.000031,
+        "low": 0.000028,
+        "close": 0.00003,
+        "samples": null,
+        "expected_samples": null,
+        "sampling_complete": null,
+        "min_contract_coverage": null,
+        "expected_contracts": null,
+        "contract_coverage_complete": null
+      },
+      "change_24h_pct": null,
+      "change_3d_pct": null,
+      "change_window_pct": null,
+      "mean_close_24h": 0.0000275,
+      "mean_close_3d": 0.0000215,
+      "mean_close_window": 0.0000205,
+      "latest_percentile_vs_prior_window": 100,
+      "direction_24h": "positive",
+      "direction_3d": "positive",
+      "direction_window": "positive",
+      "ohlc_available": true,
+      "ohlc_method": "provider OHLC",
+      "sampling_quality": null,
+      "recent_candles": [
+        {
+          "time": "2026-08-21T08:00:00.000Z",
+          "open": 0.000018,
+          "high": 0.00002,
+          "low": 0.000017,
+          "close": 0.000019,
+          "samples": null,
+          "expected_samples": null,
+          "sampling_complete": null,
+          "min_contract_coverage": null,
+          "expected_contracts": null,
+          "contract_coverage_complete": null
+        },
+        {
+          "time": "2026-08-21T12:00:00.000Z",
+          "open": 0.000019,
+          "high": 0.000021,
+          "low": 0.000018,
+          "close": 0.00002,
+          "samples": null,
+          "expected_samples": null,
+          "sampling_complete": null,
+          "min_contract_coverage": null,
+          "expected_contracts": null,
+          "contract_coverage_complete": null
+        },
+        {
+          "time": "2026-08-21T16:00:00.000Z",
+          "open": 0.00002,
+          "high": 0.000022,
+          "low": 0.000019,
+          "close": 0.000021,
+          "samples": null,
+          "expected_samples": null,
+          "sampling_complete": null,
+          "min_contract_coverage": null,
+          "expected_contracts": null,
+          "contract_coverage_complete": null
+        },
+        {
+          "time": "2026-08-21T20:00:00.000Z",
+          "open": 0.000021,
+          "high": 0.000023,
+          "low": 0.00002,
+          "close": 0.000022,
+          "samples": null,
+          "expected_samples": null,
+          "sampling_complete": null,
+          "min_contract_coverage": null,
+          "expected_contracts": null,
+          "contract_coverage_complete": null
+        },
+        {
+          "time": "2026-08-22T00:00:00.000Z",
+          "open": 0.000022,
+          "high": 0.000024,
+          "low": 0.000021,
+          "close": 0.000023,
+          "samples": null,
+          "expected_samples": null,
+          "sampling_complete": null,
+          "min_contract_coverage": null,
+          "expected_contracts": null,
+          "contract_coverage_complete": null
+        },
+        {
+          "time": "2026-08-22T04:00:00.000Z",
+          "open": 0.000023,
+          "high": 0.000025,
+          "low": 0.000022,
+          "close": 0.000024,
+          "samples": null,
+          "expected_samples": null,
+          "sampling_complete": null,
+          "min_contract_coverage": null,
+          "expected_contracts": null,
+          "contract_coverage_complete": null
+        },
+        {
+          "time": "2026-08-22T08:00:00.000Z",
+          "open": 0.000024,
+          "high": 0.000026,
+          "low": 0.000023,
+          "close": 0.000025,
+          "samples": null,
+          "expected_samples": null,
+          "sampling_complete": null,
+          "min_contract_coverage": null,
+          "expected_contracts": null,
+          "contract_coverage_complete": null
+        },
+        {
+          "time": "2026-08-22T12:00:00.000Z",
+          "open": 0.000025,
+          "high": 0.000027,
+          "low": 0.000024,
+          "close": 0.000026,
+          "samples": null,
+          "expected_samples": null,
+          "sampling_complete": null,
+          "min_contract_coverage": null,
+          "expected_contracts": null,
+          "contract_coverage_complete": null
+        },
+        {
+          "time": "2026-08-22T16:00:00.000Z",
+          "open": 0.000026,
+          "high": 0.000028,
+          "low": 0.000025,
+          "close": 0.000027,
+          "samples": null,
+          "expected_samples": null,
+          "sampling_complete": null,
+          "min_contract_coverage": null,
+          "expected_contracts": null,
+          "contract_coverage_complete": null
+        },
+        {
+          "time": "2026-08-22T20:00:00.000Z",
+          "open": 0.000027,
+          "high": 0.000029,
+          "low": 0.000026,
+          "close": 0.000028,
+          "samples": null,
+          "expected_samples": null,
+          "sampling_complete": null,
+          "min_contract_coverage": null,
+          "expected_contracts": null,
+          "contract_coverage_complete": null
+        },
+        {
+          "time": "2026-08-23T00:00:00.000Z",
+          "open": 0.000028,
+          "high": 0.00003,
+          "low": 0.000027,
+          "close": 0.000029,
+          "samples": null,
+          "expected_samples": null,
+          "sampling_complete": null,
+          "min_contract_coverage": null,
+          "expected_contracts": null,
+          "contract_coverage_complete": null
+        },
+        {
+          "time": "2026-08-23T04:00:00.000Z",
+          "open": 0.000029,
+          "high": 0.000031,
+          "low": 0.000028,
+          "close": 0.00003,
+          "samples": null,
+          "expected_samples": null,
+          "sampling_complete": null,
+          "min_contract_coverage": null,
+          "expected_contracts": null,
+          "contract_coverage_complete": null
+        }
+      ],
+      "oi_weighted": true
+    },
+    "relationship_signs_24h": {
+      "price": "positive",
+      "spot_cvd": "negative",
+      "futures_cvd": "positive",
+      "open_interest": "positive",
+      "oi_weighted_funding": "positive"
+    },
+    "interpretation_candidates": [
+      "PRICE_UP_SPOT_CVD_DOWN: potential distribution/spot demand non-confirmation",
+      "LEVERAGE_LED_RALLY: futures buying + rising OI without spot confirmation"
+    ],
+    "interpretation_note": "Candidates are relationship labels, not signals. Require magnitude, at least two horizons, and an independent source family before using one in D1/S1; all fields from this block count as ONE provider/derived family.",
+    "note": "Legacy report-machine/1–2: disclosed context only. Shadow swing-score/1 may score this panel only after completed 24h/3d coverage and setup-relative OI interpretation; it still cannot authorize until model_activation is ACTIVE."
+  },
+  "unavailable": {
+    "schema": "market-flow/1",
+    "available": false,
+    "scope": "unknown",
+    "interval_hours": 4,
+    "as_of": null,
+    "completed_through": null,
+    "spot_cvd": {
+      "available": false,
+      "reason": "no completed taker buy/sell bars"
+    },
+    "futures_cvd": {
+      "available": false,
+      "reason": "no completed taker buy/sell bars"
+    },
+    "futures_bid_ask_delta": {
+      "available": false,
+      "reason": "no completed taker buy/sell bars"
+    },
+    "open_interest": {
+      "available": false,
+      "reason": "no completed candles"
+    },
+    "oi_weighted_funding": {
+      "available": false,
+      "reason": "no completed candles"
+    },
+    "relationship_signs_24h": {
+      "price": "flat_or_unavailable",
+      "spot_cvd": "flat_or_unavailable",
+      "futures_cvd": "flat_or_unavailable",
+      "open_interest": "flat_or_unavailable",
+      "oi_weighted_funding": "flat_or_unavailable"
+    },
+    "interpretation_candidates": [],
+    "interpretation_note": "Candidates are relationship labels, not signals. Require magnitude, at least two horizons, and an independent source family before using one in D1/S1; all fields from this block count as ONE provider/derived family.",
+    "note": "Legacy report-machine/1–2: disclosed context only. Shadow swing-score/1 may score this panel only after completed 24h/3d coverage and setup-relative OI interpretation; it still cannot authorize until model_activation is ACTIVE."
+  }
+}

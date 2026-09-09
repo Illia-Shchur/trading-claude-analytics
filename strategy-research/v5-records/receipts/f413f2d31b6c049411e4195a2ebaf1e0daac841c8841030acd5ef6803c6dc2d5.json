@@ -1,0 +1,23 @@
+{
+  "schema": "strategy-v5-authoritative-command-receipt/1",
+  "version": 1,
+  "command": "experiment-freeze",
+  "status": "BLOCKED",
+  "inputs": [],
+  "outputs": [],
+  "limitations": [
+    "evaluator spec: missing physical prerequisite",
+    "execution metadata bundle: missing physical prerequisite",
+    "frozen experiment policy: missing physical prerequisite",
+    "opportunity envelope or candidate set: missing physical prerequisite",
+    "precommit: missing physical prerequisite",
+    "separated Parquet manifest: missing physical prerequisite",
+    "strategy definition: missing physical prerequisite"
+  ],
+  "details": {
+    "mode": "BLOCKED_MISSING_PHYSICAL_PREREQUISITES",
+    "reason": "authoritative command requires every listed physical input before recomputation",
+    "active": false
+  },
+  "content_sha256": "f413f2d31b6c049411e4195a2ebaf1e0daac841c8841030acd5ef6803c6dc2d5"
+}

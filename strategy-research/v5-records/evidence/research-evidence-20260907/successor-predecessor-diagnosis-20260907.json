@@ -1,0 +1,123 @@
+{
+  "schema": "strategy-evaluator-operating-characteristics-diagnosis/1",
+  "version": 1,
+  "status": "COMPLETE_RECONCILIATION",
+  "scope": "CONDITIONAL_FIXED_BASELINE_SYNTHETIC_DIAGNOSTIC",
+  "raw_result_path": "strategy-research/v5-records/evidence/fixed-baseline-full-declared-v004/operating-characteristics-full-v004-dec4470d.json",
+  "compact_result_path": "strategy-research/v5-records/evidence/fixed-baseline-full-declared-v004/operating-characteristics-full-v004-dec4470d-summary.json",
+  "raw_result_content_sha256": "36ecb2be8690c9bb1bd5f0cf14817df98aeaf7c5a86e53690f0b40e98a4b0a71",
+  "raw_result_byte_sha256": "1156b5e34e2dca2fec545f5059b61ceac2e066a7c824959d0fc603f08794a8cb",
+  "compact_result_content_sha256": "7df566f3f677f00e47d2535531469de2634bfcf97427a58edb0719e84fe12b3e",
+  "projection_exact": true,
+  "replications_reconciled": 200,
+  "decision_mismatches": 0,
+  "joint_rule_recomputed": true,
+  "shared_physical_evaluator": true,
+  "toy_statistic": false,
+  "promotion_eligible": false,
+  "activation_authorized": false,
+  "cells": [
+    {
+      "cell": "NO_EDGE:0.0",
+      "planned": 50,
+      "decisions": 2,
+      "incomplete": 0,
+      "invalid": 0,
+      "insufficient": 0,
+      "event_p20_passes": 4,
+      "paired_p20_passes": 8,
+      "event_p_value_passes": 2,
+      "paired_p_value_passes": 5,
+      "joint_decision_passes": 2,
+      "measured": true,
+      "decision_rate": 0.04,
+      "wilson95_lower": 0.011038884327619805,
+      "wilson95_upper": 0.1346009068750702
+    },
+    {
+      "cell": "PLANTED_EDGE:0.0",
+      "planned": 50,
+      "decisions": 0,
+      "incomplete": 0,
+      "invalid": 0,
+      "insufficient": 0,
+      "event_p20_passes": 5,
+      "paired_p20_passes": 10,
+      "event_p_value_passes": 3,
+      "paired_p_value_passes": 8,
+      "joint_decision_passes": 0,
+      "measured": true,
+      "decision_rate": 0,
+      "wilson95_lower": 6.938893903907228e-18,
+      "wilson95_upper": 0.07134759913335872
+    },
+    {
+      "cell": "PLANTED_EDGE:0.02",
+      "planned": 50,
+      "decisions": 14,
+      "incomplete": 0,
+      "invalid": 0,
+      "insufficient": 0,
+      "event_p20_passes": 27,
+      "paired_p20_passes": 22,
+      "event_p_value_passes": 24,
+      "paired_p_value_passes": 19,
+      "joint_decision_passes": 14,
+      "measured": true,
+      "decision_rate": 0.28,
+      "wilson95_lower": 0.17474170665911232,
+      "wilson95_upper": 0.4166512369595657
+    },
+    {
+      "cell": "PLANTED_EDGE:0.04",
+      "planned": 50,
+      "decisions": 45,
+      "incomplete": 0,
+      "invalid": 0,
+      "insufficient": 0,
+      "event_p20_passes": 49,
+      "paired_p20_passes": 47,
+      "event_p_value_passes": 48,
+      "paired_p_value_passes": 46,
+      "joint_decision_passes": 45,
+      "measured": true,
+      "decision_rate": 0.9,
+      "wilson95_lower": 0.7863976856252035,
+      "wilson95_upper": 0.9565242350681096
+    }
+  ],
+  "interpretation": {
+    "monte_carlo_uncertainty": "50 replications per v004 cell leave non-zero Wilson uncertainty; the no-edge result does not establish FPR upper bound <= 10%.",
+    "design_power": "The 0.02 effect has low conditional decision power (14/50 joint), so adding repetitions alone cannot repair a weak fixed-stage design. The 0.04 effect is near the target but its lower bound still misses 0.80 (45/50).",
+    "joint_rule": "The predeclared joint event-and-paired rule is retained. Component pass counts are reported to expose whether failure comes from event, paired, p-value, or p20 criteria.",
+    "scope_boundary": "This is a retained synthetic conditional diagnostic, not adaptive-selection calibration, PIT market evidence, observed fills, promotion, or activation evidence."
+  },
+  "build_identity": {
+    "schema": "analytics-build-identity/1",
+    "status": "KNOWN",
+    "executable": {
+      "code_source": "/Users/eternal/Desktop/Trading Claude Analytics/analytics-cli/target/analytics-cli-1.0.0-SNAPSHOT-exec.jar",
+      "kind": "JAR",
+      "sha256": "a7daad3626115e1c8e89f266f0ec76deae9bfad64666e9a0d8c56d51fb8eee67",
+      "bytes": 107121265
+    },
+    "compiled": {
+      "input_fingerprint": "d5c61389eeb2788034f54774f2d3bb8e1b4d2cc99bac963c2390a18929fc0954",
+      "revision": "30262ac0f910bbec6471dbbd3132a476da04866f",
+      "dirty_source": "true",
+      "java_version": "openjdk version \"26.0.1\" 2026-04-21",
+      "java_vendor": "Oracle Corporation",
+      "java_runtime": "OpenJDK Runtime Environment",
+      "toolchain_fingerprint": "277c0d2ab5a069bc4fabbb9a6bb581a452181a794c58b74ee640f1b958b50f01",
+      "maven_wrapper_sha256": "cae96cef89ebea3531221f4ae17c23cf8edf67d00eae8306d4186ae1bbed4d02",
+      "root_pom_sha256": "21fea44956bd42ea79951766f14624b0dba1e36226457c5babc341dbc37b7b11",
+      "marker_resource": "META-INF/build-identity.properties"
+    },
+    "runtime": {
+      "java": "26.0.1",
+      "cwd": "/Users/eternal/Desktop/Trading Claude Analytics",
+      "user_dir": "/Users/eternal/Desktop/Trading Claude Analytics"
+    }
+  },
+  "content_sha256": "69aaa16e9725e6ea4f57b2de57c24ffcf5eef4c294cbd54f24d867d9fd9f282b"
+}

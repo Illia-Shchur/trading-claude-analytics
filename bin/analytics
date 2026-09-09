@@ -1,0 +1,83 @@
+#!/usr/bin/env sh
+set -eu
+
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+REPO_ROOT=${ANALYTICS_REPO_ROOT:-$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)}
+JAR=${ANALYTICS_JAR:-$REPO_ROOT/analytics-cli/target/analytics-cli-1.0.0-SNAPSHOT-exec.jar}
+IDENTITY_SCRIPT="$REPO_ROOT/tools/build-input-identity.sh"
+LOCK_DIR="$REPO_ROOT/.analytics-build.lock"
+MAVEN_COMMAND=${ANALYTICS_MAVEN:-$REPO_ROOT/mvnw}
+
+current_fingerprint() {
+  BUILD_INPUT_IDENTITY_FINGERPRINT_ONLY=true "$IDENTITY_SCRIPT" "$REPO_ROOT"
+}
+
+packaged_fingerprint() {
+  if [ ! -f "$JAR" ] || ! command -v unzip >/dev/null 2>&1; then return 1; fi
+  (unzip -p "$JAR" META-INF/build-identity.properties 2>/dev/null \
+    || unzip -p "$JAR" BOOT-INF/classes/META-INF/build-identity.properties 2>/dev/null) \
+    | sed -n 's/^build\.input_fingerprint=//p' | head -n 1
+}
+
+needs_build=false
+if [ ! -f "$JAR" ]; then
+  needs_build=true
+else
+  expected=$(current_fingerprint)
+  actual=$(packaged_fingerprint || true)
+  if [ -z "$actual" ] || [ "$expected" != "$actual" ]; then needs_build=true; fi
+fi
+
+if [ "$needs_build" = true ]; then
+  # mkdir is an atomic lock on macOS and Linux. A waiter re-checks the JAR
+  # after the owner exits, so concurrent invocations share one rebuild.
+  while ! mkdir "$LOCK_DIR" 2>/dev/null; do
+    owner=$(cat "$LOCK_DIR/pid" 2>/dev/null || true)
+    if [ -z "$owner" ]; then
+      # An interrupted mkdir/write window leaves an empty lock. Give a
+      # live owner a brief chance to publish its PID, then remove the empty
+      # lock so a new invocation cannot wait forever.
+      sleep 0.1
+      owner=$(cat "$LOCK_DIR/pid" 2>/dev/null || true)
+      if [ -z "$owner" ]; then
+        rmdir "$LOCK_DIR" 2>/dev/null || true
+      fi
+      continue
+    fi
+    if [ -n "$owner" ] && ! kill -0 "$owner" 2>/dev/null; then
+      rm -f "$LOCK_DIR/pid"
+      rmdir "$LOCK_DIR" 2>/dev/null || true
+      continue
+    fi
+    sleep 0.05
+  done
+  printf '%s\n' "$$" > "$LOCK_DIR/pid"
+  release_lock() {
+    if [ "$(cat "$LOCK_DIR/pid" 2>/dev/null || true)" = "$$" ]; then
+      rm -f "$LOCK_DIR/pid"
+      rmdir "$LOCK_DIR" 2>/dev/null || true
+    fi
+  }
+  trap release_lock EXIT HUP INT TERM
+
+  # Another process may have completed the build while this invocation was
+  # waiting. Re-check before invoking Maven.
+  expected=$(current_fingerprint)
+  actual=$(packaged_fingerprint || true)
+  if [ ! -f "$JAR" ] || [ -z "$actual" ] || [ "$expected" != "$actual" ]; then
+    (cd "$REPO_ROOT" && "$MAVEN_COMMAND" -q -pl analytics-cli -am clean package -DskipTests) >&2
+  fi
+  # A failed or incomplete build must never fall through to an older JAR.
+  expected=$(current_fingerprint)
+  actual=$(packaged_fingerprint || true)
+  if [ ! -f "$JAR" ] || [ -z "$actual" ] || [ "$expected" != "$actual" ]; then
+    echo "analytics: build did not produce a current executable" >&2
+    exit 1
+  fi
+fi
+
+if [ -d "$LOCK_DIR" ] && [ "$(cat "$LOCK_DIR/pid" 2>/dev/null || true)" = "$$" ]; then
+  rm -f "$LOCK_DIR/pid"
+  rmdir "$LOCK_DIR" 2>/dev/null || true
+fi
+exec java -jar "$JAR" "$@"

@@ -189,7 +189,7 @@ The tag is load-bearing because the ledger has no tranche dimension: nothing els
 
 ### 2026-07-28 — Position of record: the ledger supersedes the narration (Hard Rule 8, §6 + toolchain)
 
-`node tools/position.mjs <asset>` reads a `position-snapshot/1` file exported from the personal-accounting ledger and derived from **actual Binance fills**. §6 gains a **Position & Performance** subsection sourced from it, and the toolchain gains step 0: run it *before* `fetch`.
+`./bin/analytics position <asset>` reads a `position-snapshot/1` file exported from the personal-accounting ledger and derived from **actual Binance fills**. §6 gains a **Position & Performance** subsection sourced from it, and the toolchain gains step 0: run it *before* `fetch`.
 
 For the short side specifically it supplies four things this framework has been asserting rather than reading: **real dry powder** against the 50% book cap and the 30% per-asset cap; **open shorts** (`side: "SHORT"`, read off the sign of the position amount) reconciled against the tranches §6 believes are live; **per-channel realized win rate** via `FR-A-` vs `FR-B-` tag prefixes — the exact evidence Hard Rule 6 requires before any short-side threshold is revisited; and the realized **Cumulative Funding Paid** column of the Carry Cost Ledger.
 

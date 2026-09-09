@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-evaluator-operating-characteristics-parallel-preflight/1",
+  "type": "object",
+  "required": [
+    "schema",
+    "version",
+    "status",
+    "plan_sha256",
+    "profile_sha256",
+    "outcomes_opened",
+    "promotion_eligible",
+    "activation_authorized",
+    "planned_slots",
+    "measured",
+    "performance_claim",
+    "content_sha256",
+    "fixed_evaluator",
+    "shared_physical_evaluator",
+    "toy_statistic",
+    "resource_probe_complete",
+    "disk_headroom_pass",
+    "full_confirmation_gate"
+  ],
+  "properties": {
+    "schema": {
+      "const": "strategy-evaluator-operating-characteristics-parallel-preflight/1"
+    },
+    "version": {
+      "const": 1
+    },
+    "status": {
+      "enum": [
+        "READY_PRE_OUTCOME",
+        "BLOCKED_RESOURCE"
+      ]
+    },
+    "plan_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "profile_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "outcomes_opened": {
+      "const": false
+    },
+    "promotion_eligible": {
+      "const": false
+    },
+    "activation_authorized": {
+      "const": false
+    },
+    "planned_slots": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "measured": {
+      "const": false
+    },
+    "performance_claim": {
+      "const": "NONE"
+    },
+    "content_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "fixed_evaluator": {
+      "type": "string"
+    },
+    "shared_physical_evaluator": {
+      "const": true
+    },
+    "toy_statistic": {
+      "const": false
+    },
+    "resource_probe_complete": {
+      "type": "boolean"
+    },
+    "disk_headroom_pass": {
+      "type": "boolean"
+    },
+    "full_confirmation_gate": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": true
+}

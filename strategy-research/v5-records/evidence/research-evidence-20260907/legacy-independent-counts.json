@@ -1,0 +1,362 @@
+{
+  "scope": "independent retained legacy candidate inventory only; claimed hash identities are not verified modern effective K",
+  "runs": [
+    {
+      "run": "0159ff468251af79d4e42449271f7ae3c33e646bcfe5c2fd1e899577ec090498",
+      "path": "strategy-research/runs/0159ff468251af79d4e42449271f7ae3c33e646bcfe5c2fd1e899577ec090498/candidates.jsonl",
+      "byte_sha256": "883d6a84faf4f92d108bec5337a6d76837e9efdc14737666e5ac9ac1098ae6b4",
+      "candidate_rows": 15,
+      "unique_claimed_behavior_hashes": 15,
+      "matching_candidates_with_metric_rows": 15,
+      "experiment_claimed_sha256": "9d0b6f459c0956fa503ed3558fe353a2820f25565894966652df614884b0a86c",
+      "bound_artifact_bytes_verified": {
+        "candidates": true,
+        "metrics": true,
+        "trades": true
+      }
+    },
+    {
+      "run": "15226da4545c9304535e8ac6fbe11ad4acdb1bdb8193225a8030cb7033efd21a",
+      "path": "strategy-research/runs/15226da4545c9304535e8ac6fbe11ad4acdb1bdb8193225a8030cb7033efd21a/candidates.jsonl",
+      "byte_sha256": "dc08f983686af25527f0b5bf7a23ecc5cc224814ac4e8319b7a86953d1829df1",
+      "candidate_rows": 420,
+      "unique_claimed_behavior_hashes": 420,
+      "matching_candidates_with_metric_rows": 420,
+      "experiment_claimed_sha256": "a6246d4524e0742df8b59e2ba4f0e2c384ff93e8cdc5ba6ac1e327124c87f496",
+      "bound_artifact_bytes_verified": {
+        "candidates": true,
+        "metrics": true,
+        "trades": true
+      }
+    },
+    {
+      "run": "16e0271ba8e7a688fab76279aa64d24c36886427ce30d0353c32a6a44b314b4f",
+      "path": "strategy-research/runs/16e0271ba8e7a688fab76279aa64d24c36886427ce30d0353c32a6a44b314b4f/candidates.jsonl",
+      "byte_sha256": "bae3a49b50739fd8342a9e346d42619129b60ee6e78f82898ed7d6e837ea514c",
+      "candidate_rows": 924,
+      "unique_claimed_behavior_hashes": 924,
+      "matching_candidates_with_metric_rows": 924,
+      "experiment_claimed_sha256": "25d38b2f9a6212f5f16051ef1e53d69d101cb6b6dc3aa9bd66272e94b5d31067",
+      "bound_artifact_bytes_verified": {
+        "candidates": true,
+        "metrics": true,
+        "trades": true
+      }
+    },
+    {
+      "run": "22f4661173a73eca7ac7047ac4c7970d6be7625c7728e99cceb2937c221e906f",
+      "path": "strategy-research/runs/22f4661173a73eca7ac7047ac4c7970d6be7625c7728e99cceb2937c221e906f/candidates.jsonl",
+      "byte_sha256": "dc08f983686af25527f0b5bf7a23ecc5cc224814ac4e8319b7a86953d1829df1",
+      "candidate_rows": 420,
+      "unique_claimed_behavior_hashes": 420,
+      "matching_candidates_with_metric_rows": 420,
+      "experiment_claimed_sha256": "5ecdf002922878be7071aba09dd7010e82bef54ab32c7f535ffd9cfe7273a636",
+      "bound_artifact_bytes_verified": {
+        "candidates": true,
+        "metrics": true,
+        "trades": true
+      }
+    },
+    {
+      "run": "24263b734e9379c58e2d3220e395f832e2f318e9feed0f083ea02603d9038c30",
+      "path": "strategy-research/runs/24263b734e9379c58e2d3220e395f832e2f318e9feed0f083ea02603d9038c30/candidates.jsonl",
+      "byte_sha256": "259ef0defc762319d556b409f8413e056288c6ffdeefecde210ee4b9d4894196",
+      "candidate_rows": 36,
+      "unique_claimed_behavior_hashes": 36,
+      "matching_candidates_with_metric_rows": 36,
+      "experiment_claimed_sha256": "c1877b6361fef5c4d824c783c419ffed99ae698f8ae2f6eaee6ec42ce278485f",
+      "bound_artifact_bytes_verified": {
+        "candidates": true,
+        "metrics": true,
+        "trades": true
+      }
+    },
+    {
+      "run": "276c4cb4f3add61241dbad3db20f4a5acad3062a638b12416b306be01b423803",
+      "path": "strategy-research/runs/276c4cb4f3add61241dbad3db20f4a5acad3062a638b12416b306be01b423803/candidates.jsonl",
+      "byte_sha256": "84f75877ce7f224d302054dcc1300fa10d7efe72a468572ac16df0ed7eb8f6bb",
+      "candidate_rows": 7,
+      "unique_claimed_behavior_hashes": 7,
+      "matching_candidates_with_metric_rows": 7,
+      "experiment_claimed_sha256": "1d021c61c03eb00a32ea3905e49925b3adf876fcc596c9009d0c8783ae208792",
+      "bound_artifact_bytes_verified": {
+        "candidates": true,
+        "metrics": true,
+        "trades": true
+      }
+    },
+    {
+      "run": "28797eb39557ecec6cd966f50b09dfe4e32ec89ecbf30bf98755267343433fb9",
+      "path": "strategy-research/runs/28797eb39557ecec6cd966f50b09dfe4e32ec89ecbf30bf98755267343433fb9/candidates.jsonl",
+      "byte_sha256": "b1c6a5031aeea29896319422d0e8cb5af0bbae3e0b2bd6cd088dbd353a4f9544",
+      "candidate_rows": 1,
+      "unique_claimed_behavior_hashes": 1,
+      "matching_candidates_with_metric_rows": 1,
+      "experiment_claimed_sha256": "7a23236a9708cfa7d26f712679517434cebafc922029e5ae50fe9e9281e04caa",
+      "bound_artifact_bytes_verified": {
+        "candidates": true,
+        "metrics": true,
+        "trades": true
+      }
+    },
+    {
+      "run": "38100458d439c005b689b6f67966ad275f249ab8e39b9b60ac6f5675c991a701",
+      "path": "strategy-research/runs/38100458d439c005b689b6f67966ad275f249ab8e39b9b60ac6f5675c991a701/candidates.jsonl",
+      "byte_sha256": "7008c28b6246678cd4e54410a01e3896f383c599e4b0b3f569b8d2a2014d8f07",
+      "candidate_rows": 9,
+      "unique_claimed_behavior_hashes": 9,
+      "matching_candidates_with_metric_rows": 9,
+      "experiment_claimed_sha256": "c646849ced2ba4df17d70bda2e4abcbd552459c04674b7c45b60620460bc99e5",
+      "bound_artifact_bytes_verified": {
+        "candidates": true,
+        "metrics": true,
+        "trades": true
+      }
+    },
+    {
+      "run": "42cdd793ca271990d12ccfb6e9f3f5b63cec3fb87d66f4a091fddde7df60dbb8",
+      "path": "strategy-research/runs/42cdd793ca271990d12ccfb6e9f3f5b63cec3fb87d66f4a091fddde7df60dbb8/candidates.jsonl",
+      "byte_sha256": "1c4f6be04bc3ef3647ace9d82277dafad1fda8d06637ee537b9197ee6eb3c561",
+      "candidate_rows": 90,
+      "unique_claimed_behavior_hashes": 90,
+      "matching_candidates_with_metric_rows": 90,
+      "experiment_claimed_sha256": "2221e8dc45777fcfd7ceca31bedb970765b1d9109af352e53a0d8416a5ff3359",
+      "bound_artifact_bytes_verified": {
+        "candidates": true,
+        "metrics": true,
+        "trades": true
+      }
+    },
+    {
+      "run": "47966757d3c2775132a5d8ecc1a571ac6f8189d93b4760db2dea65235139bac6",
+      "path": "strategy-research/runs/47966757d3c2775132a5d8ecc1a571ac6f8189d93b4760db2dea65235139bac6/candidates.jsonl",
+      "byte_sha256": "051a35f73d98d13b1fd457fdeb82d42362c5203427d9f7b619f2994d1649ed5e",
+      "candidate_rows": 21,
+      "unique_claimed_behavior_hashes": 21,
+      "matching_candidates_with_metric_rows": 21,
+      "experiment_claimed_sha256": "38242cf9cbfb171a818119530670007508b2a253b4116461c97883a6fc06e29e",
+      "bound_artifact_bytes_verified": {
+        "candidates": true,
+        "metrics": true,
+        "trades": true
+      }
+    },
+    {
+      "run": "4975ecc0836678c5d3e475854d3d3a0c385cdacb227ae1c6c599e521d37bd100",
+      "path": "strategy-research/runs/4975ecc0836678c5d3e475854d3d3a0c385cdacb227ae1c6c599e521d37bd100/candidates.jsonl",
+      "byte_sha256": "dc08f983686af25527f0b5bf7a23ecc5cc224814ac4e8319b7a86953d1829df1",
+      "candidate_rows": 420,
+      "unique_claimed_behavior_hashes": 420,
+      "matching_candidates_with_metric_rows": 420,
+      "experiment_claimed_sha256": "58f131494d45ac9b939d5fb9ef0f5044d2dfdd98268531cdc54bbf41568cea83",
+      "bound_artifact_bytes_verified": {
+        "candidates": true,
+        "metrics": true,
+        "trades": true
+      }
+    },
+    {
+      "run": "6dd8904cb53be6ccd29a4617929b823698d12af55da2e3222d93df08f09afd5f",
+      "path": "strategy-research/runs/6dd8904cb53be6ccd29a4617929b823698d12af55da2e3222d93df08f09afd5f/candidates.jsonl",
+      "byte_sha256": "ae2060c93b2fa654a01214e9b54df7268d6945ccb174b37b347ae6cbc7c2ef5f",
+      "candidate_rows": 24,
+      "unique_claimed_behavior_hashes": 24,
+      "matching_candidates_with_metric_rows": 24,
+      "experiment_claimed_sha256": "530cccb1782cd3d12beca46199b42b1f51b273834b335f520af387f570c35432",
+      "bound_artifact_bytes_verified": {
+        "candidates": true,
+        "metrics": true,
+        "trades": true
+      }
+    },
+    {
+      "run": "8128e040d53c5419717935d8e2f58e91be4f39f842cd34e734f2ca7c6c6a0e3e",
+      "path": "strategy-research/runs/8128e040d53c5419717935d8e2f58e91be4f39f842cd34e734f2ca7c6c6a0e3e/candidates.jsonl",
+      "byte_sha256": "84f75877ce7f224d302054dcc1300fa10d7efe72a468572ac16df0ed7eb8f6bb",
+      "candidate_rows": 7,
+      "unique_claimed_behavior_hashes": 7,
+      "matching_candidates_with_metric_rows": 7,
+      "experiment_claimed_sha256": "fb0c68b942750a992673ef1baf94d0ea0e6200bf0a3b8be15f24baaf169a2fd9",
+      "bound_artifact_bytes_verified": {
+        "candidates": true,
+        "metrics": true,
+        "trades": true
+      }
+    },
+    {
+      "run": "881e7b8a9e272574c080ce245e93631f5745a61f5c07994103441b4eee9e39df",
+      "path": "strategy-research/runs/881e7b8a9e272574c080ce245e93631f5745a61f5c07994103441b4eee9e39df/candidates.jsonl",
+      "byte_sha256": "bae3a49b50739fd8342a9e346d42619129b60ee6e78f82898ed7d6e837ea514c",
+      "candidate_rows": 924,
+      "unique_claimed_behavior_hashes": 924,
+      "matching_candidates_with_metric_rows": 924,
+      "experiment_claimed_sha256": "d2a568015c0be8f259add0f196e5db5fa67f40c4690c90a913fcd6135a494cff",
+      "bound_artifact_bytes_verified": {
+        "candidates": true,
+        "metrics": true,
+        "trades": true
+      }
+    },
+    {
+      "run": "8a7e99d2bb0b88dc1c06b138d8b59e393c598c0525e7b633f0b5bba57f82c306",
+      "path": "strategy-research/runs/8a7e99d2bb0b88dc1c06b138d8b59e393c598c0525e7b633f0b5bba57f82c306/candidates.jsonl",
+      "byte_sha256": "9b9d4df08e6bc696ec1be600feb19066335073724802a9aeefa8c95607cb02e4",
+      "candidate_rows": 24,
+      "unique_claimed_behavior_hashes": 24,
+      "matching_candidates_with_metric_rows": 24,
+      "experiment_claimed_sha256": "3a56da1881629816f4a5829ae47259e0a48fb6dc9b746f4ea4cf7458af03e9dc",
+      "bound_artifact_bytes_verified": {
+        "candidates": true,
+        "metrics": true,
+        "trades": true
+      }
+    },
+    {
+      "run": "8eeb585bfc40504a601d14f3fc81b60e9873377c90e8d1db7ed67caa42921727",
+      "path": "strategy-research/runs/8eeb585bfc40504a601d14f3fc81b60e9873377c90e8d1db7ed67caa42921727/candidates.jsonl",
+      "byte_sha256": "dc08f983686af25527f0b5bf7a23ecc5cc224814ac4e8319b7a86953d1829df1",
+      "candidate_rows": 420,
+      "unique_claimed_behavior_hashes": 420,
+      "matching_candidates_with_metric_rows": 420,
+      "experiment_claimed_sha256": "d220a75d3cae3551aeedfc952b19ef54b56651e2a26cd2406ab8cd01eb942adb",
+      "bound_artifact_bytes_verified": {
+        "candidates": true,
+        "metrics": true,
+        "trades": true
+      }
+    },
+    {
+      "run": "981f31052562643ce7cfa6909dd9b3e9491533007c694a6ff1d179bbc4e1d3b9",
+      "path": "strategy-research/runs/981f31052562643ce7cfa6909dd9b3e9491533007c694a6ff1d179bbc4e1d3b9/candidates.jsonl",
+      "byte_sha256": "883d6a84faf4f92d108bec5337a6d76837e9efdc14737666e5ac9ac1098ae6b4",
+      "candidate_rows": 15,
+      "unique_claimed_behavior_hashes": 15,
+      "matching_candidates_with_metric_rows": 15,
+      "experiment_claimed_sha256": "3540977a49eddd5571dace0a622f82a73def3800cad3aa2a993efc97a7b9c15e",
+      "bound_artifact_bytes_verified": {
+        "candidates": true,
+        "metrics": true,
+        "trades": true
+      }
+    },
+    {
+      "run": "9baff7b7f69f4c5265af53ce0bbb1cee0af0f367bba5fd19660d8cdd9977c2a4",
+      "path": "strategy-research/runs/9baff7b7f69f4c5265af53ce0bbb1cee0af0f367bba5fd19660d8cdd9977c2a4/candidates.jsonl",
+      "byte_sha256": "1c4f6be04bc3ef3647ace9d82277dafad1fda8d06637ee537b9197ee6eb3c561",
+      "candidate_rows": 90,
+      "unique_claimed_behavior_hashes": 90,
+      "matching_candidates_with_metric_rows": 90,
+      "experiment_claimed_sha256": "1a07fd0493d2e6d966fa56839dd401ea9f5742f1b4cad071c891243dc2937af0",
+      "bound_artifact_bytes_verified": {
+        "candidates": true,
+        "metrics": true,
+        "trades": true
+      }
+    },
+    {
+      "run": "ada9aca324e794871840a0161acd04aba94d9c4e7f2c7030c26b97665f657252",
+      "path": "strategy-research/runs/ada9aca324e794871840a0161acd04aba94d9c4e7f2c7030c26b97665f657252/candidates.jsonl",
+      "byte_sha256": "7008c28b6246678cd4e54410a01e3896f383c599e4b0b3f569b8d2a2014d8f07",
+      "candidate_rows": 9,
+      "unique_claimed_behavior_hashes": 9,
+      "matching_candidates_with_metric_rows": 9,
+      "experiment_claimed_sha256": "a51a85e7a98a1076c6a4ee8a81d1dc7ea770f23e3f6b9568180b387f16fc5d5f",
+      "bound_artifact_bytes_verified": {
+        "candidates": true,
+        "metrics": true,
+        "trades": true
+      }
+    },
+    {
+      "run": "ba129ee00efcddd3fd8dfc217a9563d0d54949f7fe464a78b606ee33c92809e7",
+      "path": "strategy-research/runs/ba129ee00efcddd3fd8dfc217a9563d0d54949f7fe464a78b606ee33c92809e7/candidates.jsonl",
+      "byte_sha256": "bae3a49b50739fd8342a9e346d42619129b60ee6e78f82898ed7d6e837ea514c",
+      "candidate_rows": 924,
+      "unique_claimed_behavior_hashes": 924,
+      "matching_candidates_with_metric_rows": 924,
+      "experiment_claimed_sha256": "e78f2046582c77e8b3a8c5f65d4dc2fcef576dea078364eb453dbc7213f8a10e",
+      "bound_artifact_bytes_verified": {
+        "candidates": true,
+        "metrics": true,
+        "trades": true
+      }
+    },
+    {
+      "run": "be5f8e9a18b6b3f4a8bf388d31b21fe5c99ddd495f4f70c0af949e29e1f30031",
+      "path": "strategy-research/runs/be5f8e9a18b6b3f4a8bf388d31b21fe5c99ddd495f4f70c0af949e29e1f30031/candidates.jsonl",
+      "byte_sha256": "259ef0defc762319d556b409f8413e056288c6ffdeefecde210ee4b9d4894196",
+      "candidate_rows": 36,
+      "unique_claimed_behavior_hashes": 36,
+      "matching_candidates_with_metric_rows": 36,
+      "experiment_claimed_sha256": "0a07499d72350fc1fcfd3d9702e77265ce5d1bdf311a366a526fef63765e0ffb",
+      "bound_artifact_bytes_verified": {
+        "candidates": true,
+        "metrics": true,
+        "trades": true
+      }
+    },
+    {
+      "run": "c1d39e1a4ef5dd88a965684a96e551291c23fdfbd2a892132afdb5446ca9c72e",
+      "path": "strategy-research/runs/c1d39e1a4ef5dd88a965684a96e551291c23fdfbd2a892132afdb5446ca9c72e/candidates.jsonl",
+      "byte_sha256": "051a35f73d98d13b1fd457fdeb82d42362c5203427d9f7b619f2994d1649ed5e",
+      "candidate_rows": 21,
+      "unique_claimed_behavior_hashes": 21,
+      "matching_candidates_with_metric_rows": 21,
+      "experiment_claimed_sha256": "6f4339c6a8ef85bf18d0c51edd4275ae3fbe4ba4b26f5e2ce4c0eac234b1f1ad",
+      "bound_artifact_bytes_verified": {
+        "candidates": true,
+        "metrics": true,
+        "trades": true
+      }
+    },
+    {
+      "run": "c4b858e6d4cbce30004a8bb5c2ae5944365096a68f922b48bce7ef8b7b1ad1b2",
+      "path": "strategy-research/runs/c4b858e6d4cbce30004a8bb5c2ae5944365096a68f922b48bce7ef8b7b1ad1b2/candidates.jsonl",
+      "byte_sha256": "dc08f983686af25527f0b5bf7a23ecc5cc224814ac4e8319b7a86953d1829df1",
+      "candidate_rows": 420,
+      "unique_claimed_behavior_hashes": 420,
+      "matching_candidates_with_metric_rows": 420,
+      "experiment_claimed_sha256": "a46d94da46a3ef2c2c1a5cf36c7924c62886aeb1e62f11b28a6c8595cb3f7ef5",
+      "bound_artifact_bytes_verified": {
+        "candidates": true,
+        "metrics": true,
+        "trades": true
+      }
+    },
+    {
+      "run": "cc2883137507fbe6fee6a2fd713f90645219601bf9554114911caa1dfdb56eff",
+      "path": "strategy-research/runs/cc2883137507fbe6fee6a2fd713f90645219601bf9554114911caa1dfdb56eff/candidates.jsonl",
+      "byte_sha256": "9b9d4df08e6bc696ec1be600feb19066335073724802a9aeefa8c95607cb02e4",
+      "candidate_rows": 24,
+      "unique_claimed_behavior_hashes": 24,
+      "matching_candidates_with_metric_rows": 24,
+      "experiment_claimed_sha256": "fb343ff01c24d526866e51f49c874ea3fe25f479bd2010989bc9572e3058e82f",
+      "bound_artifact_bytes_verified": {
+        "candidates": true,
+        "metrics": true,
+        "trades": true
+      }
+    },
+    {
+      "run": "dea1925ec2478f0048c4953ac66dd478a16935ac25a444f84d5337bb6c097ba0",
+      "path": "strategy-research/runs/dea1925ec2478f0048c4953ac66dd478a16935ac25a444f84d5337bb6c097ba0/candidates.jsonl",
+      "byte_sha256": "ae2060c93b2fa654a01214e9b54df7268d6945ccb174b37b347ae6cbc7c2ef5f",
+      "candidate_rows": 24,
+      "unique_claimed_behavior_hashes": 24,
+      "matching_candidates_with_metric_rows": 24,
+      "experiment_claimed_sha256": "42bdd02476b4ad473ac310c781419621c60b7ac330b19509a24a8458d1657e7d",
+      "bound_artifact_bytes_verified": {
+        "candidates": true,
+        "metrics": true,
+        "trades": true
+      }
+    }
+  ],
+  "candidate_rows": 5325,
+  "unique_claimed_behavior_hashes": 1570,
+  "unique_run_behavior_pairs": 5325,
+  "errors": [],
+  "matching_candidate_ids_with_metrics_across_runs": 5325,
+  "unique_claimed_experiment_hashes": 25,
+  "runs_with_artifact_byte_mismatch": 0
+}

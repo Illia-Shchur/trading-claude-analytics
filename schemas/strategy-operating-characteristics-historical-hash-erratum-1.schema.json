@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-operating-characteristics-historical-hash-erratum/1",
+  "type": "object",
+  "required": ["schema", "version", "status", "records", "disposition", "preservation", "content_sha256"],
+  "properties": {
+    "schema": {"const": "strategy-operating-characteristics-historical-hash-erratum/1"},
+    "version": {"const": 1},
+    "status": {"const": "HISTORICAL_INVALID_METADATA"},
+    "purpose": {"type": "string", "minLength": 1},
+    "records": {"type": "array", "minItems": 2, "items": {"type": "object", "required": ["path", "declared_content_sha256", "recomputed_content_sha256"], "properties": {"path": {"type": "string"}, "declared_content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "recomputed_content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}}, "additionalProperties": false}},
+    "disposition": {"const": "INVALID_FOR_FREEZE_BINDING"},
+    "preservation": {"type": "string", "minLength": 1},
+    "detected_by": {"type": "string"},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": false
+}

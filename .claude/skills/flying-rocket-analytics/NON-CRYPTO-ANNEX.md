@@ -42,4 +42,4 @@ The report that trips it must, in the same session: (a) state that the caveat's 
 
 ---
 
-**Residual risk, stated (2026-08-07 compaction note):** of the ten restrictions above, only item 1 (`FR_NONCRYPTO_NA`, enforced in `tools/lint-report.mjs`) and item 4 (pinned rounding) are code-enforced. Items 2, 3, 5–10 are prose-only. Both drift symptoms that actually materialized historically (denominator drift, rounding-convention drift) are in the enforced pair. Applies to 4 of 23 historical FR reports (17%) as of the 2026-08-07 compaction — not "near 0%."
+**Residual risk, stated (2026-08-07 compaction note):** of the ten restrictions above, only item 1 (`FR_NONCRYPTO_NA`, enforced in `./bin/analytics lint-report`) and item 4 (pinned rounding) are code-enforced. Items 2, 3, 5–10 are prose-only. Both drift symptoms that actually materialized historically (denominator drift, rounding-convention drift) are in the enforced pair. Applies to 4 of 23 historical FR reports (17%) as of the 2026-08-07 compaction — not "near 0%."

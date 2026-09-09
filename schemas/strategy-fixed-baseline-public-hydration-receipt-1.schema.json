@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-fixed-baseline-public-hydration-receipt/1",
+  "type": "object",
+  "required": [
+    "schema", "version", "status", "source", "endpoint", "symbol", "interval",
+    "start_at", "end_at_exclusive", "requested_rows", "observed_rows", "request_count",
+    "transport_status", "captured_at", "pit_status", "historical_filter_status",
+    "bar_role_sha256", "limitations", "content_sha256"
+  ],
+  "properties": {
+    "schema": { "const": "strategy-fixed-baseline-public-hydration-receipt/1" },
+    "version": { "const": 1 },
+    "status": { "const": "COMPLETE" },
+    "source": { "const": "BINANCE_PUBLIC_REST_KLINES" },
+    "endpoint": { "type": "string", "format": "uri" },
+    "symbol": { "type": "string", "minLength": 1 },
+    "interval": { "const": "1m" },
+    "start_at": { "type": "string", "format": "date-time" },
+    "end_at_exclusive": { "type": "string", "format": "date-time" },
+    "requested_rows": { "type": "integer", "minimum": 1 },
+    "observed_rows": { "type": "integer", "minimum": 0 },
+    "request_count": { "type": "integer", "minimum": 1 },
+    "transport_status": { "const": "HTTP_200" },
+    "captured_at": { "type": "string", "format": "date-time" },
+    "pit_status": { "const": "UNVERIFIED_DEVELOPMENT_ONLY" },
+    "historical_filter_status": { "const": "USER_BOUND_RETROSPECTIVE" },
+    "bar_role_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "limitations": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+    "content_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  },
+  "additionalProperties": false
+}

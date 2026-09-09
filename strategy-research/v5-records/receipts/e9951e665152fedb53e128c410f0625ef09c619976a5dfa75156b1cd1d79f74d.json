@@ -1,0 +1,21 @@
+{
+  "schema": "strategy-v5-authoritative-command-receipt/1",
+  "version": 1,
+  "command": "feature-build",
+  "status": "BLOCKED",
+  "inputs": [],
+  "outputs": [],
+  "limitations": [
+    "acquisition: missing physical prerequisite",
+    "plan: missing physical prerequisite",
+    "precommit: missing physical prerequisite",
+    "predictor registry: missing physical prerequisite",
+    "staging root: missing physical prerequisite"
+  ],
+  "details": {
+    "mode": "BLOCKED_MISSING_PHYSICAL_PREREQUISITES",
+    "reason": "authoritative command requires every listed physical input before recomputation",
+    "active": false
+  },
+  "content_sha256": "e9951e665152fedb53e128c410f0625ef09c619976a5dfa75156b1cd1d79f74d"
+}

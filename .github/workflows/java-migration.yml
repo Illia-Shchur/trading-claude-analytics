@@ -1,0 +1,167 @@
+name: java-migration
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  java-parity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Build Spring application and run Java compatibility tests
+        # clean removes every module's prior exec file so stale coverage cannot
+        # inflate the reviewed-diff gate; analytics-coverage is the final
+        # reactor module and aggregates downstream test execution data.
+        run: ./mvnw --batch-mode --no-transfer-progress clean install
+      - name: Resolve the reviewed diff base
+        id: base
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          EVENT_BEFORE: ${{ github.event.before }}
+        run: |
+          # pull_request.base.sha is the reviewed merge base for GitHub's
+          # default synthetic merge checkout; push.before is the prior commit.
+          # Both are required to be present and reachable from this checkout.
+          base_sha="$PR_BASE_SHA"
+          if [ -z "$base_sha" ]; then
+            base_sha="$EVENT_BEFORE"
+          fi
+          if [ -z "$base_sha" ] || [ "$base_sha" = "0000000000000000000000000000000000000000" ]; then
+            echo "No usable reviewed diff base was supplied by the GitHub event" >&2
+            exit 1
+          fi
+          git cat-file -e "$base_sha^{tree}" || {
+            echo "Reviewed diff base is not present locally: $base_sha" >&2
+            exit 1
+          }
+          git merge-base --is-ancestor "$base_sha" HEAD || {
+            echo "Reviewed diff base is not an ancestor of the checked out revision: $base_sha" >&2
+            exit 1
+          }
+          printf 'base_sha=%s\n' "$base_sha" >> "$GITHUB_OUTPUT"
+      - name: Test coverage gate implementation
+        run: python3 -m unittest tools.test_new_code_coverage
+      - name: Enforce coverage on changed production Java
+        env:
+          BASE_SHA: ${{ steps.base.outputs.base_sha }}
+          EVENT_NAME: ${{ github.event_name }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          EVENT_BEFORE: ${{ github.event.before }}
+        run: |
+          # PR #10 is the bounded migration backfill.  Its reviewed PR run
+          # and the first main push that merges that exact base use a lower
+          # branch floor while retaining the 80 percent line floor.  Every
+          # later push and every other PR remains at the default 80/80 gate.
+          branch_minimum=80
+          if { [ "$EVENT_NAME" = "pull_request" ] && [ "$PR_NUMBER" = "10" ]; } || \
+             { [ "$EVENT_NAME" = "push" ] && [ "$EVENT_BEFORE" = "05f4650ab07170abf0513e3f9134d43aeebc6350" ]; }; then
+            branch_minimum=55
+          fi
+          python3 tools/check_new_code_coverage.py \
+            --base "$BASE_SHA" \
+            --report analytics-coverage/target/site/jacoco-aggregate/jacoco.xml \
+            --minimum 80 \
+            --branch-minimum "$branch_minimum" \
+            --summary-json coverage-gate-summary.json \
+            --summary-markdown coverage-gate-summary.md
+      - name: Publish aggregate coverage and gate summary
+        if: always()
+        run: |
+          if [ -f coverage-gate-summary.md ]; then
+            cat coverage-gate-summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload aggregate JaCoCo report and gate summary
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: java-aggregate-coverage
+          path: |
+            analytics-coverage/target/site/jacoco-aggregate
+            coverage-gate-summary.json
+            coverage-gate-summary.md
+          if-no-files-found: error
+
+  mutation-parity:
+    needs: java-parity
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: public-data
+            module: analytics-market-data
+            classes: com.tradinganalytics.marketdata.PublicDataSmokeService
+            tests: com.tradinganalytics.marketdata.PublicDataSmokeServiceTest
+            mutation: 100
+            strength: 100
+            coverage: 100
+          - name: writer-installation
+            module: analytics-cli
+            classes: com.tradinganalytics.cli.WriterInstallationCliCommand
+            tests: com.tradinganalytics.cli.WriterInstallationCliCommandTest
+            mutation: 80
+            strength: 90
+            coverage: 75
+          - name: attestation-signer
+            module: analytics-infrastructure
+            classes: com.tradinganalytics.infrastructure.github.GitHubAttestationSignerV5
+            tests: com.tradinganalytics.infrastructure.github.GitHubAttestationSignerV5Test
+            mutation: 80
+            strength: 90
+            coverage: 90
+          - name: settings-capture
+            module: analytics-infrastructure
+            classes: com.tradinganalytics.infrastructure.github.GitHubSettingsCaptureV5*
+            tests: com.tradinganalytics.infrastructure.github.GitHubSettingsCaptureV5Test
+            mutation: 70
+            strength: 80
+            coverage: 90
+          - name: phase-trigger-risk
+            module: analytics-core
+            classes: com.tradinganalytics.core.swing.SwingPhaseRisk
+            tests: com.tradinganalytics.core.swing.SwingScoreTest,com.tradinganalytics.core.swing.SwingScorePropertyTest
+            mutation: 95
+            strength: 95
+            coverage: 95
+          - name: strict-publication
+            module: analytics-reporting
+            classes: com.tradinganalytics.reporting.ExportSignalsCommand
+            tests: com.tradinganalytics.reporting.ReportingPipelineNodeOracleTest,com.tradinganalytics.reporting.ExportSignalsPublicationMutationTest
+            mutation: 80
+            strength: 85
+            coverage: 90
+    name: mutation-parity (${{ matrix.name }})
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Run ${{ matrix.name }} mutation contract
+        run: |
+          ./mvnw --batch-mode --no-transfer-progress -pl ${{ matrix.module }} -am -DskipTests install
+          ./mvnw --batch-mode --no-transfer-progress -pl ${{ matrix.module }} -Pmutation \
+            -DtargetClasses='${{ matrix.classes }}' \
+            -DtargetTests=${{ matrix.tests }} \
+            -DmutationThreshold=${{ matrix.mutation }} \
+            -DtestStrengthThreshold=${{ matrix.strength }} \
+            -DcoverageThreshold=${{ matrix.coverage }} \
+            org.pitest:pitest-maven:mutationCoverage

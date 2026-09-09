@@ -1,0 +1,191 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-evaluator-operating-characteristics-parallel-plan/1",
+  "type": "object",
+  "required": [
+    "schema",
+    "version",
+    "frozen_before_outcomes",
+    "outcomes_opened",
+    "promotion_eligible",
+    "activation_authorized",
+    "episodes_per_replication",
+    "content_sha256",
+    "mode",
+    "cells",
+    "cell_count",
+    "replications",
+    "cluster_count",
+    "paired_cluster_count",
+    "lifecycle_series_per_replication",
+    "horizon_minutes",
+    "statistical_plan_sha256",
+    "baseline_sha256",
+    "control_spec_sha256",
+    "experiment_sha256",
+    "executor_source_sha256",
+    "executor_build_input_fingerprint",
+    "executor_identity_sha256",
+    "execution_profile_sha256",
+    "supporting_dependency_receipts"
+  ],
+  "properties": {
+    "schema": {
+      "const": "strategy-evaluator-operating-characteristics-parallel-plan/1"
+    },
+    "version": {
+      "const": 1
+    },
+    "frozen_before_outcomes": {
+      "const": true
+    },
+    "outcomes_opened": {
+      "const": false
+    },
+    "promotion_eligible": {
+      "const": false
+    },
+    "activation_authorized": {
+      "const": false
+    },
+    "episodes_per_replication": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "mode": {
+      "enum": [
+        "FULL",
+        "PREFIX"
+      ]
+    },
+    "slots": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "cells": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "required": [
+          "scenario",
+          "effect_size",
+          "seeds",
+          "prefix_seeds"
+        ],
+        "properties": {
+          "scenario": {
+            "type": "string",
+            "minLength": 1
+          },
+          "effect_size": {
+            "type": "number"
+          },
+          "seeds": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "prefix_seeds": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "content_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "cell_count": {
+      "const": 4
+    },
+    "replications": {
+      "const": 75
+    },
+    "cluster_count": {
+      "const": 288
+    },
+    "paired_cluster_count": {
+      "const": 162
+    },
+    "lifecycle_series_per_replication": {
+      "const": 900
+    },
+    "horizon_minutes": {
+      "const": 14400
+    },
+    "statistical_plan_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "baseline_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "control_spec_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "experiment_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "executor_source_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "executor_build_input_fingerprint": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "executor_identity_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "statistical_plan": {
+      "type": "object"
+    },
+    "execution_profile_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "supporting_dependency_receipts": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "object",
+        "required": ["relative_path", "byte_sha256", "bytes", "content_sha256"],
+        "properties": {
+          "relative_path": {
+            "enum": [
+              "strategy-research/experiments/fk-deleveraging-baseline-v002/portfolio-policy-v001.json",
+              "strategy-research/experiments/fk-deleveraging-baseline-v002/lifecycle-timing-v001.json"
+            ]
+          },
+          "byte_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "bytes": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "content_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": true
+}

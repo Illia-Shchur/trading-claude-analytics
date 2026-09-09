@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-evaluator-operating-characteristics-attempt-ledger/1",
+  "type": "object",
+  "required": ["schema", "version", "plan_sha256", "append_only", "mode", "attempts", "attempt_count", "planned_attempts", "promotion_eligible", "activation_authorized", "content_sha256"],
+  "properties": {
+    "schema": {"const": "strategy-evaluator-operating-characteristics-attempt-ledger/1"},
+    "version": {"const": 1},
+    "plan_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "append_only": {"const": true},
+    "mode": {"enum": ["PREFIX", "FULL"]},
+    "attempts": {"type": "array"},
+    "attempt_count": {"type": "integer", "minimum": 0},
+    "planned_attempts": {"type": "integer", "minimum": 1},
+    "promotion_eligible": {"const": false},
+    "activation_authorized": {"const": false},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,58 @@
+{
+  "total": {
+    "tests": 1018,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 1
+  },
+  "modules": {
+    "analytics-contracts": {
+      "tests": 85,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "analytics-research": {
+      "tests": 410,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1
+    },
+    "analytics-market-data": {
+      "tests": 55,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "analytics-cli": {
+      "tests": 95,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "analytics-reporting": {
+      "tests": 47,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "analytics-core": {
+      "tests": 191,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "analytics-infrastructure": {
+      "tests": 80,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "analytics-compatibility-tests": {
+      "tests": 55,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  }
+}

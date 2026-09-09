@@ -1,0 +1,20 @@
+{
+  "schema": "strategy-operating-characteristics-successor-plan-erratum/1",
+  "version": 1,
+  "status": "ADDITIVE_HASH_CORRECTION",
+  "detected_on": "2026-09-08",
+  "scope": "SUCCESSOR_PRECOMMIT_METADATA_ONLY",
+  "historical_plan_path": "strategy-research/experiments/fk-deleveraging-baseline-v002/operating-characteristics-successor-plan-v003.json",
+  "historical_plan_content_sha256": "97fbf3c59290b977fe879cc09f55542e7c510c43baa4ef2e524039f5ee294abb",
+  "historical_plan_byte_sha256": "f87f89680e9fb0d0356613cb789c88aded64ed0c20115ff74660ef1343438bc1",
+  "field": "matching_attrition_byte_sha256",
+  "prior_declared_value": "268810e97ca3b1c53a6c24da9448716d7006ecd0f7bae21fb628eea46507351",
+  "correct_value": "268810e97ca3b1c53a6c24da9448716d7006ecd0f7bae21fb628eea46507351b",
+  "artifact_path": "strategy-research/v5-records/evidence/research-evidence-20260907/matching-attrition-v001.json",
+  "correction_reason": "The retained matching/attrition artifact SHA-256 is 64 hexadecimal characters; the v003 metadata transcription omitted the final b.",
+  "disposition": "v003 bytes remain preserved as a historical immutable checkpoint; v004 is the corrected binding precommit.",
+  "no_outcomes_opened": true,
+  "no_executor_or_design_change": true,
+  "full_run_authorized": false,
+  "content_sha256": "59a167bf0300683c8d4d60107390fd73e33c46cfb4aea62cd8e2539314f1b23c"
+}

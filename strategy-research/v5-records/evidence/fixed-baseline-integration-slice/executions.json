@@ -1,0 +1,14 @@
+[
+  {
+    "episode_id": "btc:2021-09-07T16:00:00Z",
+    "signal_id": "btc:2021-09-07T16:00:00Z",
+    "asset": "btc",
+    "venue": "BINANCE",
+    "instrument": "BINANCE_SPOT",
+    "symbol": "BTCUSDT",
+    "decision_time": "2021-09-07T16:00:00Z",
+    "bars_role": "bars_1m",
+    "bars_interval_ms": 60000,
+    "provenance": "PUBLIC_BINANCE_KLINES_USER_BOUND_HISTORICAL_FILTERS"
+  }
+]

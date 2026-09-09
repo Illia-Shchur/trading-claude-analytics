@@ -1,0 +1,52 @@
+{
+  "status": "PASS",
+  "scope": "LOCAL_DEVELOPMENT_ONLY",
+  "measurements": [
+    {
+      "workers": 1,
+      "status": "COMPLETE",
+      "wall_seconds": 34.375963874859735,
+      "sampled_aggregate_peak_rss_bytes": 2157625344,
+      "sampled_managed_peak_disk_bytes": 89974017,
+      "exit_code": 0
+    },
+    {
+      "workers": 2,
+      "status": "COMPLETE",
+      "wall_seconds": 19.058128375094384,
+      "sampled_aggregate_peak_rss_bytes": 3500179456,
+      "sampled_managed_peak_disk_bytes": 173114015,
+      "exit_code": 0
+    }
+  ],
+  "checks": {
+    "PREFIX_NO_EDGE_0_0_910000000.json": {
+      "portable_digest_equal": true,
+      "portable_economic_sha256": "91dd7156efa7811aca55535761464cea611d90ec85bf940bc86b7845e6927454",
+      "entire_normalized_raw_equal": true,
+      "legacy_economic_hash_equal": false,
+      "metrics_equal": true,
+      "control_selections_equal": true,
+      "attempts_equal": true,
+      "portfolio_equal": true
+    },
+    "PREFIX_NO_EDGE_0_1_910000001.json": {
+      "portable_digest_equal": true,
+      "portable_economic_sha256": "0dda0f536d35b55f741082f54b57c86971e950bf732d5ab95c7a4d7ad0f14a12",
+      "entire_normalized_raw_equal": true,
+      "legacy_economic_hash_equal": false,
+      "metrics_equal": true,
+      "control_selections_equal": true,
+      "attempts_equal": true,
+      "portfolio_equal": true
+    }
+  },
+  "deterministic_result_order": [
+    "PREFIX|NO_EDGE|0|0|910000000",
+    "PREFIX|NO_EDGE|0|1|910000001"
+  ],
+  "measured_wall_ratio": 1.8037429068734296,
+  "benchmark_pairs": 1,
+  "confirmation_seeds_opened": false,
+  "note": "Legacy economic digest includes absolute policy paths and is intentionally preserved; additive portable digest and exact normalized raw comparison provide location-independent equivalence. This single prefix pair is not 28-core throughput evidence."
+}

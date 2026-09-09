@@ -2,7 +2,8 @@
 
 ## Opt-in production data-plane benchmark
 
-The benchmark entry point is `tools/strategy-research-v5-performance-benchmark.mjs`.
+The benchmark entry point is the Spring command
+`./bin/analytics strategy-research-v5-performance-benchmark`.
 It accepts only an explicitly supplied frozen five-year plan, acquisition
 manifest, authoritative Parquet manifest/root, and optionally a coverage
 manifest. Every supplied JSON document is reopened, checked against its
@@ -23,7 +24,7 @@ exact acquisition/Parquet/dataset hashes.
 Run a non-production sample while developing:
 
 ```sh
-node tools/strategy-research-v5-performance-benchmark.mjs \
+./bin/analytics strategy-research-v5-performance-benchmark \
   --plan=strategy-research/v5-records/data-backfill/plan-<hash>.json \
   --acquisition-manifest=strategy-research/v5-records/data-backfill/staging_manifest-<hash>.json \
   --acquisition-root=strategy-research/v5-data/<run>/network-resume/staging \
@@ -36,7 +37,7 @@ node tools/strategy-research-v5-performance-benchmark.mjs \
 Only `--full` proves every partition declared by the Parquet manifest:
 
 ```sh
-node tools/strategy-research-v5-performance-benchmark.mjs \
+./bin/analytics strategy-research-v5-performance-benchmark \
   --plan=<frozen-plan.json> --acquisition-manifest=<acquisition.json> \
   --acquisition-root=<staging-root> --parquet-manifest=<parquet.json> \
   --parquet-root=<parquet-root> --coverage=<coverage.json> --full
@@ -67,7 +68,7 @@ are lstat/realpath checked, and symlink or multi-link files are rejected. A scan
 `readiness.global`, which remain blocked until an authoritative WFO and
 physical-null benchmark actually runs.
 
-The performance helpers in `tools/strategy-research-v5-performance.mjs` are
+The performance helpers in `StrategyPerformanceV5` are
 opt-in building blocks for the authoritative evaluator. They do not change the
 GA population, generation count, three-seed requirement, cumulative `K`, null
 budget, selection objective, or OOS boundary.

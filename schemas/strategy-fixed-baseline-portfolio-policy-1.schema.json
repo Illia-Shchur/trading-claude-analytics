@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-fixed-baseline-portfolio-policy/1",
+  "type": "object",
+  "required": [
+    "schema",
+    "version",
+    "status",
+    "policy_id",
+    "account_currency",
+    "starting_cash_usdt",
+    "max_concurrent_slots",
+    "mark_source",
+    "mark_interval",
+    "admission_policy",
+    "post_slice_amendment",
+    "content_sha256"
+  ],
+  "properties": {
+    "schema": {"const": "strategy-fixed-baseline-portfolio-policy/1"},
+    "version": {"const": 1},
+    "status": {"const": "FROZEN"},
+    "policy_id": {"const": "FIXED_INITIAL_CASH_USDT_10000_V001"},
+    "account_currency": {"const": "USDT"},
+    "starting_cash_usdt": {"const": 10000},
+    "max_concurrent_slots": {"const": 8},
+    "mark_source": {"const": "PHYSICAL_1M_CLOSES"},
+    "mark_interval": {"const": "60m"},
+    "admission_policy": {"const": "CHRONOLOGICAL_ONE_OPEN_POSITION_PER_ASSET"},
+    "post_slice_amendment": {"const": true},
+    "amendment_note": {"type": "string", "minLength": 1},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": false
+}

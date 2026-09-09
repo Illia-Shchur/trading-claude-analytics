@@ -1,0 +1,46 @@
+{
+  "schema": "strategy-v5-lifecycle-trust/1",
+  "version": 1,
+  "fixture_only": false,
+  "provenance": "AUTHORITATIVE",
+  "root_reference": "authoritative-parquet:9999999999999999999999999999999999999999999999999999999999999999",
+  "receipts": {
+    "contract_spec": {
+      "path": "contract_spec.json",
+      "content_sha256": "a9083d93a26c14c05f59a6711cd9991f6f2ca917fbd4303341dd2f557f71c184",
+      "byte_sha256": "5e8e6262a7f9eb476c148b6a90e8436a1f71f279da9694182813e87032eacfbc",
+      "bytes": 113
+    },
+    "execution_model": {
+      "path": "execution_model.json",
+      "content_sha256": "086b3d01b22d2c6342b6b30272bc08816a19e10b8bcf2e6ea2f43892667ca43d",
+      "byte_sha256": "58c7171abf2e4fc19f6765e54bcfe0ed03ee8af8d783ef23a4c1d112c9606bd9",
+      "bytes": 115
+    },
+    "capacity": {
+      "path": "capacity.json",
+      "content_sha256": "d7eeee356f0e1dfba2bbcfcee1fccc9190c281b6b6ba126e1a2cc95612d162b8",
+      "byte_sha256": "e5cfa83ef99b96b94697b8efce614e37c2062990ebb289c667208becb12ee680",
+      "bytes": 108
+    },
+    "bars": {
+      "path": "bars.json",
+      "content_sha256": "2eef178d08de4f1135dcd8bdd0473723aacb856ee46cddc826c629bcebd96406",
+      "byte_sha256": "ee68c431210d6aa28b04da3ca772ebbdcf4a519308bc37c1baf1b68cdb62aeaf",
+      "bytes": 222,
+      "rows_sha256": "b5bbcdd7e02288d4f10ee41dbf1fdd561ea7a3e90abe9596d44c42c230a0257a"
+    },
+    "funding": {
+      "path": "funding.json",
+      "content_sha256": "68385815e9bdecb4a0ccbebae153fa0faba9a22ca84745c6bd2a78538540fb20",
+      "byte_sha256": "f79fe39483b07bfc685c1345ac52239c3617c6ff4cb5a06205dbd0b4d4b3bfe4",
+      "bytes": 107
+    }
+  },
+  "lineage": {
+    "manifest_sha256": "8888888888888888888888888888888888888888888888888888888888888888",
+    "loader": "PARQUET"
+  },
+  "bundle_sha256": "f7cf26d47b4d9596700c5dbd2a73185cc2f46bc9a2b2c292d3e2748efd1a915f",
+  "content_sha256": "b506e8b13804cd8763a660555c5e5bb9d677eb559ccba580b8301442a3f2b989"
+}

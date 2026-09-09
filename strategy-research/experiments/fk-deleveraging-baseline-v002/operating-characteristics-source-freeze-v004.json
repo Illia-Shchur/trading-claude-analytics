@@ -1,0 +1,19 @@
+{
+  "schema": "strategy-evaluator-operating-characteristics-source-freeze/1",
+  "version": 1,
+  "plan_sha256": "63e17392714365810db25d52f382f5b9578a2cead9ee06b0335e4360b41eb235",
+  "generator_schema": "synthetic-ohlc-episode-generator/4",
+  "generator_source_path": "analytics-research/src/main/java/com/tradinganalytics/research/v5/StrategyOperatingCharacteristicsV4.java",
+  "generator_source_sha256": "ed74b5f7cd7be5d03a02c88d7a38c418c54409acfea8c833cece3cb79ee79d19",
+  "executor_identity_sha256": "cef69d3f1293de27fc8462d450b2019bd569e0956de37e3dd3447fcd16d4393d",
+  "executor_path": "analytics-cli/target/analytics-cli-1.0.0-SNAPSHOT-exec.jar",
+  "build_input_fingerprint": "7573b9e1405a99b591036abd7fec88b60ab7df4542d66533f537ae6fa7969b96",
+  "frozen_before_outcomes": true,
+  "prior_draft_outcomes_opened": true,
+  "prior_draft_result_content_sha256": [
+    "d996d8a9205adfc17d6208459da1911ed2ef33ff2b0aab598c8950265ddb0e0d",
+    "afe0d368612201fb98b506e15010810da873d8fed544d05520ca69a97e5dc4f4"
+  ],
+  "source_freeze_note": "Final generator/JAR freeze after bounded WIP prefix exposure; subsequent outputs are additive diagnostic results and cannot claim pre-exposure calibration.",
+  "content_sha256": "8dc02f707e025cb4f95c869926cea6791f9d2c9f03d80c3e03529a95430de281"
+}

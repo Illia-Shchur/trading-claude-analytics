@@ -1,0 +1,866 @@
+[
+  {
+    "file": "btc_fallen_knives_20260514_1030.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): btc_fallen_knives_20260514_1030.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_fallen_knives_20260528_0930.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): btc_fallen_knives_20260528_0930.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_fallen_knives_20260531_1330.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): btc_fallen_knives_20260531_1330.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_fallen_knives_20260604_1045.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): btc_fallen_knives_20260604_1045.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_fallen_knives_20260605_1123.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): btc_fallen_knives_20260605_1123.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_fallen_knives_20260606_0354.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): btc_fallen_knives_20260606_0354.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_fallen_knives_20260610_1126.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): btc_fallen_knives_20260610_1126.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_fallen_knives_20260613_1030.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): btc_fallen_knives_20260613_1030.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_fallen_knives_20260615_1102.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): btc_fallen_knives_20260615_1102.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_fallen_knives_20260616_1603.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): btc_fallen_knives_20260616_1603.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_fallen_knives_20260617_1715.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): btc_fallen_knives_20260617_1715.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_fallen_knives_20260619_1300.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): btc_fallen_knives_20260619_1300.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_fallen_knives_20260621_1200.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): btc_fallen_knives_20260621_1200.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_fallen_knives_20260624_1330.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): btc_fallen_knives_20260624_1330.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_fallen_knives_20260625_1400.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): btc_fallen_knives_20260625_1400.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_fallen_knives_20260701_1400.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): btc_fallen_knives_20260701_1400.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_fallen_knives_20260702_1440.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): btc_fallen_knives_20260702_1440.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_fallen_knives_20260704_1330.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): btc_fallen_knives_20260704_1330.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_fallen_knives_20260709_0530.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): btc_fallen_knives_20260709_0530.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_fallen_knives_20260710_1015.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): btc_fallen_knives_20260710_1015.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_fallen_knives_20260711_1030.md",
+    "exitCode": 0,
+    "stdout": "WARN  score.discretionary missing or non-numeric (write 0 when no adjustment was taken) — required field, bounded ±2 on a 0.5 step (D1)\nWARN  tranche 1A: entry \"~65000 (MTM -1.2%)\" reads as a FILL (entry opens with a single price, not a range) but no numeric entry_price — the score unlock line, gate floor, stop band, size cap and ratchet are all skipped without it (report-machine/1, 2026-07-29)\nWARN  companion_fr found nested under inputs.companion_fr — write it top-level (report-machine/1 migration)\nWARN  companion_fr.score=undefined must be a number 0-20\nWARN  companion_fr.channel=undefined is not exactly \"A\"/\"B\"/\"none\" — move descriptive text to companion_fr.channel_note (report-machine/1, 2026-08-03)\nWARN  companion_fr.cross_validation missing — Hard Rule 5 requires the FK/FR inverse-relation check stated on every report\nPASS — 0 errors, 6 warning(s): btc_fallen_knives_20260711_1030.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_fallen_knives_20260712_1030.md",
+    "exitCode": 0,
+    "stdout": "WARN  score.discretionary missing or non-numeric (write 0 when no adjustment was taken) — required field, bounded ±2 on a 0.5 step (D1)\nWARN  tranche 1A: entry \"~65000 (MTM -1.6%)\" reads as a FILL (entry opens with a single price, not a range) but no numeric entry_price — the score unlock line, gate floor, stop band, size cap and ratchet are all skipped without it (report-machine/1, 2026-07-29)\nWARN  companion_fr found nested under inputs.companion_fr — write it top-level (report-machine/1 migration)\nWARN  companion_fr.score=undefined must be a number 0-20\nWARN  companion_fr.channel=undefined is not exactly \"A\"/\"B\"/\"none\" — move descriptive text to companion_fr.channel_note (report-machine/1, 2026-08-03)\nWARN  companion_fr.cross_validation missing — Hard Rule 5 requires the FK/FR inverse-relation check stated on every report\nPASS — 0 errors, 6 warning(s): btc_fallen_knives_20260712_1030.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_fallen_knives_20260713_1130.md",
+    "exitCode": 0,
+    "stdout": "WARN  score.discretionary missing or non-numeric (write 0 when no adjustment was taken) — required field, bounded ±2 on a 0.5 step (D1)\nWARN  tranche 1A: entry \"~65000 (MTM -3.6%)\" reads as a FILL (entry opens with a single price, not a range) but no numeric entry_price — the score unlock line, gate floor, stop band, size cap and ratchet are all skipped without it (report-machine/1, 2026-07-29)\nWARN  companion_fr found nested under inputs.companion_fr — write it top-level (report-machine/1 migration)\nWARN  companion_fr.score=undefined must be a number 0-20\nWARN  companion_fr.channel=undefined is not exactly \"A\"/\"B\"/\"none\" — move descriptive text to companion_fr.channel_note (report-machine/1, 2026-08-03)\nWARN  companion_fr.cross_validation missing — Hard Rule 5 requires the FK/FR inverse-relation check stated on every report\nPASS — 0 errors, 6 warning(s): btc_fallen_knives_20260713_1130.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_fallen_knives_20260714_0845.md",
+    "exitCode": 0,
+    "stdout": "WARN  score.discretionary missing or non-numeric (write 0 when no adjustment was taken) — required field, bounded ±2 on a 0.5 step (D1)\nWARN  tranche 1A: entry \"~65000 (MTM -3.30%)\" reads as a FILL (entry opens with a single price, not a range) but no numeric entry_price — the score unlock line, gate floor, stop band, size cap and ratchet are all skipped without it (report-machine/1, 2026-07-29)\nWARN  companion_fr found nested under inputs.companion_fr — write it top-level (report-machine/1 migration)\nWARN  companion_fr.score=undefined must be a number 0-20\nWARN  companion_fr.channel=undefined is not exactly \"A\"/\"B\"/\"none\" — move descriptive text to companion_fr.channel_note (report-machine/1, 2026-08-03)\nWARN  companion_fr.cross_validation missing — Hard Rule 5 requires the FK/FR inverse-relation check stated on every report\nPASS — 0 errors, 6 warning(s): btc_fallen_knives_20260714_0845.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_fallen_knives_20260714_1430.md",
+    "exitCode": 0,
+    "stdout": "WARN  score.discretionary missing or non-numeric (write 0 when no adjustment was taken) — required field, bounded ±2 on a 0.5 step (D1)\nWARN  tranche 1A: entry \"~65000 (MTM -0.77%)\" reads as a FILL (entry opens with a single price, not a range) but no numeric entry_price — the score unlock line, gate floor, stop band, size cap and ratchet are all skipped without it (report-machine/1, 2026-07-29)\nWARN  companion_fr found nested under inputs.companion_fr — write it top-level (report-machine/1 migration)\nWARN  companion_fr.score=undefined must be a number 0-20\nWARN  companion_fr.channel=undefined is not exactly \"A\"/\"B\"/\"none\" — move descriptive text to companion_fr.channel_note (report-machine/1, 2026-08-03)\nWARN  companion_fr.cross_validation missing — Hard Rule 5 requires the FK/FR inverse-relation check stated on every report\nPASS — 0 errors, 6 warning(s): btc_fallen_knives_20260714_1430.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_fallen_knives_20260716_0330.md",
+    "exitCode": 0,
+    "stdout": "WARN  score.discretionary missing or non-numeric (write 0 when no adjustment was taken) — required field, bounded ±2 on a 0.5 step (D1)\nWARN  tranche 1A: entry \"~65000 (MTM approx flat at 64648)\" reads as a FILL (entry opens with a single price, not a range) but no numeric entry_price — the score unlock line, gate floor, stop band, size cap and ratchet are all skipped without it (report-machine/1, 2026-07-29)\nWARN  companion_fr found nested under inputs.companion_fr — write it top-level (report-machine/1 migration)\nWARN  companion_fr.score=undefined must be a number 0-20\nWARN  companion_fr.channel=undefined is not exactly \"A\"/\"B\"/\"none\" — move descriptive text to companion_fr.channel_note (report-machine/1, 2026-08-03)\nWARN  companion_fr.cross_validation missing — Hard Rule 5 requires the FK/FR inverse-relation check stated on every report\nPASS — 0 errors, 6 warning(s): btc_fallen_knives_20260716_0330.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_fallen_knives_20260718_0300.md",
+    "exitCode": 0,
+    "stdout": "WARN  score.discretionary missing or non-numeric (write 0 when no adjustment was taken) — required field, bounded ±2 on a 0.5 step (D1)\nWARN  tranche 1A: entry \"~65000 blended (MTM -1.6% at 63938)\" reads as a FILL (entry says \"blended\", which only has meaning against a real position) but no numeric entry_price — the score unlock line, gate floor, stop band, size cap and ratchet are all skipped without it (report-machine/1, 2026-07-29)\nWARN  companion_fr found nested under inputs.companion_fr — write it top-level (report-machine/1 migration)\nWARN  companion_fr.score=undefined must be a number 0-20\nWARN  companion_fr.channel=undefined is not exactly \"A\"/\"B\"/\"none\" — move descriptive text to companion_fr.channel_note (report-machine/1, 2026-08-03)\nWARN  companion_fr.cross_validation missing — Hard Rule 5 requires the FK/FR inverse-relation check stated on every report\nPASS — 0 errors, 6 warning(s): btc_fallen_knives_20260718_0300.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_fallen_knives_20260718_1505.md",
+    "exitCode": 0,
+    "stdout": "WARN  score.discretionary missing or non-numeric (write 0 when no adjustment was taken) — required field, bounded ±2 on a 0.5 step (D1)\nWARN  tranche 1A: entry \"~65000 blended (MTM -0.8% at 64474)\" reads as a FILL (entry says \"blended\", which only has meaning against a real position) but no numeric entry_price — the score unlock line, gate floor, stop band, size cap and ratchet are all skipped without it (report-machine/1, 2026-07-29)\nWARN  companion_fr found nested under inputs.companion_fr — write it top-level (report-machine/1 migration)\nWARN  companion_fr.score=undefined must be a number 0-20\nWARN  companion_fr.channel=undefined is not exactly \"A\"/\"B\"/\"none\" — move descriptive text to companion_fr.channel_note (report-machine/1, 2026-08-03)\nWARN  companion_fr.cross_validation missing — Hard Rule 5 requires the FK/FR inverse-relation check stated on every report\nPASS — 0 errors, 6 warning(s): btc_fallen_knives_20260718_1505.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_fallen_knives_20260720_1450.md",
+    "exitCode": 0,
+    "stdout": "WARN  score.discretionary missing or non-numeric (write 0 when no adjustment was taken) — required field, bounded ±2 on a 0.5 step (D1)\nWARN  tranche 1A: entry \"~65000 blended (MTM +0.68% at 65444)\" reads as a FILL (entry says \"blended\", which only has meaning against a real position) but no numeric entry_price — the score unlock line, gate floor, stop band, size cap and ratchet are all skipped without it (report-machine/1, 2026-07-29)\nWARN  companion_fr found nested under inputs.companion_fr — write it top-level (report-machine/1 migration)\nWARN  companion_fr.score=undefined must be a number 0-20\nWARN  companion_fr.channel=undefined is not exactly \"A\"/\"B\"/\"none\" — move descriptive text to companion_fr.channel_note (report-machine/1, 2026-08-03)\nWARN  companion_fr.cross_validation missing — Hard Rule 5 requires the FK/FR inverse-relation check stated on every report\nPASS — 0 errors, 6 warning(s): btc_fallen_knives_20260720_1450.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_fallen_knives_20260722_0400.md",
+    "exitCode": 0,
+    "stdout": "WARN  score.discretionary missing or non-numeric (write 0 when no adjustment was taken) — required field, bounded ±2 on a 0.5 step (D1)\nWARN  tranche 1A: entry \"~65000 blended (MTM +1.18% at 65767)\" reads as a FILL (entry says \"blended\", which only has meaning against a real position) but no numeric entry_price — the score unlock line, gate floor, stop band, size cap and ratchet are all skipped without it (report-machine/1, 2026-07-29)\nWARN  companion_fr found nested under inputs.companion_fr — write it top-level (report-machine/1 migration)\nWARN  companion_fr.score=undefined must be a number 0-20\nWARN  companion_fr.channel=undefined is not exactly \"A\"/\"B\"/\"none\" — move descriptive text to companion_fr.channel_note (report-machine/1, 2026-08-03)\nWARN  companion_fr.cross_validation missing — Hard Rule 5 requires the FK/FR inverse-relation check stated on every report\nPASS — 0 errors, 6 warning(s): btc_fallen_knives_20260722_0400.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_fallen_knives_20260723_0805.md",
+    "exitCode": 0,
+    "stdout": "WARN  score.discretionary missing or non-numeric (write 0 when no adjustment was taken) — required field, bounded ±2 on a 0.5 step (D1)\nWARN  tranche 1A: entry \"~65000 blended (MTM +0.86% at 65560)\" reads as a FILL (entry says \"blended\", which only has meaning against a real position) but no numeric entry_price — the score unlock line, gate floor, stop band, size cap and ratchet are all skipped without it (report-machine/1, 2026-07-29)\nWARN  companion_fr found nested under inputs.companion_fr — write it top-level (report-machine/1 migration)\nWARN  companion_fr.score=undefined must be a number 0-20\nWARN  companion_fr.channel=undefined is not exactly \"A\"/\"B\"/\"none\" — move descriptive text to companion_fr.channel_note (report-machine/1, 2026-08-03)\nWARN  companion_fr.cross_validation missing — Hard Rule 5 requires the FK/FR inverse-relation check stated on every report\nPASS — 0 errors, 6 warning(s): btc_fallen_knives_20260723_0805.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_fallen_knives_20260725_1020.md",
+    "exitCode": 0,
+    "stdout": "WARN  score.discretionary missing or non-numeric (write 0 when no adjustment was taken) — required field, bounded ±2 on a 0.5 step (D1)\nWARN  tranche 1A: entry \"~65000 blended (MTM -1.59% at 63968.80)\" reads as a FILL (entry says \"blended\", which only has meaning against a real position) but no numeric entry_price — the score unlock line, gate floor, stop band, size cap and ratchet are all skipped without it (report-machine/1, 2026-07-29)\nWARN  companion_fr found nested under inputs.companion_fr — write it top-level (report-machine/1 migration)\nWARN  companion_fr.score=undefined must be a number 0-20\nWARN  companion_fr.channel=undefined is not exactly \"A\"/\"B\"/\"none\" — move descriptive text to companion_fr.channel_note (report-machine/1, 2026-08-03)\nWARN  companion_fr.cross_validation missing — Hard Rule 5 requires the FK/FR inverse-relation check stated on every report\nPASS — 0 errors, 6 warning(s): btc_fallen_knives_20260725_1020.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_fallen_knives_20260801_1117.md",
+    "exitCode": 0,
+    "stdout": "PASS — 0 errors, 0 warning(s): btc_fallen_knives_20260801_1117.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_fallen_knives_20260803_1411.md",
+    "exitCode": 0,
+    "stdout": "PASS — 0 errors, 0 warning(s): btc_fallen_knives_20260803_1411.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_fallen_knives_20260805_1008.md",
+    "exitCode": 0,
+    "stdout": "PASS — 0 errors, 0 warning(s): btc_fallen_knives_20260805_1008.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_fallen_knives_20260806_1836.md",
+    "exitCode": 0,
+    "stdout": "PASS — 0 errors, 0 warning(s): btc_fallen_knives_20260806_1836.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_fallen_knives_20260810_0020.md",
+    "exitCode": 0,
+    "stdout": "PASS — 0 errors, 0 warning(s): btc_fallen_knives_20260810_0020.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_fallen_knives_20260813_1744.md",
+    "exitCode": 0,
+    "stdout": "PASS — 0 errors, 0 warning(s): btc_fallen_knives_20260813_1744.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_fallen_knives_20260822_0346.md",
+    "exitCode": 0,
+    "stdout": "PASS — 0 errors, 0 warning(s): btc_fallen_knives_20260822_0346.json\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_flying_rocket_20260514_1045.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): btc_flying_rocket_20260514_1045.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_flying_rocket_20260615_1104.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): btc_flying_rocket_20260615_1104.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_flying_rocket_20260616_0920.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): btc_flying_rocket_20260616_0920.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_flying_rocket_20260618_0020.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): btc_flying_rocket_20260618_0020.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_flying_rocket_20260714_1500.md",
+    "exitCode": 0,
+    "stdout": "WARN  score.discretionary missing or non-numeric (write 0 when no adjustment was taken) — required field, bounded ±2 on a 0.5 step (S1)\nWARN  channel must be \"A\", \"B\" or \"none\" (got undefined) — the score means different things in each (§2.5)\nPASS — 0 errors, 2 warning(s): btc_flying_rocket_20260714_1500.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_flying_rocket_20260716_0330.md",
+    "exitCode": 0,
+    "stdout": "WARN  score.discretionary missing or non-numeric (write 0 when no adjustment was taken) — required field, bounded ±2 on a 0.5 step (S1)\nWARN  channel must be \"A\", \"B\" or \"none\" (got undefined) — the score means different things in each (§2.5)\nPASS — 0 errors, 2 warning(s): btc_flying_rocket_20260716_0330.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_flying_rocket_20260731_0426.md",
+    "exitCode": 0,
+    "stdout": "WARN  gates.measurement.1 missing — Channel B gate 1 has more than one defensible reading and the report must cite the declared one (\"current_session_high\") (FR §4, 2026-08-07)\nWARN  gates.measurement.2 missing — Channel B gate 2 has more than one defensible reading and the report must cite the declared one (\"low_to_current\") (FR §4, 2026-08-07)\nWARN  gates.measurement.5 missing — Channel B gate 5 has more than one defensible reading and the report must cite the declared one (\"bounce_window\") (FR §4, 2026-08-07)\nPASS — 0 errors, 3 warning(s): btc_flying_rocket_20260731_0426.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_flying_rocket_20260806_1844.md",
+    "exitCode": 0,
+    "stdout": "WARN  gates.measurement.1 missing — Channel B gate 1 has more than one defensible reading and the report must cite the declared one (\"current_session_high\") (FR §4, 2026-08-07)\nWARN  gates.measurement.2 missing — Channel B gate 2 has more than one defensible reading and the report must cite the declared one (\"low_to_current\") (FR §4, 2026-08-07)\nWARN  gates.measurement.5 missing — Channel B gate 5 has more than one defensible reading and the report must cite the declared one (\"bounce_window\") (FR §4, 2026-08-07)\nPASS — 0 errors, 3 warning(s): btc_flying_rocket_20260806_1844.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_flying_rocket_20260810_0030.md",
+    "exitCode": 0,
+    "stdout": "PASS — 0 errors, 0 warning(s): btc_flying_rocket_20260810_0030.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_flying_rocket_20260813_0150.md",
+    "exitCode": 0,
+    "stdout": "PASS — 0 errors, 0 warning(s): btc_flying_rocket_20260813_0150.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_flying_rocket_20260819_1222.md",
+    "exitCode": 0,
+    "stdout": "PASS — 0 errors, 0 warning(s): btc_flying_rocket_20260819_1222.json\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_flying_rocket_20260820_1640.md",
+    "exitCode": 0,
+    "stdout": "PASS — 0 errors, 0 warning(s): btc_flying_rocket_20260820_1640.json\n",
+    "stderr": ""
+  },
+  {
+    "file": "btc_flying_rocket_20260821_0457.md",
+    "exitCode": 0,
+    "stdout": "PASS — 0 errors, 0 warning(s): btc_flying_rocket_20260821_0457.json\n",
+    "stderr": ""
+  },
+  {
+    "file": "combined_fallen_knives_20260603_1200.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): combined_fallen_knives_20260603_1200.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_fallen_knives_20260528_1251.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): eth_fallen_knives_20260528_1251.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_fallen_knives_20260604_1045.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): eth_fallen_knives_20260604_1045.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_fallen_knives_20260605_1123.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): eth_fallen_knives_20260605_1123.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_fallen_knives_20260606_0354.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): eth_fallen_knives_20260606_0354.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_fallen_knives_20260610_1126.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): eth_fallen_knives_20260610_1126.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_fallen_knives_20260613_1030.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): eth_fallen_knives_20260613_1030.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_fallen_knives_20260615_1102.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): eth_fallen_knives_20260615_1102.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_fallen_knives_20260616_1603.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): eth_fallen_knives_20260616_1603.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_fallen_knives_20260617_1715.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): eth_fallen_knives_20260617_1715.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_fallen_knives_20260619_1300.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): eth_fallen_knives_20260619_1300.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_fallen_knives_20260621_1200.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): eth_fallen_knives_20260621_1200.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_fallen_knives_20260624_1330.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): eth_fallen_knives_20260624_1330.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_fallen_knives_20260625_1400.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): eth_fallen_knives_20260625_1400.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_fallen_knives_20260701_1400.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): eth_fallen_knives_20260701_1400.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_fallen_knives_20260702_1440.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): eth_fallen_knives_20260702_1440.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_fallen_knives_20260704_1330.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): eth_fallen_knives_20260704_1330.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_fallen_knives_20260709_0530.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): eth_fallen_knives_20260709_0530.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_fallen_knives_20260710_1015.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): eth_fallen_knives_20260710_1015.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_fallen_knives_20260711_1030.md",
+    "exitCode": 0,
+    "stdout": "WARN  score.discretionary missing or non-numeric (write 0 when no adjustment was taken) — required field, bounded ±2 on a 0.5 step (D1)\nWARN  companion_fr found nested under inputs.companion_fr — write it top-level (report-machine/1 migration)\nWARN  companion_fr.score=undefined must be a number 0-20\nWARN  companion_fr.channel=undefined is not exactly \"A\"/\"B\"/\"none\" — move descriptive text to companion_fr.channel_note (report-machine/1, 2026-08-03)\nWARN  companion_fr.cross_validation missing — Hard Rule 5 requires the FK/FR inverse-relation check stated on every report\nPASS — 0 errors, 5 warning(s): eth_fallen_knives_20260711_1030.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_fallen_knives_20260712_1030.md",
+    "exitCode": 0,
+    "stdout": "WARN  score.discretionary missing or non-numeric (write 0 when no adjustment was taken) — required field, bounded ±2 on a 0.5 step (D1)\nWARN  companion_fr found nested under inputs.companion_fr — write it top-level (report-machine/1 migration)\nWARN  companion_fr.score=undefined must be a number 0-20\nWARN  companion_fr.channel=undefined is not exactly \"A\"/\"B\"/\"none\" — move descriptive text to companion_fr.channel_note (report-machine/1, 2026-08-03)\nWARN  companion_fr.cross_validation missing — Hard Rule 5 requires the FK/FR inverse-relation check stated on every report\nPASS — 0 errors, 5 warning(s): eth_fallen_knives_20260712_1030.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_fallen_knives_20260713_1130.md",
+    "exitCode": 0,
+    "stdout": "WARN  score.discretionary missing or non-numeric (write 0 when no adjustment was taken) — required field, bounded ±2 on a 0.5 step (D1)\nWARN  companion_fr found nested under inputs.companion_fr — write it top-level (report-machine/1 migration)\nWARN  companion_fr.score=undefined must be a number 0-20\nWARN  companion_fr.channel=undefined is not exactly \"A\"/\"B\"/\"none\" — move descriptive text to companion_fr.channel_note (report-machine/1, 2026-08-03)\nWARN  companion_fr.cross_validation missing — Hard Rule 5 requires the FK/FR inverse-relation check stated on every report\nPASS — 0 errors, 5 warning(s): eth_fallen_knives_20260713_1130.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_fallen_knives_20260714_0845.md",
+    "exitCode": 0,
+    "stdout": "WARN  score.discretionary missing or non-numeric (write 0 when no adjustment was taken) — required field, bounded ±2 on a 0.5 step (D1)\nWARN  companion_fr found nested under inputs.companion_fr — write it top-level (report-machine/1 migration)\nWARN  companion_fr.score=undefined must be a number 0-20\nWARN  companion_fr.channel=undefined is not exactly \"A\"/\"B\"/\"none\" — move descriptive text to companion_fr.channel_note (report-machine/1, 2026-08-03)\nWARN  companion_fr.cross_validation missing — Hard Rule 5 requires the FK/FR inverse-relation check stated on every report\nPASS — 0 errors, 5 warning(s): eth_fallen_knives_20260714_0845.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_fallen_knives_20260714_1430.md",
+    "exitCode": 0,
+    "stdout": "WARN  score.discretionary missing or non-numeric (write 0 when no adjustment was taken) — required field, bounded ±2 on a 0.5 step (D1)\nWARN  companion_fr found nested under inputs.companion_fr — write it top-level (report-machine/1 migration)\nWARN  companion_fr.score=undefined must be a number 0-20\nWARN  companion_fr.channel=undefined is not exactly \"A\"/\"B\"/\"none\" — move descriptive text to companion_fr.channel_note (report-machine/1, 2026-08-03)\nWARN  companion_fr.cross_validation missing — Hard Rule 5 requires the FK/FR inverse-relation check stated on every report\nPASS — 0 errors, 5 warning(s): eth_fallen_knives_20260714_1430.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_fallen_knives_20260716_0330.md",
+    "exitCode": 0,
+    "stdout": "WARN  score.discretionary missing or non-numeric (write 0 when no adjustment was taken) — required field, bounded ±2 on a 0.5 step (D1)\nWARN  companion_fr found nested under inputs.companion_fr — write it top-level (report-machine/1 migration)\nWARN  companion_fr.score=undefined must be a number 0-20\nWARN  companion_fr.channel=undefined is not exactly \"A\"/\"B\"/\"none\" — move descriptive text to companion_fr.channel_note (report-machine/1, 2026-08-03)\nWARN  companion_fr.cross_validation missing — Hard Rule 5 requires the FK/FR inverse-relation check stated on every report\nPASS — 0 errors, 5 warning(s): eth_fallen_knives_20260716_0330.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_fallen_knives_20260718_0300.md",
+    "exitCode": 0,
+    "stdout": "WARN  score.discretionary missing or non-numeric (write 0 when no adjustment was taken) — required field, bounded ±2 on a 0.5 step (D1)\nWARN  companion_fr found nested under inputs.companion_fr — write it top-level (report-machine/1 migration)\nWARN  companion_fr.score=undefined must be a number 0-20\nWARN  companion_fr.channel=undefined is not exactly \"A\"/\"B\"/\"none\" — move descriptive text to companion_fr.channel_note (report-machine/1, 2026-08-03)\nWARN  companion_fr.cross_validation missing — Hard Rule 5 requires the FK/FR inverse-relation check stated on every report\nPASS — 0 errors, 5 warning(s): eth_fallen_knives_20260718_0300.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_fallen_knives_20260718_1505.md",
+    "exitCode": 0,
+    "stdout": "WARN  score.discretionary missing or non-numeric (write 0 when no adjustment was taken) — required field, bounded ±2 on a 0.5 step (D1)\nWARN  tranche 1A: entry \"1800-1880 IN-ZONE: ~5% FILLED @ ~1844 (MTM +0.7%), ~5% laddered 1800-1825\" reads as a FILL (entry says \"MTM\", which only has meaning against a real position) but no numeric entry_price — the score unlock line, gate floor, stop band, size cap and ratchet are all skipped without it (report-machine/1, 2026-07-29)\nWARN  companion_fr found nested under inputs.companion_fr — write it top-level (report-machine/1 migration)\nWARN  companion_fr.score=undefined must be a number 0-20\nWARN  companion_fr.channel=undefined is not exactly \"A\"/\"B\"/\"none\" — move descriptive text to companion_fr.channel_note (report-machine/1, 2026-08-03)\nWARN  companion_fr.cross_validation missing — Hard Rule 5 requires the FK/FR inverse-relation check stated on every report\nPASS — 0 errors, 6 warning(s): eth_fallen_knives_20260718_1505.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_fallen_knives_20260720_1450.md",
+    "exitCode": 0,
+    "stdout": "WARN  score.discretionary missing or non-numeric (write 0 when no adjustment was taken) — required field, bounded ±2 on a 0.5 step (D1)\nWARN  tranche 1A: entry \"1800-1880 zone: ~5% FILLED @ ~1844 (MTM +3.3%), ~5% laddered 1800-1825 working; spot 1904.74 ABOVE zone, no chase\" reads as a FILL (entry says \"MTM\", which only has meaning against a real position) but no numeric entry_price — the score unlock line, gate floor, stop band, size cap and ratchet are all skipped without it (report-machine/1, 2026-07-29)\nWARN  companion_fr found nested under inputs.companion_fr — write it top-level (report-machine/1 migration)\nWARN  companion_fr.score=undefined must be a number 0-20\nWARN  companion_fr.channel=undefined is not exactly \"A\"/\"B\"/\"none\" — move descriptive text to companion_fr.channel_note (report-machine/1, 2026-08-03)\nWARN  companion_fr.cross_validation missing — Hard Rule 5 requires the FK/FR inverse-relation check stated on every report\nPASS — 0 errors, 6 warning(s): eth_fallen_knives_20260720_1450.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_fallen_knives_20260722_0400.md",
+    "exitCode": 0,
+    "stdout": "WARN  score.discretionary missing or non-numeric (write 0 when no adjustment was taken) — required field, bounded ±2 on a 0.5 step (D1)\nWARN  tranche 1A: entry \"1800-1880 zone: ~5% FILLED @ ~1844 (MTM +3.7%), ~5% laddered 1800-1825 working; spot 1911.44 ABOVE zone, no chase; gate-count 2/8 blocks any NEW 1A add\" reads as a FILL (entry says \"MTM\", which only has meaning against a real position) but no numeric entry_price — the score unlock line, gate floor, stop band, size cap and ratchet are all skipped without it (report-machine/1, 2026-07-29)\nWARN  companion_fr found nested under inputs.companion_fr — write it top-level (report-machine/1 migration)\nWARN  companion_fr.score=undefined must be a number 0-20\nWARN  companion_fr.channel=undefined is not exactly \"A\"/\"B\"/\"none\" — move descriptive text to companion_fr.channel_note (report-machine/1, 2026-08-03)\nWARN  companion_fr.cross_validation missing — Hard Rule 5 requires the FK/FR inverse-relation check stated on every report\nPASS — 0 errors, 6 warning(s): eth_fallen_knives_20260722_0400.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_fallen_knives_20260723_0805.md",
+    "exitCode": 0,
+    "stdout": "WARN  score.discretionary missing or non-numeric (write 0 when no adjustment was taken) — required field, bounded ±2 on a 0.5 step (D1)\nWARN  tranche 1A: entry \"1800-1880 zone: ~5% FILLED @ ~1844 (MTM +4.41%), ~5% laddered 1800-1825 working; spot 1925.31 ABOVE zone, no chase; gate-count 2/8 blocks any NEW 1A add\" reads as a FILL (entry says \"MTM\", which only has meaning against a real position) but no numeric entry_price — the score unlock line, gate floor, stop band, size cap and ratchet are all skipped without it (report-machine/1, 2026-07-29)\nWARN  companion_fr found nested under inputs.companion_fr — write it top-level (report-machine/1 migration)\nWARN  companion_fr.score=undefined must be a number 0-20\nWARN  companion_fr.channel=undefined is not exactly \"A\"/\"B\"/\"none\" — move descriptive text to companion_fr.channel_note (report-machine/1, 2026-08-03)\nWARN  companion_fr.cross_validation missing — Hard Rule 5 requires the FK/FR inverse-relation check stated on every report\nPASS — 0 errors, 6 warning(s): eth_fallen_knives_20260723_0805.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_fallen_knives_20260725_1020.md",
+    "exitCode": 0,
+    "stdout": "WARN  score.discretionary missing or non-numeric (write 0 when no adjustment was taken) — required field, bounded ±2 on a 0.5 step (D1)\nWARN  companion_fr found nested under inputs.companion_fr — write it top-level (report-machine/1 migration)\nWARN  companion_fr.score=undefined must be a number 0-20\nWARN  companion_fr.channel=undefined is not exactly \"A\"/\"B\"/\"none\" — move descriptive text to companion_fr.channel_note (report-machine/1, 2026-08-03)\nWARN  companion_fr.cross_validation missing — Hard Rule 5 requires the FK/FR inverse-relation check stated on every report\nPASS — 0 errors, 5 warning(s): eth_fallen_knives_20260725_1020.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_fallen_knives_20260801_1117.md",
+    "exitCode": 0,
+    "stdout": "PASS — 0 errors, 0 warning(s): eth_fallen_knives_20260801_1117.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_fallen_knives_20260803_1411.md",
+    "exitCode": 0,
+    "stdout": "PASS — 0 errors, 0 warning(s): eth_fallen_knives_20260803_1411.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_fallen_knives_20260805_1008.md",
+    "exitCode": 0,
+    "stdout": "PASS — 0 errors, 0 warning(s): eth_fallen_knives_20260805_1008.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_fallen_knives_20260806_1836.md",
+    "exitCode": 0,
+    "stdout": "PASS — 0 errors, 0 warning(s): eth_fallen_knives_20260806_1836.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_fallen_knives_20260810_0020.md",
+    "exitCode": 0,
+    "stdout": "PASS — 0 errors, 0 warning(s): eth_fallen_knives_20260810_0020.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_fallen_knives_20260813_1744.md",
+    "exitCode": 0,
+    "stdout": "PASS — 0 errors, 0 warning(s): eth_fallen_knives_20260813_1744.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_fallen_knives_20260822_0346.md",
+    "exitCode": 0,
+    "stdout": "PASS — 0 errors, 0 warning(s): eth_fallen_knives_20260822_0346.json\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_flying_rocket_20260615_1104.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): eth_flying_rocket_20260615_1104.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_flying_rocket_20260616_0920.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): eth_flying_rocket_20260616_0920.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_flying_rocket_20260618_0020.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): eth_flying_rocket_20260618_0020.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_flying_rocket_20260714_1500.md",
+    "exitCode": 0,
+    "stdout": "WARN  score.discretionary missing or non-numeric (write 0 when no adjustment was taken) — required field, bounded ±2 on a 0.5 step (S1)\nWARN  channel must be \"A\", \"B\" or \"none\" (got undefined) — the score means different things in each (§2.5)\nPASS — 0 errors, 2 warning(s): eth_flying_rocket_20260714_1500.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_flying_rocket_20260716_0330.md",
+    "exitCode": 0,
+    "stdout": "WARN  score.discretionary missing or non-numeric (write 0 when no adjustment was taken) — required field, bounded ±2 on a 0.5 step (S1)\nWARN  channel must be \"A\", \"B\" or \"none\" (got undefined) — the score means different things in each (§2.5)\nPASS — 0 errors, 2 warning(s): eth_flying_rocket_20260716_0330.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_flying_rocket_20260728_0540.md",
+    "exitCode": 0,
+    "stdout": "WARN  gates.measurement.1 missing — Channel B gate 1 has more than one defensible reading and the report must cite the declared one (\"current_session_high\") (FR §4, 2026-08-07)\nWARN  gates.measurement.2 missing — Channel B gate 2 has more than one defensible reading and the report must cite the declared one (\"low_to_current\") (FR §4, 2026-08-07)\nWARN  gates.measurement.5 missing — Channel B gate 5 has more than one defensible reading and the report must cite the declared one (\"bounce_window\") (FR §4, 2026-08-07)\nPASS — 0 errors, 3 warning(s): eth_flying_rocket_20260728_0540.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_flying_rocket_20260731_0426.md",
+    "exitCode": 0,
+    "stdout": "WARN  gates.measurement.1 missing — Channel B gate 1 has more than one defensible reading and the report must cite the declared one (\"current_session_high\") (FR §4, 2026-08-07)\nWARN  gates.measurement.2 missing — Channel B gate 2 has more than one defensible reading and the report must cite the declared one (\"low_to_current\") (FR §4, 2026-08-07)\nWARN  gates.measurement.5 missing — Channel B gate 5 has more than one defensible reading and the report must cite the declared one (\"bounce_window\") (FR §4, 2026-08-07)\nPASS — 0 errors, 3 warning(s): eth_flying_rocket_20260731_0426.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_flying_rocket_20260806_1844.md",
+    "exitCode": 0,
+    "stdout": "WARN  gates.measurement.1 missing — Channel B gate 1 has more than one defensible reading and the report must cite the declared one (\"current_session_high\") (FR §4, 2026-08-07)\nWARN  gates.measurement.2 missing — Channel B gate 2 has more than one defensible reading and the report must cite the declared one (\"low_to_current\") (FR §4, 2026-08-07)\nWARN  gates.measurement.5 missing — Channel B gate 5 has more than one defensible reading and the report must cite the declared one (\"bounce_window\") (FR §4, 2026-08-07)\nPASS — 0 errors, 3 warning(s): eth_flying_rocket_20260806_1844.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_flying_rocket_20260810_0030.md",
+    "exitCode": 0,
+    "stdout": "PASS — 0 errors, 0 warning(s): eth_flying_rocket_20260810_0030.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_flying_rocket_20260813_0150.md",
+    "exitCode": 0,
+    "stdout": "PASS — 0 errors, 0 warning(s): eth_flying_rocket_20260813_0150.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_flying_rocket_20260819_1223.md",
+    "exitCode": 0,
+    "stdout": "PASS — 0 errors, 0 warning(s): eth_flying_rocket_20260819_1223.json\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_flying_rocket_20260820_1640.md",
+    "exitCode": 0,
+    "stdout": "PASS — 0 errors, 0 warning(s): eth_flying_rocket_20260820_1640.json\n",
+    "stderr": ""
+  },
+  {
+    "file": "eth_flying_rocket_20260821_0457.md",
+    "exitCode": 0,
+    "stdout": "PASS — 0 errors, 0 warning(s): eth_flying_rocket_20260821_0457.json\n",
+    "stderr": ""
+  },
+  {
+    "file": "gold_fallen_knives_20260515_0910.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): gold_fallen_knives_20260515_0910.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "gold_fallen_knives_20260528_1100.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): gold_fallen_knives_20260528_1100.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "gold_fallen_knives_20260531_1841.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): gold_fallen_knives_20260531_1841.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "gold_fallen_knives_20260610_1827.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): gold_fallen_knives_20260610_1827.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "gold_fallen_knives_20260611_0834.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): gold_fallen_knives_20260611_0834.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "gold_fallen_knives_20260615_1102.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): gold_fallen_knives_20260615_1102.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "gold_fallen_knives_20260616_1603.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): gold_fallen_knives_20260616_1603.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "gold_fallen_knives_20260617_1715.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): gold_fallen_knives_20260617_1715.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "gold_fallen_knives_20260619_1300.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): gold_fallen_knives_20260619_1300.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "gold_fallen_knives_20260621_1200.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): gold_fallen_knives_20260621_1200.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "gold_fallen_knives_20260624_1330.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): gold_fallen_knives_20260624_1330.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "gold_fallen_knives_20260625_1400.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): gold_fallen_knives_20260625_1400.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "gold_fallen_knives_20260701_1400.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): gold_fallen_knives_20260701_1400.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "gold_fallen_knives_20260702_1440.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): gold_fallen_knives_20260702_1440.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "gold_fallen_knives_20260704_1330.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): gold_fallen_knives_20260704_1330.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "gold_fallen_knives_20260709_0530.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): gold_fallen_knives_20260709_0530.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "gold_fallen_knives_20260711_1030.md",
+    "exitCode": 0,
+    "stdout": "WARN  score.discretionary missing or non-numeric (write 0 when no adjustment was taken) — required field, bounded ±2 on a 0.5 step (D1)\nWARN  tranche 1A: entry \"~4650\" reads as a FILL (entry opens with a single price, not a range) but no numeric entry_price — the score unlock line, gate floor, stop band, size cap and ratchet are all skipped without it (report-machine/1, 2026-07-29)\nWARN  tranche 1B: entry \"~4475 (blended 25% @ ~4545, MTM -9.7%)\" reads as a FILL (entry opens with a single price, not a range) but no numeric entry_price — the score unlock line, gate floor, stop band, size cap and ratchet are all skipped without it (report-machine/1, 2026-07-29)\nWARN  stops.deepest_zone_floor missing — coherence boolean not checkable\nWARN  companion_fr found nested under inputs.companion_fr — write it top-level (report-machine/1 migration)\nWARN  companion_fr.score=undefined must be a number 0-20\nWARN  companion_fr.channel=undefined is not exactly \"A\"/\"B\"/\"none\" — move descriptive text to companion_fr.channel_note (report-machine/1, 2026-08-03)\nWARN  companion_fr.cross_validation missing — Hard Rule 5 requires the FK/FR inverse-relation check stated on every report\nPASS — 0 errors, 8 warning(s): gold_fallen_knives_20260711_1030.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "gold_fallen_knives_20260713_1130.md",
+    "exitCode": 0,
+    "stdout": "WARN  score.discretionary missing or non-numeric (write 0 when no adjustment was taken) — required field, bounded ±2 on a 0.5 step (D1)\nWARN  tranche 1A: entry \"~4650\" reads as a FILL (entry opens with a single price, not a range) but no numeric entry_price — the score unlock line, gate floor, stop band, size cap and ratchet are all skipped without it (report-machine/1, 2026-07-29)\nWARN  tranche 1B: entry \"~4475 (blended 25% @ ~4545, MTM -11.7%)\" reads as a FILL (entry opens with a single price, not a range) but no numeric entry_price — the score unlock line, gate floor, stop band, size cap and ratchet are all skipped without it (report-machine/1, 2026-07-29)\nWARN  stops.deepest_zone_floor missing — coherence boolean not checkable\nWARN  companion_fr found nested under inputs.companion_fr — write it top-level (report-machine/1 migration)\nWARN  companion_fr.score=undefined must be a number 0-20\nWARN  companion_fr.channel=undefined is not exactly \"A\"/\"B\"/\"none\" — move descriptive text to companion_fr.channel_note (report-machine/1, 2026-08-03)\nWARN  companion_fr.cross_validation missing — Hard Rule 5 requires the FK/FR inverse-relation check stated on every report\nPASS — 0 errors, 8 warning(s): gold_fallen_knives_20260713_1130.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "gold_fallen_knives_20260714_0845.md",
+    "exitCode": 0,
+    "stdout": "WARN  score.discretionary missing or non-numeric (write 0 when no adjustment was taken) — required field, bounded ±2 on a 0.5 step (D1)\nWARN  tranche 1A: entry \"~4650\" reads as a FILL (entry opens with a single price, not a range) but no numeric entry_price — the score unlock line, gate floor, stop band, size cap and ratchet are all skipped without it (report-machine/1, 2026-07-29)\nWARN  tranche 1B: entry \"~4475 (blended 25% @ ~4545, MTM -11.4%)\" reads as a FILL (entry opens with a single price, not a range) but no numeric entry_price — the score unlock line, gate floor, stop band, size cap and ratchet are all skipped without it (report-machine/1, 2026-07-29)\nWARN  stops.deepest_zone_floor missing — coherence boolean not checkable\nWARN  companion_fr found nested under inputs.companion_fr — write it top-level (report-machine/1 migration)\nWARN  companion_fr.score=undefined must be a number 0-20\nWARN  companion_fr.channel=undefined is not exactly \"A\"/\"B\"/\"none\" — move descriptive text to companion_fr.channel_note (report-machine/1, 2026-08-03)\nWARN  companion_fr.cross_validation missing — Hard Rule 5 requires the FK/FR inverse-relation check stated on every report\nPASS — 0 errors, 8 warning(s): gold_fallen_knives_20260714_0845.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "gold_fallen_knives_20260718_1505.md",
+    "exitCode": 0,
+    "stdout": "WARN  score.discretionary missing or non-numeric (write 0 when no adjustment was taken) — required field, bounded ±2 on a 0.5 step (D1)\nWARN  tranche 1A: entry \"~4650\" reads as a FILL (entry opens with a single price, not a range) but no numeric entry_price — the score unlock line, gate floor, stop band, size cap and ratchet are all skipped without it (report-machine/1, 2026-07-29)\nWARN  tranche 1B: entry \"~4475 (blended 25% @ ~4545, MTM -11.7%)\" reads as a FILL (entry opens with a single price, not a range) but no numeric entry_price — the score unlock line, gate floor, stop band, size cap and ratchet are all skipped without it (report-machine/1, 2026-07-29)\nWARN  stops.deepest_zone_floor missing — coherence boolean not checkable\nWARN  companion_fr found nested under inputs.companion_fr — write it top-level (report-machine/1 migration)\nWARN  companion_fr.score=undefined must be a number 0-20\nWARN  companion_fr.channel=undefined is not exactly \"A\"/\"B\"/\"none\" — move descriptive text to companion_fr.channel_note (report-machine/1, 2026-08-03)\nWARN  companion_fr.cross_validation missing — Hard Rule 5 requires the FK/FR inverse-relation check stated on every report\nPASS — 0 errors, 8 warning(s): gold_fallen_knives_20260718_1505.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "gold_fallen_knives_20260720_1450.md",
+    "exitCode": 0,
+    "stdout": "WARN  score.discretionary missing or non-numeric (write 0 when no adjustment was taken) — required field, bounded ±2 on a 0.5 step (D1)\nWARN  tranche 1A: entry \"~4650\" reads as a FILL (entry opens with a single price, not a range) but no numeric entry_price — the score unlock line, gate floor, stop band, size cap and ratchet are all skipped without it (report-machine/1, 2026-07-29)\nWARN  tranche 1B: entry \"~4475 (blended 25% @ ~4545, MTM -11.76%)\" reads as a FILL (entry opens with a single price, not a range) but no numeric entry_price — the score unlock line, gate floor, stop band, size cap and ratchet are all skipped without it (report-machine/1, 2026-07-29)\nWARN  stops.deepest_zone_floor missing — coherence boolean not checkable\nWARN  companion_fr found nested under inputs.companion_fr — write it top-level (report-machine/1 migration)\nWARN  companion_fr.score=undefined must be a number 0-20\nWARN  companion_fr.channel=undefined is not exactly \"A\"/\"B\"/\"none\" — move descriptive text to companion_fr.channel_note (report-machine/1, 2026-08-03)\nWARN  companion_fr.cross_validation missing — Hard Rule 5 requires the FK/FR inverse-relation check stated on every report\nPASS — 0 errors, 8 warning(s): gold_fallen_knives_20260720_1450.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "gold_fallen_knives_20260722_0400.md",
+    "exitCode": 0,
+    "stdout": "WARN  score.discretionary missing or non-numeric (write 0 when no adjustment was taken) — required field, bounded ±2 on a 0.5 step (D1)\nWARN  tranche 1A: entry \"~4650\" reads as a FILL (entry opens with a single price, not a range) but no numeric entry_price — the score unlock line, gate floor, stop band, size cap and ratchet are all skipped without it (report-machine/1, 2026-07-29)\nWARN  tranche 1B: entry \"~4475 (blended 25% @ ~4545, MTM -9.4%)\" reads as a FILL (entry opens with a single price, not a range) but no numeric entry_price — the score unlock line, gate floor, stop band, size cap and ratchet are all skipped without it (report-machine/1, 2026-07-29)\nWARN  stops.deepest_zone_floor missing — coherence boolean not checkable\nWARN  companion_fr found nested under inputs.companion_fr — write it top-level (report-machine/1 migration)\nWARN  companion_fr.score=undefined must be a number 0-20\nWARN  companion_fr.channel=undefined is not exactly \"A\"/\"B\"/\"none\" — move descriptive text to companion_fr.channel_note (report-machine/1, 2026-08-03)\nWARN  companion_fr.cross_validation missing — Hard Rule 5 requires the FK/FR inverse-relation check stated on every report\nPASS — 0 errors, 8 warning(s): gold_fallen_knives_20260722_0400.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "gold_fallen_knives_20260723_0805.md",
+    "exitCode": 0,
+    "stdout": "WARN  score.discretionary missing or non-numeric (write 0 when no adjustment was taken) — required field, bounded ±2 on a 0.5 step (D1)\nWARN  tranche 1A: entry \"~4650\" reads as a FILL (entry opens with a single price, not a range) but no numeric entry_price — the score unlock line, gate floor, stop band, size cap and ratchet are all skipped without it (report-machine/1, 2026-07-29)\nWARN  tranche 1B: entry \"~4475 (blended 25% @ ~4545, MTM -10.16%)\" reads as a FILL (entry opens with a single price, not a range) but no numeric entry_price — the score unlock line, gate floor, stop band, size cap and ratchet are all skipped without it (report-machine/1, 2026-07-29)\nWARN  stops.deepest_zone_floor missing — coherence boolean not checkable\nWARN  companion_fr found nested under inputs.companion_fr — write it top-level (report-machine/1 migration)\nWARN  companion_fr.score=undefined must be a number 0-20\nWARN  companion_fr.channel=undefined is not exactly \"A\"/\"B\"/\"none\" — move descriptive text to companion_fr.channel_note (report-machine/1, 2026-08-03)\nWARN  companion_fr.cross_validation missing — Hard Rule 5 requires the FK/FR inverse-relation check stated on every report\nPASS — 0 errors, 8 warning(s): gold_fallen_knives_20260723_0805.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "gold_fallen_knives_20260725_1020.md",
+    "exitCode": 0,
+    "stdout": "WARN  score.discretionary missing or non-numeric (write 0 when no adjustment was taken) — required field, bounded ±2 on a 0.5 step (D1)\nWARN  tranche 1A: entry \"~4650\" reads as a FILL (entry opens with a single price, not a range) but no numeric entry_price — the score unlock line, gate floor, stop band, size cap and ratchet are all skipped without it (report-machine/1, 2026-07-29)\nWARN  tranche 1B: entry \"~4475 (blended 25% @ ~4545, MTM -10.50% at 4067.60)\" reads as a FILL (entry opens with a single price, not a range) but no numeric entry_price — the score unlock line, gate floor, stop band, size cap and ratchet are all skipped without it (report-machine/1, 2026-07-29)\nWARN  stops.deepest_zone_floor missing — coherence boolean not checkable\nWARN  companion_fr found nested under inputs.companion_fr — write it top-level (report-machine/1 migration)\nWARN  companion_fr.score=undefined must be a number 0-20\nWARN  companion_fr.channel=undefined is not exactly \"A\"/\"B\"/\"none\" — move descriptive text to companion_fr.channel_note (report-machine/1, 2026-08-03)\nWARN  companion_fr.cross_validation missing — Hard Rule 5 requires the FK/FR inverse-relation check stated on every report\nPASS — 0 errors, 8 warning(s): gold_fallen_knives_20260725_1020.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "gold_fallen_knives_20260801_1117.md",
+    "exitCode": 0,
+    "stdout": "WARN  stops.deepest_zone_floor missing — coherence boolean not checkable\nWARN  companion_fr.channel=\"none — STAND DOWN\" is not exactly \"A\"/\"B\"/\"none\" — move descriptive text to companion_fr.channel_note (report-machine/1, 2026-08-03)\nPASS — 0 errors, 2 warning(s): gold_fallen_knives_20260801_1117.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "gold_fallen_knives_20260805_1008.md",
+    "exitCode": 0,
+    "stdout": "WARN  stops.deepest_zone_floor missing — coherence boolean not checkable\nPASS — 0 errors, 1 warning(s): gold_fallen_knives_20260805_1008.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "gold_fallen_knives_20260810_0020.md",
+    "exitCode": 0,
+    "stdout": "WARN  stops.deepest_zone_floor missing — coherence boolean not checkable\nPASS — 0 errors, 1 warning(s): gold_fallen_knives_20260810_0020.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "gold_fallen_knives_20260815_1210.md",
+    "exitCode": 0,
+    "stdout": "PASS — 0 errors, 0 warning(s): gold_fallen_knives_20260815_1210.json\n",
+    "stderr": ""
+  },
+  {
+    "file": "gold_flying_rocket_20260616_0920.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): gold_flying_rocket_20260616_0920.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "gold_flying_rocket_20260618_0020.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): gold_flying_rocket_20260618_0020.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "sol_fallen_knives_20260528_1251.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): sol_fallen_knives_20260528_1251.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "sol_fallen_knives_20260718_0300.md",
+    "exitCode": 0,
+    "stdout": "WARN  score.discretionary missing or non-numeric (write 0 when no adjustment was taken) — required field, bounded ±2 on a 0.5 step (D1)\nWARN  companion_fr found nested under inputs.companion_fr — write it top-level (report-machine/1 migration)\nWARN  companion_fr.score=undefined must be a number 0-20\nWARN  companion_fr.channel=undefined is not exactly \"A\"/\"B\"/\"none\" — move descriptive text to companion_fr.channel_note (report-machine/1, 2026-08-03)\nWARN  companion_fr.cross_validation missing — Hard Rule 5 requires the FK/FR inverse-relation check stated on every report\nPASS — 0 errors, 5 warning(s): sol_fallen_knives_20260718_0300.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "sol_fallen_knives_20260813_1744.md",
+    "exitCode": 0,
+    "stdout": "PASS — 0 errors, 0 warning(s): sol_fallen_knives_20260813_1744.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "sol_flying_rocket_20260714_1500.md",
+    "exitCode": 0,
+    "stdout": "WARN  score.discretionary missing or non-numeric (write 0 when no adjustment was taken) — required field, bounded ±2 on a 0.5 step (S1)\nWARN  channel must be \"A\", \"B\" or \"none\" (got undefined) — the score means different things in each (§2.5)\nPASS — 0 errors, 2 warning(s): sol_flying_rocket_20260714_1500.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "sp500_flying_rocket_20260804_1642.md",
+    "exitCode": 0,
+    "stdout": "WARN  gates.na=[4, 6] but the frozen equity_index schema is [4, 6, 9] (active 6) — the non-crypto N/A set is fixed per asset class and may only change via a disclosed schema-revision note in the SKILL, never per report (FR annex)\nPASS — 0 errors, 1 warning(s): sp500_flying_rocket_20260804_1642.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "sp500_flying_rocket_20260804_2234.md",
+    "exitCode": 0,
+    "stdout": "WARN  score.rounding=\"half-up\" conflicts with the pinned convention for SP500 (\"half-down\") — a pinned rounding convention may not be overridden per report (§4)\nPASS — 0 errors, 1 warning(s): sp500_flying_rocket_20260804_2234.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "sp500_flying_rocket_20260812_1542.md",
+    "exitCode": 0,
+    "stdout": "PASS — 0 errors, 0 warning(s): sp500_flying_rocket_20260812_1542.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "sp500_flying_rocket_20260814_0854.md",
+    "exitCode": 0,
+    "stdout": "PASS — 0 errors, 0 warning(s): sp500_flying_rocket_20260814_0854.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "sp500_flying_rocket_20260820_1640.md",
+    "exitCode": 0,
+    "stdout": "PASS — 0 errors, 0 warning(s): sp500_flying_rocket_20260820_1640.json\n",
+    "stderr": ""
+  },
+  {
+    "file": "uni_flying_rocket_20260616_2357.md",
+    "exitCode": 1,
+    "stdout": "ERROR machine block missing (```json machine ... ``` with schema report-machine/1)\n\nFAIL — 1 error(s), 0 warning(s): uni_flying_rocket_20260616_2357.md\n",
+    "stderr": ""
+  },
+  {
+    "file": "uni_flying_rocket_20260731_0426.md",
+    "exitCode": 0,
+    "stdout": "PASS — 0 errors, 0 warning(s): uni_flying_rocket_20260731_0426.md\n",
+    "stderr": ""
+  }
+]

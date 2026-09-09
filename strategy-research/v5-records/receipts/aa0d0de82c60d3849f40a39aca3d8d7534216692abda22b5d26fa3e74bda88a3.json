@@ -1,0 +1,23 @@
+{
+  "schema": "strategy-v5-authoritative-command-receipt/1",
+  "version": 1,
+  "command": "validate",
+  "status": "COMPLETE",
+  "inputs": [
+    {
+      "role": "artifact",
+      "storage": "PHYSICAL",
+      "path": "strategy-research/v5-records/evidence/fixed-baseline-full-declared-v004/role-receipts-v004/non-trading-intervals-erratum-v001.json",
+      "byte_sha256": "a1d4227da162065538c2964658fa938337835fed2920cdd9a98e245e3962e89a",
+      "content_sha256": "3a8640dfafbab8bc31fcfc021b52ec822149439600a690a7ed89d5f96203bb4f",
+      "bytes": 821
+    }
+  ],
+  "outputs": [],
+  "limitations": [],
+  "details": {
+    "mode": "STRICT_SCHEMA_AND_SEMANTIC",
+    "active": false
+  },
+  "content_sha256": "aa0d0de82c60d3849f40a39aca3d8d7534216692abda22b5d26fa3e74bda88a3"
+}

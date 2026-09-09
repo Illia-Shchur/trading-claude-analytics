@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-prospective-numeric-execution-source/1",
+  "type": "object",
+  "required": ["schema", "version", "completed_bar_id", "decision_lineage_sha256", "trades", "content_sha256"],
+  "properties": {
+    "schema": {"const": "strategy-prospective-numeric-execution-source/1"},
+    "version": {"const": 1},
+    "asset": {"type": "string", "pattern": "^[a-z0-9]+$"},
+    "completed_bar_id": {"type": "string", "minLength": 1},
+    "decision_lineage_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "trades": {"type": "array", "minItems": 1, "items": {"type": "object", "required": ["trade_id", "direction", "quantity", "entry_price", "exit_price", "entry_time", "exit_time", "resolution_time", "fee_rate", "slippage_rate", "capacity_debit_usdt"], "properties": {"trade_id": {"type": "string", "minLength": 1}, "direction": {"enum": ["long", "short"]}, "quantity": {"type": "number", "exclusiveMinimum": 0}, "entry_price": {"type": "number", "exclusiveMinimum": 0}, "exit_price": {"type": "number", "exclusiveMinimum": 0}, "entry_time": {"type": "string", "format": "date-time"}, "exit_time": {"type": "string", "format": "date-time"}, "resolution_time": {"type": "string", "format": "date-time"}, "fee_rate": {"type": "number", "minimum": 0}, "slippage_rate": {"type": "number", "minimum": 0}, "capacity_debit_usdt": {"type": "number", "minimum": 0}}, "additionalProperties": false}},
+    "observed_price_convention": {"enum": ["REFERENCE_PRICES_PLUS_EXECUTION_DEBITS", "ACTUAL_FILL_PRICES"]},
+    "observed_fills": {"type": "array", "minItems": 1, "items": {"type": "object", "required": ["trade_id"], "properties": {"trade_id": {"type": "string", "minLength": 1}, "direction": {"enum": ["long", "short"]}, "quantity": {"type": "number", "exclusiveMinimum": 0}, "entry_price": {"type": "number", "exclusiveMinimum": 0}, "exit_price": {"type": "number", "exclusiveMinimum": 0}, "fees_usdt": {"type": "number", "minimum": 0}, "slippage_usdt": {"type": "number", "minimum": 0}, "capacity_debit_usdt": {"type": "number", "minimum": 0}, "net_pnl_usdt": {"type": "number"}}, "additionalProperties": false}},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": false
+}

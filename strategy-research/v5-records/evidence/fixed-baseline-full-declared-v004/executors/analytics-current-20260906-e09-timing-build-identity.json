@@ -1,0 +1,28 @@
+{
+  "schema": "analytics-build-identity/1",
+  "status": "KNOWN",
+  "executable": {
+    "code_source": "/Users/eternal/Desktop/Trading Claude Analytics/strategy-research/v5-records/evidence/fixed-baseline-full-declared-v004/executors/analytics-current-20260906-e09-timing.jar",
+    "kind": "JAR",
+    "sha256": "06ae9c89a90ddf6e899909875c69d2c4258d5423d1b6a6cd61a4d18e573a4bed",
+    "bytes": 107053488
+  },
+  "compiled": {
+    "input_fingerprint": "3752e3155f4b3afed0b216ed0e3223acb4889686c13771f5f48b7ba26bd66669",
+    "revision": "e54675065603ec8a578e482104a1ef15b7409807",
+    "dirty_source": "true",
+    "java_version": "openjdk version \"26.0.1\" 2026-04-21",
+    "java_vendor": "Oracle Corporation",
+    "java_runtime": "OpenJDK Runtime Environment",
+    "toolchain_fingerprint": "277c0d2ab5a069bc4fabbb9a6bb581a452181a794c58b74ee640f1b958b50f01",
+    "maven_wrapper_sha256": "cae96cef89ebea3531221f4ae17c23cf8edf67d00eae8306d4186ae1bbed4d02",
+    "root_pom_sha256": "21fea44956bd42ea79951766f14624b0dba1e36226457c5babc341dbc37b7b11",
+    "marker_resource": "META-INF/build-identity.properties"
+  },
+  "runtime": {
+    "java": "26.0.1",
+    "cwd": "/private/tmp",
+    "user_dir": "/private/tmp"
+  }
+}
+

@@ -30,10 +30,32 @@ credentials.json
 /strategy-research/v5-raw/
 /tmp/
 /strategy-research/v5-data/
+/analytics-cli/target/analytics-cli-1.0.0-SNAPSHOT-exec.jar.lock/
+strategy-research/v5-records/evidence/fixed-baseline-full-declared-v004/executors/*.jar
+# Large retained raw result projections stay available in the working archive,
+# while compact typed receipts and hashes remain the checkout evidence surface.
+/strategy-research/v5-records/evidence/fixed-baseline-full-declared-v004/fixed-baseline-e11-result.json
+/strategy-research/v5-records/evidence/fixed-baseline-full-declared-v004/full-result-20260906-v20-final.json
+/strategy-research/v5-records/evidence/fixed-baseline-full-declared-v004/full-result-20260906-v21-recompute.json
+/strategy-research/v5-records/evidence/fixed-baseline-full-declared-v004/refinement-results-v004/R1-result.json
+/strategy-research/v5-records/evidence/fixed-baseline-full-declared-v004/refinement-results-v004-run6/FK-DELEVERAGING-V002-R1.json
+/strategy-research/v5-records/evidence/fixed-baseline-full-declared-v004/operating-characteristics-full-v004-*.json
+!/strategy-research/v5-records/evidence/fixed-baseline-full-declared-v004/operating-characteristics-full-v004-dec4470d-summary.json
+!/strategy-research/v5-records/evidence/fixed-baseline-full-declared-v004/operating-characteristics-full-v004-dec4470d-exit-receipt.json
 /strategy-research/prospective-v5/
 *.snapshot.json
 exports/*.tmp
 node_modules/
+target/
+**/target/
+/.jqwik-database
+**/.jqwik-database
+**/__pycache__/
+/.analytics-build.lock/
+analytics-research/undefined/
+analytics-research/null/
+analytics-research/*.jsonl
+analytics-research/"/
 
 # report-machine/2 draft and renderer scratch (never committed)
 /.report-run/

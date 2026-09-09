@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-evaluator-operating-characteristics-successor-evaluator-receipt/1",
+  "type": "object",
+  "required": ["schema", "version", "origin", "result_schema", "result_content_sha256", "economic_semantic_sha256", "status", "executor_identity_sha256", "source_input_sha256", "metrics", "content_sha256"],
+  "properties": {
+    "schema": {"const": "strategy-evaluator-operating-characteristics-successor-evaluator-receipt/1"},
+    "version": {"const": 1},
+    "origin": {"const": "SHARED_FIXED_EVALUATOR_IN_PROCESS"},
+    "result_schema": {"const": "strategy-fixed-baseline-result/1"},
+    "result_content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "economic_semantic_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "status": {"type": "string"},
+    "executor_identity_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "source_input_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "metrics": {"type": "object"},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,113 @@
+{
+  "onchain": {
+    "available": true,
+    "as_of": "2026-07-31",
+    "history_days": 31,
+    "mvrv_ratio": 1.8,
+    "mvrv_z": 6.355,
+    "mvrv_z_method": "reconstructed: (market cap - realized cap) / sample stdev(full-history market cap); realized cap = market cap / MVRV",
+    "exchange_reserve": {
+      "native": 70,
+      "pct_of_supply": 7,
+      "change_30d_native": -30,
+      "change_30d_pct": -30
+    },
+    "exchange_flows": {
+      "inflow_usd_1d": 50,
+      "outflow_usd_1d": 40,
+      "net_inflow_usd_30d": 300,
+      "days_used": 30,
+      "sign_convention": "positive net inflow = exchange inflows exceeded outflows"
+    },
+    "lth": {
+      "available": false,
+      "status": "PROVIDER_GATED",
+      "reason": "true LTH supply/flow is not available in Coin Metrics Community; no proxy age band is substituted"
+    },
+    "status_note": "Coin Metrics flash values can back-revise; current values are descriptive unless the framework explicitly scores them"
+  },
+  "onchain_empty": {
+    "available": false,
+    "reason": "need >=30 usable daily Coin Metrics rows; got 0"
+  },
+  "premium": {
+    "available": true,
+    "as_of": "2026-01-03",
+    "latest_pct": -3,
+    "last_3_completed_days": [
+      {
+        "date": "2026-01-01",
+        "premium_pct": -1
+      },
+      {
+        "date": "2026-01-02",
+        "premium_pct": -2
+      },
+      {
+        "date": "2026-01-03",
+        "premium_pct": -3
+      }
+    ],
+    "negative_3_completed_days": true,
+    "consecutive_negative_completed_days": 3,
+    "days_aligned": 3,
+    "method": "Coinbase USD close / (Binance USDT close x Coinbase USDT-USD close) - 1",
+    "note": "completed UTC daily closes only; current partial day excluded"
+  },
+  "premium_empty": {
+    "available": false,
+    "reason": "need >=3 aligned completed daily closes; got 0"
+  },
+  "oi": {
+    "available": true,
+    "as_of": "2026-03-21",
+    "history_days": 80,
+    "latest_open_interest_usd": 179,
+    "high_90d_usd": 179,
+    "high_90d_date": "2026-03-21",
+    "pct_below_90d_high": 0,
+    "within_5pct_of_90d_high": true,
+    "scope_note": "Binance USD-M single-venue open interest; not market-wide OI"
+  },
+  "oi_empty": {
+    "available": false,
+    "history_days": 0,
+    "reason": "need >=80 distinct archived days for a 90d claim; got 0"
+  },
+  "breadth": {
+    "available": true,
+    "universe_as_of": "2026-01-01",
+    "universe_size": 3,
+    "matched": 3,
+    "coverage_pct": 100,
+    "above_200dma_count": 1,
+    "pct_above_200dma": 33.33,
+    "method": "close > SMA200; equal does not count as above"
+  },
+  "breadth_low": {
+    "available": false,
+    "universe_as_of": "2026-01-01",
+    "universe_size": 10,
+    "matched": 3,
+    "coverage_pct": 30,
+    "reason": "coverage 30% below 95% minimum"
+  },
+  "sentiment": {
+    "scored": false,
+    "note": "DISCLOSED REGIME CONTEXT ONLY — not a scored leg input. Both proxies were tested over 10y on 2026-08-05 and failed as scored inputs (GVZ: no gradient; PHYS premium: era-dependent, effective N~16). The sentiment leg keeps its NOT-FOUND fallback of 2.",
+    "vol_index": {
+      "last": 14,
+      "percentile_vs_2y": 100,
+      "history_days": 5,
+      "interpretation": "direction-blind — a high print means turbulence, NOT fear; never read as a fear signal"
+    },
+    "cef_premium": {
+      "premium_pct": 1.83,
+      "percentile_vs_2y": 0,
+      "baseline_window_days": 5,
+      "history_days": 8,
+      "sign": "PREMIUM",
+      "interpretation": "discount = investors paying below metal value (fear-shaped); UNSCORED — the signal is era-dependent and did not survive split-half validation"
+    }
+  }
+}

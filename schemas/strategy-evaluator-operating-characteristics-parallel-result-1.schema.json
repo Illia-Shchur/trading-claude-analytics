@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-evaluator-operating-characteristics-parallel-result/1",
+  "type": "object",
+  "required": [
+    "schema",
+    "version",
+    "status",
+    "mode",
+    "plan_sha256",
+    "profile_sha256",
+    "outcomes_opened",
+    "promotion_eligible",
+    "activation_authorized",
+    "measured",
+    "planned_slots",
+    "completed_slots",
+    "missing_slots",
+    "result_refs",
+    "missing",
+    "content_sha256",
+    "fixed_evaluator",
+    "shared_physical_evaluator",
+    "toy_statistic",
+    "evidence_phase",
+    "performance_claim"
+  ],
+  "properties": {
+    "schema": {
+      "const": "strategy-evaluator-operating-characteristics-parallel-result/1"
+    },
+    "version": {
+      "const": 1
+    },
+    "status": {
+      "enum": [
+        "COMPLETE",
+        "COMPUTE_INCOMPLETE"
+      ]
+    },
+    "mode": {
+      "enum": [
+        "FULL",
+        "PREFIX"
+      ]
+    },
+    "plan_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "profile_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "outcomes_opened": {
+      "const": true
+    },
+    "promotion_eligible": {
+      "const": false
+    },
+    "activation_authorized": {
+      "const": false
+    },
+    "measured": {
+      "type": "boolean"
+    },
+    "planned_slots": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "completed_slots": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "missing_slots": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "result_refs": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "missing": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "content_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "fixed_evaluator": {
+      "type": "string"
+    },
+    "shared_physical_evaluator": {
+      "const": true
+    },
+    "toy_statistic": {
+      "const": false
+    },
+    "evidence_phase": {
+      "const": "DEVELOPMENT"
+    },
+    "performance_claim": {
+      "enum": [
+        "NONE",
+        "CONDITIONAL_FIXED_BASELINE_DIAGNOSTIC"
+      ]
+    }
+  },
+  "additionalProperties": true
+}

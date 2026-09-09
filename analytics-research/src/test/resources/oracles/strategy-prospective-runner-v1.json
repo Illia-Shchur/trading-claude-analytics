@@ -1,0 +1,49 @@
+{
+  "schema": "strategy-prospective-runner-frozen-oracle/1",
+  "source": "tools/strategy-prospective-runner.mjs",
+  "invalid_command": {
+    "exit": 1,
+    "stdout": "",
+    "stderr": "usage: strategy-prospective-runner.mjs preflight|append|eligibility --ledger <path>\n"
+  },
+  "missing_ledger": {
+    "exit": 1,
+    "stdout": "",
+    "stderr": "FUTURE_SEAL_UNAVAILABLE: frozen prospective ledger is missing\n"
+  },
+  "preflight": {
+    "ready": true,
+    "schema": "strategy-prospective-ledger/1",
+    "reservation_sha256": "27e77b5503925c92dd42dadd82a50d38087a52095788b1b2820eb1c1d344b8c0",
+    "head_sha256": "901131d838b17aac0f7885b81e03cbdc9f5157a00343d30ab22083685ed1416a",
+    "data_rule": "completed public data available after frozen start only"
+  },
+  "eligibility_without_days": {
+    "pass": false,
+    "signal_count": 0,
+    "completed_outcome_count": 0,
+    "completed_portfolio_trades": 0,
+    "trades_by_asset": {"btc": 0},
+    "gates": {
+      "monitoring": false,
+      "statistical": false,
+      "stress": false,
+      "portfolio": false
+    },
+    "minimums": {
+      "minDays": 60,
+      "minPortfolioTrades": 25,
+      "minTradesPerAsset": 8
+    },
+    "reason": "FAST_OR_AUTHORITATIVE_GATES_NOT_MET"
+  },
+  "append": {
+    "path": "$OUT",
+    "head_sha256": "ae09273da56217bed45ac2f1d5990060f6c549b9470856719fe45a506950a65e",
+    "event_count": 1
+  },
+  "appended_ledger": {
+    "content_sha256": "b395ff89126ac44c2b6f0e7984ee5eac52d24d04a23844cef17b0bc800142c83",
+    "byte_sha256": "c564e794e6bbb4101603f7e032ead9a3de41d0dd1d58969819de27d0955d919a"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "schema": "strategy-v5-authoritative-command-receipt/1",
+  "version": 1,
+  "command": "metadata-build",
+  "status": "BLOCKED",
+  "inputs": [],
+  "outputs": [],
+  "limitations": [
+    "evaluator spec: missing physical prerequisite",
+    "metadata output root: missing physical prerequisite",
+    "plan: missing physical prerequisite",
+    "precommit: missing physical prerequisite",
+    "spot execution policy: missing physical prerequisite"
+  ],
+  "details": {
+    "mode": "BLOCKED_MISSING_PHYSICAL_PREREQUISITES",
+    "reason": "authoritative command requires every listed physical input before recomputation",
+    "active": false
+  },
+  "content_sha256": "3b5ca96ba2f7b50a334039d8e536382bda27bd501ff1d4e6a2fd507811d5b51f"
+}

@@ -1,0 +1,84 @@
+{
+  "event_book": {
+    "points_verified": 89839,
+    "ending_equity_usdt": 9877.345098959224,
+    "max_drawdown_usdt": 2666.352430524881,
+    "excluded_exit_boundary_marks": 165,
+    "final_active_position_count": 0,
+    "source_fingerprint": "010f1512a138e031390aa2bfef069a4b3368d9daa1c5109d8d66c65b2b22c6f0",
+    "result_sha256": "6a3b7bf3c0d3ac28af1e2703c8bd4d4ccabf0224673e6924c143d82becc726fb"
+  },
+  "control_book": {
+    "points_verified": 91182,
+    "ending_equity_usdt": 10197.809718451574,
+    "max_drawdown_usdt": 949.8559488299106,
+    "excluded_exit_boundary_marks": 155,
+    "final_active_position_count": 0,
+    "source_fingerprint": "010f1512a138e031390aa2bfef069a4b3368d9daa1c5109d8d66c65b2b22c6f0",
+    "result_sha256": "7cac0fe9ffc05e477f6a7835422ff5318aef45586d967e770c518e89ba95e415"
+  },
+  "eth_ending_equity_usdt": 9937.090065771701,
+  "preserved_files": 442,
+  "preserved_manifest_sha256": "a270b89b7b812f4e14806ec91b2528b4b565135b1c9bf51eb8a3529a12c48d9d",
+  "reviewed_base": "fd7935b9ea0320c171353416d94c1e3a6ab56078",
+  "evaluator_identity": "com.tradinganalytics.research.v5.StrategyFixedBaselinePortfolioCorrectionV1",
+  "accounting_version": "PORTFOLIO_ACCOUNTING_CORRECTION_V1",
+  "source_fingerprint": "010f1512a138e031390aa2bfef069a4b3368d9daa1c5109d8d66c65b2b22c6f0",
+  "schema": "portfolio-accounting-correction-independent-audit/1",
+  "qualification": {
+    "old_event_and_control_books_rejected_by_existing_guard": true,
+    "corrected_books_pass_existing_accounting_guard": true,
+    "new_qualification_receipt_issued": false,
+    "full_confirmation_unlocked": false
+  },
+  "tests": {
+    "tests": 1101,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 1
+  },
+  "focused_tests": 21,
+  "python_tests": 21,
+  "coverage": {
+    "line_covered": 340,
+    "line_total": 348,
+    "line_percent": 97.7,
+    "branch_covered": 152,
+    "branch_total": 186,
+    "branch_percent": 81.72,
+    "passed": true
+  },
+  "validation_commands": [
+    "./mvnw -pl analytics-research -am -Dtest=StrategyFixedBaselinePortfolioCorrectionV1Test -Dsurefire.failIfNoSpecifiedTests=false test",
+    "./mvnw --batch-mode --no-transfer-progress clean install",
+    "./mvnw -q package",
+    "python3 -m unittest tools.test_new_code_coverage tools.test_hydrate_binance_1m_windows",
+    "python3 -m unittest discover -s test/python -p 'test_fixed_baseline_hydration.py'",
+    "python3 tools/check_new_code_coverage.py --base fd7935b9ea0320c171353416d94c1e3a6ab56078 --report analytics-coverage/target/site/jacoco-aggregate/jacoco.xml",
+    "git diff --check"
+  ],
+  "preserved_artifact_sha256": {
+    "analytics-research/src/main/java/com/tradinganalytics/research/v5/StrategyFixedBaselineV5.java": "13768989d362fa1dbcb024bdef6db8bcf07b1380a9352a7ba978fb05954554a2",
+    "strategy-research/v5-records/evidence/performance-20260908/full-geometry-row.json.gz": "136f10687b7627e84721cc996d0e0035145900df1f6c31d89e705d679717a9fc",
+    "strategy-research/v5-records/evidence/performance-20260908/full-geometry-producer-audit.json.gz": "182ac99311a50633aea20b79f0d6fb67e7174e3d83eea0a51b2ca7d2937af3e8"
+  },
+  "correction_source_sha256": "3e607c3f6631a30f135ea415346ad9acd123e1512a98000bf4f10b0314a4a8a1",
+  "packaged_executable_sha256": "81c3350c10153076081c66e628ee54ffdec582dd189db7e15651b05a463772ec",
+  "before_curve_equity_usdt": {
+    "eth": 10877.658608725136,
+    "event_book": 164981.75482620575,
+    "control_book": 155886.14914311006
+  },
+  "audit_method": "Independent Python event replay; compare each canonical instant, event kind, trade ID, active count/IDs, cash, marked value and equity to final packaged Java correction; validate terminal equity, drawdown, own hashes and source immutability. No new simulations or held-out seeds.",
+  "eth_frozen_v5_reproduction_final_point": {
+    "episode_id": "eth:2021-01-12T00:00:00Z",
+    "event_time": "2021-01-21T23:18:00Z",
+    "event_type": "MARK",
+    "cash_usdt": 9937.090065771701,
+    "holdings_at_entry_cost_usdt": 0.0,
+    "equity_usdt": 10877.658608725134,
+    "drawdown_usdt": 0.0,
+    "realized_pnl_usdt": 0.0,
+    "entry_notional_usdt": 999.9989545111971
+  }
+}

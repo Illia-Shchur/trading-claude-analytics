@@ -1,0 +1,18 @@
+{
+  "schema": "strategy-v5-authoritative-command-receipt/1",
+  "version": 1,
+  "command": "prospective-runner",
+  "status": "BLOCKED",
+  "inputs": [],
+  "outputs": [],
+  "limitations": [
+    "PROSPECTIVE_LIVE_SOURCE_UNCONFIGURED"
+  ],
+  "details": {
+    "mode": "BLOCKED_LIVE_SOURCE_UNCONFIGURED",
+    "reason": "no verified frozen Binance completed-4h acquisition adapter is configured for this environment",
+    "active": false
+  },
+  "content_sha256": "0d31140fbe9f6ed8b438704e226bac09798bdf966f2afd46b8419fc054a5de48"
+}
+

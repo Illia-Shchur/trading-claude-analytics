@@ -1,0 +1,28 @@
+{
+  "schema": "analytics-build-identity/1",
+  "status": "KNOWN",
+  "executable": {
+    "code_source": "/Users/eternal/Desktop/Trading Claude Analytics/strategy-research/v5-records/evidence/fixed-baseline-full-declared-v004/executors/analytics-current-20260906-e14-retention-index.jar",
+    "kind": "JAR",
+    "sha256": "4567c7d493f07cdec806f046c40007e02bbac7358c41cd0eb5e1403183395a6d",
+    "bytes": 107059288
+  },
+  "compiled": {
+    "input_fingerprint": "fd1599dc5b64828c52203f796deb6f884d1f32ec602a97454a44c19bb91ae507",
+    "revision": "e54675065603ec8a578e482104a1ef15b7409807",
+    "dirty_source": "true",
+    "java_version": "openjdk version \"26.0.1\" 2026-04-21",
+    "java_vendor": "Oracle Corporation",
+    "java_runtime": "OpenJDK Runtime Environment",
+    "toolchain_fingerprint": "277c0d2ab5a069bc4fabbb9a6bb581a452181a794c58b74ee640f1b958b50f01",
+    "maven_wrapper_sha256": "cae96cef89ebea3531221f4ae17c23cf8edf67d00eae8306d4186ae1bbed4d02",
+    "root_pom_sha256": "21fea44956bd42ea79951766f14624b0dba1e36226457c5babc341dbc37b7b11",
+    "marker_resource": "META-INF/build-identity.properties"
+  },
+  "runtime": {
+    "java": "26.0.1",
+    "cwd": "/Users/eternal/Desktop/Trading Claude Analytics",
+    "user_dir": "/Users/eternal/Desktop/Trading Claude Analytics"
+  }
+}
+

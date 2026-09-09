@@ -1,0 +1,74 @@
+{
+  "reviewer": "parent independent Python audit",
+  "raw_byte_sha256": "1156b5e34e2dca2fec545f5059b61ceac2e066a7c824959d0fc603f08794a8cb",
+  "compact_byte_sha256": "b169ba9dcd65ba13bf27696ae7f5dafe79ae391c66e3467507ac9c40078e7bc5",
+  "replications_reconciled": 200,
+  "projection_exact": true,
+  "decision_rules_recomputed": true,
+  "cells": [
+    {
+      "cell": "NO_EDGE",
+      "effect": 0.0,
+      "n": 50,
+      "positive": 2,
+      "wilson95": [
+        0.011038884327619809,
+        0.1346009068750702
+      ],
+      "component_pass_counts": {
+        "event_p20_pass": 4,
+        "paired_p20_pass": 8,
+        "event_p_value_pass": 2,
+        "paired_p_value_pass": 5
+      }
+    },
+    {
+      "cell": "PLANTED_EDGE",
+      "effect": 0.0,
+      "n": 50,
+      "positive": 0,
+      "wilson95": [
+        6.4438204832223495e-18,
+        0.07134759913335872
+      ],
+      "component_pass_counts": {
+        "event_p20_pass": 5,
+        "paired_p20_pass": 10,
+        "event_p_value_pass": 3,
+        "paired_p_value_pass": 8
+      }
+    },
+    {
+      "cell": "PLANTED_EDGE",
+      "effect": 0.02,
+      "n": 50,
+      "positive": 14,
+      "wilson95": [
+        0.1747417066591123,
+        0.41665123695956563
+      ],
+      "component_pass_counts": {
+        "event_p20_pass": 27,
+        "paired_p20_pass": 22,
+        "event_p_value_pass": 24,
+        "paired_p_value_pass": 19
+      }
+    },
+    {
+      "cell": "PLANTED_EDGE",
+      "effect": 0.04,
+      "n": 50,
+      "positive": 45,
+      "wilson95": [
+        0.7863976856252035,
+        0.9565242350681097
+      ],
+      "component_pass_counts": {
+        "event_p20_pass": 49,
+        "paired_p20_pass": 47,
+        "event_p_value_pass": 48,
+        "paired_p_value_pass": 46
+      }
+    }
+  ]
+}

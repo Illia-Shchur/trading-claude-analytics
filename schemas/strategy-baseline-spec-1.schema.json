@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-baseline-spec/1",
+  "type": "object",
+  "required": ["schema", "baseline_id", "hypothesis_family", "predecessor", "status", "data_contract", "shock_rule", "execution", "controls", "falsifier", "activation"],
+  "properties": {
+    "schema": {"const": "strategy-baseline-spec/1"},
+    "baseline_id": {"type": "string", "minLength": 1},
+    "hypothesis_family": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*$"},
+    "predecessor": {"type": "object", "required": ["path", "sha256"]},
+    "status": {"const": "FROZEN"},
+    "evidence_phase": {"const": "DEVELOPMENT"},
+    "data_contract": {"type": "object"},
+    "shock_rule": {"type": "object"},
+    "execution": {"type": "object"},
+    "controls": {"type": "object"},
+    "falsifier": {"type": "object"},
+    "activation": {"type": "object", "required": ["authorized", "promotion_eligibility"]}
+  },
+  "additionalProperties": true
+}

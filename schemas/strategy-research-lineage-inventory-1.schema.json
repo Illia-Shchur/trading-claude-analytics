@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-research-lineage-inventory/1",
+  "type": "object",
+  "required": ["schema", "version", "status", "lower_bound", "promotion_eligible", "matching_row_count", "candidate_id_count", "content_sha256"],
+  "properties": {
+    "schema": {"const": "strategy-research-lineage-inventory/1"},
+    "version": {"const": 1},
+    "status": {"enum": ["INVENTORIED", "UNRESOLVED_HISTORY", "UNRESOLVED_ROOT"]},
+    "lower_bound": {"const": true},
+    "promotion_eligible": {"const": false},
+    "matching_row_count": {"type": "integer", "minimum": 0},
+    "candidate_row_count": {"type": "integer", "minimum": 0},
+    "candidate_id_count": {"type": "integer", "minimum": 0},
+    "metric_row_count": {"type": "integer", "minimum": 0},
+    "metrics_artifact_row_count": {"type": "integer", "minimum": 0},
+    "metrics_other_family_row_count": {"type": "integer", "minimum": 0},
+    "trade_outcome_row_count": {"type": "integer", "minimum": 0},
+    "trade_outcome_join_pending_count": {"type": "integer", "minimum": 0},
+    "parse_failure_count": {"type": "integer", "minimum": 0},
+    "unresolvable_attempt_count": {"type": "integer", "minimum": 0},
+    "claimed_behavior_hash_count": {"type": "integer", "minimum": 0},
+    "run_context_experiment_hash_count": {"type": "integer", "minimum": 0},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-control-successor-design/1",
+  "type": "object",
+  "required": ["schema", "version", "status", "development_only", "outcome_blind", "promotion_eligible", "activation_authorized", "predecessor_control_spec_sha256", "content_sha256"],
+  "properties": {
+    "schema": {"const": "strategy-control-successor-design/1"},
+    "version": {"const": 1},
+    "status": {"const": "FROZEN_DEVELOPMENT"},
+    "development_only": {"const": true},
+    "outcome_blind": {"const": true},
+    "promotion_eligible": {"const": false},
+    "activation_authorized": {"const": false},
+    "predecessor_control_spec_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": true
+}

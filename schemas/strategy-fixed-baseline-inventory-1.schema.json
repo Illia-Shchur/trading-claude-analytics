@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-fixed-baseline-inventory/1",
+  "type": "object",
+  "required": ["schema", "version", "source_result_content_sha256", "baseline_sha256", "control_spec_sha256", "experiment_sha256", "physical_input_sha256", "executor_identity_sha256", "setup_events", "control_selections", "inventory_counts", "outcomes_included", "content_sha256"],
+  "properties": {
+    "schema": {"const": "strategy-fixed-baseline-inventory/1"},
+    "version": {"const": 1},
+    "source_result_content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "baseline_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "control_spec_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "experiment_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "physical_input_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "executor_identity_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "setup_events": {"type": "array"},
+    "control_selections": {"type": "array"},
+    "inventory_counts": {"type": "object"},
+    "outcomes_included": {"const": false},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": true
+}

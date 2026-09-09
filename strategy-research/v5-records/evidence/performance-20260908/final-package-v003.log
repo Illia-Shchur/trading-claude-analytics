@@ -1,0 +1,726 @@
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner (file:/Users/eternal/.m2/wrapper/dists/apache-maven-3.9.11/a2d47e15/lib/guice-5.1.0-classes.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner
+WARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release
+WARNING: Final field _cipher in class org.sonatype.plexus.components.sec.dispatcher.DefaultSecDispatcher has been mutated reflectively by class org.eclipse.sisu.bean.BeanPropertyField in unnamed module @5a955565 (file:/Users/eternal/.m2/wrapper/dists/apache-maven-3.9.11/a2d47e15/lib/org.eclipse.sisu.inject-0.9.0.M4.jar)
+WARNING: Use --enable-final-field-mutation=ALL-UNNAMED to avoid a warning
+WARNING: Mutating final fields will be blocked in a future release unless final field mutation is enabled
+SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+timestamp = 2026-09-08T04:53:37.708373, CanonicalJsonPropertiesTest:canonicalizationIsIdempotentAcrossStrictParsing = 
+                              |-----------------------jqwik-----------------------
+tries = 400                   | # of calls to property
+checks = 400                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 108        | # of all combined edge cases
+edge-cases#tried = 62         | # of edge cases tried in current run
+seed = 8071992661518963595    | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:53:37.857436, CanonicalJsonPropertiesTest:objectInsertionOrderCannotChangeCanonicalBytes = 
+                              |-----------------------jqwik-----------------------
+tries = 400                   | # of calls to property
+checks = 400                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 19         | # of all combined edge cases
+edge-cases#tried = 8          | # of edge cases tried in current run
+seed = -7033656234787836196   | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:53:37.875214, StrictJsonPropertiesTest:rejectsEveryRepeatedPropertyName = 
+                              |-----------------------jqwik-----------------------
+tries = 300                   | # of calls to property
+checks = 300                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 2          | # of all combined edge cases
+edge-cases#tried = 2          | # of edge cases tried in current run
+seed = 7028016962449201220    | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:53:37.883529, StrictJsonPropertiesTest:acceptsEveryJsonEncodedString = 
+                              |-----------------------jqwik-----------------------
+tries = 300                   | # of calls to property
+checks = 300                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 3          | # of all combined edge cases
+edge-cases#tried = 3          | # of edge cases tried in current run
+seed = -1813360565056297541   | random seed to reproduce generated values
+
+
+Sept 08, 2026 4:53:40 AM net.jqwik.engine.properties.RandomizedShrinkablesGenerator logEdgeCasesOutnumberTriesIfApplicable
+INFO: Edge case generation exceeds number of tries. Stopped after 600 generated cases.
+timestamp = 2026-09-08T04:53:40.677005, SwingScorePropertyTest:riskNotionalIsExactlyTheMinimumOfAllThreeNonNegativeConstraints = 
+                              |-----------------------jqwik-----------------------
+tries = 500                   | # of calls to property
+checks = 500                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 600        | # of all combined edge cases
+edge-cases#tried = 82         | # of edge cases tried in current run
+seed = -802466278127415572    | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:53:40.693043, SwingScorePropertyTest:positiveDiscretionCanNeverUnlockABelowThresholdMechanicalScore = 
+                              |-----------------------jqwik-----------------------
+tries = 2                     | # of calls to property
+checks = 2                    | # of not rejected calls
+generation = EXHAUSTIVE       | parameters are exhaustively generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 0          | # of all combined edge cases
+edge-cases#tried = 0          | # of edge cases tried in current run
+seed = -7276336425474156672   | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:53:40.697994, SwingScorePropertyTest:flowScoreIsRoundedEvidenceFamilyCountTimesOneAndAQuarter = 
+                              |-----------------------jqwik-----------------------
+tries = 16                    | # of calls to property
+checks = 16                   | # of not rejected calls
+generation = EXHAUSTIVE       | parameters are exhaustively generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 0          | # of all combined edge cases
+edge-cases#tried = 0          | # of edge cases tried in current run
+seed = 6896989901566582907    | random seed to reproduce generated values
+
+
+Sept 08, 2026 4:53:40 AM net.jqwik.engine.properties.RandomizedShrinkablesGenerator logEdgeCasesOutnumberTriesIfApplicable
+INFO: Edge case generation exceeds number of tries. Stopped after 500 generated cases.
+timestamp = 2026-09-08T04:53:40.745985, SwingScorePropertyTest:normalizedLegsStayBoundedHalfPointAndMechanicalScoreNeverExceedsTwenty = 
+                              |-----------------------jqwik-----------------------
+tries = 500                   | # of calls to property
+checks = 500                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 500        | # of all combined edge cases
+edge-cases#tried = 83         | # of edge cases tried in current run
+seed = -8585374803512132129   | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:53:40.759214, SwingScorePropertyTest:halfRoundingAlwaysReturnsAHalfPointWithinQuarterPoint = 
+                              |-----------------------jqwik-----------------------
+tries = 1000                  | # of calls to property
+checks = 1000                 | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 7          | # of all combined edge cases
+edge-cases#tried = 7          | # of edge cases tried in current run
+seed = 3233087546159262690    | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:53:40.771820, ComputeMathPropertyTest:stopCoherenceIsExactlyStrictLessThan = 
+                              |-----------------------jqwik-----------------------
+tries = 300                   | # of calls to property
+checks = 300                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 49         | # of all combined edge cases
+edge-cases#tried = 36         | # of edge cases tried in current run
+seed = 5480471741304142671    | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:53:40.803262, ComputeMathPropertyTest:streakNeverExceedsInputAndStopsAtFirstBreach = 
+                              |-----------------------jqwik-----------------------
+tries = 500                   | # of calls to property
+checks = 500                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 30         | # of all combined edge cases
+edge-cases#tried = 30         | # of edge cases tried in current run
+seed = 55208474919937663      | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:53:40.817197, ComputeMathPropertyTest:percentileRankAlwaysLivesOnTheClosedPercentScale = 
+                              |-----------------------jqwik-----------------------
+tries = 500                   | # of calls to property
+checks = 500                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 56         | # of all combined edge cases
+edge-cases#tried = 56         | # of edge cases tried in current run
+seed = 2965676674582359952    | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:53:40.828173, ComputeMathPropertyTest:scoreRoundingStaysWithinOneAndUsesConservativeTieDirection = 
+                              |-----------------------jqwik-----------------------
+tries = 1000                  | # of calls to property
+checks = 1000                 | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 7          | # of all combined edge cases
+edge-cases#tried = 7          | # of edge cases tried in current run
+seed = -6956169160796120283   | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:53:40.842227, ComputeMathPropertyTest:shortEvNeverLetsPositiveCarryHelpTheGate = 
+                              |-----------------------jqwik-----------------------
+tries = 500                   | # of calls to property
+checks = 500                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 196        | # of all combined edge cases
+edge-cases#tried = 76         | # of edge cases tried in current run
+seed = 4612822048871122174    | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:53:40.849017, ComputeMathPropertyTest:drawdownAndCycleCapAreConsistentAcrossPriceRatios = 
+                              |-----------------------jqwik-----------------------
+tries = 300                   | # of calls to property
+checks = 300                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 12         | # of all combined edge cases
+edge-cases#tried = 12         | # of edge cases tried in current run
+seed = 2879008827847165507    | random seed to reproduce generated values
+
+
+Sept 08, 2026 4:53:40 AM net.jqwik.engine.properties.RandomizedShrinkablesGenerator logEdgeCasesOutnumberTriesIfApplicable
+INFO: Edge case generation exceeds number of tries. Stopped after 336 generated cases.
+timestamp = 2026-09-08T04:53:40.859909, ComputeMathPropertyTest:percentileRankIsMonotoneInTheQueriedValue = 
+                              |-----------------------jqwik-----------------------
+tries = 300                   | # of calls to property
+checks = 300                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 336        | # of all combined edge cases
+edge-cases#tried = 46         | # of edge cases tried in current run
+seed = -8565086618239731589   | random seed to reproduce generated values
+
+
+SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::load has been called by org.duckdb.DuckDBNative in an unnamed module (file:/Users/eternal/.m2/repository/org/duckdb/duckdb_jdbc/1.5.5.1/duckdb_jdbc-1.5.5.1.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+timestamp = 2026-09-08T04:53:56.802527, ReportContractPropertiesTest:facadeStrictParserRejectsEveryDuplicateProperty = 
+                              |-----------------------jqwik-----------------------
+tries = 300                   | # of calls to property
+checks = 300                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 2          | # of all combined edge cases
+edge-cases#tried = 2          | # of edge cases tried in current run
+seed = -1419905547242008794   | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:53:56.930821, ReportContractPropertiesTest:facadeCanonicalBytesAndHashesIgnoreObjectInsertionOrder = 
+                              |-----------------------jqwik-----------------------
+tries = 400                   | # of calls to property
+checks = 400                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 19         | # of all combined edge cases
+edge-cases#tried = 19         | # of edge cases tried in current run
+seed = -5757017156290380580   | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:53:56.954164, ReportContractPropertiesTest:anyUppercaseAssetBreaksThePinnedIdentityGrammar = 
+                              |-----------------------jqwik-----------------------
+tries = 300                   | # of calls to property
+checks = 300                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 16         | # of all combined edge cases
+edge-cases#tried = 15         | # of edge cases tried in current run
+seed = 5250113841633898705    | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:53:56.995869, ReportContractPropertiesTest:canonicalIdentityRoundTripsForEveryRegexAcceptedStem = 
+                              |-----------------------jqwik-----------------------
+tries = 500                   | # of calls to property
+checks = 500                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 64         | # of all combined edge cases
+edge-cases#tried = 53         | # of edge cases tried in current run
+seed = -3559323698049027175   | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:53:57.059808, ReportRendererPropertiesTest:swingTablesEscapePipesNewlinesAndCodeFences = 
+                              |-----------------------jqwik-----------------------
+tries = 150                   | # of calls to property
+checks = 150                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 5          | # of all combined edge cases
+edge-cases#tried = 5          | # of edge cases tried in current run
+seed = 1022236377461374607    | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:53:57.644054, ReportRendererPropertiesTest:allRenderExportsArePureAndDeterministic = 
+                              |-----------------------jqwik-----------------------
+tries = 150                   | # of calls to property
+checks = 150                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 3          | # of all combined edge cases
+edge-cases#tried = 3          | # of edge cases tried in current run
+seed = -6851767799198265717   | random seed to reproduce generated values
+
+
+SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::load has been called by org.duckdb.DuckDBNative in an unnamed module (file:/Users/eternal/.m2/repository/org/duckdb/duckdb_jdbc/1.5.5.1/duckdb_jdbc-1.5.5.1.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+StrategyResearchV5NodeOracleTest: ok (51 assertions)
+Command review rejection: physical source byte hash mismatch
+
+Command review rejection: execution source byte hash mismatch
+
+Command review rejection: same completed-bar identity has divergent source or signal payload
+
+Command review rejection: same completed-bar identity has divergent source or signal payload
+
+Command review rejection: same completed outcome identity has divergent outcome receipt binding
+
+PASS StrategyResearchAuthoritativeV5NodeOracleTest checks=231
+PASS 35 quarantine tests; 66/66 exports
+timestamp = 2026-09-08T04:54:31.884941, CalibrationPropertiesTest:validatorReportsEveryMissingTopLevelRequirement = 
+                              |-----------------------jqwik-----------------------
+tries = 8                     | # of calls to property
+checks = 8                    | # of not rejected calls
+generation = EXHAUSTIVE       | parameters are exhaustively generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 0          | # of all combined edge cases
+edge-cases#tried = 0          | # of edge cases tried in current run
+seed = 8799366685650825600    | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:54:32.042666, CalibrationPropertiesTest:eventPreservingCapNeverLosesEndpointsOrMisaccountsFiles = 
+                              |-----------------------jqwik-----------------------
+tries = 300                   | # of calls to property
+checks = 300                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 16         | # of all combined edge cases
+edge-cases#tried = 16         | # of edge cases tried in current run
+seed = -5715314136657940681   | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:54:32.095701, CalibrationPropertiesTest:terminalMachineBlockAccountsUtf8AndHashesRawExactly = 
+                              |-----------------------jqwik-----------------------
+tries = 250                   | # of calls to property
+checks = 250                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 9          | # of all combined edge cases
+edge-cases#tried = 8          | # of edge cases tried in current run
+seed = 4392347133728117755    | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:54:32.110422, SwingValidationPropertyTest:coverageRatiosAndGapBoundsStayCoherent = 
+                              |-----------------------jqwik-----------------------
+tries = 150                   | # of calls to property
+checks = 150                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 20         | # of all combined edge cases
+edge-cases#tried = 19         | # of edge cases tried in current run
+seed = -8694397720353852322   | random seed to reproduce generated values
+
+
+Sept 08, 2026 4:54:32 AM net.jqwik.engine.properties.RandomizedShrinkablesGenerator logEdgeCasesOutnumberTriesIfApplicable
+INFO: Edge case generation exceeds number of tries. Stopped after 144 generated cases.
+timestamp = 2026-09-08T04:54:32.119652, SwingValidationPropertyTest:candidateBoundsAdmitOnlyDeclaredSearchSpace = 
+                              |-----------------------jqwik-----------------------
+tries = 100                   | # of calls to property
+checks = 100                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 144        | # of all combined edge cases
+edge-cases#tried = 13         | # of edge cases tried in current run
+seed = 267813919015954532     | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:54:32.248140, SwingBackfillPropertyTest:labelsAlwaysResolveWithinDeclaredHorizon = 
+                              |-----------------------jqwik-----------------------
+tries = 100                   | # of calls to property
+checks = 100                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 16         | # of all combined edge cases
+edge-cases#tried = 15         | # of edge cases tried in current run
+seed = -6539808711703793359   | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:54:32.283321, SwingBackfillPropertyTest:constantRangeBarsNeverProduceImpossibleLabels = 
+                              |-----------------------jqwik-----------------------
+tries = 100                   | # of calls to property
+checks = 100                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 12         | # of all combined edge cases
+edge-cases#tried = 10         | # of edge cases tried in current run
+seed = -2914052922151425538   | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:54:32.289745, SwingEnginePropertyTest:allLegalFkStaticStopsRoundTrip = 
+                              |-----------------------jqwik-----------------------
+tries = 100                   | # of calls to property
+checks = 100                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 4          | # of all combined edge cases
+edge-cases#tried = 3          | # of edge cases tried in current run
+seed = -2216686791286233226   | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:54:32.292730, SwingEnginePropertyTest:stopsAboveHardCeilingAlwaysFail = 
+                              |-----------------------jqwik-----------------------
+tries = 50                    | # of calls to property
+checks = 50                   | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 2          | # of all combined edge cases
+edge-cases#tried = 1          | # of edge cases tried in current run
+seed = 7992670515522203325    | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:54:32.311018, SwingEnginePropertyTest:tradeMetricCountersAndRatesRemainCoherent = 
+                              |-----------------------jqwik-----------------------
+tries = 100                   | # of calls to property
+checks = 100                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 32         | # of all combined edge cases
+edge-cases#tried = 15         | # of edge cases tried in current run
+seed = 592611575660812178     | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:54:32.319563, LegacyResearchNextCommandSecurityTest:anyUnretainedExposureMutationFailsClosed = 
+                              |-----------------------jqwik-----------------------
+tries = 80                    | # of calls to property
+checks = 80                   | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 9          | # of all combined edge cases
+edge-cases#tried = 8          | # of edge cases tried in current run
+seed = 6773084439478755960    | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:54:32.330440, LegacyResearchNextCommandSecurityTest:cosmeticMetadataNeverChangesBehaviorHash = 
+                              |-----------------------jqwik-----------------------
+tries = 80                    | # of calls to property
+checks = 80                   | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 81         | # of all combined edge cases
+edge-cases#tried = 14         | # of edge cases tried in current run
+seed = -8215523953252412607   | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:54:32.334344, StrategyStatisticalV5PropertyTest:withHashIsNonMutatingAndAlwaysRecomputesOwnHash = 
+                              |-----------------------jqwik-----------------------
+tries = 80                    | # of calls to property
+checks = 80                   | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 9          | # of all combined edge cases
+edge-cases#tried = 9          | # of edge cases tried in current run
+seed = -3593731055065411353   | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:54:32.337662, StrategyStatisticalV5PropertyTest:constrainedDominanceIsAsymmetricForDistinctFeasibleObjectives = 
+                              |-----------------------jqwik-----------------------
+tries = 80                    | # of calls to property
+checks = 80                   | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 9          | # of all combined edge cases
+edge-cases#tried = 9          | # of edge cases tried in current run
+seed = -3637326784411375379   | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:54:32.340552, StrategyStatisticalV5PropertyTest:canonicalHashIgnoresObjectInsertionOrder = 
+                              |-----------------------jqwik-----------------------
+tries = 80                    | # of calls to property
+checks = 80                   | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 9          | # of all combined edge cases
+edge-cases#tried = 5          | # of edge cases tried in current run
+seed = -2907653715715012771   | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:54:32.342431, StrategyStatisticalV5PropertyTest:directNeighboursRemainUniqueAndInsideTheFrozenGeneSpace = 
+                              |-----------------------jqwik-----------------------
+tries = 11                    | # of calls to property
+checks = 11                   | # of not rejected calls
+generation = EXHAUSTIVE       | parameters are exhaustively generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 0          | # of all combined edge cases
+edge-cases#tried = 0          | # of edge cases tried in current run
+seed = -1115034043816464460   | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:54:32.353792, StrategyStatisticalV5PropertyTest:exposureAppendDeduplicatesBehaviorWhileChargingEveryAttempt = 
+                              |-----------------------jqwik-----------------------
+tries = 60                    | # of calls to property
+checks = 60                   | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 5          | # of all combined edge cases
+edge-cases#tried = 5          | # of edge cases tried in current run
+seed = -311228747953105194    | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:54:32.360128, StrategyEvaluatorV5SecurityPropertyTest:numericPredicateOperatorsPreserveTheirMathematicalBoundary = 
+                              |-----------------------jqwik-----------------------
+tries = 120                   | # of calls to property
+checks = 120                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 81         | # of all combined edge cases
+edge-cases#tried = 14         | # of edge cases tried in current run
+seed = -8771794241183343347   | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:54:32.364805, StrategyEvaluatorV5SecurityPropertyTest:physicalNullRebasePreservesIdentityAndTimeDelta = 
+                              |-----------------------jqwik-----------------------
+tries = 100                   | # of calls to property
+checks = 100                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 45         | # of all combined edge cases
+edge-cases#tried = 16         | # of edge cases tried in current run
+seed = -9017790249928458611   | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:54:32.368255, StrategyPortfolioRiskV5PropertyTest:canonicalHashIgnoresObjectInsertionOrder = 
+                              |-----------------------jqwik-----------------------
+tries = 80                    | # of calls to property
+checks = 80                   | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 5          | # of all combined edge cases
+edge-cases#tried = 4          | # of edge cases tried in current run
+seed = 6748209223869740996    | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:54:32.371153, StrategyPortfolioRiskV5PropertyTest:withHashAlwaysRecomputesOwnHash = 
+                              |-----------------------jqwik-----------------------
+tries = 80                    | # of calls to property
+checks = 80                   | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 9          | # of all combined edge cases
+edge-cases#tried = 8          | # of edge cases tried in current run
+seed = -9118702481795459817   | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:54:32.388235, OpportunityV5SecurityPropertyTest:anyContentHashMutationInvalidatesFrozenEnvelope = 
+                              |-----------------------jqwik-----------------------
+tries = 100                   | # of calls to property
+checks = 100                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 16         | # of all combined edge cases
+edge-cases#tried = 16         | # of edge cases tried in current run
+seed = -828048046087933763    | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:54:32.435120, OpportunityV5SecurityPropertyTest:densePartitionHydrationRoundTripsWithoutNestedCopies = 
+                              |-----------------------jqwik-----------------------
+tries = 80                    | # of calls to property
+checks = 80                   | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 80         | # of all combined edge cases
+edge-cases#tried = 14         | # of edge cases tried in current run
+seed = -7528092381913582357   | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:54:32.438272, StrategyPortfolioV5PropertyTest:everyNonEmptyCryptoSpotAssetIsAccepted = 
+                              |-----------------------jqwik-----------------------
+tries = 40                    | # of calls to property
+checks = 40                   | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 2          | # of all combined edge cases
+edge-cases#tried = 2          | # of edge cases tried in current run
+seed = -2460045682272797475   | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:54:32.443684, StrategyPortfolioV5PropertyTest:strictLongPnlEqualsMarkDelta = 
+                              |-----------------------jqwik-----------------------
+tries = 25                    | # of calls to property
+checks = 25                   | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 32         | # of all combined edge cases
+edge-cases#tried = 1          | # of edge cases tried in current run
+seed = 3983685354018974102    | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:54:32.447379, StrategyPortfolioV5PropertyTest:realizedOnlyPortfolioEquityIsAffineInExplicitPnl = 
+                              |-----------------------jqwik-----------------------
+tries = 30                    | # of calls to property
+checks = 30                   | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 7          | # of all combined edge cases
+edge-cases#tried = 3          | # of edge cases tried in current run
+seed = -4042777226579493569   | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:54:32.449814, StrategyPortfolioV5PropertyTest:nonCryptoAssetClassesAlwaysFailClosed = 
+                              |-----------------------jqwik-----------------------
+tries = 20                    | # of calls to property
+checks = 20                   | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 2          | # of all combined edge cases
+edge-cases#tried = 0          | # of edge cases tried in current run
+seed = -2886806472522468066   | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:54:32.462443, StrategyPerformanceV5PropertyTest:productionWorkloadPreservesFrozenAttemptAlgebra = 
+                              |-----------------------jqwik-----------------------
+tries = 50                    | # of calls to property
+checks = 50                   | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 64         | # of all combined edge cases
+edge-cases#tried = 5          | # of edge cases tried in current run
+seed = -926553512514524014    | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:54:32.469650, StrategyPerformanceV5PropertyTest:ordinaryOutcomeVectorsNeverCrossPhaseOrFoldScopes = 
+                              |-----------------------jqwik-----------------------
+tries = 24                    | # of calls to property
+checks = 24                   | # of not rejected calls
+generation = EXHAUSTIVE       | parameters are exhaustively generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 0          | # of all combined edge cases
+edge-cases#tried = 0          | # of edge cases tried in current run
+seed = 2971192706496859156    | random seed to reproduce generated values
+
+
+timestamp = 2026-09-08T04:54:32.476152, StrategyPerformanceV5PropertyTest:identicalScopesReuseEverySignalAndIntentOutcome = 
+                              |-----------------------jqwik-----------------------
+tries = 24                    | # of calls to property
+checks = 24                   | # of not rejected calls
+generation = EXHAUSTIVE       | parameters are exhaustively generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 0          | # of all combined edge cases
+edge-cases#tried = 0          | # of edge cases tried in current run
+seed = 8776157133863377286    | random seed to reproduce generated values
+
+

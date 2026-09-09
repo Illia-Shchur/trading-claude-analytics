@@ -1,0 +1,22 @@
+{
+  "schema": "strategy-v5-statistical-exposure-head/1",
+  "version": 1,
+  "status": "HEAD",
+  "hypothesis_family": "fk-deleveraging-absorption",
+  "dataset_sha256": "4f5ac7a69e4543aa34c66fa7dcf215a1b0a1eaf9ebe5d7178f6da312a7ddfa40",
+  "entries": [
+    {
+      "behavior_sha256": "4d2563ed94eae50e076f75f010adea3232b66ef5bd058f0cd1967051f1f16176",
+      "dataset_sha256": "0d7dae775c87bba5ad18cfe44ad2e16097ef2009536ded0829a49e7310fcea2a",
+      "observed_at": "2026-09-05T20:59:01.110Z",
+      "source": "FIXED_BASELINE_DIAGNOSTIC",
+      "sequence": 1,
+      "previous_sha256": "a67b33a72e6fa44b26134ed44f780ff018bde46fcab1947f288ca4e621348d45",
+      "definition_sha256": "4d2563ed94eae50e076f75f010adea3232b66ef5bd058f0cd1967051f1f16176"
+    }
+  ],
+  "cumulative_k": 1,
+  "exposure_attempt_k": 32,
+  "head_pointer_sha256": "e36be8837a4b6cc98497791bef3451323dc5d63a596653e8fa1be01b3f9e2e72",
+  "content_sha256": "234f350701aa1a5335e247609c900d773f05a8cc774d66efaba10396f4c96699"
+}

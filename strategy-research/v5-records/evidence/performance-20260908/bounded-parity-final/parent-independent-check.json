@@ -1,0 +1,10 @@
+{
+  "status": "PASS",
+  "checks": {
+    "metrics": true,
+    "control_selections": true,
+    "attempts": true,
+    "portfolio": true,
+    "economic_semantic_sha256": true
+  }
+}

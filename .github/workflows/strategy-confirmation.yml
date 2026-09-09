@@ -19,6 +19,12 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 0
+      - name: Install Java 21
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
       # The public-unseen-data custody runner is not shipped yet.  Preflight is
       # deliberately the only executable step: it fails closed before any
       # immutable burn/tag/sign operation can consume a reservation.
@@ -26,4 +32,4 @@ jobs:
         env:
           RESERVATION: ${{ inputs.reservation }}
         run: |
-          node tools/ci-confirmation.mjs --preflight --reservation "$RESERVATION"
+          ./bin/analytics ci-confirmation --preflight --reservation "$RESERVATION"

@@ -1,0 +1,162 @@
+{
+  "schema": "strategy-control-successor-design/1",
+  "version": 1,
+  "status": "FROZEN_DEVELOPMENT",
+  "design_id": "fk-deleveraging-absorption-controls-v003-development",
+  "hypothesis_family": "fk-deleveraging-absorption",
+  "predecessor_control_spec_sha256": "e2e874b216b86bb6479c3f14f1aab7844b27e05b2eae3da2eb93b7870f525468",
+  "predecessor_control_id": "fk-deleveraging-absorption-controls-v002",
+  "outcome_blind": true,
+  "decision_time_only": true,
+  "promotion_eligible": false,
+  "activation_authorized": false,
+  "outcomes_opened": false,
+  "development_exposure": true,
+  "development_only": true,
+  "matching_rule_change_is_new_specification": true,
+  "rationale": "The retained baseline produced 126 admitted event lifecycles but only three matched controls and three paired clusters. This successor expands the predeclared physical pool and records attrition before outcomes; it does not reinterpret the baseline result.",
+  "candidate_pool_policy": "SAME_ASSET_FULL_FIVE_YEAR_PIT_LOOKBACK",
+  "same_asset_first": true,
+  "cross_asset_fallback": false,
+  "reuse_policy": "WITHOUT_REPLACEMENT_WITHIN_ASSET_AND_CALENDAR_YEAR",
+  "tie_break": "STANDARDIZED_DISTANCE_ASCENDING,event_time_ASCENDING,episode_id_ASCENDING",
+  "history_expansion": "full physically retained five-year PIT window only; no synthetic rows",
+  "maximum_prior_lookback_days": 1825,
+  "minimum_prior_lag_hours": 480,
+  "downside_return_min": -0.08,
+  "downside_return_max": -0.02,
+  "prior_30_bar_return_abs": 0.02,
+  "prior_30_bar_realized_volatility_abs": 0.005,
+  "prior_30_bar_volume_zscore_abs": 0.5,
+  "independence_policy": "paired clusters remain merged scheduled lifecycle intervals; additional rows never increase independent count without disjoint windows",
+  "null_control_policy": "retain unmatched and unresolved controls in denominator; missing execution remains explicit",
+  "limitations": "Development design only. The wider historical lookback is a new specification and must be tested on held-out data after this immutable freeze.",
+  "inherited_predecessor_rules": {
+    "rule": "ALL_PREDECESSOR_V002_CONTROL_AND_BOUND_BASELINE_RULES_INHERITED_EXCEPT_LOOKBACK",
+    "venue": "BINANCE",
+    "instrument": "BINANCE_SPOT",
+    "signal_timeframe": "4h",
+    "same_hour_and_weekday_matching": true,
+    "minimum_prior_lag_hours": 480,
+    "scheduled_lifecycle_window_hours": 240,
+    "entry_fee_rate": 0.001,
+    "exit_fee_rate": 0.001,
+    "entry_slippage_rate": 0.0005,
+    "exit_slippage_rate": 0.0005,
+    "costs_source": "BOUND_PREDECESSOR_BASELINE_EXECUTION_POLICY",
+    "retained_rows_pit_verified_for_expanded_window": false,
+    "matching_variables": [
+      "prior_30_bar_return",
+      "prior_30_bar_realized_volatility",
+      "prior_30_bar_volume_zscore",
+      "hour_of_day",
+      "day_of_week"
+    ],
+    "pool": {
+      "asset_scope": "same_asset",
+      "venue": "BINANCE",
+      "instrument": "BINANCE_SPOT",
+      "signal_timeframe": "4h",
+      "requires_complete_setup_at_decision": true,
+      "requires_future_execution_resolution_after_selection": true,
+      "position_state_at_decision": "FLAT",
+      "excludes_qualifying_shocks": true,
+      "requires_downside_return_range": [
+        -0.08,
+        -0.02
+      ],
+      "excludes_open_positions_as_of_decision": true,
+      "historical_window": "same five-year PIT dataset and only rows available at the event decision time"
+    },
+    "calipers_except_lookback": {
+      "prior_30_bar_return_abs": 0.02,
+      "prior_30_bar_realized_volatility_abs": 0.005,
+      "prior_30_bar_volume_zscore_abs": 0.5,
+      "minimum_prior_lag_hours": 480,
+      "maximum_prior_lookback_days": 365,
+      "downside_return_min": -0.08,
+      "downside_return_max": -0.02,
+      "maximum_lifecycle_hours": 240
+    }
+  },
+  "successor_delta": {
+    "maximum_prior_lookback_days_from": 365,
+    "maximum_prior_lookback_days_to": 1825,
+    "only_matching_rule_change": true
+  },
+  "required_assets": [
+    "btc",
+    "eth",
+    "sol",
+    "bnb",
+    "xrp",
+    "ada",
+    "link",
+    "aave"
+  ],
+  "forbidden_fields": [
+    "exit_price",
+    "forward_pnl",
+    "forward_return",
+    "future_return",
+    "label",
+    "net_r",
+    "outcome",
+    "pnl",
+    "realized_volatility_after_decision",
+    "trade_outcome"
+  ],
+  "predecessor_snapshot": {
+    "control_id": "fk-deleveraging-absorption-controls-v002",
+    "content_sha256": "e2e874b216b86bb6479c3f14f1aab7844b27e05b2eae3da2eb93b7870f525468",
+    "matching_variables": [
+      "prior_30_bar_return",
+      "prior_30_bar_realized_volatility",
+      "prior_30_bar_volume_zscore",
+      "hour_of_day",
+      "day_of_week"
+    ],
+    "pool": {
+      "asset_scope": "same_asset",
+      "venue": "BINANCE",
+      "instrument": "BINANCE_SPOT",
+      "signal_timeframe": "4h",
+      "requires_complete_setup_at_decision": true,
+      "requires_future_execution_resolution_after_selection": true,
+      "position_state_at_decision": "FLAT",
+      "excludes_qualifying_shocks": true,
+      "requires_downside_return_range": [
+        -0.08,
+        -0.02
+      ],
+      "excludes_open_positions_as_of_decision": true,
+      "historical_window": "same five-year PIT dataset and only rows available at the event decision time"
+    },
+    "calipers": {
+      "prior_30_bar_return_abs": 0.02,
+      "prior_30_bar_realized_volatility_abs": 0.005,
+      "prior_30_bar_volume_zscore_abs": 0.5,
+      "minimum_prior_lag_hours": 480,
+      "maximum_prior_lookback_days": 365,
+      "downside_return_min": -0.08,
+      "downside_return_max": -0.02,
+      "maximum_lifecycle_hours": 240
+    },
+    "reuse_policy": "without_replacement_within_asset_and_calendar_year",
+    "tie_break": [
+      "standardized_distance_ascending",
+      "event_time_ascending",
+      "episode_id_ascending"
+    ],
+    "forbidden_fields": [
+      "future_return",
+      "label",
+      "exit_price",
+      "net_r",
+      "pnl",
+      "trade_outcome",
+      "realized_volatility_after_decision"
+    ]
+  },
+  "content_sha256": "f2a391fe27c18f50dc9e7df52f64330a5515ed5a2b315bb3caf20bb862948201"
+}

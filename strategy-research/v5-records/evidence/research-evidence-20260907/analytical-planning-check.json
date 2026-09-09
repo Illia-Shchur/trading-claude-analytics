@@ -1,0 +1,29 @@
+{
+  "scope": "DEVELOPMENT normal approximation from exposed diagnostics; neither production simulation nor validated power calculation; ignores p20 floor, finite bootstrap, dependence change and uncertainty in estimated pass rates",
+  "calculations": [
+    {
+      "component": "event",
+      "observed_pass_rate": 0.48,
+      "target_marginal_rate": 0.9,
+      "approx_clusters": 139
+    },
+    {
+      "component": "event",
+      "observed_pass_rate": 0.48,
+      "target_marginal_rate": 0.95,
+      "approx_clusters": 181
+    },
+    {
+      "component": "paired",
+      "observed_pass_rate": 0.38,
+      "target_marginal_rate": 0.9,
+      "approx_clusters": 221
+    },
+    {
+      "component": "paired",
+      "observed_pass_rate": 0.38,
+      "target_marginal_rate": 0.95,
+      "approx_clusters": 288
+    }
+  ]
+}

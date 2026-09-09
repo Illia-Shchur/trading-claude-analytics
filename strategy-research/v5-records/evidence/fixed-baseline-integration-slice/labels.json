@@ -1,0 +1,16 @@
+[
+  {
+    "episode_id": "btc:2021-09-07T16:00:00Z",
+    "asset": "btc",
+    "venue": "BINANCE",
+    "instrument": "BINANCE_SPOT",
+    "symbol": "BTCUSDT",
+    "decision_time": "2021-09-07T16:00:00Z",
+    "entry_time": "2021-09-07T16:00:00Z",
+    "resolution_ceiling_time": "2021-09-17T16:00:00Z",
+    "resolution_time": "2021-09-17T16:00:00Z",
+    "availability_time": "2026-09-05T00:00:00Z",
+    "maturity_status": "MATURED_FROM_PHYSICAL_1M_BARS",
+    "outcome_numeric_source": "TRADE_LIFECYCLE_V5"
+  }
+]

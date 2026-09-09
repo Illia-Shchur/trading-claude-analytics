@@ -1,0 +1,187 @@
+{
+  "scope" : "macro",
+  "errors" : [ ],
+  "real_yield_10y_tips" : {
+    "source" : "FRED DFII10 (daily, %)",
+    "last" : {
+      "date" : "2026-08-27",
+      "value" : 109
+    },
+    "delta_5_prints" : 5,
+    "last_10" : [ {
+      "date" : "2026-08-18",
+      "value" : 100
+    }, {
+      "date" : "2026-08-19",
+      "value" : 101
+    }, {
+      "date" : "2026-08-20",
+      "value" : 102
+    }, {
+      "date" : "2026-08-21",
+      "value" : 103
+    }, {
+      "date" : "2026-08-22",
+      "value" : 104
+    }, {
+      "date" : "2026-08-23",
+      "value" : 105
+    }, {
+      "date" : "2026-08-24",
+      "value" : 106
+    }, {
+      "date" : "2026-08-25",
+      "value" : 107
+    }, {
+      "date" : "2026-08-26",
+      "value" : 108
+    }, {
+      "date" : "2026-08-27",
+      "value" : 109
+    } ]
+  },
+  "hy_oas" : {
+    "source" : "FRED BAMLH0A0HYM2 (ICE BofA US High Yield OAS, daily, %)",
+    "last" : {
+      "date" : "2026-08-27",
+      "value" : 109
+    },
+    "delta_5_prints" : 5,
+    "note" : "DISCLOSED CONTEXT ONLY — credit stress, not a scored input"
+  },
+  "nfci" : {
+    "source" : "FRED NFCI (Chicago Fed National Financial Conditions Index, weekly)",
+    "last" : {
+      "date" : "2026-08-27",
+      "value" : 109
+    },
+    "note" : "DISCLOSED CONTEXT ONLY — 0 = historical average; positive = tighter-than-average conditions"
+  },
+  "net_liquidity" : {
+    "source" : "FRED WALCL + RRPONTSYD + WTREGEN (weekly, Thursdays)",
+    "as_of" : "2026-08-27",
+    "available" : true,
+    "net_liquidity_usd_millions" : -109000,
+    "net_liquidity_usd_trillions" : -0.11,
+    "components" : {
+      "walcl_usd_millions" : 109,
+      "rrpontsyd_usd_billions" : 109,
+      "wtregen_usd_millions" : 109
+    },
+    "cadence_note" : "WALCL/WTREGEN publish WEEKLY (Thursdays) — this is a weekly figure, not daily; a stale mid-week read must not be mistaken for fresh",
+    "note" : "DISCLOSED CONTEXT ONLY — not a scored leg or gate"
+  },
+  "stablecoin_supply" : {
+    "source" : "DefiLlama stablecoincharts/all (aggregate across all tracked stablecoins/chains)",
+    "available" : true,
+    "total_circulating_usd" : 1099000,
+    "net_change_30d_pct" : 2.81,
+    "net_change_90d_pct" : 8.92,
+    "percentile_vs_history" : 100,
+    "n_days_history" : 100,
+    "as_of" : 1708553600,
+    "note" : "DISCLOSED CONTEXT ONLY — third-party cross-chain aggregation (DefiLlama), subject to back-revision; a capital-flow tell, not a settled figure"
+  },
+  "equities_breadth_200dma" : {
+    "source" : "State Street SPY daily holdings universe + TradingView America scanner close/SMA200",
+    "available" : true,
+    "universe_as_of" : "2026-08-27",
+    "universe_size" : 2,
+    "matched" : 2,
+    "coverage_pct" : 100,
+    "above_200dma_count" : 1,
+    "pct_above_200dma" : 50,
+    "method" : "close > SMA200; equal does not count as above",
+    "scope_note" : "SPY constituent universe; descriptive macro breadth, not a scored Channel B leg or gate"
+  },
+  "vix" : {
+    "source" : "Yahoo ^VIX (CBOE VIX)",
+    "last_close" : 106,
+    "date" : "2026-08-28",
+    "delta_5_sessions_pct" : 4.95
+  },
+  "dxy" : {
+    "source" : "Yahoo DX-Y.NYB (US Dollar Index)",
+    "last_close" : 106,
+    "date" : "2026-08-28",
+    "delta_5_sessions_pct" : 4.95
+  },
+  "brent" : {
+    "source" : "Yahoo BZ=F (Brent crude)",
+    "last_close" : 106,
+    "date" : "2026-08-28",
+    "delta_5_sessions_pct" : 4.95
+  },
+  "spx" : {
+    "source" : "Yahoo ^GSPC (S&P 500)",
+    "last_close" : 106,
+    "date" : "2026-08-28",
+    "delta_5_sessions_pct" : 4.95,
+    "series" : [ {
+      "date" : "2026-08-22",
+      "close" : 100
+    }, {
+      "date" : "2026-08-23",
+      "close" : 101
+    }, {
+      "date" : "2026-08-24",
+      "close" : 102
+    }, {
+      "date" : "2026-08-25",
+      "close" : 103
+    }, {
+      "date" : "2026-08-26",
+      "close" : 104
+    }, {
+      "date" : "2026-08-27",
+      "close" : 105
+    }, {
+      "date" : "2026-08-28",
+      "close" : 106
+    } ]
+  },
+  "ndx" : {
+    "source" : "Yahoo ^IXIC (Nasdaq Composite)",
+    "last_close" : 106,
+    "date" : "2026-08-28",
+    "delta_5_sessions_pct" : 4.95
+  },
+  "us10y" : {
+    "source" : "Yahoo ^TNX (US 10y nominal yield (×10 units))",
+    "last_close" : 106,
+    "date" : "2026-08-28",
+    "delta_5_sessions_pct" : 4.95
+  },
+  "gold" : {
+    "source" : "Yahoo GC=F (COMEX gold front month)",
+    "last_close" : 106,
+    "date" : "2026-08-28",
+    "delta_5_sessions_pct" : 4.95
+  },
+  "irx" : {
+    "source" : "Yahoo ^IRX (13-week T-bill discount rate (%))",
+    "last_close" : 106,
+    "date" : "2026-08-28",
+    "delta_5_sessions_pct" : 4.95
+  },
+  "move" : {
+    "source" : "Yahoo ^MOVE (ICE BofA MOVE Index (bond vol))",
+    "last_close" : 106,
+    "date" : "2026-08-28",
+    "delta_5_sessions_pct" : 4.95
+  },
+  "dry_powder_benchmark" : {
+    "annualized_pct" : 106,
+    "source" : "Yahoo ^IRX (2026-08-28)",
+    "cross_check" : {
+      "irx" : 106,
+      "dgs3mo" : 109,
+      "delta_pct_pts" : -3
+    },
+    "note" : "idle-cash opportunity cost — what dry powder earns risk-free while unallocated"
+  },
+  "gap_coverage" : {
+    "equities_breadth_pct_above_200dma" : "AVAILABLE",
+    "report_rule" : "inspect this block before labeling equities breadth UNKNOWN"
+  }
+}

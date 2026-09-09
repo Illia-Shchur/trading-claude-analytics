@@ -1,0 +1,82 @@
+{
+  "schema": "strategy-public-data-smoke/1",
+  "universe": [
+    "btc",
+    "eth",
+    "sol",
+    "bnb",
+    "xrp",
+    "ada",
+    "link",
+    "aave"
+  ],
+  "network": false,
+  "results": [
+    {
+      "asset": "btc",
+      "symbol": "BTCUSDT",
+      "route": "BINANCE_SPOT_PUBLIC",
+      "derivatives_route": "BINANCE_USDM_PUBLIC",
+      "network": false,
+      "status": "ROUTE_READY"
+    },
+    {
+      "asset": "eth",
+      "symbol": "ETHUSDT",
+      "route": "BINANCE_SPOT_PUBLIC",
+      "derivatives_route": "BINANCE_USDM_PUBLIC",
+      "network": false,
+      "status": "ROUTE_READY"
+    },
+    {
+      "asset": "sol",
+      "symbol": "SOLUSDT",
+      "route": "BINANCE_SPOT_PUBLIC",
+      "derivatives_route": "BINANCE_USDM_PUBLIC",
+      "network": false,
+      "status": "ROUTE_READY"
+    },
+    {
+      "asset": "bnb",
+      "symbol": "BNBUSDT",
+      "route": "BINANCE_SPOT_PUBLIC",
+      "derivatives_route": "BINANCE_USDM_PUBLIC",
+      "network": false,
+      "status": "ROUTE_READY"
+    },
+    {
+      "asset": "xrp",
+      "symbol": "XRPUSDT",
+      "route": "BINANCE_SPOT_PUBLIC",
+      "derivatives_route": "BINANCE_USDM_PUBLIC",
+      "network": false,
+      "status": "ROUTE_READY"
+    },
+    {
+      "asset": "ada",
+      "symbol": "ADAUSDT",
+      "route": "BINANCE_SPOT_PUBLIC",
+      "derivatives_route": "BINANCE_USDM_PUBLIC",
+      "network": false,
+      "status": "ROUTE_READY"
+    },
+    {
+      "asset": "link",
+      "symbol": "LINKUSDT",
+      "route": "BINANCE_SPOT_PUBLIC",
+      "derivatives_route": "BINANCE_USDM_PUBLIC",
+      "network": false,
+      "status": "ROUTE_READY"
+    },
+    {
+      "asset": "aave",
+      "symbol": "AAVEUSDT",
+      "route": "BINANCE_SPOT_PUBLIC",
+      "derivatives_route": "BINANCE_USDM_PUBLIC",
+      "network": false,
+      "status": "ROUTE_READY"
+    }
+  ],
+  "pass": true,
+  "note": "Smoke output is diagnostic only; it cannot mint PIT, prospective, or ACTIVE evidence."
+}

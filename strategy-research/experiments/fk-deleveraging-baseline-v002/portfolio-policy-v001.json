@@ -1,0 +1,15 @@
+{
+  "schema": "strategy-fixed-baseline-portfolio-policy/1",
+  "version": 1,
+  "status": "FROZEN",
+  "policy_id": "FIXED_INITIAL_CASH_USDT_10000_V001",
+  "account_currency": "USDT",
+  "starting_cash_usdt": 10000,
+  "max_concurrent_slots": 8,
+  "mark_source": "PHYSICAL_1M_CLOSES",
+  "mark_interval": "60m",
+  "admission_policy": "CHRONOLOGICAL_ONE_OPEN_POSITION_PER_ASSET",
+  "post_slice_amendment": true,
+  "amendment_note": "Frozen after the retained one-event BTC integration slice; it does not rewrite or predate that outcome.",
+  "content_sha256": "f3dee179840c7ebb4445915d6b83bbb697d47ca32bc3e53b3e7ceb2a66387390"
+}

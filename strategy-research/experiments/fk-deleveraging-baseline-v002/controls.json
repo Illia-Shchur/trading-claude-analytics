@@ -1,0 +1,37 @@
+{
+  "schema" : "strategy-control-spec/1",
+  "control_id" : "fk-deleveraging-absorption-controls-v002",
+  "baseline_id" : "fk-deleveraging-absorption-baseline-v002",
+  "outcome_blind" : true,
+  "decision_time_only" : true,
+  "matching_variables" : [ "prior_30_bar_return", "prior_30_bar_realized_volatility", "prior_30_bar_volume_zscore", "hour_of_day", "day_of_week" ],
+  "pool" : {
+    "asset_scope" : "same_asset",
+    "venue" : "BINANCE",
+    "instrument" : "BINANCE_SPOT",
+    "signal_timeframe" : "4h",
+    "requires_complete_setup_at_decision" : true,
+    "requires_future_execution_resolution_after_selection" : true,
+    "position_state_at_decision" : "FLAT",
+    "excludes_qualifying_shocks" : true,
+    "requires_downside_return_range" : [ -0.08, -0.02 ],
+    "excludes_open_positions_as_of_decision" : true,
+    "historical_window" : "same five-year PIT dataset and only rows available at the event decision time"
+  },
+  "calipers" : {
+    "prior_30_bar_return_abs" : 0.02,
+    "prior_30_bar_realized_volatility_abs" : 0.005,
+    "prior_30_bar_volume_zscore_abs" : 0.5,
+    "minimum_prior_lag_hours" : 480,
+    "maximum_prior_lookback_days" : 365,
+    "downside_return_min" : -0.08,
+    "downside_return_max" : -0.02,
+    "maximum_lifecycle_hours" : 240
+  },
+  "reuse_policy" : "without_replacement_within_asset_and_calendar_year",
+  "tie_break" : [ "standardized_distance_ascending", "event_time_ascending", "episode_id_ascending" ],
+  "forbidden_fields" : [ "future_return", "label", "exit_price", "net_r", "pnl", "trade_outcome", "realized_volatility_after_decision" ],
+  "lifecycle_binding" : "Use the exact baseline execution contract and costs for both event and control. The candidate must satisfy candidate_event_time + 240h <= treated_event_time - 240h; future execution rows are resolved only after matching and missing rows fail explicitly.",
+  "proxy_disclosure" : "A matched downside bar controls observable price/volume state; it does not observe forced liquidations directly.",
+  "content_sha256" : "e2e874b216b86bb6479c3f14f1aab7844b27e05b2eae3da2eb93b7870f525468"
+}

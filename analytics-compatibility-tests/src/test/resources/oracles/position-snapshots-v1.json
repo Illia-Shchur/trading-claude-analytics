@@ -1,0 +1,492 @@
+{
+  "freshness": [
+    {
+      "band": "FRESH",
+      "age_min": 60,
+      "driver": "event_driven_snapshot",
+      "policy": "EVENT_DRIVEN",
+      "generated_age_min": 60,
+      "holdings_age_min": 10080,
+      "stale_after_min": null,
+      "expired_after_min": null,
+      "note": "position of record under event-driven policy — user exports after every new trade; elapsed time alone does not invalidate an unchanged position"
+    },
+    {
+      "band": "STALE",
+      "age_min": 60,
+      "driver": "generated_at",
+      "policy": "STRICT_TIME",
+      "generated_age_min": 60,
+      "holdings_age_min": 10080,
+      "stale_after_min": 30,
+      "expired_after_min": 4320,
+      "note": "descriptive use only, with an age banner. May NOT satisfy a phase-dependent unlock precondition or fill a realized ledger column."
+    },
+    {
+      "band": "EXPIRED",
+      "age_min": null,
+      "driver": "generated_at",
+      "generated_age_min": null,
+      "holdings_age_min": null,
+      "stale_after_min": 720,
+      "expired_after_min": 4320,
+      "note": "generated_at is missing or unparseable — treat as no snapshot at all (cold start, Hard Rule 4)"
+    },
+    {
+      "band": "FRESH",
+      "age_min": 721,
+      "driver": "event_driven_snapshot",
+      "policy": "EVENT_DRIVEN",
+      "generated_age_min": 721,
+      "holdings_age_min": null,
+      "stale_after_min": null,
+      "expired_after_min": null,
+      "note": "position of record under event-driven policy — user exports after every new trade; elapsed time alone does not invalidate an unchanged position"
+    }
+  ],
+  "projections": [
+    {
+      "asset": "PAXG",
+      "requested_asset": "GOLD",
+      "ledger_asset": "PAXG",
+      "alias_note": "Position read from PAXG, tokenized gold. PAXG is a PROXY for spot gold — fully backed and tracking XAU ~1:1, but carrying issuer/custody counterparty risk that spot gold does not, and able to trade at a premium or discount. Quantity and cost basis are real; treat the instrument as PAXG, not bullion. Canonical gold SPOT still comes from Hard Rule 1 sources, never from this mark.",
+      "covered": true,
+      "position": {
+        "asset": "PAXG",
+        "qty": "1.3293894",
+        "avg_cost_usd": "4204.5027"
+      },
+      "custody": {
+        "status": "RECONCILED",
+        "on_venue": true,
+        "off_venue_qty": null,
+        "note": "Live balance agrees with the fill replay; the position is where the ledger can see it."
+      },
+      "basis": {
+        "reliable": true,
+        "oversold_qty": null,
+        "dust_unbacked_qty": null,
+        "note": null
+      },
+      "short": {
+        "short": null,
+        "short_qty": null,
+        "avg_entry_usd": null,
+        "note": "NOT PRESENT in this snapshot — the producer predates the signed cost-basis model and could not represent a short. Report short exposure in PAXG as UNKNOWN, never as zero; on this producer a short surfaced as basis_reliable:false instead."
+      },
+      "attribution": {
+        "tags": [],
+        "untagged_open_deals": 0,
+        "note": "every open deal carries a phase tag"
+      },
+      "open_deals": [],
+      "closed_deals": [],
+      "fills": null,
+      "futures_positions": [],
+      "funding": null,
+      "performance_by_tag": []
+    },
+    {
+      "asset": "SILVER",
+      "covered": false,
+      "reason": "not_tracked",
+      "note": "This asset has no counterpart in the ledger and never will. Carry position state forward from the prior report; do NOT read a zero position from this response."
+    },
+    {
+      "asset": "BTC",
+      "covered": true,
+      "position": {
+        "asset": "BTC",
+        "qty": "1.5",
+        "avg_cost_usd": "71204.0000"
+      },
+      "custody": {
+        "status": "RECONCILED",
+        "on_venue": true,
+        "off_venue_qty": null,
+        "note": "Live balance agrees with the fill replay; the position is where the ledger can see it."
+      },
+      "basis": {
+        "reliable": true,
+        "oversold_qty": null,
+        "dust_unbacked_qty": null,
+        "note": null
+      },
+      "short": {
+        "short": null,
+        "short_qty": null,
+        "avg_entry_usd": null,
+        "note": "NOT PRESENT in this snapshot — the producer predates the signed cost-basis model and could not represent a short. Report short exposure in BTC as UNKNOWN, never as zero; on this producer a short surfaced as basis_reliable:false instead."
+      },
+      "attribution": {
+        "tags": [
+          "FK-P1A"
+        ],
+        "untagged_open_deals": 1,
+        "note": "1 open deal(s) carry no tag. Report the position as real but attribution UNTAGGED — a phase-dependent unlock precondition cannot resolve through an untagged holding."
+      },
+      "open_deals": [
+        {
+          "asset": "BTC",
+          "tag": "FK-P1A"
+        },
+        {
+          "asset": "BTC",
+          "tag": null
+        }
+      ],
+      "closed_deals": [],
+      "fills": {
+        "fill_count_total": 9,
+        "fills": [
+          {
+            "price": "69000"
+          }
+        ]
+      },
+      "futures_positions": [],
+      "funding": null,
+      "performance_by_tag": [
+        {
+          "tag": "FK-P1A",
+          "performance": {
+            "deal_count": 3
+          }
+        }
+      ]
+    },
+    {
+      "asset": "ETH",
+      "covered": true,
+      "position": null,
+      "custody": {
+        "status": "NO_POSITION_ROW",
+        "on_venue": null,
+        "off_venue_qty": null,
+        "note": "The snapshot carries no position row for ETH, so custody is UNKNOWN — not reconciled. An absent row is the absence of an answer, never an all-clear. Do NOT report this asset as on-venue, flat, or exited on the strength of this response; a snapshot written before 2026-07-30 omitted any asset whose live balance was exactly zero, including assets the replay still held a position in."
+      },
+      "basis": {
+        "reliable": null,
+        "oversold_qty": null,
+        "note": "NO POSITION ROW for ETH — cost-basis reliability is UNKNOWN, not confirmed. Do not read this as a reliable basis, and do not quote average cost, cost basis, unrealized PnL or ROI on the strength of it."
+      },
+      "short": {
+        "short": null,
+        "short_qty": null,
+        "avg_entry_usd": null,
+        "note": "NO POSITION ROW for ETH — whether a short is open is UNKNOWN, not answered."
+      },
+      "attribution": {
+        "tags": [],
+        "untagged_open_deals": 1,
+        "note": "1 open deal(s) carry no tag. Report the position as real but attribution UNTAGGED — a phase-dependent unlock precondition cannot resolve through an untagged holding."
+      },
+      "open_deals": [],
+      "closed_deals": [
+        {
+          "asset": "ETH",
+          "tag": "FR-B-1A"
+        }
+      ],
+      "fills": null,
+      "futures_positions": [
+        {
+          "base_asset": "ETH",
+          "side": "SHORT"
+        }
+      ],
+      "funding": {
+        "asset": "ETH"
+      },
+      "performance_by_tag": []
+    },
+    {
+      "asset": "SOL",
+      "covered": false,
+      "reason": "no_ledger_history",
+      "note": "The ledger tracks this asset but holds no position row, no round trip and no open future in it. That is a genuine flat, not a gap — but it is stated, not inferred from an absent row. It holds only for a snapshot generated on or after 2026-07-30, when the exporter began emitting a row for every replayed asset including those with a zero live balance; on an older file an absent row may simply be an asset that was sold to exactly zero."
+    },
+    {
+      "asset": "BTC",
+      "covered": true,
+      "position": {
+        "asset": "BTC",
+        "qty_reconciliation_status": "EXPLAINED_BY_EXTERNAL_TRANSFER",
+        "off_venue_qty": "0.5",
+        "basis_reliable": false,
+        "oversold_qty": "1",
+        "short_qty": "4",
+        "short_avg_price_usd": "70000"
+      },
+      "custody": {
+        "status": "EXPLAINED_BY_EXTERNAL_TRANSFER",
+        "on_venue": false,
+        "off_venue_qty": "0.5",
+        "custody_adjusted_unrealized_pnl_usd": null,
+        "note": "0.5 BTC left the exchange as a withdrawal, not a sale, and is presumed held in external custody. REPORT THIS AS A HELD POSITION — do NOT read the near-zero live balance as flat or as an exit. The mark is custody-adjusted and therefore a belief the ledger cannot verify: it cannot tell cold storage from a sale on another venue. Confirm custody before sizing against it, and do not let it satisfy a phase-dependent unlock precondition."
+      },
+      "basis": {
+        "reliable": false,
+        "oversold_qty": "1",
+        "note": "COST BASIS NOT DERIVABLE for BTC: the ledger's replay disposed of more than it ever saw acquired (1 beyond the position), because the asset was sold short on margin or because an acquisition was never ingested — the ledger cannot tell which. Do NOT quote average cost, cost basis, unrealized PnL or ROI for BTC; state that the basis is unknown. The QUANTITY is still sound and is the position of record. Realized PnL is an UPPER BOUND, not a result: a short leg was realized against a zero basis, so it overstates the gain. This may not satisfy a phase-dependent unlock precondition that reads cost basis, and nothing is sized against a cost basis that does not exist."
+      },
+      "short": {
+        "short": true,
+        "short_qty": "4",
+        "avg_entry_usd": "70000",
+        "note": "NET SHORT 4 BTC at an average entry of 70000. trade_derived_qty is a NET and may read flat or even long against an offsetting spot position; this leg still has to be covered and still pays carry. total_cost_usd is NEGATIVE for a short — money received, not spent."
+      },
+      "attribution": {
+        "tags": [
+          "FK-P1A"
+        ],
+        "untagged_open_deals": 1,
+        "note": "1 open deal(s) carry no tag. Report the position as real but attribution UNTAGGED — a phase-dependent unlock precondition cannot resolve through an untagged holding."
+      },
+      "open_deals": [
+        {
+          "asset": "BTC",
+          "tag": "FK-P1A"
+        },
+        {
+          "asset": "BTC",
+          "tag": null
+        }
+      ],
+      "closed_deals": [],
+      "fills": {
+        "fill_count_total": 9,
+        "fills": [
+          {
+            "price": "69000"
+          }
+        ]
+      },
+      "futures_positions": [],
+      "funding": null,
+      "performance_by_tag": [
+        {
+          "tag": "FK-P1A",
+          "performance": {
+            "deal_count": 3
+          }
+        }
+      ]
+    },
+    {
+      "asset": "BTC",
+      "covered": true,
+      "position": {
+        "asset": "BTC",
+        "qty_reconciliation_status": "EXPLAINED_BY_SYNTHETIC_OPENING_BALANCE",
+        "short_qty": null
+      },
+      "custody": {
+        "status": "EXPLAINED_BY_SYNTHETIC_OPENING_BALANCE",
+        "on_venue": true,
+        "off_venue_qty": null,
+        "cost_basis_contaminated": true,
+        "note": "The replay exceeds the live balance by a synthetic OPENING_BALANCE seed carried at the ledger's data floor — an accounting artefact, not coins, and one that can never be reconciled because the pre-floor fills it was computed from were deleted. REPORT THE LIVE QUANTITY AS THE POSITION (this asset may genuinely be flat); do NOT report trade_derived_qty as BTC held, and do NOT treat it as off-venue custody — unlike a withdrawal there is no evidence these coins exist. Cost basis, unrealized PnL and realized PnL for BTC are contaminated by the seed's price: quote them as unreliable or not at all, and do not let them satisfy a phase-dependent unlock precondition."
+      },
+      "basis": {
+        "reliable": true,
+        "oversold_qty": null,
+        "dust_unbacked_qty": null,
+        "note": null
+      },
+      "short": {
+        "short": false,
+        "short_qty": 0,
+        "avg_entry_usd": null,
+        "note": null
+      },
+      "attribution": {
+        "tags": [
+          "FK-P1A"
+        ],
+        "untagged_open_deals": 1,
+        "note": "1 open deal(s) carry no tag. Report the position as real but attribution UNTAGGED — a phase-dependent unlock precondition cannot resolve through an untagged holding."
+      },
+      "open_deals": [
+        {
+          "asset": "BTC",
+          "tag": "FK-P1A"
+        },
+        {
+          "asset": "BTC",
+          "tag": null
+        }
+      ],
+      "closed_deals": [],
+      "fills": {
+        "fill_count_total": 9,
+        "fills": [
+          {
+            "price": "69000"
+          }
+        ]
+      },
+      "futures_positions": [],
+      "funding": null,
+      "performance_by_tag": [
+        {
+          "tag": "FK-P1A",
+          "performance": {
+            "deal_count": 3
+          }
+        }
+      ]
+    },
+    {
+      "asset": "BTC",
+      "covered": true,
+      "position": {
+        "asset": "BTC",
+        "qty_reconciliation_status": "UNEXPLAINED",
+        "basis_reliable": true,
+        "dust_unbacked_qty": "0.00001"
+      },
+      "custody": {
+        "status": "UNEXPLAINED",
+        "on_venue": null,
+        "off_venue_qty": null,
+        "note": "The live balance and the fill replay disagree, and neither recorded withdrawals nor a migration seed accounts for the gap. This is a data defect — an unread wallet, an uncovered venue, or an incomplete backfill — not a position. Do NOT report a figure for this asset in either direction; fix the ledger first."
+      },
+      "basis": {
+        "reliable": true,
+        "oversold_qty": null,
+        "dust_unbacked_qty": "0.00001",
+        "note": "Basis reliable for BTC, with a disclosure: 0.00001 was disposed unbacked but waived as sub-dollar dust rather than counted against the flag. Quote the cost figures normally — this is the ordinary state of a long-tail book, not a defect — but do not describe the replay as having had nothing missing."
+      },
+      "short": {
+        "short": null,
+        "short_qty": null,
+        "avg_entry_usd": null,
+        "note": "NOT PRESENT in this snapshot — the producer predates the signed cost-basis model and could not represent a short. Report short exposure in BTC as UNKNOWN, never as zero; on this producer a short surfaced as basis_reliable:false instead."
+      },
+      "attribution": {
+        "tags": [
+          "FK-P1A"
+        ],
+        "untagged_open_deals": 1,
+        "note": "1 open deal(s) carry no tag. Report the position as real but attribution UNTAGGED — a phase-dependent unlock precondition cannot resolve through an untagged holding."
+      },
+      "open_deals": [
+        {
+          "asset": "BTC",
+          "tag": "FK-P1A"
+        },
+        {
+          "asset": "BTC",
+          "tag": null
+        }
+      ],
+      "closed_deals": [],
+      "fills": {
+        "fill_count_total": 9,
+        "fills": [
+          {
+            "price": "69000"
+          }
+        ]
+      },
+      "futures_positions": [],
+      "funding": null,
+      "performance_by_tag": [
+        {
+          "tag": "FK-P1A",
+          "performance": {
+            "deal_count": 3
+          }
+        }
+      ]
+    },
+    {
+      "asset": "BTC",
+      "covered": true,
+      "position": {
+        "asset": "BTC",
+        "qty_reconciliation_status": "RECONCILED",
+        "basis_reliable": false,
+        "oversold_qty": "3",
+        "basis_unreliable_note": "producer note"
+      },
+      "custody": {
+        "status": "RECONCILED",
+        "on_venue": true,
+        "off_venue_qty": null,
+        "note": "Live balance agrees with the fill replay; the position is where the ledger can see it."
+      },
+      "basis": {
+        "reliable": false,
+        "oversold_qty": "3",
+        "note": "producer note"
+      },
+      "short": {
+        "short": null,
+        "short_qty": null,
+        "avg_entry_usd": null,
+        "note": "NOT PRESENT in this snapshot — the producer predates the signed cost-basis model and could not represent a short. Report short exposure in BTC as UNKNOWN, never as zero; on this producer a short surfaced as basis_reliable:false instead."
+      },
+      "attribution": {
+        "tags": [
+          "FK-P1A"
+        ],
+        "untagged_open_deals": 1,
+        "note": "1 open deal(s) carry no tag. Report the position as real but attribution UNTAGGED — a phase-dependent unlock precondition cannot resolve through an untagged holding."
+      },
+      "open_deals": [
+        {
+          "asset": "BTC",
+          "tag": "FK-P1A"
+        },
+        {
+          "asset": "BTC",
+          "tag": null
+        }
+      ],
+      "closed_deals": [],
+      "fills": {
+        "fill_count_total": 9,
+        "fills": [
+          {
+            "price": "69000"
+          }
+        ]
+      },
+      "futures_positions": [],
+      "funding": null,
+      "performance_by_tag": [
+        {
+          "tag": "FK-P1A",
+          "performance": {
+            "deal_count": 3
+          }
+        }
+      ]
+    }
+  ],
+  "snapshot_freshness": {
+    "band": "STALE",
+    "age_min": 1,
+    "driver": "event_driven_snapshot",
+    "policy": "EVENT_DRIVEN",
+    "generated_age_min": 1,
+    "holdings_age_min": 2,
+    "stale_after_min": null,
+    "expired_after_min": null,
+    "note": "descriptive use only: at least one relevant futures component has incomplete status/coverage.",
+    "relevant_scope": "FUTURES_ONLY",
+    "component_clocks": {
+      "futures.account_as_of": "2026-07-28T11:59:00Z",
+      "futures.positions_as_of": "2026-07-28T11:59:00Z",
+      "futures.marks_as_of": "2026-07-28T11:59:00Z",
+      "futures.orders_as_of": "2026-07-28T11:59:00Z",
+      "futures.income_as_of": "2026-07-28T11:59:00Z",
+      "futures.position_as_of:ETHUSDT": "2026-07-28T11:59:00Z"
+    },
+    "limitations": [
+      "income_coverage:ETHUSDT=PARTIAL"
+    ]
+  }
+}
