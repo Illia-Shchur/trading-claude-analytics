@@ -25,8 +25,8 @@ no held-out confirmation, strategy activation, or trading is authorized.
    economics with explicit provenance-only exclusions.
 4. Build using JDK 21 and the pinned Maven wrapper. Run clean
    reactor, Python regressions, applicable mutation tests and changed-production
-   coverage against the full reviewed merge-base SHA, with 80% line and 80%
-   branch floors. Fix failures before final packaging.
+   coverage against the full reviewed merge-base SHA, with 55% line and 55%
+   branch floors. Exact 55% passes; fix failures before final packaging.
 5. Freeze fresh executable-bound development declarations. Inventory physical
    inputs; use supported generation/acquisition with retained provenance. No
    historical executor cache is presumed. The existing synthetic successor

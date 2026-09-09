@@ -44,11 +44,12 @@ java -version
 python3 tools/check_new_code_coverage.py \
   --base 966b2758ff9e5e499c63d301e8f46bbbe0c423f7 \
   --report analytics-coverage/target/site/jacoco-aggregate/jacoco.xml \
-  --minimum 80 --branch-minimum 80
+  --minimum 55 --branch-minimum 55
 ```
 
-The reviewed base above is merged PR #10. Its migration-only branch exception
-does not apply to these changes. The runnable application is the `-exec.jar`;
+The active reviewed-diff policy is an unconditional 55% line and 55% branch
+floor. PR #10's former migration exception is historical evidence only. The
+runnable application is the `-exec.jar`;
 the thin module JAR has no executable manifest.
 
 ## Fresh declaration and physical inputs

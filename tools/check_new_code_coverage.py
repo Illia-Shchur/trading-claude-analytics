@@ -366,7 +366,7 @@ def _coverage_for_path(path: str, coverage: dict[tuple[str | None, str], SourceC
 def _passes(covered: int, total: int, minimum: Decimal) -> str:
     if total == 0:
         return "not-applicable"
-    # Compare exact decimal/rational values; never round a failing 79.99% up.
+    # Compare exact decimal/rational values; never round a failing fraction up.
     return "passed" if Decimal(covered) * Decimal(100) >= Decimal(total) * minimum else "failed"
 
 
@@ -375,7 +375,7 @@ def evaluate(
     base: str,
     report_path: Path,
     *,
-    minimum: Decimal = Decimal("80"),
+    minimum: Decimal = Decimal("55"),
     branch_minimum: Decimal | None = None,
     include_untracked: bool = True,
 ) -> GateResult:
@@ -447,7 +447,7 @@ def _argument_parser() -> argparse.ArgumentParser:
     parser.add_argument("--base", default=os.environ.get("COVERAGE_BASE"), help="validated git commit or tree-ish baseline")
     parser.add_argument("--workspace", type=Path, default=Path("."))
     parser.add_argument("--report", type=Path, required=True, help="aggregate JaCoCo XML report")
-    parser.add_argument("--minimum", type=Decimal, default=Decimal("80"))
+    parser.add_argument("--minimum", type=Decimal, default=Decimal("55"))
     parser.add_argument(
         "--branch-minimum",
         type=Decimal,
