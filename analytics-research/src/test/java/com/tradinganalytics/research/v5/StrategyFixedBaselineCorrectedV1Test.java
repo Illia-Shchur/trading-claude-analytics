@@ -322,6 +322,32 @@ final class StrategyFixedBaselineCorrectedV1Test {
     }
 
     @Test
+    void validationReplayRecomputesBothBooksWithoutMutatingTheStoredPortfolio() {
+        ObjectNode corrected = correctForTest(frozen(book(1000, 1010,
+                trade("replay-valid", "2021-01-01T00:00:00Z", "2021-01-01T00:01:00Z", 100, 110)),
+                book(1000, 1000)));
+        ObjectNode portfolio = (ObjectNode) corrected.path("portfolio");
+        ObjectNode before = portfolio.deepCopy();
+
+        ObjectNode replay = StrategyFixedBaselineCorrectedV1.correctedPortfolioForValidation(portfolio);
+
+        assertThat(replay.path("event_book").path("trades"))
+                .isEqualTo(portfolio.path("event_book").path("trades"));
+        assertThat(replay.path("control_book").path("trades"))
+                .isEqualTo(portfolio.path("control_book").path("trades"));
+        assertThat(replay.path("starting_equity_usdt").asDouble())
+                .isEqualTo(portfolio.path("starting_equity_usdt").asDouble());
+        assertThat(replay.path("ending_equity_usdt").asDouble())
+                .isEqualTo(portfolio.path("ending_equity_usdt").asDouble());
+        assertThat(replay.path("net_pnl_usdt").asDouble())
+                .isEqualTo(portfolio.path("net_pnl_usdt").asDouble());
+        assertThat(portfolio).isEqualTo(before);
+        assertThatThrownBy(() -> StrategyFixedBaselineCorrectedV1.correctedPortfolioForValidation(
+                JsonHashes.mapper().getNodeFactory().nullNode()))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("requires an object");
+    }
+
+    @Test
     void rejectsMalformedBooksLifecycleAndBoundaryEvidence() {
         ObjectNode nonArrayTrades = book(1000, 1000);
         nonArrayTrades.put("trades", "not-an-array");
