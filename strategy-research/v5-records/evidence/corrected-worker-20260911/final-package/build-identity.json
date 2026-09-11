@@ -1,0 +1,28 @@
+{
+  "schema": "analytics-build-identity/1",
+  "status": "KNOWN",
+  "executable": {
+    "code_source": "/private/tmp/trading-pr13/.report-run/pr13-final/final-package/executor.jar",
+    "kind": "JAR",
+    "sha256": "3ff5aa4612053d2483a83b93f12055bddcd45d25edc75c8ca61d1635b89c87cc",
+    "bytes": 107283641
+  },
+  "compiled": {
+    "input_fingerprint": "c99a335303fa4649c83e445d7480cc2cfcbe879f51c22fc1558627680e55496a",
+    "revision": "397e57e8842d1d57c297ad2b31f506b2e6676cef",
+    "dirty_source": "false",
+    "java_version": "openjdk version \"21.0.11\" 2026-04-21",
+    "java_vendor": "Homebrew",
+    "java_runtime": "OpenJDK Runtime Environment",
+    "toolchain_fingerprint": "37d5f5b0512f0e167a2368f1969b03de014934cb3e0d1f7933e2c3296b988c10",
+    "maven_wrapper_sha256": "cae96cef89ebea3531221f4ae17c23cf8edf67d00eae8306d4186ae1bbed4d02",
+    "root_pom_sha256": "1d19e5762fe0cd3a8b5787b2ec6f081d606704e83a498a5f416bdc8fd7fe9355",
+    "marker_resource": "META-INF/build-identity.properties"
+  },
+  "runtime": {
+    "java": "21.0.11",
+    "cwd": "/private/tmp/trading-pr13",
+    "user_dir": "/private/tmp/trading-pr13"
+  }
+}
+

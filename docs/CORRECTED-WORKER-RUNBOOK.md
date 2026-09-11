@@ -1,9 +1,12 @@
 # Corrected worker development execution
 
-> WORK IN PROGRESS: work was stopped at the owner's request on 2026-09-09.
-> The final source snapshot is not fully verified and is not qualified. Read
-> [the handoff](CORRECTED-WORKER-HANDOFF-20260909.md) before executing these commands.
-> Full qualification recovery commands remain unexecuted on eligible hardware.
+> **Engineering verification complete — 2026-09-11.** See the
+> [verification record](CORRECTED-WORKER-VERIFICATION-20260911.md) for the final
+> source, package, test, coverage, PREFIX, and audit evidence. FULL remains
+> blocked by the declared 28-CPU/32-GiB resource gate and is not qualified; no
+> held-out confirmation, activation, or trading is authorized. The evidence
+> archive is recorded in the verification record; CI is checked on PR13 head
+> after push.
 
 The corrected commands select `StrategyFixedBaselineCorrectedV1` and
 `PORTFOLIO_ACCOUNTING_CORRECTION_V1`. The historical commands retain their frozen
@@ -12,14 +15,16 @@ or trading. A completed PREFIX is not qualification.
 
 ## Setup and verification
 
-Use JDK 21 and the repository's Maven 3.9.11 wrapper. On this Windows workstation,
-the clean reactor runs in Ubuntu 24.04 WSL on an ext4 checkout. Existing custody
-tests require Unix hard-link metadata and symbolic links. Keep the Windows
-checkout's unrelated files separate; clone into a new Linux directory and check
-out the desired reviewed commit. Do not copy ignored caches from another host.
+Use JDK 21 and the repository's Maven 3.9.11 wrapper. On Linux or macOS, run the
+clean reactor from a native Unix filesystem; existing custody tests require Unix
+hard-link metadata and symbolic links. On the Windows workstation, run it in
+Ubuntu 24.04 WSL on an ext4 checkout. Keep unrelated files separate; clone into
+a new directory and check out the desired reviewed commit. Do not copy ignored
+caches from another host. macOS host identity is read from a bounded
+`ioreg IOPlatformUUID` probe and fails closed when that identity is unavailable.
 
-After the delivery branch is published, open `wsl -d Ubuntu-24.04` from
-PowerShell, then use a new directory:
+After the delivery branch is published, use a new directory (open
+`wsl -d Ubuntu-24.04` from PowerShell first when running on Windows):
 
 ```sh
 git clone --branch codex/corrected-worker-qualification \
@@ -35,7 +40,7 @@ Record the exact commit printed above. Reproducing a retained run requires its
 original packaged JAR and declared inputs, rather than rebuilding a different
 commit and attaching its output to that run.
 
-From the Linux checkout:
+From the Linux or macOS checkout:
 
 ```sh
 java -version
@@ -52,6 +57,32 @@ floor. PR #10's former migration exception is historical evidence only. The
 runnable application is the `-exec.jar`;
 the thin module JAR has no executable manifest.
 
+Run the network-free Python regressions before packaging a fresh executable:
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tools -p 'test_*.py'
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s test/python -p 'test_*.py'
+```
+
+After the clean research build, measure mutation coverage against the corrected
+evaluator and process-resource helper with focused tests. These commands apply
+the acceptance floors of 80% mutation, 90% test strength, and 90% line coverage;
+record the measured outcome from each focused run.
+
+```sh
+./mvnw --batch-mode --no-transfer-progress -pl analytics-research -Pmutation \
+  -DtargetClasses=com.tradinganalytics.research.v5.StrategyFixedBaselineCorrectedV1 \
+  -DtargetTests=com.tradinganalytics.research.v5.StrategyFixedBaselineCorrectedV1Test \
+  -DmutationThreshold=80 -DtestStrengthThreshold=90 -DcoverageThreshold=90 \
+  org.pitest:pitest-maven:mutationCoverage
+
+./mvnw --batch-mode --no-transfer-progress -pl analytics-research -Pmutation \
+  -DtargetClasses=com.tradinganalytics.research.v5.StrategyProcessResourcesV1 \
+  -DtargetTests=com.tradinganalytics.research.v5.StrategyProcessResourcesV1Test \
+  -DmutationThreshold=80 -DtestStrengthThreshold=90 -DcoverageThreshold=90 \
+  org.pitest:pitest-maven:mutationCoverage
+```
+
 ## Fresh declaration and physical inputs
 
 Choose a new run directory for each executable and machine. Preserve it after
@@ -62,7 +93,11 @@ RUN=.report-run/corrected-worker-$(date -u +%Y%m%dT%H%M%SZ)
 mkdir -p "$RUN"
 cp analytics-cli/target/analytics-cli-1.0.0-SNAPSHOT-exec.jar "$RUN/executor.jar"
 JAR="$RUN/executor.jar"
-sha256sum "$JAR" > "$RUN/executor.sha256"
+if command -v sha256sum >/dev/null 2>&1; then
+  sha256sum "$JAR"
+else
+  shasum -a 256 "$JAR"
+fi > "$RUN/executor.sha256"
 java -jar "$JAR" strategy-research-v5 operating-characteristics-corrected-parallel-profile \
   > "$RUN/profile.json"
 java -jar "$JAR" strategy-research-v5 operating-characteristics-corrected-parallel-plan \
@@ -77,10 +112,12 @@ The builder validates the retained statistical declaration, captures the current
 packaged executable/source identity and current supporting dependency bytes, and
 creates disjoint DEVELOPMENT seed inventories. It does not modify the retained
 plan. PREFIX uses the retained two-repetition, ten-episode diagnostic geometry.
-Full-size DEVELOPMENT uses the declared worker wave with the unchanged
-450-event/450-control, 288-cluster, 162-paired-cluster, 900-series, 14,400-minute
-geometry. The statistical plan's 75 repetitions per cell remain a distinct
-held-out confirmation declaration.
+Full-size DEVELOPMENT uses one development seed per admitted worker in each of
+the four cells, for exactly `4 x effective_workers` slots per run. Every slot
+uses the unchanged 450-event/450-control, 162 two-source physical clusters (288
+paired statistical clusters), 900-series, 14,400-minute geometry. The statistical
+plan's 75 repetitions per cell remain a distinct held-out confirmation declaration
+and are not run by this development workflow.
 
 Required tracked inputs are the baseline, controls, experiment, portfolio policy,
 and lifecycle timing policy. The successor generator creates physical synthetic
@@ -141,11 +178,12 @@ new profile and plan on that host, bound to the newly packaged executable. Do
 not copy a started plan or a qualification receipt from this machine.
 
 The frozen ceilings remain 48 hours wall time, 26 GiB aggregate RSS, 128 GiB
-managed disk, 2 GiB coordinator reservation, and 2 GiB heap / 3 GiB RSS per worker.
-Admission is at most eight workers and 24 CPUs. Full-size DEVELOPMENT must
-complete the declared wave for every cell in distinct serial and parallel runs,
-with disjoint held-out confirmation seeds. A resource-only profile, a PREFIX,
-or a partial/resumed measurement does not prove that qualification.
+managed disk, 2 GiB coordinator reservation, and 2 GiB heap / 3 GiB RSS per
+worker. Admission is at most eight workers and 24 CPUs. Full-size DEVELOPMENT
+must complete the `4 x effective_workers` wave across the four cells in distinct
+serial and parallel runs, with development seeds disjoint from the held-out
+confirmation seeds. A resource-only profile, a PREFIX, or a partial/resumed
+measurement does not prove that qualification.
 
 On an eligible host, first perform the fresh declaration steps above, then run
 the following from the same repository root. These commands execute only the

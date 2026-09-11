@@ -1,0 +1,23 @@
+{
+  "verification" : "ENGINEERING_ONLY",
+  "qualification_claim" : "NONE",
+  "source_path" : "strategy-research/v5-records/evidence/performance-20260908/full-geometry-row.json.gz",
+  "source_gzip_sha256" : "136f10687b7627e84721cc996d0e0035145900df1f6c31d89e705d679717a9fc",
+  "raw_result_content_sha256" : "1e5d5b9a1d9c1b9a2382c56074a37e1cbaa8ca8eb17b72b1e6034cd2900ba093",
+  "corrected_result_content_sha256" : "7e692ac1c84a2f678f0c227a9892bffd6e527ca7e03f3d98a2c25b02d9382b88",
+  "corrected_executor_identity_sha256" : "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "validation" : "ACCEPTED",
+  "raw_geometry" : {
+    "singleton_clusters" : 126,
+    "double_source_clusters" : 162,
+    "source_episodes" : 450,
+    "paired_tested_clusters" : 288
+  },
+  "corrected_geometry" : {
+    "singleton_clusters" : 126,
+    "double_source_clusters" : 162,
+    "source_episodes" : 450,
+    "paired_tested_clusters" : 288
+  },
+  "content_sha256" : "69eb029b03d17457f9a23c72028574aa23a619a84dab9f88ce0c164a1bdce5fc"
+}

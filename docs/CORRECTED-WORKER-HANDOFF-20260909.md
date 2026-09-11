@@ -1,9 +1,12 @@
-# Corrected worker handoff — unfinished draft
+# Corrected worker handoff — engineering verification complete
 
-The owner stopped work and requested a PR and continuation prompt on 2026-09-09.
-This branch is **not ready to merge and not QUALIFIED**. No held-out confirmation,
-activation, or live trading was performed. The final edits were captured without
-another clean build or completed independent review.
+Engineering verification completed on 2026-09-11. See the
+[verification record](CORRECTED-WORKER-VERIFICATION-20260911.md) for the final
+source, package, test, coverage, PREFIX, and independent audit evidence. The
+declared FULL run remains blocked by the 28-CPU/32-GiB resource gate and is not
+qualified. No held-out confirmation, activation, or live trading was performed.
+The evidence archive is recorded in the verification record; CI is checked on
+PR13 head after push.
 
 ## Prompt for the next agent
 

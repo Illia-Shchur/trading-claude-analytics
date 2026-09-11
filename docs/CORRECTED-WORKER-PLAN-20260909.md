@@ -1,7 +1,12 @@
 # Corrected worker implementation and qualification plan
 
-> Unfinished plan, stopped at the owner's request. See
-> [current status and continuation prompt](CORRECTED-WORKER-HANDOFF-20260909.md).
+> **Engineering verification complete — 2026-09-11.** See the
+> [verification record](CORRECTED-WORKER-VERIFICATION-20260911.md) for the final
+> source, package, test, coverage, PREFIX, and audit evidence. FULL remains
+> blocked by the declared 28-CPU/32-GiB resource gate and is not qualified; no
+> held-out confirmation, activation, or trading is authorized. The evidence
+> archive is recorded in the verification record; CI is checked on PR13 head
+> after push.
 
 Reviewed base: `966b2758ff9e5e499c63d301e8f46bbbe0c423f7` (merged PR #10), branch
 `codex/corrected-worker-qualification`. Planning and independent review use
@@ -32,11 +37,17 @@ no held-out confirmation, strategy activation, or trading is authorized.
    historical executor cache is presumed. The existing synthetic successor
    development generator is an authorized diagnostic input workflow, not a
    substitute for real-market physical evidence.
-6. Qualification requires the existing exact full geometry: four cells, 75
-   repetitions, 450 episodes, 288 clusters, 162 paired clusters, 900 lifecycle
-   series and 14,400 minutes; retain the required complete development worker
-   wave and disjoint seeds. Enforce existing runtime/RSS/disk limits and fresh
-   machine checks. A resource profile or prefix comparison is not qualification.
+6. Qualification retains the existing exact full geometry inside each development
+   slot: 450 episodes, 162 two-source physical clusters (288 paired statistical
+   clusters), 900 lifecycle series and 14,400 minutes across the four cells. The
+   statistical declaration of 75 repetitions per cell is the held-out
+   confirmation inventory, not the development wave size. Development
+   qualification requires a complete wave of 4 x effective_workers slots (one
+   disjoint development seed per cell for each
+   admitted worker) in both the serial and parallel runs, with all development
+   seeds disjoint from the held-out inventory. Enforce existing runtime/RSS/disk
+   limits and fresh machine checks. A resource profile or prefix comparison is
+   not qualification.
 7. Independently review code, accounting propagation, identities, portability
    and evidence. Fix findings, rerun affected checks, commit only reviewed files,
    push this branch, open a PR and inspect CI on its final commit. Do not merge.
