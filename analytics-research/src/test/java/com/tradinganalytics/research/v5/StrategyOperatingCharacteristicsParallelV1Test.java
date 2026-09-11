@@ -309,6 +309,14 @@ final class StrategyOperatingCharacteristicsParallelV1Test {
     }
 
     @Test
+    void processWorkersUseVersionedSubcommandsForFrozenAndCorrectedRuns() {
+        assertThat(StrategyOperatingCharacteristicsParallelV1.workerSubcommandForTest(false))
+                .isEqualTo("operating-characteristics-parallel-worker");
+        assertThat(StrategyOperatingCharacteristicsParallelV1.workerSubcommandForTest(true))
+                .isEqualTo("operating-characteristics-corrected-parallel-worker");
+    }
+
+    @Test
     void cancellationLeavesDenominatorAndDoesNotLaunchRemainingSlots() throws Exception {
         ObjectNode plan = plan("PREFIX", 2, true);
         ObjectNode profile = profile(1);

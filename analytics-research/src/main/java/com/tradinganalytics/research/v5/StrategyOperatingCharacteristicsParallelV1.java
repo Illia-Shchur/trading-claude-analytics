@@ -3034,6 +3034,15 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
         return false;
     }
 
+    static String workerSubcommandForTest(boolean corrected) {
+        return workerSubcommand(corrected);
+    }
+
+    private static String workerSubcommand(boolean corrected) {
+        return corrected ? "operating-characteristics-corrected-parallel-worker"
+                : "operating-characteristics-parallel-worker";
+    }
+
     private static final class ProcessSlotExecutor implements DurableSlotExecutor {
         private final ObjectNode options;
         private final ObjectNode plan;
@@ -3103,7 +3112,7 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
                     "-Xmx" + Math.max(64L, payload.path("worker_heap_bytes").asLong() / (1024L * 1024L)) + "m",
                     "-XX:ActiveProcessorCount=" + profile.path("worker_cpu").asInt((int) WORKER_CPU),
                     "-Djava.io.tmpdir=" + scratch.resolve("tmp"), "-jar", jar.toString(),
-                    "strategy-research-v5", "operating-characteristics-parallel-worker", "--internal",
+                    "strategy-research-v5", workerSubcommand(corrected), "--internal",
                     "--payload", payloadPath.toString(), "--out", output.toString());
             Files.createDirectories(scratch.resolve("tmp"));
             ProcessBuilder builder = new ProcessBuilder(command).directory(workerRoot.toFile())
