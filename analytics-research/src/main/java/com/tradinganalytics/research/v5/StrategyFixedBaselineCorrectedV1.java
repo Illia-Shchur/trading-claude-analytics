@@ -11,6 +11,10 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 
 /**
  * Corrected, separately versioned evaluator adapter for fixed-baseline V5.
@@ -32,6 +36,9 @@ public final class StrategyFixedBaselineCorrectedV1 {
     private static final String FROZEN_RESULT_SCHEMA = "strategy-fixed-baseline-result/1";
     private static final String REFINEMENT_RESULT_SCHEMA = "strategy-fixed-refinement-member-result/1";
     private static final double EPSILON = 1e-8;
+    private static final Set<String> HASH_FIELDS = Set.of(
+            "content_sha256", "corrected_economic_semantic_sha256",
+            "corrected_semantic_sha256", "build_identity");
     private static final String ALGORITHM_FINGERPRINT = algorithmFingerprint();
 
     private StrategyFixedBaselineCorrectedV1() { }
@@ -92,7 +99,7 @@ public final class StrategyFixedBaselineCorrectedV1 {
             throw new IllegalArgumentException("corrected evaluator requires a frozen V5 result schema");
         }
         String sourceHash = frozen.path("content_sha256").asText("");
-        if (!JsonHashes.isSha256(sourceHash) || !sourceHash.equals(JsonHashes.ownHash(frozen))) {
+        if (!JsonHashes.isSha256(sourceHash) || !sourceHash.equals(JsonHashes.ownHashStreaming(frozen))) {
             throw new IllegalArgumentException("corrected evaluator source result content hash is invalid");
         }
         if (frozen.has("correction_status") || frozen.has("corrected_evaluator_identity")) {
@@ -183,7 +190,7 @@ public final class StrategyFixedBaselineCorrectedV1 {
         result.remove("semantic_sha256");
         result.put("corrected_economic_semantic_sha256", correctedEconomicHash(result));
         result.put("corrected_semantic_sha256", correctedSemanticHash(result));
-        result.put("content_sha256", JsonHashes.ownHash(result));
+        result.put("content_sha256", JsonHashes.ownHashStreaming(result));
         return result;
     }
 
@@ -506,18 +513,96 @@ public final class StrategyFixedBaselineCorrectedV1 {
     }
 
     private static String correctedEconomicHash(ObjectNode result) {
-        ObjectNode copy = result.deepCopy();
-        copy.remove("content_sha256"); copy.remove("corrected_economic_semantic_sha256");
-        copy.remove("corrected_semantic_sha256"); copy.remove("build_identity");
-        removeProvenance(copy);
-        return JsonHashes.canonicalSha256(copy);
+        return filteredCanonicalSha256(result, true);
     }
 
     private static String correctedSemanticHash(ObjectNode result) {
-        ObjectNode copy = result.deepCopy();
-        copy.remove("content_sha256"); copy.remove("corrected_economic_semantic_sha256");
-        copy.remove("corrected_semantic_sha256"); copy.remove("build_identity");
-        return JsonHashes.canonicalSha256(copy);
+        return filteredCanonicalSha256(result, false);
+    }
+
+    /**
+     * Hash a large corrected result without first copying it or materializing
+     * its complete canonical JSON string.  The old implementation made both
+     * allocations for each corrected digest, which exceeded the worker's
+     * fixed two GiB heap on FULL geometry results.  Scalar encoding remains
+     * delegated to the repository JCS implementation, preserving its number,
+     * escaping, and surrogate validation rules.
+     */
+    private static String filteredCanonicalSha256(ObjectNode result, boolean stripProvenance) {
+        return filteredCanonicalSha256(result, stripProvenance, HASH_FIELDS);
+    }
+
+    private static String filteredCanonicalSha256(ObjectNode result, boolean stripProvenance,
+            Set<String> rootExcludedFields) {
+        MessageDigest digest = sha256Digest();
+        writeFilteredCanonical(result, digest, stripProvenance, true, rootExcludedFields);
+        return HexFormat.of().formatHex(digest.digest());
+    }
+
+    private static void writeFilteredCanonical(JsonNode node, MessageDigest digest,
+            boolean stripProvenance, boolean root, Set<String> rootExcludedFields) {
+        if (node == null) {
+            update(digest, JsonHashes.canonicalBytes(null));
+        } else if (node.isObject()) {
+            List<String> names = new ArrayList<>();
+            node.fieldNames().forEachRemaining(names::add);
+            names.removeIf(name -> (root && rootExcludedFields.contains(name))
+                    || (stripProvenance && provenanceField(name)));
+            names.sort(String::compareTo);
+            update(digest, (byte) '{');
+            for (int index = 0; index < names.size(); index++) {
+                if (index != 0) update(digest, (byte) ',');
+                String name = names.get(index);
+                update(digest, JsonHashes.canonicalBytes(name));
+                update(digest, (byte) ':');
+                writeFilteredCanonical(node.get(name), digest, stripProvenance, false, rootExcludedFields);
+            }
+            update(digest, (byte) '}');
+        } else if (node.isArray()) {
+            update(digest, (byte) '[');
+            for (int index = 0; index < node.size(); index++) {
+                if (index != 0) update(digest, (byte) ',');
+                writeFilteredCanonical(node.get(index), digest, stripProvenance, false, rootExcludedFields);
+            }
+            update(digest, (byte) ']');
+        } else {
+            update(digest, JsonHashes.canonicalBytes(node));
+        }
+    }
+
+    private static boolean provenanceField(String field) {
+        return field.equals("content_sha256") || field.endsWith("_path")
+                || field.equals("path") || field.equals("physical_root_reference")
+                || field.equals("source_build_identity") || field.equals("build_identity")
+                || field.equals("source_evaluator_identity") || field.equals("evaluator_identity")
+                || field.equals("corrected_evaluator_identity") || field.equals("source_result_schema")
+                || field.equals("source_result_content_sha256") || field.equals("source_executor_identity_sha256")
+                || field.equals("corrected_executor_identity_sha256")
+                || field.equals("executor_identity_sha256") || field.equals("attempt_identity_sha256")
+                || field.equals("exposure_head_sha256") || field.equals("source_fingerprint")
+                || field.equals("source_fingerprint_provenance") || field.equals("source_input_canonical_sha256")
+                || field.equals("correction_input_canonical_sha256")
+                || field.equals("corrected_input_binding_sha256") || field.equals("event_book_correction_sha256")
+                || field.equals("control_book_correction_sha256") || field.equals("algorithm_fingerprint")
+                || field.equals("accounting_version") || field.equals("correction_receipt")
+                || field.equals("evaluator") || field.equals("legacy_book_schema")
+                || field.equals("legacy_book_content_sha256");
+    }
+
+    private static void update(MessageDigest digest, byte value) {
+        digest.update(value);
+    }
+
+    private static void update(MessageDigest digest, byte[] value) {
+        digest.update(value);
+    }
+
+    private static MessageDigest sha256Digest() {
+        try {
+            return MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException impossible) {
+            throw new IllegalStateException("SHA-256 is unavailable", impossible);
+        }
     }
 
     /** Package-private custody seam used by serial/parallel equivalence validation. */

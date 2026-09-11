@@ -858,7 +858,7 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
             artifact.put("portable_economic_sha256", portableEconomicSha256((ObjectNode) raw));
         }
         artifact.set("executor_identity", identity.deepCopy());
-        artifact.put("content_sha256", JsonHashes.ownHash(artifact));
+        artifact.put("content_sha256", JsonHashes.ownHashStreaming(artifact));
         return artifact;
     }
 
@@ -1225,7 +1225,7 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
     private static void validateRawReceipts(ObjectNode artifact, ObjectNode row, ObjectNode raw,
             Slot slot, ObjectNode plan, Path path, boolean packagedStrict) {
         String rawContent = raw.path("content_sha256").asText("");
-        String rawCanonical = JsonHashes.canonicalSha256(raw);
+        String rawCanonical = JsonHashes.canonicalSha256Streaming(raw);
         String rawBytes = serializedJsonSha256(raw);
         checkRawReceipt(row, "raw_evaluator_result_content_sha256", rawContent, path, packagedStrict);
         checkRawReceipt(row, "raw_evaluator_result_canonical_sha256", rawCanonical, path, packagedStrict);
@@ -1689,17 +1689,13 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
 
     private static void requireOwnHash(ObjectNode value, String label) {
         if (!SHA256.matcher(value.path("content_sha256").asText()).matches()
-                || !value.path("content_sha256").asText().equals(JsonHashes.ownHash(value))) {
+                || !value.path("content_sha256").asText().equals(JsonHashes.ownHashStreaming(value))) {
             throw new IllegalArgumentException(label + " content hash is invalid");
         }
     }
 
     private static String serializedJsonSha256(JsonNode value) {
-        try {
-            return JsonHashes.sha256(JsonHashes.mapper().writeValueAsBytes(value));
-        } catch (IOException error) {
-            throw new IllegalArgumentException("cannot serialize JSON receipt", error);
-        }
+        return JsonHashes.serializedSha256Streaming(value);
     }
 
     /**
@@ -2980,7 +2976,10 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
     private static void writeAtomic(Path path, ObjectNode value, boolean replace) throws IOException {
         Path parent = path.toAbsolutePath().normalize().getParent(); if (parent != null) Files.createDirectories(parent);
         Path temporary = path.resolveSibling(path.getFileName() + ".tmp-" + System.nanoTime());
-        Files.write(temporary, JsonHashes.mapper().writeValueAsBytes(value), StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
+        try (OutputStream output = Files.newOutputStream(temporary,
+                StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)) {
+            JsonHashes.mapper().writeValue(output, value);
+        }
         try {
             if (replace) Files.move(temporary, path, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
             else Files.move(temporary, path, StandardCopyOption.ATOMIC_MOVE);

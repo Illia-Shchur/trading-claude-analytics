@@ -3,16 +3,43 @@ package com.tradinganalytics.research.v5;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.tradinganalytics.contracts.schema.ResearchSchemaRegistry;
 import com.tradinganalytics.infrastructure.build.BuildIdentityService;
 import com.tradinganalytics.infrastructure.security.JsonHashes;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 /** Portable contract and integration checks for the corrected evaluator seam. */
 final class StrategyFixedBaselineCorrectedV1Test {
     private static final String EXECUTOR = "a".repeat(64);
+
+    @Test
+    void streamingLargeValueHashesMatchExistingCanonicalAndSerializedBytes() throws Exception {
+        ObjectNode value = JsonHashes.mapper().createObjectNode()
+                .put("😀", "é\n\u000f")
+                .put("negative_zero", -0D)
+                .put("small_exponent", 1e-7D)
+                .put("fixed_number", 1e-6D);
+        value.putArray("rows").addObject().put("z", 2).put("a", true);
+        value.putObject("nested").put("path", "/tmp/retained").put("value", 1.5D);
+
+        assertThat(JsonHashes.canonicalSha256Streaming(value))
+                .isEqualTo(JsonHashes.sha256(JsonHashes.canonicalBytes(value)));
+        assertThat(JsonHashes.ownHashStreaming(value))
+                .isEqualTo(JsonHashes.sha256(JsonHashes.canonicalBytes(value)));
+        assertThat(JsonHashes.serializedSha256Streaming(value))
+                .isEqualTo(JsonHashes.sha256(JsonHashes.mapper().writeValueAsBytes(value)));
+
+        value.put("content_sha256", "stale");
+        ObjectNode withoutContent = value.deepCopy();
+        withoutContent.remove("content_sha256");
+        assertThat(JsonHashes.ownHashStreaming(value))
+                .isEqualTo(JsonHashes.sha256(JsonHashes.canonicalBytes(withoutContent)));
+    }
 
     @Test
     void correctsBothBooksAndRecomputesCombinedEquityMetrics() {
@@ -574,6 +601,26 @@ final class StrategyFixedBaselineCorrectedV1Test {
     }
 
     @Test
+    void filteredCorrectionDigestsMatchMaterializedReferenceScopes() {
+        ObjectNode corrected = correctForTest(frozen(book(1000, 1010,
+                trade("scope", "2021-01-01T00:00:00Z", "2021-01-01T00:01:00Z", 100, 110)),
+                book(1000, 1000)));
+
+        ObjectNode economic = corrected.deepCopy();
+        removeRootDigestFields(economic);
+        stripEconomicProvenance(economic);
+        assertThat(corrected.path("corrected_economic_semantic_sha256").asText())
+                .isEqualTo(JsonHashes.sha256(JsonHashes.canonicalBytes(economic)));
+
+        ObjectNode semantic = corrected.deepCopy();
+        removeRootDigestFields(semantic);
+        assertThat(corrected.path("corrected_semantic_sha256").asText())
+                .isEqualTo(JsonHashes.sha256(JsonHashes.canonicalBytes(semantic)));
+        assertThat(corrected.path("portfolio").path("event_book").path("content_sha256").asText())
+                .isNotBlank();
+    }
+
+    @Test
     void correctedEconomicDigestChangesWhenEconomicTradeChanges() {
         ObjectNode first = frozen(book(1000, 1010,
                 trade("event", "2021-01-01T00:00:00Z", "2021-01-01T00:01:00Z", 100, 110)),
@@ -639,6 +686,46 @@ final class StrategyFixedBaselineCorrectedV1Test {
     private static ObjectNode rehash(ObjectNode frozen) {
         frozen.put("content_sha256", JsonHashes.ownHash(frozen));
         return frozen;
+    }
+
+    private static void removeRootDigestFields(ObjectNode value) {
+        value.remove("content_sha256");
+        value.remove("corrected_economic_semantic_sha256");
+        value.remove("corrected_semantic_sha256");
+        value.remove("build_identity");
+    }
+
+    private static void stripEconomicProvenance(JsonNode node) {
+        if (node instanceof ObjectNode object) {
+            List<String> names = new ArrayList<>();
+            object.fieldNames().forEachRemaining(names::add);
+            for (String name : names) {
+                if (name.equals("content_sha256") || name.endsWith("_path") || name.equals("path")
+                        || name.equals("physical_root_reference") || name.equals("source_build_identity")
+                        || name.equals("build_identity") || name.equals("source_evaluator_identity")
+                        || name.equals("evaluator_identity") || name.equals("corrected_evaluator_identity")
+                        || name.equals("source_result_schema") || name.equals("source_result_content_sha256")
+                        || name.equals("source_executor_identity_sha256")
+                        || name.equals("corrected_executor_identity_sha256")
+                        || name.equals("executor_identity_sha256") || name.equals("attempt_identity_sha256")
+                        || name.equals("exposure_head_sha256") || name.equals("source_fingerprint")
+                        || name.equals("source_fingerprint_provenance")
+                        || name.equals("source_input_canonical_sha256")
+                        || name.equals("correction_input_canonical_sha256")
+                        || name.equals("corrected_input_binding_sha256")
+                        || name.equals("event_book_correction_sha256")
+                        || name.equals("control_book_correction_sha256") || name.equals("algorithm_fingerprint")
+                        || name.equals("accounting_version") || name.equals("correction_receipt")
+                        || name.equals("evaluator") || name.equals("legacy_book_schema")
+                        || name.equals("legacy_book_content_sha256")) {
+                    object.remove(name);
+                } else {
+                    stripEconomicProvenance(object.get(name));
+                }
+            }
+        } else if (node instanceof ArrayNode array) {
+            array.forEach(StrategyFixedBaselineCorrectedV1Test::stripEconomicProvenance);
+        }
     }
 
     private static ObjectNode book(double starting, double ending, ObjectNode... trades) {

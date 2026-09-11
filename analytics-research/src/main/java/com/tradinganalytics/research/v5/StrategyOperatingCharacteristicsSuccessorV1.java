@@ -492,8 +492,10 @@ public final class StrategyOperatingCharacteristicsSuccessorV1 {
             ObjectNode rawEvaluatorResult = evaluated;
             row.set("raw_evaluator_result", rawEvaluatorResult);
             row.put("raw_evaluator_result_content_sha256", rawEvaluatorResult.path("content_sha256").asText());
-            row.put("raw_evaluator_result_canonical_sha256", JsonHashes.canonicalSha256(rawEvaluatorResult));
-            row.put("raw_evaluator_result_byte_sha256", serializedJsonSha256(rawEvaluatorResult));
+            row.put("raw_evaluator_result_canonical_sha256",
+                    JsonHashes.canonicalSha256Streaming(rawEvaluatorResult));
+            row.put("raw_evaluator_result_byte_sha256",
+                    JsonHashes.serializedSha256Streaming(rawEvaluatorResult));
             row.set("representative_setup_events", firstRows(evaluated.path("setup_events"), 2));
             row.set("representative_control_selections", firstRows(evaluated.path("control_selections"), 2));
             return row;
@@ -997,22 +999,20 @@ public final class StrategyOperatingCharacteristicsSuccessorV1 {
         JsonNode raw = row.path("raw_evaluator_result");
         if (!raw.isObject()
                 || !raw.path("content_sha256").isTextual()
-                || !raw.path("content_sha256").asText().equals(JsonHashes.ownHash(raw))
+                || !raw.path("content_sha256").asText().equals(JsonHashes.ownHashStreaming(raw))
                 || !raw.path("content_sha256").asText().equals(receipt.path("result_content_sha256").asText())
                 || !row.path("raw_evaluator_result_content_sha256").asText().equals(raw.path("content_sha256").asText())
-                || !row.path("raw_evaluator_result_canonical_sha256").asText().equals(JsonHashes.canonicalSha256(raw))
-                || !row.path("raw_evaluator_result_byte_sha256").asText().equals(serializedJsonSha256(raw))) {
+                || !row.path("raw_evaluator_result_canonical_sha256").asText().equals(
+                        JsonHashes.canonicalSha256Streaming(raw))
+                || !row.path("raw_evaluator_result_byte_sha256").asText().equals(
+                        JsonHashes.serializedSha256Streaming(raw))) {
             return false;
         }
         return row.path("portfolio_summary").equals(raw.path("portfolio"));
     }
 
     private static String serializedJsonSha256(JsonNode value) {
-        try {
-            return JsonHashes.sha256(JsonHashes.mapper().writeValueAsBytes(value));
-        } catch (IOException error) {
-            throw new IllegalArgumentException("cannot serialize raw evaluator result", error);
-        }
+        return JsonHashes.serializedSha256Streaming(value);
     }
 
     private static void validateNumericFalsifier(JsonNode row) {

@@ -26,6 +26,41 @@ final class JsonHashesTest {
     }
 
     @Test
+    void streamingCanonicalHashesMatchMaterializedJcsBytes() throws Exception {
+        ObjectNode value = JsonHashes.mapper().createObjectNode()
+                .put("😀", "é\n\u000f")
+                .put("negative_zero", -0D)
+                .put("small_exponent", 1e-7D)
+                .put("fixed_number", 1e-6D);
+        value.putArray("rows").addObject().put("z", 2).put("a", true);
+        value.putObject("nested").put("path", "/tmp/retained").put("value", 1.5D);
+        String materialized = JsonHashes.sha256(JsonHashes.canonicalBytes(value));
+
+        assertThat(JsonHashes.canonicalSha256Streaming(value)).isEqualTo(materialized);
+        assertThat(JsonHashes.canonicalSha256(value)).isEqualTo(materialized);
+        assertThat(JsonHashes.ownHashStreaming(value)).isEqualTo(materialized);
+        assertThat(JsonHashes.serializedSha256Streaming(value))
+                .isEqualTo(JsonHashes.sha256(JsonHashes.mapper().writeValueAsBytes(value)));
+        assertThat(JsonHashes.canonicalSha256(null))
+                .isEqualTo(JsonHashes.sha256(JsonHashes.canonicalBytes(null)));
+        assertThat(JsonHashes.canonicalSha256(NullNode.getInstance()))
+                .isEqualTo(JsonHashes.sha256(JsonHashes.canonicalBytes(NullNode.getInstance())));
+
+        value.put("content_sha256", "stale");
+        ObjectNode withoutContent = value.deepCopy();
+        withoutContent.remove("content_sha256");
+        assertThat(JsonHashes.ownHashStreaming(value))
+                .isEqualTo(JsonHashes.sha256(JsonHashes.canonicalBytes(withoutContent)));
+        assertThatThrownBy(() -> JsonHashes.ownHashStreaming(null))
+                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> JsonHashes.canonicalSha256(value.put("nan", Double.NaN)))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("NaN");
+        assertThatThrownBy(() -> JsonHashes.canonicalSha256(
+                JsonHashes.mapper().createObjectNode().put("\uD800", 1)))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("Lone surrogate");
+    }
+
+    @Test
     void ownHashExcludesOnlyTheDeclaredTopLevelField() {
         ObjectNode value = JsonHashes.mapper().createObjectNode().put("schema", "fixture/1");
         String expected = JsonHashes.ownHash(value);
