@@ -331,43 +331,91 @@ public final class StrategyFixedBaselineCorrectedV1 {
         if (trades == null || !trades.isArray()) throw new IllegalArgumentException(label + " trades must be an array");
         for (JsonNode raw : trades) {
             if (!(raw instanceof ObjectNode trade)) continue;
-            for (String field : List.of("direction", "instrument_type", "instrument")) {
-                if (trade.has(field) && !trade.path(field).isTextual()) {
-                    throw new IllegalArgumentException(label + " corrected accounting has malformed " + field);
+            validateSupportedTradeMetadata(trade, label);
+        }
+    }
+
+    /**
+     * Validate contract metadata wherever the lifecycle producer places it.
+     * The legacy projection keeps some fields on the trade object, while the
+     * authoritative lifecycle keeps the same contract on the lifecycle and
+     * its exit rows.  Missing optional fields remain valid for historical
+     * fixtures.
+     */
+    private static void validateSupportedTradeMetadata(JsonNode node, String label) {
+        if (node == null) return;
+        if (node.isObject()) {
+            validateTextMetadata(node, "direction", label);
+            if (node.has("direction")) {
+                String direction = node.path("direction").asText();
+                if (direction.isBlank()) {
+                    throw new IllegalArgumentException(label + " corrected accounting has malformed direction");
+                }
+                if (!"long".equalsIgnoreCase(direction)) {
+                    throw new IllegalArgumentException(label + " corrected accounting supports long spot trades only");
                 }
             }
-            String direction = trade.path("direction").asText("long");
-            if (trade.has("direction") && direction.isBlank()) {
-                throw new IllegalArgumentException(label + " corrected accounting has malformed direction");
+
+            validateTextMetadata(node, "instrument_type", label);
+            if (node.has("instrument_type")) {
+                String instrumentType = node.path("instrument_type").asText();
+                if (instrumentType.isBlank() || !"SPOT".equalsIgnoreCase(instrumentType)) {
+                    throw new IllegalArgumentException(label + " corrected accounting supports spot instruments only");
+                }
             }
-            if (!"long".equalsIgnoreCase(direction)) {
-                throw new IllegalArgumentException(label + " corrected accounting supports long spot trades only");
+
+            validateTextMetadata(node, "instrument", label);
+            if (node.has("instrument")) {
+                String instrument = node.path("instrument").asText();
+                if (instrument.isBlank() || (!"BINANCE_SPOT".equalsIgnoreCase(instrument)
+                        && !"SPOT".equalsIgnoreCase(instrument))) {
+                    throw new IllegalArgumentException(label + " corrected accounting supports spot instruments only");
+                }
             }
-            String instrumentType = trade.path("instrument_type").asText("SPOT");
-            if (instrumentType.isBlank() || !"SPOT".equalsIgnoreCase(instrumentType)) {
-                throw new IllegalArgumentException(label + " corrected accounting supports spot instruments only");
+
+            if (node.has("contract_multiplier")) {
+                JsonNode multiplier = node.path("contract_multiplier");
+                if (!multiplier.isNumber() || !Double.isFinite(multiplier.asDouble())) {
+                    throw new IllegalArgumentException(label + " corrected accounting has malformed contract_multiplier");
+                }
+                if (Math.abs(multiplier.asDouble() - 1D) > EPSILON) {
+                    throw new IllegalArgumentException(label + " corrected accounting supports unit contract multipliers only");
+                }
             }
-            String instrument = trade.path("instrument").asText("BINANCE_SPOT");
-            if (instrument.isBlank() || (!"BINANCE_SPOT".equalsIgnoreCase(instrument)
-                    && !"SPOT".equalsIgnoreCase(instrument))) {
-                throw new IllegalArgumentException(label + " corrected accounting supports spot instruments only");
-            }
-            for (String field : List.of("funding_usdt", "funding_fee_usdt", "borrow_fee_usdt", "margin_usdt")) {
-                if (trade.has(field)) {
-                    if (!trade.path(field).isNumber() || !Double.isFinite(trade.path(field).asDouble())
-                            || Math.abs(trade.path(field).asDouble()) > EPSILON) {
+
+            for (String field : List.of("funding_usdt", "funding_fee_usdt", "borrow_fee_usdt", "margin_usdt",
+                    "funding_usd", "funding_fee_usd", "borrow_fee_usd", "margin_usd", "funding_pnl_usd",
+                    "funding_pnl_usdt")) {
+                if (node.has(field)) {
+                    JsonNode funding = node.path(field);
+                    if (!funding.isNumber() || !Double.isFinite(funding.asDouble())
+                            || Math.abs(funding.asDouble()) > EPSILON) {
                         throw new IllegalArgumentException(label + " corrected accounting does not support " + field);
                     }
                 }
             }
-            if (trade.has("leverage")) {
-                if (!trade.path("leverage").isNumber() || !Double.isFinite(trade.path("leverage").asDouble())) {
+
+            if (node.has("leverage")) {
+                JsonNode leverage = node.path("leverage");
+                if (!leverage.isNumber() || !Double.isFinite(leverage.asDouble())) {
                     throw new IllegalArgumentException(label + " corrected accounting has malformed leverage");
                 }
-                if (Math.abs(trade.path("leverage").asDouble() - 1D) > EPSILON) {
+                if (Math.abs(leverage.asDouble() - 1D) > EPSILON) {
                     throw new IllegalArgumentException(label + " corrected accounting supports unlevered spot only");
                 }
             }
+
+            node.fields().forEachRemaining(field -> validateSupportedTradeMetadata(field.getValue(), label));
+        } else if (node.isArray()) {
+            node.forEach(child -> validateSupportedTradeMetadata(child, label));
+        }
+    }
+
+    private static void validateTextMetadata(JsonNode node, String field, String label) {
+        if (!node.has(field)) return;
+        JsonNode value = node.path(field);
+        if (!value.isTextual()) {
+            throw new IllegalArgumentException(label + " corrected accounting has malformed " + field);
         }
     }
 
@@ -491,6 +539,8 @@ public final class StrategyFixedBaselineCorrectedV1 {
         }
         ObjectNode event = object(portfolio, "event_book", "corrected portfolio");
         ObjectNode control = object(portfolio, "control_book", "corrected portfolio");
+        validateSupportedTradeContract(event, "event_book");
+        validateSupportedTradeContract(control, "control_book");
         return correctedPortfolio(portfolio,
                 StrategyFixedBaselinePortfolioCorrectionV1.correctLegacyBook(event),
                 StrategyFixedBaselinePortfolioCorrectionV1.correctLegacyBook(control));
@@ -553,6 +603,16 @@ public final class StrategyFixedBaselineCorrectedV1 {
                 .put("metric_policy", "recompute_equity_holdings_returns_drawdown")
                 .put("supported_contract", "long_spot_single_full_exit");
         return JsonHashes.canonicalSha256(descriptor);
+    }
+
+    /**
+     * Package-level custody hook for the strict worker verifier.  The
+     * algorithm fingerprint is part of the corrected result contract, so a
+     * verifier must compare it with this build's descriptor rather than only
+     * checking that an attacker supplied a well-formed SHA-256 value.
+     */
+    static String algorithmFingerprintForValidation() {
+        return ALGORITHM_FINGERPRINT;
     }
 
     private record CurvePoint(Instant time, String book, int ordinal, ObjectNode node) { }

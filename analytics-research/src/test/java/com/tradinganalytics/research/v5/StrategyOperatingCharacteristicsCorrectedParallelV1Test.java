@@ -590,6 +590,13 @@ final class StrategyOperatingCharacteristicsCorrectedParallelV1Test {
         return slots;
     }
 
+    private static StrategyOperatingCharacteristicsParallelV1.Slot correctedPrefixSlot(ObjectNode plan, int cellIndex) {
+        JsonNode cell = plan.path("development_prefix_seed_cells").get(cellIndex);
+        return new StrategyOperatingCharacteristicsParallelV1.Slot(
+                plan.path("content_sha256").asText(), "PREFIX", cell.path("scenario").asText(),
+                cell.path("effect_size").asDouble(), 0, cell.path("prefix_seeds").get(0).asLong(), cellIndex);
+    }
+
     private static ObjectNode correctedWorkerArtifact(StrategyOperatingCharacteristicsParallelV1.Slot slot,
             ObjectNode raw, String runId) throws Exception {
         return correctedWorkerArtifact(slot, raw, runId, 450, 450, 288);
@@ -667,7 +674,7 @@ final class StrategyOperatingCharacteristicsCorrectedParallelV1Test {
 
     private static ObjectNode correctedWorkerRawResult(int tradeCount, String physicalInputHash) throws Exception {
         int independentUnits = tradeCount == 450 ? 288 : 1;
-        int pairedClusters = tradeCount == 450 ? 162 : 1;
+        int pairedClusters = tradeCount == 450 ? 288 : 1;
         ObjectNode eventBook = qualificationBookWithGeometry("event", 100D, 101D, tradeCount);
         ObjectNode controlBook = qualificationBookWithGeometry("control", 100D, 100D, tradeCount);
         ObjectNode frozen = JsonHashes.mapper().createObjectNode()
@@ -684,7 +691,7 @@ final class StrategyOperatingCharacteristicsCorrectedParallelV1Test {
                 .put("independent_market_episode_count", independentUnits);
         frozen.set("setup_events", evidenceInventory("event", "event_id", tradeCount));
         frozen.set("control_selections", evidenceInventory("control", "event_id", tradeCount));
-        frozen.set("independent_market_episodes", evidenceInventory("cluster", "episode_id", independentUnits));
+        frozen.set("independent_market_episodes", independentClusterInventory(tradeCount, independentUnits));
         frozen.set("attempts", pairedAttemptInventory(eventBook, controlBook, tradeCount));
         ObjectNode attrition = frozen.putObject("matching_attrition")
                 .put("schema", "strategy-matching-attrition/1").put("version", 1).put("outcome_blind", true);
@@ -719,6 +726,20 @@ final class StrategyOperatingCharacteristicsCorrectedParallelV1Test {
         ArrayNode result = JsonHashes.mapper().createArrayNode();
         for (int index = 0; index < count; index++) {
             result.addObject().put(idField, prefix + "-" + index);
+        }
+        return result;
+    }
+
+    private static ArrayNode independentClusterInventory(int tradeCount, int clusterCount) {
+        ArrayNode result = JsonHashes.mapper().createArrayNode();
+        int doubleSourceClusters = tradeCount == 450 ? 162 : 1;
+        int source = 0;
+        for (int index = 0; index < clusterCount; index++) {
+            ObjectNode cluster = result.addObject().put("episode_id", "cluster-" + index)
+                    .put("cluster_id", "cluster-hash-" + index);
+            ArrayNode sourceIds = cluster.putArray("source_episode_ids");
+            sourceIds.add("event-" + source++);
+            if (index < doubleSourceClusters) sourceIds.add("event-" + source++);
         }
         return result;
     }
@@ -931,6 +952,170 @@ final class StrategyOperatingCharacteristicsCorrectedParallelV1Test {
         Files.writeString(path, JsonHashes.mapper().writeValueAsString(artifact));
         StrategyOperatingCharacteristicsParallelV1.validateCorrectedArtifactForTest(
                 artifact, path, slot, plan, artifact.path("run_id").asText());
+    }
+
+    @Test
+    void strictCorrectedArtifactRejectsARehashedRawResultTransplantedAcrossSlots() throws Exception {
+        ObjectNode profile = profile(1, resourceProbe(28, 32L * GIB, 256L * GIB));
+        ObjectNode plan = correctedPlan(1, profile);
+        StrategyOperatingCharacteristicsParallelV1.Slot target = correctedPrefixSlot(plan, 0);
+        StrategyOperatingCharacteristicsParallelV1.Slot source = correctedPrefixSlot(plan, 1);
+        ObjectNode sourceRaw = correctedWorkerRawResult(source, 10);
+        ObjectNode artifact = correctedWorkerArtifact(target, correctedWorkerRawResult(target, 10),
+                UUID.randomUUID().toString(), 10, 10, 1);
+        Path validPath = temporary.resolve("valid-prefix-artifact.json");
+        Files.writeString(validPath, JsonHashes.mapper().writeValueAsString(artifact));
+        StrategyOperatingCharacteristicsParallelV1.validateCorrectedArtifactForTest(
+                artifact, validPath, target, plan, artifact.path("run_id").asText());
+        ObjectNode row = (ObjectNode) artifact.path("row");
+        row.set("raw_evaluator_result", sourceRaw);
+        row.put("generator_input_sha256", sourceRaw.path("physical_input_sha256").asText())
+                .put("raw_evaluator_result_content_sha256", sourceRaw.path("content_sha256").asText())
+                .put("raw_evaluator_result_canonical_sha256", JsonHashes.canonicalSha256(sourceRaw))
+                .put("raw_evaluator_result_byte_sha256", JsonHashes.sha256(JsonHashes.mapper().writeValueAsBytes(sourceRaw)))
+                .put("economic_semantic_sha256", sourceRaw.path("corrected_economic_semantic_sha256").asText());
+        ObjectNode receipt = (ObjectNode) row.path("evaluator_receipt");
+        receipt.put("result_content_sha256", sourceRaw.path("content_sha256").asText())
+                .put("economic_semantic_sha256", sourceRaw.path("corrected_economic_semantic_sha256").asText())
+                .put("source_input_sha256", sourceRaw.path("physical_input_sha256").asText());
+        rehash(receipt);
+        rehash(row);
+        artifact.put("portable_economic_sha256",
+                StrategyOperatingCharacteristicsParallelV1.portableEconomicSha256ForTest(sourceRaw));
+        rehash(artifact);
+        Path path = temporary.resolve("transplanted-slot-artifact.json");
+        Files.writeString(path, JsonHashes.mapper().writeValueAsString(artifact));
+        ObjectNode transplantedArtifact = artifact;
+
+        assertThatThrownBy(() -> StrategyOperatingCharacteristicsParallelV1.validateCorrectedArtifactForTest(
+                transplantedArtifact, path, target, plan, transplantedArtifact.path("run_id").asText()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("physical input descriptor");
+    }
+
+    @Test
+    void strictCorrectedArtifactRequiresCurrentAlgorithmAndCorrectionBindings() throws Exception {
+        ObjectNode profile = profile(1, resourceProbe(28, 32L * GIB, 256L * GIB));
+        ObjectNode plan = correctedPlan(1, profile);
+        StrategyOperatingCharacteristicsParallelV1.Slot slot = correctedPrefixSlot(plan, 0);
+        ObjectNode wrongAlgorithmArtifact = correctedWorkerArtifact(slot, correctedWorkerRawResult(slot, 10),
+                UUID.randomUUID().toString(), 10, 10, 1);
+        ObjectNode raw = (ObjectNode) wrongAlgorithmArtifact.path("row").path("raw_evaluator_result").deepCopy();
+        raw.put("algorithm_fingerprint", "e".repeat(64));
+        rehash(raw);
+        replaceArtifactRaw(wrongAlgorithmArtifact, raw);
+        Path path = temporary.resolve("wrong-algorithm-artifact.json");
+
+        assertThatThrownBy(() -> StrategyOperatingCharacteristicsParallelV1.validateCorrectedArtifactForTest(
+                wrongAlgorithmArtifact, path, slot, plan, wrongAlgorithmArtifact.path("run_id").asText()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("corrected raw evaluator");
+
+        ObjectNode wrongBindingArtifact = correctedWorkerArtifact(slot, correctedWorkerRawResult(slot, 10),
+                UUID.randomUUID().toString(), 10, 10, 1);
+        raw = (ObjectNode) wrongBindingArtifact.path("row").path("raw_evaluator_result").deepCopy();
+        ObjectNode binding = (ObjectNode) raw.path("corrected_input_binding");
+        binding.put("physical_input_sha256", "f".repeat(64));
+        raw.put("corrected_economic_semantic_sha256",
+                StrategyFixedBaselineCorrectedV1.correctedEconomicSha256ForValidation(raw));
+        rehash(raw);
+        replaceArtifactRaw(wrongBindingArtifact, raw);
+        assertThatThrownBy(() -> StrategyOperatingCharacteristicsParallelV1.validateCorrectedArtifactForTest(
+                wrongBindingArtifact, path, slot, plan, wrongBindingArtifact.path("run_id").asText()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("input binding");
+    }
+
+    private static void replaceArtifactRaw(ObjectNode artifact, ObjectNode raw) throws Exception {
+        ObjectNode row = (ObjectNode) artifact.path("row");
+        row.set("raw_evaluator_result", raw.deepCopy());
+        row.put("generator_input_sha256", raw.path("physical_input_sha256").asText())
+                .put("raw_evaluator_result_content_sha256", raw.path("content_sha256").asText())
+                .put("raw_evaluator_result_canonical_sha256", JsonHashes.canonicalSha256(raw))
+                .put("raw_evaluator_result_byte_sha256",
+                        JsonHashes.sha256(JsonHashes.mapper().writeValueAsBytes(raw)))
+                .put("economic_semantic_sha256", raw.path("corrected_economic_semantic_sha256").asText());
+        ObjectNode receipt = (ObjectNode) row.path("evaluator_receipt");
+        receipt.put("result_content_sha256", raw.path("content_sha256").asText())
+                .put("economic_semantic_sha256", raw.path("corrected_economic_semantic_sha256").asText())
+                .put("source_input_sha256", raw.path("physical_input_sha256").asText());
+        rehash(receipt);
+        rehash(row);
+        artifact.put("portable_economic_sha256",
+                StrategyOperatingCharacteristicsParallelV1.portableEconomicSha256ForTest(raw));
+        rehash(artifact);
+    }
+
+    @Test
+    void correctedResumeRejectsARehashedTerminalRawResultWithStaleAlgorithmBinding() throws Exception {
+        ObjectNode profile = profile(1, resourceProbe(28, 32L * GIB, 256L * GIB));
+        ObjectNode plan = correctedPlan(1, profile);
+        plan.put("schema", StrategyOperatingCharacteristicsSuccessorV1.CORRECTED_PLAN_SCHEMA)
+                .put("binding_fixed_evaluator", StrategyFixedBaselineCorrectedV1.EVALUATOR_ID)
+                .put("development_exposure", true)
+                .put("predecessor_diagnosis_sha256", "a".repeat(64))
+                .put("lineage_inventory_sha256", "b".repeat(64));
+        for (int index = 0; index < plan.path("cells").size(); index++) {
+            ObjectNode cellNode = (ObjectNode) plan.path("cells").get(index);
+            cellNode.set("prefix_seeds", plan.path("development_prefix_seed_cells").get(index)
+                    .path("prefix_seeds").deepCopy());
+        }
+        rehash(plan);
+        JsonNode cell = plan.path("cells").get(0);
+        StrategyOperatingCharacteristicsParallelV1.Slot slot = new StrategyOperatingCharacteristicsParallelV1.Slot(
+                plan.path("content_sha256").asText(), "PREFIX", cell.path("scenario").asText(),
+                cell.path("effect_size").asDouble(), 0, cell.path("prefix_seeds").get(0).asLong(), 0);
+        ObjectNode artifact = correctedWorkerArtifact(slot, correctedWorkerRawResult(slot, 10),
+                UUID.randomUUID().toString(), 10, 10, 1);
+        ObjectNode validLedger = terminalLedger(plan, slot, artifact);
+        StrategyOperatingCharacteristicsSuccessorV1.validateLedgerForTest(plan, validLedger);
+        ObjectNode raw = (ObjectNode) artifact.path("row").path("raw_evaluator_result").deepCopy();
+        raw.put("algorithm_fingerprint", "e".repeat(64));
+        rehash(raw);
+        replaceArtifactRaw(artifact, raw);
+        ObjectNode ledger = terminalLedger(plan, slot, artifact);
+
+        assertThatThrownBy(() -> StrategyOperatingCharacteristicsSuccessorV1.validateLedgerForTest(plan, ledger))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("corrected raw evaluator");
+    }
+
+    private static ObjectNode terminalLedger(ObjectNode plan,
+            StrategyOperatingCharacteristicsParallelV1.Slot slot, ObjectNode artifact) {
+        ObjectNode row = (ObjectNode) artifact.path("row");
+        ObjectNode output = (ObjectNode) row.path("evaluator_receipt");
+        ObjectNode attempt = JsonHashes.mapper().createObjectNode()
+                .put("attempt_id", "PREFIX|NO_EDGE|0:0")
+                .put("plan_sha256", plan.path("content_sha256").asText())
+                .put("mode", slot.mode()).put("scenario", slot.scenario())
+                .put("effect_size", slot.effectSize()).put("replication", slot.replication())
+                .put("seed", slot.seed()).put("status", "COMPLETE")
+                .put("outcomes_opened", true).put("promotion_eligible", false)
+                .put("internal_evaluator", true)
+                .put("executor_identity_sha256", plan.path("executor_identity_sha256").asText())
+                .put("input_sha256", syntheticInputSha(plan, slot, 10))
+                .put("evaluator_output_sha256", output.path("content_sha256").asText());
+        attempt.set("result_row", row.deepCopy());
+        attempt.set("evaluator_output", output.deepCopy());
+        ArrayNode attempts = JsonHashes.mapper().createArrayNode().add(attempt);
+        ObjectNode ledger = JsonHashes.mapper().createObjectNode()
+                .put("schema", StrategyOperatingCharacteristicsSuccessorV1.LEDGER_SCHEMA)
+                .put("version", 1).put("append_only", true)
+                .put("plan_sha256", plan.path("content_sha256").asText())
+                .put("mode", slot.mode());
+        ledger.set("attempts", attempts);
+        ledger.put("content_sha256", JsonHashes.ownHash(ledger));
+        return ledger;
+    }
+
+    private static String syntheticInputSha(ObjectNode plan,
+            StrategyOperatingCharacteristicsParallelV1.Slot slot, int episodes) {
+        ObjectNode input = JsonHashes.mapper().createObjectNode()
+                .put("plan_sha256", plan.path("content_sha256").asText())
+                .put("mode", slot.mode()).put("replication", slot.replication())
+                .put("cell", slot.scenario()).put("effect_size", slot.effectSize())
+                .put("seed", slot.seed()).put("episodes", episodes);
+        return JsonHashes.canonicalSha256(input);
     }
 
     @Test

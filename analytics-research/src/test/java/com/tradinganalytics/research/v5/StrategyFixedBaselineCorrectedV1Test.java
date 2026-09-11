@@ -246,6 +246,55 @@ final class StrategyFixedBaselineCorrectedV1Test {
     }
 
     @Test
+    void validatesTheNestedLifecycleContractAndExitFunding() {
+        ObjectNode supported = trade("nested-supported", "2021-01-01T00:00:00Z",
+                "2021-01-01T00:01:00Z", 100, 110);
+        ObjectNode lifecycle = (ObjectNode) supported.path("lifecycle");
+        lifecycle.put("direction", "long").put("instrument_type", "SPOT")
+                .put("contract_multiplier", 1D).put("funding_usd", 0D);
+        ((ObjectNode) lifecycle.path("exits").get(0)).put("funding_usd", 0D);
+        assertThat(correctForTest(frozen(book(1000, 1010, supported), book(1000, 1000)))
+                .path("portfolio").path("event_book").path("trade_count").asInt()).isOne();
+
+        ObjectNode shortLifecycle = trade("nested-short", "2021-01-01T00:00:00Z",
+                "2021-01-01T00:01:00Z", 100, 110);
+        ((ObjectNode) shortLifecycle.path("lifecycle")).put("direction", "short");
+        assertThatThrownBy(() -> correctForTest(frozen(book(1000, 1010, shortLifecycle), book(1000, 1000))))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("long spot");
+
+        ObjectNode derivativeLifecycle = trade("nested-derivative", "2021-01-01T00:00:00Z",
+                "2021-01-01T00:01:00Z", 100, 110);
+        ((ObjectNode) derivativeLifecycle.path("lifecycle")).put("instrument_type", "PERPETUAL");
+        assertThatThrownBy(() -> correctForTest(frozen(book(1000, 1010, derivativeLifecycle), book(1000, 1000))))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("spot instruments");
+
+        ObjectNode scaledLifecycle = trade("nested-scaled", "2021-01-01T00:00:00Z",
+                "2021-01-01T00:01:00Z", 100, 110);
+        ((ObjectNode) scaledLifecycle.path("lifecycle")).put("contract_multiplier", 2D);
+        assertThatThrownBy(() -> correctForTest(frozen(book(1000, 1010, scaledLifecycle), book(1000, 1000))))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("contract multipliers");
+
+        ObjectNode fundedExit = trade("nested-funded-exit", "2021-01-01T00:00:00Z",
+                "2021-01-01T00:01:00Z", 100, 110);
+        ((ObjectNode) fundedExit.path("lifecycle").path("exits").get(0)).put("funding_usd", 1D);
+        assertThatThrownBy(() -> correctForTest(frozen(book(1000, 1010, fundedExit), book(1000, 1000))))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("funding_usd");
+    }
+
+    @Test
+    void validationReplayRejectsNestedUnsupportedContractBeforeRecomputation() {
+        ObjectNode corrected = correctForTest(frozen(book(1000, 1010,
+                trade("replay-nested", "2021-01-01T00:00:00Z", "2021-01-01T00:01:00Z", 100, 110)),
+                book(1000, 1000)));
+        ObjectNode portfolio = (ObjectNode) corrected.path("portfolio");
+        ((ObjectNode) portfolio.path("event_book").path("trades").get(0).path("lifecycle"))
+                .put("contract_multiplier", 2D);
+
+        assertThatThrownBy(() -> StrategyFixedBaselineCorrectedV1.correctedPortfolioForValidation(portfolio))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("contract multipliers");
+    }
+
+    @Test
     void rejectsMalformedBooksLifecycleAndBoundaryEvidence() {
         ObjectNode nonArrayTrades = book(1000, 1000);
         nonArrayTrades.put("trades", "not-an-array");

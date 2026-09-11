@@ -15,9 +15,13 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.file.FileStore;
 import java.nio.file.Files;
+import java.nio.file.FileVisitResult;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
@@ -43,6 +47,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -89,6 +94,8 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
     private static final int MAX_RETRY = 1;
     private static final String OPTIMIZED_METHOD = "evaluateOptimizedReplication";
     private static final Set<ProcessHandle> ACTIVE_PROCESSES = ConcurrentHashMap.newKeySet();
+    private static final Pattern MAC_PLATFORM_UUID = Pattern.compile(
+            "\\\"IOPlatformUUID\\\"\\s*=\\s*\\\"([0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12})\\\"");
 
     private StrategyOperatingCharacteristicsParallelV1() { }
 
@@ -1202,7 +1209,8 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
         if (row.path("raw_evaluator_result").isObject()) {
             ObjectNode raw = (ObjectNode) row.path("raw_evaluator_result");
             requireOwnHash(raw, "raw evaluator result");
-            validateRawReceipts(artifact, row, raw, path, packagedStrict && "COMPLETE".equals(status));
+            validateRawReceipts(artifact, row, raw, slot, plan, path,
+                    packagedStrict && "COMPLETE".equals(status));
         } else if (packagedStrict && "COMPLETE".equals(status)) {
             throw new IllegalArgumentException("packaged worker row has no bound raw evaluator result: " + path);
         }
@@ -1215,7 +1223,7 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
      * still agree with the immutable evaluator result and its receipt.
      */
     private static void validateRawReceipts(ObjectNode artifact, ObjectNode row, ObjectNode raw,
-            Path path, boolean packagedStrict) {
+            Slot slot, ObjectNode plan, Path path, boolean packagedStrict) {
         String rawContent = raw.path("content_sha256").asText("");
         String rawCanonical = JsonHashes.canonicalSha256(raw);
         String rawBytes = serializedJsonSha256(raw);
@@ -1231,6 +1239,17 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
         }
         if (!packagedStrict) return;
 
+        String physical = raw.path("physical_input_sha256").asText("");
+        String expectedPhysical = expectedSyntheticInputSha256(plan, slot);
+        if (!SHA256.matcher(physical).matches() || !physical.equals(expectedPhysical)) {
+            throw new IllegalArgumentException("raw evaluator physical input descriptor differs from frozen slot: " + path);
+        }
+        if (!plan.path("baseline_sha256").asText("").equals(raw.path("baseline_sha256").asText(""))
+                || !plan.path("control_spec_sha256").asText("").equals(raw.path("control_spec_sha256").asText(""))
+                || !plan.path("experiment_sha256").asText("").equals(raw.path("experiment_sha256").asText(""))) {
+            throw new IllegalArgumentException("raw evaluator inputs differ from the frozen plan: " + path);
+        }
+
         ObjectNode receipt = object(row, "evaluator_receipt");
         requireOwnHash(receipt, "evaluator receipt");
         boolean corrected = CORRECTED_SLOT_RESULT_SCHEMA.equals(artifact.path("schema").asText());
@@ -1243,7 +1262,6 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
                     || !StrategyFixedBaselinePortfolioCorrectionV1.ACCOUNTING_VERSION
                             .equals(raw.path("evaluator").path("accounting_version").asText())
                     || !SHA256.matcher(raw.path("corrected_economic_semantic_sha256").asText()).matches()
-                    || !SHA256.matcher(raw.path("algorithm_fingerprint").asText()).matches()
                     || !raw.path("corrected_portfolio_metrics").isObject()
                     || !raw.path("correction_receipt").isObject()
                     || !raw.path("portfolio").path("corrected_metrics").isObject()
@@ -1254,7 +1272,7 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
                             .equals(raw.path("corrected_portfolio_metrics"))) {
                 throw new IllegalArgumentException("corrected raw evaluator identity or accounting binding mismatch: " + path);
             }
-            requireOwnHash((ObjectNode) raw.path("correction_receipt"), "corrected evaluator receipt");
+            validateCorrectedRawBindings(raw, plan, path);
             validateCorrectedQualificationPortfolio(row,
                     "FULL".equals(artifact.path("mode").asText()));
         }
@@ -1278,8 +1296,8 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
                 || !raw.path("status").asText().equals(receipt.path("status").asText())
                 || !rawEconomic.equals(receipt.path("economic_semantic_sha256").asText())
                 || !rawEconomic.equals(row.path("economic_semantic_sha256").asText())
-                || !raw.path("physical_input_sha256").asText().equals(row.path("generator_input_sha256").asText())
-                || !raw.path("physical_input_sha256").asText().equals(receipt.path("source_input_sha256").asText())) {
+                || !physical.equals(row.path("generator_input_sha256").asText())
+                || !physical.equals(receipt.path("source_input_sha256").asText())) {
             throw new IllegalArgumentException("evaluator receipt result binding mismatch: " + path);
         }
         String artifactExecutor = artifact.path("executor_identity").path("executable").path("sha256").asText("");
@@ -1301,6 +1319,110 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
                         != row.path("decision").asBoolean(false))) {
             throw new IllegalArgumentException("compact worker projection differs from raw evaluator result: " + path);
         }
+    }
+
+    /**
+     * Recomputes every corrected-result provenance binding that is part of the
+     * production evaluator contract.  Shape-only SHA checks are insufficient:
+     * a rehashed result can still name another correction algorithm or source
+     * result and then be accepted on resume.
+     */
+    static void validateCorrectedRawForResume(ObjectNode raw, ObjectNode row, ObjectNode plan,
+            String mode, String scenario, double effect, int replication, long seed, Path path) {
+        String physical = raw.path("physical_input_sha256").asText("");
+        String expectedPhysical = expectedSyntheticInputSha256(plan,
+                new Slot(plan.path("content_sha256").asText(), mode, scenario, effect, replication, seed, 0));
+        if (!SHA256.matcher(physical).matches() || !physical.equals(expectedPhysical)
+                || !plan.path("baseline_sha256").asText("").equals(raw.path("baseline_sha256").asText(""))
+                || !plan.path("control_spec_sha256").asText("").equals(raw.path("control_spec_sha256").asText(""))
+                || !plan.path("experiment_sha256").asText("").equals(raw.path("experiment_sha256").asText(""))) {
+            throw new IllegalArgumentException("successor raw evaluator input differs from frozen slot or plan: " + path);
+        }
+        if (!StrategyFixedBaselineCorrectedV1.RESULT_SCHEMA.equals(raw.path("schema").asText())
+                || !CORRECTED_EVALUATOR.equals(raw.path("evaluator_identity").asText())
+                || !CORRECTED_EVALUATOR.equals(raw.path("corrected_evaluator_identity").asText())
+                || !StrategyFixedBaselinePortfolioCorrectionV1.ACCOUNTING_VERSION
+                        .equals(raw.path("accounting_version").asText())
+                || !SHA256.matcher(raw.path("executor_identity_sha256").asText()).matches()
+                || !raw.path("executor_identity_sha256").asText()
+                        .equals(plan.path("executor_identity_sha256").asText())
+                || !SHA256.matcher(raw.path("corrected_executor_identity_sha256").asText()).matches()
+                || !raw.path("corrected_executor_identity_sha256").asText()
+                        .equals(plan.path("executor_identity_sha256").asText())
+                || !raw.path("content_sha256").asText().equals(JsonHashes.ownHash(raw))
+                || !raw.path("corrected_portfolio_metrics").isObject()
+                || !raw.path("portfolio").path("corrected_metrics").isObject()
+                || !raw.path("metrics").path("corrected_portfolio").isObject()
+                || !raw.path("corrected_portfolio_metrics")
+                        .equals(raw.path("portfolio").path("corrected_metrics"))
+                || !raw.path("corrected_portfolio_metrics")
+                        .equals(raw.path("metrics").path("corrected_portfolio"))
+                || !raw.path("corrected_economic_semantic_sha256").asText()
+                        .equals(StrategyFixedBaselineCorrectedV1.correctedEconomicSha256ForValidation(raw))
+                || !row.path("generator_input_sha256").asText().equals(physical)
+                || !row.path("raw_evaluator_result_content_sha256").asText()
+                        .equals(raw.path("content_sha256").asText())
+                || !row.path("portfolio_summary").equals(raw.path("portfolio"))
+                || !row.path("metrics").equals(raw.path("metrics"))) {
+            throw new IllegalArgumentException("successor raw evaluator result is not bound to its compact row: " + path);
+        }
+        validateCorrectedRawBindings(raw, plan, path);
+        validateCorrectedQualificationPortfolio(row, "FULL".equals(mode));
+    }
+
+    private static void validateCorrectedRawBindings(ObjectNode raw, ObjectNode plan, Path path) {
+        String algorithm = StrategyFixedBaselineCorrectedV1.algorithmFingerprintForValidation();
+        ObjectNode binding = object(raw, "corrected_input_binding");
+        if (!algorithm.equals(raw.path("algorithm_fingerprint").asText())
+                || !raw.path("corrected_input_binding_sha256").asText()
+                        .equals(JsonHashes.canonicalSha256(binding))
+                || !StrategyFixedBaselineCorrectedV1.EVALUATOR_ID
+                        .equals(binding.path("corrected_evaluator_identity").asText())
+                || !StrategyFixedBaselinePortfolioCorrectionV1.ACCOUNTING_VERSION
+                        .equals(binding.path("accounting_version").asText())
+                || !algorithm.equals(binding.path("algorithm_fingerprint").asText())
+                || !raw.path("source_result_content_sha256").asText()
+                        .equals(binding.path("source_result_content_sha256").asText())
+                || !raw.path("source_evaluator_identity").asText()
+                        .equals(binding.path("source_evaluator_identity").asText())
+                || !raw.path("source_executor_identity_sha256").asText()
+                        .equals(binding.path("source_executor_identity_sha256").asText())
+                || !raw.path("baseline_sha256").asText().equals(binding.path("baseline_sha256").asText())
+                || !raw.path("control_spec_sha256").asText().equals(binding.path("control_spec_sha256").asText())
+                || !raw.path("experiment_sha256").asText().equals(binding.path("experiment_sha256").asText())
+                || !raw.path("physical_input_sha256").asText().equals(binding.path("physical_input_sha256").asText())) {
+            throw new IllegalArgumentException("corrected raw evaluator input binding mismatch: " + path);
+        }
+        ObjectNode receipt = object(raw, "correction_receipt");
+        requireOwnHash(receipt, "corrected evaluator receipt");
+        if (!"strategy-fixed-baseline-corrected-evaluator-receipt/1".equals(receipt.path("schema").asText())
+                || receipt.path("version").asInt(-1) != 1
+                || !StrategyFixedBaselineCorrectedV1.EVALUATOR_ID.equals(receipt.path("evaluator_identity").asText())
+                || !StrategyFixedBaselinePortfolioCorrectionV1.ACCOUNTING_VERSION
+                        .equals(receipt.path("accounting_version").asText())
+                || !algorithm.equals(receipt.path("algorithm_fingerprint").asText())
+                || !raw.path("source_result_content_sha256").asText()
+                        .equals(receipt.path("source_result_content_sha256").asText())
+                || !raw.path("source_executor_identity_sha256").asText()
+                        .equals(receipt.path("source_executor_identity_sha256").asText())
+                || !raw.path("portfolio").path("event_book").path("content_sha256").asText()
+                        .equals(receipt.path("event_book_correction_sha256").asText())
+                || !raw.path("portfolio").path("control_book").path("content_sha256").asText()
+                        .equals(receipt.path("control_book_correction_sha256").asText())) {
+            throw new IllegalArgumentException("corrected raw evaluator correction receipt mismatch: " + path);
+        }
+    }
+
+    private static String expectedSyntheticInputSha256(ObjectNode plan, Slot slot) {
+        ObjectNode syntheticInput = JsonHashes.mapper().createObjectNode()
+                .put("plan_sha256", plan.path("content_sha256").asText())
+                .put("mode", slot.mode())
+                .put("replication", slot.replication())
+                .put("cell", slot.scenario())
+                .put("effect_size", slot.effectSize())
+                .put("seed", slot.seed())
+                .put("episodes", episodesForMode(plan, slot.mode()));
+        return JsonHashes.canonicalSha256(syntheticInput);
     }
 
 
@@ -1401,8 +1523,10 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
 
     private static int episodesForMode(ObjectNode plan, String mode) {
         if ("PREFIX".equals(mode)) {
-            return plan.path("resource_preflight").path("episodes_per_replication")
-                    .asInt(plan.path("episodes_per_replication").asInt(10));
+            // Keep this fallback identical to SuccessorV1.expectedInputSha:
+            // PREFIX is the bounded ten-episode diagnostic when the retained
+            // preflight does not carry an explicit episode count.
+            return plan.path("resource_preflight").path("episodes_per_replication").asInt(10);
         }
         return plan.path("episodes_per_replication").asInt(450);
     }
@@ -2118,7 +2242,7 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
         JsonNode metrics = raw.path("metrics");
         if (!metrics.isObject()
                 || metrics.path("event_tested_cluster_count").asInt(-1) != 288
-                || metrics.path("paired_tested_cluster_count").asInt(-1) != 162
+                || metrics.path("paired_tested_cluster_count").asInt(-1) != 288
                 || metrics.path("independent_market_episode_count").asInt(-1) != 288
                 || metrics.path("paired_count").asInt(-1) != 450) {
             throw new IllegalArgumentException("corrected raw evaluator does not prove FULL cluster/PIT geometry");
@@ -2131,14 +2255,46 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
                 || sequential.path("setup_events_to_admitted_events").asInt(-1) != 450
                 || sequential.path("admitted_events_to_control_selections").asInt(-1) != 450
                 || sequential.path("control_selections_to_matched_controls").asInt(-1) != 450
-                || sequential.path("complete_pairs_to_paired_clusters").asInt(-1) != 162
+                || sequential.path("complete_pairs_to_paired_clusters").asInt(-1) != 288
                 || sequential.path("admitted_events_to_event_clusters").asInt(-1) != 288
                 || attrition.path("marginal_attrition").path("merged_scheduled_lifecycle_clusters").asInt(-1) != 288) {
             throw new IllegalArgumentException("corrected raw evaluator does not prove FULL matching/PIT attrition geometry");
         }
+        validateFullSourceClusterGeometry(raw.path("independent_market_episodes"));
         requireUniqueEvidenceIds(raw.path("setup_events"), "setup_events");
         requireUniqueEvidenceIds(raw.path("control_selections"), "control_selections");
         requireUniqueEvidenceIds(raw.path("independent_market_episodes"), "independent_market_episodes");
+    }
+
+    /**
+     * The statistical uncertainty unit is the 288 merged lifecycle clusters.
+     * The frozen plan's 162 value describes the separate physical geometry:
+     * 162 double-source clusters plus 126 singleton clusters produce the 450
+     * event series.  Keep both facts explicit so one cannot be substituted for
+     * the other in a qualification artifact.
+     */
+    private static void validateFullSourceClusterGeometry(JsonNode clusters) {
+        int singleton = 0;
+        int doubleSource = 0;
+        int sourceCount = 0;
+        Set<String> sourceIds = new HashSet<>();
+        for (JsonNode cluster : clusters) {
+            JsonNode sources = cluster.path("source_episode_ids");
+            if (!sources.isArray() || sources.size() < 1 || sources.size() > 2) {
+                throw new IllegalArgumentException("corrected raw cluster source geometry is invalid");
+            }
+            for (JsonNode source : sources) {
+                if (!source.isTextual() || source.asText().isBlank() || !sourceIds.add(source.asText())) {
+                    throw new IllegalArgumentException("corrected raw cluster source IDs are not unique");
+                }
+            }
+            sourceCount += sources.size();
+            if (sources.size() == 1) singleton++;
+            else doubleSource++;
+        }
+        if (singleton != 126 || doubleSource != 162 || sourceCount != 450) {
+            throw new IllegalArgumentException("corrected raw cluster source geometry is not 126 singleton plus 162 double-source clusters");
+        }
     }
 
     private static Set<String> tradeIds(JsonNode trades, String label) {
@@ -2706,6 +2862,7 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
             }
             return "";
         }
+        if (os.contains("mac")) return macMachineIdentity();
         for (String candidate : List.of("/etc/machine-id", "/var/lib/dbus/machine-id")) {
             try {
                 String value = Files.readString(Path.of(candidate)).trim();
@@ -2715,20 +2872,67 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
         return "";
     }
 
-    private static long treeBytes(Path root) {
-        try (var paths = Files.walk(root)) {
-            long total = 0L;
-            var iterator = paths.iterator();
-            while (iterator.hasNext()) {
-                Path path = iterator.next();
-                if (Files.isRegularFile(path)) {
-                    long size = Files.size(path);
-                    if (Long.MAX_VALUE - total < size) return Long.MAX_VALUE;
-                    total += size;
-                }
+    private static String macMachineIdentity() {
+        try {
+            Process process = new ProcessBuilder("ioreg", "-rd1", "-c", "IOPlatformExpertDevice")
+                    .redirectErrorStream(true).start();
+            if (!process.waitFor(2L, TimeUnit.SECONDS)) {
+                process.destroyForcibly();
+                return "";
             }
-            return total;
-        } catch (IOException | RuntimeException ignored) { return -1L; }
+            try (InputStream stream = process.getInputStream()) {
+                if (process.exitValue() != 0) return "";
+                return parseMacMachineIdentity(new String(stream.readAllBytes(), StandardCharsets.UTF_8));
+            }
+        } catch (IOException | InterruptedException error) {
+            if (error instanceof InterruptedException) Thread.currentThread().interrupt();
+            return "";
+        }
+    }
+
+    /** Parses the bounded ioreg response; malformed or missing identity fails closed. */
+    static String parseMacMachineIdentity(String output) {
+        if (output == null) return "";
+        Matcher matcher = MAC_PLATFORM_UUID.matcher(output);
+        return matcher.find() ? matcher.group(1) : "";
+    }
+
+    private static long treeBytes(Path root) {
+        if (root == null || !Files.exists(root)) return -1L;
+        final long[] total = {0L};
+        final boolean[] failed = {false};
+        try {
+            Files.walkFileTree(root, new SimpleFileVisitor<>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attributes) {
+                    try {
+                        long size = Files.size(file);
+                        if (Long.MAX_VALUE - total[0] < size) total[0] = Long.MAX_VALUE;
+                        else total[0] += size;
+                        return FileVisitResult.CONTINUE;
+                    } catch (NoSuchFileException vanished) {
+                        // Atomic worker cleanup may remove a file after the walker sees it.
+                        return FileVisitResult.CONTINUE;
+                    } catch (IOException | RuntimeException error) {
+                        failed[0] = true;
+                        return FileVisitResult.TERMINATE;
+                    }
+                }
+
+                @Override
+                public FileVisitResult visitFileFailed(Path file, IOException error) {
+                    if (error instanceof NoSuchFileException) {
+                        // A concurrently removed entry is not a disk-probe failure.
+                        return FileVisitResult.CONTINUE;
+                    }
+                    failed[0] = true;
+                    return FileVisitResult.TERMINATE;
+                }
+            });
+        } catch (IOException | RuntimeException error) {
+            return -1L;
+        }
+        return failed[0] ? -1L : total[0];
     }
 
     private static long detectedMemoryBytes() {

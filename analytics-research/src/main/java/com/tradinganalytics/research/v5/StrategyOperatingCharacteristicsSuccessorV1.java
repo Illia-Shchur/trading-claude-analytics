@@ -710,10 +710,16 @@ public final class StrategyOperatingCharacteristicsSuccessorV1 {
         }
         requireHash(attempt, "executor_identity_sha256");
         requireHash(attempt, "input_sha256");
+        if (internal) validateInternalAttemptInputBinding(plan, attempt);
         if (!attempt.path("outcomes_opened").asBoolean(false)
                 || !attempt.path("promotion_eligible").isBoolean()
                 || attempt.path("promotion_eligible").asBoolean(true)) {
             throw new IllegalArgumentException("successor attempt lacks diagnostic outcome boundary");
+        }
+        if (internal && !"STARTED".equals(attempt.path("status").asText())
+                && attempt.path("result_row").isObject()
+                && !attempt.path("status").asText().equals(attempt.path("result_row").path("status").asText())) {
+            throw new IllegalArgumentException("successor terminal attempt status differs from its durable result row");
         }
         if ("COMPLETE".equals(attempt.path("status").asText())) {
             if (!internal || !attempt.path("internal_evaluator").asBoolean(false)) {
@@ -736,6 +742,14 @@ public final class StrategyOperatingCharacteristicsSuccessorV1 {
                     || !attempt.path("result_row").path("metrics").equals(output.path("metrics"))
                     || !validRawEvaluatorResult(attempt.path("result_row"), output)) {
                 throw new IllegalArgumentException("COMPLETE successor attempt lacks an authoritative evaluator result");
+            }
+            if (corrected) {
+                ObjectNode resultRow = object(attempt, "result_row");
+                ObjectNode raw = object(resultRow, "raw_evaluator_result");
+                StrategyOperatingCharacteristicsParallelV1.validateCorrectedRawForResume(raw, resultRow, plan,
+                        attempt.path("mode").asText(), attempt.path("scenario").asText(),
+                        attempt.path("effect_size").asDouble(), attempt.path("replication").asInt(),
+                        attempt.path("seed").asLong(), Path.of("successor-attempt-ledger"));
             }
         }
         if (!"STARTED".equals(attempt.path("status").asText()) && !attempt.path("result_row").isObject()) {
@@ -763,6 +777,71 @@ public final class StrategyOperatingCharacteristicsSuccessorV1 {
                 || !plan.path("content_sha256").asText().equals(ledger.path("plan_sha256").asText())
                 || !ledger.path("content_sha256").asText().equals(JsonHashes.ownHash(ledger))) {
             throw new IllegalArgumentException("successor attempt ledger is invalid or bound to another plan");
+        }
+        JsonNode attempts = ledger.path("attempts");
+        if (!attempts.isArray()) throw new IllegalArgumentException("successor attempt ledger has no attempt inventory");
+        // Historical frozen V5 ledgers retain their original custody contract.
+        // The additive corrected ledger is the only path that gets the new
+        // raw-result and synthetic-slot resume checks.
+        if (isCorrectedPlan(plan)) for (JsonNode value : attempts) {
+            if (!value.isObject()) throw new IllegalArgumentException("successor attempt ledger contains a non-object attempt");
+            validateAttempt(plan, (ObjectNode) value, true);
+        }
+    }
+
+    /** Package-private custody seam for corrected resume regression tests. */
+    static void validateLedgerForTest(ObjectNode plan, ObjectNode ledger) {
+        validateLedger(plan, ledger);
+    }
+
+    /**
+     * Resume validation must bind the durable input hash to the actual frozen
+     * slot.  A copied row can carry self-consistent hashes while naming a
+     * different cell or seed unless this descriptor is reconstructed here.
+     */
+    private static void validateInternalAttemptInputBinding(ObjectNode plan, ObjectNode attempt) {
+        String mode = attempt.path("mode").asText("");
+        String scenario = attempt.path("scenario").asText("");
+        double effect = attempt.path("effect_size").asDouble(Double.NaN);
+        int replication = attempt.path("replication").asInt(-1);
+        long seed = attempt.path("seed").asLong(Long.MIN_VALUE);
+        int replicationLimit = "PREFIX".equals(mode)
+                ? plan.path("resource_preflight").path("replications").asInt(-1)
+                : plan.path("replications").asInt(-1);
+        if (!Set.of("PREFIX", "FULL").contains(mode) || scenario.isBlank()
+                || !Double.isFinite(effect) || replication < 0 || replication >= replicationLimit) {
+            throw new IllegalArgumentException("successor internal attempt slot is invalid");
+        }
+        JsonNode cell = null;
+        for (JsonNode candidate : plan.path("cells")) {
+            if (scenario.equals(candidate.path("scenario").asText())
+                    && Double.compare(effect, candidate.path("effect_size").asDouble(Double.NaN)) == 0) {
+                cell = candidate; break;
+            }
+        }
+        String seedField = "PREFIX".equals(mode) ? "prefix_seeds" : "seeds";
+        if (cell == null || !cell.path(seedField).isArray() || cell.path(seedField).size() <= replication
+                || !cell.path(seedField).get(replication).isIntegralNumber()
+                || cell.path(seedField).get(replication).asLong() != seed) {
+            throw new IllegalArgumentException("successor internal attempt seed differs from frozen slot");
+        }
+        String effectKey = java.math.BigDecimal.valueOf(effect).stripTrailingZeros().toPlainString();
+        String expectedId = mode + "|" + scenario + "|" + effectKey + ":" + replication;
+        if (!expectedId.equals(attempt.path("attempt_id").asText())) {
+            throw new IllegalArgumentException("successor internal attempt_id differs from frozen slot");
+        }
+        String expectedInput = expectedInputSha(plan, mode, new CellSpec(scenario, effect, null), replication, seed);
+        if (!expectedInput.equals(attempt.path("input_sha256").asText())) {
+            throw new IllegalArgumentException("successor internal attempt input differs from frozen synthetic descriptor");
+        }
+        if (attempt.path("result_row").isObject()) {
+            JsonNode row = attempt.path("result_row");
+            if (!scenario.equals(row.path("cell").asText())
+                    || Double.compare(effect, row.path("effect_size").asDouble(Double.NaN)) != 0
+                    || replication != row.path("replication").asInt(-1)
+                    || seed != row.path("seed").asLong(Long.MIN_VALUE)) {
+                throw new IllegalArgumentException("successor internal attempt row differs from frozen slot");
+            }
         }
     }
 
@@ -1078,6 +1157,12 @@ public final class StrategyOperatingCharacteristicsSuccessorV1 {
         JsonNode value = object.path(field);
         if (!value.isArray()) throw new IllegalArgumentException("required array missing: " + field);
         return (ArrayNode) value;
+    }
+
+    private static ObjectNode object(JsonNode parent, String field) {
+        JsonNode value = parent.path(field);
+        if (!value.isObject()) throw new IllegalArgumentException("required object missing: " + field);
+        return (ObjectNode) value;
     }
 
     private static void requireHash(JsonNode value, String field) {

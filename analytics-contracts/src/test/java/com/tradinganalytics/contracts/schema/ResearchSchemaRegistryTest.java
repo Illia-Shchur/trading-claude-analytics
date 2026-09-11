@@ -109,6 +109,28 @@ class ResearchSchemaRegistryTest {
     }
 
     @Test
+    void validatesCorrectedSuccessorEvaluatorReceiptBindings() {
+        String valid = "{\"schema\":\"strategy-evaluator-operating-characteristics-corrected-successor-evaluator-receipt/1\","
+                + "\"version\":1,\"origin\":\"SHARED_FIXED_EVALUATOR_IN_PROCESS\","
+                + "\"result_schema\":\"strategy-fixed-baseline-corrected-result/1\","
+                + "\"result_content_sha256\":\"" + HASH + "\","
+                + "\"economic_semantic_sha256\":\"" + HASH + "\",\"status\":\"COMPLETE\","
+                + "\"executor_identity_sha256\":\"" + HASH + "\",\"source_input_sha256\":\"" + HASH + "\","
+                + "\"metrics\":{},\"accounting_version\":\"PORTFOLIO_ACCOUNTING_CORRECTION_V1\","
+                + "\"evaluator_identity\":\"com.tradinganalytics.research.v5.StrategyFixedBaselineCorrectedV1\","
+                + "\"legacy_result_content_sha256\":\"" + HASH + "\",\"content_sha256\":\"" + HASH + "\"}";
+
+        assertThat(registry.validateKnownContractJson(valid)).isTrue();
+        assertThatThrownBy(() -> registry.validateKnownContractJson(
+                valid.replace("\"evaluator_identity\":\"com.tradinganalytics.research.v5.StrategyFixedBaselineCorrectedV1\"",
+                        "\"evaluator_identity\":\"StrategyFixedBaselineV5\"")))
+                .isInstanceOf(ContractSchemaValidationException.class);
+        assertThatThrownBy(() -> registry.validateKnownContractJson(
+                valid.replace(",\"legacy_result_content_sha256\":\"" + HASH + "\"", "")))
+                .isInstanceOf(ContractSchemaValidationException.class);
+    }
+
+    @Test
     void enablesAjvFormatsEquivalentDateTimeAssertions() {
         String template = "{\"schema\":\"strategy-prospective-reservation/1\",\"version\":1,"
                 + "\"status\":\"FROZEN\",\"decision\":\"SHADOW\","

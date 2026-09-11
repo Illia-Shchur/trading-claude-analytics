@@ -273,6 +273,19 @@ final class StrategyOperatingCharacteristicsParallelV1Test {
     }
 
     @Test
+    void macMachineIdentityParserAcceptsOnlyAPlatformUuid() {
+        String uuid = "00112233-4455-6677-8899-aabbccddeeff";
+        assertThat(StrategyOperatingCharacteristicsParallelV1.parseMacMachineIdentity(
+                "+-o IOPlatformExpertDevice\n    \"IOPlatformUUID\" = \"" + uuid + "\"\n"))
+                .isEqualTo(uuid);
+        assertThat(StrategyOperatingCharacteristicsParallelV1.parseMacMachineIdentity(null)).isEmpty();
+        assertThat(StrategyOperatingCharacteristicsParallelV1.parseMacMachineIdentity(
+                "    \"IOPlatformUUID\" = \"unknown\"\n")).isEmpty();
+        assertThat(StrategyOperatingCharacteristicsParallelV1.parseMacMachineIdentity(
+                "    \"OtherUUID\" = \"" + uuid + "\"\n")).isEmpty();
+    }
+
+    @Test
     void resourceIncompleteRowsAbortGloballyWithoutPublishingCompleteTransport() {
         ObjectNode plan = plan("PREFIX", 2, true);
         ObjectNode profile = profile(1);
