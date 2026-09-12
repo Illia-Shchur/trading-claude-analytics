@@ -68,8 +68,11 @@ final class StrategyOperatingCharacteristicsCorrectedParallelV1Test {
         ObjectNode detached = StrategyOperatingCharacteristicsParallelV1.correctedSlotArtifactForTest(
                 slot, 1, detachedRow, identity, runId, false);
         ObjectNode ownedRow = (ObjectNode) expected.path("row").deepCopy();
-        ObjectNode owned = StrategyOperatingCharacteristicsParallelV1.correctedSlotArtifactForTest(
-                slot, 1, ownedRow, identity, runId, true);
+        Method ownedBuilder = StrategyOperatingCharacteristicsParallelV1.class.getDeclaredMethod(
+                "slotArtifactTakingOwnedCorrectedRow", StrategyOperatingCharacteristicsParallelV1.Slot.class,
+                int.class, ObjectNode.class, ObjectNode.class, String.class);
+        ownedBuilder.setAccessible(true);
+        ObjectNode owned = (ObjectNode) ownedBuilder.invoke(null, slot, 1, ownedRow, identity, runId);
 
         byte[] detachedBytes = JsonHashes.mapper().writeValueAsBytes(detached);
         byte[] ownedBytes = JsonHashes.mapper().writeValueAsBytes(owned);
@@ -87,6 +90,46 @@ final class StrategyOperatingCharacteristicsCorrectedParallelV1Test {
         ((ObjectNode) detachedRow.path("raw_evaluator_result").path("metrics")).put("mutated_after_build", true);
         assertThat(JsonHashes.mapper().writeValueAsBytes(detached)).containsExactly(detachedBytes);
         assertThat(detached.path("content_sha256").asText()).isEqualTo(JsonHashes.ownHashStreaming(detached));
+    }
+
+    @Test
+    void workerArtifactRejectsRowOwnershipForFrozenMode() throws Exception {
+        StrategyOperatingCharacteristicsParallelV1.Slot slot =
+                new StrategyOperatingCharacteristicsParallelV1.Slot(
+                        "a".repeat(64), "FULL", "PLANTED_EDGE", 0.02, 0, 920200000L, 0);
+        Method builder = StrategyOperatingCharacteristicsParallelV1.class.getDeclaredMethod("slotArtifact",
+                StrategyOperatingCharacteristicsParallelV1.Slot.class, int.class,
+                ObjectNode.class, ObjectNode.class, boolean.class, String.class, boolean.class);
+        builder.setAccessible(true);
+
+        assertThatThrownBy(() -> builder.invoke(null, slot, 1, JsonHashes.mapper().createObjectNode(),
+                JsonHashes.mapper().createObjectNode(), false, null, true))
+                .isInstanceOf(InvocationTargetException.class)
+                .hasCauseInstanceOf(IllegalArgumentException.class)
+                .hasRootCauseMessage("only corrected worker artifacts may take row ownership");
+    }
+
+    @Test
+    void frozenWorkerArtifactWrapperKeepsDetachedRowCopy() throws Exception {
+        StrategyOperatingCharacteristicsParallelV1.Slot slot =
+                new StrategyOperatingCharacteristicsParallelV1.Slot(
+                        "a".repeat(64), "FULL", "PLANTED_EDGE", 0.02, 0, 920200000L, 0);
+        ObjectNode row = JsonHashes.mapper().createObjectNode().put("status", "COMPLETE")
+                .put("payload", "original");
+        Method builder = StrategyOperatingCharacteristicsParallelV1.class.getDeclaredMethod("slotArtifact",
+                StrategyOperatingCharacteristicsParallelV1.Slot.class, int.class,
+                ObjectNode.class, ObjectNode.class, boolean.class, String.class);
+        builder.setAccessible(true);
+
+        ObjectNode artifact = (ObjectNode) builder.invoke(null, slot, 1, row,
+                JsonHashes.mapper().createObjectNode(), false, null);
+
+        byte[] artifactBytes = JsonHashes.mapper().writeValueAsBytes(artifact);
+        assertThat(artifact.path("row")).isNotSameAs(row);
+        assertThat(artifact.path("row").path("payload").asText()).isEqualTo("original");
+        row.put("payload", "caller mutation");
+        assertThat(JsonHashes.mapper().writeValueAsBytes(artifact)).containsExactly(artifactBytes);
+        assertThat(artifact.path("content_sha256").asText()).isEqualTo(JsonHashes.ownHashStreaming(artifact));
     }
 
     @Test
