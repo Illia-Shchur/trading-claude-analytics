@@ -1,0 +1,10 @@
+{
+  "scope": "ENGINEERING_ONLY_FULL_DEVELOPMENT",
+  "source_commit": "d0d34d0df5b8814c640619756d8d7e51d2717e84",
+  "executor_jar_sha256": "b78f6b0906b8548ba1ccebe1e69572b2fcc29fac3a438bde017cbf1ea4ad6827",
+  "executor_source_sha256": "f7e7c28e7d4177da5cfa5cb6675b9b374c85faba598e78f28884533f7dbaf05c",
+  "plan_content_sha256": "60c9904b3b103ab1ea1069c1faa8129e75879e4bb033f9fa7f7042abfd6ecd75",
+  "profile_content_sha256": "87a3112be2f617793dc40e4cb9e228c51f355c0bd4dc6c84833e66f33c2dd6ae",
+  "heldout_authorized": false,
+  "qualification_authorized": false
+}

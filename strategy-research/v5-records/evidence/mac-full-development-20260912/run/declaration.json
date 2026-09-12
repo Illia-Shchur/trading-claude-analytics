@@ -1,0 +1,120 @@
+{
+  "activation_authorized": false,
+  "aggregate_worker_rss_limit_bytes": 8589934592,
+  "disk_limit_bytes": 21474836480,
+  "executor_jar_sha256": "b78f6b0906b8548ba1ccebe1e69572b2fcc29fac3a438bde017cbf1ea4ad6827",
+  "executor_source_sha256": "f7e7c28e7d4177da5cfa5cb6675b9b374c85faba598e78f28884533f7dbaf05c",
+  "git_status": "",
+  "heldout_executed": false,
+  "integrity_before": {
+    "baseline": {
+      "bytes": 7937,
+      "path": "/private/tmp/trading-pr13/strategy-research/definitions/fk-deleveraging-absorption/v002.json",
+      "sha256": "4ab073d4b62c77410cca2456066fbae70b93b19ebf93d63922204e1b3548fc1a"
+    },
+    "controls": {
+      "bytes": 2094,
+      "path": "/private/tmp/trading-pr13/strategy-research/experiments/fk-deleveraging-baseline-v002/controls.json",
+      "sha256": "8170e98fcf90c30aea67a4f2a4503d85817f158377dd449c5a3ed9b0b0793216"
+    },
+    "executor_jar": {
+      "bytes": 107286790,
+      "path": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/final-package/executor.jar",
+      "sha256": "b78f6b0906b8548ba1ccebe1e69572b2fcc29fac3a438bde017cbf1ea4ad6827"
+    },
+    "experiment": {
+      "bytes": 1530,
+      "path": "/private/tmp/trading-pr13/strategy-research/experiments/fk-deleveraging-baseline-v002/experiment.json",
+      "sha256": "805d34f09c7d94cbf9be3efdf5277f384583dbf1646feab2140c443083aeed1f"
+    },
+    "plan": {
+      "bytes": 40073,
+      "path": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/final-package/plan.json",
+      "sha256": "d13ca86fc8a17c5b5f6e8b6d0cb80835203e53be17922b5d6901aecdfb85756d"
+    },
+    "profile": {
+      "bytes": 1746,
+      "path": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/final-package/profile.json",
+      "sha256": "636c4ffa98046e010191866e0d813b15f6bb4c1587d3fe158720e964dc555390"
+    }
+  },
+  "max_parallel_workers": 2,
+  "plan_content_sha256": "60c9904b3b103ab1ea1069c1faa8129e75879e4bb033f9fa7f7042abfd6ecd75",
+  "planned_slots": [
+    {
+      "effect_size": 0.0,
+      "mode": "FULL",
+      "replication": 0,
+      "scenario": "NO_EDGE",
+      "seed": 920000000,
+      "slot_id": "FULL|NO_EDGE|0|0|920000000"
+    },
+    {
+      "effect_size": 0.0,
+      "mode": "FULL",
+      "replication": 1,
+      "scenario": "NO_EDGE",
+      "seed": 920000001,
+      "slot_id": "FULL|NO_EDGE|0|1|920000001"
+    },
+    {
+      "effect_size": 0.0,
+      "mode": "FULL",
+      "replication": 0,
+      "scenario": "PLANTED_EDGE",
+      "seed": 920100000,
+      "slot_id": "FULL|PLANTED_EDGE|0|0|920100000"
+    },
+    {
+      "effect_size": 0.0,
+      "mode": "FULL",
+      "replication": 1,
+      "scenario": "PLANTED_EDGE",
+      "seed": 920100001,
+      "slot_id": "FULL|PLANTED_EDGE|0|1|920100001"
+    },
+    {
+      "effect_size": 0.02,
+      "mode": "FULL",
+      "replication": 0,
+      "scenario": "PLANTED_EDGE",
+      "seed": 920200000,
+      "slot_id": "FULL|PLANTED_EDGE|0.02|0|920200000"
+    },
+    {
+      "effect_size": 0.02,
+      "mode": "FULL",
+      "replication": 1,
+      "scenario": "PLANTED_EDGE",
+      "seed": 920200001,
+      "slot_id": "FULL|PLANTED_EDGE|0.02|1|920200001"
+    },
+    {
+      "effect_size": 0.04,
+      "mode": "FULL",
+      "replication": 0,
+      "scenario": "PLANTED_EDGE",
+      "seed": 920300000,
+      "slot_id": "FULL|PLANTED_EDGE|0.04|0|920300000"
+    },
+    {
+      "effect_size": 0.04,
+      "mode": "FULL",
+      "replication": 1,
+      "scenario": "PLANTED_EDGE",
+      "seed": 920300001,
+      "slot_id": "FULL|PLANTED_EDGE|0.04|1|920300001"
+    }
+  ],
+  "profile_content_sha256": "87a3112be2f617793dc40e4cb9e228c51f355c0bd4dc6c84833e66f33c2dd6ae",
+  "qualification_attempted": false,
+  "scope": "ENGINEERING_ONLY_MAC_FULL_GEOMETRY_DEVELOPMENT",
+  "single_slot_seed": null,
+  "slot_wall_seconds": 5400,
+  "source": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/final-package/manifest.json",
+  "trading_authorized": false,
+  "wave_selection": "both",
+  "wave_wall_seconds": 21600,
+  "worker_heap_bytes": 2147483648,
+  "worker_rss_limit_bytes": 3221225472
+}

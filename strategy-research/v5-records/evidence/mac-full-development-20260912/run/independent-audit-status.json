@@ -1,0 +1,16 @@
+{
+  "scope": "ENGINEERING_ONLY_NOT_QUALIFICATION",
+  "wrapper_pid": 33568,
+  "harness_pid": 35262,
+  "started_at": "2026-09-12T06:16:18.788034+00:00",
+  "poll_seconds": 30,
+  "audit_script_sha256": "3bcbb78d446d82edac4db3c672022ba5a6fecab114200715f332d7d16d77a023",
+  "wrapper_script_sha256": "e91c90977b9e855f5daa4fa8d557df3fd164a892bc2b5791c172bf047c66d7e5",
+  "heavy_artifact_reads_started": true,
+  "completion_mode": "EXPLICIT_COMPLETED_RUN_REAUDIT",
+  "audit_started_at": "2026-09-12T06:16:18.846909+00:00",
+  "status": "PASS",
+  "completed_at": "2026-09-12T06:17:45.021807+00:00",
+  "audit": "independent-audit.json",
+  "artifacts_audited": 16
+}

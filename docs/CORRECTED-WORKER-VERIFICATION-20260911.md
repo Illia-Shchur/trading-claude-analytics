@@ -1,5 +1,15 @@
 # Corrected worker verification record — 2026-09-11
 
+> **Follow-up:** the later eight-seed Mac FULL development run is documented
+> in [Mac FULL development execution — 2026-09-12](MAC-FULL-DEVELOPMENT-20260912.md)
+> and its compact records are in
+> [`mac-full-development-20260912`](../strategy-research/v5-records/evidence/mac-full-development-20260912/).
+> That follow-up supersedes this note only for the later development-run
+> measurements. It does not change the qualification state: formal FULL remains
+> `BLOCKED_RESOURCE`, with no heldout confirmation, activation, or trading
+> authorization. The hashes, counts, CI coverage, and results below remain the
+> historical snapshot for the 2026-09-11 verification.
+
 > **Engineering verification complete.** The final source, package, clean
 > reactor, coverage, PREFIX runs, and independent audit passed. The declared
 > FULL run is blocked by the resource gate and is not qualified. No held-out
