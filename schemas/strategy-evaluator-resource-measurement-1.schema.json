@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-evaluator-resource-measurement/1",
+  "type": "object",
+  "required": ["schema", "version", "plan_sha256", "profile_sha256", "ledger_content_sha256", "executor_identity_sha256", "executor_source_sha256", "host_identity_sha256", "run_id", "workers", "launched_slot_count", "completed_slot_count", "fresh_full_wave", "measured_wall_millis", "measured_max_aggregate_rss_bytes", "measured_max_coordinator_rss_bytes", "measured_max_disk_bytes", "resource_probe_complete", "content_sha256"],
+  "properties": {
+    "schema": {"const": "strategy-evaluator-resource-measurement/1"},
+    "version": {"const": 1},
+    "plan_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "profile_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "ledger_content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "executor_identity_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "executor_source_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "host_identity_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "run_id": {"type": "string", "pattern": "^[0-9a-fA-F-]{36}$"},
+    "workers": {"type": "integer", "minimum": 1},
+    "launched_slot_count": {"type": "integer", "minimum": 0},
+    "completed_slot_count": {"type": "integer", "minimum": 0},
+    "fresh_full_wave": {"type": "boolean"},
+    "measured_wall_millis": {"type": "integer", "minimum": 0},
+    "measured_max_aggregate_rss_bytes": {"type": "integer", "minimum": -1},
+    "measured_max_coordinator_rss_bytes": {"type": "integer", "minimum": -1},
+    "measured_max_disk_bytes": {"type": "integer", "minimum": -1},
+    "resource_probe_complete": {"type": "boolean"},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": false
+}

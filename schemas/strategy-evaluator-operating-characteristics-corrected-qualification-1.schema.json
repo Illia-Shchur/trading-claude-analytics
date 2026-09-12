@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-evaluator-operating-characteristics-corrected-qualification/1",
+  "type": "object",
+  "required": ["schema", "version", "status", "evidence_phase", "mode", "measured", "serial_parallel_equivalent", "plan_sha256", "profile_sha256", "accounting_version", "fixed_evaluator", "promotion_eligible", "activation_authorized", "qualification_receipt", "profile", "content_sha256"],
+  "properties": {
+    "schema": {"const": "strategy-evaluator-operating-characteristics-corrected-qualification/1"},
+    "version": {"const": 1},
+    "status": {"const": "QUALIFIED"},
+    "evidence_phase": {"const": "DEVELOPMENT"},
+    "mode": {"const": "FULL"},
+    "measured": {"const": true},
+    "serial_parallel_equivalent": {"const": true},
+    "plan_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "profile_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "accounting_version": {"const": "PORTFOLIO_ACCOUNTING_CORRECTION_V1"},
+    "fixed_evaluator": {"const": "com.tradinganalytics.research.v5.StrategyFixedBaselineCorrectedV1"},
+    "promotion_eligible": {"const": false},
+    "activation_authorized": {"const": false},
+    "qualification_receipt": {"type": "object"},
+    "profile": {"type": "object"},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,700 @@
+{
+  "status": "PASS",
+  "scope": "ENGINEERING_ONLY_NOT_QUALIFICATION",
+  "artifacts": [
+    {
+      "path": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/parallel/slots/FULL_NO_EDGE_0_0_920000000/worker-result.json",
+      "byte_sha256": "5863d1eeecfa90a52048ff3169b0729d465d972f2fedaf1dfb34f02b9349aad3",
+      "slot_id": "FULL|NO_EDGE|0|0|920000000",
+      "plan_sha256": "60c9904b3b103ab1ea1069c1faa8129e75879e4bb033f9fa7f7042abfd6ecd75",
+      "run_id": "a4165129-ce06-4e74-9a25-a7e0999a75bd",
+      "seed": 920000000,
+      "scenario": "NO_EDGE",
+      "effect_size": 0.0,
+      "replication": 0,
+      "portfolio_points": 179923,
+      "combined_points": 179923,
+      "trades": 900,
+      "portable_economic_sha256": "4512d8e024e1d59a9b12716270774cc20143bbcdeeb70399b72492f6d17fe815",
+      "comparison_sha256": "fabb1f68eed2ca253e8fa2081d1c030fbcce28e82cf5fd03777eb5ed86e0dcd5",
+      "executor_identity": {
+        "schema": "analytics-build-identity/1",
+        "status": "KNOWN",
+        "executable": {
+          "code_source": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/final-package/executor.jar",
+          "kind": "JAR",
+          "sha256": "b78f6b0906b8548ba1ccebe1e69572b2fcc29fac3a438bde017cbf1ea4ad6827",
+          "bytes": 107286790
+        },
+        "compiled": {
+          "input_fingerprint": "f7e7c28e7d4177da5cfa5cb6675b9b374c85faba598e78f28884533f7dbaf05c",
+          "revision": "d0d34d0df5b8814c640619756d8d7e51d2717e84",
+          "dirty_source": "false",
+          "java_version": "openjdk version \"21.0.11\" 2026-04-21",
+          "java_vendor": "Homebrew",
+          "java_runtime": "OpenJDK Runtime Environment",
+          "toolchain_fingerprint": "37d5f5b0512f0e167a2368f1969b03de014934cb3e0d1f7933e2c3296b988c10",
+          "maven_wrapper_sha256": "cae96cef89ebea3531221f4ae17c23cf8edf67d00eae8306d4186ae1bbed4d02",
+          "root_pom_sha256": "1d19e5762fe0cd3a8b5787b2ec6f081d606704e83a498a5f416bdc8fd7fe9355",
+          "marker_resource": "META-INF/build-identity.properties"
+        },
+        "runtime": {
+          "java": "21.0.11",
+          "cwd": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/parallel/slots/FULL_NO_EDGE_0_0_920000000/repository",
+          "user_dir": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/parallel/slots/FULL_NO_EDGE_0_0_920000000/repository"
+        }
+      }
+    },
+    {
+      "path": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/parallel/slots/FULL_NO_EDGE_0_1_920000001/worker-result.json",
+      "byte_sha256": "85bb5d3ade6dfac09be048a53b002980c4866d0e6b8bb341713985469bf26b30",
+      "slot_id": "FULL|NO_EDGE|0|1|920000001",
+      "plan_sha256": "60c9904b3b103ab1ea1069c1faa8129e75879e4bb033f9fa7f7042abfd6ecd75",
+      "run_id": "a4165129-ce06-4e74-9a25-a7e0999a75bd",
+      "seed": 920000001,
+      "scenario": "NO_EDGE",
+      "effect_size": 0.0,
+      "replication": 1,
+      "portfolio_points": 183025,
+      "combined_points": 183025,
+      "trades": 900,
+      "portable_economic_sha256": "24b088944f4827d899d9c088a345498f6a486a5fd4563d5670da57aa66b83d71",
+      "comparison_sha256": "262a93847b0246e550549fae735c91f4f00635c467242d772d24be077924a147",
+      "executor_identity": {
+        "schema": "analytics-build-identity/1",
+        "status": "KNOWN",
+        "executable": {
+          "code_source": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/final-package/executor.jar",
+          "kind": "JAR",
+          "sha256": "b78f6b0906b8548ba1ccebe1e69572b2fcc29fac3a438bde017cbf1ea4ad6827",
+          "bytes": 107286790
+        },
+        "compiled": {
+          "input_fingerprint": "f7e7c28e7d4177da5cfa5cb6675b9b374c85faba598e78f28884533f7dbaf05c",
+          "revision": "d0d34d0df5b8814c640619756d8d7e51d2717e84",
+          "dirty_source": "false",
+          "java_version": "openjdk version \"21.0.11\" 2026-04-21",
+          "java_vendor": "Homebrew",
+          "java_runtime": "OpenJDK Runtime Environment",
+          "toolchain_fingerprint": "37d5f5b0512f0e167a2368f1969b03de014934cb3e0d1f7933e2c3296b988c10",
+          "maven_wrapper_sha256": "cae96cef89ebea3531221f4ae17c23cf8edf67d00eae8306d4186ae1bbed4d02",
+          "root_pom_sha256": "1d19e5762fe0cd3a8b5787b2ec6f081d606704e83a498a5f416bdc8fd7fe9355",
+          "marker_resource": "META-INF/build-identity.properties"
+        },
+        "runtime": {
+          "java": "21.0.11",
+          "cwd": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/parallel/slots/FULL_NO_EDGE_0_1_920000001/repository",
+          "user_dir": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/parallel/slots/FULL_NO_EDGE_0_1_920000001/repository"
+        }
+      }
+    },
+    {
+      "path": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/parallel/slots/FULL_PLANTED_EDGE_0_0_920100000/worker-result.json",
+      "byte_sha256": "60faf3d25194f9ffa2ba08754315ff93097e2109105fd61950dc1dc6b6ca7e78",
+      "slot_id": "FULL|PLANTED_EDGE|0|0|920100000",
+      "plan_sha256": "60c9904b3b103ab1ea1069c1faa8129e75879e4bb033f9fa7f7042abfd6ecd75",
+      "run_id": "a4165129-ce06-4e74-9a25-a7e0999a75bd",
+      "seed": 920100000,
+      "scenario": "PLANTED_EDGE",
+      "effect_size": 0.0,
+      "replication": 0,
+      "portfolio_points": 181628,
+      "combined_points": 181628,
+      "trades": 900,
+      "portable_economic_sha256": "db2c347a3892e40f1f3c76c975d75c7b970fb6260830dfba8c2f042f937e961c",
+      "comparison_sha256": "63eb67d313d42dd5b5db0520d8687cfcd5917c9be395ed9a12b3bf1345d99607",
+      "executor_identity": {
+        "schema": "analytics-build-identity/1",
+        "status": "KNOWN",
+        "executable": {
+          "code_source": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/final-package/executor.jar",
+          "kind": "JAR",
+          "sha256": "b78f6b0906b8548ba1ccebe1e69572b2fcc29fac3a438bde017cbf1ea4ad6827",
+          "bytes": 107286790
+        },
+        "compiled": {
+          "input_fingerprint": "f7e7c28e7d4177da5cfa5cb6675b9b374c85faba598e78f28884533f7dbaf05c",
+          "revision": "d0d34d0df5b8814c640619756d8d7e51d2717e84",
+          "dirty_source": "false",
+          "java_version": "openjdk version \"21.0.11\" 2026-04-21",
+          "java_vendor": "Homebrew",
+          "java_runtime": "OpenJDK Runtime Environment",
+          "toolchain_fingerprint": "37d5f5b0512f0e167a2368f1969b03de014934cb3e0d1f7933e2c3296b988c10",
+          "maven_wrapper_sha256": "cae96cef89ebea3531221f4ae17c23cf8edf67d00eae8306d4186ae1bbed4d02",
+          "root_pom_sha256": "1d19e5762fe0cd3a8b5787b2ec6f081d606704e83a498a5f416bdc8fd7fe9355",
+          "marker_resource": "META-INF/build-identity.properties"
+        },
+        "runtime": {
+          "java": "21.0.11",
+          "cwd": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/parallel/slots/FULL_PLANTED_EDGE_0_0_920100000/repository",
+          "user_dir": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/parallel/slots/FULL_PLANTED_EDGE_0_0_920100000/repository"
+        }
+      }
+    },
+    {
+      "path": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/parallel/slots/FULL_PLANTED_EDGE_0_1_920100001/worker-result.json",
+      "byte_sha256": "5721c6cb5290912def1eb880ea7efed00c812a2496200c7a07c932d7b910801f",
+      "slot_id": "FULL|PLANTED_EDGE|0|1|920100001",
+      "plan_sha256": "60c9904b3b103ab1ea1069c1faa8129e75879e4bb033f9fa7f7042abfd6ecd75",
+      "run_id": "a4165129-ce06-4e74-9a25-a7e0999a75bd",
+      "seed": 920100001,
+      "scenario": "PLANTED_EDGE",
+      "effect_size": 0.0,
+      "replication": 1,
+      "portfolio_points": 180423,
+      "combined_points": 180423,
+      "trades": 900,
+      "portable_economic_sha256": "749fd67f1113c58a6cb1ddd56093a37935f9bd2a6a9a4a1c8d7cc8b96f60c3fd",
+      "comparison_sha256": "48571340355f4e662fd989318b57051ef17839f0ca2dad1f225bdc253b8491d4",
+      "executor_identity": {
+        "schema": "analytics-build-identity/1",
+        "status": "KNOWN",
+        "executable": {
+          "code_source": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/final-package/executor.jar",
+          "kind": "JAR",
+          "sha256": "b78f6b0906b8548ba1ccebe1e69572b2fcc29fac3a438bde017cbf1ea4ad6827",
+          "bytes": 107286790
+        },
+        "compiled": {
+          "input_fingerprint": "f7e7c28e7d4177da5cfa5cb6675b9b374c85faba598e78f28884533f7dbaf05c",
+          "revision": "d0d34d0df5b8814c640619756d8d7e51d2717e84",
+          "dirty_source": "false",
+          "java_version": "openjdk version \"21.0.11\" 2026-04-21",
+          "java_vendor": "Homebrew",
+          "java_runtime": "OpenJDK Runtime Environment",
+          "toolchain_fingerprint": "37d5f5b0512f0e167a2368f1969b03de014934cb3e0d1f7933e2c3296b988c10",
+          "maven_wrapper_sha256": "cae96cef89ebea3531221f4ae17c23cf8edf67d00eae8306d4186ae1bbed4d02",
+          "root_pom_sha256": "1d19e5762fe0cd3a8b5787b2ec6f081d606704e83a498a5f416bdc8fd7fe9355",
+          "marker_resource": "META-INF/build-identity.properties"
+        },
+        "runtime": {
+          "java": "21.0.11",
+          "cwd": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/parallel/slots/FULL_PLANTED_EDGE_0_1_920100001/repository",
+          "user_dir": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/parallel/slots/FULL_PLANTED_EDGE_0_1_920100001/repository"
+        }
+      }
+    },
+    {
+      "path": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/parallel/slots/FULL_PLANTED_EDGE_0.02_0_920200000/worker-result.json",
+      "byte_sha256": "1e7b7e9a03b80def36c68775e3932fc535655dc5b7a236331ce8e10f7f6bf8f3",
+      "slot_id": "FULL|PLANTED_EDGE|0.02|0|920200000",
+      "plan_sha256": "60c9904b3b103ab1ea1069c1faa8129e75879e4bb033f9fa7f7042abfd6ecd75",
+      "run_id": "a4165129-ce06-4e74-9a25-a7e0999a75bd",
+      "seed": 920200000,
+      "scenario": "PLANTED_EDGE",
+      "effect_size": 0.02,
+      "replication": 0,
+      "portfolio_points": 181727,
+      "combined_points": 181727,
+      "trades": 900,
+      "portable_economic_sha256": "2d79e91980d7e5df801be3655ba4819deb541876b77fa7eac1c913350a482fef",
+      "comparison_sha256": "187e54442c1763278837e4217b8eafaa39968956ca5c5445336baf0fc0e3178d",
+      "executor_identity": {
+        "schema": "analytics-build-identity/1",
+        "status": "KNOWN",
+        "executable": {
+          "code_source": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/final-package/executor.jar",
+          "kind": "JAR",
+          "sha256": "b78f6b0906b8548ba1ccebe1e69572b2fcc29fac3a438bde017cbf1ea4ad6827",
+          "bytes": 107286790
+        },
+        "compiled": {
+          "input_fingerprint": "f7e7c28e7d4177da5cfa5cb6675b9b374c85faba598e78f28884533f7dbaf05c",
+          "revision": "d0d34d0df5b8814c640619756d8d7e51d2717e84",
+          "dirty_source": "false",
+          "java_version": "openjdk version \"21.0.11\" 2026-04-21",
+          "java_vendor": "Homebrew",
+          "java_runtime": "OpenJDK Runtime Environment",
+          "toolchain_fingerprint": "37d5f5b0512f0e167a2368f1969b03de014934cb3e0d1f7933e2c3296b988c10",
+          "maven_wrapper_sha256": "cae96cef89ebea3531221f4ae17c23cf8edf67d00eae8306d4186ae1bbed4d02",
+          "root_pom_sha256": "1d19e5762fe0cd3a8b5787b2ec6f081d606704e83a498a5f416bdc8fd7fe9355",
+          "marker_resource": "META-INF/build-identity.properties"
+        },
+        "runtime": {
+          "java": "21.0.11",
+          "cwd": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/parallel/slots/FULL_PLANTED_EDGE_0.02_0_920200000/repository",
+          "user_dir": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/parallel/slots/FULL_PLANTED_EDGE_0.02_0_920200000/repository"
+        }
+      }
+    },
+    {
+      "path": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/parallel/slots/FULL_PLANTED_EDGE_0.02_1_920200001/worker-result.json",
+      "byte_sha256": "9d2747efa3287f3807bb62e2ebded14c27598d40cbc3e25c3f23df873e7881eb",
+      "slot_id": "FULL|PLANTED_EDGE|0.02|1|920200001",
+      "plan_sha256": "60c9904b3b103ab1ea1069c1faa8129e75879e4bb033f9fa7f7042abfd6ecd75",
+      "run_id": "a4165129-ce06-4e74-9a25-a7e0999a75bd",
+      "seed": 920200001,
+      "scenario": "PLANTED_EDGE",
+      "effect_size": 0.02,
+      "replication": 1,
+      "portfolio_points": 184813,
+      "combined_points": 184813,
+      "trades": 900,
+      "portable_economic_sha256": "ec10748cd9d32bd5e946ef6ee4e4eeab8253c1aeb75d2a892e5d8437de48d0d0",
+      "comparison_sha256": "c67792995ba8b46a472341bd0e9a2fdfc9033bd0aeabea802f134d73ed4de170",
+      "executor_identity": {
+        "schema": "analytics-build-identity/1",
+        "status": "KNOWN",
+        "executable": {
+          "code_source": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/final-package/executor.jar",
+          "kind": "JAR",
+          "sha256": "b78f6b0906b8548ba1ccebe1e69572b2fcc29fac3a438bde017cbf1ea4ad6827",
+          "bytes": 107286790
+        },
+        "compiled": {
+          "input_fingerprint": "f7e7c28e7d4177da5cfa5cb6675b9b374c85faba598e78f28884533f7dbaf05c",
+          "revision": "d0d34d0df5b8814c640619756d8d7e51d2717e84",
+          "dirty_source": "false",
+          "java_version": "openjdk version \"21.0.11\" 2026-04-21",
+          "java_vendor": "Homebrew",
+          "java_runtime": "OpenJDK Runtime Environment",
+          "toolchain_fingerprint": "37d5f5b0512f0e167a2368f1969b03de014934cb3e0d1f7933e2c3296b988c10",
+          "maven_wrapper_sha256": "cae96cef89ebea3531221f4ae17c23cf8edf67d00eae8306d4186ae1bbed4d02",
+          "root_pom_sha256": "1d19e5762fe0cd3a8b5787b2ec6f081d606704e83a498a5f416bdc8fd7fe9355",
+          "marker_resource": "META-INF/build-identity.properties"
+        },
+        "runtime": {
+          "java": "21.0.11",
+          "cwd": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/parallel/slots/FULL_PLANTED_EDGE_0.02_1_920200001/repository",
+          "user_dir": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/parallel/slots/FULL_PLANTED_EDGE_0.02_1_920200001/repository"
+        }
+      }
+    },
+    {
+      "path": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/parallel/slots/FULL_PLANTED_EDGE_0.04_0_920300000/worker-result.json",
+      "byte_sha256": "45d3593ed98113b87f3b7ea2adf650bfbac8b44417089b2af957e07d7d150a3b",
+      "slot_id": "FULL|PLANTED_EDGE|0.04|0|920300000",
+      "plan_sha256": "60c9904b3b103ab1ea1069c1faa8129e75879e4bb033f9fa7f7042abfd6ecd75",
+      "run_id": "a4165129-ce06-4e74-9a25-a7e0999a75bd",
+      "seed": 920300000,
+      "scenario": "PLANTED_EDGE",
+      "effect_size": 0.04,
+      "replication": 0,
+      "portfolio_points": 189030,
+      "combined_points": 189030,
+      "trades": 900,
+      "portable_economic_sha256": "2678545b3fe60a4fa9d62746731ce673051e713fa5c6843719bdedf2c0fa88d2",
+      "comparison_sha256": "4150f248f2919b8bccd983328d6eadc6161ba2fd6796cd03e322ca55e5da7c68",
+      "executor_identity": {
+        "schema": "analytics-build-identity/1",
+        "status": "KNOWN",
+        "executable": {
+          "code_source": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/final-package/executor.jar",
+          "kind": "JAR",
+          "sha256": "b78f6b0906b8548ba1ccebe1e69572b2fcc29fac3a438bde017cbf1ea4ad6827",
+          "bytes": 107286790
+        },
+        "compiled": {
+          "input_fingerprint": "f7e7c28e7d4177da5cfa5cb6675b9b374c85faba598e78f28884533f7dbaf05c",
+          "revision": "d0d34d0df5b8814c640619756d8d7e51d2717e84",
+          "dirty_source": "false",
+          "java_version": "openjdk version \"21.0.11\" 2026-04-21",
+          "java_vendor": "Homebrew",
+          "java_runtime": "OpenJDK Runtime Environment",
+          "toolchain_fingerprint": "37d5f5b0512f0e167a2368f1969b03de014934cb3e0d1f7933e2c3296b988c10",
+          "maven_wrapper_sha256": "cae96cef89ebea3531221f4ae17c23cf8edf67d00eae8306d4186ae1bbed4d02",
+          "root_pom_sha256": "1d19e5762fe0cd3a8b5787b2ec6f081d606704e83a498a5f416bdc8fd7fe9355",
+          "marker_resource": "META-INF/build-identity.properties"
+        },
+        "runtime": {
+          "java": "21.0.11",
+          "cwd": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/parallel/slots/FULL_PLANTED_EDGE_0.04_0_920300000/repository",
+          "user_dir": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/parallel/slots/FULL_PLANTED_EDGE_0.04_0_920300000/repository"
+        }
+      }
+    },
+    {
+      "path": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/parallel/slots/FULL_PLANTED_EDGE_0.04_1_920300001/worker-result.json",
+      "byte_sha256": "03032c2802af63ae061cc86b2356926a7906e52a69bd2c83473d555b95f0cc76",
+      "slot_id": "FULL|PLANTED_EDGE|0.04|1|920300001",
+      "plan_sha256": "60c9904b3b103ab1ea1069c1faa8129e75879e4bb033f9fa7f7042abfd6ecd75",
+      "run_id": "a4165129-ce06-4e74-9a25-a7e0999a75bd",
+      "seed": 920300001,
+      "scenario": "PLANTED_EDGE",
+      "effect_size": 0.04,
+      "replication": 1,
+      "portfolio_points": 188906,
+      "combined_points": 188906,
+      "trades": 900,
+      "portable_economic_sha256": "ab89f25d597c02c90474751698b4444789b20d015d4581e2ce75702a9c5ddbb7",
+      "comparison_sha256": "9abad1305fe36e6627c687565adc90bae9e99dfc28544b308316a80a585ca1b0",
+      "executor_identity": {
+        "schema": "analytics-build-identity/1",
+        "status": "KNOWN",
+        "executable": {
+          "code_source": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/final-package/executor.jar",
+          "kind": "JAR",
+          "sha256": "b78f6b0906b8548ba1ccebe1e69572b2fcc29fac3a438bde017cbf1ea4ad6827",
+          "bytes": 107286790
+        },
+        "compiled": {
+          "input_fingerprint": "f7e7c28e7d4177da5cfa5cb6675b9b374c85faba598e78f28884533f7dbaf05c",
+          "revision": "d0d34d0df5b8814c640619756d8d7e51d2717e84",
+          "dirty_source": "false",
+          "java_version": "openjdk version \"21.0.11\" 2026-04-21",
+          "java_vendor": "Homebrew",
+          "java_runtime": "OpenJDK Runtime Environment",
+          "toolchain_fingerprint": "37d5f5b0512f0e167a2368f1969b03de014934cb3e0d1f7933e2c3296b988c10",
+          "maven_wrapper_sha256": "cae96cef89ebea3531221f4ae17c23cf8edf67d00eae8306d4186ae1bbed4d02",
+          "root_pom_sha256": "1d19e5762fe0cd3a8b5787b2ec6f081d606704e83a498a5f416bdc8fd7fe9355",
+          "marker_resource": "META-INF/build-identity.properties"
+        },
+        "runtime": {
+          "java": "21.0.11",
+          "cwd": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/parallel/slots/FULL_PLANTED_EDGE_0.04_1_920300001/repository",
+          "user_dir": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/parallel/slots/FULL_PLANTED_EDGE_0.04_1_920300001/repository"
+        }
+      }
+    },
+    {
+      "path": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/serial/slots/FULL_NO_EDGE_0_0_920000000/worker-result.json",
+      "byte_sha256": "2577fbca373c777fd60de59062f8ead11df5b0a8c5f8c2cae18e44a146658248",
+      "slot_id": "FULL|NO_EDGE|0|0|920000000",
+      "plan_sha256": "60c9904b3b103ab1ea1069c1faa8129e75879e4bb033f9fa7f7042abfd6ecd75",
+      "run_id": "463f4f6a-8e72-4f71-9552-ee4fab336880",
+      "seed": 920000000,
+      "scenario": "NO_EDGE",
+      "effect_size": 0.0,
+      "replication": 0,
+      "portfolio_points": 179923,
+      "combined_points": 179923,
+      "trades": 900,
+      "portable_economic_sha256": "4512d8e024e1d59a9b12716270774cc20143bbcdeeb70399b72492f6d17fe815",
+      "comparison_sha256": "fabb1f68eed2ca253e8fa2081d1c030fbcce28e82cf5fd03777eb5ed86e0dcd5",
+      "executor_identity": {
+        "schema": "analytics-build-identity/1",
+        "status": "KNOWN",
+        "executable": {
+          "code_source": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/final-package/executor.jar",
+          "kind": "JAR",
+          "sha256": "b78f6b0906b8548ba1ccebe1e69572b2fcc29fac3a438bde017cbf1ea4ad6827",
+          "bytes": 107286790
+        },
+        "compiled": {
+          "input_fingerprint": "f7e7c28e7d4177da5cfa5cb6675b9b374c85faba598e78f28884533f7dbaf05c",
+          "revision": "d0d34d0df5b8814c640619756d8d7e51d2717e84",
+          "dirty_source": "false",
+          "java_version": "openjdk version \"21.0.11\" 2026-04-21",
+          "java_vendor": "Homebrew",
+          "java_runtime": "OpenJDK Runtime Environment",
+          "toolchain_fingerprint": "37d5f5b0512f0e167a2368f1969b03de014934cb3e0d1f7933e2c3296b988c10",
+          "maven_wrapper_sha256": "cae96cef89ebea3531221f4ae17c23cf8edf67d00eae8306d4186ae1bbed4d02",
+          "root_pom_sha256": "1d19e5762fe0cd3a8b5787b2ec6f081d606704e83a498a5f416bdc8fd7fe9355",
+          "marker_resource": "META-INF/build-identity.properties"
+        },
+        "runtime": {
+          "java": "21.0.11",
+          "cwd": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/serial/slots/FULL_NO_EDGE_0_0_920000000/repository",
+          "user_dir": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/serial/slots/FULL_NO_EDGE_0_0_920000000/repository"
+        }
+      }
+    },
+    {
+      "path": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/serial/slots/FULL_NO_EDGE_0_1_920000001/worker-result.json",
+      "byte_sha256": "30c591e267771ba13dd09012ac0100d1df882e4a7c52a72d707149787fddf4c5",
+      "slot_id": "FULL|NO_EDGE|0|1|920000001",
+      "plan_sha256": "60c9904b3b103ab1ea1069c1faa8129e75879e4bb033f9fa7f7042abfd6ecd75",
+      "run_id": "463f4f6a-8e72-4f71-9552-ee4fab336880",
+      "seed": 920000001,
+      "scenario": "NO_EDGE",
+      "effect_size": 0.0,
+      "replication": 1,
+      "portfolio_points": 183025,
+      "combined_points": 183025,
+      "trades": 900,
+      "portable_economic_sha256": "24b088944f4827d899d9c088a345498f6a486a5fd4563d5670da57aa66b83d71",
+      "comparison_sha256": "262a93847b0246e550549fae735c91f4f00635c467242d772d24be077924a147",
+      "executor_identity": {
+        "schema": "analytics-build-identity/1",
+        "status": "KNOWN",
+        "executable": {
+          "code_source": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/final-package/executor.jar",
+          "kind": "JAR",
+          "sha256": "b78f6b0906b8548ba1ccebe1e69572b2fcc29fac3a438bde017cbf1ea4ad6827",
+          "bytes": 107286790
+        },
+        "compiled": {
+          "input_fingerprint": "f7e7c28e7d4177da5cfa5cb6675b9b374c85faba598e78f28884533f7dbaf05c",
+          "revision": "d0d34d0df5b8814c640619756d8d7e51d2717e84",
+          "dirty_source": "false",
+          "java_version": "openjdk version \"21.0.11\" 2026-04-21",
+          "java_vendor": "Homebrew",
+          "java_runtime": "OpenJDK Runtime Environment",
+          "toolchain_fingerprint": "37d5f5b0512f0e167a2368f1969b03de014934cb3e0d1f7933e2c3296b988c10",
+          "maven_wrapper_sha256": "cae96cef89ebea3531221f4ae17c23cf8edf67d00eae8306d4186ae1bbed4d02",
+          "root_pom_sha256": "1d19e5762fe0cd3a8b5787b2ec6f081d606704e83a498a5f416bdc8fd7fe9355",
+          "marker_resource": "META-INF/build-identity.properties"
+        },
+        "runtime": {
+          "java": "21.0.11",
+          "cwd": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/serial/slots/FULL_NO_EDGE_0_1_920000001/repository",
+          "user_dir": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/serial/slots/FULL_NO_EDGE_0_1_920000001/repository"
+        }
+      }
+    },
+    {
+      "path": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/serial/slots/FULL_PLANTED_EDGE_0_0_920100000/worker-result.json",
+      "byte_sha256": "51d688e232fa4773401ea39a2179db0744ef433db27c50852890cdb42036ca4b",
+      "slot_id": "FULL|PLANTED_EDGE|0|0|920100000",
+      "plan_sha256": "60c9904b3b103ab1ea1069c1faa8129e75879e4bb033f9fa7f7042abfd6ecd75",
+      "run_id": "463f4f6a-8e72-4f71-9552-ee4fab336880",
+      "seed": 920100000,
+      "scenario": "PLANTED_EDGE",
+      "effect_size": 0.0,
+      "replication": 0,
+      "portfolio_points": 181628,
+      "combined_points": 181628,
+      "trades": 900,
+      "portable_economic_sha256": "db2c347a3892e40f1f3c76c975d75c7b970fb6260830dfba8c2f042f937e961c",
+      "comparison_sha256": "63eb67d313d42dd5b5db0520d8687cfcd5917c9be395ed9a12b3bf1345d99607",
+      "executor_identity": {
+        "schema": "analytics-build-identity/1",
+        "status": "KNOWN",
+        "executable": {
+          "code_source": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/final-package/executor.jar",
+          "kind": "JAR",
+          "sha256": "b78f6b0906b8548ba1ccebe1e69572b2fcc29fac3a438bde017cbf1ea4ad6827",
+          "bytes": 107286790
+        },
+        "compiled": {
+          "input_fingerprint": "f7e7c28e7d4177da5cfa5cb6675b9b374c85faba598e78f28884533f7dbaf05c",
+          "revision": "d0d34d0df5b8814c640619756d8d7e51d2717e84",
+          "dirty_source": "false",
+          "java_version": "openjdk version \"21.0.11\" 2026-04-21",
+          "java_vendor": "Homebrew",
+          "java_runtime": "OpenJDK Runtime Environment",
+          "toolchain_fingerprint": "37d5f5b0512f0e167a2368f1969b03de014934cb3e0d1f7933e2c3296b988c10",
+          "maven_wrapper_sha256": "cae96cef89ebea3531221f4ae17c23cf8edf67d00eae8306d4186ae1bbed4d02",
+          "root_pom_sha256": "1d19e5762fe0cd3a8b5787b2ec6f081d606704e83a498a5f416bdc8fd7fe9355",
+          "marker_resource": "META-INF/build-identity.properties"
+        },
+        "runtime": {
+          "java": "21.0.11",
+          "cwd": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/serial/slots/FULL_PLANTED_EDGE_0_0_920100000/repository",
+          "user_dir": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/serial/slots/FULL_PLANTED_EDGE_0_0_920100000/repository"
+        }
+      }
+    },
+    {
+      "path": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/serial/slots/FULL_PLANTED_EDGE_0_1_920100001/worker-result.json",
+      "byte_sha256": "89a3116dd5843cb72b2a6e950c7fd4fe95ddaf7210c28892829858f6c4ecdb69",
+      "slot_id": "FULL|PLANTED_EDGE|0|1|920100001",
+      "plan_sha256": "60c9904b3b103ab1ea1069c1faa8129e75879e4bb033f9fa7f7042abfd6ecd75",
+      "run_id": "463f4f6a-8e72-4f71-9552-ee4fab336880",
+      "seed": 920100001,
+      "scenario": "PLANTED_EDGE",
+      "effect_size": 0.0,
+      "replication": 1,
+      "portfolio_points": 180423,
+      "combined_points": 180423,
+      "trades": 900,
+      "portable_economic_sha256": "749fd67f1113c58a6cb1ddd56093a37935f9bd2a6a9a4a1c8d7cc8b96f60c3fd",
+      "comparison_sha256": "48571340355f4e662fd989318b57051ef17839f0ca2dad1f225bdc253b8491d4",
+      "executor_identity": {
+        "schema": "analytics-build-identity/1",
+        "status": "KNOWN",
+        "executable": {
+          "code_source": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/final-package/executor.jar",
+          "kind": "JAR",
+          "sha256": "b78f6b0906b8548ba1ccebe1e69572b2fcc29fac3a438bde017cbf1ea4ad6827",
+          "bytes": 107286790
+        },
+        "compiled": {
+          "input_fingerprint": "f7e7c28e7d4177da5cfa5cb6675b9b374c85faba598e78f28884533f7dbaf05c",
+          "revision": "d0d34d0df5b8814c640619756d8d7e51d2717e84",
+          "dirty_source": "false",
+          "java_version": "openjdk version \"21.0.11\" 2026-04-21",
+          "java_vendor": "Homebrew",
+          "java_runtime": "OpenJDK Runtime Environment",
+          "toolchain_fingerprint": "37d5f5b0512f0e167a2368f1969b03de014934cb3e0d1f7933e2c3296b988c10",
+          "maven_wrapper_sha256": "cae96cef89ebea3531221f4ae17c23cf8edf67d00eae8306d4186ae1bbed4d02",
+          "root_pom_sha256": "1d19e5762fe0cd3a8b5787b2ec6f081d606704e83a498a5f416bdc8fd7fe9355",
+          "marker_resource": "META-INF/build-identity.properties"
+        },
+        "runtime": {
+          "java": "21.0.11",
+          "cwd": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/serial/slots/FULL_PLANTED_EDGE_0_1_920100001/repository",
+          "user_dir": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/serial/slots/FULL_PLANTED_EDGE_0_1_920100001/repository"
+        }
+      }
+    },
+    {
+      "path": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/serial/slots/FULL_PLANTED_EDGE_0.02_0_920200000/worker-result.json",
+      "byte_sha256": "fe770640c723f6c56f59f794ac7ad2fd0188e3d34429fda40933f68134e8a16d",
+      "slot_id": "FULL|PLANTED_EDGE|0.02|0|920200000",
+      "plan_sha256": "60c9904b3b103ab1ea1069c1faa8129e75879e4bb033f9fa7f7042abfd6ecd75",
+      "run_id": "463f4f6a-8e72-4f71-9552-ee4fab336880",
+      "seed": 920200000,
+      "scenario": "PLANTED_EDGE",
+      "effect_size": 0.02,
+      "replication": 0,
+      "portfolio_points": 181727,
+      "combined_points": 181727,
+      "trades": 900,
+      "portable_economic_sha256": "2d79e91980d7e5df801be3655ba4819deb541876b77fa7eac1c913350a482fef",
+      "comparison_sha256": "187e54442c1763278837e4217b8eafaa39968956ca5c5445336baf0fc0e3178d",
+      "executor_identity": {
+        "schema": "analytics-build-identity/1",
+        "status": "KNOWN",
+        "executable": {
+          "code_source": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/final-package/executor.jar",
+          "kind": "JAR",
+          "sha256": "b78f6b0906b8548ba1ccebe1e69572b2fcc29fac3a438bde017cbf1ea4ad6827",
+          "bytes": 107286790
+        },
+        "compiled": {
+          "input_fingerprint": "f7e7c28e7d4177da5cfa5cb6675b9b374c85faba598e78f28884533f7dbaf05c",
+          "revision": "d0d34d0df5b8814c640619756d8d7e51d2717e84",
+          "dirty_source": "false",
+          "java_version": "openjdk version \"21.0.11\" 2026-04-21",
+          "java_vendor": "Homebrew",
+          "java_runtime": "OpenJDK Runtime Environment",
+          "toolchain_fingerprint": "37d5f5b0512f0e167a2368f1969b03de014934cb3e0d1f7933e2c3296b988c10",
+          "maven_wrapper_sha256": "cae96cef89ebea3531221f4ae17c23cf8edf67d00eae8306d4186ae1bbed4d02",
+          "root_pom_sha256": "1d19e5762fe0cd3a8b5787b2ec6f081d606704e83a498a5f416bdc8fd7fe9355",
+          "marker_resource": "META-INF/build-identity.properties"
+        },
+        "runtime": {
+          "java": "21.0.11",
+          "cwd": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/serial/slots/FULL_PLANTED_EDGE_0.02_0_920200000/repository",
+          "user_dir": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/serial/slots/FULL_PLANTED_EDGE_0.02_0_920200000/repository"
+        }
+      }
+    },
+    {
+      "path": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/serial/slots/FULL_PLANTED_EDGE_0.02_1_920200001/worker-result.json",
+      "byte_sha256": "04a4e440762878869c98100a8208b5f9b3e94e79cbc8ba7b3e3455d2650ed0a3",
+      "slot_id": "FULL|PLANTED_EDGE|0.02|1|920200001",
+      "plan_sha256": "60c9904b3b103ab1ea1069c1faa8129e75879e4bb033f9fa7f7042abfd6ecd75",
+      "run_id": "463f4f6a-8e72-4f71-9552-ee4fab336880",
+      "seed": 920200001,
+      "scenario": "PLANTED_EDGE",
+      "effect_size": 0.02,
+      "replication": 1,
+      "portfolio_points": 184813,
+      "combined_points": 184813,
+      "trades": 900,
+      "portable_economic_sha256": "ec10748cd9d32bd5e946ef6ee4e4eeab8253c1aeb75d2a892e5d8437de48d0d0",
+      "comparison_sha256": "c67792995ba8b46a472341bd0e9a2fdfc9033bd0aeabea802f134d73ed4de170",
+      "executor_identity": {
+        "schema": "analytics-build-identity/1",
+        "status": "KNOWN",
+        "executable": {
+          "code_source": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/final-package/executor.jar",
+          "kind": "JAR",
+          "sha256": "b78f6b0906b8548ba1ccebe1e69572b2fcc29fac3a438bde017cbf1ea4ad6827",
+          "bytes": 107286790
+        },
+        "compiled": {
+          "input_fingerprint": "f7e7c28e7d4177da5cfa5cb6675b9b374c85faba598e78f28884533f7dbaf05c",
+          "revision": "d0d34d0df5b8814c640619756d8d7e51d2717e84",
+          "dirty_source": "false",
+          "java_version": "openjdk version \"21.0.11\" 2026-04-21",
+          "java_vendor": "Homebrew",
+          "java_runtime": "OpenJDK Runtime Environment",
+          "toolchain_fingerprint": "37d5f5b0512f0e167a2368f1969b03de014934cb3e0d1f7933e2c3296b988c10",
+          "maven_wrapper_sha256": "cae96cef89ebea3531221f4ae17c23cf8edf67d00eae8306d4186ae1bbed4d02",
+          "root_pom_sha256": "1d19e5762fe0cd3a8b5787b2ec6f081d606704e83a498a5f416bdc8fd7fe9355",
+          "marker_resource": "META-INF/build-identity.properties"
+        },
+        "runtime": {
+          "java": "21.0.11",
+          "cwd": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/serial/slots/FULL_PLANTED_EDGE_0.02_1_920200001/repository",
+          "user_dir": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/serial/slots/FULL_PLANTED_EDGE_0.02_1_920200001/repository"
+        }
+      }
+    },
+    {
+      "path": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/serial/slots/FULL_PLANTED_EDGE_0.04_0_920300000/worker-result.json",
+      "byte_sha256": "43a7e1ecd33fde86ab7918d92877ba7d84f57384d58a02203e8d407cc7591d18",
+      "slot_id": "FULL|PLANTED_EDGE|0.04|0|920300000",
+      "plan_sha256": "60c9904b3b103ab1ea1069c1faa8129e75879e4bb033f9fa7f7042abfd6ecd75",
+      "run_id": "463f4f6a-8e72-4f71-9552-ee4fab336880",
+      "seed": 920300000,
+      "scenario": "PLANTED_EDGE",
+      "effect_size": 0.04,
+      "replication": 0,
+      "portfolio_points": 189030,
+      "combined_points": 189030,
+      "trades": 900,
+      "portable_economic_sha256": "2678545b3fe60a4fa9d62746731ce673051e713fa5c6843719bdedf2c0fa88d2",
+      "comparison_sha256": "4150f248f2919b8bccd983328d6eadc6161ba2fd6796cd03e322ca55e5da7c68",
+      "executor_identity": {
+        "schema": "analytics-build-identity/1",
+        "status": "KNOWN",
+        "executable": {
+          "code_source": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/final-package/executor.jar",
+          "kind": "JAR",
+          "sha256": "b78f6b0906b8548ba1ccebe1e69572b2fcc29fac3a438bde017cbf1ea4ad6827",
+          "bytes": 107286790
+        },
+        "compiled": {
+          "input_fingerprint": "f7e7c28e7d4177da5cfa5cb6675b9b374c85faba598e78f28884533f7dbaf05c",
+          "revision": "d0d34d0df5b8814c640619756d8d7e51d2717e84",
+          "dirty_source": "false",
+          "java_version": "openjdk version \"21.0.11\" 2026-04-21",
+          "java_vendor": "Homebrew",
+          "java_runtime": "OpenJDK Runtime Environment",
+          "toolchain_fingerprint": "37d5f5b0512f0e167a2368f1969b03de014934cb3e0d1f7933e2c3296b988c10",
+          "maven_wrapper_sha256": "cae96cef89ebea3531221f4ae17c23cf8edf67d00eae8306d4186ae1bbed4d02",
+          "root_pom_sha256": "1d19e5762fe0cd3a8b5787b2ec6f081d606704e83a498a5f416bdc8fd7fe9355",
+          "marker_resource": "META-INF/build-identity.properties"
+        },
+        "runtime": {
+          "java": "21.0.11",
+          "cwd": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/serial/slots/FULL_PLANTED_EDGE_0.04_0_920300000/repository",
+          "user_dir": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/serial/slots/FULL_PLANTED_EDGE_0.04_0_920300000/repository"
+        }
+      }
+    },
+    {
+      "path": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/serial/slots/FULL_PLANTED_EDGE_0.04_1_920300001/worker-result.json",
+      "byte_sha256": "dafd47f4cc497feb1a26b65e329c2795e38c5f9b73ee6a42a744cc3ba29c825a",
+      "slot_id": "FULL|PLANTED_EDGE|0.04|1|920300001",
+      "plan_sha256": "60c9904b3b103ab1ea1069c1faa8129e75879e4bb033f9fa7f7042abfd6ecd75",
+      "run_id": "463f4f6a-8e72-4f71-9552-ee4fab336880",
+      "seed": 920300001,
+      "scenario": "PLANTED_EDGE",
+      "effect_size": 0.04,
+      "replication": 1,
+      "portfolio_points": 188906,
+      "combined_points": 188906,
+      "trades": 900,
+      "portable_economic_sha256": "ab89f25d597c02c90474751698b4444789b20d015d4581e2ce75702a9c5ddbb7",
+      "comparison_sha256": "9abad1305fe36e6627c687565adc90bae9e99dfc28544b308316a80a585ca1b0",
+      "executor_identity": {
+        "schema": "analytics-build-identity/1",
+        "status": "KNOWN",
+        "executable": {
+          "code_source": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/final-package/executor.jar",
+          "kind": "JAR",
+          "sha256": "b78f6b0906b8548ba1ccebe1e69572b2fcc29fac3a438bde017cbf1ea4ad6827",
+          "bytes": 107286790
+        },
+        "compiled": {
+          "input_fingerprint": "f7e7c28e7d4177da5cfa5cb6675b9b374c85faba598e78f28884533f7dbaf05c",
+          "revision": "d0d34d0df5b8814c640619756d8d7e51d2717e84",
+          "dirty_source": "false",
+          "java_version": "openjdk version \"21.0.11\" 2026-04-21",
+          "java_vendor": "Homebrew",
+          "java_runtime": "OpenJDK Runtime Environment",
+          "toolchain_fingerprint": "37d5f5b0512f0e167a2368f1969b03de014934cb3e0d1f7933e2c3296b988c10",
+          "maven_wrapper_sha256": "cae96cef89ebea3531221f4ae17c23cf8edf67d00eae8306d4186ae1bbed4d02",
+          "root_pom_sha256": "1d19e5762fe0cd3a8b5787b2ec6f081d606704e83a498a5f416bdc8fd7fe9355",
+          "marker_resource": "META-INF/build-identity.properties"
+        },
+        "runtime": {
+          "java": "21.0.11",
+          "cwd": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/serial/slots/FULL_PLANTED_EDGE_0.04_1_920300001/repository",
+          "user_dir": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/serial/slots/FULL_PLANTED_EDGE_0.04_1_920300001/repository"
+        }
+      }
+    }
+  ],
+  "artifacts_audited": 16,
+  "independently_reconciled_books": 32,
+  "book_curve_points": 2938950,
+  "combined_curve_points": 2938950,
+  "trades_reconciled": 14400,
+  "serial_parallel_metrics_and_book_and_combined_curves_equal": true
+}

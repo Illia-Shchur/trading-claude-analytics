@@ -1,0 +1,90 @@
+[
+  {
+    "artifact": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/serial/slots/FULL_NO_EDGE_0_0_920000000/worker-result.json",
+    "content_sha256": "43848d0666e7cb6af2f1a745fbe9713c654363a5a53ea4279afbab72f037c7a5",
+    "corrected_economic_semantic_sha256": "4512d8e024e1d59a9b12716270774cc20143bbcdeeb70399b72492f6d17fe815",
+    "event_count": 450,
+    "independent_units": 288,
+    "paired_count": 450,
+    "portable_economic_sha256": "4512d8e024e1d59a9b12716270774cc20143bbcdeeb70399b72492f6d17fe815",
+    "slot_id": "FULL|NO_EDGE|0|0|920000000",
+    "status": "PASS"
+  },
+  {
+    "artifact": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/serial/slots/FULL_NO_EDGE_0_1_920000001/worker-result.json",
+    "content_sha256": "d6735e16f278e4fe0b8327c032627fa284c0c6d1928da678198694c3943b5d75",
+    "corrected_economic_semantic_sha256": "24b088944f4827d899d9c088a345498f6a486a5fd4563d5670da57aa66b83d71",
+    "event_count": 450,
+    "independent_units": 288,
+    "paired_count": 450,
+    "portable_economic_sha256": "24b088944f4827d899d9c088a345498f6a486a5fd4563d5670da57aa66b83d71",
+    "slot_id": "FULL|NO_EDGE|0|1|920000001",
+    "status": "PASS"
+  },
+  {
+    "artifact": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/serial/slots/FULL_PLANTED_EDGE_0_0_920100000/worker-result.json",
+    "content_sha256": "9e432d02ee52f201e7389eedf0069fa76f7a85d19e02d436baef9a6dfa1ede77",
+    "corrected_economic_semantic_sha256": "db2c347a3892e40f1f3c76c975d75c7b970fb6260830dfba8c2f042f937e961c",
+    "event_count": 450,
+    "independent_units": 288,
+    "paired_count": 450,
+    "portable_economic_sha256": "db2c347a3892e40f1f3c76c975d75c7b970fb6260830dfba8c2f042f937e961c",
+    "slot_id": "FULL|PLANTED_EDGE|0|0|920100000",
+    "status": "PASS"
+  },
+  {
+    "artifact": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/serial/slots/FULL_PLANTED_EDGE_0_1_920100001/worker-result.json",
+    "content_sha256": "328115ede3973846e7d4bd1170ed4bc244c208852b701a5356940a9e546a0d5d",
+    "corrected_economic_semantic_sha256": "749fd67f1113c58a6cb1ddd56093a37935f9bd2a6a9a4a1c8d7cc8b96f60c3fd",
+    "event_count": 450,
+    "independent_units": 288,
+    "paired_count": 450,
+    "portable_economic_sha256": "749fd67f1113c58a6cb1ddd56093a37935f9bd2a6a9a4a1c8d7cc8b96f60c3fd",
+    "slot_id": "FULL|PLANTED_EDGE|0|1|920100001",
+    "status": "PASS"
+  },
+  {
+    "artifact": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/serial/slots/FULL_PLANTED_EDGE_0.02_0_920200000/worker-result.json",
+    "content_sha256": "d5446c9867b9034b5ff67306fa8642c6028050a9a059d75c40169af90008318a",
+    "corrected_economic_semantic_sha256": "2d79e91980d7e5df801be3655ba4819deb541876b77fa7eac1c913350a482fef",
+    "event_count": 450,
+    "independent_units": 288,
+    "paired_count": 450,
+    "portable_economic_sha256": "2d79e91980d7e5df801be3655ba4819deb541876b77fa7eac1c913350a482fef",
+    "slot_id": "FULL|PLANTED_EDGE|0.02|0|920200000",
+    "status": "PASS"
+  },
+  {
+    "artifact": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/serial/slots/FULL_PLANTED_EDGE_0.02_1_920200001/worker-result.json",
+    "content_sha256": "de9947715d9818cbf0cdf4b30a08cc3a2090a3803c07e7bafc92310e6b9ca541",
+    "corrected_economic_semantic_sha256": "ec10748cd9d32bd5e946ef6ee4e4eeab8253c1aeb75d2a892e5d8437de48d0d0",
+    "event_count": 450,
+    "independent_units": 288,
+    "paired_count": 450,
+    "portable_economic_sha256": "ec10748cd9d32bd5e946ef6ee4e4eeab8253c1aeb75d2a892e5d8437de48d0d0",
+    "slot_id": "FULL|PLANTED_EDGE|0.02|1|920200001",
+    "status": "PASS"
+  },
+  {
+    "artifact": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/serial/slots/FULL_PLANTED_EDGE_0.04_0_920300000/worker-result.json",
+    "content_sha256": "4365876264ee5fb8b7a39f684e3f06e895efce086008eb375bb72a557720cd96",
+    "corrected_economic_semantic_sha256": "2678545b3fe60a4fa9d62746731ce673051e713fa5c6843719bdedf2c0fa88d2",
+    "event_count": 450,
+    "independent_units": 288,
+    "paired_count": 450,
+    "portable_economic_sha256": "2678545b3fe60a4fa9d62746731ce673051e713fa5c6843719bdedf2c0fa88d2",
+    "slot_id": "FULL|PLANTED_EDGE|0.04|0|920300000",
+    "status": "PASS"
+  },
+  {
+    "artifact": "/private/tmp/trading-pr13/.report-run/mac-full-repaired/full-paired-waves/serial/slots/FULL_PLANTED_EDGE_0.04_1_920300001/worker-result.json",
+    "content_sha256": "1cc028cd822e9c95e51b05ead09870c5f1b736610e793e3f005143d91a812647",
+    "corrected_economic_semantic_sha256": "ab89f25d597c02c90474751698b4444789b20d015d4581e2ce75702a9c5ddbb7",
+    "event_count": 450,
+    "independent_units": 288,
+    "paired_count": 450,
+    "portable_economic_sha256": "ab89f25d597c02c90474751698b4444789b20d015d4581e2ce75702a9c5ddbb7",
+    "slot_id": "FULL|PLANTED_EDGE|0.04|1|920300001",
+    "status": "PASS"
+  }
+]

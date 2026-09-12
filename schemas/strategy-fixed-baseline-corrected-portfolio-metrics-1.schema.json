@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-fixed-baseline-corrected-portfolio-metrics/1",
+  "type": "object",
+  "required": ["schema", "version", "accounting_version", "evaluator_identity", "trade_count",
+                "event_book", "control_book", "combined", "equity_curve_sha256",
+                "equity_curve_source", "equity_curve_row_count", "content_sha256"],
+  "properties": {
+    "schema": {"const": "strategy-fixed-baseline-corrected-portfolio-metrics/1"},
+    "version": {"const": 1},
+    "accounting_version": {"const": "PORTFOLIO_ACCOUNTING_CORRECTION_V1"},
+    "evaluator_identity": {"const": "com.tradinganalytics.research.v5.StrategyFixedBaselineCorrectedV1"},
+    "trade_count": {"type": "integer", "minimum": 0},
+    "event_book": {"$ref": "#/$defs/bookMetrics"},
+    "control_book": {"$ref": "#/$defs/bookMetrics"},
+    "combined": {"$ref": "#/$defs/combinedMetrics"},
+    "equity_curve_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "equity_curve_source": {"const": "portfolio.combined_equity_curve"},
+    "equity_curve_row_count": {"type": "integer", "minimum": 0},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "$defs": {
+    "bookMetrics": {
+      "type": "object",
+      "required": ["starting_equity_usdt", "ending_equity_usdt", "net_pnl_usdt",
+                    "max_drawdown_usdt", "return_fraction", "final_marked_holdings_usdt",
+                    "final_active_position_count"],
+      "properties": {
+        "starting_equity_usdt": {"type": "number"},
+        "ending_equity_usdt": {"type": "number"},
+        "net_pnl_usdt": {"type": "number"},
+        "max_drawdown_usdt": {"type": "number", "minimum": 0},
+        "return_fraction": {"type": "number"},
+        "final_marked_holdings_usdt": {"type": "number", "minimum": 0},
+        "final_active_position_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "combinedMetrics": {
+      "type": "object",
+      "required": ["starting_equity_usdt", "ending_equity_usdt", "gross_pnl_usdt", "fees_usdt",
+                    "slippage_usdt", "capacity_debit_usdt", "net_pnl_usdt", "max_drawdown_usdt",
+                    "return_fraction", "max_drawdown_fraction", "final_marked_holdings_usdt",
+                    "final_active_position_count", "equity_curve_recomputed"],
+      "properties": {
+        "starting_equity_usdt": {"type": "number", "exclusiveMinimum": 0},
+        "ending_equity_usdt": {"type": "number"},
+        "gross_pnl_usdt": {"type": "number"},
+        "fees_usdt": {"type": "number", "minimum": 0},
+        "slippage_usdt": {"type": "number", "minimum": 0},
+        "capacity_debit_usdt": {"type": "number", "minimum": 0},
+        "net_pnl_usdt": {"type": "number"},
+        "max_drawdown_usdt": {"type": "number", "minimum": 0},
+        "return_fraction": {"type": "number"},
+        "max_drawdown_fraction": {"type": "number", "minimum": 0},
+        "final_marked_holdings_usdt": {"type": "number", "minimum": 0},
+        "final_active_position_count": {"type": "integer", "minimum": 0},
+        "equity_curve_recomputed": {"const": true}
+      }
+    }
+  },
+  "additionalProperties": true
+}

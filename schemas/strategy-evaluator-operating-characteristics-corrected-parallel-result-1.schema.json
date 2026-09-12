@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-evaluator-operating-characteristics-corrected-parallel-result/1",
+  "type": "object",
+  "required": ["schema", "version", "status", "mode", "plan_sha256", "profile_sha256", "fixed_evaluator", "accounting_version", "outcomes_opened", "promotion_eligible", "activation_authorized", "measured", "planned_slots", "completed_slots", "missing_slots", "result_refs", "missing", "requested_workers", "effective_workers", "ledger_content_sha256", "resource_measurement", "content_sha256"],
+  "properties": {
+    "schema": {"const": "strategy-evaluator-operating-characteristics-corrected-parallel-result/1"},
+    "version": {"const": 1},
+    "status": {"enum": ["COMPLETE", "COMPUTE_INCOMPLETE"]},
+    "mode": {"enum": ["FULL", "PREFIX"]},
+    "plan_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "profile_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "fixed_evaluator": {"const": "com.tradinganalytics.research.v5.StrategyFixedBaselineCorrectedV1"},
+    "accounting_version": {"const": "PORTFOLIO_ACCOUNTING_CORRECTION_V1"},
+    "shared_physical_evaluator": {"const": true},
+    "toy_statistic": {"const": false},
+    "outcomes_opened": {"const": true},
+    "promotion_eligible": {"const": false},
+    "activation_authorized": {"const": false},
+    "measured": {"type": "boolean"},
+    "planned_slots": {"type": "integer", "minimum": 0},
+    "completed_slots": {"type": "integer", "minimum": 0},
+    "missing_slots": {"type": "integer", "minimum": 0},
+    "result_refs": {"type": "array", "items": {"type": "object"}},
+    "missing": {"type": "array", "items": {"type": "object"}},
+    "requested_workers": {"type": "integer", "minimum": 1},
+    "effective_workers": {"type": "integer", "minimum": 1},
+    "ledger_content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "resource_measurement": {"$ref": "#/$defs/resourceMeasurement"},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "$defs": {
+    "resourceMeasurement": {
+      "type": "object",
+      "required": ["schema", "version", "plan_sha256", "profile_sha256", "ledger_content_sha256", "executor_identity_sha256", "executor_source_sha256", "host_identity_sha256", "run_id", "workers", "launched_slot_count", "completed_slot_count", "fresh_full_wave", "measured_wall_millis", "measured_max_aggregate_rss_bytes", "measured_max_coordinator_rss_bytes", "measured_max_disk_bytes", "resource_probe_complete", "content_sha256"],
+      "properties": {
+        "schema": {"const": "strategy-evaluator-resource-measurement/1"},
+        "version": {"const": 1},
+        "plan_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "profile_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "ledger_content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "executor_identity_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "executor_source_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "host_identity_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "run_id": {"type": "string", "pattern": "^[0-9a-fA-F-]{36}$"},
+        "workers": {"type": "integer", "minimum": 1},
+        "launched_slot_count": {"type": "integer", "minimum": 0},
+        "completed_slot_count": {"type": "integer", "minimum": 0},
+        "fresh_full_wave": {"type": "boolean"},
+        "measured_wall_millis": {"type": "integer", "minimum": 0},
+        "measured_max_aggregate_rss_bytes": {"type": "integer", "minimum": -1},
+        "measured_max_coordinator_rss_bytes": {"type": "integer", "minimum": -1},
+        "measured_max_disk_bytes": {"type": "integer", "minimum": -1},
+        "resource_probe_complete": {"type": "boolean"},
+        "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": true
+}

@@ -45,57 +45,56 @@ class NewCodeCoverageTest(unittest.TestCase):
         target.write_text(report, encoding="utf-8")
         return target
 
-    def test_exact_eighty_percent_passes_and_below_boundary_fails(self):
+    def test_exact_fifty_five_percent_passes_and_below_boundary_fails(self):
         base = self._commit_base()
-        source = self._write_source(
-            contents="class Thing {\n  int a() { return 1; }\n  int b() { return 2; }\n  int c() { return 3; }\n  int d() { return 4; }\n}\n"
-        )
-        report = self._write_report([(1, True, 0, 0), (2, True, 0, 0), (3, True, 0, 0), (4, False, 0, 0), (5, True, 0, 0)])
-        exact = evaluate(self.workspace, base, report, minimum=Decimal("80"))
+        source = self._write_source(contents="".join(f"int value{number}() {{ return {number}; }}\n" for number in range(1, 21)))
+        report = self._write_report([(number, number <= 11, 0, 0) for number in range(1, 21)])
+        exact = evaluate(self.workspace, base, report)
         self.assertEqual(exact.line_status, "passed")
         self.assertEqual(exact.branch_status, "not-applicable")
+        self.assertEqual(exact.minimum, Decimal("55"))
 
-        report.write_text(report.read_text(encoding="utf-8").replace('nr="4" mi="1" ci="0"', 'nr="4" mi="1" ci="0"').replace('nr="5" mi="0" ci="1"', 'nr="5" mi="1" ci="0"'), encoding="utf-8")
-        below = evaluate(self.workspace, base, report, minimum=Decimal("80"))
+        report.write_text(report.read_text(encoding="utf-8").replace('nr="11" mi="0" ci="1"', 'nr="11" mi="1" ci="0"'), encoding="utf-8")
+        below = evaluate(self.workspace, base, report)
         self.assertEqual(below.line_status, "failed")
         self.assertFalse(below.passed)
 
-    def test_exact_eighty_branch_boundary_passes(self):
+    def test_exact_fifty_five_branch_boundary_passes(self):
         base = self._commit_base()
         self._write_source().write_text(
             "class Thing {\n  int value() { return 1; }\n  int changed() { return 2; }\n}\n", encoding="utf-8"
         )
-        report = self._write_report([(1, True, 0, 0), (2, True, 1, 4), (3, True, 0, 0)])
+        report = self._write_report([(1, True, 0, 0), (2, True, 9, 11), (3, True, 0, 0)])
         result = evaluate(self.workspace, base, report)
-        self.assertEqual(result.branch_total, 5)
-        self.assertEqual(result.branch_covered, 4)
+        self.assertEqual(result.branch_total, 20)
+        self.assertEqual(result.branch_covered, 11)
         self.assertEqual(result.branch_status, "passed")
-        self.assertEqual(result.branch_minimum, Decimal("80"))
+        self.assertEqual(result.branch_minimum, Decimal("55"))
 
-    def test_branch_minimum_can_be_lowered_without_lowering_line_minimum(self):
+    def test_explicit_branch_minimum_override_is_opt_in(self):
         base = self._commit_base()
         self._write_source().write_text(
             "class Thing {\n  int value() { return 1; }\n  int changed() { return 2; }\n}\n",
             encoding="utf-8",
         )
         report = self._write_report([(1, True, 9, 11), (2, True, 0, 0), (3, True, 0, 0)])
-        result = evaluate(self.workspace, base, report, minimum=Decimal("80"), branch_minimum=Decimal("55"))
-        self.assertEqual(result.minimum, Decimal("80"))
+        result = evaluate(self.workspace, base, report, minimum=Decimal("60"), branch_minimum=Decimal("55"))
+        self.assertEqual(result.minimum, Decimal("60"))
         self.assertEqual(result.branch_minimum, Decimal("55"))
         self.assertEqual(result.line_status, "passed")
         self.assertEqual(result.branch_status, "passed")
-        self.assertEqual(result.as_dict()["minimum_percent"], "80")
+        self.assertEqual(result.as_dict()["minimum_percent"], "60")
         self.assertEqual(result.as_dict()["branch_minimum_percent"], "55")
 
         inherited = evaluate(self.workspace, base, report, minimum=Decimal("55"))
         self.assertEqual(inherited.branch_minimum, Decimal("55"))
         self.assertEqual(inherited.branch_status, "passed")
 
-    def test_just_below_custom_branch_boundary_fails(self):
+    def test_just_below_current_branch_boundary_fails(self):
         base = self._commit_base()
         self._write_source()
         report = self._write_report([(1, True, 46, 54), (2, True, 0, 0), (3, True, 0, 0)])
-        result = evaluate(self.workspace, base, report, minimum=Decimal("80"), branch_minimum=Decimal("55"))
+        result = evaluate(self.workspace, base, report, minimum=Decimal("55"), branch_minimum=Decimal("55"))
         self.assertEqual(result.branch_total, 100)
         self.assertEqual(result.branch_covered, 54)
         self.assertEqual(result.branch_status, "failed")
@@ -107,8 +106,8 @@ class NewCodeCoverageTest(unittest.TestCase):
             "class Thing {\n  int value() { return 1; }\n  int changed() { return 2; }\n}\n",
             encoding="utf-8",
         )
-        report = self._write_report([(1, True, 0, 20), (2, False, 0, 0), (3, True, 0, 0)])
-        result = evaluate(self.workspace, base, report, minimum=Decimal("80"), branch_minimum=Decimal("55"))
+        report = self._write_report([(1, True, 0, 20), (2, False, 0, 0), (3, False, 0, 0)])
+        result = evaluate(self.workspace, base, report, minimum=Decimal("55"), branch_minimum=Decimal("55"))
         self.assertEqual(result.line_status, "failed")
         self.assertEqual(result.branch_status, "passed")
         self.assertFalse(result.passed)
@@ -170,6 +169,29 @@ class NewCodeCoverageTest(unittest.TestCase):
         result = evaluate(self.workspace, base, report)
         self.assertEqual(result.changed_files, ())
         self.assertEqual(result.executable_lines, 0)
+
+    def test_untracked_source_with_windows_line_endings_matches_tree_baseline(self):
+        source = self._write_source()
+        base = self._commit_base()
+        subprocess.run(["git", "rm", "--cached", "-q", source.relative_to(self.workspace).as_posix()], cwd=self.workspace, check=True)
+        source.write_bytes(source.read_bytes().replace(b"\r\n", b"\n").replace(b"\n", b"\r\n"))
+        report = self._write_report([(1, True, 0, 0), (2, True, 0, 0), (3, True, 0, 0)])
+        result = evaluate(self.workspace, base, report)
+        self.assertEqual(result.changed_files, ())
+        self.assertEqual(result.executable_lines, 0)
+
+    def test_untracked_source_with_changed_content_and_windows_line_endings_is_included(self):
+        source = self._write_source()
+        base = self._commit_base()
+        subprocess.run(["git", "rm", "--cached", "-q", source.relative_to(self.workspace).as_posix()], cwd=self.workspace, check=True)
+        source.write_bytes(
+            b"class Thing {\r\n  int value() { return 2; }\r\n}\r\n"
+        )
+        report = self._write_report([(1, True, 0, 0), (2, True, 0, 0), (3, True, 0, 0)])
+        result = evaluate(self.workspace, base, report)
+        self.assertEqual([item.path for item in result.changed_files], [source.relative_to(self.workspace).as_posix()])
+        self.assertEqual(result.changed_files[0].line_numbers, frozenset({2}))
+        self.assertEqual(result.executable_lines, 1)
 
     def test_source_path_mismatch_fails_closed(self):
         self._write_source()

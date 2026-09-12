@@ -1,5 +1,9 @@
 # Business logic improvement plan — 2026-09-08
 
+This historical plan records the former 80% coverage policy and its measured
+results. The current active policy is 55% line and 55% branch coverage; see
+`AGENTS.md`. Historical thresholds and evidence below remain unchanged.
+
 ## Objective and ownership
 
 Implement the six priorities in BUSINESS-LOGIC-COVERAGE-AUDIT-20260908.md. Implementation is delegated to gpt-5.6-luna with xhigh reasoning. The primary agent plans, integrates, independently reviews the completed implementation, and verifies the final result. Preserve all existing working-tree changes; do not commit, push, deploy, tune strategy thresholds, or run market research as part of this task.

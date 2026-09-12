@@ -1,0 +1,53 @@
+{
+  "scope": "ENGINEERING_VERIFICATION_AND_PREFIX_DEVELOPMENT",
+  "qualification_status": "BLOCKED_RESOURCE",
+  "source_commit": "397e57e8842d1d57c297ad2b31f506b2e6676cef",
+  "reviewed_base": "966b2758ff9e5e499c63d301e8f46bbbe0c423f7",
+  "files": [
+    {
+      "path": "final-test-counts.json",
+      "bytes": 68,
+      "byte_sha256": "7cd2225f7404ff3609bbb346a5bb5543441cad531f69a4571bcde5123a569115"
+    },
+    {
+      "path": "final-coverage.json",
+      "bytes": 22455,
+      "byte_sha256": "e8a673b5408f28e7a71793f7d6407073e56d883ccb5a9bd41a4bdb524ddafc97"
+    },
+    {
+      "path": "final-prefix-audit.json",
+      "bytes": 2524,
+      "byte_sha256": "375ed530871c2347543c487906fc8cd3a5930c13b3db611dd71a9192b94bc0cb"
+    },
+    {
+      "path": "actual-producer-geometry-verification.json",
+      "bytes": 1029,
+      "byte_sha256": "f65cac946e4b6a0732b3d6ce30f422b198cb3a2fb6d24812760af7b7bbc2e1d2"
+    },
+    {
+      "path": "final-package/build-identity.json",
+      "bytes": 1130,
+      "byte_sha256": "a40488d2cf7343031449dadfdbed711779b18b837a5f24561555e4ff8b8fa031"
+    },
+    {
+      "path": "final-package/profile.json",
+      "bytes": 1746,
+      "byte_sha256": "4b1b7fb2254b73c91c57fe3ceebfa5d989cb864e662260ded131f681bd12c13c"
+    },
+    {
+      "path": "final-package/plan.json",
+      "bytes": 40073,
+      "byte_sha256": "3ced6a7d6d293810c7b49ebeafc71353033fc8603b070ad9543b94d3f68e63c6"
+    },
+    {
+      "path": "final-package/preflight-full.json",
+      "bytes": 4031,
+      "byte_sha256": "e3b1f688c3978e3eb222c76ca8a062b770f43f8376f06afddc722b7f8b7164dd"
+    },
+    {
+      "path": "external-archive.json",
+      "bytes": 340,
+      "byte_sha256": "c25c033866b2942d1f64bb962331ef120baaa313e2de0686aa289410dc471789"
+    }
+  ]
+}
