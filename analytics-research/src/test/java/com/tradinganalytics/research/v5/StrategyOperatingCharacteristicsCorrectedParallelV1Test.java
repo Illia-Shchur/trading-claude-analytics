@@ -56,6 +56,40 @@ final class StrategyOperatingCharacteristicsCorrectedParallelV1Test {
     }
 
     @Test
+    void correctedWorkerRowOwnershipPreservesArtifactAndDetachedHelperContract() throws Exception {
+        String runId = "owned-row-parity-test";
+        StrategyOperatingCharacteristicsParallelV1.Slot slot =
+                new StrategyOperatingCharacteristicsParallelV1.Slot(
+                        "a".repeat(64), "FULL", "PLANTED_EDGE", 0.02, 0, 920200000L, 0);
+        ObjectNode raw = correctedWorkerRawResult(slot, 10);
+        ObjectNode expected = correctedWorkerArtifact(slot, raw, runId);
+        ObjectNode identity = (ObjectNode) expected.path("executor_identity").deepCopy();
+        ObjectNode detachedRow = (ObjectNode) expected.path("row").deepCopy();
+        ObjectNode detached = StrategyOperatingCharacteristicsParallelV1.correctedSlotArtifactForTest(
+                slot, 1, detachedRow, identity, runId, false);
+        ObjectNode ownedRow = (ObjectNode) expected.path("row").deepCopy();
+        ObjectNode owned = StrategyOperatingCharacteristicsParallelV1.correctedSlotArtifactForTest(
+                slot, 1, ownedRow, identity, runId, true);
+
+        byte[] detachedBytes = JsonHashes.mapper().writeValueAsBytes(detached);
+        byte[] ownedBytes = JsonHashes.mapper().writeValueAsBytes(owned);
+        assertThat(ownedBytes).containsExactly(detachedBytes);
+        assertThat(detached).isEqualTo(expected);
+        assertThat(owned).isEqualTo(expected);
+        assertThat(owned.get("row")).isSameAs(ownedRow);
+        assertThat(detached.path("portable_economic_sha256").asText())
+                .isEqualTo(expected.path("portable_economic_sha256").asText());
+        assertThat(detached.path("row").path("economic_semantic_sha256").asText())
+                .isEqualTo(expected.path("row").path("economic_semantic_sha256").asText());
+        assertThat(detached.path("content_sha256").asText()).isEqualTo(JsonHashes.ownHashStreaming(detached));
+        assertThat(owned.path("content_sha256").asText()).isEqualTo(JsonHashes.ownHashStreaming(owned));
+
+        ((ObjectNode) detachedRow.path("raw_evaluator_result").path("metrics")).put("mutated_after_build", true);
+        assertThat(JsonHashes.mapper().writeValueAsBytes(detached)).containsExactly(detachedBytes);
+        assertThat(detached.path("content_sha256").asText()).isEqualTo(JsonHashes.ownHashStreaming(detached));
+    }
+
+    @Test
     void correctedPreflightPreservesExactGeometryAndUsesCorrectedBinding() {
         ObjectNode profile = profile(1, resourceProbe(28, 32L * GIB, 256L * GIB));
         ObjectNode plan = correctedPlan(1, profile);

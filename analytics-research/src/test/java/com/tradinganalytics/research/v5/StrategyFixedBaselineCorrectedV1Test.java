@@ -94,6 +94,43 @@ final class StrategyFixedBaselineCorrectedV1Test {
     }
 
     @Test
+    void selectivelyRebuiltBranchesRetainDeepCopyIsolation() {
+        ObjectNode frozen = frozen(book(1000, 1000), book(1000, 1000));
+        ObjectNode portfolio = (ObjectNode) frozen.path("portfolio");
+        portfolio.putArray("combined_equity_curve").addObject()
+                .putArray("large_retired_branch").addObject().put("value", "old");
+        portfolio.putObject("corrected_metrics").putObject("old_projection")
+                .putArray("nested").addObject().put("value", "old");
+        portfolio.putObject("retained_metadata").putArray("nested").addObject().put("value", "source");
+        frozen.putObject("retained_evidence").putArray("nested").addObject().put("value", "source");
+        rehash(frozen);
+        ObjectNode before = frozen.deepCopy();
+
+        ObjectNode corrected = correctForTest(frozen);
+
+        assertThat(frozen).isEqualTo(before);
+        assertThat(corrected.path("portfolio").path("retained_metadata").path("nested").get(0)
+                .path("value").asText()).isEqualTo("source");
+        assertThat(corrected.path("portfolio").path("combined_equity_curve").findValue("large_retired_branch"))
+                .isNull();
+
+        ((ObjectNode) corrected.path("portfolio").path("retained_metadata").path("nested").get(0))
+                .put("value", "result mutation");
+        ((ObjectNode) corrected.path("retained_evidence").path("nested").get(0))
+                .put("value", "result mutation");
+        assertThat(frozen).isEqualTo(before);
+
+        ((ObjectNode) frozen.path("portfolio").path("retained_metadata").path("nested").get(0))
+                .put("value", "source mutation");
+        ((ObjectNode) frozen.path("retained_evidence").path("nested").get(0))
+                .put("value", "source mutation");
+        assertThat(corrected.path("portfolio").path("retained_metadata").path("nested").get(0)
+                .path("value").asText()).isEqualTo("result mutation");
+        assertThat(corrected.path("retained_evidence").path("nested").get(0)
+                .path("value").asText()).isEqualTo("result mutation");
+    }
+
+    @Test
     void acceptsEquivalentInstantFormsAndCanonicalizesCorrectionCurve() {
         ObjectNode trade = trade("instant", "2021-01-01T00:00:00+00:00",
                 "2021-01-01T00:01:00.000Z", 100, 110);

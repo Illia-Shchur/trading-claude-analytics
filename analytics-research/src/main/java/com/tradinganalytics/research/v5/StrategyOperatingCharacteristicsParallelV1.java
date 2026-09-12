@@ -707,7 +707,9 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
             }
             throw new ResourceViolation(error.getMessage());
         }
-        ObjectNode artifact = slotArtifact(slot, payload.path("attempt").asInt(1), row, identity, corrected, runId);
+        ObjectNode artifact = corrected
+                ? slotArtifactTakingOwnedCorrectedRow(slot, payload.path("attempt").asInt(1), row, identity, runId)
+                : slotArtifact(slot, payload.path("attempt").asInt(1), row, identity, false, runId);
         try {
             writeAtomic(output.toAbsolutePath().normalize(), artifact, false);
         } catch (IOException error) {
@@ -838,6 +840,25 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
 
     private static ObjectNode slotArtifact(Slot slot, int attempt, ObjectNode row, ObjectNode identity,
             boolean corrected, String runId) {
+        return slotArtifact(slot, attempt, row, identity, corrected, runId, false);
+    }
+
+    private static ObjectNode slotArtifactTakingOwnedCorrectedRow(Slot slot, int attempt, ObjectNode row,
+            ObjectNode identity, String runId) {
+        return slotArtifact(slot, attempt, row, identity, true, runId, true);
+    }
+
+    /** Package test seam for comparing ownership transfer with the detached helper contract. */
+    static ObjectNode correctedSlotArtifactForTest(Slot slot, int attempt, ObjectNode row,
+            ObjectNode identity, String runId, boolean takeOwnership) {
+        return slotArtifact(slot, attempt, row, identity, true, runId, takeOwnership);
+    }
+
+    private static ObjectNode slotArtifact(Slot slot, int attempt, ObjectNode row, ObjectNode identity,
+            boolean corrected, String runId, boolean takeOwnership) {
+        if (takeOwnership && !corrected) {
+            throw new IllegalArgumentException("only corrected worker artifacts may take row ownership");
+        }
         String transportStatus = "COMPLETE".equals(row.path("status").asText()) ? "COMPLETE" : "COMPUTE_INCOMPLETE";
         ObjectNode artifact = JsonHashes.mapper().createObjectNode()
                 .put("schema", corrected ? CORRECTED_SLOT_RESULT_SCHEMA : SLOT_RESULT_SCHEMA).put("version", 1)
@@ -848,7 +869,7 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
                 .put("fixed_evaluator", corrected ? CORRECTED_EVALUATOR : FIXED_EVALUATOR)
                 .put("promotion_eligible", false)
                 .put("activation_authorized", false).put("content_sha256", "");
-        artifact.set("row", row.deepCopy());
+        artifact.set("row", takeOwnership ? row : row.deepCopy());
         if (corrected) {
             artifact.put("accounting_version", StrategyFixedBaselinePortfolioCorrectionV1.ACCOUNTING_VERSION);
             if (runId != null && !runId.isBlank()) artifact.put("run_id", runId);

@@ -2,6 +2,7 @@ package com.tradinganalytics.research.v5;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.tradinganalytics.infrastructure.build.BuildIdentityService;
 import com.tradinganalytics.infrastructure.security.JsonHashes;
@@ -129,7 +130,10 @@ public final class StrategyFixedBaselineCorrectedV1 {
         ObjectNode correctedControl = StrategyFixedBaselinePortfolioCorrectionV1.correctLegacyBook(controlBook);
         ObjectNode correctedPortfolio = correctedPortfolio(sourcePortfolio, correctedEvent, correctedControl);
 
-        ObjectNode result = frozen.deepCopy();
+        // The portfolio is replaced below.  Keep its original key position
+        // while avoiding a full deep copy of the frozen portfolio that would
+        // immediately be discarded.
+        ObjectNode result = deepCopyWithReplacedSubtrees(frozen, Set.of("portfolio"));
         result.put("schema", RESULT_SCHEMA).put("version", VERSION)
                 .put("correction_status", "CORRECTED")
                 .put("accounting_version", ACCOUNTING_VERSION)
@@ -195,7 +199,10 @@ public final class StrategyFixedBaselineCorrectedV1 {
     }
 
     private static ObjectNode correctedPortfolio(ObjectNode source, ObjectNode event, ObjectNode control) {
-        ObjectNode portfolio = source.deepCopy();
+        // These portfolio branches are rebuilt below; leave placeholders in
+        // place so serialized field order matches the prior deep-copy path.
+        ObjectNode portfolio = deepCopyWithReplacedSubtrees(source,
+                Set.of("event_book", "control_book", "combined_equity_curve", "corrected_metrics"));
         portfolio.set("event_book", event);
         portfolio.set("control_book", control);
         double net = number(event, "net_pnl_usdt") + number(control, "net_pnl_usdt");
@@ -238,6 +245,13 @@ public final class StrategyFixedBaselineCorrectedV1 {
                 starting, ending, net, maxDrawdown);
         portfolio.set("corrected_metrics", correctedMetrics);
         return portfolio;
+    }
+
+    private static ObjectNode deepCopyWithReplacedSubtrees(ObjectNode source, Set<String> replacedFields) {
+        ObjectNode copy = JsonHashes.mapper().createObjectNode();
+        source.fields().forEachRemaining(field -> copy.set(field.getKey(),
+                replacedFields.contains(field.getKey()) ? NullNode.getInstance() : field.getValue().deepCopy()));
+        return copy;
     }
 
     private static ObjectNode correctedMetrics(ObjectNode event, ObjectNode control,
