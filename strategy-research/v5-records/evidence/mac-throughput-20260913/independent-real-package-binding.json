@@ -1,0 +1,116 @@
+{
+  "status": "PASS",
+  "workers_launched": 0,
+  "binding": {
+    "schema": "mac-throughput-package-binding/1",
+    "manifest_path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/throughput-search-20260913/candidate-package/manifest.json",
+    "manifest_sha256": "f9a87031a5442a07e25e913cdcfa8d20380e92399438aa33febf612e2c9f104f",
+    "executor_jar_sha256": "b8a34877f8d674c4c16d3e121759f9c7c3a62b0a563226fbe03c02b91b27e6d2",
+    "executor_source_sha256": "ca94e33f2a56b0a9a3b3f29005a3d1e722e2f5efdf044de2876fe9289858b376",
+    "plan_content_sha256": "5013683ff195e32b4d632a74f7583a79d6b5d5283729c21ab4112214958a06dd",
+    "profile_content_sha256": "7075212298798d1a2f7d59bf02e554e17439d7b66ee52355115146e43689b51a",
+    "executor_jar_bytes": 107287509,
+    "plan_file_sha256": "513bf5fb6e09095de7cb23df83e9feb80aaedc11f6625687bf08403bcea0a072",
+    "profile_file_sha256": "c0891eac113a43f701c860f296bbfd1958c6466fc96f85b7106b150d256898ff",
+    "core_input_files": {
+      "baseline": {
+        "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/strategy-research/definitions/fk-deleveraging-absorption/v002.json",
+        "sha256": "4ab073d4b62c77410cca2456066fbae70b93b19ebf93d63922204e1b3548fc1a",
+        "bytes": 7937
+      },
+      "controls": {
+        "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/strategy-research/experiments/fk-deleveraging-baseline-v002/controls.json",
+        "sha256": "8170e98fcf90c30aea67a4f2a4503d85817f158377dd449c5a3ed9b0b0793216",
+        "bytes": 2094
+      },
+      "experiment": {
+        "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/strategy-research/experiments/fk-deleveraging-baseline-v002/experiment.json",
+        "sha256": "805d34f09c7d94cbf9be3efdf5277f384583dbf1646feab2140c443083aeed1f",
+        "bytes": 1530
+      }
+    },
+    "supporting_dependency_receipts": [
+      {
+        "relative_path": "strategy-research/experiments/fk-deleveraging-baseline-v002/portfolio-policy-v001.json",
+        "bytes": 621,
+        "byte_sha256": "8b60d04ff83fd9f10c41612bbb6c8bc233d458d92dff8ff3de20f6648d2512aa",
+        "content_sha256": "f3dee179840c7ebb4445915d6b83bbb697d47ca32bc3e53b3e7ceb2a66387390"
+      },
+      {
+        "relative_path": "strategy-research/experiments/fk-deleveraging-baseline-v002/lifecycle-timing-v001.json",
+        "bytes": 758,
+        "byte_sha256": "161913446d290b9bd6fccaa352420c578d1ea6923fd9739fdc36ec5630f493a0",
+        "content_sha256": "c08f9b4e2fcdf1252bb6ba403996254f442111e7628c966df546deff21a2e010"
+      }
+    ],
+    "declared_source_identity_matches_plan": true,
+    "planned_full_slots": [
+      {
+        "slot_id": "FULL|NO_EDGE|0|0|920000000",
+        "mode": "FULL",
+        "scenario": "NO_EDGE",
+        "effect_size": 0.0,
+        "replication": 0,
+        "seed": 920000000
+      },
+      {
+        "slot_id": "FULL|NO_EDGE|0|1|920000001",
+        "mode": "FULL",
+        "scenario": "NO_EDGE",
+        "effect_size": 0.0,
+        "replication": 1,
+        "seed": 920000001
+      },
+      {
+        "slot_id": "FULL|PLANTED_EDGE|0|0|920100000",
+        "mode": "FULL",
+        "scenario": "PLANTED_EDGE",
+        "effect_size": 0.0,
+        "replication": 0,
+        "seed": 920100000
+      },
+      {
+        "slot_id": "FULL|PLANTED_EDGE|0|1|920100001",
+        "mode": "FULL",
+        "scenario": "PLANTED_EDGE",
+        "effect_size": 0.0,
+        "replication": 1,
+        "seed": 920100001
+      },
+      {
+        "slot_id": "FULL|PLANTED_EDGE|0.02|0|920200000",
+        "mode": "FULL",
+        "scenario": "PLANTED_EDGE",
+        "effect_size": 0.02,
+        "replication": 0,
+        "seed": 920200000
+      },
+      {
+        "slot_id": "FULL|PLANTED_EDGE|0.02|1|920200001",
+        "mode": "FULL",
+        "scenario": "PLANTED_EDGE",
+        "effect_size": 0.02,
+        "replication": 1,
+        "seed": 920200001
+      },
+      {
+        "slot_id": "FULL|PLANTED_EDGE|0.04|0|920300000",
+        "mode": "FULL",
+        "scenario": "PLANTED_EDGE",
+        "effect_size": 0.04,
+        "replication": 0,
+        "seed": 920300000
+      },
+      {
+        "slot_id": "FULL|PLANTED_EDGE|0.04|1|920300001",
+        "mode": "FULL",
+        "scenario": "PLANTED_EDGE",
+        "effect_size": 0.04,
+        "replication": 1,
+        "seed": 920300001
+      }
+    ],
+    "expected_slot_count": 8,
+    "scope": "ENGINEERING_ONLY_NOT_QUALIFICATION"
+  }
+}

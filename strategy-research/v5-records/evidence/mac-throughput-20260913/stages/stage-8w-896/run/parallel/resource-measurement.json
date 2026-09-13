@@ -1,0 +1,10 @@
+{
+  "aggregate_rss_samples": 2426,
+  "launch_heap_mib": 896,
+  "max_aggregate_worker_rss_bytes": 8387510272,
+  "max_run_disk_bytes": 31339706441,
+  "max_worker_rss_bytes": 1135673344,
+  "minimum_free_disk_reserve_bytes": 10737418240,
+  "rss_is_observational": true,
+  "run_disk_limit_bytes": 68719476736
+}

@@ -1,0 +1,43 @@
+{
+  "aggregate_worker_gc_pause_fraction": 0.23314795590533807,
+  "batch_finished_at_epoch_ns": 1789318164883508000,
+  "batch_finished_at_utc": "2026-09-13T16:49:24.883Z",
+  "batch_finished_monotonic_ns": 8172081095083,
+  "batch_started_at_epoch_ns": 1789315649074930000,
+  "batch_started_at_utc": "2026-09-13T16:07:29.074Z",
+  "batch_started_monotonic_ns": 5656300813875,
+  "clock_elapsed_delta_seconds": 0.028296792,
+  "full_gc_count_sum_workers": 0,
+  "gc_pause_seconds_sum_workers": 4692.030287000004,
+  "gc_summary": "gc-summary.json",
+  "heap_mib": 1024,
+  "planned_worker_count": 8,
+  "scope": "ENGINEERING_ONLY_MAC_FULL_GEOMETRY_DEVELOPMENT",
+  "slot_states": {
+    "FULL|NO_EDGE|0|0|920000000": "CENSORED",
+    "FULL|NO_EDGE|0|1|920000001": "CENSORED",
+    "FULL|PLANTED_EDGE|0.02|0|920200000": "CENSORED",
+    "FULL|PLANTED_EDGE|0.02|1|920200001": "CENSORED",
+    "FULL|PLANTED_EDGE|0.04|0|920300000": "CENSORED",
+    "FULL|PLANTED_EDGE|0.04|1|920300001": "CENSORED",
+    "FULL|PLANTED_EDGE|0|0|920100000": "CENSORED",
+    "FULL|PLANTED_EDGE|0|1|920100001": "CENSORED"
+  },
+  "stage_name": "stage-8w-1024",
+  "status": "CENSORED",
+  "timing_integrity": "PASS",
+  "worker_batch_utc_elapsed_seconds": 2515.808578,
+  "worker_batch_wall_seconds": 2515.780281208,
+  "worker_completion_count": 0,
+  "worker_pause_fractions": {
+    "FULL|NO_EDGE|0|0|920000000": 0.23627038859432528,
+    "FULL|NO_EDGE|0|1|920000001": 0.22615485091675638,
+    "FULL|PLANTED_EDGE|0.02|0|920200000": 0.23704017269394362,
+    "FULL|PLANTED_EDGE|0.02|1|920200001": 0.23975242187727713,
+    "FULL|PLANTED_EDGE|0.04|0|920300000": 0.23553345987289026,
+    "FULL|PLANTED_EDGE|0.04|1|920300001": 0.22526457570941466,
+    "FULL|PLANTED_EDGE|0|0|920100000": 0.2296664801976473,
+    "FULL|PLANTED_EDGE|0|1|920100001": 0.2355002457300152
+  },
+  "workers": 8
+}

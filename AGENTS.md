@@ -66,6 +66,28 @@ Spring commands that make report numbers computed instead of narrated. The appli
 - `./mvnw -q -pl analytics-core test` — Java regression vectors; run before calibrations and after any deterministic rubric-helper change. A SKILL band change and its Java helper plus test change land in the same commit.
 - **New production-code coverage gate:** CI runs a clean reactor build, publishes `analytics-coverage/target/site/jacoco-aggregate` (HTML/XML), and applies `python3 tools/check_new_code_coverage.py --base <reviewed-base> --report analytics-coverage/target/site/jacoco-aggregate/jacoco.xml`. Added or modified executable Java lines under `src/main/java` require at least 55% line coverage and, when changed lines contain branches, at least 55% branch coverage. Exact 55% passes; a zero denominator is not applicable. The checker accepts an independently configured branch floor, defaulting to the line floor, while the active CI invocation sets both floors explicitly to 55%; there is no automatic migration exception. The former PR #10 backfill's 80% line/55% branch rule is historical evidence only. Missing or malformed aggregate data, an unresolved base, and source-path mismatches fail closed. Documentation-only and test-source changes are outside this denominator. For local verification, first run `./mvnw --batch-mode --no-transfer-progress clean install`, then the command above with the explicit merge-base/tree baseline.
 
+## Local Mac FULL-development throughput default
+
+For the bounded eight-seed Mac throughput harness only, record 6 outer workers
+with `-Xmx1024m -XX:ActiveProcessorCount=1 -XX:+UseG1GC` as the local
+recommendation. The fresh 4-worker/1024 MiB matched comparison passed strict
+validation and independent replay and confirmed no material batch-time
+difference. This records a tested harness setting; it does not change the
+production execution profile or resource gate. Six is not claimed to be
+materially faster. Keep 4×1024 MiB as an equally fast alternative. This
+preference reflects the user's preference for more workers, not a RAM or
+Mac-usability tie-break.
+
+The 8-worker search stopped lowering heap at 896 MiB after both 8-worker
+attempts were censored and the 896 MiB run showed a GC cliff. 1 GiB was the
+lowest tested heap with a fully validated eight-job batch; this is not an
+absolute minimum claim. Full-GC counts,
+pause time, memory pressure, compression, and swap are diagnostics, never
+automatic rejection criteria; sampled RSS is observational. These local
+throughput measurements do not change the production resource gate, execution
+profile, held-out inventory, or qualification requirements. See
+`docs/MAC-WORKER-THROUGHPUT-20260913.md` for stage evidence and limits.
+
 ## Output Convention
 
 Reports are saved as markdown to:

@@ -1,0 +1,9 @@
+{
+  "archive": "/Users/eternal/Desktop/Trading Claude Analytics/.report-run/mac-full-development-20260912.tar.gz",
+  "sha256": "e5236c2993cf83029426746e36ce269597c67ede0a40aa21e1f5bd64f89c56ac",
+  "restored_to": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/recovered-baseline",
+  "restored_at_utc": "2026-09-13T14:38:05.916594+00:00",
+  "verification_subtree_relocated_to": "/Users/eternal/.codex/artifacts/trading-pr13-performance/baseline-verification",
+  "reason": "Restored historical JaCoCo HTML JavaScript triggers checkout-wide retired-JavaScript inventory test; kept intact outside checkout.",
+  "updated_at_utc": "2026-09-13T14:50:22.658071+00:00"
+}

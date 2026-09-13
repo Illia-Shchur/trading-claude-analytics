@@ -1,0 +1,43 @@
+{
+  "aggregate_worker_gc_pause_fraction": 0.16459824172935358,
+  "batch_finished_at_epoch_ns": 1789326014766118000,
+  "batch_finished_at_utc": "2026-09-13T19:00:14.766Z",
+  "batch_finished_monotonic_ns": 16021984680166,
+  "batch_started_at_epoch_ns": 1789323944638253000,
+  "batch_started_at_utc": "2026-09-13T18:25:44.638Z",
+  "batch_started_monotonic_ns": 13951844672125,
+  "clock_elapsed_delta_seconds": -0.012143041,
+  "full_gc_count_sum_workers": 27,
+  "gc_pause_seconds_sum_workers": 1357.9739189999975,
+  "gc_summary": "gc-summary.json",
+  "heap_mib": 1024,
+  "planned_worker_count": 8,
+  "scope": "ENGINEERING_ONLY_MAC_FULL_GEOMETRY_DEVELOPMENT",
+  "slot_states": {
+    "FULL|NO_EDGE|0|0|920000000": "PUBLISHED_TEMPORARY",
+    "FULL|NO_EDGE|0|1|920000001": "PUBLISHED_TEMPORARY",
+    "FULL|PLANTED_EDGE|0.02|0|920200000": "PUBLISHED_TEMPORARY",
+    "FULL|PLANTED_EDGE|0.02|1|920200001": "PUBLISHED_TEMPORARY",
+    "FULL|PLANTED_EDGE|0.04|0|920300000": "PUBLISHED_TEMPORARY",
+    "FULL|PLANTED_EDGE|0.04|1|920300001": "PUBLISHED_TEMPORARY",
+    "FULL|PLANTED_EDGE|0|0|920100000": "PUBLISHED_TEMPORARY",
+    "FULL|PLANTED_EDGE|0|1|920100001": "PUBLISHED_TEMPORARY"
+  },
+  "stage_name": "stage-4w-1024-repeat-1",
+  "status": "WORKERS_COMPLETE",
+  "timing_integrity": "PASS",
+  "worker_batch_utc_elapsed_seconds": 2070.127865,
+  "worker_batch_wall_seconds": 2070.140008041,
+  "worker_completion_count": 8,
+  "worker_pause_fractions": {
+    "FULL|NO_EDGE|0|0|920000000": 0.16423437229775772,
+    "FULL|NO_EDGE|0|1|920000001": 0.16621569794376417,
+    "FULL|PLANTED_EDGE|0.02|0|920200000": 0.1645523578862407,
+    "FULL|PLANTED_EDGE|0.02|1|920200001": 0.16318806735754607,
+    "FULL|PLANTED_EDGE|0.04|0|920300000": 0.16557621148322144,
+    "FULL|PLANTED_EDGE|0.04|1|920300001": 0.163873044388897,
+    "FULL|PLANTED_EDGE|0|0|920100000": 0.1642132129545403,
+    "FULL|PLANTED_EDGE|0|1|920100001": 0.1649409280353953
+  },
+  "workers": 4
+}

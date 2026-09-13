@@ -1,0 +1,9 @@
+{
+  "comparison_eligible": false,
+  "elapsed_seconds": 2521.402624291,
+  "runner_exit_code": 3,
+  "runner_manifest": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/throughput-search-20260913/stages/stage-8w-1024/run/manifest.json",
+  "schema": "mac-throughput-stage-result/1",
+  "stage_name": "stage-8w-1024",
+  "status": "CENSORED"
+}

@@ -1,0 +1,180 @@
+{
+  "conclusion_rule": "Report the selected tested configuration with measured alternatives; do not imply it is fastest or a global optimum.",
+  "eligibility_rule": "Only a complete PASS with strict validation and independent audit is validated. CENSORED runs are lower bounds, not complete timings or incumbents.",
+  "schema": "mac-throughput-derived-stage-summary/1",
+  "scope": "ENGINEERING_ONLY_NOT_QUALIFICATION",
+  "stage4_gc_note": "Use the hash-bound gc-diagnostic-correction.json for stage-4w-1024 GC totals. The original gc-summary.json, execution-records.json, and batch-metrics.json are included byte-exactly; their original GC counters reflect the padded-tag parser defect and are retained only as source evidence.",
+  "stage_results": [
+    {
+      "batch_seconds": 2094.070572292,
+      "comparison_eligible": true,
+      "completed_jobs": 8,
+      "elapsed_lower_bound_seconds": null,
+      "gc_diagnostic_source": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/throughput-search-20260913/stages/stage-4w-1024/gc-diagnostic-correction.json",
+      "gc_diagnostics": {
+        "aggregate_worker_pause_fraction": 0.16403620153579956,
+        "all_gc_pause_seconds_sum_workers": 1363.1452249999984,
+        "full_gc_count": 28,
+        "full_gc_pause_seconds": 26.278737,
+        "pause_count": 52824,
+        "worker_count": 8
+      },
+      "heap_mib": 1024,
+      "planned_jobs": 8,
+      "source_receipt_sha256": {
+        "batch_metrics": "6401f464324b4dc3bb0c2fd9c7e393ca943892f8dcd256529f549e151c9353ad",
+        "gc_summary_or_correction": "534a5b660b8faccf1405f8f3be5e7543155f618c34f97d0b5de11cfadd1c8f01",
+        "stage_result": "c91f650c4bf897a3c1adc5b54e9ef2525d2fc6c252db9004cb3f12d33e840020"
+      },
+      "stage_name": "stage-4w-1024",
+      "status": "PASS",
+      "timing_integrity": "PASS",
+      "validated": true,
+      "workers": 4
+    },
+    {
+      "batch_seconds": 2070.140008041,
+      "comparison_eligible": true,
+      "completed_jobs": 8,
+      "elapsed_lower_bound_seconds": null,
+      "gc_diagnostic_source": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/throughput-search-20260913/stages/stage-4w-1024-repeat-1/run/parallel/gc-summary.json",
+      "gc_diagnostics": {
+        "aggregate_worker_pause_fraction": 0.16459824172935358,
+        "all_gc_pause_seconds_sum_workers": 1357.9739189999975,
+        "full_gc_count": 27,
+        "full_gc_pause_seconds": 25.677565,
+        "parsed_after_all_workers_stopped": true,
+        "per_worker_pause_fraction": {
+          "FULL|NO_EDGE|0|0|920000000": 0.16423437229775772,
+          "FULL|NO_EDGE|0|1|920000001": 0.16621569794376417,
+          "FULL|PLANTED_EDGE|0.02|0|920200000": 0.1645523578862407,
+          "FULL|PLANTED_EDGE|0.02|1|920200001": 0.16318806735754607,
+          "FULL|PLANTED_EDGE|0.04|0|920300000": 0.16557621148322144,
+          "FULL|PLANTED_EDGE|0.04|1|920300001": 0.163873044388897,
+          "FULL|PLANTED_EDGE|0|0|920100000": 0.1642132129545403,
+          "FULL|PLANTED_EDGE|0|1|920100001": 0.1649409280353953
+        }
+      },
+      "heap_mib": 1024,
+      "planned_jobs": 8,
+      "source_receipt_sha256": {
+        "batch_metrics": "e0fde85848a5559f24a88deb60382e804f81c0c81d1691b553bda5e31b3c05e6",
+        "gc_summary_or_correction": "8b55fbd46275e90ca422dff467c20bd50d46e37fe80907a4b393685bb021569b",
+        "stage_result": "ba9542a4037230a28e1d8eca02233ce73d2cfd5e078ec0a67bcc71ba76b94b15"
+      },
+      "stage_name": "stage-4w-1024-repeat-1",
+      "status": "PASS",
+      "timing_integrity": "PASS",
+      "validated": true,
+      "workers": 4
+    },
+    {
+      "batch_seconds": 2087.46835275,
+      "comparison_eligible": true,
+      "completed_jobs": 8,
+      "elapsed_lower_bound_seconds": null,
+      "gc_diagnostic_source": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/throughput-search-20260913/stages/stage-6w-1024/run/parallel/gc-summary.json",
+      "gc_diagnostics": {
+        "aggregate_worker_pause_fraction": 0.16411196330174566,
+        "all_gc_pause_seconds_sum_workers": 1409.4042019999997,
+        "full_gc_count": 23,
+        "full_gc_pause_seconds": 25.658639,
+        "parsed_after_all_workers_stopped": true,
+        "per_worker_pause_fraction": {
+          "FULL|NO_EDGE|0|0|920000000": 0.16047250300714644,
+          "FULL|NO_EDGE|0|1|920000001": 0.16494143994412977,
+          "FULL|PLANTED_EDGE|0.02|0|920200000": 0.16472138767088232,
+          "FULL|PLANTED_EDGE|0.02|1|920200001": 0.16485288575665538,
+          "FULL|PLANTED_EDGE|0.04|0|920300000": 0.16640230785306365,
+          "FULL|PLANTED_EDGE|0.04|1|920300001": 0.1669686868154192,
+          "FULL|PLANTED_EDGE|0|0|920100000": 0.16298523889975186,
+          "FULL|PLANTED_EDGE|0|1|920100001": 0.16209539427742603
+        }
+      },
+      "heap_mib": 1024,
+      "planned_jobs": 8,
+      "source_receipt_sha256": {
+        "batch_metrics": "108e85c6785869631adea765d86e83b981d75fcdb4058207f640a69b088a1ef4",
+        "gc_summary_or_correction": "afd8c03b850cd44f092c57cb036e76730efa4a99e256da7564807f6c4dbc6a19",
+        "stage_result": "2171f7a19e227b93ad9be46f99452a82153adc386156bdc9fe35a8aa569b0ba6"
+      },
+      "stage_name": "stage-6w-1024",
+      "status": "PASS",
+      "timing_integrity": "PASS",
+      "validated": true,
+      "workers": 6
+    },
+    {
+      "batch_seconds": null,
+      "comparison_eligible": false,
+      "completed_jobs": 0,
+      "elapsed_lower_bound_seconds": 2515.780281208,
+      "gc_diagnostic_source": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/throughput-search-20260913/stages/stage-8w-1024/run/parallel/gc-summary.json",
+      "gc_diagnostics": {
+        "aggregate_worker_pause_fraction": 0.23314795590533807,
+        "all_gc_pause_seconds_sum_workers": 4692.030287000004,
+        "full_gc_count": 0,
+        "full_gc_pause_seconds": 0.0,
+        "parsed_after_all_workers_stopped": true,
+        "per_worker_pause_fraction": {
+          "FULL|NO_EDGE|0|0|920000000": 0.23627038859432528,
+          "FULL|NO_EDGE|0|1|920000001": 0.22615485091675638,
+          "FULL|PLANTED_EDGE|0.02|0|920200000": 0.23704017269394362,
+          "FULL|PLANTED_EDGE|0.02|1|920200001": 0.23975242187727713,
+          "FULL|PLANTED_EDGE|0.04|0|920300000": 0.23553345987289026,
+          "FULL|PLANTED_EDGE|0.04|1|920300001": 0.22526457570941466,
+          "FULL|PLANTED_EDGE|0|0|920100000": 0.2296664801976473,
+          "FULL|PLANTED_EDGE|0|1|920100001": 0.2355002457300152
+        }
+      },
+      "heap_mib": 1024,
+      "planned_jobs": 8,
+      "source_receipt_sha256": {
+        "batch_metrics": "d1f8530f046a518fe239f7c7003b3b6f18ed0dff00a9d3115dff38145655bc7d",
+        "gc_summary_or_correction": "0cd57c795a1496771324c5349567f08dc0891a152b49d5bdd13c70464428d38f",
+        "stage_result": "23787a37c061d0de0035dbb046425f6360b8f168e5a3b56e69e9096d516a6980"
+      },
+      "stage_name": "stage-8w-1024",
+      "status": "CENSORED",
+      "timing_integrity": "PASS",
+      "validated": false,
+      "workers": 8
+    },
+    {
+      "batch_seconds": null,
+      "comparison_eligible": false,
+      "completed_jobs": 6,
+      "elapsed_lower_bound_seconds": 2518.287601292,
+      "gc_diagnostic_source": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/throughput-search-20260913/stages/stage-8w-896/run/parallel/gc-summary.json",
+      "gc_diagnostics": {
+        "aggregate_worker_pause_fraction": 0.32298938650991393,
+        "all_gc_pause_seconds_sum_workers": 5483.699471000001,
+        "full_gc_count": 1579,
+        "full_gc_pause_seconds": 2607.834733,
+        "parsed_after_all_workers_stopped": true,
+        "per_worker_pause_fraction": {
+          "FULL|NO_EDGE|0|0|920000000": 0.2599210725624605,
+          "FULL|NO_EDGE|0|1|920000001": 0.28319623554791185,
+          "FULL|PLANTED_EDGE|0.02|0|920200000": 0.2584213377834683,
+          "FULL|PLANTED_EDGE|0.02|1|920200001": 0.2977421928930756,
+          "FULL|PLANTED_EDGE|0.04|0|920300000": 0.4527648477679264,
+          "FULL|PLANTED_EDGE|0.04|1|920300001": 0.43188856127417,
+          "FULL|PLANTED_EDGE|0|0|920100000": 0.27584892472032324,
+          "FULL|PLANTED_EDGE|0|1|920100001": 0.2588087023981283
+        }
+      },
+      "heap_mib": 896,
+      "planned_jobs": 8,
+      "source_receipt_sha256": {
+        "batch_metrics": "8c4b00165265aea7bbf4e0aa45c560291119c30491e191911a18028366f96602",
+        "gc_summary_or_correction": "1dcddbf2275ada796848f21dce8c26845157fd937836ad8bad4b2a7123abe140",
+        "stage_result": "838ae7b5459fbf15e0594a1c16fc1d656650fa19e892c92fba5277268818743c"
+      },
+      "stage_name": "stage-8w-896",
+      "status": "CENSORED",
+      "timing_integrity": "PASS",
+      "validated": false,
+      "workers": 8
+    }
+  ]
+}

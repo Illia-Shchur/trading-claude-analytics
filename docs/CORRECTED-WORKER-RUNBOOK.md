@@ -242,3 +242,30 @@ ledger. A qualification measurement must cover an entirely fresh worker wave;
 reusing completed artifacts during resume cannot supply missing launch-time
 resource evidence. If a run cannot meet that requirement, retain the interrupted
 evidence and start a fresh declaration and run instead of editing its ledger.
+
+## Local Mac throughput study
+
+The standalone bounded eight-seed Mac throughput harness is an engineering
+measurement separate from the profile-based workflow above. It does not change
+profile admission, the FULL resource gate, the held-out inventory, or
+qualification requirements. See the
+[2026-09-13 throughput study](MAC-WORKER-THROUGHPUT-20260913.md) for the frozen
+package, stage receipts, and limitations.
+
+For that harness on the tested Mac, record 6 outer workers with
+`-Xmx1024m -XX:ActiveProcessorCount=1 -XX:+UseG1GC` as the local recommendation.
+The fresh 4-worker/1024 MiB comparison passed strict validation and independent
+replay; the completed 4-worker and 6-worker batches were close, with no
+material six-worker speedup established. Keep 4×1024 MiB as an equally fast
+alternative. Choosing six reflects the user's
+preference for more workers, not a memory or usability trade-off.
+
+The 8-worker search stopped heap reductions at 896 MiB: both 8-worker attempts
+were censored, and the 896 MiB run had a diagnostic GC cliff. 1 GiB was the
+lowest tested heap with a fully validated eight-job batch, not an absolute
+minimum. Censored runs are
+lower bounds, not completed timings or validated candidates. GC counts, pause
+time, pressure, compression, and swap do not automatically fail a run; RSS is
+observational. The 4-worker stage's original GC summary missed padded HotSpot
+tags, so use its separate corrected GC supplement and retain the original
+stage receipts byte-for-byte.

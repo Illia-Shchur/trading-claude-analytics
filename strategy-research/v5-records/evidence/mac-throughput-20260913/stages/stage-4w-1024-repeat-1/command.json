@@ -1,0 +1,28 @@
+{
+  "argv": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/throughput-search-20260913/harness/run_mac_full_development.py",
+    "--repo",
+    "/Users/eternal/.codex/worktrees/trading-pr13-performance",
+    "--run",
+    "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/throughput-search-20260913/stages/stage-4w-1024-repeat-1/run",
+    "--package",
+    "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/throughput-search-20260913/candidate-package",
+    "--manifest",
+    "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/throughput-search-20260913/candidate-package/manifest.json",
+    "--wave",
+    "parallel",
+    "--workers",
+    "4",
+    "--heap-mib",
+    "1024",
+    "--active-processors",
+    "1",
+    "--stage-name",
+    "stage-4w-1024-repeat-1",
+    "--java",
+    "/opt/homebrew/Cellar/openjdk@21/21.0.11/libexec/openjdk.jdk/Contents/Home/bin/java",
+    "--max-batch-seconds",
+    "2504.9620233"
+  ]
+}

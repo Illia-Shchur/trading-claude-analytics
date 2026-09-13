@@ -1,0 +1,131 @@
+{
+  "active_processors": 1,
+  "clock_elapsed_delta_seconds": -0.012143041,
+  "comparison_eligible": true,
+  "complete_eight_seed_batch": true,
+  "gc_summary": "run/parallel/gc-summary.json",
+  "heap_mib": 1024,
+  "host_telemetry": "run/parallel/host-telemetry.jsonl",
+  "independent_audit": "independent-audit.json",
+  "independent_frozen_audit": "PASS",
+  "normalization_applied_to_raw_artifacts": false,
+  "normalization_policy": [
+    "/row/raw_evaluator_result/physical_input_sha256",
+    "/row/raw_evaluator_result/corrected_input_binding/physical_input_sha256",
+    "/row/raw_evaluator_result/physical_source_producer/plan_sha256"
+  ],
+  "normalized_economic_comparisons": {
+    "FULL|NO_EDGE|0|0|920000000": {
+      "candidate_normalized_economic_sha256": "4512d8e024e1d59a9b12716270774cc20143bbcdeeb70399b72492f6d17fe815",
+      "candidate_portable_economic_sha256_before": "87d986951fe2f7257a669870776db3793ae107e783e0c40c25a3d5598fda87ab",
+      "normalization_applied_in_memory_only": true,
+      "normalized_paths": [
+        "/row/raw_evaluator_result/physical_input_sha256",
+        "/row/raw_evaluator_result/corrected_input_binding/physical_input_sha256",
+        "/row/raw_evaluator_result/physical_source_producer/plan_sha256"
+      ],
+      "reference_economic_sha256": "4512d8e024e1d59a9b12716270774cc20143bbcdeeb70399b72492f6d17fe815",
+      "status": "PASS"
+    },
+    "FULL|NO_EDGE|0|1|920000001": {
+      "candidate_normalized_economic_sha256": "24b088944f4827d899d9c088a345498f6a486a5fd4563d5670da57aa66b83d71",
+      "candidate_portable_economic_sha256_before": "4d0105df9cccb8e233fe698284eb86fa92ff173c44bba2e17eb9a9d267fb7e3e",
+      "normalization_applied_in_memory_only": true,
+      "normalized_paths": [
+        "/row/raw_evaluator_result/physical_input_sha256",
+        "/row/raw_evaluator_result/corrected_input_binding/physical_input_sha256",
+        "/row/raw_evaluator_result/physical_source_producer/plan_sha256"
+      ],
+      "reference_economic_sha256": "24b088944f4827d899d9c088a345498f6a486a5fd4563d5670da57aa66b83d71",
+      "status": "PASS"
+    },
+    "FULL|PLANTED_EDGE|0.02|0|920200000": {
+      "candidate_normalized_economic_sha256": "2d79e91980d7e5df801be3655ba4819deb541876b77fa7eac1c913350a482fef",
+      "candidate_portable_economic_sha256_before": "b43e07d6b9d42876cea2a5f498cad33f604b35915b61f64d353d1a98b79dbff2",
+      "normalization_applied_in_memory_only": true,
+      "normalized_paths": [
+        "/row/raw_evaluator_result/physical_input_sha256",
+        "/row/raw_evaluator_result/corrected_input_binding/physical_input_sha256",
+        "/row/raw_evaluator_result/physical_source_producer/plan_sha256"
+      ],
+      "reference_economic_sha256": "2d79e91980d7e5df801be3655ba4819deb541876b77fa7eac1c913350a482fef",
+      "status": "PASS"
+    },
+    "FULL|PLANTED_EDGE|0.02|1|920200001": {
+      "candidate_normalized_economic_sha256": "ec10748cd9d32bd5e946ef6ee4e4eeab8253c1aeb75d2a892e5d8437de48d0d0",
+      "candidate_portable_economic_sha256_before": "fd7fdfab8b2a09c72f4927fe0caad444b1497b09298ee0c338f80327dc066985",
+      "normalization_applied_in_memory_only": true,
+      "normalized_paths": [
+        "/row/raw_evaluator_result/physical_input_sha256",
+        "/row/raw_evaluator_result/corrected_input_binding/physical_input_sha256",
+        "/row/raw_evaluator_result/physical_source_producer/plan_sha256"
+      ],
+      "reference_economic_sha256": "ec10748cd9d32bd5e946ef6ee4e4eeab8253c1aeb75d2a892e5d8437de48d0d0",
+      "status": "PASS"
+    },
+    "FULL|PLANTED_EDGE|0.04|0|920300000": {
+      "candidate_normalized_economic_sha256": "2678545b3fe60a4fa9d62746731ce673051e713fa5c6843719bdedf2c0fa88d2",
+      "candidate_portable_economic_sha256_before": "7d548364b505cc93b2b23e15bb1bab7ead073dfc44ff3334ff68bf400bbfc892",
+      "normalization_applied_in_memory_only": true,
+      "normalized_paths": [
+        "/row/raw_evaluator_result/physical_input_sha256",
+        "/row/raw_evaluator_result/corrected_input_binding/physical_input_sha256",
+        "/row/raw_evaluator_result/physical_source_producer/plan_sha256"
+      ],
+      "reference_economic_sha256": "2678545b3fe60a4fa9d62746731ce673051e713fa5c6843719bdedf2c0fa88d2",
+      "status": "PASS"
+    },
+    "FULL|PLANTED_EDGE|0.04|1|920300001": {
+      "candidate_normalized_economic_sha256": "ab89f25d597c02c90474751698b4444789b20d015d4581e2ce75702a9c5ddbb7",
+      "candidate_portable_economic_sha256_before": "aca82b9ac120323cd37a9fae5840209e3b5dd893e5db45a4bc13fd8970c6759c",
+      "normalization_applied_in_memory_only": true,
+      "normalized_paths": [
+        "/row/raw_evaluator_result/physical_input_sha256",
+        "/row/raw_evaluator_result/corrected_input_binding/physical_input_sha256",
+        "/row/raw_evaluator_result/physical_source_producer/plan_sha256"
+      ],
+      "reference_economic_sha256": "ab89f25d597c02c90474751698b4444789b20d015d4581e2ce75702a9c5ddbb7",
+      "status": "PASS"
+    },
+    "FULL|PLANTED_EDGE|0|0|920100000": {
+      "candidate_normalized_economic_sha256": "db2c347a3892e40f1f3c76c975d75c7b970fb6260830dfba8c2f042f937e961c",
+      "candidate_portable_economic_sha256_before": "4fc72741c1af7cb67afbdbf6d95d3c5b840b95c4b6053e20c7e39b96dbcd09f1",
+      "normalization_applied_in_memory_only": true,
+      "normalized_paths": [
+        "/row/raw_evaluator_result/physical_input_sha256",
+        "/row/raw_evaluator_result/corrected_input_binding/physical_input_sha256",
+        "/row/raw_evaluator_result/physical_source_producer/plan_sha256"
+      ],
+      "reference_economic_sha256": "db2c347a3892e40f1f3c76c975d75c7b970fb6260830dfba8c2f042f937e961c",
+      "status": "PASS"
+    },
+    "FULL|PLANTED_EDGE|0|1|920100001": {
+      "candidate_normalized_economic_sha256": "749fd67f1113c58a6cb1ddd56093a37935f9bd2a6a9a4a1c8d7cc8b96f60c3fd",
+      "candidate_portable_economic_sha256_before": "b8d96a6769a2fed917f3632124625c8da3e32a5249036939e51e667d8d08d08f",
+      "normalization_applied_in_memory_only": true,
+      "normalized_paths": [
+        "/row/raw_evaluator_result/physical_input_sha256",
+        "/row/raw_evaluator_result/corrected_input_binding/physical_input_sha256",
+        "/row/raw_evaluator_result/physical_source_producer/plan_sha256"
+      ],
+      "reference_economic_sha256": "749fd67f1113c58a6cb1ddd56093a37935f9bd2a6a9a4a1c8d7cc8b96f60c3fd",
+      "status": "PASS"
+    }
+  },
+  "package_bindings": "package-bindings.json",
+  "per_seed_metrics_and_three_curves_match_reference": true,
+  "per_seed_portable_economic_hashes_match_reference": true,
+  "raw_artifacts_preserved": true,
+  "reference_capsule_sha256": "b1830b2aa6da34b752ec964a539dd7e64a64ffa3a73725e6352c044a9c585c23",
+  "resource_observations": "run/parallel/resource-measurement.json",
+  "schema": "mac-throughput-stage-result/1",
+  "scope": "ENGINEERING_ONLY_NOT_QUALIFICATION",
+  "stage_elapsed_seconds": 2559.648987875,
+  "stage_name": "stage-4w-1024-repeat-1",
+  "status": "PASS",
+  "strict_validator": "PASS",
+  "timing_integrity": "PASS",
+  "worker_batch_utc_elapsed_seconds": 2070.127865,
+  "worker_batch_wall_seconds": 2070.140008041,
+  "workers": 4
+}

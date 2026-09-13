@@ -1,0 +1,72 @@
+{
+  "causing_stage": "stage-8w-896",
+  "changed_at_utc": "2026-09-13T17:38:47.655Z",
+  "constraints": [
+    "The 8\u00d7896 stage remains a censored lower bound, not a completed makespan or incumbent.",
+    "GC counts and pause fractions are diagnostic only.",
+    "Require fresh matched incumbent/candidate runs before confirming a >5% loss or stopping that direction.",
+    "Only completed, strictly validated, independently audited configurations are incumbents.",
+    "No global or absolute minimum is claimed."
+  ],
+  "observed": {
+    "aggregate_worker_pause_fraction": 0.32298938650991393,
+    "censor_threshold_seconds": 2512.884687,
+    "completed_jobs": 6,
+    "corrected_full_gc_pause_seconds_sum_workers": 2607.834733,
+    "corrected_gc_full_count": 1579,
+    "corrected_gc_pause_seconds_sum_workers": 5483.699471000001,
+    "elapsed_lower_bound_seconds": 2518.287601292,
+    "heap_mib": 896,
+    "planned_jobs": 8,
+    "remaining_jobs": 2,
+    "status": "CENSORED_SLOWER_THAN_REFERENCE_LOWER_BOUND",
+    "unfinished_jobs": [
+      {
+        "all_gc_pause_fraction": 0.4527648477679264,
+        "full_gc_count": 574,
+        "full_gc_pause_seconds": 797.6841290000002,
+        "pause_seconds": 1140.179162999999,
+        "slot_id": "FULL|PLANTED_EDGE|0.04|0|920300000",
+        "status": "CENSORED"
+      },
+      {
+        "all_gc_pause_fraction": 0.43188856127417,
+        "full_gc_count": 552,
+        "full_gc_pause_seconds": 726.282246,
+        "pause_seconds": 1086.7187810000005,
+        "slot_id": "FULL|PLANTED_EDGE|0.04|1|920300001",
+        "status": "CENSORED"
+      }
+    ],
+    "workers": 8
+  },
+  "previous_plan_path": ".report-run/throughput-search-20260913/PLAN.before-stage-8x896-censor.md",
+  "previous_plan_sha256": "edeac08c99379e4aa03dcf8860effb2ae28782afc19fcad91305f6342feb82fc",
+  "schema": "mac-throughput-plan-change/1",
+  "selection": "Stop 8-worker heap reductions at 896 MiB; run 6 workers at the validated 1024 MiB heap, then a fresh 4\u00d71024 MiB batch as the matched comparison.",
+  "source_receipts": {
+    "batch_metrics": {
+      "bytes": 1893,
+      "path": ".report-run/throughput-search-20260913/stages/stage-8w-896/run/parallel/batch-metrics.json",
+      "sha256": "8c4b00165265aea7bbf4e0aa45c560291119c30491e191911a18028366f96602"
+    },
+    "censor": {
+      "bytes": 218,
+      "path": ".report-run/throughput-search-20260913/stages/stage-8w-896/run/parallel/censored.json",
+      "sha256": "debe8c5a9dcf9bca76bb29521223aff8722d1be3119cf08b88e3739e110ed74c"
+    },
+    "execution_records": {
+      "bytes": 10916,
+      "path": ".report-run/throughput-search-20260913/stages/stage-8w-896/run/parallel/execution-records.json",
+      "sha256": "7a566c5d865882cab1710049a8d2e92d2aa20c794933cd18a303011d6c40d32b"
+    },
+    "gc_summary": {
+      "bytes": 738,
+      "path": ".report-run/throughput-search-20260913/stages/stage-8w-896/run/parallel/gc-summary.json",
+      "sha256": "1dcddbf2275ada796848f21dce8c26845157fd937836ad8bad4b2a7123abe140"
+    }
+  },
+  "status": "RECORDED",
+  "updated_plan_path": ".report-run/throughput-search-20260913/PLAN.md",
+  "updated_plan_sha256": "a756d83471c69c233d577a6dd4e149d3f4b0875b18737b13c0392ad0f64db77a"
+}

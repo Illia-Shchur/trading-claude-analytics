@@ -1,0 +1,154 @@
+{
+  "schema": "mac-throughput-independent-final-review/1",
+  "status": "PASS",
+  "reviewer": "/root/throughput_review",
+  "reviewed_at_utc": "2026-09-13T19:16:13.317857+00:00",
+  "scope": [
+    "Static review of final documentation and compact evidence packager",
+    "Independent rerun of ten lightweight harness/packager tests",
+    "Actual five-stage small receipt terminal and timing gate checks",
+    "Fresh four-worker strict/audit/normalized/reference-capsule cross-receipt consistency"
+  ],
+  "reviewed_files": {
+    "AGENTS.md": "615a1c1199b1ff0db6a12036b2be18e06b5467c745f574f769f2bea30e2f7f73",
+    "docs/CORRECTED-WORKER-RUNBOOK.md": "49274ff4fca8e2d91da281d74e4fe8a78f148026204b8ab65ab6490d0eb5cbb2",
+    "docs/MAC-WORKER-THROUGHPUT-20260913.md": "1bb23b150c7b0227f3e85e886277fed13fcec371a8a50794648ae7a4292d03d8",
+    ".report-run/throughput-search-20260913/package-throughput-evidence.py": "c638716e7eb385c708121d03c05952cd1f724cd7f296029e21d689ff4c960f94",
+    ".report-run/throughput-search-20260913/EVIDENCE_PACKAGE_SPEC.md": "60fbfcaca82fd22c84d69257724e8a5a39032fc48747143ec4bd6154a207eaa2",
+    ".report-run/throughput-search-20260913/tests/test_throughput_harness.py": "fde645e78cb2018da0971a0d23a3f19ceb761ffafd950d2bd3eac1b9e54911b5",
+    ".report-run/throughput-search-20260913/harness-tests.json": "0b763e6c721ac84e971fd2b54dc6f15e886f31622833b03af117bdf65e517d99",
+    ".report-run/throughput-search-20260913/reference-capsule.json": "548f16f415bc0e3663cdee21b44ef211cdc9d37772284577660a690165644265",
+    ".report-run/throughput-search-20260913/independent-review.json": "e961c9d6be6cff8b38d787a32ca346d329ecfce6c2fc669fc8b2184441c68355",
+    ".report-run/throughput-search-20260913/independent-real-package-binding.json": "eb77d9975b55f94b94801ac25092f14d2e65f6a1b099b5c67c8cc9ff67ecd161",
+    ".report-run/throughput-search-20260913/independent-gc-parser-review.json": "58839c8d763a4e15991376407d8fd7d87b4002ef198cfaa4233ea6b8996c2c52",
+    ".report-run/throughput-search-20260913/stages/stage-4w-1024/stage-control.json": "75fca72d1781e4e0f81aa68b49bdcdebe2d2983693d791d9701f3459bec9bf5e",
+    ".report-run/throughput-search-20260913/stages/stage-4w-1024/stage-result.json": "c91f650c4bf897a3c1adc5b54e9ef2525d2fc6c252db9004cb3f12d33e840020",
+    ".report-run/throughput-search-20260913/stages/stage-4w-1024/run/parallel/batch-metrics.json": "6401f464324b4dc3bb0c2fd9c7e393ca943892f8dcd256529f549e151c9353ad",
+    ".report-run/throughput-search-20260913/stages/stage-8w-1024/stage-control.json": "f549fd948dc26da59644659ac6c18279cdd55d715ceb386ead22215cbc8b949e",
+    ".report-run/throughput-search-20260913/stages/stage-8w-1024/stage-result.json": "23787a37c061d0de0035dbb046425f6360b8f168e5a3b56e69e9096d516a6980",
+    ".report-run/throughput-search-20260913/stages/stage-8w-1024/run/parallel/batch-metrics.json": "d1f8530f046a518fe239f7c7003b3b6f18ed0dff00a9d3115dff38145655bc7d",
+    ".report-run/throughput-search-20260913/stages/stage-8w-896/stage-control.json": "19249989444e686ac74c20686b80ec45dadbebe543fa3a6db383682e5ece24e3",
+    ".report-run/throughput-search-20260913/stages/stage-8w-896/stage-result.json": "838ae7b5459fbf15e0594a1c16fc1d656650fa19e892c92fba5277268818743c",
+    ".report-run/throughput-search-20260913/stages/stage-8w-896/run/parallel/batch-metrics.json": "8c4b00165265aea7bbf4e0aa45c560291119c30491e191911a18028366f96602",
+    ".report-run/throughput-search-20260913/stages/stage-6w-1024/stage-control.json": "847c3bca8d62ab35f42d38f5e376d2a81a382db3be76ae2cb6c8f1ee4dd4a3ab",
+    ".report-run/throughput-search-20260913/stages/stage-6w-1024/stage-result.json": "2171f7a19e227b93ad9be46f99452a82153adc386156bdc9fe35a8aa569b0ba6",
+    ".report-run/throughput-search-20260913/stages/stage-6w-1024/run/parallel/batch-metrics.json": "108e85c6785869631adea765d86e83b981d75fcdb4058207f640a69b088a1ef4",
+    ".report-run/throughput-search-20260913/stages/stage-4w-1024-repeat-1/stage-control.json": "827410816a8efa00f3af0fd802a75a26055de253b51797109a548e15efcb3f43",
+    ".report-run/throughput-search-20260913/stages/stage-4w-1024-repeat-1/stage-result.json": "ba9542a4037230a28e1d8eca02233ce73d2cfd5e078ec0a67bcc71ba76b94b15",
+    ".report-run/throughput-search-20260913/stages/stage-4w-1024-repeat-1/run/parallel/batch-metrics.json": "e0fde85848a5559f24a88deb60382e804f81c0c81d1691b553bda5e31b3c05e6",
+    ".report-run/throughput-search-20260913/stages/stage-4w-1024-repeat-1/independent-audit.json": "8c104d67e5ade9257f64ef934910d5aee9b1c84285c701565c8ecfcf3b2a6028",
+    ".report-run/throughput-search-20260913/stages/stage-4w-1024-repeat-1/raw-artifact-preservation.json": "c6f5e21f3f6ddd5934debe975013ee4d77c49180e136f12c2c019879b8ce1b1a",
+    ".report-run/throughput-search-20260913/stages/stage-4w-1024-repeat-1/run/parallel/strict-validation.json": "1dd788e5b4c7776d3ab8c9eed60ee2e82de383515b7da742b3e387078778e144"
+  },
+  "tests": "10 PASS",
+  "stage_results": [
+    {
+      "stage": "stage-4w-1024",
+      "status": "PASS",
+      "completed_jobs": 8,
+      "batch_seconds": 2094.070572292,
+      "censored_elapsed_lower_bound_seconds": null
+    },
+    {
+      "stage": "stage-8w-1024",
+      "status": "CENSORED",
+      "completed_jobs": 0,
+      "batch_seconds": null,
+      "censored_elapsed_lower_bound_seconds": 2515.780281208
+    },
+    {
+      "stage": "stage-8w-896",
+      "status": "CENSORED",
+      "completed_jobs": 6,
+      "batch_seconds": null,
+      "censored_elapsed_lower_bound_seconds": 2518.287601292
+    },
+    {
+      "stage": "stage-6w-1024",
+      "status": "PASS",
+      "completed_jobs": 8,
+      "batch_seconds": 2087.46835275,
+      "censored_elapsed_lower_bound_seconds": null
+    },
+    {
+      "stage": "stage-4w-1024-repeat-1",
+      "status": "PASS",
+      "completed_jobs": 8,
+      "batch_seconds": 2070.140008041,
+      "censored_elapsed_lower_bound_seconds": null
+    }
+  ],
+  "selected_configuration": {
+    "workers": 6,
+    "heap_mib": 1024,
+    "active_processors": 1,
+    "gc": "G1",
+    "basis": "Highest tested concurrency with no material observed full-batch penalty; user preference for more workers",
+    "alternative": "4 workers at1024MiB equally competitive in observed runs",
+    "not_claimed": [
+      "Statistically established speedup or noninferiority",
+      "Global or absolute minimum",
+      "Qualification"
+    ]
+  },
+  "fresh_repeat_receipt_checks": {
+    "strict_unique_slots": 8,
+    "audit_unique_slots": 8,
+    "normalized_unique_slots": 8,
+    "audit_trades": 7200,
+    "audit_books": 16,
+    "metrics_and_three_curve_digests_match_reference_capsule": true,
+    "normalized_economics_match_reference_capsule": true,
+    "candidate_before_normalization_hashes_match_audited_candidate": true,
+    "preservation_receipt_entries": 8
+  },
+  "package_review": {
+    "original_files_copied_byte_exact": true,
+    "initial_four_worker_gc_uses_separate_correction": true,
+    "original_gc_summary_in_allowlist": true,
+    "censored_stages_have_no_completed_batch_seconds": true,
+    "matching_terminal_control_result_required": true,
+    "pending_validation_rejected": true,
+    "full_package_build_performed_by_reviewer": false
+  },
+  "limits": [
+    "Final review did not reread or independently rehash large raw worker artifacts; raw preservation assertions are checked in small receipts and against reviewed harness behavior",
+    "Previously reviewed original four-worker GC log correction used independent direct log parsing; see dedicated receipt",
+    "No benchmarks executed by reviewer",
+    "Archive SHA checks were reported PASS by root; packaging/extraction remains root-owned."
+  ],
+  "final_refresh": {
+    "scope": "Final GC comparison table, lowest-fully-validated heap caveat, final evidence destination wording, packager review-receipt allowlist",
+    "gc_table_cross_checked_against_small_receipts": [
+      [
+        "stage-4w-1024",
+        28,
+        0.16403620153579956
+      ],
+      [
+        "stage-6w-1024",
+        23,
+        0.16411196330174566
+      ],
+      [
+        "stage-4w-1024-repeat-1",
+        27,
+        0.16459824172935358
+      ],
+      [
+        "stage-8w-1024",
+        0,
+        0.23314795590533807
+      ],
+      [
+        "stage-8w-896",
+        1579,
+        0.32298938650991393
+      ]
+    ],
+    "future_manifest_not_hashed": true,
+    "tests_not_rerun": "Only final documentation and static allowlist changes since ten tests passed",
+    "archive_custody": "Root reports six permanent archive SHA checks PASS; reviewer did not rehash archives",
+    "evidence_destination": "Documentation names agreed final extraction path; root packaging/extraction is the remaining publication step"
+  }
+}

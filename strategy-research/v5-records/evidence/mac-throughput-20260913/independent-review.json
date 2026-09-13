@@ -1,0 +1,45 @@
+{
+  "schema": "mac-throughput-independent-review/1",
+  "status": "PASS_FOR_ENGINEERING_SEARCH_LAUNCH",
+  "reviewer": "/root/throughput_review",
+  "reviewed_at_utc": "2026-09-13T15:20:13.662666+00:00",
+  "files": {
+    "run-throughput-stage.py": "8e41d40d800ace3fffcb5be725e5ad54a427624f82c44070701ed06b0a65e1d5",
+    "harness/run_mac_full_development.py": "87e7c919ead11b2038cd352f975c9d5e36a07d8fe68dc2a76da21f30a756b9fe",
+    "harness/StrictArtifactValidator.java": "7381c2db6d8f03735639ed0227fe4345fae0baa541a5ef188ecb8f5f111569e7",
+    "tests/test_throughput_harness.py": "340a95db6fffddcde5cdf9b0aa559cac9e80387891e0c1ad36c584053d91026b"
+  },
+  "independent_checks": [
+    "process tree RSS/CPU descendants and cycle safety",
+    "ps failure does not suppress disk checks",
+    "disk unavailable remains fail closed",
+    "young/full GC pause parser",
+    "strict validator wrong-slot rejection",
+    "array reader accepts strict/execution arrays",
+    "failure terminal checkpoint and censored preservation",
+    "cancellation forwarding and wait",
+    "five implementation unit tests independently rerun PASS"
+  ],
+  "smoke_receipt": "reference-normalization-smoke-attempt-2.json",
+  "smoke_verified": true,
+  "limitations": [
+    "No timed benchmark run by reviewer",
+    "Self-normalization smoke is same-build baseline sanity only; every real candidate still requires strict validation, independent replay, exact metrics/three-curves match, and normalized economics match",
+    "512 MiB is current exploratory grid floor, not proof of minimum or permission to claim completion without degradation"
+  ],
+  "review_notes": [
+    "RSS, GC, swap and pressure remain observational",
+    "Candidate PASS only after all eight completed seeds and timing integrity",
+    "Original candidate and baseline bytes preserved",
+    "Persistent per-worker checkpoints and stage failure receipts reviewed",
+    "Manual search orchestration, restart reconciliation and stage archives owned by root"
+  ],
+  "real_package_binding": {
+    "status": "PASS",
+    "receipt": "independent-real-package-binding.json",
+    "slots": 8,
+    "support_dependency_count": 2,
+    "own_hash_semantics": "Exclude only root content_sha256, preserving nested fields; byte hash and size independently verified",
+    "workers_launched": 0
+  }
+}

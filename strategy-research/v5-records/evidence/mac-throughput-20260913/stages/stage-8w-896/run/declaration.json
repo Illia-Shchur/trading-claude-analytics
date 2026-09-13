@@ -1,0 +1,127 @@
+{
+  "activation_authorized": false,
+  "active_processors": 1,
+  "executor_jar_sha256": "b8a34877f8d674c4c16d3e121759f9c7c3a62b0a563226fbe03c02b91b27e6d2",
+  "executor_source_sha256": "ca94e33f2a56b0a9a3b3f29005a3d1e722e2f5efdf044de2876fe9289858b376",
+  "git_status": "",
+  "heldout_executed": false,
+  "integrity_before": {
+    "baseline": {
+      "bytes": 7937,
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/strategy-research/definitions/fk-deleveraging-absorption/v002.json",
+      "sha256": "4ab073d4b62c77410cca2456066fbae70b93b19ebf93d63922204e1b3548fc1a"
+    },
+    "controls": {
+      "bytes": 2094,
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/strategy-research/experiments/fk-deleveraging-baseline-v002/controls.json",
+      "sha256": "8170e98fcf90c30aea67a4f2a4503d85817f158377dd449c5a3ed9b0b0793216"
+    },
+    "executor_jar": {
+      "bytes": 107287509,
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/throughput-search-20260913/candidate-package/executor.jar",
+      "sha256": "b8a34877f8d674c4c16d3e121759f9c7c3a62b0a563226fbe03c02b91b27e6d2"
+    },
+    "experiment": {
+      "bytes": 1530,
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/strategy-research/experiments/fk-deleveraging-baseline-v002/experiment.json",
+      "sha256": "805d34f09c7d94cbf9be3efdf5277f384583dbf1646feab2140c443083aeed1f"
+    },
+    "plan": {
+      "bytes": 40073,
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/throughput-search-20260913/candidate-package/plan.json",
+      "sha256": "513bf5fb6e09095de7cb23df83e9feb80aaedc11f6625687bf08403bcea0a072"
+    },
+    "profile": {
+      "bytes": 1746,
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/throughput-search-20260913/candidate-package/profile.json",
+      "sha256": "c0891eac113a43f701c860f296bbfd1958c6466fc96f85b7106b150d256898ff"
+    }
+  },
+  "jvm_gc": "G1",
+  "launch_heap_mib": 896,
+  "max_batch_seconds": 2512.884687,
+  "max_parallel_workers": 8,
+  "minimum_free_disk_reserve_bytes": 10737418240,
+  "plan_content_sha256": "5013683ff195e32b4d632a74f7583a79d6b5d5283729c21ab4112214958a06dd",
+  "planned_slots": [
+    {
+      "effect_size": 0.0,
+      "mode": "FULL",
+      "replication": 0,
+      "scenario": "NO_EDGE",
+      "seed": 920000000,
+      "slot_id": "FULL|NO_EDGE|0|0|920000000"
+    },
+    {
+      "effect_size": 0.0,
+      "mode": "FULL",
+      "replication": 1,
+      "scenario": "NO_EDGE",
+      "seed": 920000001,
+      "slot_id": "FULL|NO_EDGE|0|1|920000001"
+    },
+    {
+      "effect_size": 0.0,
+      "mode": "FULL",
+      "replication": 0,
+      "scenario": "PLANTED_EDGE",
+      "seed": 920100000,
+      "slot_id": "FULL|PLANTED_EDGE|0|0|920100000"
+    },
+    {
+      "effect_size": 0.0,
+      "mode": "FULL",
+      "replication": 1,
+      "scenario": "PLANTED_EDGE",
+      "seed": 920100001,
+      "slot_id": "FULL|PLANTED_EDGE|0|1|920100001"
+    },
+    {
+      "effect_size": 0.02,
+      "mode": "FULL",
+      "replication": 0,
+      "scenario": "PLANTED_EDGE",
+      "seed": 920200000,
+      "slot_id": "FULL|PLANTED_EDGE|0.02|0|920200000"
+    },
+    {
+      "effect_size": 0.02,
+      "mode": "FULL",
+      "replication": 1,
+      "scenario": "PLANTED_EDGE",
+      "seed": 920200001,
+      "slot_id": "FULL|PLANTED_EDGE|0.02|1|920200001"
+    },
+    {
+      "effect_size": 0.04,
+      "mode": "FULL",
+      "replication": 0,
+      "scenario": "PLANTED_EDGE",
+      "seed": 920300000,
+      "slot_id": "FULL|PLANTED_EDGE|0.04|0|920300000"
+    },
+    {
+      "effect_size": 0.04,
+      "mode": "FULL",
+      "replication": 1,
+      "scenario": "PLANTED_EDGE",
+      "seed": 920300001,
+      "slot_id": "FULL|PLANTED_EDGE|0.04|1|920300001"
+    }
+  ],
+  "profile_content_sha256": "7075212298798d1a2f7d59bf02e554e17439d7b66ee52355115146e43689b51a",
+  "qualification_attempted": false,
+  "rss_policy": "OBSERVATIONAL_ONLY",
+  "run_disk_limit_bytes": 68719476736,
+  "scope": "ENGINEERING_ONLY_MAC_FULL_GEOMETRY_DEVELOPMENT",
+  "single_slot_seed": null,
+  "slot_wall_seconds": 5400,
+  "source": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/throughput-search-20260913/candidate-package/manifest.json",
+  "stage_name": "stage-8w-896",
+  "trading_authorized": false,
+  "wave_selection": "parallel",
+  "wave_wall_seconds": 21600,
+  "worker_payload_cpu": 2,
+  "worker_payload_heap_bytes": 2147483648,
+  "worker_payload_rss_bytes": 3221225472
+}

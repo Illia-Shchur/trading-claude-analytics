@@ -1,0 +1,42 @@
+{
+  "changed_at_utc": "2026-09-13T16:51:53.012Z",
+  "decision": "Run 8 workers at 896 MiB next, before the 6-worker fallback, to test whether lower heap changes full-batch throughput.",
+  "decision_constraints": [
+    "The censored 8-worker/1024 MiB attempt remains only a slower-than-reference lower bound, not a completed makespan.",
+    "A candidate more than 5% slower or censored triggers fresh matched incumbent/candidate batches before confirming loss or stopping that direction.",
+    "After confirmed loss or failure at 8 workers, try 6 workers at the best successful heap.",
+    "Report only the best tested complete configuration; do not claim a global or absolute minimum."
+  ],
+  "observations": [
+    {
+      "batch_seconds": 2094.070572292,
+      "complete_jobs": 8,
+      "planned_jobs": 8,
+      "stage": "stage-4w-1024",
+      "status": "PASS"
+    },
+    {
+      "censor_threshold_ratio": 1.2,
+      "complete_jobs": 0,
+      "crossed_120_percent_censor": true,
+      "elapsed_lower_bound_seconds": 2515.78,
+      "elapsed_to_reference_ratio": 1.2013826244864474,
+      "planned_jobs": 8,
+      "reference_batch_seconds": 2094.070572292,
+      "reference_completed_stage": "stage-4w-1024",
+      "stage": "stage-8w-1024",
+      "status": "CENSORED"
+    }
+  ],
+  "operator_reported_diagnostics": {
+    "diagnostics_only": true,
+    "memory_compression_approx_gib": 8.2,
+    "swap_growth_approx_mib": 953
+  },
+  "previous_plan_path": ".report-run/throughput-search-20260913/PLAN.before-stage-8x1024-censor.md",
+  "previous_plan_sha256": "dde687d9a986d0dbb03854a2354c24fe60484a09fad48d81197c81bae8c211ab",
+  "schema": "mac-throughput-plan-change/1",
+  "status": "RECORDED",
+  "updated_plan_path": ".report-run/throughput-search-20260913/PLAN.md",
+  "updated_plan_sha256": "edeac08c99379e4aa03dcf8860effb2ae28782afc19fcad91305f6342feb82fc"
+}

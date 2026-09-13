@@ -1,0 +1,8 @@
+{
+  "comparison_eligible": false,
+  "completed_workers": 0,
+  "elapsed_seconds": 2515.780281208,
+  "max_batch_seconds": 2512.884687,
+  "remaining_workers": 8,
+  "status": "CENSORED_SLOWER_THAN_REFERENCE_LOWER_BOUND"
+}

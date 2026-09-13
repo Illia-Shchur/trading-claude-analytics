@@ -1,0 +1,63 @@
+{
+  "schema": "throughput-archive-custody/1",
+  "status": "PASS",
+  "created_at_utc": "2026-09-13T19:13:10.379637+00:00",
+  "copies": [
+    {
+      "source": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/throughput-search-20260913/archives/campaign-setup.tar.gz",
+      "destination": "/Users/eternal/.codex/artifacts/trading-pr13-performance/throughput-search-20260913/campaign-setup.tar.gz",
+      "sha256": "3eb2e36a085c0d20801a9bcc72d8278634fbf5bfbf98ecf22a3da4d81c1e4d96",
+      "bytes": 104914784,
+      "original_receipt": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/throughput-search-20260913/archives/campaign-setup.receipt.json",
+      "original_receipt_sha256": "d85439594fb4a2d19ba3ed287cb6d4faf4d2bca6722bc871023e92c3d1f0fc1b",
+      "copy_verified": true
+    },
+    {
+      "source": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/throughput-search-20260913/archives/stage-4w-1024-repeat-1.tar.gz",
+      "destination": "/Users/eternal/.codex/artifacts/trading-pr13-performance/throughput-search-20260913/stage-4w-1024-repeat-1.tar.gz",
+      "sha256": "834543129f843dabadbbcac79d27db34bc8972e9712164af77410ecbd35bf59e",
+      "bytes": 450083009,
+      "original_receipt": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/throughput-search-20260913/archives/stage-4w-1024-repeat-1.receipt.json",
+      "original_receipt_sha256": "434a6d773bfe63075f031a9421ed9607fff3f846150c5274d6002af0220b2789",
+      "copy_verified": true
+    },
+    {
+      "source": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/throughput-search-20260913/archives/stage-4w-1024.tar.gz",
+      "destination": "/Users/eternal/.codex/artifacts/trading-pr13-performance/throughput-search-20260913/stage-4w-1024.tar.gz",
+      "sha256": "41eafe833caaef4bc8082fa4f5059022bb03300eb81a900c3cb5720c6a5400e7",
+      "bytes": 450236505,
+      "original_receipt": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/throughput-search-20260913/archives/stage-4w-1024.receipt.json",
+      "original_receipt_sha256": "dff8e8f48bf2a80fcc1c2284d15817bceaa85bcf4cbc34cbb833837aed806758",
+      "copy_verified": true
+    },
+    {
+      "source": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/throughput-search-20260913/archives/stage-6w-1024.tar.gz",
+      "destination": "/Users/eternal/.codex/artifacts/trading-pr13-performance/throughput-search-20260913/stage-6w-1024.tar.gz",
+      "sha256": "38a7d634638dca787c656a6a6262ef2da8ea90f1243e36be00a58155ebfb2904",
+      "bytes": 450398087,
+      "original_receipt": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/throughput-search-20260913/archives/stage-6w-1024.receipt.json",
+      "original_receipt_sha256": "c188674ef5159d75f5d4e29aa9ab3e277f985956b8c8c29a55d2a88b19454538",
+      "copy_verified": true
+    },
+    {
+      "source": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/throughput-search-20260913/archives/stage-8w-1024.tar.gz",
+      "destination": "/Users/eternal/.codex/artifacts/trading-pr13-performance/throughput-search-20260913/stage-8w-1024.tar.gz",
+      "sha256": "7d0fb7264b05789f1f0c81d953473e53613a32f51dc35462890a3ab55103c569",
+      "bytes": 5807332213,
+      "original_receipt": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/throughput-search-20260913/archives/stage-8w-1024.receipt.json",
+      "original_receipt_sha256": "0d0debd6c6b42fd1680a30767f883ab34504e3038eb357c52ccac5bf3bcaa651",
+      "copy_verified": true
+    },
+    {
+      "source": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/throughput-search-20260913/archives/stage-8w-896.tar.gz",
+      "destination": "/Users/eternal/.codex/artifacts/trading-pr13-performance/throughput-search-20260913/stage-8w-896.tar.gz",
+      "sha256": "0257b4d3e901e89084e3f800e3088647ef35133c93c8b8740f475c0b23b823e0",
+      "bytes": 1793073691,
+      "original_receipt": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/throughput-search-20260913/archives/stage-8w-896.receipt.json",
+      "original_receipt_sha256": "f826668fd108ed6bbd40100682c5ea33334da05d3c32d813617f6fdd1d3ae2bb",
+      "copy_verified": true
+    }
+  ],
+  "source_archives_preserved": true,
+  "verification_scope": "Compressed archive SHA-256 and parseable member inventory; source raw-artifact byte preservation is recorded by each passing stage audit. No claim of separate per-member content comparison after extraction."
+}

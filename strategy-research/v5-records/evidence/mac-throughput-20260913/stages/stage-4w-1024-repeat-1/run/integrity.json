@@ -1,0 +1,67 @@
+{
+  "after": {
+    "baseline": {
+      "bytes": 7937,
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/strategy-research/definitions/fk-deleveraging-absorption/v002.json",
+      "sha256": "4ab073d4b62c77410cca2456066fbae70b93b19ebf93d63922204e1b3548fc1a"
+    },
+    "controls": {
+      "bytes": 2094,
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/strategy-research/experiments/fk-deleveraging-baseline-v002/controls.json",
+      "sha256": "8170e98fcf90c30aea67a4f2a4503d85817f158377dd449c5a3ed9b0b0793216"
+    },
+    "executor_jar": {
+      "bytes": 107287509,
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/throughput-search-20260913/candidate-package/executor.jar",
+      "sha256": "b8a34877f8d674c4c16d3e121759f9c7c3a62b0a563226fbe03c02b91b27e6d2"
+    },
+    "experiment": {
+      "bytes": 1530,
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/strategy-research/experiments/fk-deleveraging-baseline-v002/experiment.json",
+      "sha256": "805d34f09c7d94cbf9be3efdf5277f384583dbf1646feab2140c443083aeed1f"
+    },
+    "plan": {
+      "bytes": 40073,
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/throughput-search-20260913/candidate-package/plan.json",
+      "sha256": "513bf5fb6e09095de7cb23df83e9feb80aaedc11f6625687bf08403bcea0a072"
+    },
+    "profile": {
+      "bytes": 1746,
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/throughput-search-20260913/candidate-package/profile.json",
+      "sha256": "c0891eac113a43f701c860f296bbfd1958c6466fc96f85b7106b150d256898ff"
+    }
+  },
+  "before": {
+    "baseline": {
+      "bytes": 7937,
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/strategy-research/definitions/fk-deleveraging-absorption/v002.json",
+      "sha256": "4ab073d4b62c77410cca2456066fbae70b93b19ebf93d63922204e1b3548fc1a"
+    },
+    "controls": {
+      "bytes": 2094,
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/strategy-research/experiments/fk-deleveraging-baseline-v002/controls.json",
+      "sha256": "8170e98fcf90c30aea67a4f2a4503d85817f158377dd449c5a3ed9b0b0793216"
+    },
+    "executor_jar": {
+      "bytes": 107287509,
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/throughput-search-20260913/candidate-package/executor.jar",
+      "sha256": "b8a34877f8d674c4c16d3e121759f9c7c3a62b0a563226fbe03c02b91b27e6d2"
+    },
+    "experiment": {
+      "bytes": 1530,
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/strategy-research/experiments/fk-deleveraging-baseline-v002/experiment.json",
+      "sha256": "805d34f09c7d94cbf9be3efdf5277f384583dbf1646feab2140c443083aeed1f"
+    },
+    "plan": {
+      "bytes": 40073,
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/throughput-search-20260913/candidate-package/plan.json",
+      "sha256": "513bf5fb6e09095de7cb23df83e9feb80aaedc11f6625687bf08403bcea0a072"
+    },
+    "profile": {
+      "bytes": 1746,
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/throughput-search-20260913/candidate-package/profile.json",
+      "sha256": "c0891eac113a43f701c860f296bbfd1958c6466fc96f85b7106b150d256898ff"
+    }
+  },
+  "status": "PASS"
+}

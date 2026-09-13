@@ -1,0 +1,34 @@
+{
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    ".report-run/throughput-search-20260913/tests/test_throughput_harness.py",
+    "-v"
+  ],
+  "completed_at_utc": "2026-09-13T19:11:36.181Z",
+  "duration_seconds": 0.012,
+  "exit_code": 0,
+  "schema": "mac-throughput-harness-tests/1",
+  "sources": {
+    "harness/run_mac_full_development.py": {
+      "bytes": 59221,
+      "sha256": "043519e911d790c44c070187518c8795cb4abed349114c361a6bd3d4c1b3393e"
+    },
+    "package-throughput-evidence.py": {
+      "bytes": 14524,
+      "sha256": "c6fecbed5af041e38958f9a1dcf5a655dcf4248394c301c3f68f57410ab992ee"
+    },
+    "run-throughput-stage.py": {
+      "bytes": 39337,
+      "sha256": "8e41d40d800ace3fffcb5be725e5ad54a427624f82c44070701ed06b0a65e1d5"
+    },
+    "tests/test_throughput_harness.py": {
+      "bytes": 9281,
+      "sha256": "fde645e78cb2018da0971a0d23a3f19ceb761ffafd950d2bd3eac1b9e54911b5"
+    }
+  },
+  "started_at_utc": "2026-09-13T19:11:36.056Z",
+  "status": "PASS",
+  "stderr_sha256": "f6803f7b1c07771984578c3f19caeb70c2200ecae4ae9184f50cb148ad128b8a",
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "tests_run": 10
+}
