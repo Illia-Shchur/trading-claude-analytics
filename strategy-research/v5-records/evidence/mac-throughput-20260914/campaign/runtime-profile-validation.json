@@ -1,0 +1,21 @@
+{
+  "executor_manifest_sha256": "9aaf5ce6e33d5de1147c4708060a71d04c957878a5cb23f32dccb054347c169b",
+  "profile_byte_sha256": "37c06b8d0302b2d13ab87b459db4247f78c0f22f705327613c110b527fbc7943",
+  "profile_content_sha256": "397e189b69ae26a63a4c08f907410cba19de52a0399c3a75411135e0272d0c95",
+  "profile_path": "strategy-research/v5-records/evidence/mac-throughput-20260914/selected-local-runtime-profile.json",
+  "schema": "mac-local-runtime-profile-validation/1",
+  "settings": {
+    "active_processor_count": 1,
+    "effective_concurrency_cap": 8,
+    "gc_collector": "G1",
+    "outer_workers": 6,
+    "profile_id": "selected-local-mac-6w-1536",
+    "selection_status": "SELECTED_LOCAL_ENGINEERING_MAC",
+    "xmx_mib": 1536
+  },
+  "status": "PASS",
+  "validated_at_utc": "2026-09-14T19:04:32Z",
+  "validator_path": ".report-run/calculation-performance-20260914/harness/run_mac_full_development.py",
+  "validator_sha256": "b5db9ac5925fed80bebae4f3acaa03872aceaf80cf7e43c5fe78515f5ddacb3b",
+  "worker_workload_launched": false
+}

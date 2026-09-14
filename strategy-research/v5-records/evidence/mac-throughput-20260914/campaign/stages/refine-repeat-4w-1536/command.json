@@ -1,0 +1,28 @@
+{
+  "argv": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/harness/run_mac_full_development.py",
+    "--repo",
+    "/Users/eternal/.codex/worktrees/trading-pr13-performance",
+    "--run",
+    "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/stages/refine-repeat-4w-1536/run",
+    "--package",
+    "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/candidate-package",
+    "--manifest",
+    "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/candidate-package/manifest.json",
+    "--wave",
+    "parallel",
+    "--runtime-profile",
+    "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/stages/refine-repeat-4w-1536/runtime-profile.json",
+    "--expected-runtime-profile-sha256",
+    "8a4987c2c9bb483d0ef562d26083be87b2e3ca1707f0cfb839a5fac196493572",
+    "--controller-source",
+    "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/run-throughput-stage.py",
+    "--stage-name",
+    "refine-repeat-4w-1536",
+    "--java",
+    "/opt/homebrew/Cellar/openjdk@21/21.0.11/libexec/openjdk.jdk/Contents/Home/bin/java",
+    "--max-batch-seconds",
+    "1607.45153745"
+  ]
+}

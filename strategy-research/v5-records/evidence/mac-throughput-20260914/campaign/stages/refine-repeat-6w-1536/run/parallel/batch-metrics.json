@@ -1,0 +1,52 @@
+{
+  "active_processors": 1,
+  "aggregate_worker_gc_pause_fraction": 0.08688261021393646,
+  "batch_finished_at_epoch_ns": 1789405566330785000,
+  "batch_finished_at_utc": "2026-09-14T17:06:06.330Z",
+  "batch_finished_monotonic_ns": 62666441070666,
+  "batch_started_at_epoch_ns": 1789404224845402000,
+  "batch_started_at_utc": "2026-09-14T16:43:44.845Z",
+  "batch_started_monotonic_ns": 61324950152291,
+  "clock_elapsed_delta_seconds": -0.005535375,
+  "full_gc_count_sum_workers": 0,
+  "gc_pause_seconds_sum_workers": 475.7901949999998,
+  "gc_summary": "gc-summary.json",
+  "heap_mib": 1536,
+  "jvm_gc": "G1",
+  "planned_worker_count": 8,
+  "runtime_profile": {
+    "byte_sha256": "92f0eaadd6f1d31e7fd7350c1243a494be2bc3684e6208bb3819125d6678afc0",
+    "content_sha256": "f77d8efe70c768e0340b97f2de4c83a615b7aed5d33f864e72eeefc81668986e",
+    "executor_manifest_sha256": "9aaf5ce6e33d5de1147c4708060a71d04c957878a5cb23f32dccb054347c169b",
+    "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/stages/refine-repeat-6w-1536/runtime-profile.json",
+    "profile_id": "refine-repeat-6w-1536"
+  },
+  "scope": "ENGINEERING_ONLY_MAC_FULL_GEOMETRY_DEVELOPMENT",
+  "slot_states": {
+    "FULL|NO_EDGE|0|0|920000000": "PUBLISHED_TEMPORARY",
+    "FULL|NO_EDGE|0|1|920000001": "PUBLISHED_TEMPORARY",
+    "FULL|PLANTED_EDGE|0.02|0|920200000": "PUBLISHED_TEMPORARY",
+    "FULL|PLANTED_EDGE|0.02|1|920200001": "PUBLISHED_TEMPORARY",
+    "FULL|PLANTED_EDGE|0.04|0|920300000": "PUBLISHED_TEMPORARY",
+    "FULL|PLANTED_EDGE|0.04|1|920300001": "PUBLISHED_TEMPORARY",
+    "FULL|PLANTED_EDGE|0|0|920100000": "PUBLISHED_TEMPORARY",
+    "FULL|PLANTED_EDGE|0|1|920100001": "PUBLISHED_TEMPORARY"
+  },
+  "stage_name": "refine-repeat-6w-1536",
+  "status": "WORKERS_COMPLETE",
+  "timing_integrity": "PASS",
+  "worker_batch_utc_elapsed_seconds": 1341.485383,
+  "worker_batch_wall_seconds": 1341.490918375,
+  "worker_completion_count": 8,
+  "worker_pause_fractions": {
+    "FULL|NO_EDGE|0|0|920000000": 0.09249144259893377,
+    "FULL|NO_EDGE|0|1|920000001": 0.09014119621968558,
+    "FULL|PLANTED_EDGE|0.02|0|920200000": 0.08860037093073886,
+    "FULL|PLANTED_EDGE|0.02|1|920200001": 0.09161381650393825,
+    "FULL|PLANTED_EDGE|0.04|0|920300000": 0.09232924143645051,
+    "FULL|PLANTED_EDGE|0.04|1|920300001": 0.0695824854178069,
+    "FULL|PLANTED_EDGE|0|0|920100000": 0.08496629179407596,
+    "FULL|PLANTED_EDGE|0|1|920100001": 0.08467867018172186
+  },
+  "workers": 6
+}

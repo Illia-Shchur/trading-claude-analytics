@@ -1,0 +1,13 @@
+# New-code Mac runtime search plan
+
+Package: manifest `9aaf5ce6e33d5de1147c4708060a71d04c957878a5cb23f32dccb054347c169b`, source commit `6d5e02dd553a582d2f4052e8d6010d56587f96e9`, pinned JDK 21. This is an engineering-only search over the unchanged eight development seeds. It does not execute the 300 held-out replications or qualify a machine.
+
+The first timed run is 4 workers × 1536 MiB per JVM. This anchors the new code against the best complete pre-change batch. The coarse follow-ups are 4 × 1280, 6 × 1280, and 6 × 1024. Then test eight workers at whichever of 1024 or 1280 MiB the completed six-worker evidence makes more promising. Each stage consumes one self-hashed local runtime profile bound to this package. The controller freezes the profile bytes in the stage before starting workers, and checks worker count, Xmx, ActiveProcessorCount, collector, and both profile hashes in the runner and batch receipts.
+
+After the coarse grid, use complete validated batch times and resource telemetry to select at most five purposeful refinement runs within the plan's ten-run exploratory cap. Test a neighboring worker count when results are close enough to need a direct tie-break; test one adjacent heap step when it can distinguish throughput from memory effects; repeat close candidates when run variation could change the choice. Stop a branch after a repeated material slowdown or failure. Prefer additional workers only for indistinguishable batch times after matched repeats.
+
+The optional performance censor for each run is 1.20 × the fastest complete validated incumbent available when that run starts. The starting incumbent is the old-code 4 × 1536 result, 1899.389 seconds, making the first cap 2279.267 seconds. Censored stages remain lower bounds and never become incumbents. Validation and independent replay time are outside the worker-only timing used to choose settings.
+
+Every selectable stage must complete all eight strict validations, match the frozen economic hash and event/control/combined curves, pass independent 7200-trade/16-book replay, preserve raw bytes, and have valid timing. Record runner-only worker makespan separately from strict validation, normalization, independent audit, and packaging. No profiling, build, archive, or unrelated heavy task runs during timed batches.
+
+The final selection is confirmed with two matched complete batches using the selected profile and a suitable fresh reference. All stage evidence and failed/censored attempts remain immutable. The result is the best validated setting in the tested neighborhood; repeated runs remain the same eight development datasets and do not add research samples.

@@ -1,0 +1,21 @@
+{
+  "archive_required": true,
+  "declaration": "declaration.json",
+  "engineering_validation": "engineering-validation.json",
+  "independent_audit_pending": true,
+  "preflight": "production-full-preflight.json",
+  "schema": "mac-corrected-worker-engineering-run/1",
+  "status": "STRICT_PASS_PENDING_INDEPENDENT_AUDIT",
+  "strict_validation": {
+    "parallel": "parallel/strict-validation.json"
+  },
+  "wave_run_ids": {
+    "parallel": "0655bf07-c5b2-4b82-996d-6d3937f48dac"
+  },
+  "waves": [
+    "parallel"
+  ],
+  "worker_batch_metrics": {
+    "parallel": "parallel/batch-metrics.json"
+  }
+}

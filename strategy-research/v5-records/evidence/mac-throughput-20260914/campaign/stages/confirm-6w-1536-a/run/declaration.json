@@ -1,0 +1,154 @@
+{
+  "activation_authorized": false,
+  "active_processors": 1,
+  "executor_jar_sha256": "523a88ef061761479d78f4d2791fc52a1e58ee7e276c6a27890e83154dcfca22",
+  "executor_source_sha256": "944507d7e84aab9855fbff7e9bb464c5ff6272f8f41b653daf9129b85461b474",
+  "git_status": "",
+  "heldout_executed": false,
+  "integrity_before": {
+    "baseline": {
+      "bytes": 7937,
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/strategy-research/definitions/fk-deleveraging-absorption/v002.json",
+      "sha256": "4ab073d4b62c77410cca2456066fbae70b93b19ebf93d63922204e1b3548fc1a"
+    },
+    "controls": {
+      "bytes": 2094,
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/strategy-research/experiments/fk-deleveraging-baseline-v002/controls.json",
+      "sha256": "8170e98fcf90c30aea67a4f2a4503d85817f158377dd449c5a3ed9b0b0793216"
+    },
+    "executor_jar": {
+      "bytes": 107289007,
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/candidate-package/executor.jar",
+      "sha256": "523a88ef061761479d78f4d2791fc52a1e58ee7e276c6a27890e83154dcfca22"
+    },
+    "experiment": {
+      "bytes": 1530,
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/strategy-research/experiments/fk-deleveraging-baseline-v002/experiment.json",
+      "sha256": "805d34f09c7d94cbf9be3efdf5277f384583dbf1646feab2140c443083aeed1f"
+    },
+    "plan": {
+      "bytes": 40073,
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/candidate-package/plan.json",
+      "sha256": "e6f6df95becd8ee45b2e17dd91af180dd83b79fe8cdc9fc2229db8e83a4f201b"
+    },
+    "profile": {
+      "bytes": 1746,
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/candidate-package/profile.json",
+      "sha256": "34b5a1378ee3622a93b9aab21861e30d1347655e1206cc1721f8056bb8a3b4d7"
+    },
+    "runtime_profile": {
+      "bytes": 1269,
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/stages/confirm-6w-1536-a/runtime-profile.json",
+      "sha256": "ac53a88093af00aa4546a2b91d3b76dd4aadb361cc07c5615082852cf8aec6e4"
+    },
+    "stage_controller_source": {
+      "bytes": 44860,
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/run-throughput-stage.py",
+      "sha256": "7bf7b6a1a5c8270b2e4cccec64741d3a7b720feb42878a6e9b0157bec7972ce5"
+    },
+    "strict_artifact_validator_source": {
+      "bytes": 7503,
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/harness/StrictArtifactValidator.java",
+      "sha256": "7381c2db6d8f03735639ed0227fe4345fae0baa541a5ef188ecb8f5f111569e7"
+    },
+    "worker_harness_source": {
+      "bytes": 64585,
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/harness/run_mac_full_development.py",
+      "sha256": "b5db9ac5925fed80bebae4f3acaa03872aceaf80cf7e43c5fe78515f5ddacb3b"
+    }
+  },
+  "jvm_gc": "G1",
+  "launch_heap_mib": 1536,
+  "max_batch_seconds": 1607.45153745,
+  "max_parallel_workers": 6,
+  "minimum_free_disk_reserve_bytes": 10737418240,
+  "plan_content_sha256": "c5e4c9210e8349ec05d8f321725fe39eb4fdedd867e151555573469b85de823c",
+  "planned_slots": [
+    {
+      "effect_size": 0.0,
+      "mode": "FULL",
+      "replication": 0,
+      "scenario": "NO_EDGE",
+      "seed": 920000000,
+      "slot_id": "FULL|NO_EDGE|0|0|920000000"
+    },
+    {
+      "effect_size": 0.0,
+      "mode": "FULL",
+      "replication": 1,
+      "scenario": "NO_EDGE",
+      "seed": 920000001,
+      "slot_id": "FULL|NO_EDGE|0|1|920000001"
+    },
+    {
+      "effect_size": 0.0,
+      "mode": "FULL",
+      "replication": 0,
+      "scenario": "PLANTED_EDGE",
+      "seed": 920100000,
+      "slot_id": "FULL|PLANTED_EDGE|0|0|920100000"
+    },
+    {
+      "effect_size": 0.0,
+      "mode": "FULL",
+      "replication": 1,
+      "scenario": "PLANTED_EDGE",
+      "seed": 920100001,
+      "slot_id": "FULL|PLANTED_EDGE|0|1|920100001"
+    },
+    {
+      "effect_size": 0.02,
+      "mode": "FULL",
+      "replication": 0,
+      "scenario": "PLANTED_EDGE",
+      "seed": 920200000,
+      "slot_id": "FULL|PLANTED_EDGE|0.02|0|920200000"
+    },
+    {
+      "effect_size": 0.02,
+      "mode": "FULL",
+      "replication": 1,
+      "scenario": "PLANTED_EDGE",
+      "seed": 920200001,
+      "slot_id": "FULL|PLANTED_EDGE|0.02|1|920200001"
+    },
+    {
+      "effect_size": 0.04,
+      "mode": "FULL",
+      "replication": 0,
+      "scenario": "PLANTED_EDGE",
+      "seed": 920300000,
+      "slot_id": "FULL|PLANTED_EDGE|0.04|0|920300000"
+    },
+    {
+      "effect_size": 0.04,
+      "mode": "FULL",
+      "replication": 1,
+      "scenario": "PLANTED_EDGE",
+      "seed": 920300001,
+      "slot_id": "FULL|PLANTED_EDGE|0.04|1|920300001"
+    }
+  ],
+  "profile_content_sha256": "38bb83340dada1d295595dcca8fbc4696913e71bafbd210137b14e4c63e0d591",
+  "qualification_attempted": false,
+  "rss_policy": "OBSERVATIONAL_ONLY",
+  "run_disk_limit_bytes": 68719476736,
+  "runtime_profile": {
+    "byte_sha256": "ac53a88093af00aa4546a2b91d3b76dd4aadb361cc07c5615082852cf8aec6e4",
+    "content_sha256": "16be0fcb1517069c78922a554ec4f162a945fa00886bd98d94e92db70d212430",
+    "executor_manifest_sha256": "9aaf5ce6e33d5de1147c4708060a71d04c957878a5cb23f32dccb054347c169b",
+    "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/stages/confirm-6w-1536-a/runtime-profile.json",
+    "profile_id": "confirm-selected-6w-1536"
+  },
+  "scope": "ENGINEERING_ONLY_MAC_FULL_GEOMETRY_DEVELOPMENT",
+  "single_slot_seed": null,
+  "slot_wall_seconds": 5400,
+  "source": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/candidate-package/manifest.json",
+  "stage_name": "confirm-6w-1536-a",
+  "trading_authorized": false,
+  "wave_selection": "parallel",
+  "wave_wall_seconds": 21600,
+  "worker_payload_cpu": 2,
+  "worker_payload_heap_bytes": 2147483648,
+  "worker_payload_rss_bytes": 3221225472
+}

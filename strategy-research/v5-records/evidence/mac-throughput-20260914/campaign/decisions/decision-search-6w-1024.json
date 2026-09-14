@@ -1,0 +1,47 @@
+{
+  "candidate": {
+    "active_processor_count": 1,
+    "gc_collector": "G1",
+    "outer_workers": 6,
+    "xmx_mib": 1024
+  },
+  "censor_rule": "1.20 times the fastest complete validated incumbent at stage start; censored stages are lower bounds only.",
+  "comparison_evidence": [
+    {
+      "stage": "search-4w-1280",
+      "stage_result_sha256": "d3fe9458f23ff80f8d67c61b29df6c07e4ea8dee6736bb7dcb405be42f6e3173",
+      "status": "PASS",
+      "worker_batch_wall_seconds": 1375.787384833
+    },
+    {
+      "stage": "search-6w-1280",
+      "stage_result_sha256": "20fc48d3db19da5c4467074d63590a8db76493f6f1409c829d3c792d1aba028a",
+      "status": "PASS",
+      "worker_batch_wall_seconds": 1365.548434625
+    },
+    {
+      "stage": "throughput-search-20260913/stage-6w-1024",
+      "stage_result_sha256": "2171f7a19e227b93ad9be46f99452a82153adc386156bdc9fe35a8aa569b0ba6",
+      "status": "PASS",
+      "worker_batch_wall_seconds": 2087.46835275
+    }
+  ],
+  "content_sha256": "36478fa6a791e21da7c9833fa475f730d5ef4a9383178e980af37e461775731f",
+  "created_at_utc": "2026-09-14T15:09:09Z",
+  "current_incumbent": {
+    "stage": "search-4w-1536",
+    "stage_result_sha256": "115dfc98b21b7b7daad7a858e910fafed1a5d80376e83ce2f22861e9bdfabe9f",
+    "status": "PASS",
+    "worker_batch_wall_seconds": 1339.542947875
+  },
+  "decision": "RUN",
+  "decision_id": "search-6w-1024",
+  "fixed_inventory": {
+    "development_seeds": 8,
+    "heldout_seeds_run": 0,
+    "qualification_claim": false
+  },
+  "predeclared_performance_censor_seconds": 1607.45153745,
+  "reason": "Next predeclared coarse comparison after 6x1280; tests whether lowering each worker heap to 1024 MiB changes full-batch time and GC pressure at six-worker concurrency.",
+  "schema": "calculation-performance-search-decision/1"
+}

@@ -1,0 +1,36 @@
+{
+  "archive_bytes": 519579860,
+  "archive_format": "tar.zst (zstd level3; checksum enabled; bsdtar Mac metadata, xattrs, ACLs, and file flags disabled)",
+  "archive_member_verification": "PASS: streamed every regular member; all 337 listed files and the embedded manifest matched byte count and SHA-256; no unexpected members; zstd checksum/decompression exit0.",
+  "archive_path": "/Users/eternal/.codex/artifacts/trading-pr13-performance/calculation-performance-20260914/phase5-reference-supplement-20260914-v3.tar.zst",
+  "archive_sha256": "95240f50624393fb10417bfe74a2630a753ba7a123374ba68eb29a3743c0f5a8",
+  "earlier_superseded_full_archive": {
+    "archive_bytes": 8839590035,
+    "archive_sha256": "23a200f653b36be8c2c56bc68ecc9d038c14816ad6cd5adab01dc7a84b2ea22b",
+    "path": "/Users/eternal/.codex/artifacts/trading-pr13-performance/calculation-performance-20260914/raw-campaign-20260914.tar.zst",
+    "reason": "bsdtar had included AppleDouble metadata members; superseded by the verified no-metadata full raw campaign snapshot archive."
+  },
+  "manifest_content_bytes": 3081535044,
+  "manifest_entry_count": 337,
+  "regular_archive_members_including_manifest": 338,
+  "schema": "calculation-performance-phase5-reference-supplement-custody/1",
+  "source_stage_result_sha256": "d98163a8d02ef29095c077af096f9a9b2c73e01620d79c61965a69db17d8ed7d",
+  "status": "PASS",
+  "superseded_archive": {
+    "archive_bytes": 519571097,
+    "archive_sha256": "2b0f9d00e5ae7bfc9c5b76944678e5b047f58006452407b24f24635c4b4559cf",
+    "path": "/Users/eternal/.codex/artifacts/trading-pr13-performance/calculation-performance-20260914/phase5-reference-supplement-20260914-v2.tar.zst",
+    "reason": "Superseded by v3 after correcting the documented overlap between individual 4-worker and 6-worker timing ranges; the v2 archive remains preserved and its contents were verified."
+  },
+  "previously_superseded_archive": {
+    "archive_bytes": 519619727,
+    "archive_sha256": "775e0895f10ffe6838683a552c82b69c5b5de82bec57a5c7cac118984c665785",
+    "path": "/Users/eternal/.codex/artifacts/trading-pr13-performance/calculation-performance-20260914/phase5-reference-supplement-20260914.tar.zst",
+    "reason": "Initial supplement manifest accidentally excluded two nested files named manifest.json. Member audit found only these two unlisted files; every listed member matched. Superseded by verified v2 manifest/archive."
+  },
+  "supplement_manifest_content_sha256": "41bb66ec60292b7ced97dafecba79fd168d2021e671586a7cfe011123ba6520b",
+  "supplement_manifest_file_sha256": "0d61621b998d9f0a08534f5753b4d2aead92bd0907c4ea3aeaa2a41b51ca356f",
+  "supplement_manifest_path": ".report-run/calculation-performance-20260914/phase5-reference-supplement/manifest.json",
+  "verified_content_bytes": 3081535044,
+  "verified_entry_count": 337
+}

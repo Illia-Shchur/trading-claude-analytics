@@ -1,0 +1,80 @@
+{
+  "comparison_evidence": [
+    {
+      "heap_mib": 1536,
+      "stage": "search-4w-1536",
+      "stage_elapsed_seconds": 1648.872970542,
+      "stage_result_sha256": "115dfc98b21b7b7daad7a858e910fafed1a5d80376e83ce2f22861e9bdfabe9f",
+      "status": "PASS",
+      "worker_batch_wall_seconds": 1339.542947875,
+      "workers": 4
+    },
+    {
+      "heap_mib": 1536,
+      "stage": "refine-repeat-4w-1536",
+      "stage_elapsed_seconds": 1642.301524042,
+      "stage_result_sha256": "8452ef066a17cb48bfc90bcf2defb8da610497a1c0378d7e19443e5ef2959eae",
+      "status": "PASS",
+      "worker_batch_wall_seconds": 1329.567945791,
+      "workers": 4
+    },
+    {
+      "heap_mib": 1536,
+      "stage": "refine-6w-1536",
+      "stage_elapsed_seconds": 1649.042245667,
+      "stage_result_sha256": "195116a730a740586859cee725269a8317734076473d1924e0c3b19b33630753",
+      "status": "PASS",
+      "worker_batch_wall_seconds": 1341.404730542,
+      "workers": 6
+    },
+    {
+      "heap_mib": 1536,
+      "stage": "refine-repeat-6w-1536",
+      "stage_elapsed_seconds": 1653.407134416,
+      "stage_result_sha256": "1bb4da00e92fedef08ee5ad367de2158707249bf7fd71ed62704b2e31f9d93c3",
+      "status": "PASS",
+      "worker_batch_wall_seconds": 1341.490918375,
+      "workers": 6
+    }
+  ],
+  "content_sha256": "3563a54752be216bcd201137066e3ae98ca50039e65a7027443cc1f9f52af881",
+  "created_at_utc": "2026-09-14T17:48:04Z",
+  "decision": "RUN_FINAL_MATCHED_CONFIRMATION_PAIR",
+  "decision_basis": {
+    "four_worker_mean_seconds": 1334.5554468330001,
+    "four_worker_observations_seconds": [
+      1339.542947875,
+      1329.567945791
+    ],
+    "four_worker_observed_spread_seconds": 9.975002083999925,
+    "interpretation": "The 6x1536 mean is 6.893s (0.52%) slower than the 4x1536 mean, inside the 4-worker repeat spread of 9.975s. Select six only as the prescribed tie-break pending two fresh confirmation batches.",
+    "mean_difference_percent_of_four": 0.5164549469904756,
+    "mean_difference_six_minus_four_seconds": 6.892377625499876,
+    "selection_rule": "Choose by complete eight-task worker-only makespan. Small differences require matched repeats; when timings are indistinguishable under observed run variation, prefer more workers.",
+    "six_worker_mean_seconds": 1341.4478244585,
+    "six_worker_observations_seconds": [
+      1341.404730542,
+      1341.490918375
+    ],
+    "timings_indistinguishable_under_observed_variation": true
+  },
+  "decision_id": "select-6w-1536-pending-confirmation",
+  "fixed_inventory": {
+    "development_seeds": 8,
+    "heldout_seeds_run": 0,
+    "qualification_claim": false
+  },
+  "next_action": "Run two fresh matched complete eight-seed confirmation batches at 6x1536 MiB, then finalize the selected local engineering profile only if both pass all frozen gates.",
+  "performance_censor_seconds": 1607.45153745,
+  "qualification_status": "NOT_QUALIFIED",
+  "schema": "calculation-performance-search-decision/1",
+  "selected_candidate": {
+    "active_processor_count": 1,
+    "gc_collector": "G1",
+    "outer_workers": 6,
+    "platform": "macOS",
+    "scope": "LOCAL_ENGINEERING_ONLY",
+    "xmx_mib": 1536
+  },
+  "version": 1
+}

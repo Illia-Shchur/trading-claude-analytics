@@ -1,0 +1,33 @@
+{
+  "active_processors": 1,
+  "aggregate_max_worker_rss_bytes": 8427454464,
+  "elapsed_seconds": 1672.8190109580028,
+  "heldout_executed": false,
+  "jvm_gc": "G1",
+  "launch_heap_mib": 1280,
+  "minimum_free_disk_reserve_bytes": 10737418240,
+  "notes": [
+    "Direct corrected-worker CLI execution is an engineering diagnostic because the production FULL coordinator gate correctly blocks this Mac.",
+    "The frozen plan retains 75 confirmation repetitions per cell; this harness executes only the eight 920M development seeds.",
+    "No qualification or confirmation command was invoked."
+  ],
+  "parallel_slots": 8,
+  "production_full_preflight_status": "BLOCKED_RESOURCE",
+  "qualification_attempted": false,
+  "rss_is_observational": true,
+  "run_disk_limit_bytes": 68719476736,
+  "runtime_profile": {
+    "byte_sha256": "276da66e79dd139186568fe27674989a2b67e3a1c23f8135679d1c466b9778cc",
+    "content_sha256": "9137711b6e47248ea1ce7ef08e222e369647956e5e2c04152236e6ffb1c57466",
+    "executor_manifest_sha256": "9aaf5ce6e33d5de1147c4708060a71d04c957878a5cb23f32dccb054347c169b",
+    "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/stages/search-6w-1280/runtime-profile.json",
+    "profile_id": "search-6w-1280-worker-comparison"
+  },
+  "scope": "ENGINEERING_ONLY_MAC_FULL_GEOMETRY_DEVELOPMENT",
+  "serial_parallel_economic_digests_equal": null,
+  "serial_slots": 0,
+  "single_slot_seed": null,
+  "status": "STRICT_PASS_PENDING_INDEPENDENT_AUDIT",
+  "wave_selection": "parallel",
+  "workers": 6
+}

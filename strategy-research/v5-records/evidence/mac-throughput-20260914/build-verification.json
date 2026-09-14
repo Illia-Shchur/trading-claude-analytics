@@ -1,0 +1,52 @@
+{
+  "candidate_package_unchanged": {
+    "current_jar_sha256": "523a88ef061761479d78f4d2791fc52a1e58ee7e276c6a27890e83154dcfca22",
+    "jar_sha256": "523a88ef061761479d78f4d2791fc52a1e58ee7e276c6a27890e83154dcfca22",
+    "manifest_sha256": "9aaf5ce6e33d5de1147c4708060a71d04c957878a5cb23f32dccb054347c169b"
+  },
+  "changed_code_coverage": {
+    "branch_coverage_percent": "98.78",
+    "branch_minimum_percent": "80",
+    "branches": "81/82",
+    "command": "python3 tools/check_new_code_coverage.py --base 33065e15731e08fcbe6c2f99dff9657580e31d8b --report analytics-coverage/target/site/jacoco-aggregate/jacoco.xml --minimum 80 --branch-minimum 80",
+    "gate_log_sha256": "abf666fd26270c3bafb95d59bf7d2b2c12ea14e08da4c15f391bfc878e9ead11",
+    "line_coverage_percent": "100.00",
+    "lines": "104/104",
+    "minimum_percent": "80",
+    "report_sha256": "fb5bc8453e32744126373228bcbef7862337ea69c1d5bc1b72180bbd4f7bfa41",
+    "status": "PASS"
+  },
+  "created_at_utc": "2026-09-14T19:04:19Z",
+  "jdk": {
+    "path": "/opt/homebrew/Cellar/openjdk@21/21.0.11/libexec/openjdk.jdk/Contents/Home/bin/java",
+    "version_output": "openjdk version \"21.0.11\" 2026-04-21\nOpenJDK Runtime Environment Homebrew (build 21.0.11)\nOpenJDK 64-Bit Server VM Homebrew (build 21.0.11, mixed mode, sharing)"
+  },
+  "reactor": {
+    "command": "./mvnw --batch-mode --no-transfer-progress clean install",
+    "exit_code": 0,
+    "log_path": ".report-run/calculation-performance-20260914/final-clean-install.log",
+    "log_sha256": "428babdd5fe2dfc7946ba8b273f5e89bef3065d8ccf90dd56518df4ae13162a5",
+    "maven_wrapper_sha256": "cae96cef89ebea3531221f4ae17c23cf8edf67d00eae8306d4186ae1bbed4d02",
+    "status": "PASS",
+    "total_time_seconds": 343
+  },
+  "schema": "calculation-performance-build-verification/1",
+  "source_commit": "6d5e02dd553a582d2f4052e8d6010d56587f96e9",
+  "status": "PASS",
+  "tests": {
+    "affected_contract_suite": {
+      "errors": 0,
+      "failures": 0,
+      "path": "analytics-contracts/target/surefire-reports/TEST-com.tradinganalytics.contracts.json.NodeCanonicalizeCompatibilityTest.xml",
+      "sha256": "d13b3a3c5e5dd6983a1e989c1cfe779f3c34f97ff5fff94078c181c9a620bc63",
+      "skipped": 0,
+      "tests": 31
+    },
+    "errors": 0,
+    "failures": 0,
+    "failures_and_errors": 0,
+    "skipped": 1,
+    "suites": 272,
+    "tests": 1544
+  }
+}

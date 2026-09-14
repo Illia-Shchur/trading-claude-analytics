@@ -1,0 +1,83 @@
+{
+  "comparison_contract": {
+    "active_processor_count": 1,
+    "gc_collector": "G1",
+    "heap_mib": 1536,
+    "independent_randomization_or_causal_estimate": false,
+    "new_code_batch_preceded_fresh_old_code_reference": true,
+    "pinned_jdk": "21.0.11",
+    "platform": "macOS",
+    "raw_artifacts_modified": false,
+    "same_eight_development_seeds": true,
+    "same_host": true,
+    "same_task_geometry": true,
+    "workers": 4
+  },
+  "content_sha256": "13708790793af43c8eb2d8b8c0499f2b10255c487edae57c12ce5d6f533b3594",
+  "created_at_utc": "2026-09-14T20:13:10+00:00",
+  "fresh_old_code_reference": {
+    "all_strict_validations_pass": true,
+    "batch_metrics_sha256": "91a0bef6c1e08ca470548a059ca7f160414b2c7d7817db9aba30af98b17c2641",
+    "books_reconciled": 16,
+    "executor_jar_sha256": "b8a34877f8d674c4c16d3e121759f9c7c3a62b0a563226fbe03c02b91b27e6d2",
+    "executor_manifest_sha256": "f9a87031a5442a07e25e913cdcfa8d20380e92399438aa33febf612e2c9f104f",
+    "independent_audit_artifacts": 8,
+    "independent_audit_status": "PASS",
+    "no_production_java_diff_since_prechange_head": true,
+    "prechange_head": "33065e15731e08fcbe6c2f99dff9657580e31d8b",
+    "raw_artifacts_preserved": true,
+    "reference_economic_hashes_and_metrics_curves_match": true,
+    "runtime_profile_sha256": "6be28f7705b7a31e1294579ca6900e900eec33c76295d3f2348d5ff4064dccbb",
+    "source_commit": "4d8ec899c8d80eca20af970d46a0acf08e0ca3f1",
+    "stage": "stages/prechange-4w-1536",
+    "stage_elapsed_seconds": 2393.960876625,
+    "stage_result_sha256": "d98163a8d02ef29095c077af096f9a9b2c73e01620d79c61965a69db17d8ed7d",
+    "strict_validation_count": 8,
+    "trades_reconciled": 7200,
+    "worker_batch_seconds": 1921.885887792
+  },
+  "historical_prechange_observation": {
+    "role": "Preserved historical evidence; not used as the fresh reference.",
+    "stage": "throughput-heap-expansion-20260913/stages/stage-4w-1536",
+    "status": "PASS",
+    "worker_batch_seconds": 1899.388514917
+  },
+  "new_code_anchor": {
+    "batch_metrics_sha256": "b0a2e9bf32dd54316705481015c789d02f3a2ec2e8dedf83a0e04eefd6877987",
+    "books_reconciled": 16,
+    "executor_jar_sha256": "523a88ef061761479d78f4d2791fc52a1e58ee7e276c6a27890e83154dcfca22",
+    "executor_manifest_sha256": "9aaf5ce6e33d5de1147c4708060a71d04c957878a5cb23f32dccb054347c169b",
+    "independent_audit_status": "PASS",
+    "raw_artifacts_preserved": true,
+    "reference_economic_hashes_and_metrics_curves_match": true,
+    "source_commit": "6d5e02dd553a582d2f4052e8d6010d56587f96e9",
+    "stage": "stages/search-4w-1536",
+    "stage_result_sha256": "115dfc98b21b7b7daad7a858e910fafed1a5d80376e83ce2f22861e9bdfabe9f",
+    "strict_validation_count": 8,
+    "trades_reconciled": 7200,
+    "worker_batch_seconds": 1339.542947875
+  },
+  "observed_worker_batch_difference": {
+    "interpretation": "One fresh batch per executable, with the new-code batch first. This descriptive local comparison is not randomized or statistically conclusive and does not establish a causal effect.",
+    "new_seconds": 1339.542947875,
+    "old_seconds": 1921.885887792,
+    "percent_lower_vs_old": 30.300599198740002,
+    "seconds_lower": 582.342939917
+  },
+  "plan_geometry_binding": {
+    "all_remaining_plan_and_slot_content_equal": true,
+    "difference_paths": [
+      "$.content_sha256",
+      "$.execution_profile_sha256",
+      "$.executor_build_input_fingerprint",
+      "$.executor_identity_sha256",
+      "$.executor_source_sha256"
+    ],
+    "new_plan_sha256": "e6f6df95becd8ee45b2e17dd91af180dd83b79fe8cdc9fc2229db8e83a4f201b",
+    "old_plan_sha256": "513bf5fb6e09095de7cb23df83e9feb80aaedc11f6625687bf08403bcea0a072"
+  },
+  "qualification_boundary": "No held-out seeds, formal qualification, or strategy parameter change.",
+  "schema": "calculation-performance-fresh-code-effect-comparison/1",
+  "scope": "LOCAL_MAC_ENGINEERING_DESCRIPTIVE_COMPARISON_NOT_QUALIFICATION",
+  "status": "PASS"
+}

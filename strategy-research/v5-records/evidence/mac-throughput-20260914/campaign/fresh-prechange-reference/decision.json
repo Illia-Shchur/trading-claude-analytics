@@ -1,0 +1,52 @@
+{
+  "comparison_contract": {
+    "AC_power_and_caffeinate_required": true,
+    "active_processor_count": 1,
+    "cap_basis": "Reused prospective upper bound from prior old-code plan: 1.20 \u00d7 2087.46835275s old-code incumbent. A censor is a lower bound and cannot be called a complete comparison.",
+    "fixed_development_seeds": 8,
+    "gc_collector": "G1",
+    "geometry_and_slot_payloads_equal": true,
+    "heap_mib": 1536,
+    "old_new_plan_structural_differences": [
+      "$.content_sha256",
+      "$.execution_profile_sha256",
+      "$.executor_build_input_fingerprint",
+      "$.executor_identity_sha256",
+      "$.executor_source_sha256"
+    ],
+    "pinned_jdk": "21.0.11",
+    "same_local_host": "macOS",
+    "same_planned_slots": true,
+    "worker_batch_cap_seconds": 2504.9620233,
+    "workers": 4
+  },
+  "content_sha256": "7d5bc0cd250d4ef3abd57cb2d680ea33b288526170ec6c06923eb1f27ff39e49",
+  "created_at_utc": "2026-09-14T19:25:34+00:00",
+  "decision_id": "prechange-4w-1536",
+  "new_code_controller_is_unchanged": true,
+  "new_executable": {
+    "executor_jar_sha256": "523a88ef061761479d78f4d2791fc52a1e58ee7e276c6a27890e83154dcfca22",
+    "manifest_sha256": "9aaf5ce6e33d5de1147c4708060a71d04c957878a5cb23f32dccb054347c169b",
+    "matched_new_stage": "stages/search-4w-1536",
+    "matched_new_stage_result_sha256": "115dfc98b21b7b7daad7a858e910fafed1a5d80376e83ce2f22861e9bdfabe9f",
+    "package_path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/candidate-package",
+    "source_commit": "6d5e02dd553a582d2f4052e8d6010d56587f96e9"
+  },
+  "old_code_controller_isolated_copy": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/run-prechange-reference-stage.py",
+  "old_executable": {
+    "executor_jar_sha256": "b8a34877f8d674c4c16d3e121759f9c7c3a62b0a563226fbe03c02b91b27e6d2",
+    "manifest_sha256": "f9a87031a5442a07e25e913cdcfa8d20380e92399438aa33febf612e2c9f104f",
+    "no_java_source_changes_between_commits": true,
+    "package_path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/throughput-search-20260913/candidate-package",
+    "plan_file_sha256": "513bf5fb6e09095de7cb23df83e9feb80aaedc11f6625687bf08403bcea0a072",
+    "prechange_head": "33065e15731e08fcbe6c2f99dff9657580e31d8b",
+    "profile_file_sha256": "c0891eac113a43f701c860f296bbfd1958c6466fc96f85b7106b150d256898ff",
+    "source_commit": "4d8ec899c8d80eca20af970d46a0acf08e0ca3f1"
+  },
+  "old_runtime_profile": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/runtime-profiles/prechange-reference-mac-4w-1536.json",
+  "old_runtime_profile_content_sha256": "6be28f7705b7a31e1294579ca6900e900eec33c76295d3f2348d5ff4064dccbb",
+  "purpose": "Phase 5 fresh matched old/new executable comparison at the same worker and heap setting; the historical old campaign timing is preserved but is not the primary code-effect reference.",
+  "run_order_limit": "The new-code run occurred earlier; this old-code reference runs afterward. The observed pair is descriptive, not randomized, statistical, or a causal estimate.",
+  "schema": "calculation-performance-fresh-prechange-reference-decision/1",
+  "status": "FROZEN_BEFORE_WORKLOAD"
+}

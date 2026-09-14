@@ -1,0 +1,112 @@
+{
+  "batch_metrics": "batch-metrics.json",
+  "completed_workers": 8,
+  "execution_records": "execution-records.json",
+  "planned_workers": 8,
+  "schema": "mac-throughput-live-progress/1",
+  "slots": {
+    "FULL|NO_EDGE|0|0|920000000": {
+      "artifact": "parallel/slots/FULL_NO_EDGE_0_0_920000000/worker-result.json",
+      "elapsed_seconds": 696.813943166,
+      "error": "",
+      "exit_code": 0,
+      "finished_at_epoch_ns": 1789410690668248000,
+      "finished_at_utc": "2026-09-14T18:31:30.668Z",
+      "finished_monotonic_ns": 67790799801916,
+      "status": "PUBLISHED_TEMPORARY"
+    },
+    "FULL|NO_EDGE|0|1|920000001": {
+      "artifact": "parallel/slots/FULL_NO_EDGE_0_1_920000001/worker-result.json",
+      "elapsed_seconds": 688.719745708,
+      "error": "",
+      "exit_code": 0,
+      "finished_at_epoch_ns": 1789410682574272000,
+      "finished_at_utc": "2026-09-14T18:31:22.574Z",
+      "finished_monotonic_ns": 67782705792541,
+      "status": "PUBLISHED_TEMPORARY"
+    },
+    "FULL|PLANTED_EDGE|0.02|0|920200000": {
+      "artifact": "parallel/slots/FULL_PLANTED_EDGE_0.02_0_920200000/worker-result.json",
+      "elapsed_seconds": 680.727578625,
+      "error": "",
+      "exit_code": 0,
+      "finished_at_epoch_ns": 1789410674582700000,
+      "finished_at_utc": "2026-09-14T18:31:14.582Z",
+      "finished_monotonic_ns": 67774714187250,
+      "status": "PUBLISHED_TEMPORARY"
+    },
+    "FULL|PLANTED_EDGE|0.02|1|920200001": {
+      "artifact": "parallel/slots/FULL_PLANTED_EDGE_0.02_1_920200001/worker-result.json",
+      "elapsed_seconds": 688.725491583,
+      "error": "",
+      "exit_code": 0,
+      "finished_at_epoch_ns": 1789410682580729000,
+      "finished_at_utc": "2026-09-14T18:31:22.580Z",
+      "finished_monotonic_ns": 67782712250416,
+      "status": "PUBLISHED_TEMPORARY"
+    },
+    "FULL|PLANTED_EDGE|0.04|0|920300000": {
+      "artifact": "parallel/slots/FULL_PLANTED_EDGE_0.04_0_920300000/worker-result.json",
+      "elapsed_seconds": 648.658672458,
+      "error": "",
+      "exit_code": 0,
+      "finished_at_epoch_ns": 1789411323237182000,
+      "finished_at_utc": "2026-09-14T18:42:03.237Z",
+      "finished_monotonic_ns": 68423376501416,
+      "status": "PUBLISHED_TEMPORARY"
+    },
+    "FULL|PLANTED_EDGE|0.04|1|920300001": {
+      "artifact": "parallel/slots/FULL_PLANTED_EDGE_0.04_1_920300001/worker-result.json",
+      "elapsed_seconds": 650.719658084,
+      "error": "",
+      "exit_code": 0,
+      "finished_at_epoch_ns": 1789411333287984000,
+      "finished_at_utc": "2026-09-14T18:42:13.288Z",
+      "finished_monotonic_ns": 68433427355000,
+      "status": "PUBLISHED_TEMPORARY"
+    },
+    "FULL|PLANTED_EDGE|0|0|920100000": {
+      "artifact": "parallel/slots/FULL_PLANTED_EDGE_0_0_920100000/worker-result.json",
+      "elapsed_seconds": 700.804497833,
+      "error": "",
+      "exit_code": 0,
+      "finished_at_epoch_ns": 1789410694659120000,
+      "finished_at_utc": "2026-09-14T18:31:34.659Z",
+      "finished_monotonic_ns": 67794790690041,
+      "status": "PUBLISHED_TEMPORARY"
+    },
+    "FULL|PLANTED_EDGE|0|1|920100001": {
+      "artifact": "parallel/slots/FULL_PLANTED_EDGE_0_1_920100001/worker-result.json",
+      "elapsed_seconds": 694.755101458,
+      "error": "",
+      "exit_code": 0,
+      "finished_at_epoch_ns": 1789410688609944000,
+      "finished_at_utc": "2026-09-14T18:31:28.609Z",
+      "finished_monotonic_ns": 67788741489666,
+      "status": "PUBLISHED_TEMPORARY"
+    }
+  },
+  "stage": {
+    "active_processors": 1,
+    "heap_mib": 1536,
+    "jar_sha256": "523a88ef061761479d78f4d2791fc52a1e58ee7e276c6a27890e83154dcfca22",
+    "java": "/opt/homebrew/Cellar/openjdk@21/21.0.11/libexec/openjdk.jdk/Contents/Home/bin/java",
+    "jvm_gc": "G1",
+    "runtime_profile": {
+      "byte_sha256": "ac53a88093af00aa4546a2b91d3b76dd4aadb361cc07c5615082852cf8aec6e4",
+      "content_sha256": "16be0fcb1517069c78922a554ec4f162a945fa00886bd98d94e92db70d212430",
+      "executor_manifest_sha256": "9aaf5ce6e33d5de1147c4708060a71d04c957878a5cb23f32dccb054347c169b",
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/stages/confirm-6w-1536-b/runtime-profile.json",
+      "profile_id": "confirm-selected-6w-1536"
+    },
+    "source_sha256": "944507d7e84aab9855fbff7e9bb464c5ff6272f8f41b653daf9129b85461b474",
+    "stage_name": "confirm-6w-1536-b",
+    "workers": 6
+  },
+  "started_at_epoch_ns": 1789409993839489000,
+  "started_at_utc": "2026-09-14T18:19:53.839Z",
+  "started_monotonic_ns": 67093968210708,
+  "status": "WORKERS_COMPLETE",
+  "updated_at_utc": "2026-09-14T18:42:13.868Z",
+  "wave": "parallel"
+}

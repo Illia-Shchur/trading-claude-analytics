@@ -1,0 +1,22 @@
+{
+  "active_processor_count": 1,
+  "content_sha256": "8a4987c2c9bb483d0ef562d26083be87b2e3ca1707f0cfb839a5fac196493572",
+  "decision_receipt_sha256": "483163d2d300a602695ff87964a889fbe1004040dad5f3e0db0a6ed3b17c54de",
+  "effective_concurrency_cap": 8,
+  "evidence_references": [
+    ".report-run/calculation-performance-20260914/stages/search-4w-1536/stage-result.json",
+    ".report-run/calculation-performance-20260914/stages/refine-6w-1536/stage-result.json",
+    ".report-run/calculation-performance-20260914/stages/refine-repeat-6w-1536/stage-result.json"
+  ],
+  "executor_manifest_sha256": "9aaf5ce6e33d5de1147c4708060a71d04c957878a5cb23f32dccb054347c169b",
+  "gc_collector": "G1",
+  "host_identity_sha256": "506b6b5b92853cd698b3bdeee68034be09ed2619550943f319bab9f5ff1f63f6",
+  "outer_workers": 4,
+  "platform": "macOS",
+  "profile_id": "refine-repeat-4w-1536",
+  "schema": "mac-local-engineering-runtime/1",
+  "scope": "LOCAL_ENGINEERING_ONLY",
+  "selection_status": "CANDIDATE_NOT_SELECTED",
+  "version": 1,
+  "xmx_mib": 1536
+}

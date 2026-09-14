@@ -1,0 +1,42 @@
+{
+  "FULL|NO_EDGE|0|0|920000000": {
+    "after_audit_sha256": "ff33c0efad6627dc85954adb54b71214c9cfd9c5a7cad3b8d2f96415890996ea",
+    "before_audit_sha256": "ff33c0efad6627dc85954adb54b71214c9cfd9c5a7cad3b8d2f96415890996ea",
+    "preserved": true
+  },
+  "FULL|NO_EDGE|0|1|920000001": {
+    "after_audit_sha256": "0a521dc29a2d20fa34432995dc3a6ef3bac0774769b23df23ef0a51950010d73",
+    "before_audit_sha256": "0a521dc29a2d20fa34432995dc3a6ef3bac0774769b23df23ef0a51950010d73",
+    "preserved": true
+  },
+  "FULL|PLANTED_EDGE|0.02|0|920200000": {
+    "after_audit_sha256": "eebcff4737112309db2c68fad3ec21aa00daebee273f76e5c058f22452b00bd4",
+    "before_audit_sha256": "eebcff4737112309db2c68fad3ec21aa00daebee273f76e5c058f22452b00bd4",
+    "preserved": true
+  },
+  "FULL|PLANTED_EDGE|0.02|1|920200001": {
+    "after_audit_sha256": "5bbcaf547435065e6a3f87ebf4e36f53777524b43da5557716ec78017bf635f2",
+    "before_audit_sha256": "5bbcaf547435065e6a3f87ebf4e36f53777524b43da5557716ec78017bf635f2",
+    "preserved": true
+  },
+  "FULL|PLANTED_EDGE|0.04|0|920300000": {
+    "after_audit_sha256": "a29795bc1171bb8f0b2cec6512768c0be0209e10eb6d2ef84ca07ee48005cbd6",
+    "before_audit_sha256": "a29795bc1171bb8f0b2cec6512768c0be0209e10eb6d2ef84ca07ee48005cbd6",
+    "preserved": true
+  },
+  "FULL|PLANTED_EDGE|0.04|1|920300001": {
+    "after_audit_sha256": "fcecc4f2758cd001b76eddc45e615c073ae6e30b816e394e5c91b6aacdaedb5c",
+    "before_audit_sha256": "fcecc4f2758cd001b76eddc45e615c073ae6e30b816e394e5c91b6aacdaedb5c",
+    "preserved": true
+  },
+  "FULL|PLANTED_EDGE|0|0|920100000": {
+    "after_audit_sha256": "03dbd533d5c2df694651bf3a355d907c0463e75ea7f26d7fb5da75bceedea58f",
+    "before_audit_sha256": "03dbd533d5c2df694651bf3a355d907c0463e75ea7f26d7fb5da75bceedea58f",
+    "preserved": true
+  },
+  "FULL|PLANTED_EDGE|0|1|920100001": {
+    "after_audit_sha256": "03aa872e00c260e8d5f65163a2c36f13b1283cc3b1dd71b8def7f66559b37de7",
+    "before_audit_sha256": "03aa872e00c260e8d5f65163a2c36f13b1283cc3b1dd71b8def7f66559b37de7",
+    "preserved": true
+  }
+}

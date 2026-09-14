@@ -1,0 +1,15 @@
+{
+  "build_identity_toolchain_fingerprint": "37d5f5b0512f0e167a2368f1969b03de014934cb3e0d1f7933e2c3296b988c10",
+  "created_at_utc": "2026-09-14T13:18:06Z",
+  "engineering_change": "CanonicalJson direct UTF-8 encoding for scalar strings, booleans and null; pinned JCS retains numeric and structured encoding.",
+  "executor_jar_sha256": "523a88ef061761479d78f4d2791fc52a1e58ee7e276c6a27890e83154dcfca22",
+  "executor_source_sha256": "944507d7e84aab9855fbff7e9bb464c5ff6272f8f41b653daf9129b85461b474",
+  "heldout_authorized": false,
+  "java": "/opt/homebrew/Cellar/openjdk@21/21.0.11/libexec/openjdk.jdk/Contents/Home/bin/java",
+  "plan_content_sha256": "c5e4c9210e8349ec05d8f321725fe39eb4fdedd867e151555573469b85de823c",
+  "profile_content_sha256": "38bb83340dada1d295595dcca8fbc4696913e71bafbd210137b14e4c63e0d591",
+  "qualification_authorized": false,
+  "scope": "ENGINEERING_ONLY_FULL_DEVELOPMENT_THROUGHPUT_SEARCH",
+  "source_commit": "6d5e02dd553a582d2f4052e8d6010d56587f96e9",
+  "source_tree_dirty": false
+}

@@ -1,0 +1,27 @@
+{
+  "active_processor_count": 1,
+  "content_sha256": "397e189b69ae26a63a4c08f907410cba19de52a0399c3a75411135e0272d0c95",
+  "effective_concurrency_cap": 8,
+  "evidence_references": [
+    ".report-run/calculation-performance-20260914/stages/search-4w-1536/stage-result.json",
+    ".report-run/calculation-performance-20260914/stages/refine-repeat-4w-1536/stage-result.json",
+    ".report-run/calculation-performance-20260914/stages/refine-6w-1536/stage-result.json",
+    ".report-run/calculation-performance-20260914/stages/refine-repeat-6w-1536/stage-result.json",
+    ".report-run/calculation-performance-20260914/stages/confirm-6w-1536-a/stage-result.json",
+    ".report-run/calculation-performance-20260914/stages/confirm-6w-1536-b/stage-result.json"
+  ],
+  "evidence_scope": "Eight fixed development seeds; local Mac engineering only. No held-out seeds or formal qualification.",
+  "executor_manifest_sha256": "9aaf5ce6e33d5de1147c4708060a71d04c957878a5cb23f32dccb054347c169b",
+  "gc_collector": "G1",
+  "host_identity_sha256": "506b6b5b92853cd698b3bdeee68034be09ed2619550943f319bab9f5ff1f63f6",
+  "outer_workers": 6,
+  "platform": "macOS",
+  "profile_id": "selected-local-mac-6w-1536",
+  "runner_usage": "Pass this file with --runtime-profile and --expected-runtime-profile-sha256 <content_sha256> to the frozen Mac engineering harness.",
+  "schema": "mac-local-engineering-runtime/1",
+  "scope": "LOCAL_ENGINEERING_ONLY",
+  "selection_decision_receipt_sha256": "cee61271a8fd21fb405d31b0f4f073d2fda48a5704490319050536b1a173c728",
+  "selection_status": "SELECTED_LOCAL_ENGINEERING_MAC",
+  "version": 1,
+  "xmx_mib": 1536
+}

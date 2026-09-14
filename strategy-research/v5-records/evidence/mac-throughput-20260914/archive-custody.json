@@ -1,0 +1,23 @@
+{
+  "archive_bytes": 8837288547,
+  "archive_format": "tar.zst (zstd level3, checksum enabled; bsdtar Mac metadata and xattrs disabled)",
+  "archive_member_verification": "PASS: streamed every regular member; each of 9,776 manifest entries and the embedded manifest file matched byte count and SHA-256; no unexpected members; zstd checksum/decompression exit0.",
+  "archive_path": "/Users/eternal/.codex/artifacts/trading-pr13-performance/calculation-performance-20260914/raw-campaign-20260914-clean.tar.zst",
+  "archive_regular_file_count_including_manifest": 9777,
+  "archive_sha256": "a445e1528e95e9dfe4b76151f30c59b7652424b45a1f5d4412efcf9a926de51a",
+  "manifest_content_bytes": 56033099497,
+  "manifest_entry_count": 9776,
+  "raw_content_manifest_content_sha256": "125c684a3e2db43c71df087cafee642ede32949db553763ca2fe8596d104afed",
+  "raw_content_manifest_file_sha256": "7584f8ec7e3d15541d9665c7a1950f0284994328e39cb7256a1a1b43e6c1ee0f",
+  "raw_content_manifest_path": ".report-run/calculation-performance-20260914/raw-campaign-content-manifest.json",
+  "schema": "calculation-performance-raw-archive-custody/1",
+  "status": "PASS",
+  "superseded_archive": {
+    "archive_bytes": 8839590035,
+    "archive_sha256": "23a200f653b36be8c2c56bc68ecc9d038c14816ad6cd5adab01dc7a84b2ea22b",
+    "path": "/Users/eternal/.codex/artifacts/trading-pr13-performance/calculation-performance-20260914/raw-campaign-20260914.tar.zst",
+    "reason": "Provisional tar included bsdtar-generated AppleDouble metadata members outside the content manifest. Preserved unchanged; replaced by this verified no-metadata archive."
+  },
+  "verified_content_bytes": 56033099497,
+  "verified_entries": 9776
+}

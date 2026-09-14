@@ -1,0 +1,38 @@
+{
+  "candidate": [
+    "workers",
+    "heap_mib"
+  ],
+  "claim_limit": "One matched development batch comparison on the same Mac and worker profile; this is observed local engineering evidence, not a formal qualification or independent research sample.",
+  "configuration": {
+    "active_processor_count": 1,
+    "gc_collector": "G1",
+    "heap_mib": 1536,
+    "workers": 4
+  },
+  "elapsed_reduction_percent": 29.47504223834187,
+  "elapsed_reduction_seconds": 559.8455670420001,
+  "new_code": {
+    "independent_books_reconciled": 16,
+    "independent_trades_reconciled": 7200,
+    "package_manifest_sha256": "9aaf5ce6e33d5de1147c4708060a71d04c957878a5cb23f32dccb054347c169b",
+    "raw_artifacts_preserved": true,
+    "reference_economic_hash_match": true,
+    "reference_metrics_and_three_curves_match": true,
+    "stage": "calculation-performance-20260914/stages/search-4w-1536",
+    "stage_result_sha256": "115dfc98b21b7b7daad7a858e910fafed1a5d80376e83ce2f22861e9bdfabe9f",
+    "status": "PASS",
+    "strict_validations": 8,
+    "timing_integrity": "PASS",
+    "worker_batch_wall_seconds": 1339.542947875
+  },
+  "prechange": {
+    "package_manifest_sha256": null,
+    "stage": "throughput-heap-expansion-20260913/stages/stage-4w-1536",
+    "stage_result_sha256": "836ddb76554297eb13ba6c1326f3190aaf2905410bf72a5a759eeaf614a3d9a2",
+    "status": "PASS",
+    "worker_batch_wall_seconds": 1899.388514917
+  },
+  "schema": "calculation-performance-code-effect-comparison/1",
+  "scope": "ENGINEERING_ONLY_SAME_EIGHT_DEVELOPMENT_SEEDS"
+}

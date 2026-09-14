@@ -1,0 +1,8 @@
+{
+  "batch_metrics": "parallel/batch-metrics.json",
+  "completed_waves": [
+    "parallel"
+  ],
+  "elapsed_seconds": 1330.1367893330025,
+  "scope": "ENGINEERING_ONLY_MAC_FULL_GEOMETRY_DEVELOPMENT"
+}

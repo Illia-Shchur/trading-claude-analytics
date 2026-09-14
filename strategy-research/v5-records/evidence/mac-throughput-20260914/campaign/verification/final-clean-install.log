@@ -1,0 +1,1780 @@
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] Trading Analytics                                                  [pom]
+[INFO] analytics-contracts                                                [jar]
+[INFO] analytics-core                                                     [jar]
+[INFO] analytics-infrastructure                                           [jar]
+[INFO] analytics-market-data                                              [jar]
+[INFO] analytics-reporting                                                [jar]
+[INFO] analytics-research                                                 [jar]
+[INFO] analytics-cli                                                      [jar]
+[INFO] analytics-compatibility-tests                                      [jar]
+[INFO] Trading Analytics aggregate coverage                               [pom]
+[INFO] 
+[INFO] -----------< com.tradinganalytics:trading-analytics-parent >------------
+[INFO] Building Trading Analytics 1.0.0-SNAPSHOT                         [1/10]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ trading-analytics-parent ---
+[INFO] 
+[INFO] --- enforcer:3.6.2:enforce (enforce-build-environment) @ trading-analytics-parent ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.version.RequireJavaVersion passed
+[INFO] Rule 1: org.apache.maven.enforcer.rules.version.RequireMavenVersion passed
+[INFO] 
+[INFO] --- jacoco:0.8.15:prepare-agent (default) @ trading-analytics-parent ---
+[INFO] argLine set to -javaagent:/Users/eternal/.m2/repository/org/jacoco/org.jacoco.agent/0.8.15/org.jacoco.agent-0.8.15-runtime.jar=destfile=/Users/eternal/.codex/worktrees/trading-pr13-performance/target/jacoco.exec
+[INFO] 
+[INFO] --- jacoco:0.8.15:report (jacoco-report) @ trading-analytics-parent ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO] 
+[INFO] --- install:3.1.2:install (default-install) @ trading-analytics-parent ---
+[INFO] Installing /Users/eternal/.codex/worktrees/trading-pr13-performance/pom.xml to /Users/eternal/.m2/repository/com/tradinganalytics/trading-analytics-parent/1.0.0-SNAPSHOT/trading-analytics-parent-1.0.0-SNAPSHOT.pom
+[INFO] 
+[INFO] --------------< com.tradinganalytics:analytics-contracts >--------------
+[INFO] Building analytics-contracts 1.0.0-SNAPSHOT                       [2/10]
+[INFO]   from analytics-contracts/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ analytics-contracts ---
+[INFO] Deleting /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-contracts/target
+[INFO] 
+[INFO] --- enforcer:3.6.2:enforce (enforce-build-environment) @ analytics-contracts ---
+[INFO] 
+[INFO] --- jacoco:0.8.15:prepare-agent (default) @ analytics-contracts ---
+[INFO] argLine set to -javaagent:/Users/eternal/.m2/repository/org/jacoco/org.jacoco.agent/0.8.15/org.jacoco.agent-0.8.15-runtime.jar=destfile=/Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-contracts/target/jacoco.exec
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ analytics-contracts ---
+[INFO] Copying 192 resources from ../schemas to target/classes/schemas
+[INFO] 
+[INFO] --- compiler:3.14.1:compile (default-compile) @ analytics-contracts ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 8 source files with javac [debug parameters release 21] to target/classes
+[INFO] /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-contracts/src/main/java/com/tradinganalytics/contracts/json/NodePrettyJson.java: Some input files use or override a deprecated API.
+[INFO] /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-contracts/src/main/java/com/tradinganalytics/contracts/json/NodePrettyJson.java: Recompile with -Xlint:deprecation for details.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ analytics-contracts ---
+[INFO] skip non existing resourceDirectory /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-contracts/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.14.1:testCompile (default-testCompile) @ analytics-contracts ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 7 source files with javac [debug parameters release 21] to target/test-classes
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ analytics-contracts ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.tradinganalytics.contracts.schema.ResearchSchemaRegistryTest
+SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.890 s -- in com.tradinganalytics.contracts.schema.ResearchSchemaRegistryTest
+[INFO] Running com.tradinganalytics.contracts.json.PrettyCanonicalJsonTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in com.tradinganalytics.contracts.json.PrettyCanonicalJsonTest
+[INFO] Running com.tradinganalytics.contracts.json.NodePrettyJsonTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in com.tradinganalytics.contracts.json.NodePrettyJsonTest
+[INFO] Running com.tradinganalytics.contracts.json.NodeCanonicalizeCompatibilityTest
+[INFO] Tests run: 31, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.121 s -- in com.tradinganalytics.contracts.json.NodeCanonicalizeCompatibilityTest
+[INFO] Running com.tradinganalytics.contracts.json.StrictJsonTest
+[INFO] Tests run: 34, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.035 s -- in com.tradinganalytics.contracts.json.StrictJsonTest
+[INFO] Running com.tradinganalytics.contracts.json.CanonicalJsonPropertiesTest
+timestamp = 2026-09-14T21:57:44.273823, CanonicalJsonPropertiesTest:canonicalizationIsIdempotentAcrossStrictParsing = 
+                              |-----------------------jqwik-----------------------
+tries = 400                   | # of calls to property
+checks = 400                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 108        | # of all combined edge cases
+edge-cases#tried = 51         | # of edge cases tried in current run
+seed = 5309722410654133994    | random seed to reproduce generated values
+
+
+timestamp = 2026-09-14T21:57:44.396208, CanonicalJsonPropertiesTest:objectInsertionOrderCannotChangeCanonicalBytes = 
+                              |-----------------------jqwik-----------------------
+tries = 400                   | # of calls to property
+checks = 400                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 19         | # of all combined edge cases
+edge-cases#tried = 19         | # of edge cases tried in current run
+seed = 5507048466618734987    | random seed to reproduce generated values
+
+
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.292 s -- in com.tradinganalytics.contracts.json.CanonicalJsonPropertiesTest
+[INFO] Running com.tradinganalytics.contracts.json.StrictJsonPropertiesTest
+timestamp = 2026-09-14T21:57:44.414047, StrictJsonPropertiesTest:rejectsEveryRepeatedPropertyName = 
+                              |-----------------------jqwik-----------------------
+tries = 300                   | # of calls to property
+checks = 300                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 2          | # of all combined edge cases
+edge-cases#tried = 2          | # of edge cases tried in current run
+seed = 2484188754008468943    | random seed to reproduce generated values
+
+
+timestamp = 2026-09-14T21:57:44.422503, StrictJsonPropertiesTest:acceptsEveryJsonEncodedString = 
+                              |-----------------------jqwik-----------------------
+tries = 300                   | # of calls to property
+checks = 300                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 3          | # of all combined edge cases
+edge-cases#tried = 3          | # of edge cases tried in current run
+seed = 1951211728592660959    | random seed to reproduce generated values
+
+
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.024 s -- in com.tradinganalytics.contracts.json.StrictJsonPropertiesTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 88, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] --- jar:3.4.1:jar (default-jar) @ analytics-contracts ---
+[INFO] Building jar: /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-contracts/target/analytics-contracts-1.0.0-SNAPSHOT.jar
+[INFO] 
+[INFO] --- jacoco:0.8.15:report (jacoco-report) @ analytics-contracts ---
+[INFO] Loading execution data file /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-contracts/target/jacoco.exec
+[INFO] Analyzed bundle 'analytics-contracts' with 11 classes
+[INFO] 
+[INFO] --- install:3.1.2:install (default-install) @ analytics-contracts ---
+[INFO] Installing /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-contracts/pom.xml to /Users/eternal/.m2/repository/com/tradinganalytics/analytics-contracts/1.0.0-SNAPSHOT/analytics-contracts-1.0.0-SNAPSHOT.pom
+[INFO] Installing /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-contracts/target/analytics-contracts-1.0.0-SNAPSHOT.jar to /Users/eternal/.m2/repository/com/tradinganalytics/analytics-contracts/1.0.0-SNAPSHOT/analytics-contracts-1.0.0-SNAPSHOT.jar
+[INFO] 
+[INFO] ----------------< com.tradinganalytics:analytics-core >-----------------
+[INFO] Building analytics-core 1.0.0-SNAPSHOT                            [3/10]
+[INFO]   from analytics-core/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ analytics-core ---
+[INFO] Deleting /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-core/target
+[INFO] 
+[INFO] --- enforcer:3.6.2:enforce (enforce-build-environment) @ analytics-core ---
+[INFO] 
+[INFO] --- jacoco:0.8.15:prepare-agent (default) @ analytics-core ---
+[INFO] argLine set to -javaagent:/Users/eternal/.m2/repository/org/jacoco/org.jacoco.agent/0.8.15/org.jacoco.agent-0.8.15-runtime.jar=destfile=/Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-core/target/jacoco.exec
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ analytics-core ---
+[INFO] skip non existing resourceDirectory /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-core/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.14.1:compile (default-compile) @ analytics-core ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 16 source files with javac [debug parameters release 21] to target/classes
+[INFO] /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-core/src/main/java/com/tradinganalytics/core/compute/ComputeCommand.java: Some input files use or override a deprecated API.
+[INFO] /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-core/src/main/java/com/tradinganalytics/core/compute/ComputeCommand.java: Recompile with -Xlint:deprecation for details.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ analytics-core ---
+[INFO] Copying 1 resource from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.14.1:testCompile (default-testCompile) @ analytics-core ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 6 source files with javac [debug parameters release 21] to target/test-classes
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ analytics-core ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.tradinganalytics.core.swing.SwingScoreTest
+[INFO] Tests run: 76, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.448 s -- in com.tradinganalytics.core.swing.SwingScoreTest
+[INFO] Running com.tradinganalytics.core.compute.ComputeMjsNodeOracleTest
+[INFO] Tests run: 56, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.132 s -- in com.tradinganalytics.core.compute.ComputeMjsNodeOracleTest
+[INFO] Running com.tradinganalytics.core.compute.ComputeMathTest
+[INFO] Tests run: 45, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.072 s -- in com.tradinganalytics.core.compute.ComputeMathTest
+[INFO] Running com.tradinganalytics.core.lib.ToolchainSupportTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.013 s -- in com.tradinganalytics.core.lib.ToolchainSupportTest
+[INFO] Running com.tradinganalytics.core.swing.SwingScorePropertyTest
+Sep 14, 2026 9:57:46 PM net.jqwik.engine.properties.RandomizedShrinkablesGenerator logEdgeCasesOutnumberTriesIfApplicable
+INFO: Edge case generation exceeds number of tries. Stopped after 600 generated cases.
+timestamp = 2026-09-14T21:57:46.969612, SwingScorePropertyTest:riskNotionalIsExactlyTheMinimumOfAllThreeNonNegativeConstraints = 
+                              |-----------------------jqwik-----------------------
+tries = 500                   | # of calls to property
+checks = 500                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 600        | # of all combined edge cases
+edge-cases#tried = 80         | # of edge cases tried in current run
+seed = 8536749220161260530    | random seed to reproduce generated values
+
+
+timestamp = 2026-09-14T21:57:46.981949, SwingScorePropertyTest:positiveDiscretionCanNeverUnlockABelowThresholdMechanicalScore = 
+                              |-----------------------jqwik-----------------------
+tries = 2                     | # of calls to property
+checks = 2                    | # of not rejected calls
+generation = EXHAUSTIVE       | parameters are exhaustively generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 0          | # of all combined edge cases
+edge-cases#tried = 0          | # of edge cases tried in current run
+seed = -839467156103430244    | random seed to reproduce generated values
+
+
+timestamp = 2026-09-14T21:57:46.985984, SwingScorePropertyTest:flowScoreIsRoundedEvidenceFamilyCountTimesOneAndAQuarter = 
+                              |-----------------------jqwik-----------------------
+tries = 16                    | # of calls to property
+checks = 16                   | # of not rejected calls
+generation = EXHAUSTIVE       | parameters are exhaustively generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 0          | # of all combined edge cases
+edge-cases#tried = 0          | # of edge cases tried in current run
+seed = 3132740440417653781    | random seed to reproduce generated values
+
+
+Sep 14, 2026 9:57:46 PM net.jqwik.engine.properties.RandomizedShrinkablesGenerator logEdgeCasesOutnumberTriesIfApplicable
+INFO: Edge case generation exceeds number of tries. Stopped after 500 generated cases.
+timestamp = 2026-09-14T21:57:47.017555, SwingScorePropertyTest:normalizedLegsStayBoundedHalfPointAndMechanicalScoreNeverExceedsTwenty = 
+                              |-----------------------jqwik-----------------------
+tries = 500                   | # of calls to property
+checks = 500                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 500        | # of all combined edge cases
+edge-cases#tried = 86         | # of edge cases tried in current run
+seed = 3892021008411625293    | random seed to reproduce generated values
+
+
+timestamp = 2026-09-14T21:57:47.030648, SwingScorePropertyTest:halfRoundingAlwaysReturnsAHalfPointWithinQuarterPoint = 
+                              |-----------------------jqwik-----------------------
+tries = 1000                  | # of calls to property
+checks = 1000                 | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 7          | # of all combined edge cases
+edge-cases#tried = 7          | # of edge cases tried in current run
+seed = 5494729629109982095    | random seed to reproduce generated values
+
+
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.200 s -- in com.tradinganalytics.core.swing.SwingScorePropertyTest
+[INFO] Running com.tradinganalytics.core.compute.ComputeMathPropertyTest
+timestamp = 2026-09-14T21:57:47.040671, ComputeMathPropertyTest:stopCoherenceIsExactlyStrictLessThan = 
+                              |-----------------------jqwik-----------------------
+tries = 300                   | # of calls to property
+checks = 300                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 49         | # of all combined edge cases
+edge-cases#tried = 46         | # of edge cases tried in current run
+seed = -8441976729411703015   | random seed to reproduce generated values
+
+
+timestamp = 2026-09-14T21:57:47.070022, ComputeMathPropertyTest:streakNeverExceedsInputAndStopsAtFirstBreach = 
+                              |-----------------------jqwik-----------------------
+tries = 500                   | # of calls to property
+checks = 500                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 30         | # of all combined edge cases
+edge-cases#tried = 29         | # of edge cases tried in current run
+seed = 4198815610514112815    | random seed to reproduce generated values
+
+
+timestamp = 2026-09-14T21:57:47.086257, ComputeMathPropertyTest:percentileRankAlwaysLivesOnTheClosedPercentScale = 
+                              |-----------------------jqwik-----------------------
+tries = 500                   | # of calls to property
+checks = 500                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 56         | # of all combined edge cases
+edge-cases#tried = 49         | # of edge cases tried in current run
+seed = 3213937441555991047    | random seed to reproduce generated values
+
+
+timestamp = 2026-09-14T21:57:47.097755, ComputeMathPropertyTest:scoreRoundingStaysWithinOneAndUsesConservativeTieDirection = 
+                              |-----------------------jqwik-----------------------
+tries = 1000                  | # of calls to property
+checks = 1000                 | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 7          | # of all combined edge cases
+edge-cases#tried = 7          | # of edge cases tried in current run
+seed = -1141338877424582883   | random seed to reproduce generated values
+
+
+timestamp = 2026-09-14T21:57:47.113671, ComputeMathPropertyTest:shortEvNeverLetsPositiveCarryHelpTheGate = 
+                              |-----------------------jqwik-----------------------
+tries = 500                   | # of calls to property
+checks = 500                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 196        | # of all combined edge cases
+edge-cases#tried = 78         | # of edge cases tried in current run
+seed = -6632188529485432676   | random seed to reproduce generated values
+
+
+timestamp = 2026-09-14T21:57:47.120595, ComputeMathPropertyTest:drawdownAndCycleCapAreConsistentAcrossPriceRatios = 
+                              |-----------------------jqwik-----------------------
+tries = 300                   | # of calls to property
+checks = 300                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 12         | # of all combined edge cases
+edge-cases#tried = 12         | # of edge cases tried in current run
+seed = -3623598316870050574   | random seed to reproduce generated values
+
+
+Sep 14, 2026 9:57:47 PM net.jqwik.engine.properties.RandomizedShrinkablesGenerator logEdgeCasesOutnumberTriesIfApplicable
+INFO: Edge case generation exceeds number of tries. Stopped after 336 generated cases.
+timestamp = 2026-09-14T21:57:47.133492, ComputeMathPropertyTest:percentileRankIsMonotoneInTheQueriedValue = 
+                              |-----------------------jqwik-----------------------
+tries = 300                   | # of calls to property
+checks = 300                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 336        | # of all combined edge cases
+edge-cases#tried = 47         | # of edge cases tried in current run
+seed = 8473212404963416624    | random seed to reproduce generated values
+
+
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.101 s -- in com.tradinganalytics.core.compute.ComputeMathPropertyTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 195, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] --- jar:3.4.1:jar (default-jar) @ analytics-core ---
+[INFO] Building jar: /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-core/target/analytics-core-1.0.0-SNAPSHOT.jar
+[INFO] 
+[INFO] --- jacoco:0.8.15:report (jacoco-report) @ analytics-core ---
+[INFO] Loading execution data file /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-core/target/jacoco.exec
+[INFO] Analyzed bundle 'analytics-core' with 58 classes
+[INFO] 
+[INFO] --- install:3.1.2:install (default-install) @ analytics-core ---
+[INFO] Installing /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-core/pom.xml to /Users/eternal/.m2/repository/com/tradinganalytics/analytics-core/1.0.0-SNAPSHOT/analytics-core-1.0.0-SNAPSHOT.pom
+[INFO] Installing /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-core/target/analytics-core-1.0.0-SNAPSHOT.jar to /Users/eternal/.m2/repository/com/tradinganalytics/analytics-core/1.0.0-SNAPSHOT/analytics-core-1.0.0-SNAPSHOT.jar
+[INFO] 
+[INFO] -----------< com.tradinganalytics:analytics-infrastructure >------------
+[INFO] Building analytics-infrastructure 1.0.0-SNAPSHOT                  [4/10]
+[INFO]   from analytics-infrastructure/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ analytics-infrastructure ---
+[INFO] Deleting /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-infrastructure/target
+[INFO] 
+[INFO] --- enforcer:3.6.2:enforce (enforce-build-environment) @ analytics-infrastructure ---
+[INFO] 
+[INFO] --- jacoco:0.8.15:prepare-agent (default) @ analytics-infrastructure ---
+[INFO] argLine set to -javaagent:/Users/eternal/.m2/repository/org/jacoco/org.jacoco.agent/0.8.15/org.jacoco.agent-0.8.15-runtime.jar=destfile=/Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-infrastructure/target/jacoco.exec
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ analytics-infrastructure ---
+[INFO] skip non existing resourceDirectory /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-infrastructure/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.14.1:compile (default-compile) @ analytics-infrastructure ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 23 source files with javac [debug parameters release 21] to target/classes
+[INFO] /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-infrastructure/src/main/java/com/tradinganalytics/infrastructure/github/GitHubAttestationSignerV5.java: Some input files use or override a deprecated API.
+[INFO] /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-infrastructure/src/main/java/com/tradinganalytics/infrastructure/github/GitHubAttestationSignerV5.java: Recompile with -Xlint:deprecation for details.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ analytics-infrastructure ---
+[INFO] Copying 4 resources from src/test/resources to target/test-classes
+[INFO] Copying 1 resource from ../analytics-research/src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.14.1:testCompile (default-testCompile) @ analytics-infrastructure ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 16 source files with javac [debug parameters release 21] to target/test-classes
+[INFO] /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-infrastructure/src/test/java/com/tradinganalytics/infrastructure/security/WorkflowSecurityV5EvidenceChainTest.java: /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-infrastructure/src/test/java/com/tradinganalytics/infrastructure/security/WorkflowSecurityV5EvidenceChainTest.java uses or overrides a deprecated API.
+[INFO] /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-infrastructure/src/test/java/com/tradinganalytics/infrastructure/security/WorkflowSecurityV5EvidenceChainTest.java: Recompile with -Xlint:deprecation for details.
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ analytics-infrastructure ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.tradinganalytics.infrastructure.repository.RepositoryLayoutTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.110 s -- in com.tradinganalytics.infrastructure.repository.RepositoryLayoutTest
+[INFO] Running com.tradinganalytics.infrastructure.security.FilesystemCustodyTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.439 s -- in com.tradinganalytics.infrastructure.security.FilesystemCustodyTest
+[INFO] Running com.tradinganalytics.infrastructure.security.PhysicalEvaluatorTrustRegistryTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.013 s -- in com.tradinganalytics.infrastructure.security.PhysicalEvaluatorTrustRegistryTest
+[INFO] Running com.tradinganalytics.infrastructure.security.SecureOperationsTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.160 s -- in com.tradinganalytics.infrastructure.security.SecureOperationsTest
+[INFO] Running com.tradinganalytics.infrastructure.security.JsonHashesTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.036 s -- in com.tradinganalytics.infrastructure.security.JsonHashesTest
+[INFO] Running com.tradinganalytics.infrastructure.security.WorkflowSecurityV5Test
+SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.555 s -- in com.tradinganalytics.infrastructure.security.WorkflowSecurityV5Test
+[INFO] Running com.tradinganalytics.infrastructure.security.VerifiedLoaderLifecycleTrustTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.014 s -- in com.tradinganalytics.infrastructure.security.VerifiedLoaderLifecycleTrustTest
+[INFO] Running com.tradinganalytics.infrastructure.security.TarArchiveVerifierTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.054 s -- in com.tradinganalytics.infrastructure.security.TarArchiveVerifierTest
+[INFO] Running com.tradinganalytics.infrastructure.security.LifecycleTrustServiceTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.067 s -- in com.tradinganalytics.infrastructure.security.LifecycleTrustServiceTest
+[INFO] Running com.tradinganalytics.infrastructure.security.ScopeIndependentOutcomeCapabilityTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.035 s -- in com.tradinganalytics.infrastructure.security.ScopeIndependentOutcomeCapabilityTest
+[INFO] Running com.tradinganalytics.infrastructure.security.WorkflowSecurityV5EvidenceChainTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.536 s -- in com.tradinganalytics.infrastructure.security.WorkflowSecurityV5EvidenceChainTest
+[INFO] Running com.tradinganalytics.infrastructure.marketdata.PublicDataAdaptersTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.068 s -- in com.tradinganalytics.infrastructure.marketdata.PublicDataAdaptersTest
+[INFO] Running com.tradinganalytics.infrastructure.github.WriterInstallationReceiptsTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in com.tradinganalytics.infrastructure.github.WriterInstallationReceiptsTest
+[INFO] Running com.tradinganalytics.infrastructure.github.GitHubAttestationSignerV5Test
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.222 s -- in com.tradinganalytics.infrastructure.github.GitHubAttestationSignerV5Test
+[INFO] Running com.tradinganalytics.infrastructure.github.GitHubCapturePolicyTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in com.tradinganalytics.infrastructure.github.GitHubCapturePolicyTest
+[INFO] Running com.tradinganalytics.infrastructure.github.GitHubSettingsCaptureV5Test
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.448 s -- in com.tradinganalytics.infrastructure.github.GitHubSettingsCaptureV5Test
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 92, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] --- jar:3.4.1:jar (default-jar) @ analytics-infrastructure ---
+[INFO] Building jar: /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-infrastructure/target/analytics-infrastructure-1.0.0-SNAPSHOT.jar
+[INFO] 
+[INFO] --- jacoco:0.8.15:report (jacoco-report) @ analytics-infrastructure ---
+[INFO] Loading execution data file /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-infrastructure/target/jacoco.exec
+[INFO] Analyzed bundle 'analytics-infrastructure' with 111 classes
+[INFO] 
+[INFO] --- install:3.1.2:install (default-install) @ analytics-infrastructure ---
+[INFO] Installing /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-infrastructure/pom.xml to /Users/eternal/.m2/repository/com/tradinganalytics/analytics-infrastructure/1.0.0-SNAPSHOT/analytics-infrastructure-1.0.0-SNAPSHOT.pom
+[INFO] Installing /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-infrastructure/target/analytics-infrastructure-1.0.0-SNAPSHOT.jar to /Users/eternal/.m2/repository/com/tradinganalytics/analytics-infrastructure/1.0.0-SNAPSHOT/analytics-infrastructure-1.0.0-SNAPSHOT.jar
+[INFO] 
+[INFO] -------------< com.tradinganalytics:analytics-market-data >-------------
+[INFO] Building analytics-market-data 1.0.0-SNAPSHOT                     [5/10]
+[INFO]   from analytics-market-data/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ analytics-market-data ---
+[INFO] Deleting /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-market-data/target
+[INFO] 
+[INFO] --- enforcer:3.6.2:enforce (enforce-build-environment) @ analytics-market-data ---
+[INFO] 
+[INFO] --- jacoco:0.8.15:prepare-agent (default) @ analytics-market-data ---
+[INFO] argLine set to -javaagent:/Users/eternal/.m2/repository/org/jacoco/org.jacoco.agent/0.8.15/org.jacoco.agent-0.8.15-runtime.jar=destfile=/Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-market-data/target/jacoco.exec
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ analytics-market-data ---
+[INFO] skip non existing resourceDirectory /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-market-data/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.14.1:compile (default-compile) @ analytics-market-data ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 29 source files with javac [debug parameters release 21] to target/classes
+[INFO] /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-market-data/src/main/java/com/tradinganalytics/marketdata/SnapshotPanels.java: Some input files use or override a deprecated API.
+[INFO] /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-market-data/src/main/java/com/tradinganalytics/marketdata/SnapshotPanels.java: Recompile with -Xlint:deprecation for details.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ analytics-market-data ---
+[INFO] Copying 3 resources from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.14.1:testCompile (default-testCompile) @ analytics-market-data ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 13 source files with javac [debug parameters release 21] to target/test-classes
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ analytics-market-data ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.tradinganalytics.marketdata.research.ResearchDataTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.693 s -- in com.tradinganalytics.marketdata.research.ResearchDataTest
+[INFO] Running com.tradinganalytics.marketdata.research.ResearchDataCommandAdapterTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.091 s -- in com.tradinganalytics.marketdata.research.ResearchDataCommandAdapterTest
+[INFO] Running com.tradinganalytics.marketdata.MarketSeriesAnalyticsTest
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.022 s -- in com.tradinganalytics.marketdata.MarketSeriesAnalyticsTest
+[INFO] Running com.tradinganalytics.marketdata.MarketFlowAggregationTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in com.tradinganalytics.marketdata.MarketFlowAggregationTest
+[INFO] Running com.tradinganalytics.marketdata.PublicDataSmokeServiceTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.115 s -- in com.tradinganalytics.marketdata.PublicDataSmokeServiceTest
+[INFO] Running com.tradinganalytics.marketdata.MarketContextAnalyticsTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in com.tradinganalytics.marketdata.MarketContextAnalyticsTest
+[INFO] Running com.tradinganalytics.marketdata.MarketSnapshotStoreTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.013 s -- in com.tradinganalytics.marketdata.MarketSnapshotStoreTest
+[INFO] Running com.tradinganalytics.marketdata.http.MarketHttpClientTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in com.tradinganalytics.marketdata.http.MarketHttpClientTest
+[INFO] Running com.tradinganalytics.marketdata.LiveMarketFetchServiceTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.053 s -- in com.tradinganalytics.marketdata.LiveMarketFetchServiceTest
+[INFO] Running com.tradinganalytics.marketdata.SnapshotPanelsTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.007 s -- in com.tradinganalytics.marketdata.SnapshotPanelsTest
+[INFO] Running com.tradinganalytics.marketdata.MarketFlowPanelTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.012 s -- in com.tradinganalytics.marketdata.MarketFlowPanelTest
+[INFO] Running com.tradinganalytics.marketdata.FundingAnalyticsTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in com.tradinganalytics.marketdata.FundingAnalyticsTest
+[INFO] Running com.tradinganalytics.marketdata.MarketFetchSupportTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in com.tradinganalytics.marketdata.MarketFetchSupportTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 62, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] --- jar:3.4.1:jar (default-jar) @ analytics-market-data ---
+[INFO] Building jar: /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-market-data/target/analytics-market-data-1.0.0-SNAPSHOT.jar
+[INFO] 
+[INFO] --- jacoco:0.8.15:report (jacoco-report) @ analytics-market-data ---
+[INFO] Loading execution data file /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-market-data/target/jacoco.exec
+[INFO] Analyzed bundle 'analytics-market-data' with 61 classes
+[INFO] 
+[INFO] --- install:3.1.2:install (default-install) @ analytics-market-data ---
+[INFO] Installing /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-market-data/pom.xml to /Users/eternal/.m2/repository/com/tradinganalytics/analytics-market-data/1.0.0-SNAPSHOT/analytics-market-data-1.0.0-SNAPSHOT.pom
+[INFO] Installing /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-market-data/target/analytics-market-data-1.0.0-SNAPSHOT.jar to /Users/eternal/.m2/repository/com/tradinganalytics/analytics-market-data/1.0.0-SNAPSHOT/analytics-market-data-1.0.0-SNAPSHOT.jar
+[INFO] 
+[INFO] --------------< com.tradinganalytics:analytics-reporting >--------------
+[INFO] Building analytics-reporting 1.0.0-SNAPSHOT                       [6/10]
+[INFO]   from analytics-reporting/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ analytics-reporting ---
+[INFO] Deleting /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-reporting/target
+[INFO] 
+[INFO] --- enforcer:3.6.2:enforce (enforce-build-environment) @ analytics-reporting ---
+[INFO] 
+[INFO] --- jacoco:0.8.15:prepare-agent (default) @ analytics-reporting ---
+[INFO] argLine set to -javaagent:/Users/eternal/.m2/repository/org/jacoco/org.jacoco.agent/0.8.15/org.jacoco.agent-0.8.15-runtime.jar=destfile=/Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-reporting/target/jacoco.exec
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ analytics-reporting ---
+[INFO] skip non existing resourceDirectory /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-reporting/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.14.1:compile (default-compile) @ analytics-reporting ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 21 source files with javac [debug parameters release 21] to target/classes
+[INFO] /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-reporting/src/main/java/com/tradinganalytics/reporting/ReportingJson.java: /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-reporting/src/main/java/com/tradinganalytics/reporting/ReportingJson.java uses or overrides a deprecated API.
+[INFO] /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-reporting/src/main/java/com/tradinganalytics/reporting/ReportingJson.java: Recompile with -Xlint:deprecation for details.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ analytics-reporting ---
+[INFO] Copying 13 resources from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.14.1:testCompile (default-testCompile) @ analytics-reporting ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 12 source files with javac [debug parameters release 21] to target/test-classes
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ analytics-reporting ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.tradinganalytics.reporting.SwingActivationVerifierTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.290 s -- in com.tradinganalytics.reporting.SwingActivationVerifierTest
+[INFO] Running com.tradinganalytics.reporting.ReportContractNodeOracleParityTest
+SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.417 s -- in com.tradinganalytics.reporting.ReportContractNodeOracleParityTest
+[INFO] Running com.tradinganalytics.reporting.ReportContractKnownAnswerTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.055 s -- in com.tradinganalytics.reporting.ReportContractKnownAnswerTest
+[INFO] Running com.tradinganalytics.reporting.ReportingFilesTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in com.tradinganalytics.reporting.ReportingFilesTest
+[INFO] Running com.tradinganalytics.reporting.position.PositionSnapshotsTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.015 s -- in com.tradinganalytics.reporting.position.PositionSnapshotsTest
+[INFO] Running com.tradinganalytics.reporting.ExportSignalsPublicationMutationTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.130 s -- in com.tradinganalytics.reporting.ExportSignalsPublicationMutationTest
+[INFO] Running com.tradinganalytics.reporting.ReportRendererNodeOracleTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.041 s -- in com.tradinganalytics.reporting.ReportRendererNodeOracleTest
+[INFO] Running com.tradinganalytics.reporting.ReportingPipelineNodeOracleTest
+[INFO] Tests run: 15, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.807 s -- in com.tradinganalytics.reporting.ReportingPipelineNodeOracleTest
+[INFO] Running com.tradinganalytics.reporting.ReportPathsTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in com.tradinganalytics.reporting.ReportPathsTest
+[INFO] Running com.tradinganalytics.reporting.ReportContractUtilitiesTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.017 s -- in com.tradinganalytics.reporting.ReportContractUtilitiesTest
+[INFO] Running com.tradinganalytics.reporting.ReportContractPropertiesTest
+timestamp = 2026-09-14T21:57:58.908318, ReportContractPropertiesTest:facadeStrictParserRejectsEveryDuplicateProperty = 
+                              |-----------------------jqwik-----------------------
+tries = 300                   | # of calls to property
+checks = 300                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 2          | # of all combined edge cases
+edge-cases#tried = 2          | # of edge cases tried in current run
+seed = -4728674555933423498   | random seed to reproduce generated values
+
+
+timestamp = 2026-09-14T21:57:59.023966, ReportContractPropertiesTest:facadeCanonicalBytesAndHashesIgnoreObjectInsertionOrder = 
+                              |-----------------------jqwik-----------------------
+tries = 400                   | # of calls to property
+checks = 400                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 19         | # of all combined edge cases
+edge-cases#tried = 14         | # of edge cases tried in current run
+seed = 6298360605582423731    | random seed to reproduce generated values
+
+
+timestamp = 2026-09-14T21:57:59.044378, ReportContractPropertiesTest:anyUppercaseAssetBreaksThePinnedIdentityGrammar = 
+                              |-----------------------jqwik-----------------------
+tries = 300                   | # of calls to property
+checks = 300                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 16         | # of all combined edge cases
+edge-cases#tried = 16         | # of edge cases tried in current run
+seed = -1625957514632798831   | random seed to reproduce generated values
+
+
+timestamp = 2026-09-14T21:57:59.087518, ReportContractPropertiesTest:canonicalIdentityRoundTripsForEveryRegexAcceptedStem = 
+                              |-----------------------jqwik-----------------------
+tries = 500                   | # of calls to property
+checks = 500                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 64         | # of all combined edge cases
+edge-cases#tried = 64         | # of edge cases tried in current run
+seed = 7658305438578485606    | random seed to reproduce generated values
+
+
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.295 s -- in com.tradinganalytics.reporting.ReportContractPropertiesTest
+[INFO] Running com.tradinganalytics.reporting.ReportRendererPropertiesTest
+timestamp = 2026-09-14T21:57:59.154681, ReportRendererPropertiesTest:swingTablesEscapePipesNewlinesAndCodeFences = 
+                              |-----------------------jqwik-----------------------
+tries = 150                   | # of calls to property
+checks = 150                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 5          | # of all combined edge cases
+edge-cases#tried = 4          | # of edge cases tried in current run
+seed = -8922695734449229635   | random seed to reproduce generated values
+
+
+timestamp = 2026-09-14T21:57:59.748423, ReportRendererPropertiesTest:allRenderExportsArePureAndDeterministic = 
+                              |-----------------------jqwik-----------------------
+tries = 150                   | # of calls to property
+checks = 150                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 3          | # of all combined edge cases
+edge-cases#tried = 3          | # of edge cases tried in current run
+seed = -5042028872216521790   | random seed to reproduce generated values
+
+
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.659 s -- in com.tradinganalytics.reporting.ReportRendererPropertiesTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 61, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] --- jar:3.4.1:jar (default-jar) @ analytics-reporting ---
+[INFO] Building jar: /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-reporting/target/analytics-reporting-1.0.0-SNAPSHOT.jar
+[INFO] 
+[INFO] --- jacoco:0.8.15:report (jacoco-report) @ analytics-reporting ---
+[INFO] Loading execution data file /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-reporting/target/jacoco.exec
+[INFO] Analyzed bundle 'analytics-reporting' with 33 classes
+[INFO] 
+[INFO] --- install:3.1.2:install (default-install) @ analytics-reporting ---
+[INFO] Installing /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-reporting/pom.xml to /Users/eternal/.m2/repository/com/tradinganalytics/analytics-reporting/1.0.0-SNAPSHOT/analytics-reporting-1.0.0-SNAPSHOT.pom
+[INFO] Installing /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-reporting/target/analytics-reporting-1.0.0-SNAPSHOT.jar to /Users/eternal/.m2/repository/com/tradinganalytics/analytics-reporting/1.0.0-SNAPSHOT/analytics-reporting-1.0.0-SNAPSHOT.jar
+[INFO] 
+[INFO] --------------< com.tradinganalytics:analytics-research >---------------
+[INFO] Building analytics-research 1.0.0-SNAPSHOT                        [7/10]
+[INFO]   from analytics-research/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ analytics-research ---
+[INFO] Deleting /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-research/target
+[INFO] 
+[INFO] --- enforcer:3.6.2:enforce (enforce-build-environment) @ analytics-research ---
+[INFO] 
+[INFO] --- jacoco:0.8.15:prepare-agent (default) @ analytics-research ---
+[INFO] argLine set to -javaagent:/Users/eternal/.m2/repository/org/jacoco/org.jacoco.agent/0.8.15/org.jacoco.agent-0.8.15-runtime.jar=destfile=/Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-research/target/jacoco.exec
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ analytics-research ---
+[INFO] skip non existing resourceDirectory /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-research/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.14.1:compile (default-compile) @ analytics-research ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 69 source files with javac [debug parameters release 21] to target/classes
+[INFO] /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-research/src/main/java/com/tradinganalytics/research/calibration/CalibrationRun.java: Some input files use or override a deprecated API.
+[INFO] /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-research/src/main/java/com/tradinganalytics/research/calibration/CalibrationRun.java: Recompile with -Xlint:deprecation for details.
+[INFO] /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-research/src/main/java/com/tradinganalytics/research/v5/StrategyEvaluatorV5.java: /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-research/src/main/java/com/tradinganalytics/research/v5/StrategyEvaluatorV5.java uses unchecked or unsafe operations.
+[INFO] /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-research/src/main/java/com/tradinganalytics/research/v5/StrategyEvaluatorV5.java: Recompile with -Xlint:unchecked for details.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ analytics-research ---
+[INFO] Copying 21 resources from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.14.1:testCompile (default-testCompile) @ analytics-research ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 177 source files with javac [debug parameters release 21] to target/test-classes
+[INFO] /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-research/src/test/java/com/tradinganalytics/research/calibration/CalibrationCorpusNodeOracleTest.java: Some input files use or override a deprecated API.
+[INFO] /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-research/src/test/java/com/tradinganalytics/research/calibration/CalibrationCorpusNodeOracleTest.java: Recompile with -Xlint:deprecation for details.
+[INFO] /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-research/src/test/java/com/tradinganalytics/research/v5/StrategyResearchAuthoritativeV5NodeOracleTest.java: Some input files use unchecked or unsafe operations.
+[INFO] /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-research/src/test/java/com/tradinganalytics/research/v5/StrategyResearchAuthoritativeV5NodeOracleTest.java: Recompile with -Xlint:unchecked for details.
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ analytics-research ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.tradinganalytics.research.calibration.CalibrationRegistryTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.290 s -- in com.tradinganalytics.research.calibration.CalibrationRegistryTest
+[INFO] Running com.tradinganalytics.research.calibration.CalibrationRunNodeOracleTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.198 s -- in com.tradinganalytics.research.calibration.CalibrationRunNodeOracleTest
+[INFO] Running com.tradinganalytics.research.calibration.CalibrationCorpusTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.014 s -- in com.tradinganalytics.research.calibration.CalibrationCorpusTest
+[INFO] Running com.tradinganalytics.research.calibration.CalibrationPathsTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.007 s -- in com.tradinganalytics.research.calibration.CalibrationPathsTest
+[INFO] Running com.tradinganalytics.research.calibration.CalibrationCorpusNodeOracleTest
+SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.331 s -- in com.tradinganalytics.research.calibration.CalibrationCorpusNodeOracleTest
+[INFO] Running com.tradinganalytics.research.swing.SwingResearchCliNodeOracleTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.055 s -- in com.tradinganalytics.research.swing.SwingResearchCliNodeOracleTest
+[INFO] Running com.tradinganalytics.research.swing.SwingCalibrationCoverageTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.127 s -- in com.tradinganalytics.research.swing.SwingCalibrationCoverageTest
+[INFO] Running com.tradinganalytics.research.swing.SwingCandidatesNodeOracleTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in com.tradinganalytics.research.swing.SwingCandidatesNodeOracleTest
+[INFO] Running com.tradinganalytics.research.swing.SwingEngineNodeOracleTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.139 s -- in com.tradinganalytics.research.swing.SwingEngineNodeOracleTest
+[INFO] Running com.tradinganalytics.research.swing.SwingEngineTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.033 s -- in com.tradinganalytics.research.swing.SwingEngineTest
+[INFO] Running com.tradinganalytics.research.swing.SwingValidationNodeOracleTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in com.tradinganalytics.research.swing.SwingValidationNodeOracleTest
+[INFO] Running com.tradinganalytics.research.swing.SwingEngineCliNodeOracleTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.014 s -- in com.tradinganalytics.research.swing.SwingEngineCliNodeOracleTest
+[INFO] Running com.tradinganalytics.research.swing.SwingEngineWalkForwardCoverageTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.050 s -- in com.tradinganalytics.research.swing.SwingEngineWalkForwardCoverageTest
+[INFO] Running com.tradinganalytics.research.swing.SwingBackfillSetupFamilyCoverageTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.010 s -- in com.tradinganalytics.research.swing.SwingBackfillSetupFamilyCoverageTest
+[INFO] Running com.tradinganalytics.research.swing.SwingCalibrationLinterTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in com.tradinganalytics.research.swing.SwingCalibrationLinterTest
+[INFO] Running com.tradinganalytics.research.swing.SwingBackfillNodeOracleTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.711 s -- in com.tradinganalytics.research.swing.SwingBackfillNodeOracleTest
+[INFO] Running com.tradinganalytics.research.swing.SwingEngineNormalizationBoundaryCoverageTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in com.tradinganalytics.research.swing.SwingEngineNormalizationBoundaryCoverageTest
+[INFO] Running com.tradinganalytics.research.swing.SwingBackfillHttpSourceCoverageTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.015 s -- in com.tradinganalytics.research.swing.SwingBackfillHttpSourceCoverageTest
+[INFO] Running com.tradinganalytics.research.swing.SwingBackfillHistoricalSourceCoverageTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 24.96 s -- in com.tradinganalytics.research.swing.SwingBackfillHistoricalSourceCoverageTest
+[INFO] Running com.tradinganalytics.research.swing.SwingEngineLifecycleCoverageTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in com.tradinganalytics.research.swing.SwingEngineLifecycleCoverageTest
+[INFO] Running com.tradinganalytics.research.legacy.LegacyResearchV1ContractTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.268 s -- in com.tradinganalytics.research.legacy.LegacyResearchV1ContractTest
+[INFO] Running com.tradinganalytics.research.legacy.LegacyResearchV2AuthoritativeContractTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.333 s -- in com.tradinganalytics.research.legacy.LegacyResearchV2AuthoritativeContractTest
+[INFO] Running com.tradinganalytics.research.legacy.LegacyResearchMigrationV3NodeOracleTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.017 s -- in com.tradinganalytics.research.legacy.LegacyResearchMigrationV3NodeOracleTest
+[INFO] Running com.tradinganalytics.research.legacy.LegacyResearchCommandAdapterNodeOracleTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.191 s -- in com.tradinganalytics.research.legacy.LegacyResearchCommandAdapterNodeOracleTest
+[INFO] Running com.tradinganalytics.research.legacy.LegacyStrategyResearchCorrectionTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.050 s -- in com.tradinganalytics.research.legacy.LegacyStrategyResearchCorrectionTest
+[INFO] Running com.tradinganalytics.research.legacy.LegacyResearchSecurityTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.023 s -- in com.tradinganalytics.research.legacy.LegacyResearchSecurityTest
+[INFO] Running com.tradinganalytics.research.legacy.LegacyResearchV2OriginalContractTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.120 s -- in com.tradinganalytics.research.legacy.LegacyResearchV2OriginalContractTest
+[INFO] Running com.tradinganalytics.research.legacy.LegacyResearchNextNodeOracleTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.066 s -- in com.tradinganalytics.research.legacy.LegacyResearchNextNodeOracleTest
+[INFO] Running com.tradinganalytics.research.legacy.ResearchSmokeV3Test
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in com.tradinganalytics.research.legacy.ResearchSmokeV3Test
+[INFO] Running com.tradinganalytics.research.legacy.LegacyStrategyResearchNodeOracleTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.002 s -- in com.tradinganalytics.research.legacy.LegacyStrategyResearchNodeOracleTest
+[INFO] Running com.tradinganalytics.research.legacy.LegacyResearchFoundationV3ContractTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.020 s -- in com.tradinganalytics.research.legacy.LegacyResearchFoundationV3ContractTest
+[INFO] Running com.tradinganalytics.research.legacy.LegacyResearchV1NodeOracleTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in com.tradinganalytics.research.legacy.LegacyResearchV1NodeOracleTest
+[INFO] Running com.tradinganalytics.research.legacy.LegacyResearchNextCommandSecurityTest
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.051 s -- in com.tradinganalytics.research.legacy.LegacyResearchNextCommandSecurityTest
+[INFO] Running com.tradinganalytics.research.legacy.LegacyResearchV3NodeOracleTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in com.tradinganalytics.research.legacy.LegacyResearchV3NodeOracleTest
+[INFO] Running com.tradinganalytics.research.legacy.LegacyResearchV3GatesTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.023 s -- in com.tradinganalytics.research.legacy.LegacyResearchV3GatesTest
+[INFO] Running com.tradinganalytics.research.legacy.LegacyResearchV2NodeOracleTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.007 s -- in com.tradinganalytics.research.legacy.LegacyResearchV2NodeOracleTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyEvidenceV1Test
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.020 s -- in com.tradinganalytics.research.v5.StrategyEvidenceV1Test
+[INFO] Running com.tradinganalytics.research.v5.StrategyResearchDataV5DatedArchivePromotionBoundaryTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.058 s -- in com.tradinganalytics.research.v5.StrategyResearchDataV5DatedArchivePromotionBoundaryTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkCompletedBarsMatrixTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.265 s -- in com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkCompletedBarsMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyResearchDataV5DatedDiscoveryBoundaryTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.542 s -- in com.tradinganalytics.research.v5.StrategyResearchDataV5DatedDiscoveryBoundaryTest
+[INFO] Running com.tradinganalytics.research.v5.FeatureDagV5NodeOracleTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.077 s -- in com.tradinganalytics.research.v5.FeatureDagV5NodeOracleTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyFixedBaselineV5SupportedContractMatrixTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.017 s -- in com.tradinganalytics.research.v5.StrategyFixedBaselineV5SupportedContractMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyStatisticalV5BoundaryMatrixTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.035 s -- in com.tradinganalytics.research.v5.StrategyStatisticalV5BoundaryMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkRunAdmissionMatrixTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.263 s -- in com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkRunAdmissionMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyStatisticalV5AssetAggregateMatrixTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.011 s -- in com.tradinganalytics.research.v5.StrategyStatisticalV5AssetAggregateMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyStatisticalV5PublicationBindingMatrixTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.131 s -- in com.tradinganalytics.research.v5.StrategyStatisticalV5PublicationBindingMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyPortfolioV5NodeOracleTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.011 s -- in com.tradinganalytics.research.v5.StrategyPortfolioV5NodeOracleTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyEvaluatorV5SecurityPropertyTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.025 s -- in com.tradinganalytics.research.v5.StrategyEvaluatorV5SecurityPropertyTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkParquetLineageMatrixTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.291 s -- in com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkParquetLineageMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.OpportunityV5NodeOracleTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.039 s -- in com.tradinganalytics.research.v5.OpportunityV5NodeOracleTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkJsonlFallbackMatrixTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.117 s -- in com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkJsonlFallbackMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyResearchDataV5FundingBoundaryMatrixTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in com.tradinganalytics.research.v5.StrategyResearchDataV5FundingBoundaryMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.TradeLifecycleTimingAvailabilityTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in com.tradinganalytics.research.v5.TradeLifecycleTimingAvailabilityTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyFixedBaselineTimingLedgerTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.002 s -- in com.tradinganalytics.research.v5.StrategyFixedBaselineTimingLedgerTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkPromotedCoverageTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.071 s -- in com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkPromotedCoverageTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyResearchDataV5PromotedCoverageBoundaryTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.032 s -- in com.tradinganalytics.research.v5.StrategyResearchDataV5PromotedCoverageBoundaryTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyStatisticalV5AuditSelectionValidationTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.016 s -- in com.tradinganalytics.research.v5.StrategyStatisticalV5AuditSelectionValidationTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyStatisticalV5AssetScopeMatrixTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in com.tradinganalytics.research.v5.StrategyStatisticalV5AssetScopeMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyOperatingCharacteristicsV4Test
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in com.tradinganalytics.research.v5.StrategyOperatingCharacteristicsV4Test
+[INFO] Running com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkParquetOptionalSchemaMatrixTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.112 s -- in com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkParquetOptionalSchemaMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyPerformanceV5CoverageManifestMatrixTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.102 s -- in com.tradinganalytics.research.v5.StrategyPerformanceV5CoverageManifestMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyEvaluatorV5AuthoritativeTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.371 s -- in com.tradinganalytics.research.v5.StrategyEvaluatorV5AuthoritativeTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyReadinessV5EvidenceChainTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.128 s -- in com.tradinganalytics.research.v5.StrategyReadinessV5EvidenceChainTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyStatisticalV5EvaluatorValidationMatrixTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.064 s -- in com.tradinganalytics.research.v5.StrategyStatisticalV5EvaluatorValidationMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyReadinessV5PhysicalReadinessMatrixContractsTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.334 s -- in com.tradinganalytics.research.v5.StrategyReadinessV5PhysicalReadinessMatrixContractsTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyProspectiveRunnerNodeOracleTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in com.tradinganalytics.research.v5.StrategyProspectiveRunnerNodeOracleTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyOperatingCharacteristicsResourceGuardTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in com.tradinganalytics.research.v5.StrategyOperatingCharacteristicsResourceGuardTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyStatisticalV5EvaluatorContractMatrixTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in com.tradinganalytics.research.v5.StrategyStatisticalV5EvaluatorContractMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyReadinessV5AuditBoundaryTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.007 s -- in com.tradinganalytics.research.v5.StrategyReadinessV5AuditBoundaryTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyPerformanceV5NodeOracleTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.819 s -- in com.tradinganalytics.research.v5.StrategyPerformanceV5NodeOracleTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyStatisticalV5NullAndPhysicalValidationTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.016 s -- in com.tradinganalytics.research.v5.StrategyStatisticalV5NullAndPhysicalValidationTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyResearchV5NodeOracleTest
+StrategyResearchV5NodeOracleTest: ok (51 assertions)
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.247 s -- in com.tradinganalytics.research.v5.StrategyResearchV5NodeOracleTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyResearchDataV5CoverageTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.033 s -- in com.tradinganalytics.research.v5.StrategyResearchDataV5CoverageTest
+[INFO] Running com.tradinganalytics.research.v5.TradeLifecycleV5NodeOracleTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.010 s -- in com.tradinganalytics.research.v5.TradeLifecycleV5NodeOracleTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyRefinementReviewTest
+[INFO] Tests run: 21, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.129 s -- in com.tradinganalytics.research.v5.StrategyRefinementReviewTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyResearchV5ReplayEvidenceContractsTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.016 s -- in com.tradinganalytics.research.v5.StrategyResearchV5ReplayEvidenceContractsTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyResearchV5LegacyContractsTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.019 s -- in com.tradinganalytics.research.v5.StrategyResearchV5LegacyContractsTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyStatisticalV5PublicationSecurityMatrixTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.113 s -- in com.tradinganalytics.research.v5.StrategyStatisticalV5PublicationSecurityMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyProspectiveV5NodeOracleTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.117 s -- in com.tradinganalytics.research.v5.StrategyProspectiveV5NodeOracleTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyPerformanceV5TrustTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.021 s -- in com.tradinganalytics.research.v5.StrategyPerformanceV5TrustTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyResearchDataV5CurrentDatedCatalogBoundaryTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in com.tradinganalytics.research.v5.StrategyResearchDataV5CurrentDatedCatalogBoundaryTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyResearchDataV5NormalizedBoundaryMatrixTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.007 s -- in com.tradinganalytics.research.v5.StrategyResearchDataV5NormalizedBoundaryMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyResearchDataV5ExpandedContractTest
+[INFO] Tests run: 15, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.012 s -- in com.tradinganalytics.research.v5.StrategyResearchDataV5ExpandedContractTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkSamplingMatrixTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.202 s -- in com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkSamplingMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyFixedBaselineCorrectedV1Test
+[INFO] Tests run: 25, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.080 s -- in com.tradinganalytics.research.v5.StrategyFixedBaselineCorrectedV1Test
+[INFO] Running com.tradinganalytics.research.v5.StrategyStatisticalV5NullCalibrationMatrixTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.049 s -- in com.tradinganalytics.research.v5.StrategyStatisticalV5NullCalibrationMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyOperatingCharacteristicsCorrectedParallelV1Test
+[INFO] Tests run: 33, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 204.8 s -- in com.tradinganalytics.research.v5.StrategyOperatingCharacteristicsCorrectedParallelV1Test
+[INFO] Running com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkEntryDefaultsTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.522 s -- in com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkEntryDefaultsTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyResearchDataV5LegacyBoundaryMatrixTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.045 s -- in com.tradinganalytics.research.v5.StrategyResearchDataV5LegacyBoundaryMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyOperatingCharacteristicsParallelV1Test
+[INFO] Tests run: 20, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.121 s -- in com.tradinganalytics.research.v5.StrategyOperatingCharacteristicsParallelV1Test
+[INFO] Running com.tradinganalytics.research.v5.StrategyResearchV5SettingsDriftContractsTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in com.tradinganalytics.research.v5.StrategyResearchV5SettingsDriftContractsTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyStatisticalV5InputArtifactBoundaryMatrixTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in com.tradinganalytics.research.v5.StrategyStatisticalV5InputArtifactBoundaryMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkAcquisitionLineageMatrixTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.215 s -- in com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkAcquisitionLineageMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkJsonlSemanticOptionalMatrixTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.177 s -- in com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkJsonlSemanticOptionalMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkFundingSegmentMatrixTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.001 s -- in com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkFundingSegmentMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyFixedBaselineV5Test
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.015 s -- in com.tradinganalytics.research.v5.StrategyFixedBaselineV5Test
+[INFO] Running com.tradinganalytics.research.v5.StrategyProspectiveNumericCustodyReviewTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in com.tradinganalytics.research.v5.StrategyProspectiveNumericCustodyReviewTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyProspectiveOutcomeReconciliationIntegrationTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in com.tradinganalytics.research.v5.StrategyProspectiveOutcomeReconciliationIntegrationTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyFixedBaselineV5PhysicalCostsMatrixTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in com.tradinganalytics.research.v5.StrategyFixedBaselineV5PhysicalCostsMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.OpportunityV5SecurityPropertyTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.007 s -- in com.tradinganalytics.research.v5.OpportunityV5SecurityPropertyTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyRetentionArchivePublicationReviewTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in com.tradinganalytics.research.v5.StrategyRetentionArchivePublicationReviewTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkPhysicalMatrixTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.456 s -- in com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkPhysicalMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkFundingRawEventMatrixTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.065 s -- in com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkFundingRawEventMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyFixedBaselineV5PhysicalFixtureTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.032 s -- in com.tradinganalytics.research.v5.StrategyFixedBaselineV5PhysicalFixtureTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyProspectiveOutcomeCommandReviewTest
+Command review rejection: physical source byte hash mismatch
+
+Command review rejection: execution source byte hash mismatch
+
+Command review rejection: same completed-bar identity has divergent source or signal payload
+
+Command review rejection: same completed-bar identity has divergent source or signal payload
+
+Command review rejection: same completed outcome identity has divergent outcome receipt binding
+
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.201 s -- in com.tradinganalytics.research.v5.StrategyProspectiveOutcomeCommandReviewTest
+[INFO] Running com.tradinganalytics.research.v5.TradeLifecycleAvailabilityReviewTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.002 s -- in com.tradinganalytics.research.v5.TradeLifecycleAvailabilityReviewTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkDatedCoverageMatrixTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.150 s -- in com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkDatedCoverageMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyStatisticalV5EvaluatorValueMatrixTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.958 s -- in com.tradinganalytics.research.v5.StrategyStatisticalV5EvaluatorValueMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkFundingSemanticValueMatrixTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.369 s -- in com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkFundingSemanticValueMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkFundingSourceReplayMatrixTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.235 s -- in com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkFundingSourceReplayMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkJsonlMissingFieldsMatrixTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.078 s -- in com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkJsonlMissingFieldsMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.RetainedFixedEvidenceSchemaTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.132 s -- in com.tradinganalytics.research.v5.RetainedFixedEvidenceSchemaTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyFixedBaselinePortfolioCorrectionV1Test
+[INFO] Tests run: 21, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.010 s -- in com.tradinganalytics.research.v5.StrategyFixedBaselinePortfolioCorrectionV1Test
+[INFO] Running com.tradinganalytics.research.v5.StrategyResearchDataV5AuthoritativeRoleProductionBoundaryTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.053 s -- in com.tradinganalytics.research.v5.StrategyResearchDataV5AuthoritativeRoleProductionBoundaryTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyStatisticalV5NodeOracleTest
+[INFO] Tests run: 27, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.283 s -- in com.tradinganalytics.research.v5.StrategyStatisticalV5NodeOracleTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkOptionalAvailabilityDisabledTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.056 s -- in com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkOptionalAvailabilityDisabledTest
+[INFO] Running com.tradinganalytics.research.v5.TradeLifecycleClosureReviewTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.010 s -- in com.tradinganalytics.research.v5.TradeLifecycleClosureReviewTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyReadinessV5NodeOracleTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.055 s -- in com.tradinganalytics.research.v5.StrategyReadinessV5NodeOracleTest
+[INFO] Running com.tradinganalytics.research.v5.OperatingCharacteristicsPlanV3Test
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.001 s -- in com.tradinganalytics.research.v5.OperatingCharacteristicsPlanV3Test
+[INFO] Running com.tradinganalytics.research.v5.StrategyProspectiveTypedBoundaryReviewTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.049 s -- in com.tradinganalytics.research.v5.StrategyProspectiveTypedBoundaryReviewTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyReadinessV5OpportunityAuditContractsTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.019 s -- in com.tradinganalytics.research.v5.StrategyReadinessV5OpportunityAuditContractsTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyFixedBaselineReviewTest
+[INFO] Tests run: 15, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.040 s -- in com.tradinganalytics.research.v5.StrategyFixedBaselineReviewTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyStatisticalV5CheckpointMatrixTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.035 s -- in com.tradinganalytics.research.v5.StrategyStatisticalV5CheckpointMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyResearchDataV5CaptureCustodyBoundaryTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.010 s -- in com.tradinganalytics.research.v5.StrategyResearchDataV5CaptureCustodyBoundaryTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyStatisticalV5AuditBranchMatrixTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.012 s -- in com.tradinganalytics.research.v5.StrategyStatisticalV5AuditBranchMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyResearchAuthoritativeV5ContractTest
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.056 s -- in com.tradinganalytics.research.v5.StrategyResearchAuthoritativeV5ContractTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyPerformanceV5FundingCoverageTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.035 s -- in com.tradinganalytics.research.v5.StrategyPerformanceV5FundingCoverageTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyStatisticalV5AuditContractMatrixTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.002 s -- in com.tradinganalytics.research.v5.StrategyStatisticalV5AuditContractMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyResearchDataV5ValidationCoverageTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in com.tradinganalytics.research.v5.StrategyResearchDataV5ValidationCoverageTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyResearchDataV5OutcomeLifecycleMatrixTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.121 s -- in com.tradinganalytics.research.v5.StrategyResearchDataV5OutcomeLifecycleMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyStatisticalV5ShadowValidationTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 11.73 s -- in com.tradinganalytics.research.v5.StrategyStatisticalV5ShadowValidationTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyStatisticalV5ValidationTest
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.020 s -- in com.tradinganalytics.research.v5.StrategyStatisticalV5ValidationTest
+[INFO] Running com.tradinganalytics.research.v5.PhysicalInputAssemblyHashTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.001 s -- in com.tradinganalytics.research.v5.PhysicalInputAssemblyHashTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyStatisticalV5RetainedOosBindingMatrixTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.593 s -- in com.tradinganalytics.research.v5.StrategyStatisticalV5RetainedOosBindingMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyResearchV5OpportunityContractsTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.809 s -- in com.tradinganalytics.research.v5.StrategyResearchV5OpportunityContractsTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyResearchV5LegacyCorpusTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.204 s -- in com.tradinganalytics.research.v5.StrategyResearchV5LegacyCorpusTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkFundingPartialReplayTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.046 s -- in com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkFundingPartialReplayTest
+[INFO] Running com.tradinganalytics.research.v5.OpportunityV5BehaviorTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in com.tradinganalytics.research.v5.OpportunityV5BehaviorTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyReadinessV5PhysicalAuditContractsTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.071 s -- in com.tradinganalytics.research.v5.StrategyReadinessV5PhysicalAuditContractsTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyFixedBaselineV5FrozenContractMatrixTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in com.tradinganalytics.research.v5.StrategyFixedBaselineV5FrozenContractMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyProcessResourcesV1Test
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.010 s -- in com.tradinganalytics.research.v5.StrategyProcessResourcesV1Test
+[INFO] Running com.tradinganalytics.research.v5.StrategyOperatingCharacteristicsSuccessorV1Test
+[WARNING] Tests run: 7, Failures: 0, Errors: 0, Skipped: 1, Time elapsed: 0.078 s -- in com.tradinganalytics.research.v5.StrategyOperatingCharacteristicsSuccessorV1Test
+[INFO] Running com.tradinganalytics.research.v5.StrategyStatisticalV5PhysicalNullWorkloadValidationTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.613 s -- in com.tradinganalytics.research.v5.StrategyStatisticalV5PhysicalNullWorkloadValidationTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyProspectiveReconciliationReviewTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in com.tradinganalytics.research.v5.StrategyProspectiveReconciliationReviewTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyEvaluatorV5NodeOracleTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.014 s -- in com.tradinganalytics.research.v5.StrategyEvaluatorV5NodeOracleTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyResearchAuthoritativeV5NodeOracleTest
+PASS StrategyResearchAuthoritativeV5NodeOracleTest checks=231
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 13.91 s -- in com.tradinganalytics.research.v5.StrategyResearchAuthoritativeV5NodeOracleTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkFullAdmissionMatrixTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.053 s -- in com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkFullAdmissionMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyPortfolioRiskV5NodeOracleTest
+[INFO] Tests run: 20, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.280 s -- in com.tradinganalytics.research.v5.StrategyPortfolioRiskV5NodeOracleTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyOperatingCharacteristicsReviewTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.573 s -- in com.tradinganalytics.research.v5.StrategyOperatingCharacteristicsReviewTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyRetentionArchiveReviewTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.042 s -- in com.tradinganalytics.research.v5.StrategyRetentionArchiveReviewTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyFixedRefinementV5Test
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in com.tradinganalytics.research.v5.StrategyFixedRefinementV5Test
+[INFO] Running com.tradinganalytics.research.v5.StrategyProspectiveOutcomeReconciliationV1Test
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in com.tradinganalytics.research.v5.StrategyProspectiveOutcomeReconciliationV1Test
+[INFO] Running com.tradinganalytics.research.v5.StrategyStatisticalV5PublicationShadowMatrixTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.820 s -- in com.tradinganalytics.research.v5.StrategyStatisticalV5PublicationShadowMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkContractCoverageTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.708 s -- in com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkContractCoverageTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyStatisticalV5NestedScopeMatrixTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.488 s -- in com.tradinganalytics.research.v5.StrategyStatisticalV5NestedScopeMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyResearchDataV5NodeOracleTest
+PASS 35 quarantine tests; 66/66 exports
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.541 s -- in com.tradinganalytics.research.v5.StrategyResearchDataV5NodeOracleTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyResearchDataV5SourceChainCustodyBoundaryTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.025 s -- in com.tradinganalytics.research.v5.StrategyResearchDataV5SourceChainCustodyBoundaryTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyResearchDataV5RoleSourceSelectorBoundaryTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.007 s -- in com.tradinganalytics.research.v5.StrategyResearchDataV5RoleSourceSelectorBoundaryTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyResearchDataV5ReplayArchiveBoundaryTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.022 s -- in com.tradinganalytics.research.v5.StrategyResearchDataV5ReplayArchiveBoundaryTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyProspectiveObservedConventionTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.001 s -- in com.tradinganalytics.research.v5.StrategyProspectiveObservedConventionTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkFundingPhysicalMatrixTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.219 s -- in com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkFundingPhysicalMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkMetricsPhysicalMatrixTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.198 s -- in com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkMetricsPhysicalMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyEvaluatorV5PortablePhysicalTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.486 s -- in com.tradinganalytics.research.v5.StrategyEvaluatorV5PortablePhysicalTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyResearchUiExportV5Test
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.039 s -- in com.tradinganalytics.research.v5.StrategyResearchUiExportV5Test
+[INFO] Running com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkPathAndAcquisitionMatrixTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.151 s -- in com.tradinganalytics.research.v5.StrategyPerformanceV5BenchmarkPathAndAcquisitionMatrixTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyStatisticalV5StatisticalContractMatrixTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in com.tradinganalytics.research.v5.StrategyStatisticalV5StatisticalContractMatrixTest
+[INFO] Running com.tradinganalytics.research.routing.V5ArtifactRoutingTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.002 s -- in com.tradinganalytics.research.routing.V5ArtifactRoutingTest
+[INFO] Running com.tradinganalytics.research.calibration.CalibrationPropertiesTest
+timestamp = 2026-09-14T22:03:01.360116, CalibrationPropertiesTest:validatorReportsEveryMissingTopLevelRequirement = 
+                              |-----------------------jqwik-----------------------
+tries = 8                     | # of calls to property
+checks = 8                    | # of not rejected calls
+generation = EXHAUSTIVE       | parameters are exhaustively generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 0          | # of all combined edge cases
+edge-cases#tried = 0          | # of edge cases tried in current run
+seed = -9155787462230362794   | random seed to reproduce generated values
+
+
+timestamp = 2026-09-14T22:03:01.584603, CalibrationPropertiesTest:eventPreservingCapNeverLosesEndpointsOrMisaccountsFiles = 
+                              |-----------------------jqwik-----------------------
+tries = 300                   | # of calls to property
+checks = 300                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 16         | # of all combined edge cases
+edge-cases#tried = 16         | # of edge cases tried in current run
+seed = -5547937401856784049   | random seed to reproduce generated values
+
+
+timestamp = 2026-09-14T22:03:01.622753, CalibrationPropertiesTest:terminalMachineBlockAccountsUtf8AndHashesRawExactly = 
+                              |-----------------------jqwik-----------------------
+tries = 250                   | # of calls to property
+checks = 250                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 9          | # of all combined edge cases
+edge-cases#tried = 9          | # of edge cases tried in current run
+seed = 5477423816153586583    | random seed to reproduce generated values
+
+
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.347 s -- in com.tradinganalytics.research.calibration.CalibrationPropertiesTest
+[INFO] Running com.tradinganalytics.research.swing.SwingValidationPropertyTest
+timestamp = 2026-09-14T22:03:01.637911, SwingValidationPropertyTest:coverageRatiosAndGapBoundsStayCoherent = 
+                              |-----------------------jqwik-----------------------
+tries = 150                   | # of calls to property
+checks = 150                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 20         | # of all combined edge cases
+edge-cases#tried = 18         | # of edge cases tried in current run
+seed = -2443218791166722859   | random seed to reproduce generated values
+
+
+Sep 14, 2026 10:03:01 PM net.jqwik.engine.properties.RandomizedShrinkablesGenerator logEdgeCasesOutnumberTriesIfApplicable
+INFO: Edge case generation exceeds number of tries. Stopped after 144 generated cases.
+timestamp = 2026-09-14T22:03:01.646767, SwingValidationPropertyTest:candidateBoundsAdmitOnlyDeclaredSearchSpace = 
+                              |-----------------------jqwik-----------------------
+tries = 100                   | # of calls to property
+checks = 100                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 144        | # of all combined edge cases
+edge-cases#tried = 12         | # of edge cases tried in current run
+seed = -7817925413068448228   | random seed to reproduce generated values
+
+
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.022 s -- in com.tradinganalytics.research.swing.SwingValidationPropertyTest
+[INFO] Running com.tradinganalytics.research.swing.SwingBackfillPropertyTest
+timestamp = 2026-09-14T22:03:01.822407, SwingBackfillPropertyTest:labelsAlwaysResolveWithinDeclaredHorizon = 
+                              |-----------------------jqwik-----------------------
+tries = 100                   | # of calls to property
+checks = 100                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 16         | # of all combined edge cases
+edge-cases#tried = 10         | # of edge cases tried in current run
+seed = -7012048059585134346   | random seed to reproduce generated values
+
+
+timestamp = 2026-09-14T22:03:01.871293, SwingBackfillPropertyTest:constantRangeBarsNeverProduceImpossibleLabels = 
+                              |-----------------------jqwik-----------------------
+tries = 100                   | # of calls to property
+checks = 100                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 12         | # of all combined edge cases
+edge-cases#tried = 12         | # of edge cases tried in current run
+seed = -7316064597342824994   | random seed to reproduce generated values
+
+
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.224 s -- in com.tradinganalytics.research.swing.SwingBackfillPropertyTest
+[INFO] Running com.tradinganalytics.research.swing.SwingEnginePropertyTest
+timestamp = 2026-09-14T22:03:01.878279, SwingEnginePropertyTest:allLegalFkStaticStopsRoundTrip = 
+                              |-----------------------jqwik-----------------------
+tries = 100                   | # of calls to property
+checks = 100                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 4          | # of all combined edge cases
+edge-cases#tried = 4          | # of edge cases tried in current run
+seed = 6293239357714448248    | random seed to reproduce generated values
+
+
+timestamp = 2026-09-14T22:03:01.880949, SwingEnginePropertyTest:stopsAboveHardCeilingAlwaysFail = 
+                              |-----------------------jqwik-----------------------
+tries = 50                    | # of calls to property
+checks = 50                   | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 2          | # of all combined edge cases
+edge-cases#tried = 2          | # of edge cases tried in current run
+seed = -4214725678516711962   | random seed to reproduce generated values
+
+
+timestamp = 2026-09-14T22:03:01.903574, SwingEnginePropertyTest:tradeMetricCountersAndRatesRemainCoherent = 
+                              |-----------------------jqwik-----------------------
+tries = 100                   | # of calls to property
+checks = 100                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 32         | # of all combined edge cases
+edge-cases#tried = 14         | # of edge cases tried in current run
+seed = -6757733079039428150   | random seed to reproduce generated values
+
+
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.032 s -- in com.tradinganalytics.research.swing.SwingEnginePropertyTest
+[INFO] Running com.tradinganalytics.research.legacy.LegacyResearchNextCommandSecurityTest
+timestamp = 2026-09-14T22:03:01.912741, LegacyResearchNextCommandSecurityTest:anyUnretainedExposureMutationFailsClosed = 
+                              |-----------------------jqwik-----------------------
+tries = 80                    | # of calls to property
+checks = 80                   | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 9          | # of all combined edge cases
+edge-cases#tried = 6          | # of edge cases tried in current run
+seed = 4042362649653612269    | random seed to reproduce generated values
+
+
+timestamp = 2026-09-14T22:03:01.923591, LegacyResearchNextCommandSecurityTest:cosmeticMetadataNeverChangesBehaviorHash = 
+                              |-----------------------jqwik-----------------------
+tries = 80                    | # of calls to property
+checks = 80                   | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 81         | # of all combined edge cases
+edge-cases#tried = 12         | # of edge cases tried in current run
+seed = -331435253147933738    | random seed to reproduce generated values
+
+
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.020 s -- in com.tradinganalytics.research.legacy.LegacyResearchNextCommandSecurityTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyStatisticalV5PropertyTest
+timestamp = 2026-09-14T22:03:01.927570, StrategyStatisticalV5PropertyTest:withHashIsNonMutatingAndAlwaysRecomputesOwnHash = 
+                              |-----------------------jqwik-----------------------
+tries = 80                    | # of calls to property
+checks = 80                   | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 9          | # of all combined edge cases
+edge-cases#tried = 9          | # of edge cases tried in current run
+seed = -5143411678221699279   | random seed to reproduce generated values
+
+
+timestamp = 2026-09-14T22:03:01.930158, StrategyStatisticalV5PropertyTest:constrainedDominanceIsAsymmetricForDistinctFeasibleObjectives = 
+                              |-----------------------jqwik-----------------------
+tries = 80                    | # of calls to property
+checks = 80                   | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 9          | # of all combined edge cases
+edge-cases#tried = 7          | # of edge cases tried in current run
+seed = 2984601072320001150    | random seed to reproduce generated values
+
+
+timestamp = 2026-09-14T22:03:01.932793, StrategyStatisticalV5PropertyTest:canonicalHashIgnoresObjectInsertionOrder = 
+                              |-----------------------jqwik-----------------------
+tries = 80                    | # of calls to property
+checks = 80                   | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 9          | # of all combined edge cases
+edge-cases#tried = 9          | # of edge cases tried in current run
+seed = 2237304174850211412    | random seed to reproduce generated values
+
+
+timestamp = 2026-09-14T22:03:01.934349, StrategyStatisticalV5PropertyTest:directNeighboursRemainUniqueAndInsideTheFrozenGeneSpace = 
+                              |-----------------------jqwik-----------------------
+tries = 11                    | # of calls to property
+checks = 11                   | # of not rejected calls
+generation = EXHAUSTIVE       | parameters are exhaustively generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 0          | # of all combined edge cases
+edge-cases#tried = 0          | # of edge cases tried in current run
+seed = -2837488905000807755   | random seed to reproduce generated values
+
+
+timestamp = 2026-09-14T22:03:01.942907, StrategyStatisticalV5PropertyTest:exposureAppendDeduplicatesBehaviorWhileChargingEveryAttempt = 
+                              |-----------------------jqwik-----------------------
+tries = 60                    | # of calls to property
+checks = 60                   | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 5          | # of all combined edge cases
+edge-cases#tried = 5          | # of edge cases tried in current run
+seed = 7623175984115675007    | random seed to reproduce generated values
+
+
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.019 s -- in com.tradinganalytics.research.v5.StrategyStatisticalV5PropertyTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyEvaluatorV5SecurityPropertyTest
+timestamp = 2026-09-14T22:03:01.948451, StrategyEvaluatorV5SecurityPropertyTest:numericPredicateOperatorsPreserveTheirMathematicalBoundary = 
+                              |-----------------------jqwik-----------------------
+tries = 120                   | # of calls to property
+checks = 120                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 81         | # of all combined edge cases
+edge-cases#tried = 17         | # of edge cases tried in current run
+seed = -1715186743831262075   | random seed to reproduce generated values
+
+
+timestamp = 2026-09-14T22:03:01.952668, StrategyEvaluatorV5SecurityPropertyTest:physicalNullRebasePreservesIdentityAndTimeDelta = 
+                              |-----------------------jqwik-----------------------
+tries = 100                   | # of calls to property
+checks = 100                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 45         | # of all combined edge cases
+edge-cases#tried = 12         | # of edge cases tried in current run
+seed = 667483666708591095     | random seed to reproduce generated values
+
+
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in com.tradinganalytics.research.v5.StrategyEvaluatorV5SecurityPropertyTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyPortfolioRiskV5PropertyTest
+timestamp = 2026-09-14T22:03:01.956418, StrategyPortfolioRiskV5PropertyTest:canonicalHashIgnoresObjectInsertionOrder = 
+                              |-----------------------jqwik-----------------------
+tries = 80                    | # of calls to property
+checks = 80                   | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 5          | # of all combined edge cases
+edge-cases#tried = 2          | # of edge cases tried in current run
+seed = 1590733004273055631    | random seed to reproduce generated values
+
+
+timestamp = 2026-09-14T22:03:01.959614, StrategyPortfolioRiskV5PropertyTest:withHashAlwaysRecomputesOwnHash = 
+                              |-----------------------jqwik-----------------------
+tries = 80                    | # of calls to property
+checks = 80                   | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 9          | # of all combined edge cases
+edge-cases#tried = 9          | # of edge cases tried in current run
+seed = 4543157829998079751    | random seed to reproduce generated values
+
+
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in com.tradinganalytics.research.v5.StrategyPortfolioRiskV5PropertyTest
+[INFO] Running com.tradinganalytics.research.v5.OpportunityV5SecurityPropertyTest
+timestamp = 2026-09-14T22:03:01.976549, OpportunityV5SecurityPropertyTest:anyContentHashMutationInvalidatesFrozenEnvelope = 
+                              |-----------------------jqwik-----------------------
+tries = 100                   | # of calls to property
+checks = 100                  | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 16         | # of all combined edge cases
+edge-cases#tried = 15         | # of edge cases tried in current run
+seed = -3054011679206078439   | random seed to reproduce generated values
+
+
+timestamp = 2026-09-14T22:03:02.026164, OpportunityV5SecurityPropertyTest:densePartitionHydrationRoundTripsWithoutNestedCopies = 
+                              |-----------------------jqwik-----------------------
+tries = 80                    | # of calls to property
+checks = 80                   | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 80         | # of all combined edge cases
+edge-cases#tried = 8          | # of edge cases tried in current run
+seed = 7149720777040695660    | random seed to reproduce generated values
+
+
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.066 s -- in com.tradinganalytics.research.v5.OpportunityV5SecurityPropertyTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyPortfolioV5PropertyTest
+timestamp = 2026-09-14T22:03:02.029374, StrategyPortfolioV5PropertyTest:everyNonEmptyCryptoSpotAssetIsAccepted = 
+                              |-----------------------jqwik-----------------------
+tries = 40                    | # of calls to property
+checks = 40                   | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 2          | # of all combined edge cases
+edge-cases#tried = 2          | # of edge cases tried in current run
+seed = 6639690051343707203    | random seed to reproduce generated values
+
+
+timestamp = 2026-09-14T22:03:02.034980, StrategyPortfolioV5PropertyTest:strictLongPnlEqualsMarkDelta = 
+                              |-----------------------jqwik-----------------------
+tries = 25                    | # of calls to property
+checks = 25                   | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 32         | # of all combined edge cases
+edge-cases#tried = 3          | # of edge cases tried in current run
+seed = -7990225413979629889   | random seed to reproduce generated values
+
+
+timestamp = 2026-09-14T22:03:02.038123, StrategyPortfolioV5PropertyTest:realizedOnlyPortfolioEquityIsAffineInExplicitPnl = 
+                              |-----------------------jqwik-----------------------
+tries = 30                    | # of calls to property
+checks = 30                   | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 7          | # of all combined edge cases
+edge-cases#tried = 6          | # of edge cases tried in current run
+seed = -5658198476213917326   | random seed to reproduce generated values
+
+
+timestamp = 2026-09-14T22:03:02.039457, StrategyPortfolioV5PropertyTest:nonCryptoAssetClassesAlwaysFailClosed = 
+                              |-----------------------jqwik-----------------------
+tries = 20                    | # of calls to property
+checks = 20                   | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 2          | # of all combined edge cases
+edge-cases#tried = 2          | # of edge cases tried in current run
+seed = -38320605179860783     | random seed to reproduce generated values
+
+
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.013 s -- in com.tradinganalytics.research.v5.StrategyPortfolioV5PropertyTest
+[INFO] Running com.tradinganalytics.research.v5.StrategyPerformanceV5PropertyTest
+timestamp = 2026-09-14T22:03:02.053211, StrategyPerformanceV5PropertyTest:productionWorkloadPreservesFrozenAttemptAlgebra = 
+                              |-----------------------jqwik-----------------------
+tries = 50                    | # of calls to property
+checks = 50                   | # of not rejected calls
+generation = RANDOMIZED       | parameters are randomly generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 64         | # of all combined edge cases
+edge-cases#tried = 9          | # of edge cases tried in current run
+seed = 6314373959094803243    | random seed to reproduce generated values
+
+
+timestamp = 2026-09-14T22:03:02.058901, StrategyPerformanceV5PropertyTest:ordinaryOutcomeVectorsNeverCrossPhaseOrFoldScopes = 
+                              |-----------------------jqwik-----------------------
+tries = 24                    | # of calls to property
+checks = 24                   | # of not rejected calls
+generation = EXHAUSTIVE       | parameters are exhaustively generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 0          | # of all combined edge cases
+edge-cases#tried = 0          | # of edge cases tried in current run
+seed = 3437894561556667110    | random seed to reproduce generated values
+
+
+timestamp = 2026-09-14T22:03:02.063250, StrategyPerformanceV5PropertyTest:identicalScopesReuseEverySignalAndIntentOutcome = 
+                              |-----------------------jqwik-----------------------
+tries = 24                    | # of calls to property
+checks = 24                   | # of not rejected calls
+generation = EXHAUSTIVE       | parameters are exhaustively generated
+after-failure = SAMPLE_FIRST  | try previously failed sample, then previous seed
+when-fixed-seed = ALLOW       | fixing the random seed is allowed
+edge-cases#mode = MIXIN       | edge cases are mixed in
+edge-cases#total = 0          | # of all combined edge cases
+edge-cases#tried = 0          | # of edge cases tried in current run
+seed = -3388881841715812848   | random seed to reproduce generated values
+
+
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.024 s -- in com.tradinganalytics.research.v5.StrategyPerformanceV5PropertyTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[WARNING] Tests run: 913, Failures: 0, Errors: 0, Skipped: 1
+[INFO] 
+[INFO] 
+[INFO] --- jar:3.4.1:jar (default-jar) @ analytics-research ---
+[INFO] Building jar: /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-research/target/analytics-research-1.0.0-SNAPSHOT.jar
+[INFO] 
+[INFO] --- jacoco:0.8.15:report (jacoco-report) @ analytics-research ---
+[INFO] Loading execution data file /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-research/target/jacoco.exec
+[INFO] Analyzed bundle 'analytics-research' with 278 classes
+[INFO] 
+[INFO] --- install:3.1.2:install (default-install) @ analytics-research ---
+[INFO] Installing /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-research/pom.xml to /Users/eternal/.m2/repository/com/tradinganalytics/analytics-research/1.0.0-SNAPSHOT/analytics-research-1.0.0-SNAPSHOT.pom
+[INFO] Installing /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-research/target/analytics-research-1.0.0-SNAPSHOT.jar to /Users/eternal/.m2/repository/com/tradinganalytics/analytics-research/1.0.0-SNAPSHOT/analytics-research-1.0.0-SNAPSHOT.jar
+[INFO] 
+[INFO] -----------------< com.tradinganalytics:analytics-cli >-----------------
+[INFO] Building analytics-cli 1.0.0-SNAPSHOT                             [8/10]
+[INFO]   from analytics-cli/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[WARNING] Parameter 'errorOutputFile' is unknown for plugin 'exec-maven-plugin:3.1.0:exec (write-build-identity)'
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ analytics-cli ---
+[INFO] Deleting /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-cli/target
+[INFO] 
+[INFO] --- enforcer:3.6.2:enforce (enforce-build-environment) @ analytics-cli ---
+[INFO] 
+[INFO] --- jacoco:0.8.15:prepare-agent (default) @ analytics-cli ---
+[INFO] argLine set to -javaagent:/Users/eternal/.m2/repository/org/jacoco/org.jacoco.agent/0.8.15/org.jacoco.agent-0.8.15-runtime.jar=destfile=/Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-cli/target/jacoco.exec
+[INFO] 
+[INFO] --- exec:3.1.0:exec (write-build-identity) @ analytics-cli ---
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ analytics-cli ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.14.1:compile (default-compile) @ analytics-cli ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 42 source files with javac [debug parameters release 21] to target/classes
+[INFO] /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-cli/src/main/java/com/tradinganalytics/cli/StrategyV5WorkflowDeployment.java: Some input files use or override a deprecated API.
+[INFO] /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-cli/src/main/java/com/tradinganalytics/cli/StrategyV5WorkflowDeployment.java: Recompile with -Xlint:deprecation for details.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ analytics-cli ---
+[INFO] skip non existing resourceDirectory /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-cli/src/test/resources
+[INFO] Copying 2 resources from ../analytics-research/src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.14.1:testCompile (default-testCompile) @ analytics-cli ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 23 source files with javac [debug parameters release 21] to target/test-classes
+[INFO] /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-cli/src/test/java/com/tradinganalytics/cli/StrategyV5WorkflowDeploymentEvidenceChainTest.java: /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-cli/src/test/java/com/tradinganalytics/cli/StrategyV5WorkflowDeploymentEvidenceChainTest.java uses or overrides a deprecated API.
+[INFO] /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-cli/src/test/java/com/tradinganalytics/cli/StrategyV5WorkflowDeploymentEvidenceChainTest.java: Recompile with -Xlint:deprecation for details.
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ analytics-cli ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.tradinganalytics.cli.AnalyticsCommandTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.495 s -- in com.tradinganalytics.cli.AnalyticsCommandTest
+[INFO] Running com.tradinganalytics.cli.TripwireCommandTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.060 s -- in com.tradinganalytics.cli.TripwireCommandTest
+[INFO] Running com.tradinganalytics.cli.PublicDataSmokeCommandTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.027 s -- in com.tradinganalytics.cli.PublicDataSmokeCommandTest
+[INFO] Running com.tradinganalytics.cli.LegacyFlagOptionsTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in com.tradinganalytics.cli.LegacyFlagOptionsTest
+[INFO] Running com.tradinganalytics.cli.CiBurnTagCliCommandTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.053 s -- in com.tradinganalytics.cli.CiBurnTagCliCommandTest
+[INFO] Running com.tradinganalytics.cli.ReportingCliCommandsTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.027 s -- in com.tradinganalytics.cli.ReportingCliCommandsTest
+[INFO] Running com.tradinganalytics.cli.SnapshotCommandTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.024 s -- in com.tradinganalytics.cli.SnapshotCommandTest
+[INFO] Running com.tradinganalytics.cli.StrategyV5WorkflowDeploymentEvidenceChainTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.554 s -- in com.tradinganalytics.cli.StrategyV5WorkflowDeploymentEvidenceChainTest
+[INFO] Running com.tradinganalytics.cli.ResearchSmokeCliCommandTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.012 s -- in com.tradinganalytics.cli.ResearchSmokeCliCommandTest
+[INFO] Running com.tradinganalytics.cli.StrategyAttestationCliCommandTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.014 s -- in com.tradinganalytics.cli.StrategyAttestationCliCommandTest
+[INFO] Running com.tradinganalytics.cli.GitHubSettingsCaptureCliCommandTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.023 s -- in com.tradinganalytics.cli.GitHubSettingsCaptureCliCommandTest
+[INFO] Running com.tradinganalytics.cli.GitHubAttestationCliCommandTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.012 s -- in com.tradinganalytics.cli.GitHubAttestationCliCommandTest
+[INFO] Running com.tradinganalytics.cli.CalibrationRegistryCommandTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.013 s -- in com.tradinganalytics.cli.CalibrationRegistryCommandTest
+[INFO] Running com.tradinganalytics.cli.StrategyV5WorkflowSupportTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.014 s -- in com.tradinganalytics.cli.StrategyV5WorkflowSupportTest
+[INFO] Running com.tradinganalytics.cli.PortedToolCliCommandsTest
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.641 s -- in com.tradinganalytics.cli.PortedToolCliCommandsTest
+[INFO] Running com.tradinganalytics.cli.FetchCommandTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in com.tradinganalytics.cli.FetchCommandTest
+[INFO] Running com.tradinganalytics.cli.PositionCommandTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in com.tradinganalytics.cli.PositionCommandTest
+[INFO] Running com.tradinganalytics.cli.WriterInstallationCliCommandTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.356 s -- in com.tradinganalytics.cli.WriterInstallationCliCommandTest
+[INFO] Running com.tradinganalytics.cli.BuildFreshnessReviewTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.250 s -- in com.tradinganalytics.cli.BuildFreshnessReviewTest
+[INFO] Running com.tradinganalytics.cli.ComputeCliCommandTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in com.tradinganalytics.cli.ComputeCliCommandTest
+[INFO] Running com.tradinganalytics.cli.CiConfirmationCliCommandTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in com.tradinganalytics.cli.CiConfirmationCliCommandTest
+[INFO] Running com.tradinganalytics.cli.StrategyV5ProspectiveWorkflowCliCommandTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.045 s -- in com.tradinganalytics.cli.StrategyV5ProspectiveWorkflowCliCommandTest
+[INFO] Running com.tradinganalytics.cli.WorkflowSecurityCliCommandTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.037 s -- in com.tradinganalytics.cli.WorkflowSecurityCliCommandTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 99, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] --- jar:3.4.1:jar (default-jar) @ analytics-cli ---
+[INFO] Building jar: /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-cli/target/analytics-cli-1.0.0-SNAPSHOT.jar
+[INFO] 
+[INFO] --- spring-boot:4.1.1:repackage (default) @ analytics-cli ---
+[INFO] Attaching repackaged archive /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-cli/target/analytics-cli-1.0.0-SNAPSHOT-exec.jar with classifier exec
+[INFO] 
+[INFO] --- jacoco:0.8.15:report (jacoco-report) @ analytics-cli ---
+[INFO] Loading execution data file /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-cli/target/jacoco.exec
+[INFO] Analyzed bundle 'analytics-cli' with 64 classes
+[INFO] 
+[INFO] --- install:3.1.2:install (default-install) @ analytics-cli ---
+[INFO] Installing /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-cli/pom.xml to /Users/eternal/.m2/repository/com/tradinganalytics/analytics-cli/1.0.0-SNAPSHOT/analytics-cli-1.0.0-SNAPSHOT.pom
+[INFO] Installing /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-cli/target/analytics-cli-1.0.0-SNAPSHOT.jar to /Users/eternal/.m2/repository/com/tradinganalytics/analytics-cli/1.0.0-SNAPSHOT/analytics-cli-1.0.0-SNAPSHOT.jar
+[INFO] Installing /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-cli/target/analytics-cli-1.0.0-SNAPSHOT-exec.jar to /Users/eternal/.m2/repository/com/tradinganalytics/analytics-cli/1.0.0-SNAPSHOT/analytics-cli-1.0.0-SNAPSHOT-exec.jar
+[INFO] 
+[INFO] ---------< com.tradinganalytics:analytics-compatibility-tests >---------
+[INFO] Building analytics-compatibility-tests 1.0.0-SNAPSHOT             [9/10]
+[INFO]   from analytics-compatibility-tests/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ analytics-compatibility-tests ---
+[INFO] Deleting /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-compatibility-tests/target
+[INFO] 
+[INFO] --- enforcer:3.6.2:enforce (enforce-build-environment) @ analytics-compatibility-tests ---
+[INFO] 
+[INFO] --- jacoco:0.8.15:prepare-agent (default) @ analytics-compatibility-tests ---
+[INFO] argLine set to -javaagent:/Users/eternal/.m2/repository/org/jacoco/org.jacoco.agent/0.8.15/org.jacoco.agent-0.8.15-runtime.jar=destfile=/Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-compatibility-tests/target/jacoco.exec
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ analytics-compatibility-tests ---
+[INFO] skip non existing resourceDirectory /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-compatibility-tests/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.14.1:compile (default-compile) @ analytics-compatibility-tests ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ analytics-compatibility-tests ---
+[INFO] Copying 20 resources from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.14.1:testCompile (default-testCompile) @ analytics-compatibility-tests ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 22 source files with javac [debug parameters release 21] to target/test-classes
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ analytics-compatibility-tests ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.tradinganalytics.compatibility.PositionSnapshotsParityTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.317 s -- in com.tradinganalytics.compatibility.PositionSnapshotsParityTest
+[INFO] Running com.tradinganalytics.compatibility.CalibrationRegistryParityTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.033 s -- in com.tradinganalytics.compatibility.CalibrationRegistryParityTest
+[INFO] Running com.tradinganalytics.compatibility.LiveMarketFetchMacroParityTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.239 s -- in com.tradinganalytics.compatibility.LiveMarketFetchMacroParityTest
+[INFO] Running com.tradinganalytics.compatibility.MarketFlowPanelParityTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.017 s -- in com.tradinganalytics.compatibility.MarketFlowPanelParityTest
+[INFO] Running com.tradinganalytics.compatibility.FundingAnalyticsParityTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in com.tradinganalytics.compatibility.FundingAnalyticsParityTest
+[INFO] Running com.tradinganalytics.compatibility.PrettyCanonicalJsonParityTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.036 s -- in com.tradinganalytics.compatibility.PrettyCanonicalJsonParityTest
+[INFO] Running com.tradinganalytics.compatibility.CalibrationCorpusParityTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.013 s -- in com.tradinganalytics.compatibility.CalibrationCorpusParityTest
+[INFO] Running com.tradinganalytics.compatibility.JavaSourceMapTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.049 s -- in com.tradinganalytics.compatibility.JavaSourceMapTest
+[INFO] Running com.tradinganalytics.compatibility.LiveMarketFetchAssetParityTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.075 s -- in com.tradinganalytics.compatibility.LiveMarketFetchAssetParityTest
+[INFO] Running com.tradinganalytics.compatibility.TripwireCommandParityTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.066 s -- in com.tradinganalytics.compatibility.TripwireCommandParityTest
+[INFO] Running com.tradinganalytics.compatibility.JavaWorkflowCutoverTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.013 s -- in com.tradinganalytics.compatibility.JavaWorkflowCutoverTest
+[INFO] Running com.tradinganalytics.compatibility.MarketContextAnalyticsParityTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in com.tradinganalytics.compatibility.MarketContextAnalyticsParityTest
+[INFO] Running com.tradinganalytics.compatibility.LegacyFlagOptionsParityTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.010 s -- in com.tradinganalytics.compatibility.LegacyFlagOptionsParityTest
+[INFO] Running com.tradinganalytics.compatibility.ToolchainSupportParityTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.059 s -- in com.tradinganalytics.compatibility.ToolchainSupportParityTest
+[INFO] Running com.tradinganalytics.compatibility.MarketFlowAggregationParityTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.002 s -- in com.tradinganalytics.compatibility.MarketFlowAggregationParityTest
+[INFO] Running com.tradinganalytics.compatibility.MarketSeriesAnalyticsParityTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in com.tradinganalytics.compatibility.MarketSeriesAnalyticsParityTest
+[INFO] Running com.tradinganalytics.compatibility.SnapshotPanelsParityTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.002 s -- in com.tradinganalytics.compatibility.SnapshotPanelsParityTest
+[INFO] Running com.tradinganalytics.compatibility.V5ArtifactRoutingParityTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in com.tradinganalytics.compatibility.V5ArtifactRoutingParityTest
+[INFO] Running com.tradinganalytics.compatibility.ReportPathsParityTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in com.tradinganalytics.compatibility.ReportPathsParityTest
+[INFO] Running com.tradinganalytics.compatibility.MarketFetchSupportParityTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in com.tradinganalytics.compatibility.MarketFetchSupportParityTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 55, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] --- jar:3.4.1:jar (default-jar) @ analytics-compatibility-tests ---
+[WARNING] JAR will be empty - no content was marked for inclusion!
+[INFO] Building jar: /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-compatibility-tests/target/analytics-compatibility-tests-1.0.0-SNAPSHOT.jar
+[INFO] 
+[INFO] --- jacoco:0.8.15:report (jacoco-report) @ analytics-compatibility-tests ---
+[INFO] Skipping JaCoCo execution due to missing classes directory.
+[INFO] 
+[INFO] --- install:3.1.2:install (default-install) @ analytics-compatibility-tests ---
+[INFO] Installing /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-compatibility-tests/pom.xml to /Users/eternal/.m2/repository/com/tradinganalytics/analytics-compatibility-tests/1.0.0-SNAPSHOT/analytics-compatibility-tests-1.0.0-SNAPSHOT.pom
+[INFO] Installing /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-compatibility-tests/target/analytics-compatibility-tests-1.0.0-SNAPSHOT.jar to /Users/eternal/.m2/repository/com/tradinganalytics/analytics-compatibility-tests/1.0.0-SNAPSHOT/analytics-compatibility-tests-1.0.0-SNAPSHOT.jar
+[INFO] 
+[INFO] --------------< com.tradinganalytics:analytics-coverage >---------------
+[INFO] Building Trading Analytics aggregate coverage 1.0.0-SNAPSHOT     [10/10]
+[INFO]   from analytics-coverage/pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ analytics-coverage ---
+[INFO] 
+[INFO] --- enforcer:3.6.2:enforce (enforce-build-environment) @ analytics-coverage ---
+[INFO] 
+[INFO] --- jacoco:0.8.15:prepare-agent (default) @ analytics-coverage ---
+[INFO] argLine set to -javaagent:/Users/eternal/.m2/repository/org/jacoco/org.jacoco.agent/0.8.15/org.jacoco.agent-0.8.15-runtime.jar=destfile=/Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-coverage/target/jacoco.exec
+[INFO] 
+[INFO] --- jacoco:0.8.15:report (jacoco-report) @ analytics-coverage ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO] 
+[INFO] --- jacoco:0.8.15:report-aggregate (jacoco-reactor-aggregate) @ analytics-coverage ---
+[INFO] Loading execution data file /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-contracts/target/jacoco.exec
+[INFO] Loading execution data file /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-core/target/jacoco.exec
+[INFO] Loading execution data file /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-infrastructure/target/jacoco.exec
+[INFO] Loading execution data file /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-market-data/target/jacoco.exec
+[INFO] Loading execution data file /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-reporting/target/jacoco.exec
+[INFO] Loading execution data file /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-research/target/jacoco.exec
+[INFO] Loading execution data file /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-cli/target/jacoco.exec
+[INFO] Loading execution data file /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-compatibility-tests/target/jacoco.exec
+[INFO] Analyzed bundle 'analytics-contracts' with 11 classes
+[INFO] Analyzed bundle 'analytics-core' with 58 classes
+[INFO] Analyzed bundle 'analytics-infrastructure' with 111 classes
+[INFO] Analyzed bundle 'analytics-market-data' with 61 classes
+[INFO] Analyzed bundle 'analytics-reporting' with 33 classes
+[INFO] Analyzed bundle 'analytics-research' with 278 classes
+[INFO] Analyzed bundle 'analytics-cli' with 64 classes
+[INFO] Analyzed bundle 'analytics-compatibility-tests' with 0 classes
+[INFO] 
+[INFO] --- install:3.1.2:install (default-install) @ analytics-coverage ---
+[INFO] Installing /Users/eternal/.codex/worktrees/trading-pr13-performance/analytics-coverage/pom.xml to /Users/eternal/.m2/repository/com/tradinganalytics/analytics-coverage/1.0.0-SNAPSHOT/analytics-coverage-1.0.0-SNAPSHOT.pom
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for Trading Analytics 1.0.0-SNAPSHOT:
+[INFO] 
+[INFO] Trading Analytics .................................. SUCCESS [  0.279 s]
+[INFO] analytics-contracts ................................ SUCCESS [  3.580 s]
+[INFO] analytics-core ..................................... SUCCESS [  2.545 s]
+[INFO] analytics-infrastructure ........................... SUCCESS [  4.876 s]
+[INFO] analytics-market-data .............................. SUCCESS [  3.762 s]
+[INFO] analytics-reporting ................................ SUCCESS [  3.967 s]
+[INFO] analytics-research ................................. SUCCESS [05:02 min]
+[INFO] analytics-cli ...................................... SUCCESS [ 17.576 s]
+[INFO] analytics-compatibility-tests ...................... SUCCESS [  2.775 s]
+[INFO] Trading Analytics aggregate coverage ............... SUCCESS [  0.830 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  05:43 min
+[INFO] Finished at: 2026-09-14T22:03:23+03:00
+[INFO] ------------------------------------------------------------------------

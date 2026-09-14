@@ -1,0 +1,10 @@
+{
+  "schema": "calculation-performance-plan-review/1",
+  "status": "APPROVED",
+  "plan": "/Users/eternal/.codex/worktrees/trading-pr13-performance/docs/CALCULATION-PERFORMANCE-PLAN-20260914.md",
+  "plan_sha256": "a3e9a8d2dc01964708a6b5cfcca032384ee59fba2c4acd04bb7cafeb1094bfab",
+  "reviewer": "/root/throughput_review",
+  "approved_at_utc": "2026-09-14T11:51:53.839847+00:00",
+  "resolved_finding": "Effective concurrency capped at eight for the fixed eight-job workload; no ten-worker experiment",
+  "review_scope": "Plan, correctness and trust boundaries, coverage, package freeze, runnable local profiles, bounded search and confirmation; not an implementation review"
+}

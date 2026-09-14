@@ -1,0 +1,355 @@
+{
+  "status": "PASS",
+  "scope": "ENGINEERING_ONLY_NOT_QUALIFICATION",
+  "artifacts": [
+    {
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/stages/prechange-4w-1536/run/parallel/slots/FULL_NO_EDGE_0_0_920000000/worker-result.json",
+      "byte_sha256": "70b21098b9a97c308d09fbd0cdff4bd4a700700aafbe7d2714e2fa180f3cf4c6",
+      "slot_id": "FULL|NO_EDGE|0|0|920000000",
+      "plan_sha256": "5013683ff195e32b4d632a74f7583a79d6b5d5283729c21ab4112214958a06dd",
+      "run_id": "18b4fd55-5c92-4c8a-b3cb-a9afefb0e67d",
+      "seed": 920000000,
+      "scenario": "NO_EDGE",
+      "effect_size": 0.0,
+      "replication": 0,
+      "portfolio_points": 179923,
+      "combined_points": 179923,
+      "trades": 900,
+      "portable_economic_sha256": "87d986951fe2f7257a669870776db3793ae107e783e0c40c25a3d5598fda87ab",
+      "comparison_sha256": "fabb1f68eed2ca253e8fa2081d1c030fbcce28e82cf5fd03777eb5ed86e0dcd5",
+      "executor_identity": {
+        "schema": "analytics-build-identity/1",
+        "status": "KNOWN",
+        "executable": {
+          "code_source": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/throughput-search-20260913/candidate-package/executor.jar",
+          "kind": "JAR",
+          "sha256": "b8a34877f8d674c4c16d3e121759f9c7c3a62b0a563226fbe03c02b91b27e6d2",
+          "bytes": 107287509
+        },
+        "compiled": {
+          "input_fingerprint": "ca94e33f2a56b0a9a3b3f29005a3d1e722e2f5efdf044de2876fe9289858b376",
+          "revision": "4d8ec899c8d80eca20af970d46a0acf08e0ca3f1",
+          "dirty_source": "false",
+          "java_version": "openjdk version \"26.0.1\" 2026-04-21",
+          "java_vendor": "Oracle Corporation",
+          "java_runtime": "OpenJDK Runtime Environment",
+          "toolchain_fingerprint": "277c0d2ab5a069bc4fabbb9a6bb581a452181a794c58b74ee640f1b958b50f01",
+          "maven_wrapper_sha256": "cae96cef89ebea3531221f4ae17c23cf8edf67d00eae8306d4186ae1bbed4d02",
+          "root_pom_sha256": "1d19e5762fe0cd3a8b5787b2ec6f081d606704e83a498a5f416bdc8fd7fe9355",
+          "marker_resource": "META-INF/build-identity.properties"
+        },
+        "runtime": {
+          "java": "21.0.11",
+          "cwd": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/stages/prechange-4w-1536/run/parallel/slots/FULL_NO_EDGE_0_0_920000000/repository",
+          "user_dir": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/stages/prechange-4w-1536/run/parallel/slots/FULL_NO_EDGE_0_0_920000000/repository"
+        }
+      }
+    },
+    {
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/stages/prechange-4w-1536/run/parallel/slots/FULL_NO_EDGE_0_1_920000001/worker-result.json",
+      "byte_sha256": "a5dab8b17518de3fb13a886571101c3f9ab373e4ccee6da2eb5b585f09ac8689",
+      "slot_id": "FULL|NO_EDGE|0|1|920000001",
+      "plan_sha256": "5013683ff195e32b4d632a74f7583a79d6b5d5283729c21ab4112214958a06dd",
+      "run_id": "18b4fd55-5c92-4c8a-b3cb-a9afefb0e67d",
+      "seed": 920000001,
+      "scenario": "NO_EDGE",
+      "effect_size": 0.0,
+      "replication": 1,
+      "portfolio_points": 183025,
+      "combined_points": 183025,
+      "trades": 900,
+      "portable_economic_sha256": "4d0105df9cccb8e233fe698284eb86fa92ff173c44bba2e17eb9a9d267fb7e3e",
+      "comparison_sha256": "262a93847b0246e550549fae735c91f4f00635c467242d772d24be077924a147",
+      "executor_identity": {
+        "schema": "analytics-build-identity/1",
+        "status": "KNOWN",
+        "executable": {
+          "code_source": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/throughput-search-20260913/candidate-package/executor.jar",
+          "kind": "JAR",
+          "sha256": "b8a34877f8d674c4c16d3e121759f9c7c3a62b0a563226fbe03c02b91b27e6d2",
+          "bytes": 107287509
+        },
+        "compiled": {
+          "input_fingerprint": "ca94e33f2a56b0a9a3b3f29005a3d1e722e2f5efdf044de2876fe9289858b376",
+          "revision": "4d8ec899c8d80eca20af970d46a0acf08e0ca3f1",
+          "dirty_source": "false",
+          "java_version": "openjdk version \"26.0.1\" 2026-04-21",
+          "java_vendor": "Oracle Corporation",
+          "java_runtime": "OpenJDK Runtime Environment",
+          "toolchain_fingerprint": "277c0d2ab5a069bc4fabbb9a6bb581a452181a794c58b74ee640f1b958b50f01",
+          "maven_wrapper_sha256": "cae96cef89ebea3531221f4ae17c23cf8edf67d00eae8306d4186ae1bbed4d02",
+          "root_pom_sha256": "1d19e5762fe0cd3a8b5787b2ec6f081d606704e83a498a5f416bdc8fd7fe9355",
+          "marker_resource": "META-INF/build-identity.properties"
+        },
+        "runtime": {
+          "java": "21.0.11",
+          "cwd": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/stages/prechange-4w-1536/run/parallel/slots/FULL_NO_EDGE_0_1_920000001/repository",
+          "user_dir": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/stages/prechange-4w-1536/run/parallel/slots/FULL_NO_EDGE_0_1_920000001/repository"
+        }
+      }
+    },
+    {
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/stages/prechange-4w-1536/run/parallel/slots/FULL_PLANTED_EDGE_0.02_0_920200000/worker-result.json",
+      "byte_sha256": "d192bee6d40702ab40e4f36d37e30103514f0beedbe8fb35c839337c89a01aa2",
+      "slot_id": "FULL|PLANTED_EDGE|0.02|0|920200000",
+      "plan_sha256": "5013683ff195e32b4d632a74f7583a79d6b5d5283729c21ab4112214958a06dd",
+      "run_id": "18b4fd55-5c92-4c8a-b3cb-a9afefb0e67d",
+      "seed": 920200000,
+      "scenario": "PLANTED_EDGE",
+      "effect_size": 0.02,
+      "replication": 0,
+      "portfolio_points": 181727,
+      "combined_points": 181727,
+      "trades": 900,
+      "portable_economic_sha256": "b43e07d6b9d42876cea2a5f498cad33f604b35915b61f64d353d1a98b79dbff2",
+      "comparison_sha256": "187e54442c1763278837e4217b8eafaa39968956ca5c5445336baf0fc0e3178d",
+      "executor_identity": {
+        "schema": "analytics-build-identity/1",
+        "status": "KNOWN",
+        "executable": {
+          "code_source": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/throughput-search-20260913/candidate-package/executor.jar",
+          "kind": "JAR",
+          "sha256": "b8a34877f8d674c4c16d3e121759f9c7c3a62b0a563226fbe03c02b91b27e6d2",
+          "bytes": 107287509
+        },
+        "compiled": {
+          "input_fingerprint": "ca94e33f2a56b0a9a3b3f29005a3d1e722e2f5efdf044de2876fe9289858b376",
+          "revision": "4d8ec899c8d80eca20af970d46a0acf08e0ca3f1",
+          "dirty_source": "false",
+          "java_version": "openjdk version \"26.0.1\" 2026-04-21",
+          "java_vendor": "Oracle Corporation",
+          "java_runtime": "OpenJDK Runtime Environment",
+          "toolchain_fingerprint": "277c0d2ab5a069bc4fabbb9a6bb581a452181a794c58b74ee640f1b958b50f01",
+          "maven_wrapper_sha256": "cae96cef89ebea3531221f4ae17c23cf8edf67d00eae8306d4186ae1bbed4d02",
+          "root_pom_sha256": "1d19e5762fe0cd3a8b5787b2ec6f081d606704e83a498a5f416bdc8fd7fe9355",
+          "marker_resource": "META-INF/build-identity.properties"
+        },
+        "runtime": {
+          "java": "21.0.11",
+          "cwd": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/stages/prechange-4w-1536/run/parallel/slots/FULL_PLANTED_EDGE_0.02_0_920200000/repository",
+          "user_dir": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/stages/prechange-4w-1536/run/parallel/slots/FULL_PLANTED_EDGE_0.02_0_920200000/repository"
+        }
+      }
+    },
+    {
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/stages/prechange-4w-1536/run/parallel/slots/FULL_PLANTED_EDGE_0.02_1_920200001/worker-result.json",
+      "byte_sha256": "7ddf767064aa209a17a24c2ce62f6cd8858ded6e7488e3e77fb96b8d1ccf6812",
+      "slot_id": "FULL|PLANTED_EDGE|0.02|1|920200001",
+      "plan_sha256": "5013683ff195e32b4d632a74f7583a79d6b5d5283729c21ab4112214958a06dd",
+      "run_id": "18b4fd55-5c92-4c8a-b3cb-a9afefb0e67d",
+      "seed": 920200001,
+      "scenario": "PLANTED_EDGE",
+      "effect_size": 0.02,
+      "replication": 1,
+      "portfolio_points": 184813,
+      "combined_points": 184813,
+      "trades": 900,
+      "portable_economic_sha256": "fd7fdfab8b2a09c72f4927fe0caad444b1497b09298ee0c338f80327dc066985",
+      "comparison_sha256": "c67792995ba8b46a472341bd0e9a2fdfc9033bd0aeabea802f134d73ed4de170",
+      "executor_identity": {
+        "schema": "analytics-build-identity/1",
+        "status": "KNOWN",
+        "executable": {
+          "code_source": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/throughput-search-20260913/candidate-package/executor.jar",
+          "kind": "JAR",
+          "sha256": "b8a34877f8d674c4c16d3e121759f9c7c3a62b0a563226fbe03c02b91b27e6d2",
+          "bytes": 107287509
+        },
+        "compiled": {
+          "input_fingerprint": "ca94e33f2a56b0a9a3b3f29005a3d1e722e2f5efdf044de2876fe9289858b376",
+          "revision": "4d8ec899c8d80eca20af970d46a0acf08e0ca3f1",
+          "dirty_source": "false",
+          "java_version": "openjdk version \"26.0.1\" 2026-04-21",
+          "java_vendor": "Oracle Corporation",
+          "java_runtime": "OpenJDK Runtime Environment",
+          "toolchain_fingerprint": "277c0d2ab5a069bc4fabbb9a6bb581a452181a794c58b74ee640f1b958b50f01",
+          "maven_wrapper_sha256": "cae96cef89ebea3531221f4ae17c23cf8edf67d00eae8306d4186ae1bbed4d02",
+          "root_pom_sha256": "1d19e5762fe0cd3a8b5787b2ec6f081d606704e83a498a5f416bdc8fd7fe9355",
+          "marker_resource": "META-INF/build-identity.properties"
+        },
+        "runtime": {
+          "java": "21.0.11",
+          "cwd": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/stages/prechange-4w-1536/run/parallel/slots/FULL_PLANTED_EDGE_0.02_1_920200001/repository",
+          "user_dir": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/stages/prechange-4w-1536/run/parallel/slots/FULL_PLANTED_EDGE_0.02_1_920200001/repository"
+        }
+      }
+    },
+    {
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/stages/prechange-4w-1536/run/parallel/slots/FULL_PLANTED_EDGE_0.04_0_920300000/worker-result.json",
+      "byte_sha256": "463ebc2c5f8ac5faed96a7312e72a5819c14b56765186506dc1a25f5d902e98d",
+      "slot_id": "FULL|PLANTED_EDGE|0.04|0|920300000",
+      "plan_sha256": "5013683ff195e32b4d632a74f7583a79d6b5d5283729c21ab4112214958a06dd",
+      "run_id": "18b4fd55-5c92-4c8a-b3cb-a9afefb0e67d",
+      "seed": 920300000,
+      "scenario": "PLANTED_EDGE",
+      "effect_size": 0.04,
+      "replication": 0,
+      "portfolio_points": 189030,
+      "combined_points": 189030,
+      "trades": 900,
+      "portable_economic_sha256": "7d548364b505cc93b2b23e15bb1bab7ead073dfc44ff3334ff68bf400bbfc892",
+      "comparison_sha256": "4150f248f2919b8bccd983328d6eadc6161ba2fd6796cd03e322ca55e5da7c68",
+      "executor_identity": {
+        "schema": "analytics-build-identity/1",
+        "status": "KNOWN",
+        "executable": {
+          "code_source": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/throughput-search-20260913/candidate-package/executor.jar",
+          "kind": "JAR",
+          "sha256": "b8a34877f8d674c4c16d3e121759f9c7c3a62b0a563226fbe03c02b91b27e6d2",
+          "bytes": 107287509
+        },
+        "compiled": {
+          "input_fingerprint": "ca94e33f2a56b0a9a3b3f29005a3d1e722e2f5efdf044de2876fe9289858b376",
+          "revision": "4d8ec899c8d80eca20af970d46a0acf08e0ca3f1",
+          "dirty_source": "false",
+          "java_version": "openjdk version \"26.0.1\" 2026-04-21",
+          "java_vendor": "Oracle Corporation",
+          "java_runtime": "OpenJDK Runtime Environment",
+          "toolchain_fingerprint": "277c0d2ab5a069bc4fabbb9a6bb581a452181a794c58b74ee640f1b958b50f01",
+          "maven_wrapper_sha256": "cae96cef89ebea3531221f4ae17c23cf8edf67d00eae8306d4186ae1bbed4d02",
+          "root_pom_sha256": "1d19e5762fe0cd3a8b5787b2ec6f081d606704e83a498a5f416bdc8fd7fe9355",
+          "marker_resource": "META-INF/build-identity.properties"
+        },
+        "runtime": {
+          "java": "21.0.11",
+          "cwd": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/stages/prechange-4w-1536/run/parallel/slots/FULL_PLANTED_EDGE_0.04_0_920300000/repository",
+          "user_dir": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/stages/prechange-4w-1536/run/parallel/slots/FULL_PLANTED_EDGE_0.04_0_920300000/repository"
+        }
+      }
+    },
+    {
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/stages/prechange-4w-1536/run/parallel/slots/FULL_PLANTED_EDGE_0.04_1_920300001/worker-result.json",
+      "byte_sha256": "7cc090818c7b8ecee131e3f7d6af2249698aaaab4937c250b198fd9b092b610b",
+      "slot_id": "FULL|PLANTED_EDGE|0.04|1|920300001",
+      "plan_sha256": "5013683ff195e32b4d632a74f7583a79d6b5d5283729c21ab4112214958a06dd",
+      "run_id": "18b4fd55-5c92-4c8a-b3cb-a9afefb0e67d",
+      "seed": 920300001,
+      "scenario": "PLANTED_EDGE",
+      "effect_size": 0.04,
+      "replication": 1,
+      "portfolio_points": 188906,
+      "combined_points": 188906,
+      "trades": 900,
+      "portable_economic_sha256": "aca82b9ac120323cd37a9fae5840209e3b5dd893e5db45a4bc13fd8970c6759c",
+      "comparison_sha256": "9abad1305fe36e6627c687565adc90bae9e99dfc28544b308316a80a585ca1b0",
+      "executor_identity": {
+        "schema": "analytics-build-identity/1",
+        "status": "KNOWN",
+        "executable": {
+          "code_source": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/throughput-search-20260913/candidate-package/executor.jar",
+          "kind": "JAR",
+          "sha256": "b8a34877f8d674c4c16d3e121759f9c7c3a62b0a563226fbe03c02b91b27e6d2",
+          "bytes": 107287509
+        },
+        "compiled": {
+          "input_fingerprint": "ca94e33f2a56b0a9a3b3f29005a3d1e722e2f5efdf044de2876fe9289858b376",
+          "revision": "4d8ec899c8d80eca20af970d46a0acf08e0ca3f1",
+          "dirty_source": "false",
+          "java_version": "openjdk version \"26.0.1\" 2026-04-21",
+          "java_vendor": "Oracle Corporation",
+          "java_runtime": "OpenJDK Runtime Environment",
+          "toolchain_fingerprint": "277c0d2ab5a069bc4fabbb9a6bb581a452181a794c58b74ee640f1b958b50f01",
+          "maven_wrapper_sha256": "cae96cef89ebea3531221f4ae17c23cf8edf67d00eae8306d4186ae1bbed4d02",
+          "root_pom_sha256": "1d19e5762fe0cd3a8b5787b2ec6f081d606704e83a498a5f416bdc8fd7fe9355",
+          "marker_resource": "META-INF/build-identity.properties"
+        },
+        "runtime": {
+          "java": "21.0.11",
+          "cwd": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/stages/prechange-4w-1536/run/parallel/slots/FULL_PLANTED_EDGE_0.04_1_920300001/repository",
+          "user_dir": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/stages/prechange-4w-1536/run/parallel/slots/FULL_PLANTED_EDGE_0.04_1_920300001/repository"
+        }
+      }
+    },
+    {
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/stages/prechange-4w-1536/run/parallel/slots/FULL_PLANTED_EDGE_0_0_920100000/worker-result.json",
+      "byte_sha256": "fae75c0436602f189c8d59f2b8b59eab34a1b13a7dcf596bb09e9e52cfd65ea2",
+      "slot_id": "FULL|PLANTED_EDGE|0|0|920100000",
+      "plan_sha256": "5013683ff195e32b4d632a74f7583a79d6b5d5283729c21ab4112214958a06dd",
+      "run_id": "18b4fd55-5c92-4c8a-b3cb-a9afefb0e67d",
+      "seed": 920100000,
+      "scenario": "PLANTED_EDGE",
+      "effect_size": 0.0,
+      "replication": 0,
+      "portfolio_points": 181628,
+      "combined_points": 181628,
+      "trades": 900,
+      "portable_economic_sha256": "4fc72741c1af7cb67afbdbf6d95d3c5b840b95c4b6053e20c7e39b96dbcd09f1",
+      "comparison_sha256": "63eb67d313d42dd5b5db0520d8687cfcd5917c9be395ed9a12b3bf1345d99607",
+      "executor_identity": {
+        "schema": "analytics-build-identity/1",
+        "status": "KNOWN",
+        "executable": {
+          "code_source": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/throughput-search-20260913/candidate-package/executor.jar",
+          "kind": "JAR",
+          "sha256": "b8a34877f8d674c4c16d3e121759f9c7c3a62b0a563226fbe03c02b91b27e6d2",
+          "bytes": 107287509
+        },
+        "compiled": {
+          "input_fingerprint": "ca94e33f2a56b0a9a3b3f29005a3d1e722e2f5efdf044de2876fe9289858b376",
+          "revision": "4d8ec899c8d80eca20af970d46a0acf08e0ca3f1",
+          "dirty_source": "false",
+          "java_version": "openjdk version \"26.0.1\" 2026-04-21",
+          "java_vendor": "Oracle Corporation",
+          "java_runtime": "OpenJDK Runtime Environment",
+          "toolchain_fingerprint": "277c0d2ab5a069bc4fabbb9a6bb581a452181a794c58b74ee640f1b958b50f01",
+          "maven_wrapper_sha256": "cae96cef89ebea3531221f4ae17c23cf8edf67d00eae8306d4186ae1bbed4d02",
+          "root_pom_sha256": "1d19e5762fe0cd3a8b5787b2ec6f081d606704e83a498a5f416bdc8fd7fe9355",
+          "marker_resource": "META-INF/build-identity.properties"
+        },
+        "runtime": {
+          "java": "21.0.11",
+          "cwd": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/stages/prechange-4w-1536/run/parallel/slots/FULL_PLANTED_EDGE_0_0_920100000/repository",
+          "user_dir": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/stages/prechange-4w-1536/run/parallel/slots/FULL_PLANTED_EDGE_0_0_920100000/repository"
+        }
+      }
+    },
+    {
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/stages/prechange-4w-1536/run/parallel/slots/FULL_PLANTED_EDGE_0_1_920100001/worker-result.json",
+      "byte_sha256": "a772fad2789f82c2b38e8d5c31e30ee777dc65ad8c99745065bace06d0ef648d",
+      "slot_id": "FULL|PLANTED_EDGE|0|1|920100001",
+      "plan_sha256": "5013683ff195e32b4d632a74f7583a79d6b5d5283729c21ab4112214958a06dd",
+      "run_id": "18b4fd55-5c92-4c8a-b3cb-a9afefb0e67d",
+      "seed": 920100001,
+      "scenario": "PLANTED_EDGE",
+      "effect_size": 0.0,
+      "replication": 1,
+      "portfolio_points": 180423,
+      "combined_points": 180423,
+      "trades": 900,
+      "portable_economic_sha256": "b8d96a6769a2fed917f3632124625c8da3e32a5249036939e51e667d8d08d08f",
+      "comparison_sha256": "48571340355f4e662fd989318b57051ef17839f0ca2dad1f225bdc253b8491d4",
+      "executor_identity": {
+        "schema": "analytics-build-identity/1",
+        "status": "KNOWN",
+        "executable": {
+          "code_source": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/throughput-search-20260913/candidate-package/executor.jar",
+          "kind": "JAR",
+          "sha256": "b8a34877f8d674c4c16d3e121759f9c7c3a62b0a563226fbe03c02b91b27e6d2",
+          "bytes": 107287509
+        },
+        "compiled": {
+          "input_fingerprint": "ca94e33f2a56b0a9a3b3f29005a3d1e722e2f5efdf044de2876fe9289858b376",
+          "revision": "4d8ec899c8d80eca20af970d46a0acf08e0ca3f1",
+          "dirty_source": "false",
+          "java_version": "openjdk version \"26.0.1\" 2026-04-21",
+          "java_vendor": "Oracle Corporation",
+          "java_runtime": "OpenJDK Runtime Environment",
+          "toolchain_fingerprint": "277c0d2ab5a069bc4fabbb9a6bb581a452181a794c58b74ee640f1b958b50f01",
+          "maven_wrapper_sha256": "cae96cef89ebea3531221f4ae17c23cf8edf67d00eae8306d4186ae1bbed4d02",
+          "root_pom_sha256": "1d19e5762fe0cd3a8b5787b2ec6f081d606704e83a498a5f416bdc8fd7fe9355",
+          "marker_resource": "META-INF/build-identity.properties"
+        },
+        "runtime": {
+          "java": "21.0.11",
+          "cwd": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/stages/prechange-4w-1536/run/parallel/slots/FULL_PLANTED_EDGE_0_1_920100001/repository",
+          "user_dir": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/calculation-performance-20260914/stages/prechange-4w-1536/run/parallel/slots/FULL_PLANTED_EDGE_0_1_920100001/repository"
+        }
+      }
+    }
+  ],
+  "artifacts_audited": 8,
+  "independently_reconciled_books": 16,
+  "book_curve_points": 1469475,
+  "combined_curve_points": 1469475,
+  "trades_reconciled": 7200
+}

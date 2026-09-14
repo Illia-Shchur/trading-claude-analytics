@@ -1,0 +1,21 @@
+{
+  "active_processor_count": 1,
+  "content_sha256": "6be28f7705b7a31e1294579ca6900e900eec33c76295d3f2348d5ff4064dccbb",
+  "evidence_references": [
+    "prechange-reference-decision.json",
+    "stages/prechange-4w-1536/stage-result.json"
+  ],
+  "evidence_scope": "Same eight development seeds and geometry; fresh matched pre-change executable reference. No qualification claim.",
+  "executor_manifest_sha256": "f9a87031a5442a07e25e913cdcfa8d20380e92399438aa33febf612e2c9f104f",
+  "gc_collector": "G1",
+  "host_identity_sha256": "506b6b5b92853cd698b3bdeee68034be09ed2619550943f319bab9f5ff1f63f6",
+  "outer_workers": 4,
+  "platform": "macOS",
+  "profile_id": "prechange-reference-mac-4w-1536",
+  "runner_usage": "Reference-only profile; pass with the isolated pre-change stage controller, old immutable package manifest, and expected content hash.",
+  "schema": "mac-local-engineering-runtime/1",
+  "scope": "LOCAL_ENGINEERING_ONLY",
+  "selection_status": "REFERENCE_ONLY_NOT_SELECTED",
+  "version": 1,
+  "xmx_mib": 1536
+}
