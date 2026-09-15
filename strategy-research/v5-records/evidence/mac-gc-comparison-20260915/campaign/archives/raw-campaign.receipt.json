@@ -1,0 +1,19 @@
+{
+  "archive_bytes": 3434897368,
+  "archive_format": "tar.zst (zstd level3, checksum enabled; bsdtar Mac metadata, xattrs, ACLs, and file flags disabled)",
+  "archive_member_verification": "PASS: streamed decompressed archive and matched every regular member byte count and SHA-256 against the embedded manifest; embedded manifest bytes matched source; zstd checksum/decompression exit 0.",
+  "archive_path": "/Users/eternal/.codex/artifacts/trading-pr13-performance/gc-comparison-20260915/raw-campaign-20260915-clean.tar.zst",
+  "archive_sha256": "17829baf11e52915802baf5ac5c4f2be406bcf4f0bd692e5610374b7e805571f",
+  "created_at_utc": "2026-09-15T02:55:24.751Z",
+  "manifest_entry_count": 2633,
+  "raw_content_manifest_bytes": 621404,
+  "raw_content_manifest_content_sha256": "1a2f69b9f67c3ee8e3fb80f3f7e4bfea4d63002dae86d9955cbda02ae3d1ae95",
+  "raw_content_manifest_file_sha256": "693868b54b92d8d576380d9f8399ffd4eb4934dac3ec8ff738b522c015a69ba9",
+  "raw_content_manifest_path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/raw-campaign-content-manifest.json",
+  "schema": "mac-gc-comparison-raw-archive-receipt/1",
+  "source_campaign": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915",
+  "status": "PASS",
+  "verification_uncompressed_tar_bytes": 24017285120,
+  "verified_content_bytes": 24014212374,
+  "verified_entries": 2633
+}

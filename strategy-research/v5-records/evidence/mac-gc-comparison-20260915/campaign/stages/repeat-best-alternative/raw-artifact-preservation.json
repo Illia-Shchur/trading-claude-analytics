@@ -1,0 +1,42 @@
+{
+  "FULL|NO_EDGE|0|0|920000000": {
+    "after_audit_sha256": "244c90b428f832490a419531b26f38a69217037390963c2642e85fab00e328b7",
+    "before_audit_sha256": "244c90b428f832490a419531b26f38a69217037390963c2642e85fab00e328b7",
+    "preserved": true
+  },
+  "FULL|NO_EDGE|0|1|920000001": {
+    "after_audit_sha256": "49fb6c7442cb1b1182b3a6663df5ca33ae302c464f68f39b2939be648b0f6da5",
+    "before_audit_sha256": "49fb6c7442cb1b1182b3a6663df5ca33ae302c464f68f39b2939be648b0f6da5",
+    "preserved": true
+  },
+  "FULL|PLANTED_EDGE|0.02|0|920200000": {
+    "after_audit_sha256": "4d24c5f08642f127872c6d1ecaf4c677a0a470cbb01239b1aeebc22e2f11be1a",
+    "before_audit_sha256": "4d24c5f08642f127872c6d1ecaf4c677a0a470cbb01239b1aeebc22e2f11be1a",
+    "preserved": true
+  },
+  "FULL|PLANTED_EDGE|0.02|1|920200001": {
+    "after_audit_sha256": "edca18a0e17ab0e4a4b40e19d9d7f009b820978f4d498674df25753b902b3195",
+    "before_audit_sha256": "edca18a0e17ab0e4a4b40e19d9d7f009b820978f4d498674df25753b902b3195",
+    "preserved": true
+  },
+  "FULL|PLANTED_EDGE|0.04|0|920300000": {
+    "after_audit_sha256": "a63f5ea54e058453b57cb31f5026041d8da2241cfde12ec9b3a63d9a76231f51",
+    "before_audit_sha256": "a63f5ea54e058453b57cb31f5026041d8da2241cfde12ec9b3a63d9a76231f51",
+    "preserved": true
+  },
+  "FULL|PLANTED_EDGE|0.04|1|920300001": {
+    "after_audit_sha256": "f4aa3b8b59667b6d2dc44017485969089be6699064b3328cba3ff9f994d81629",
+    "before_audit_sha256": "f4aa3b8b59667b6d2dc44017485969089be6699064b3328cba3ff9f994d81629",
+    "preserved": true
+  },
+  "FULL|PLANTED_EDGE|0|0|920100000": {
+    "after_audit_sha256": "8988a0e83d3cd91d5403fa06b03a6b2243e62bce8363e6a36db3108512a55fe7",
+    "before_audit_sha256": "8988a0e83d3cd91d5403fa06b03a6b2243e62bce8363e6a36db3108512a55fe7",
+    "preserved": true
+  },
+  "FULL|PLANTED_EDGE|0|1|920100001": {
+    "after_audit_sha256": "d67eb731dd8aa93971587c1d56d9ea2e8567e5ea82f9cf4719523103510554e4",
+    "before_audit_sha256": "d67eb731dd8aa93971587c1d56d9ea2e8567e5ea82f9cf4719523103510554e4",
+    "preserved": true
+  }
+}

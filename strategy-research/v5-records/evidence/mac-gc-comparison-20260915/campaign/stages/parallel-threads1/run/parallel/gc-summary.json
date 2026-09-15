@@ -1,0 +1,58 @@
+{
+  "aggregate_worker_pause_fraction": 0.1768851446369813,
+  "all_gc_pause_seconds_sum_workers": 991.1076310000001,
+  "allocation_stall_event_count_sum_workers": 0,
+  "allocation_stall_max_seconds": 0.0,
+  "allocation_stall_seconds_sum_workers": 0.0,
+  "collectors_detected": [
+    "Parallel"
+  ],
+  "concurrent_phase_seconds_sum_workers": 0.0,
+  "full_gc_count": 261,
+  "full_gc_pause_seconds": 151.815394,
+  "parallel_gc_worker_counts": [
+    1
+  ],
+  "parallel_gc_worker_counts_by_slot": {
+    "FULL|NO_EDGE|0|0|920000000": [
+      1
+    ],
+    "FULL|NO_EDGE|0|1|920000001": [
+      1
+    ],
+    "FULL|PLANTED_EDGE|0.02|0|920200000": [
+      1
+    ],
+    "FULL|PLANTED_EDGE|0.02|1|920200001": [
+      1
+    ],
+    "FULL|PLANTED_EDGE|0.04|0|920300000": [
+      1
+    ],
+    "FULL|PLANTED_EDGE|0.04|1|920300001": [
+      1
+    ],
+    "FULL|PLANTED_EDGE|0|0|920100000": [
+      1
+    ],
+    "FULL|PLANTED_EDGE|0|1|920100001": [
+      1
+    ]
+  },
+  "parsed_after_all_workers_stopped": true,
+  "parser_status": "SUPPORTED",
+  "parser_validation_errors": [],
+  "per_worker_pause_fraction": {
+    "FULL|NO_EDGE|0|0|920000000": 0.1795327148236821,
+    "FULL|NO_EDGE|0|1|920000001": 0.17768394533709933,
+    "FULL|PLANTED_EDGE|0.02|0|920200000": 0.17259755379038771,
+    "FULL|PLANTED_EDGE|0.02|1|920200001": 0.17619489023656712,
+    "FULL|PLANTED_EDGE|0.04|0|920300000": 0.17385059105824574,
+    "FULL|PLANTED_EDGE|0.04|1|920300001": 0.17658716360787963,
+    "FULL|PLANTED_EDGE|0|0|920100000": 0.1776984605517276,
+    "FULL|PLANTED_EDGE|0|1|920100001": 0.18093208878761552
+  },
+  "zgc_allocation_stall_phase_counts_sum_workers": null,
+  "zgc_allocation_stall_phase_row_count_sum_workers": null,
+  "zgc_worker_settings_by_slot": {}
+}

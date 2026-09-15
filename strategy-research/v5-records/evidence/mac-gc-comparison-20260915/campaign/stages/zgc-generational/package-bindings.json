@@ -1,0 +1,160 @@
+{
+  "core_input_files": {
+    "baseline": {
+      "bytes": 7937,
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/strategy-research/definitions/fk-deleveraging-absorption/v002.json",
+      "sha256": "4ab073d4b62c77410cca2456066fbae70b93b19ebf93d63922204e1b3548fc1a"
+    },
+    "controls": {
+      "bytes": 2094,
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/strategy-research/experiments/fk-deleveraging-baseline-v002/controls.json",
+      "sha256": "8170e98fcf90c30aea67a4f2a4503d85817f158377dd449c5a3ed9b0b0793216"
+    },
+    "experiment": {
+      "bytes": 1530,
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/strategy-research/experiments/fk-deleveraging-baseline-v002/experiment.json",
+      "sha256": "805d34f09c7d94cbf9be3efdf5277f384583dbf1646feab2140c443083aeed1f"
+    }
+  },
+  "declared_source_identity_matches_plan": true,
+  "executor_jar_bytes": 107289007,
+  "executor_jar_sha256": "523a88ef061761479d78f4d2791fc52a1e58ee7e276c6a27890e83154dcfca22",
+  "executor_source_sha256": "944507d7e84aab9855fbff7e9bb464c5ff6272f8f41b653daf9129b85461b474",
+  "expected_slot_count": 8,
+  "manifest_path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/candidate-package/manifest.json",
+  "manifest_sha256": "9aaf5ce6e33d5de1147c4708060a71d04c957878a5cb23f32dccb054347c169b",
+  "plan_content_sha256": "c5e4c9210e8349ec05d8f321725fe39eb4fdedd867e151555573469b85de823c",
+  "plan_file_sha256": "e6f6df95becd8ee45b2e17dd91af180dd83b79fe8cdc9fc2229db8e83a4f201b",
+  "planned_full_slots": [
+    {
+      "effect_size": 0.0,
+      "mode": "FULL",
+      "replication": 0,
+      "scenario": "NO_EDGE",
+      "seed": 920000000,
+      "slot_id": "FULL|NO_EDGE|0|0|920000000"
+    },
+    {
+      "effect_size": 0.0,
+      "mode": "FULL",
+      "replication": 1,
+      "scenario": "NO_EDGE",
+      "seed": 920000001,
+      "slot_id": "FULL|NO_EDGE|0|1|920000001"
+    },
+    {
+      "effect_size": 0.0,
+      "mode": "FULL",
+      "replication": 0,
+      "scenario": "PLANTED_EDGE",
+      "seed": 920100000,
+      "slot_id": "FULL|PLANTED_EDGE|0|0|920100000"
+    },
+    {
+      "effect_size": 0.0,
+      "mode": "FULL",
+      "replication": 1,
+      "scenario": "PLANTED_EDGE",
+      "seed": 920100001,
+      "slot_id": "FULL|PLANTED_EDGE|0|1|920100001"
+    },
+    {
+      "effect_size": 0.02,
+      "mode": "FULL",
+      "replication": 0,
+      "scenario": "PLANTED_EDGE",
+      "seed": 920200000,
+      "slot_id": "FULL|PLANTED_EDGE|0.02|0|920200000"
+    },
+    {
+      "effect_size": 0.02,
+      "mode": "FULL",
+      "replication": 1,
+      "scenario": "PLANTED_EDGE",
+      "seed": 920200001,
+      "slot_id": "FULL|PLANTED_EDGE|0.02|1|920200001"
+    },
+    {
+      "effect_size": 0.04,
+      "mode": "FULL",
+      "replication": 0,
+      "scenario": "PLANTED_EDGE",
+      "seed": 920300000,
+      "slot_id": "FULL|PLANTED_EDGE|0.04|0|920300000"
+    },
+    {
+      "effect_size": 0.04,
+      "mode": "FULL",
+      "replication": 1,
+      "scenario": "PLANTED_EDGE",
+      "seed": 920300001,
+      "slot_id": "FULL|PLANTED_EDGE|0.04|1|920300001"
+    }
+  ],
+  "profile_content_sha256": "38bb83340dada1d295595dcca8fbc4696913e71bafbd210137b14e4c63e0d591",
+  "profile_file_sha256": "34b5a1378ee3622a93b9aab21861e30d1347655e1206cc1721f8056bb8a3b4d7",
+  "schema": "mac-throughput-package-binding/1",
+  "scope": "ENGINEERING_ONLY_NOT_QUALIFICATION",
+  "supporting_dependency_receipts": [
+    {
+      "byte_sha256": "8b60d04ff83fd9f10c41612bbb6c8bc233d458d92dff8ff3de20f6648d2512aa",
+      "bytes": 621,
+      "content_sha256": "f3dee179840c7ebb4445915d6b83bbb697d47ca32bc3e53b3e7ceb2a66387390",
+      "relative_path": "strategy-research/experiments/fk-deleveraging-baseline-v002/portfolio-policy-v001.json"
+    },
+    {
+      "byte_sha256": "161913446d290b9bd6fccaa352420c578d1ea6923fd9739fdc36ec5630f493a0",
+      "bytes": 758,
+      "content_sha256": "c08f9b4e2fcdf1252bb6ba403996254f442111e7628c966df546deff21a2e010",
+      "relative_path": "strategy-research/experiments/fk-deleveraging-baseline-v002/lifecycle-timing-v001.json"
+    }
+  ],
+  "tooling_bindings": {
+    "campaign_orchestrator": {
+      "bytes": 43256,
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/campaign.py",
+      "sha256": "4280cd26a221575f64685ef36d348274bf40f196cc8d8ce1bd85cefaeb864aea"
+    },
+    "collector_availability_receipt": {
+      "bytes": 10615,
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/probes/availability-probes.json",
+      "sha256": "3480db5d36280b4def5c3e5caad38f153a9aea0027e8d024cc0344893c3fc641"
+    },
+    "collector_configuration_probe": {
+      "bytes": 6881,
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/probe_gc_configurations.py",
+      "sha256": "f34be4c1e701e894136f7daaae17191111dcd8fa167296ac00bb0b1d84908ca7"
+    },
+    "evidence_packager": {
+      "bytes": 15772,
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/package-throughput-evidence.py",
+      "sha256": "4cb0c315850f719b010f33ab309c02fa82038287ce12ba958ba36d0d7b967f9b"
+    },
+    "independent_frozen_auditor": {
+      "bytes": 12217,
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/tools/audit-full.py",
+      "sha256": "3bcbb78d446d82edac4db3c672022ba5a6fecab114200715f332d7d16d77a023"
+    },
+    "runtime_profiles_manifest": {
+      "bytes": 2555,
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/runtime-profiles.json",
+      "sha256": "c5ffdbc2012e5e7bd1c7a7d8c5414a3b8cb8a9b277815ed71224516bb3dfceb8"
+    },
+    "stage_controller": {
+      "bytes": 51345,
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/run-throughput-stage.py",
+      "sha256": "1b60f8dfcca947f75e78be3089fd93820a38726f4dd91541c0115447f1be6a59"
+    },
+    "strict_artifact_validator_source": {
+      "bytes": 7503,
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/harness/StrictArtifactValidator.java",
+      "sha256": "7381c2db6d8f03735639ed0227fe4345fae0baa541a5ef188ecb8f5f111569e7"
+    },
+    "worker_harness": {
+      "bytes": 79279,
+      "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/harness/run_mac_full_development.py",
+      "sha256": "56cc26654c607e685226c2c1fe3ac4d4d6e62e9b4f48413f258f641a778de9fd"
+    }
+  },
+  "tooling_bindings_sha256": "de33cfa2bd76c25e5215e5c7797cd20ac7ddff316c0757f3f8cb9a1985e0d711"
+}

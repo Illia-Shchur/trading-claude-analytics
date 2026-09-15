@@ -1,0 +1,42 @@
+{
+  "FULL|NO_EDGE|0|0|920000000": {
+    "after_audit_sha256": "2c122da794bca532f21a3e83f4ba7170a2fe6c5e8ed6697e6b3e617080fbe947",
+    "before_audit_sha256": "2c122da794bca532f21a3e83f4ba7170a2fe6c5e8ed6697e6b3e617080fbe947",
+    "preserved": true
+  },
+  "FULL|NO_EDGE|0|1|920000001": {
+    "after_audit_sha256": "2f83db63be03eeb91d0ec2be3b77872e80157894680f0188ba89d7f97e1c041b",
+    "before_audit_sha256": "2f83db63be03eeb91d0ec2be3b77872e80157894680f0188ba89d7f97e1c041b",
+    "preserved": true
+  },
+  "FULL|PLANTED_EDGE|0.02|0|920200000": {
+    "after_audit_sha256": "0580548744f878cfd07834b0f5bf410f437dcbe4dbb91a7317c25f34deb9738e",
+    "before_audit_sha256": "0580548744f878cfd07834b0f5bf410f437dcbe4dbb91a7317c25f34deb9738e",
+    "preserved": true
+  },
+  "FULL|PLANTED_EDGE|0.02|1|920200001": {
+    "after_audit_sha256": "9b04c5e414bfeeadf176ad8668779b21be141e3fbe5e5d74a73097c7538cf8ed",
+    "before_audit_sha256": "9b04c5e414bfeeadf176ad8668779b21be141e3fbe5e5d74a73097c7538cf8ed",
+    "preserved": true
+  },
+  "FULL|PLANTED_EDGE|0.04|0|920300000": {
+    "after_audit_sha256": "91d5a5ae0a397f97b405104f4590d6cdc0223e4c54b6d0f2edffc280c14c6bb5",
+    "before_audit_sha256": "91d5a5ae0a397f97b405104f4590d6cdc0223e4c54b6d0f2edffc280c14c6bb5",
+    "preserved": true
+  },
+  "FULL|PLANTED_EDGE|0.04|1|920300001": {
+    "after_audit_sha256": "6718723e52271b034ec91df4e9878babe0995a49960be18c10de9deadfdcf6e2",
+    "before_audit_sha256": "6718723e52271b034ec91df4e9878babe0995a49960be18c10de9deadfdcf6e2",
+    "preserved": true
+  },
+  "FULL|PLANTED_EDGE|0|0|920100000": {
+    "after_audit_sha256": "bc7dd3f85f02d7bdbbe83405d0dbbf47bfed9a3c68182786a3608b8bd9a5f49e",
+    "before_audit_sha256": "bc7dd3f85f02d7bdbbe83405d0dbbf47bfed9a3c68182786a3608b8bd9a5f49e",
+    "preserved": true
+  },
+  "FULL|PLANTED_EDGE|0|1|920100001": {
+    "after_audit_sha256": "6cd62e2b9411e93799dfaf6c8d3b688f440d102fd37ad7f7e2d3baf5b0626f95",
+    "before_audit_sha256": "6cd62e2b9411e93799dfaf6c8d3b688f440d102fd37ad7f7e2d3baf5b0626f95",
+    "preserved": true
+  }
+}

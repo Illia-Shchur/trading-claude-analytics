@@ -1,0 +1,92 @@
+{
+  "active_processors": 1,
+  "actual_gc_collectors": [
+    "G1"
+  ],
+  "actual_parallel_gc_worker_counts": [
+    1
+  ],
+  "actual_parallel_gc_worker_counts_by_slot": {
+    "FULL|NO_EDGE|0|0|920000000": [
+      1
+    ],
+    "FULL|NO_EDGE|0|1|920000001": [
+      1
+    ],
+    "FULL|PLANTED_EDGE|0.02|0|920200000": [
+      1
+    ],
+    "FULL|PLANTED_EDGE|0.02|1|920200001": [
+      1
+    ],
+    "FULL|PLANTED_EDGE|0.04|0|920300000": [
+      1
+    ],
+    "FULL|PLANTED_EDGE|0.04|1|920300001": [
+      1
+    ],
+    "FULL|PLANTED_EDGE|0|0|920100000": [
+      1
+    ],
+    "FULL|PLANTED_EDGE|0|1|920100001": [
+      1
+    ]
+  },
+  "aggregate_worker_gc_pause_fraction": 0.08701992731270995,
+  "batch_finished_at_epoch_ns": 1789425970308211000,
+  "batch_finished_at_utc": "2026-09-14T22:46:10.308Z",
+  "batch_finished_monotonic_ns": 83070412393708,
+  "batch_started_at_epoch_ns": 1789424634926670000,
+  "batch_started_at_utc": "2026-09-14T22:23:54.926Z",
+  "batch_started_monotonic_ns": 81734999771291,
+  "clock_elapsed_delta_seconds": -0.031081417,
+  "full_gc_count_sum_workers": 0,
+  "gc_log_parser_status": "SUPPORTED",
+  "gc_pause_seconds_sum_workers": 474.5941150000002,
+  "gc_summary": "gc-summary.json",
+  "heap_mib": 1536,
+  "jvm_gc": "G1",
+  "planned_worker_count": 8,
+  "runtime_profile": {
+    "byte_sha256": "799007dd3fc815640f840ae488772ef3c27be080484cdb8183e201d89be6eb4b",
+    "content_sha256": "9c81cb2e7ae48fcc328e4ef199307c5a2545740967745c088851ea295ceacff5",
+    "executor_manifest_sha256": "9aaf5ce6e33d5de1147c4708060a71d04c957878a5cb23f32dccb054347c169b",
+    "gc_collector": "G1",
+    "java_executable": "/opt/homebrew/Cellar/openjdk@21/21.0.11/libexec/openjdk.jdk/Contents/Home/bin/java",
+    "java_version": "21.0.11",
+    "jvm_gc_flags": [
+      "-XX:+UseG1GC"
+    ],
+    "parallel_gc_threads": null,
+    "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/stages/baseline-g1/runtime-profile.json",
+    "profile_id": "baseline-g1"
+  },
+  "scope": "ENGINEERING_ONLY_MAC_FULL_GEOMETRY_DEVELOPMENT",
+  "slot_states": {
+    "FULL|NO_EDGE|0|0|920000000": "PUBLISHED_TEMPORARY",
+    "FULL|NO_EDGE|0|1|920000001": "PUBLISHED_TEMPORARY",
+    "FULL|PLANTED_EDGE|0.02|0|920200000": "PUBLISHED_TEMPORARY",
+    "FULL|PLANTED_EDGE|0.02|1|920200001": "PUBLISHED_TEMPORARY",
+    "FULL|PLANTED_EDGE|0.04|0|920300000": "PUBLISHED_TEMPORARY",
+    "FULL|PLANTED_EDGE|0.04|1|920300001": "PUBLISHED_TEMPORARY",
+    "FULL|PLANTED_EDGE|0|0|920100000": "PUBLISHED_TEMPORARY",
+    "FULL|PLANTED_EDGE|0|1|920100001": "PUBLISHED_TEMPORARY"
+  },
+  "stage_name": "baseline-g1",
+  "status": "WORKERS_COMPLETE",
+  "timing_integrity": "PASS",
+  "worker_batch_utc_elapsed_seconds": 1335.381541,
+  "worker_batch_wall_seconds": 1335.412622417,
+  "worker_completion_count": 8,
+  "worker_pause_fractions": {
+    "FULL|NO_EDGE|0|0|920000000": 0.09449669038949128,
+    "FULL|NO_EDGE|0|1|920000001": 0.09280204107527061,
+    "FULL|PLANTED_EDGE|0.02|0|920200000": 0.08118754534658774,
+    "FULL|PLANTED_EDGE|0.02|1|920200001": 0.09412959352493061,
+    "FULL|PLANTED_EDGE|0.04|0|920300000": 0.09001371348138648,
+    "FULL|PLANTED_EDGE|0.04|1|920300001": 0.09055677136251726,
+    "FULL|PLANTED_EDGE|0|0|920100000": 0.08910052116887907,
+    "FULL|PLANTED_EDGE|0|1|920100001": 0.0644740531534599
+  },
+  "workers": 6
+}

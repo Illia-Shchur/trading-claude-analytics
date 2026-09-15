@@ -1,0 +1,28 @@
+{
+  "argv": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/harness/run_mac_full_development.py",
+    "--repo",
+    "/Users/eternal/.codex/worktrees/trading-pr13-performance",
+    "--run",
+    "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/stages/baseline-g1-retry/run",
+    "--package",
+    "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/candidate-package",
+    "--manifest",
+    "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/candidate-package/manifest.json",
+    "--wave",
+    "parallel",
+    "--runtime-profile",
+    "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/stages/baseline-g1-retry/runtime-profile.json",
+    "--expected-runtime-profile-sha256",
+    "9c81cb2e7ae48fcc328e4ef199307c5a2545740967745c088851ea295ceacff5",
+    "--controller-source",
+    "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/run-throughput-stage.py",
+    "--stage-name",
+    "baseline-g1-retry",
+    "--java",
+    "/opt/homebrew/Cellar/openjdk@21/21.0.11/libexec/openjdk.jdk/Contents/Home/bin/java",
+    "--max-batch-seconds",
+    "1677.47625"
+  ]
+}

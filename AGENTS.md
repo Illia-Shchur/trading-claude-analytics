@@ -111,3 +111,14 @@ Full per-report workflow: `position` → `fetch` → `compute` → save → `lin
 - If no asset specified → **BTC**
 - If context is ambiguous between BTC and another asset → ask once, then proceed
 - Multi-asset reports are allowed but produce one file per asset
+
+## Current Mac collector profile (2026-09-15)
+
+The bounded Java 21 GC comparison selected the self-hashed local engineering
+profile at `strategy-research/v5-records/evidence/mac-gc-comparison-20260915/selected-local-runtime-profile.json`:
+6 outer workers × 1536 MiB, `-XX:ActiveProcessorCount=1`, Parallel GC with
+`-XX:ParallelGCThreads=2`. Two validated Parallel/2 batches averaged 1306.414
+seconds versus two validated G1 batches averaging 1348.359 seconds; the
+predeclared repeat-spread rule selected Parallel/2. This applies only to the
+optimized eight-development-seed Mac harness. It does not change production or
+qualification settings, and it provides no Windows result.

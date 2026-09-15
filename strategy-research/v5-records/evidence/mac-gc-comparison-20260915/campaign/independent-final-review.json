@@ -1,0 +1,49 @@
+{
+  "checks": {
+    "all_152_compact_manifest_entries_size_and_sha256": "PASS",
+    "corrected_gc_diagnostics_equal_source_receipts": "PASS",
+    "failed_initial_stage_preserved_unranked_and_launch_count_eight_of_ten": "PASS",
+    "parallel_two_reversed_order_confirmation_mean_gain_exceeds_observed_spread": "PASS",
+    "selected_profile_frozen_package_decision_java_settings_binding": "PASS",
+    "self_hashes_profile_summary_selection_manifest": "PASS",
+    "seven_complete_stage_receipts_strict_normalized_curves_raw_preservation_and_independent_audit": "PASS",
+    "windows_and_formal_qualification_not_claimed": "PASS"
+  },
+  "content_sha256": "d64dc13056b5d619513c360a3d38da9427507b558cf94caa318ea601492b4c46",
+  "created_at_utc": "2026-09-15T03:08:59.605712+00:00",
+  "findings": [],
+  "limitations": [
+    "Reviewed compact receipts and source hash bindings; did not independently stream or rehash the raw contents or external raw archive. Archive member verification relies on producer custody receipts.",
+    "No builds, benchmarks, qualification, or Windows execution performed by reviewer.",
+    "Two observations per finalist support the prospective engineering selection rule, not statistical significance or a global optimum.",
+    "Frozen executor manifest checked in campaign candidate-package source; compact delivery references that prior immutable package through stage package-binding receipts."
+  ],
+  "report_sha256": "3a101959313331cf22017c78b4ce843a0376ea809bb0e924b3ac63442cd01d3c",
+  "reviewed_files_sha256": {
+    "campaign/archive-custody.json": "1d5886335ee474cbc66596615e94dddbe80cf04b658e8f3831eda0431b728d78",
+    "campaign/archives/raw-campaign.receipt.json": "f1dac9475b16005b8e8b25491ff6c25e8b0871c5e768cc62d1940a0a427f8ddd",
+    "campaign/selection-decision.json": "2fb949e070b79b5ab84ab00e84ce35b578101f0b48ea861a427ccceb213b0b43",
+    "derived-stage-summary.json": "83fa10f5fc057f7ae054e2b0e5af643630dece5b048da56f9d45c8ff7d881343",
+    "runtime-profile-validation.json": "5084f0c251c11a4300eb406dfe9ec4c47aea622b47f9d21ee886e93ed622909f",
+    "selected-local-runtime-profile.json": "d3aeffa11fb3a80f11b563ba1b2d2c7126a3bb7a487b5a843e161a700f232c14"
+  },
+  "reviewed_snapshot": {
+    "entry_count": 152,
+    "evidence_manifest_byte_sha256": "de6fe3d6a77788fcf54c0d82b782935e69896bc8808ab033c4f28ad2881f5661",
+    "evidence_manifest_content_sha256": "1dbff63e9c69b460ba2e4df667921dfd5f907c9aa96cd9196f395fb5d036f6ae"
+  },
+  "reviewer": "independent throughput_review agent",
+  "schema": "mac-gc-independent-final-review/1",
+  "selection": {
+    "active_processor_count": 1,
+    "collector": "Parallel",
+    "g1_mean_seconds": 1348.3587644795,
+    "mean_advantage_percent": 3.1108216492137974,
+    "mean_advantage_seconds": 41.94503635449996,
+    "outer_workers": 6,
+    "parallel_gc_threads": 2,
+    "parallel_two_mean_seconds": 1306.413728125,
+    "xmx_mib": 1536
+  },
+  "status": "APPROVED"
+}

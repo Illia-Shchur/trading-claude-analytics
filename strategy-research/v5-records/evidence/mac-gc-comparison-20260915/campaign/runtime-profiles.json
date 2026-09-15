@@ -1,0 +1,68 @@
+{
+  "content_sha256": "d57122de5bb026a17b90733b6ed14425aa1914a47b06ffb0f02215b34f3a99cd",
+  "executor_manifest_sha256": "9aaf5ce6e33d5de1147c4708060a71d04c957878a5cb23f32dccb054347c169b",
+  "java_executable": "/opt/homebrew/Cellar/openjdk@21/21.0.11/libexec/openjdk.jdk/Contents/Home/bin/java",
+  "java_version": "21.0.11",
+  "profiles": [
+    {
+      "byte_sha256": "799007dd3fc815640f840ae488772ef3c27be080484cdb8183e201d89be6eb4b",
+      "content_sha256": "9c81cb2e7ae48fcc328e4ef199307c5a2545740967745c088851ea295ceacff5",
+      "gc_collector": "G1",
+      "jvm_gc_flags": [
+        "-XX:+UseG1GC"
+      ],
+      "parallel_gc_threads": null,
+      "path": "runtime-profiles/baseline-g1.json",
+      "profile_id": "baseline-g1"
+    },
+    {
+      "byte_sha256": "63ab016a89674849acfecd430c2f26bd07626bea068ed94e27331092776138b9",
+      "content_sha256": "f36ddbaa52ad0872343d7cdc78a0e022fd0e80ffb3b239cd9c175c6d606b5626",
+      "gc_collector": "Serial",
+      "jvm_gc_flags": [
+        "-XX:+UseSerialGC"
+      ],
+      "parallel_gc_threads": null,
+      "path": "runtime-profiles/serial.json",
+      "profile_id": "serial"
+    },
+    {
+      "byte_sha256": "0ba2f4e505703f7ae4a8e3a5652252affd4d8c7688afc194848afd74ed7f96f9",
+      "content_sha256": "cdb1982a14e9e1627101b291bfd8fc5f24e39df1f9faa0a6357609aced1c3d20",
+      "gc_collector": "Parallel",
+      "jvm_gc_flags": [
+        "-XX:+UseParallelGC",
+        "-XX:ParallelGCThreads=1"
+      ],
+      "parallel_gc_threads": 1,
+      "path": "runtime-profiles/parallel-threads1.json",
+      "profile_id": "parallel-threads1"
+    },
+    {
+      "byte_sha256": "012dd326537ba59c1b01994d6e0cced8a3360a5e768944cf199850e2821b69fc",
+      "content_sha256": "155aa1980d5240311a2346b1cda6b3dbd93ba9935b8b5b74fd38cc14f128180b",
+      "gc_collector": "Parallel",
+      "jvm_gc_flags": [
+        "-XX:+UseParallelGC",
+        "-XX:ParallelGCThreads=2"
+      ],
+      "parallel_gc_threads": 2,
+      "path": "runtime-profiles/parallel-threads2.json",
+      "profile_id": "parallel-threads2"
+    },
+    {
+      "byte_sha256": "e506eea6462d113fd7b388a59275e19fcd337b225b33e02a95756b901410c1fe",
+      "content_sha256": "df7c40ae55be9e45e11ff5a6311c6ed951c861457f6b6b740c0bce2e69c35f8a",
+      "gc_collector": "ZGC_Generational",
+      "jvm_gc_flags": [
+        "-XX:+UseZGC",
+        "-XX:+ZGenerational"
+      ],
+      "parallel_gc_threads": null,
+      "path": "runtime-profiles/zgc-generational.json",
+      "profile_id": "zgc-generational"
+    }
+  ],
+  "schema": "mac-gc-runtime-profiles/1",
+  "version": 1
+}

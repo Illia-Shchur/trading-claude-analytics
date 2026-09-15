@@ -1,0 +1,80 @@
+{
+  "active_processors": 1,
+  "actual_gc_collectors": [
+    "ZGC_Generational"
+  ],
+  "actual_parallel_gc_worker_counts": [],
+  "actual_parallel_gc_worker_counts_by_slot": {
+    "FULL|NO_EDGE|0|0|920000000": [],
+    "FULL|NO_EDGE|0|1|920000001": [],
+    "FULL|PLANTED_EDGE|0.02|0|920200000": [],
+    "FULL|PLANTED_EDGE|0.02|1|920200001": [],
+    "FULL|PLANTED_EDGE|0.04|0|920300000": [],
+    "FULL|PLANTED_EDGE|0.04|1|920300001": [],
+    "FULL|PLANTED_EDGE|0|0|920100000": [],
+    "FULL|PLANTED_EDGE|0|1|920100001": []
+  },
+  "aggregate_worker_gc_pause_fraction": 0.00019669061194011207,
+  "batch_finished_at_epoch_ns": 1789436033134496000,
+  "batch_finished_at_utc": "2026-09-15T01:33:53.134Z",
+  "batch_finished_monotonic_ns": 93133196462750,
+  "batch_started_at_epoch_ns": 1789434534038381000,
+  "batch_started_at_utc": "2026-09-15T01:08:54.038Z",
+  "batch_started_monotonic_ns": 91634085767541,
+  "clock_elapsed_delta_seconds": -0.014580209,
+  "full_gc_count_sum_workers": 0,
+  "gc_log_parser_status": "SUPPORTED",
+  "gc_pause_seconds_sum_workers": 1.2871030000000723,
+  "gc_summary": "gc-summary.json",
+  "heap_mib": 1536,
+  "jvm_gc": "ZGC_Generational",
+  "jvm_gc_flags": [
+    "-XX:+UseZGC",
+    "-XX:+ZGenerational"
+  ],
+  "parallel_gc_threads": null,
+  "planned_worker_count": 8,
+  "runtime_profile": {
+    "byte_sha256": "e506eea6462d113fd7b388a59275e19fcd337b225b33e02a95756b901410c1fe",
+    "content_sha256": "df7c40ae55be9e45e11ff5a6311c6ed951c861457f6b6b740c0bce2e69c35f8a",
+    "executor_manifest_sha256": "9aaf5ce6e33d5de1147c4708060a71d04c957878a5cb23f32dccb054347c169b",
+    "gc_collector": "ZGC_Generational",
+    "java_executable": "/opt/homebrew/Cellar/openjdk@21/21.0.11/libexec/openjdk.jdk/Contents/Home/bin/java",
+    "java_version": "21.0.11",
+    "jvm_gc_flags": [
+      "-XX:+UseZGC",
+      "-XX:+ZGenerational"
+    ],
+    "parallel_gc_threads": null,
+    "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/stages/zgc-generational/runtime-profile.json",
+    "profile_id": "zgc-generational"
+  },
+  "scope": "ENGINEERING_ONLY_MAC_FULL_GEOMETRY_DEVELOPMENT",
+  "slot_states": {
+    "FULL|NO_EDGE|0|0|920000000": "PUBLISHED_TEMPORARY",
+    "FULL|NO_EDGE|0|1|920000001": "PUBLISHED_TEMPORARY",
+    "FULL|PLANTED_EDGE|0.02|0|920200000": "PUBLISHED_TEMPORARY",
+    "FULL|PLANTED_EDGE|0.02|1|920200001": "PUBLISHED_TEMPORARY",
+    "FULL|PLANTED_EDGE|0.04|0|920300000": "PUBLISHED_TEMPORARY",
+    "FULL|PLANTED_EDGE|0.04|1|920300001": "PUBLISHED_TEMPORARY",
+    "FULL|PLANTED_EDGE|0|0|920100000": "PUBLISHED_TEMPORARY",
+    "FULL|PLANTED_EDGE|0|1|920100001": "PUBLISHED_TEMPORARY"
+  },
+  "stage_name": "zgc-generational",
+  "status": "WORKERS_COMPLETE",
+  "timing_integrity": "PASS",
+  "worker_batch_utc_elapsed_seconds": 1499.096115,
+  "worker_batch_wall_seconds": 1499.110695209,
+  "worker_completion_count": 8,
+  "worker_pause_fractions": {
+    "FULL|NO_EDGE|0|0|920000000": 0.00017856576028878155,
+    "FULL|NO_EDGE|0|1|920000001": 0.00021680882767085796,
+    "FULL|PLANTED_EDGE|0.02|0|920200000": 0.00021168979949204417,
+    "FULL|PLANTED_EDGE|0.02|1|920200001": 0.00023868242085591746,
+    "FULL|PLANTED_EDGE|0.04|0|920300000": 0.00011823772659456693,
+    "FULL|PLANTED_EDGE|0.04|1|920300001": 0.0001226280614911475,
+    "FULL|PLANTED_EDGE|0|0|920100000": 0.0002156282415897757,
+    "FULL|PLANTED_EDGE|0|1|920100001": 0.00023269801919652256
+  },
+  "workers": 6
+}

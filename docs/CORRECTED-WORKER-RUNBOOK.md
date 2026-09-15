@@ -271,3 +271,18 @@ The report's fresh same-setting comparison used the pre-change package at
 (1339.543 seconds). The observed 30.30% lower batch time is descriptive: the
 new-code batch ran first, with one fresh batch per executable, so it does not
 establish a randomized or statistically conclusive causal effect.
+
+### Current collector comparison (2026-09-15)
+
+The follow-up bounded Java 21 collector comparison is recorded in
+[GC-COMPARISON-20260915](GC-COMPARISON-20260915.md). For the optimized package on
+this M1 Pro Mac, the current runnable local profile is the self-hashed
+[Parallel/2 profile](../strategy-research/v5-records/evidence/mac-gc-comparison-20260915/selected-local-runtime-profile.json): six outer workers × 1536 MiB, `-XX:ActiveProcessorCount=1`,
+`-XX:+UseParallelGC`, and `-XX:ParallelGCThreads=2`. It was selected after two
+validated Parallel/2 batches averaged 1306.414 seconds versus two validated G1
+batches averaging 1348.359 seconds; the mean advantage exceeded the observed
+within-setting spread under the predeclared rule. This remains local engineering
+evidence only and does not alter production or qualification settings. The raw
+and compact evidence custody is in
+`strategy-research/v5-records/evidence/mac-gc-comparison-20260915/`; Windows
+performance and compatibility remain unmeasured.

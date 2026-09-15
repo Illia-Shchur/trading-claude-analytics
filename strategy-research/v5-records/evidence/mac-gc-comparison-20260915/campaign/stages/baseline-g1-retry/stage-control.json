@@ -1,0 +1,29 @@
+{
+  "active_processors": 1,
+  "completed_at_epoch_ns": 1789428740225149000,
+  "completed_at_utc": "2026-09-14T23:32:20.225Z",
+  "gc_collector": "G1",
+  "heap_mib": 1536,
+  "jvm_gc_flags": [
+    "-XX:+UseG1GC"
+  ],
+  "package_manifest_sha256": "9aaf5ce6e33d5de1147c4708060a71d04c957878a5cb23f32dccb054347c169b",
+  "parallel_gc_threads": null,
+  "reference_capsule_sha256": "b1830b2aa6da34b752ec964a539dd7e64a64ffa3a73725e6352c044a9c585c23",
+  "runner_elapsed_seconds": 1652.535667833,
+  "runner_exit_code": 0,
+  "runtime_profile_byte_sha256": "799007dd3fc815640f840ae488772ef3c27be080484cdb8183e201d89be6eb4b",
+  "runtime_profile_id": "baseline-g1",
+  "runtime_profile_path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/stages/baseline-g1-retry/runtime-profile.json",
+  "runtime_profile_sha256": "9c81cb2e7ae48fcc328e4ef199307c5a2545740967745c088851ea295ceacff5",
+  "schema": "mac-throughput-stage-control/1",
+  "stage_name": "baseline-g1-retry",
+  "stage_path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/stages/baseline-g1-retry",
+  "started_at_epoch_ns": 1789426938109254000,
+  "started_at_utc": "2026-09-14T23:02:18.109Z",
+  "started_monotonic_ns": 84038220199375,
+  "status": "PASS",
+  "tooling_bindings_sha256": "de33cfa2bd76c25e5215e5c7797cd20ac7ddff316c0757f3f8cb9a1985e0d711",
+  "worker_run_path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/stages/baseline-g1-retry/run",
+  "workers": 6
+}

@@ -1,0 +1,1006 @@
+{
+  "baseline_retry_required": true,
+  "content_sha256": "69861464799d349b8eeeccb7cc5f6e45027f65ac6f78e81287cba5b3b8e4e439",
+  "created_at_utc": "2026-09-14T21:56:17.492Z",
+  "full_batch_launch_count": 8,
+  "initial_censor_seconds": 1677.47625,
+  "initial_order": [
+    "baseline-g1",
+    "serial",
+    "parallel-threads1",
+    "parallel-threads2",
+    "zgc-generational"
+  ],
+  "max_full_batches": 10,
+  "planned_profiles": [
+    {
+      "byte_sha256": "799007dd3fc815640f840ae488772ef3c27be080484cdb8183e201d89be6eb4b",
+      "content_sha256": "9c81cb2e7ae48fcc328e4ef199307c5a2545740967745c088851ea295ceacff5",
+      "gc_collector": "G1",
+      "jvm_gc_flags": [
+        "-XX:+UseG1GC"
+      ],
+      "parallel_gc_threads": null,
+      "path": "runtime-profiles/baseline-g1.json",
+      "profile_id": "baseline-g1"
+    },
+    {
+      "byte_sha256": "63ab016a89674849acfecd430c2f26bd07626bea068ed94e27331092776138b9",
+      "content_sha256": "f36ddbaa52ad0872343d7cdc78a0e022fd0e80ffb3b239cd9c175c6d606b5626",
+      "gc_collector": "Serial",
+      "jvm_gc_flags": [
+        "-XX:+UseSerialGC"
+      ],
+      "parallel_gc_threads": null,
+      "path": "runtime-profiles/serial.json",
+      "profile_id": "serial"
+    },
+    {
+      "byte_sha256": "0ba2f4e505703f7ae4a8e3a5652252affd4d8c7688afc194848afd74ed7f96f9",
+      "content_sha256": "cdb1982a14e9e1627101b291bfd8fc5f24e39df1f9faa0a6357609aced1c3d20",
+      "gc_collector": "Parallel",
+      "jvm_gc_flags": [
+        "-XX:+UseParallelGC",
+        "-XX:ParallelGCThreads=1"
+      ],
+      "parallel_gc_threads": 1,
+      "path": "runtime-profiles/parallel-threads1.json",
+      "profile_id": "parallel-threads1"
+    },
+    {
+      "byte_sha256": "012dd326537ba59c1b01994d6e0cced8a3360a5e768944cf199850e2821b69fc",
+      "content_sha256": "155aa1980d5240311a2346b1cda6b3dbd93ba9935b8b5b74fd38cc14f128180b",
+      "gc_collector": "Parallel",
+      "jvm_gc_flags": [
+        "-XX:+UseParallelGC",
+        "-XX:ParallelGCThreads=2"
+      ],
+      "parallel_gc_threads": 2,
+      "path": "runtime-profiles/parallel-threads2.json",
+      "profile_id": "parallel-threads2"
+    },
+    {
+      "byte_sha256": "e506eea6462d113fd7b388a59275e19fcd337b225b33e02a95756b901410c1fe",
+      "content_sha256": "df7c40ae55be9e45e11ff5a6311c6ed951c861457f6b6b740c0bce2e69c35f8a",
+      "gc_collector": "ZGC_Generational",
+      "jvm_gc_flags": [
+        "-XX:+UseZGC",
+        "-XX:+ZGenerational"
+      ],
+      "parallel_gc_threads": null,
+      "path": "runtime-profiles/zgc-generational.json",
+      "profile_id": "zgc-generational"
+    }
+  ],
+  "runner_integration_recovery_receipt": {
+    "path": "runner-integration-recovery.json",
+    "sha256": "bec44f19ab3ee14c84f8cde56daa08032e5adeac48f6867bc4e1361455068bd5"
+  },
+  "schema": "mac-gc-comparison-state/1",
+  "selected_collector": "parallel-threads2",
+  "stages": [
+    {
+      "censor_seconds": 1677.47625,
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/run-throughput-stage.py",
+        "--run-stage",
+        "--repo",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance",
+        "--search-root",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915",
+        "--package",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/candidate-package",
+        "--manifest",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/candidate-package/manifest.json",
+        "--reference-capsule",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/reference-capsule.json",
+        "--runner",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/harness/run_mac_full_development.py",
+        "--audit-script",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/tools/audit-full.py",
+        "--runtime-profile",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/runtime-profiles/baseline-g1.json",
+        "--stage-name",
+        "baseline-g1",
+        "--java",
+        "/opt/homebrew/Cellar/openjdk@21/21.0.11/libexec/openjdk.jdk/Contents/Home/bin/java",
+        "--max-batch-seconds",
+        "1677.476250000"
+      ],
+      "controller_log": "campaign-logs/baseline-g1.controller.log",
+      "controller_pid": 50084,
+      "elapsed_lower_bound_seconds": null,
+      "environment_before_stage": {
+        "competing_workloads": [],
+        "disk": {
+          "command": [
+            "df",
+            "-k",
+            "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915"
+          ],
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "Filesystem   1024-blocks      Used Available Capacity iused      ifree %iused  Mounted on\n/dev/disk3s5   971350180 743418556 206419876    79% 3889809 2064198760    0%   /System/Volumes/Data"
+        },
+        "free_disk_bytes": 211373953024,
+        "host": {
+          "command": [
+            "system_profiler",
+            "SPHardwareDataType"
+          ],
+          "excluded_device_identifiers": true,
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "Hardware:\n\n    Hardware Overview:\n\n      Model Name: MacBook Pro\n      Model Identifier: MacBookPro18,1\n      Chip: Apple M1 Pro\n      Total Number of Cores: 10 (8 performance and 2 efficiency)\n      Memory: 16 GB\n      System Firmware Version: mBoot-18000.120.36\n      OS Loader Version: 11881.140.96.701.1\n      Activation Lock Status: Enabled"
+        },
+        "java_sha256": "2c2aca8d8796794fd92ad9ca0c544e91dfd77487b34dd7f2b1ba0b29d6e57d42",
+        "java_version": {
+          "command": [
+            "/opt/homebrew/Cellar/openjdk@21/21.0.11/libexec/openjdk.jdk/Contents/Home/bin/java",
+            "-version"
+          ],
+          "exit_code": 0,
+          "stderr": "openjdk version \"21.0.11\" 2026-04-21\nOpenJDK Runtime Environment Homebrew (build 21.0.11)\nOpenJDK 64-Bit Server VM Homebrew (build 21.0.11, mixed mode, sharing)",
+          "stdout": ""
+        },
+        "power": {
+          "command": [
+            "pmset",
+            "-g",
+            "batt"
+          ],
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=7209059)\t100%; charged; 0:00 remaining present: true"
+        },
+        "power_source": {
+          "command": [
+            "pmset",
+            "-g",
+            "ps"
+          ],
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=7209059)\t100%; charged; 0:00 remaining present: true"
+        },
+        "sampled_at_utc": "2026-09-14T22:23:52.045Z",
+        "sleep_guard_caffeinate_is_present": true,
+        "sw_vers": {
+          "command": [
+            "sw_vers"
+          ],
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "ProductName:\t\tmacOS\nProductVersion:\t\t15.7.7\nBuildVersion:\t\t24G720"
+        },
+        "uname": {
+          "command": [
+            "uname",
+            "-a"
+          ],
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "Darwin MacBook-Pro.local 24.6.0 Darwin Kernel Version 24.6.0: Tue Apr 21 20:19:01 PDT 2026; root:xnu-11417.140.69.710.16~1/RELEASE_ARM64_T6000 arm64"
+        }
+      },
+      "finished_at_utc": "2026-09-14T22:51:52.742Z",
+      "launch_number": 1,
+      "profile_id": "baseline-g1",
+      "return_code": 1,
+      "stage_name": "baseline-g1",
+      "stage_result": "stages/baseline-g1/stage-result.json",
+      "started_at_utc": "2026-09-14T22:23:52.269Z",
+      "status": "FAILED",
+      "worker_batch_seconds": null
+    },
+    {
+      "censor_seconds": 1677.47625,
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/run-throughput-stage.py",
+        "--run-stage",
+        "--repo",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance",
+        "--search-root",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915",
+        "--package",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/candidate-package",
+        "--manifest",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/candidate-package/manifest.json",
+        "--reference-capsule",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/reference-capsule.json",
+        "--runner",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/harness/run_mac_full_development.py",
+        "--audit-script",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/tools/audit-full.py",
+        "--runtime-profile",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/runtime-profiles/baseline-g1.json",
+        "--stage-name",
+        "baseline-g1-retry",
+        "--java",
+        "/opt/homebrew/Cellar/openjdk@21/21.0.11/libexec/openjdk.jdk/Contents/Home/bin/java",
+        "--max-batch-seconds",
+        "1677.476250000"
+      ],
+      "controller_log": "campaign-logs/baseline-g1-retry.controller.log",
+      "controller_pid": 64320,
+      "elapsed_lower_bound_seconds": null,
+      "environment_before_stage": {
+        "competing_workloads": [],
+        "disk": {
+          "command": [
+            "df",
+            "-k",
+            "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915"
+          ],
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "Filesystem   1024-blocks      Used Available Capacity iused      ifree %iused  Mounted on\n/dev/disk3s5   971350180 745947416 203891016    79% 3889827 2038910160    0%   /System/Volumes/Data"
+        },
+        "free_disk_bytes": 208784400384,
+        "host": {
+          "command": [
+            "system_profiler",
+            "SPHardwareDataType"
+          ],
+          "excluded_device_identifiers": true,
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "Hardware:\n\n    Hardware Overview:\n\n      Model Name: MacBook Pro\n      Model Identifier: MacBookPro18,1\n      Chip: Apple M1 Pro\n      Total Number of Cores: 10 (8 performance and 2 efficiency)\n      Memory: 16 GB\n      System Firmware Version: mBoot-18000.120.36\n      OS Loader Version: 11881.140.96.701.1\n      Activation Lock Status: Enabled"
+        },
+        "java_sha256": "2c2aca8d8796794fd92ad9ca0c544e91dfd77487b34dd7f2b1ba0b29d6e57d42",
+        "java_version": {
+          "command": [
+            "/opt/homebrew/Cellar/openjdk@21/21.0.11/libexec/openjdk.jdk/Contents/Home/bin/java",
+            "-version"
+          ],
+          "exit_code": 0,
+          "stderr": "openjdk version \"21.0.11\" 2026-04-21\nOpenJDK Runtime Environment Homebrew (build 21.0.11)\nOpenJDK 64-Bit Server VM Homebrew (build 21.0.11, mixed mode, sharing)",
+          "stdout": ""
+        },
+        "power": {
+          "command": [
+            "pmset",
+            "-g",
+            "batt"
+          ],
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=7209059)\t100%; charged; 0:00 remaining present: true"
+        },
+        "power_source": {
+          "command": [
+            "pmset",
+            "-g",
+            "ps"
+          ],
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=7209059)\t100%; charged; 0:00 remaining present: true"
+        },
+        "sampled_at_utc": "2026-09-14T23:02:17.793Z",
+        "sleep_guard_caffeinate_is_present": true,
+        "sw_vers": {
+          "command": [
+            "sw_vers"
+          ],
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "ProductName:\t\tmacOS\nProductVersion:\t\t15.7.7\nBuildVersion:\t\t24G720"
+        },
+        "uname": {
+          "command": [
+            "uname",
+            "-a"
+          ],
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "Darwin MacBook-Pro.local 24.6.0 Darwin Kernel Version 24.6.0: Tue Apr 21 20:19:01 PDT 2026; root:xnu-11417.140.69.710.16~1/RELEASE_ARM64_T6000 arm64"
+        }
+      },
+      "finished_at_utc": "2026-09-14T23:32:48.514Z",
+      "launch_number": 2,
+      "profile_id": "baseline-g1",
+      "return_code": 0,
+      "stage_name": "baseline-g1-retry",
+      "stage_result": "stages/baseline-g1-retry/stage-result.json",
+      "started_at_utc": "2026-09-14T23:02:17.975Z",
+      "status": "PASS",
+      "worker_batch_seconds": 1341.242946542
+    },
+    {
+      "censor_seconds": 1676.5536831775,
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/run-throughput-stage.py",
+        "--run-stage",
+        "--repo",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance",
+        "--search-root",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915",
+        "--package",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/candidate-package",
+        "--manifest",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/candidate-package/manifest.json",
+        "--reference-capsule",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/reference-capsule.json",
+        "--runner",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/harness/run_mac_full_development.py",
+        "--audit-script",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/tools/audit-full.py",
+        "--runtime-profile",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/runtime-profiles/serial.json",
+        "--stage-name",
+        "serial",
+        "--java",
+        "/opt/homebrew/Cellar/openjdk@21/21.0.11/libexec/openjdk.jdk/Contents/Home/bin/java",
+        "--max-batch-seconds",
+        "1676.553683178"
+      ],
+      "controller_log": "campaign-logs/serial.controller.log",
+      "controller_pid": 78352,
+      "elapsed_lower_bound_seconds": null,
+      "environment_before_stage": {
+        "competing_workloads": [],
+        "disk": {
+          "command": [
+            "df",
+            "-k",
+            "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915"
+          ],
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "Filesystem   1024-blocks      Used Available Capacity iused      ifree %iused  Mounted on\n/dev/disk3s5   971350180 749513780 200324652    79% 3890682 2003246520    0%   /System/Volumes/Data"
+        },
+        "free_disk_bytes": 205132443648,
+        "host": {
+          "command": [
+            "system_profiler",
+            "SPHardwareDataType"
+          ],
+          "excluded_device_identifiers": true,
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "Hardware:\n\n    Hardware Overview:\n\n      Model Name: MacBook Pro\n      Model Identifier: MacBookPro18,1\n      Chip: Apple M1 Pro\n      Total Number of Cores: 10 (8 performance and 2 efficiency)\n      Memory: 16 GB\n      System Firmware Version: mBoot-18000.120.36\n      OS Loader Version: 11881.140.96.701.1\n      Activation Lock Status: Enabled"
+        },
+        "java_sha256": "2c2aca8d8796794fd92ad9ca0c544e91dfd77487b34dd7f2b1ba0b29d6e57d42",
+        "java_version": {
+          "command": [
+            "/opt/homebrew/Cellar/openjdk@21/21.0.11/libexec/openjdk.jdk/Contents/Home/bin/java",
+            "-version"
+          ],
+          "exit_code": 0,
+          "stderr": "openjdk version \"21.0.11\" 2026-04-21\nOpenJDK Runtime Environment Homebrew (build 21.0.11)\nOpenJDK 64-Bit Server VM Homebrew (build 21.0.11, mixed mode, sharing)",
+          "stdout": ""
+        },
+        "power": {
+          "command": [
+            "pmset",
+            "-g",
+            "batt"
+          ],
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=7209059)\t100%; charged; 0:00 remaining present: true"
+        },
+        "power_source": {
+          "command": [
+            "pmset",
+            "-g",
+            "ps"
+          ],
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=7209059)\t100%; charged; 0:00 remaining present: true"
+        },
+        "sampled_at_utc": "2026-09-14T23:32:48.582Z",
+        "sleep_guard_caffeinate_is_present": true,
+        "sw_vers": {
+          "command": [
+            "sw_vers"
+          ],
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "ProductName:\t\tmacOS\nProductVersion:\t\t15.7.7\nBuildVersion:\t\t24G720"
+        },
+        "uname": {
+          "command": [
+            "uname",
+            "-a"
+          ],
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "Darwin MacBook-Pro.local 24.6.0 Darwin Kernel Version 24.6.0: Tue Apr 21 20:19:01 PDT 2026; root:xnu-11417.140.69.710.16~1/RELEASE_ARM64_T6000 arm64"
+        }
+      },
+      "finished_at_utc": "2026-09-15T00:07:49.420Z",
+      "launch_number": 3,
+      "profile_id": "serial",
+      "return_code": 0,
+      "stage_name": "serial",
+      "stage_result": "stages/serial/stage-result.json",
+      "started_at_utc": "2026-09-14T23:32:48.756Z",
+      "status": "PASS",
+      "worker_batch_seconds": 1606.759183084
+    },
+    {
+      "censor_seconds": 1676.5536831775,
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/run-throughput-stage.py",
+        "--run-stage",
+        "--repo",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance",
+        "--search-root",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915",
+        "--package",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/candidate-package",
+        "--manifest",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/candidate-package/manifest.json",
+        "--reference-capsule",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/reference-capsule.json",
+        "--runner",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/harness/run_mac_full_development.py",
+        "--audit-script",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/tools/audit-full.py",
+        "--runtime-profile",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/runtime-profiles/parallel-threads1.json",
+        "--stage-name",
+        "parallel-threads1",
+        "--java",
+        "/opt/homebrew/Cellar/openjdk@21/21.0.11/libexec/openjdk.jdk/Contents/Home/bin/java",
+        "--max-batch-seconds",
+        "1676.553683178"
+      ],
+      "controller_log": "campaign-logs/parallel-threads1.controller.log",
+      "controller_pid": 92962,
+      "elapsed_lower_bound_seconds": null,
+      "environment_before_stage": {
+        "competing_workloads": [],
+        "disk": {
+          "command": [
+            "df",
+            "-k",
+            "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915"
+          ],
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "Filesystem   1024-blocks      Used Available Capacity iused      ifree %iused  Mounted on\n/dev/disk3s5   971350180 752043420 197795012    80% 3891037 1977950120    0%   /System/Volumes/Data"
+        },
+        "free_disk_bytes": 202542092288,
+        "host": {
+          "command": [
+            "system_profiler",
+            "SPHardwareDataType"
+          ],
+          "excluded_device_identifiers": true,
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "Hardware:\n\n    Hardware Overview:\n\n      Model Name: MacBook Pro\n      Model Identifier: MacBookPro18,1\n      Chip: Apple M1 Pro\n      Total Number of Cores: 10 (8 performance and 2 efficiency)\n      Memory: 16 GB\n      System Firmware Version: mBoot-18000.120.36\n      OS Loader Version: 11881.140.96.701.1\n      Activation Lock Status: Enabled"
+        },
+        "java_sha256": "2c2aca8d8796794fd92ad9ca0c544e91dfd77487b34dd7f2b1ba0b29d6e57d42",
+        "java_version": {
+          "command": [
+            "/opt/homebrew/Cellar/openjdk@21/21.0.11/libexec/openjdk.jdk/Contents/Home/bin/java",
+            "-version"
+          ],
+          "exit_code": 0,
+          "stderr": "openjdk version \"21.0.11\" 2026-04-21\nOpenJDK Runtime Environment Homebrew (build 21.0.11)\nOpenJDK 64-Bit Server VM Homebrew (build 21.0.11, mixed mode, sharing)",
+          "stdout": ""
+        },
+        "power": {
+          "command": [
+            "pmset",
+            "-g",
+            "batt"
+          ],
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=7209059)\t100%; charged; 0:00 remaining present: true"
+        },
+        "power_source": {
+          "command": [
+            "pmset",
+            "-g",
+            "ps"
+          ],
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=7209059)\t100%; charged; 0:00 remaining present: true"
+        },
+        "sampled_at_utc": "2026-09-15T00:07:49.491Z",
+        "sleep_guard_caffeinate_is_present": true,
+        "sw_vers": {
+          "command": [
+            "sw_vers"
+          ],
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "ProductName:\t\tmacOS\nProductVersion:\t\t15.7.7\nBuildVersion:\t\t24G720"
+        },
+        "uname": {
+          "command": [
+            "uname",
+            "-a"
+          ],
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "Darwin MacBook-Pro.local 24.6.0 Darwin Kernel Version 24.6.0: Tue Apr 21 20:19:01 PDT 2026; root:xnu-11417.140.69.710.16~1/RELEASE_ARM64_T6000 arm64"
+        }
+      },
+      "finished_at_utc": "2026-09-15T00:38:50.337Z",
+      "launch_number": 4,
+      "profile_id": "parallel-threads1",
+      "return_code": 0,
+      "stage_name": "parallel-threads1",
+      "stage_result": "stages/parallel-threads1/stage-result.json",
+      "started_at_utc": "2026-09-15T00:07:49.726Z",
+      "status": "PASS",
+      "worker_batch_seconds": 1377.739203125
+    },
+    {
+      "censor_seconds": 1676.5536831775,
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/run-throughput-stage.py",
+        "--run-stage",
+        "--repo",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance",
+        "--search-root",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915",
+        "--package",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/candidate-package",
+        "--manifest",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/candidate-package/manifest.json",
+        "--reference-capsule",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/reference-capsule.json",
+        "--runner",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/harness/run_mac_full_development.py",
+        "--audit-script",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/tools/audit-full.py",
+        "--runtime-profile",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/runtime-profiles/parallel-threads2.json",
+        "--stage-name",
+        "parallel-threads2",
+        "--java",
+        "/opt/homebrew/Cellar/openjdk@21/21.0.11/libexec/openjdk.jdk/Contents/Home/bin/java",
+        "--max-batch-seconds",
+        "1676.553683178"
+      ],
+      "controller_log": "campaign-logs/parallel-threads2.controller.log",
+      "controller_pid": 7377,
+      "elapsed_lower_bound_seconds": null,
+      "environment_before_stage": {
+        "competing_workloads": [],
+        "disk": {
+          "command": [
+            "df",
+            "-k",
+            "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915"
+          ],
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "Filesystem   1024-blocks      Used Available Capacity iused      ifree %iused  Mounted on\n/dev/disk3s5   971350180 755605016 194233416    80% 3891553 1942334160    0%   /System/Volumes/Data"
+        },
+        "free_disk_bytes": 198895017984,
+        "host": {
+          "command": [
+            "system_profiler",
+            "SPHardwareDataType"
+          ],
+          "excluded_device_identifiers": true,
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "Hardware:\n\n    Hardware Overview:\n\n      Model Name: MacBook Pro\n      Model Identifier: MacBookPro18,1\n      Chip: Apple M1 Pro\n      Total Number of Cores: 10 (8 performance and 2 efficiency)\n      Memory: 16 GB\n      System Firmware Version: mBoot-18000.120.36\n      OS Loader Version: 11881.140.96.701.1\n      Activation Lock Status: Enabled"
+        },
+        "java_sha256": "2c2aca8d8796794fd92ad9ca0c544e91dfd77487b34dd7f2b1ba0b29d6e57d42",
+        "java_version": {
+          "command": [
+            "/opt/homebrew/Cellar/openjdk@21/21.0.11/libexec/openjdk.jdk/Contents/Home/bin/java",
+            "-version"
+          ],
+          "exit_code": 0,
+          "stderr": "openjdk version \"21.0.11\" 2026-04-21\nOpenJDK Runtime Environment Homebrew (build 21.0.11)\nOpenJDK 64-Bit Server VM Homebrew (build 21.0.11, mixed mode, sharing)",
+          "stdout": ""
+        },
+        "power": {
+          "command": [
+            "pmset",
+            "-g",
+            "batt"
+          ],
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=7209059)\t100%; charged; 0:00 remaining present: true"
+        },
+        "power_source": {
+          "command": [
+            "pmset",
+            "-g",
+            "ps"
+          ],
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=7209059)\t100%; charged; 0:00 remaining present: true"
+        },
+        "sampled_at_utc": "2026-09-15T00:38:50.407Z",
+        "sleep_guard_caffeinate_is_present": true,
+        "sw_vers": {
+          "command": [
+            "sw_vers"
+          ],
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "ProductName:\t\tmacOS\nProductVersion:\t\t15.7.7\nBuildVersion:\t\t24G720"
+        },
+        "uname": {
+          "command": [
+            "uname",
+            "-a"
+          ],
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "Darwin MacBook-Pro.local 24.6.0 Darwin Kernel Version 24.6.0: Tue Apr 21 20:19:01 PDT 2026; root:xnu-11417.140.69.710.16~1/RELEASE_ARM64_T6000 arm64"
+        }
+      },
+      "finished_at_utc": "2026-09-15T01:08:51.191Z",
+      "launch_number": 5,
+      "profile_id": "parallel-threads2",
+      "return_code": 0,
+      "stage_name": "parallel-threads2",
+      "stage_result": "stages/parallel-threads2/stage-result.json",
+      "started_at_utc": "2026-09-15T00:38:50.627Z",
+      "status": "PASS",
+      "worker_batch_seconds": 1321.463385291
+    },
+    {
+      "censor_seconds": 1651.82923161375,
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/run-throughput-stage.py",
+        "--run-stage",
+        "--repo",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance",
+        "--search-root",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915",
+        "--package",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/candidate-package",
+        "--manifest",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/candidate-package/manifest.json",
+        "--reference-capsule",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/reference-capsule.json",
+        "--runner",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/harness/run_mac_full_development.py",
+        "--audit-script",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/tools/audit-full.py",
+        "--runtime-profile",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/runtime-profiles/zgc-generational.json",
+        "--stage-name",
+        "zgc-generational",
+        "--java",
+        "/opt/homebrew/Cellar/openjdk@21/21.0.11/libexec/openjdk.jdk/Contents/Home/bin/java",
+        "--max-batch-seconds",
+        "1651.829231614"
+      ],
+      "controller_log": "campaign-logs/zgc-generational.controller.log",
+      "controller_pid": 21412,
+      "elapsed_lower_bound_seconds": null,
+      "environment_before_stage": {
+        "competing_workloads": [],
+        "disk": {
+          "command": [
+            "df",
+            "-k",
+            "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915"
+          ],
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "Filesystem   1024-blocks      Used Available Capacity iused      ifree %iused  Mounted on\n/dev/disk3s5   971350180 757906880 191931552    80% 3891896 1919315520    0%   /System/Volumes/Data"
+        },
+        "free_disk_bytes": 196537909248,
+        "host": {
+          "command": [
+            "system_profiler",
+            "SPHardwareDataType"
+          ],
+          "excluded_device_identifiers": true,
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "Hardware:\n\n    Hardware Overview:\n\n      Model Name: MacBook Pro\n      Model Identifier: MacBookPro18,1\n      Chip: Apple M1 Pro\n      Total Number of Cores: 10 (8 performance and 2 efficiency)\n      Memory: 16 GB\n      System Firmware Version: mBoot-18000.120.36\n      OS Loader Version: 11881.140.96.701.1\n      Activation Lock Status: Enabled"
+        },
+        "java_sha256": "2c2aca8d8796794fd92ad9ca0c544e91dfd77487b34dd7f2b1ba0b29d6e57d42",
+        "java_version": {
+          "command": [
+            "/opt/homebrew/Cellar/openjdk@21/21.0.11/libexec/openjdk.jdk/Contents/Home/bin/java",
+            "-version"
+          ],
+          "exit_code": 0,
+          "stderr": "openjdk version \"21.0.11\" 2026-04-21\nOpenJDK Runtime Environment Homebrew (build 21.0.11)\nOpenJDK 64-Bit Server VM Homebrew (build 21.0.11, mixed mode, sharing)",
+          "stdout": ""
+        },
+        "power": {
+          "command": [
+            "pmset",
+            "-g",
+            "batt"
+          ],
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=7209059)\t100%; charged; 0:00 remaining present: true"
+        },
+        "power_source": {
+          "command": [
+            "pmset",
+            "-g",
+            "ps"
+          ],
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=7209059)\t100%; charged; 0:00 remaining present: true"
+        },
+        "sampled_at_utc": "2026-09-15T01:08:51.259Z",
+        "sleep_guard_caffeinate_is_present": true,
+        "sw_vers": {
+          "command": [
+            "sw_vers"
+          ],
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "ProductName:\t\tmacOS\nProductVersion:\t\t15.7.7\nBuildVersion:\t\t24G720"
+        },
+        "uname": {
+          "command": [
+            "uname",
+            "-a"
+          ],
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "Darwin MacBook-Pro.local 24.6.0 Darwin Kernel Version 24.6.0: Tue Apr 21 20:19:01 PDT 2026; root:xnu-11417.140.69.710.16~1/RELEASE_ARM64_T6000 arm64"
+        }
+      },
+      "finished_at_utc": "2026-09-15T01:41:52.055Z",
+      "launch_number": 6,
+      "profile_id": "zgc-generational",
+      "return_code": 0,
+      "stage_name": "zgc-generational",
+      "stage_result": "stages/zgc-generational/stage-result.json",
+      "started_at_utc": "2026-09-15T01:08:51.427Z",
+      "status": "PASS",
+      "worker_batch_seconds": 1499.110695209
+    },
+    {
+      "censor_seconds": 1651.82923161375,
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/run-throughput-stage.py",
+        "--run-stage",
+        "--repo",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance",
+        "--search-root",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915",
+        "--package",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/candidate-package",
+        "--manifest",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/candidate-package/manifest.json",
+        "--reference-capsule",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/reference-capsule.json",
+        "--runner",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/harness/run_mac_full_development.py",
+        "--audit-script",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/tools/audit-full.py",
+        "--runtime-profile",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/runtime-profiles/parallel-threads2.json",
+        "--stage-name",
+        "repeat-best-alternative",
+        "--java",
+        "/opt/homebrew/Cellar/openjdk@21/21.0.11/libexec/openjdk.jdk/Contents/Home/bin/java",
+        "--max-batch-seconds",
+        "1651.829231614"
+      ],
+      "controller_log": "campaign-logs/repeat-best-alternative.controller.log",
+      "controller_pid": 35743,
+      "elapsed_lower_bound_seconds": null,
+      "environment_before_stage": {
+        "competing_workloads": [],
+        "disk": {
+          "command": [
+            "df",
+            "-k",
+            "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915"
+          ],
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "Filesystem   1024-blocks      Used Available Capacity iused      ifree %iused  Mounted on\n/dev/disk3s5   971350180 761549208 188289224    81% 3892391 1882892240    0%   /System/Volumes/Data"
+        },
+        "free_disk_bytes": 192808165376,
+        "host": {
+          "command": [
+            "system_profiler",
+            "SPHardwareDataType"
+          ],
+          "excluded_device_identifiers": true,
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "Hardware:\n\n    Hardware Overview:\n\n      Model Name: MacBook Pro\n      Model Identifier: MacBookPro18,1\n      Chip: Apple M1 Pro\n      Total Number of Cores: 10 (8 performance and 2 efficiency)\n      Memory: 16 GB\n      System Firmware Version: mBoot-18000.120.36\n      OS Loader Version: 11881.140.96.701.1\n      Activation Lock Status: Enabled"
+        },
+        "java_sha256": "2c2aca8d8796794fd92ad9ca0c544e91dfd77487b34dd7f2b1ba0b29d6e57d42",
+        "java_version": {
+          "command": [
+            "/opt/homebrew/Cellar/openjdk@21/21.0.11/libexec/openjdk.jdk/Contents/Home/bin/java",
+            "-version"
+          ],
+          "exit_code": 0,
+          "stderr": "openjdk version \"21.0.11\" 2026-04-21\nOpenJDK Runtime Environment Homebrew (build 21.0.11)\nOpenJDK 64-Bit Server VM Homebrew (build 21.0.11, mixed mode, sharing)",
+          "stdout": ""
+        },
+        "power": {
+          "command": [
+            "pmset",
+            "-g",
+            "batt"
+          ],
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=7209059)\t100%; charged; 0:00 remaining present: true"
+        },
+        "power_source": {
+          "command": [
+            "pmset",
+            "-g",
+            "ps"
+          ],
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=7209059)\t100%; charged; 0:00 remaining present: true"
+        },
+        "sampled_at_utc": "2026-09-15T01:41:52.104Z",
+        "sleep_guard_caffeinate_is_present": true,
+        "sw_vers": {
+          "command": [
+            "sw_vers"
+          ],
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "ProductName:\t\tmacOS\nProductVersion:\t\t15.7.7\nBuildVersion:\t\t24G720"
+        },
+        "uname": {
+          "command": [
+            "uname",
+            "-a"
+          ],
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "Darwin MacBook-Pro.local 24.6.0 Darwin Kernel Version 24.6.0: Tue Apr 21 20:19:01 PDT 2026; root:xnu-11417.140.69.710.16~1/RELEASE_ARM64_T6000 arm64"
+        }
+      },
+      "finished_at_utc": "2026-09-15T02:11:22.781Z",
+      "launch_number": 7,
+      "profile_id": "parallel-threads2",
+      "return_code": 0,
+      "stage_name": "repeat-best-alternative",
+      "stage_result": "stages/repeat-best-alternative/stage-result.json",
+      "started_at_utc": "2026-09-15T01:41:52.264Z",
+      "status": "PASS",
+      "worker_batch_seconds": 1291.364070959
+    },
+    {
+      "censor_seconds": 1614.20508869875,
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/run-throughput-stage.py",
+        "--run-stage",
+        "--repo",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance",
+        "--search-root",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915",
+        "--package",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/candidate-package",
+        "--manifest",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/candidate-package/manifest.json",
+        "--reference-capsule",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/reference-capsule.json",
+        "--runner",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/harness/run_mac_full_development.py",
+        "--audit-script",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/tools/audit-full.py",
+        "--runtime-profile",
+        "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915/runtime-profiles/baseline-g1.json",
+        "--stage-name",
+        "repeat-g1",
+        "--java",
+        "/opt/homebrew/Cellar/openjdk@21/21.0.11/libexec/openjdk.jdk/Contents/Home/bin/java",
+        "--max-batch-seconds",
+        "1614.205088699"
+      ],
+      "controller_log": "campaign-logs/repeat-g1.controller.log",
+      "controller_pid": 49817,
+      "elapsed_lower_bound_seconds": null,
+      "environment_before_stage": {
+        "competing_workloads": [],
+        "disk": {
+          "command": [
+            "df",
+            "-k",
+            "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-comparison-20260915"
+          ],
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "Filesystem   1024-blocks      Used Available Capacity iused      ifree %iused  Mounted on\n/dev/disk3s5   971350180 764053564 185784868    81% 3892846 1857848680    0%   /System/Volumes/Data"
+        },
+        "free_disk_bytes": 190243704832,
+        "host": {
+          "command": [
+            "system_profiler",
+            "SPHardwareDataType"
+          ],
+          "excluded_device_identifiers": true,
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "Hardware:\n\n    Hardware Overview:\n\n      Model Name: MacBook Pro\n      Model Identifier: MacBookPro18,1\n      Chip: Apple M1 Pro\n      Total Number of Cores: 10 (8 performance and 2 efficiency)\n      Memory: 16 GB\n      System Firmware Version: mBoot-18000.120.36\n      OS Loader Version: 11881.140.96.701.1\n      Activation Lock Status: Enabled"
+        },
+        "java_sha256": "2c2aca8d8796794fd92ad9ca0c544e91dfd77487b34dd7f2b1ba0b29d6e57d42",
+        "java_version": {
+          "command": [
+            "/opt/homebrew/Cellar/openjdk@21/21.0.11/libexec/openjdk.jdk/Contents/Home/bin/java",
+            "-version"
+          ],
+          "exit_code": 0,
+          "stderr": "openjdk version \"21.0.11\" 2026-04-21\nOpenJDK Runtime Environment Homebrew (build 21.0.11)\nOpenJDK 64-Bit Server VM Homebrew (build 21.0.11, mixed mode, sharing)",
+          "stdout": ""
+        },
+        "power": {
+          "command": [
+            "pmset",
+            "-g",
+            "batt"
+          ],
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=7209059)\t100%; charged; 0:00 remaining present: true"
+        },
+        "power_source": {
+          "command": [
+            "pmset",
+            "-g",
+            "ps"
+          ],
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=7209059)\t100%; charged; 0:00 remaining present: true"
+        },
+        "sampled_at_utc": "2026-09-15T02:11:22.853Z",
+        "sleep_guard_caffeinate_is_present": true,
+        "sw_vers": {
+          "command": [
+            "sw_vers"
+          ],
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "ProductName:\t\tmacOS\nProductVersion:\t\t15.7.7\nBuildVersion:\t\t24G720"
+        },
+        "uname": {
+          "command": [
+            "uname",
+            "-a"
+          ],
+          "exit_code": 0,
+          "stderr": "",
+          "stdout": "Darwin MacBook-Pro.local 24.6.0 Darwin Kernel Version 24.6.0: Tue Apr 21 20:19:01 PDT 2026; root:xnu-11417.140.69.710.16~1/RELEASE_ARM64_T6000 arm64"
+        }
+      },
+      "finished_at_utc": "2026-09-15T02:41:53.580Z",
+      "launch_number": 8,
+      "profile_id": "baseline-g1",
+      "return_code": 0,
+      "stage_name": "repeat-g1",
+      "stage_result": "stages/repeat-g1/stage-result.json",
+      "started_at_utc": "2026-09-15T02:11:23.033Z",
+      "status": "PASS",
+      "worker_batch_seconds": 1355.474582417
+    }
+  ],
+  "status": "COMPLETE",
+  "updated_at_utc": "2026-09-15T02:41:53.592Z",
+  "version": 1
+}

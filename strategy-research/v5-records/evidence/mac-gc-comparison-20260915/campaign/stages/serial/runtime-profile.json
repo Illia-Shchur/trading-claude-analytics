@@ -1,0 +1,26 @@
+{
+  "active_processor_count": 1,
+  "content_sha256": "f36ddbaa52ad0872343d7cdc78a0e022fd0e80ffb3b239cd9c175c6d606b5626",
+  "created_at_utc": "2026-09-14T21:56:17.425Z",
+  "effective_concurrency_cap": 8,
+  "evidence_references": [
+    "probes/availability-probes.json"
+  ],
+  "executor_manifest_sha256": "9aaf5ce6e33d5de1147c4708060a71d04c957878a5cb23f32dccb054347c169b",
+  "gc_collector": "Serial",
+  "host_identity_sha256": "506b6b5b92853cd698b3bdeee68034be09ed2619550943f319bab9f5ff1f63f6",
+  "java_executable": "/opt/homebrew/Cellar/openjdk@21/21.0.11/libexec/openjdk.jdk/Contents/Home/bin/java",
+  "java_version": "21.0.11",
+  "jvm_gc_flags": [
+    "-XX:+UseSerialGC"
+  ],
+  "outer_workers": 6,
+  "parallel_gc_threads": null,
+  "platform": "macOS",
+  "profile_id": "serial",
+  "schema": "mac-local-engineering-runtime/1",
+  "scope": "LOCAL_ENGINEERING_ONLY",
+  "selection_status": "CANDIDATE_NOT_SELECTED",
+  "version": 1,
+  "xmx_mib": 1536
+}

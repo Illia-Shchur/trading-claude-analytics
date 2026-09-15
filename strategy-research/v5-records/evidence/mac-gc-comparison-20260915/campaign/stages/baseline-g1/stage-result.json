@@ -1,0 +1,8 @@
+{
+  "comparison_eligible": false,
+  "error": "runner or batch settings differ from the controller-frozen runtime profile",
+  "schema": "mac-throughput-stage-result/1",
+  "stage_name": "baseline-g1",
+  "status": "FAILED",
+  "terminal_at_utc": "2026-09-14T22:51:23.741Z"
+}

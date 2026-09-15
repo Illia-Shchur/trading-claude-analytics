@@ -1,0 +1,29 @@
+{
+  "content_sha256": "088cede250de8085f7840c846c05d3fbdcc3902d71b8b49d00d9cf23a4243331",
+  "executor_manifest_sha256": "9aaf5ce6e33d5de1147c4708060a71d04c957878a5cb23f32dccb054347c169b",
+  "profile_byte_sha256": "d3aeffa11fb3a80f11b563ba1b2d2c7126a3bb7a487b5a843e161a700f232c14",
+  "profile_content_sha256": "4ee96bc162fdda7250376836f5b8111b9601587e455b5c71d833f99d1b2a98e1",
+  "profile_path": "strategy-research/v5-records/evidence/mac-gc-comparison-20260915/selected-local-runtime-profile.json",
+  "schema": "mac-local-runtime-profile-validation/1",
+  "settings": {
+    "active_processor_count": 1,
+    "effective_concurrency_cap": 8,
+    "gc_collector": "Parallel",
+    "java_executable": "/opt/homebrew/Cellar/openjdk@21/21.0.11/libexec/openjdk.jdk/Contents/Home/bin/java",
+    "java_version": "21.0.11",
+    "jvm_gc_flags": [
+      "-XX:+UseParallelGC",
+      "-XX:ParallelGCThreads=2"
+    ],
+    "outer_workers": 6,
+    "parallel_gc_threads": 2,
+    "profile_id": "selected-local-mac-gc-parallel-threads2",
+    "selection_status": "SELECTED_LOCAL_ENGINEERING_MAC",
+    "xmx_mib": 1536
+  },
+  "status": "PASS",
+  "validated_at_utc": "2026-09-15T03:01:13.236Z",
+  "validator_path": "campaign/harness/run_mac_full_development.py",
+  "validator_sha256": "56cc26654c607e685226c2c1fe3ac4d4d6e62e9b4f48413f258f641a778de9fd",
+  "worker_workload_launched": false
+}
