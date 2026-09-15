@@ -1,0 +1,42 @@
+{
+  "FULL|NO_EDGE|0|0|920000000": {
+    "after_audit_sha256": "7121bb5eb5158a3a8bb3ea78c3f23027dc0e458a6e14715e5fb4cecac6df4e04",
+    "before_audit_sha256": "7121bb5eb5158a3a8bb3ea78c3f23027dc0e458a6e14715e5fb4cecac6df4e04",
+    "preserved": true
+  },
+  "FULL|NO_EDGE|0|1|920000001": {
+    "after_audit_sha256": "e2c576a43bfffe76c9750662893fa1b8b601a70f3f58b22550226dc4c3805765",
+    "before_audit_sha256": "e2c576a43bfffe76c9750662893fa1b8b601a70f3f58b22550226dc4c3805765",
+    "preserved": true
+  },
+  "FULL|PLANTED_EDGE|0.02|0|920200000": {
+    "after_audit_sha256": "fceb625e3da1bb9b9c1cc1a479fa555f57c1df8b7e929ab34a9f51cd0e101d9e",
+    "before_audit_sha256": "fceb625e3da1bb9b9c1cc1a479fa555f57c1df8b7e929ab34a9f51cd0e101d9e",
+    "preserved": true
+  },
+  "FULL|PLANTED_EDGE|0.02|1|920200001": {
+    "after_audit_sha256": "0e5580d90b23a4b0c3dca42bf368caef364f745dc6f1aafe1ef7f0a097efaa33",
+    "before_audit_sha256": "0e5580d90b23a4b0c3dca42bf368caef364f745dc6f1aafe1ef7f0a097efaa33",
+    "preserved": true
+  },
+  "FULL|PLANTED_EDGE|0.04|0|920300000": {
+    "after_audit_sha256": "9ab95d524426e7327ccf0ea233f9feb8fd519e6d9c5dd61619f497295dbfb464",
+    "before_audit_sha256": "9ab95d524426e7327ccf0ea233f9feb8fd519e6d9c5dd61619f497295dbfb464",
+    "preserved": true
+  },
+  "FULL|PLANTED_EDGE|0.04|1|920300001": {
+    "after_audit_sha256": "13ceca2761a6765f110bccd78da5a728f2e2554420f8d14be16e04fcd33242e8",
+    "before_audit_sha256": "13ceca2761a6765f110bccd78da5a728f2e2554420f8d14be16e04fcd33242e8",
+    "preserved": true
+  },
+  "FULL|PLANTED_EDGE|0|0|920100000": {
+    "after_audit_sha256": "9cb0a54cc2d3023b73e7fb1b5c4becff1e363a40f57030e0c4ef8861eb80fa4f",
+    "before_audit_sha256": "9cb0a54cc2d3023b73e7fb1b5c4becff1e363a40f57030e0c4ef8861eb80fa4f",
+    "preserved": true
+  },
+  "FULL|PLANTED_EDGE|0|1|920100001": {
+    "after_audit_sha256": "8d793fcc65fa593e1e662ee939942f842c11f618e59b94aee31db32595054641",
+    "before_audit_sha256": "8d793fcc65fa593e1e662ee939942f842c11f618e59b94aee31db32595054641",
+    "preserved": true
+  }
+}

@@ -1,0 +1,98 @@
+{
+  "active_processors": 1,
+  "actual_gc_collectors": [
+    "Parallel"
+  ],
+  "actual_parallel_gc_worker_counts": [
+    2
+  ],
+  "actual_parallel_gc_worker_counts_by_slot": {
+    "FULL|NO_EDGE|0|0|920000000": [
+      2
+    ],
+    "FULL|NO_EDGE|0|1|920000001": [
+      2
+    ],
+    "FULL|PLANTED_EDGE|0.02|0|920200000": [
+      2
+    ],
+    "FULL|PLANTED_EDGE|0.02|1|920200001": [
+      2
+    ],
+    "FULL|PLANTED_EDGE|0.04|0|920300000": [
+      2
+    ],
+    "FULL|PLANTED_EDGE|0.04|1|920300001": [
+      2
+    ],
+    "FULL|PLANTED_EDGE|0|0|920100000": [
+      2
+    ],
+    "FULL|PLANTED_EDGE|0|1|920100001": [
+      2
+    ]
+  },
+  "aggregate_worker_gc_pause_fraction": 0.10780344737236869,
+  "batch_finished_at_epoch_ns": 1789466365900428000,
+  "batch_finished_at_utc": "2026-09-15T09:59:25.900Z",
+  "batch_finished_monotonic_ns": 123465972396666,
+  "batch_started_at_epoch_ns": 1789465007662210000,
+  "batch_started_at_utc": "2026-09-15T09:36:47.662Z",
+  "batch_started_monotonic_ns": 122107730634625,
+  "clock_elapsed_delta_seconds": -0.003544041,
+  "full_gc_count_sum_workers": 260,
+  "gc_log_parser_status": "SUPPORTED",
+  "gc_pause_seconds_sum_workers": 571.2099760000002,
+  "gc_summary": "gc-summary.json",
+  "heap_mib": 1536,
+  "jvm_gc": "Parallel",
+  "jvm_gc_flags": [
+    "-XX:+UseParallelGC",
+    "-XX:ParallelGCThreads=2"
+  ],
+  "parallel_gc_threads": 2,
+  "planned_worker_count": 8,
+  "runtime_profile": {
+    "byte_sha256": "dd9528705a0978d9562b56e60d5a04b8432a8f5547797a0abbe40fad21147c5a",
+    "content_sha256": "8625d0034033b014c6ee27241dbcdbb21493975d71a08de5e96651c6b7ec3495",
+    "executor_manifest_sha256": "9aaf5ce6e33d5de1147c4708060a71d04c957878a5cb23f32dccb054347c169b",
+    "gc_collector": "Parallel",
+    "java_executable": "/opt/homebrew/Cellar/openjdk@21/21.0.11/libexec/openjdk.jdk/Contents/Home/bin/java",
+    "java_version": "21.0.11",
+    "jvm_gc_flags": [
+      "-XX:+UseParallelGC",
+      "-XX:ParallelGCThreads=2"
+    ],
+    "parallel_gc_threads": 2,
+    "path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-four-workers-20260915/stages/workers4-second/runtime-profile.json",
+    "profile_id": "workers4"
+  },
+  "scope": "ENGINEERING_ONLY_MAC_FULL_GEOMETRY_DEVELOPMENT",
+  "slot_states": {
+    "FULL|NO_EDGE|0|0|920000000": "PUBLISHED_TEMPORARY",
+    "FULL|NO_EDGE|0|1|920000001": "PUBLISHED_TEMPORARY",
+    "FULL|PLANTED_EDGE|0.02|0|920200000": "PUBLISHED_TEMPORARY",
+    "FULL|PLANTED_EDGE|0.02|1|920200001": "PUBLISHED_TEMPORARY",
+    "FULL|PLANTED_EDGE|0.04|0|920300000": "PUBLISHED_TEMPORARY",
+    "FULL|PLANTED_EDGE|0.04|1|920300001": "PUBLISHED_TEMPORARY",
+    "FULL|PLANTED_EDGE|0|0|920100000": "PUBLISHED_TEMPORARY",
+    "FULL|PLANTED_EDGE|0|1|920100001": "PUBLISHED_TEMPORARY"
+  },
+  "stage_name": "workers4-second",
+  "status": "WORKERS_COMPLETE",
+  "timing_integrity": "PASS",
+  "worker_batch_utc_elapsed_seconds": 1358.238218,
+  "worker_batch_wall_seconds": 1358.241762041,
+  "worker_completion_count": 8,
+  "worker_pause_fractions": {
+    "FULL|NO_EDGE|0|0|920000000": 0.10718964259604354,
+    "FULL|NO_EDGE|0|1|920000001": 0.10877743213865257,
+    "FULL|PLANTED_EDGE|0.02|0|920200000": 0.11068313003231517,
+    "FULL|PLANTED_EDGE|0.02|1|920200001": 0.10932800074177122,
+    "FULL|PLANTED_EDGE|0.04|0|920300000": 0.10949204848840222,
+    "FULL|PLANTED_EDGE|0.04|1|920300001": 0.10739116350876446,
+    "FULL|PLANTED_EDGE|0|0|920100000": 0.10208834497719112,
+    "FULL|PLANTED_EDGE|0|1|920100001": 0.10778555533987491
+  },
+  "workers": 4
+}

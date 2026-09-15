@@ -1,0 +1,40 @@
+{
+  "content_sha256": "d9a697015b658512075cae5d7d9b26b5ea4a6e7d52dd6389c00c8f09e96f2938",
+  "executor_manifest_sha256": "9aaf5ce6e33d5de1147c4708060a71d04c957878a5cb23f32dccb054347c169b",
+  "java_executable": "/opt/homebrew/Cellar/openjdk@21/21.0.11/libexec/openjdk.jdk/Contents/Home/bin/java",
+  "java_version": "21.0.11",
+  "profiles": [
+    {
+      "active_processor_count": 1,
+      "byte_sha256": "dd9528705a0978d9562b56e60d5a04b8432a8f5547797a0abbe40fad21147c5a",
+      "content_sha256": "8625d0034033b014c6ee27241dbcdbb21493975d71a08de5e96651c6b7ec3495",
+      "gc_collector": "Parallel",
+      "jvm_gc_flags": [
+        "-XX:+UseParallelGC",
+        "-XX:ParallelGCThreads=2"
+      ],
+      "outer_workers": 4,
+      "parallel_gc_threads": 2,
+      "path": "runtime-profiles/workers4.json",
+      "profile_id": "workers4",
+      "xmx_mib": 1536
+    },
+    {
+      "active_processor_count": 1,
+      "byte_sha256": "57a6b368b9f11984db436c96eb2360965b75aa8b203d86ed3fc3271d68db2ec6",
+      "content_sha256": "ba1f7dc2901199aff68a0d910a3471b82211d43376c810d677717780f704321f",
+      "gc_collector": "Parallel",
+      "jvm_gc_flags": [
+        "-XX:+UseParallelGC",
+        "-XX:ParallelGCThreads=2"
+      ],
+      "outer_workers": 6,
+      "parallel_gc_threads": 2,
+      "path": "runtime-profiles/workers6.json",
+      "profile_id": "workers6",
+      "xmx_mib": 1536
+    }
+  ],
+  "schema": "mac-parallel2-worker-profiles/1",
+  "version": 1
+}

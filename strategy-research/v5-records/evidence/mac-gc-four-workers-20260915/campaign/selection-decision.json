@@ -1,0 +1,22 @@
+{
+  "content_sha256": "be0bf2d83fe70c0fea5477d5f81b12a647582d82708b56b9ec76bed108a0ba10",
+  "mean6_minus_mean4_seconds": -12.317906249500084,
+  "mean_difference_fraction_of_slower": 0.009234128203830757,
+  "practical_tie_fraction": 0.01,
+  "schema": "mac-parallel2-worker-selection/1",
+  "selected_profile": "workers4",
+  "selection_rule": "Select workers4 when mean4 <= mean6 * 1.01; select workers6 only when mean4 > mean6 * 1.01. This is an engineering margin, not statistical significance.",
+  "status": "WORKERS4_SELECTED",
+  "workers4_mean_seconds": 1333.954432687,
+  "workers4_observations_seconds": [
+    1309.667103333,
+    1358.241762041
+  ],
+  "workers4_range_seconds": 48.574658708000015,
+  "workers6_mean_seconds": 1321.6365264375,
+  "workers6_observations_seconds": [
+    1295.495569375,
+    1347.7774835
+  ],
+  "workers6_range_seconds": 52.28191412499996
+}

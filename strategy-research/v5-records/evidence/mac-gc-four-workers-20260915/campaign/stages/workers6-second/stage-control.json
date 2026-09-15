@@ -1,0 +1,30 @@
+{
+  "active_processors": 1,
+  "completed_at_epoch_ns": 1789464995037153000,
+  "completed_at_utc": "2026-09-15T09:36:35.037Z",
+  "gc_collector": "Parallel",
+  "heap_mib": 1536,
+  "jvm_gc_flags": [
+    "-XX:+UseParallelGC",
+    "-XX:ParallelGCThreads=2"
+  ],
+  "package_manifest_sha256": "9aaf5ce6e33d5de1147c4708060a71d04c957878a5cb23f32dccb054347c169b",
+  "parallel_gc_threads": 2,
+  "reference_capsule_sha256": "b1830b2aa6da34b752ec964a539dd7e64a64ffa3a73725e6352c044a9c585c23",
+  "runner_elapsed_seconds": 1666.396680208,
+  "runner_exit_code": 0,
+  "runtime_profile_byte_sha256": "57a6b368b9f11984db436c96eb2360965b75aa8b203d86ed3fc3271d68db2ec6",
+  "runtime_profile_id": "workers6",
+  "runtime_profile_path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-four-workers-20260915/stages/workers6-second/runtime-profile.json",
+  "runtime_profile_sha256": "ba1f7dc2901199aff68a0d910a3471b82211d43376c810d677717780f704321f",
+  "schema": "mac-throughput-stage-control/1",
+  "stage_name": "workers6-second",
+  "stage_path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-four-workers-20260915/stages/workers6-second",
+  "started_at_epoch_ns": 1789463174667896000,
+  "started_at_utc": "2026-09-15T09:06:14.667Z",
+  "started_monotonic_ns": 120274789424458,
+  "status": "PASS",
+  "tooling_bindings_sha256": "4d6197a787403fceb0b8f2f3409eb494690c2674a23e346adcb70d70b0e3bfad",
+  "worker_run_path": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-four-workers-20260915/stages/workers6-second/run",
+  "workers": 6
+}

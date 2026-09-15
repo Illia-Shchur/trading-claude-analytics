@@ -1,0 +1,18 @@
+{
+  "copies": [
+    {
+      "bytes": 1762438998,
+      "copy_verified": true,
+      "destination": "/Users/eternal/.codex/artifacts/trading-pr13-performance/gc-four-workers-20260915/raw-campaign-20260915.tar.zst",
+      "original_receipt": "archives/raw-campaign.receipt.json",
+      "original_receipt_sha256": "8a25cf1d6754eaa825ba0f3c24dfec5e3f5e330b16f6eddf08277cd2e8460cbd",
+      "sha256": "7a4028c91fec15568d2248e922050e508b7bb5932171f1ee5c3a036cb92fbbeb",
+      "source": "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-four-workers-20260915"
+    }
+  ],
+  "created_at_utc": "2026-09-15T10:10:34.306Z",
+  "schema": "mac-parallel2-four-worker-archive-custody/1",
+  "source_campaign_preserved": true,
+  "status": "PASS",
+  "verification_scope": "Streamed archive member verification against the embedded byte/SHA manifest; all regular members matched and no metadata AppleDouble members were present."
+}

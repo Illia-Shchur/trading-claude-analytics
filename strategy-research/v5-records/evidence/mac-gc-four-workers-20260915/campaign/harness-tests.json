@@ -1,0 +1,21 @@
+{
+  "command": [
+    "python3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "/Users/eternal/.codex/worktrees/trading-pr13-performance/.report-run/gc-four-workers-20260915/tests",
+    "-p",
+    "test_gc_comparison_harness.py",
+    "-q"
+  ],
+  "content_sha256": "400370d6e8de9bf53f4e8f7dc1bca5468e6157399311556cc686dd5549a8dd13",
+  "coverage_note": "24 lightweight tests include runtime bindings, parser/collector evidence, cancellation, ABBA JSON order and prepared-state manifest/probe negative checks.",
+  "created_at_utc": "2026-09-15T10:10:47.923Z",
+  "exit_code": 0,
+  "schema": "mac-parallel2-four-worker-harness-tests/1",
+  "status": "PASS",
+  "test_log_path": "harness-tests.log",
+  "test_log_sha256": "f38d14ef33a763e73abb8a4536c2c99499133b0b087d9e4772bcae9aa2ed5242"
+}

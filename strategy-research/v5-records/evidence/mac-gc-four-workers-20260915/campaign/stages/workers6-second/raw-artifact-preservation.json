@@ -1,0 +1,42 @@
+{
+  "FULL|NO_EDGE|0|0|920000000": {
+    "after_audit_sha256": "fb7f693a57d9c65ef7081253cfb4776352cefa8bb2776b1cf551ceaca1c08fc1",
+    "before_audit_sha256": "fb7f693a57d9c65ef7081253cfb4776352cefa8bb2776b1cf551ceaca1c08fc1",
+    "preserved": true
+  },
+  "FULL|NO_EDGE|0|1|920000001": {
+    "after_audit_sha256": "586d0733594c3679775581b8cccc29daf28a07d1d59f91a0aa5285887539a79b",
+    "before_audit_sha256": "586d0733594c3679775581b8cccc29daf28a07d1d59f91a0aa5285887539a79b",
+    "preserved": true
+  },
+  "FULL|PLANTED_EDGE|0.02|0|920200000": {
+    "after_audit_sha256": "238dbea8274360fac0fb50b941e7ac88af9cce4fbf9c400094fd4d899fcaf273",
+    "before_audit_sha256": "238dbea8274360fac0fb50b941e7ac88af9cce4fbf9c400094fd4d899fcaf273",
+    "preserved": true
+  },
+  "FULL|PLANTED_EDGE|0.02|1|920200001": {
+    "after_audit_sha256": "d2ccccd4b75f7cd8003ffa1b701d56a6a80fd417cda7891f99f30e4186a24483",
+    "before_audit_sha256": "d2ccccd4b75f7cd8003ffa1b701d56a6a80fd417cda7891f99f30e4186a24483",
+    "preserved": true
+  },
+  "FULL|PLANTED_EDGE|0.04|0|920300000": {
+    "after_audit_sha256": "5d4e78bf8f68ea13bd3d9cfa6e5c3b38ec0d3cbb967ccbb72b136574dd274031",
+    "before_audit_sha256": "5d4e78bf8f68ea13bd3d9cfa6e5c3b38ec0d3cbb967ccbb72b136574dd274031",
+    "preserved": true
+  },
+  "FULL|PLANTED_EDGE|0.04|1|920300001": {
+    "after_audit_sha256": "3b1fba7ad4bfaa4c3182d89b37ce2237ad694a04d830188212adf9272b8afb99",
+    "before_audit_sha256": "3b1fba7ad4bfaa4c3182d89b37ce2237ad694a04d830188212adf9272b8afb99",
+    "preserved": true
+  },
+  "FULL|PLANTED_EDGE|0|0|920100000": {
+    "after_audit_sha256": "ed88cea557eb9e35b374dce44fb0f025f7c496efdd39c3a175b99246cc9b0832",
+    "before_audit_sha256": "ed88cea557eb9e35b374dce44fb0f025f7c496efdd39c3a175b99246cc9b0832",
+    "preserved": true
+  },
+  "FULL|PLANTED_EDGE|0|1|920100001": {
+    "after_audit_sha256": "891e25535fb7c67c976ebfb89a41cec381c0f8925ff613b7ca3ec7d472f51af4",
+    "before_audit_sha256": "891e25535fb7c67c976ebfb89a41cec381c0f8925ff613b7ca3ec7d472f51af4",
+    "preserved": true
+  }
+}

@@ -1,0 +1,462 @@
+{
+  "content_sha256": "456a3d5dac5ee3f46c19570991ebdd946ddf44158fd2a6dc4c0af9bf1cf17d3f",
+  "created_at_utc": "2026-09-15T10:21:19Z",
+  "entry_count": 86,
+  "external_archives": [
+    {
+      "bytes": 1762438998,
+      "name": "full_raw_campaign",
+      "path": "/Users/eternal/.codex/artifacts/trading-pr13-performance/gc-four-workers-20260915/raw-campaign-20260915.tar.zst",
+      "sha256": "7a4028c91fec15568d2248e922050e508b7bb5932171f1ee5c3a036cb92fbbeb",
+      "status": "PASS"
+    },
+    {
+      "bytes": 222519,
+      "name": "compact_evidence_archive_pre_final_review",
+      "path": "/Users/eternal/.codex/artifacts/trading-pr13-performance/gc-four-workers-20260915/compact-evidence-20260915-v2.tar.gz",
+      "sha256": "d1273f3c24a81156bc7bdb7e9d8889b735818acfa129cee12ecfec63d4f8e69a",
+      "status": "PASS"
+    },
+    {
+      "bytes": 224183,
+      "name": "compact_evidence_archive_final",
+      "path": "/Users/eternal/.codex/artifacts/trading-pr13-performance/gc-four-workers-20260915/compact-evidence-20260915-v3.tar.gz",
+      "sha256": "c608d4cfa3d1c7d3c0398ddafe7d4d134504a95a5241ec13dd39e08ff5955ed5",
+      "status": "PASS"
+    }
+  ],
+  "files": [
+    {
+      "bytes": 933,
+      "path": "campaign/archive-custody.json",
+      "sha256": "c81a0d19e32dc2657ec260e655955337dd0152454540294830510500b5feeff4"
+    },
+    {
+      "bytes": 1381,
+      "path": "campaign/archives/raw-campaign.receipt.json",
+      "sha256": "8a25cf1d6754eaa825ba0f3c24dfec5e3f5e330b16f6eddf08277cd2e8460cbd"
+    },
+    {
+      "bytes": 1160,
+      "path": "campaign/availability-probe.json",
+      "sha256": "600e71b20e87e790e89d402fab2d78bb0a88dad9eb38b144ac877b02428907b9"
+    },
+    {
+      "bytes": 19046,
+      "path": "campaign/campaign-state.json",
+      "sha256": "c2a3b2058222bf4aa1fdc62de01ac0960eee7d583a1a37970c6405ab832ecafe"
+    },
+    {
+      "bytes": 790,
+      "path": "campaign/harness-tests.json",
+      "sha256": "df142ef48b10b9b70d410e12c74b5d34eca5f1ff8f519681e54d6cb417702735"
+    },
+    {
+      "bytes": 98,
+      "path": "campaign/harness-tests.log",
+      "sha256": "f38d14ef33a763e73abb8a4536c2c99499133b0b087d9e4772bcae9aa2ed5242"
+    },
+    {
+      "bytes": 2765,
+      "path": "campaign/host-preflight.json",
+      "sha256": "94058bb2c62322d7e5b1422d260f58e80d58d8116d09ca2fa0dba3d8790dedb2"
+    },
+    {
+      "bytes": 3792,
+      "path": "campaign/independent-final-review.json",
+      "sha256": "c8ba9ebca88a5d908d9ea486541820a9d0a27de89e6f4778f19292be283ed0bf"
+    },
+    {
+      "bytes": 2658,
+      "path": "campaign/independent-runner-review.json",
+      "sha256": "81581bb2ff4a826b7f0ec786b4932e4003050c258caf37dcc33ada60fba0c2c4"
+    },
+    {
+      "bytes": 161,
+      "path": "campaign/probe/stderr.txt",
+      "sha256": "30b5b10762a8ff64f7513be4354be86724a53322c3d52106cf2587d90570bb32"
+    },
+    {
+      "bytes": 59878,
+      "path": "campaign/probe/stdout.txt",
+      "sha256": "3338e21eb77fc372955714ec5a58c311fcef9341f48c4646c2c301168516a56b"
+    },
+    {
+      "bytes": 312780,
+      "path": "campaign/raw-campaign-content-manifest.json",
+      "sha256": "2edd7a8b4a09a6d3de77fc2976cb02ca8ee0118e0a1b71e71311a568274256eb"
+    },
+    {
+      "bytes": 26175,
+      "path": "campaign/reference-capsule.json",
+      "sha256": "548f16f415bc0e3663cdee21b44ef211cdc9d37772284577660a690165644265"
+    },
+    {
+      "bytes": 1448,
+      "path": "campaign/runtime-profiles.json",
+      "sha256": "d78f78bf79f735460151487a97bfd234d1b25e0071d974019c7a734bdb9242d6"
+    },
+    {
+      "bytes": 872,
+      "path": "campaign/selection-decision.json",
+      "sha256": "8d289fc0460607a7636f15882173be3f7a74e2498e37a138ab509cbf976466dc"
+    },
+    {
+      "bytes": 1372,
+      "path": "campaign/stages/workers4-first/command.json",
+      "sha256": "51c64eafca8ed68d0e52f1bffe93cd086f12c38e11da8fa2370eb0a19a8c9c5b"
+    },
+    {
+      "bytes": 20746,
+      "path": "campaign/stages/workers4-first/independent-audit.json",
+      "sha256": "64c92fd2b98fea0517dd288e1abbf44e9d79c50341f3f05c807cd8689aa85aad"
+    },
+    {
+      "bytes": 6799,
+      "path": "campaign/stages/workers4-first/package-bindings.json",
+      "sha256": "9bb21c77119f194d69bd99b3e244f7db44d9ecfc096fff05fa478e388319b132"
+    },
+    {
+      "bytes": 2045,
+      "path": "campaign/stages/workers4-first/raw-artifact-preservation.json",
+      "sha256": "589b05255517ee51ba7d2d9b9d8ba22e2249d1306e6547e06ac098b49a3e57ad"
+    },
+    {
+      "bytes": 6610,
+      "path": "campaign/stages/workers4-first/run/declaration.json",
+      "sha256": "29d60d6423ff717a1aa80210033755c0b0c06c597f9fd76bd0fd1e38f0e5f889"
+    },
+    {
+      "bytes": 5664,
+      "path": "campaign/stages/workers4-first/run/integrity.json",
+      "sha256": "2a8dd9b5534ee8617283b7fd25536d7e3b8f13900f69976f3bb1342515c9755b"
+    },
+    {
+      "bytes": 592,
+      "path": "campaign/stages/workers4-first/run/manifest.json",
+      "sha256": "c0c5b856f97b68281391c9889dcc4640103d9dcd4e7ce19df4fc10adada992ec"
+    },
+    {
+      "bytes": 3509,
+      "path": "campaign/stages/workers4-first/run/parallel/batch-metrics.json",
+      "sha256": "6627e9dbe1490010c906f0612f341037d5ac55332809bf44d0a6afbd0a72b23c"
+    },
+    {
+      "bytes": 33546,
+      "path": "campaign/stages/workers4-first/run/parallel/execution-records.json",
+      "sha256": "825e0cb0e9b875aabf45e7acef80b9c2c302efa6d088d6fc0a168472d1f675d3"
+    },
+    {
+      "bytes": 1728,
+      "path": "campaign/stages/workers4-first/run/parallel/gc-summary.json",
+      "sha256": "1ab2adfc88ebc29f165d1b5275bb7df388dfcf8f150f74c58535931dfbe7a683"
+    },
+    {
+      "bytes": 307,
+      "path": "campaign/stages/workers4-first/run/parallel/resource-measurement.json",
+      "sha256": "45627d40a3b2588c49284faaf9c79c6c6eaae95a5e14da50223a963b0d91947d"
+    },
+    {
+      "bytes": 6281,
+      "path": "campaign/stages/workers4-first/run/parallel/strict-validation.json",
+      "sha256": "44d0a01720f47a2d33eead883ab260eb41661ad0d17b3bf42e0ca62f6c9cc534"
+    },
+    {
+      "bytes": 4142,
+      "path": "campaign/stages/workers4-first/run/production-full-preflight.json",
+      "sha256": "1e01fe304f4ffc5d46aafe5cb6fffaac4c2a3ce2bbb11eb7cd79317558db25d0"
+    },
+    {
+      "bytes": 156,
+      "path": "campaign/stages/workers4-first/runner-process.json",
+      "sha256": "ac6ca56de65d4459fc069f3656e153e60b3d0a2b1a6cbe0f3deac567749f9f73"
+    },
+    {
+      "bytes": 973,
+      "path": "campaign/stages/workers4-first/runtime-profile.json",
+      "sha256": "dd9528705a0978d9562b56e60d5a04b8432a8f5547797a0abbe40fad21147c5a"
+    },
+    {
+      "bytes": 1578,
+      "path": "campaign/stages/workers4-first/stage-control.json",
+      "sha256": "a1e025a57f7cd5e6ce125945558b4460ddda9a6b746150a8b1f1671618f305be"
+    },
+    {
+      "bytes": 11513,
+      "path": "campaign/stages/workers4-first/stage-result.json",
+      "sha256": "db6c4588334f0d800acd9b52723b3cef6783a8783d9656d1f954476049baee99"
+    },
+    {
+      "bytes": 1375,
+      "path": "campaign/stages/workers4-second/command.json",
+      "sha256": "3de5a8d4788796ae2bd16a340f69636a3af8552371f0c6de0f8aab218b2e5900"
+    },
+    {
+      "bytes": 20770,
+      "path": "campaign/stages/workers4-second/independent-audit.json",
+      "sha256": "e448b19e357a616e09960ece22071a8c1e94d398db1ad837712f88a1e1f7be35"
+    },
+    {
+      "bytes": 6799,
+      "path": "campaign/stages/workers4-second/package-bindings.json",
+      "sha256": "9bb21c77119f194d69bd99b3e244f7db44d9ecfc096fff05fa478e388319b132"
+    },
+    {
+      "bytes": 2045,
+      "path": "campaign/stages/workers4-second/raw-artifact-preservation.json",
+      "sha256": "9286f5b08dad6913c4cec4948e8fb5d6ef623fa4bfed00a161e4ed818cbeb2fc"
+    },
+    {
+      "bytes": 6613,
+      "path": "campaign/stages/workers4-second/run/declaration.json",
+      "sha256": "f2be7d7be54b318c9be7aea750e33355abd6ec1431824811a5d6151e98ad9964"
+    },
+    {
+      "bytes": 5666,
+      "path": "campaign/stages/workers4-second/run/integrity.json",
+      "sha256": "8d79a5e336ee9d1c780e98e81ed49567bca4bfc04ea5051f6fe3093b3466b184"
+    },
+    {
+      "bytes": 592,
+      "path": "campaign/stages/workers4-second/run/manifest.json",
+      "sha256": "86969cbe54a4f70f91887c117ec36bf4fca74cbcc287b385ed2f90ef4fc3678a"
+    },
+    {
+      "bytes": 3515,
+      "path": "campaign/stages/workers4-second/run/parallel/batch-metrics.json",
+      "sha256": "60c315e7b721f3b96638df277663748ac0fa2b5b9eebe3b5637a317a7a0bc608"
+    },
+    {
+      "bytes": 33578,
+      "path": "campaign/stages/workers4-second/run/parallel/execution-records.json",
+      "sha256": "188b214cd8ee40967e3f7d464104d514675cb108e29d2767e0d298c1f15e6ec4"
+    },
+    {
+      "bytes": 1731,
+      "path": "campaign/stages/workers4-second/run/parallel/gc-summary.json",
+      "sha256": "51f1a28b277d62638001b2af3a0dbf8436e81bf60fcd5b6b989eb875ab4f9aee"
+    },
+    {
+      "bytes": 307,
+      "path": "campaign/stages/workers4-second/run/parallel/resource-measurement.json",
+      "sha256": "b22f470e11f6cd20044db31d31ed1551b69bf1269c8b8f5298af76355cf90e5d"
+    },
+    {
+      "bytes": 6289,
+      "path": "campaign/stages/workers4-second/run/parallel/strict-validation.json",
+      "sha256": "f946d9b2025f0be24769579960018e91b8b759faf8beefd34c9586749f8a4bb2"
+    },
+    {
+      "bytes": 4142,
+      "path": "campaign/stages/workers4-second/run/production-full-preflight.json",
+      "sha256": "1e01fe304f4ffc5d46aafe5cb6fffaac4c2a3ce2bbb11eb7cd79317558db25d0"
+    },
+    {
+      "bytes": 155,
+      "path": "campaign/stages/workers4-second/runner-process.json",
+      "sha256": "6f48da2ec9855b0f7a459c15de0523720e3fbcca6963d3f1cd25362d6f7438c7"
+    },
+    {
+      "bytes": 973,
+      "path": "campaign/stages/workers4-second/runtime-profile.json",
+      "sha256": "dd9528705a0978d9562b56e60d5a04b8432a8f5547797a0abbe40fad21147c5a"
+    },
+    {
+      "bytes": 1582,
+      "path": "campaign/stages/workers4-second/stage-control.json",
+      "sha256": "34c194059cf5a34b1cf940b49d636d44ec783478f1eac9979426dd8f3e8d0169"
+    },
+    {
+      "bytes": 11516,
+      "path": "campaign/stages/workers4-second/stage-result.json",
+      "sha256": "ff5c31b95e382f0d55758622b2746f9cde480b015cc726ad5c17850209be6276"
+    },
+    {
+      "bytes": 1372,
+      "path": "campaign/stages/workers6-first/command.json",
+      "sha256": "ed5b14e947309d4380849e527ae470cb6fe60a2682a67ae2477bf81e1bef87ce"
+    },
+    {
+      "bytes": 20746,
+      "path": "campaign/stages/workers6-first/independent-audit.json",
+      "sha256": "7c399fda50cd027f5280f5eb0695dccdddec7d41855c0f579aebe3465b9f7896"
+    },
+    {
+      "bytes": 6799,
+      "path": "campaign/stages/workers6-first/package-bindings.json",
+      "sha256": "9bb21c77119f194d69bd99b3e244f7db44d9ecfc096fff05fa478e388319b132"
+    },
+    {
+      "bytes": 2045,
+      "path": "campaign/stages/workers6-first/raw-artifact-preservation.json",
+      "sha256": "78fda8a208cb25e473bb1942981cd4fb0802f4e677ce6fd6cd4cd8b51ea94b89"
+    },
+    {
+      "bytes": 6610,
+      "path": "campaign/stages/workers6-first/run/declaration.json",
+      "sha256": "804b09374f2be7c94f325a272ae1e51fb864834350190d7f3c1bc6e67ecedc02"
+    },
+    {
+      "bytes": 5664,
+      "path": "campaign/stages/workers6-first/run/integrity.json",
+      "sha256": "0a03ce4f050cb597bba626eaf54b85c15d6734c3f91f596a48c52b2852b9679a"
+    },
+    {
+      "bytes": 592,
+      "path": "campaign/stages/workers6-first/run/manifest.json",
+      "sha256": "f98db3d270d530dbd5e61a1a85bae714dd9bb9136391b34766aa578a24d57a88"
+    },
+    {
+      "bytes": 3510,
+      "path": "campaign/stages/workers6-first/run/parallel/batch-metrics.json",
+      "sha256": "2fb21f93d56e13294f42a337c9837bfd20a8f00693b20ca70d632194e7635808"
+    },
+    {
+      "bytes": 33570,
+      "path": "campaign/stages/workers6-first/run/parallel/execution-records.json",
+      "sha256": "289137812728b25b807dea94a8589aefe0bc187b7a5f3b1a4fd5484e1939626d"
+    },
+    {
+      "bytes": 1737,
+      "path": "campaign/stages/workers6-first/run/parallel/gc-summary.json",
+      "sha256": "3660a2931fb9d4c739358da7d7bfac122aebb0373082d7aab9dc55f99a523d4c"
+    },
+    {
+      "bytes": 307,
+      "path": "campaign/stages/workers6-first/run/parallel/resource-measurement.json",
+      "sha256": "b7216bb8fda1b05859ff95f54cebc898e6c2c6dceb01b6677958e4d770a71c7f"
+    },
+    {
+      "bytes": 6281,
+      "path": "campaign/stages/workers6-first/run/parallel/strict-validation.json",
+      "sha256": "cea29b204c146d760efa85fa419695c9b90beb08b66c273842b220243fbdf521"
+    },
+    {
+      "bytes": 4142,
+      "path": "campaign/stages/workers6-first/run/production-full-preflight.json",
+      "sha256": "1e01fe304f4ffc5d46aafe5cb6fffaac4c2a3ce2bbb11eb7cd79317558db25d0"
+    },
+    {
+      "bytes": 156,
+      "path": "campaign/stages/workers6-first/runner-process.json",
+      "sha256": "fbc20b5a5688f83bface31aab7d8602c47747680b738c01112ff69e1809579ab"
+    },
+    {
+      "bytes": 973,
+      "path": "campaign/stages/workers6-first/runtime-profile.json",
+      "sha256": "57a6b368b9f11984db436c96eb2360965b75aa8b203d86ed3fc3271d68db2ec6"
+    },
+    {
+      "bytes": 1578,
+      "path": "campaign/stages/workers6-first/stage-control.json",
+      "sha256": "b62b4abf338d94650f539e242e1d5123bbde68f3ad4aa09aee246572c1392c1d"
+    },
+    {
+      "bytes": 11513,
+      "path": "campaign/stages/workers6-first/stage-result.json",
+      "sha256": "1749e79ff045f1df2225f70a133272a979595bb21d8bca69d1db2a99b7e5e781"
+    },
+    {
+      "bytes": 1375,
+      "path": "campaign/stages/workers6-second/command.json",
+      "sha256": "a791026c6faa6db3b0fbfaf79325ea3a248b6706403411b1ae6c1ab9373fb3cd"
+    },
+    {
+      "bytes": 20770,
+      "path": "campaign/stages/workers6-second/independent-audit.json",
+      "sha256": "0f311602c1601784b41b4f58d0131779d19207844502c1c8db601e867123ff16"
+    },
+    {
+      "bytes": 6799,
+      "path": "campaign/stages/workers6-second/package-bindings.json",
+      "sha256": "9bb21c77119f194d69bd99b3e244f7db44d9ecfc096fff05fa478e388319b132"
+    },
+    {
+      "bytes": 2045,
+      "path": "campaign/stages/workers6-second/raw-artifact-preservation.json",
+      "sha256": "2bbe7c1c48c7d71bfd77c5b1f6f13355ac54ab37c7304f8b10b0ce7bb6577383"
+    },
+    {
+      "bytes": 6613,
+      "path": "campaign/stages/workers6-second/run/declaration.json",
+      "sha256": "067edee98e9108d70b4e15076cfb374571bd1df1c3cdd468d17333fb00d0dc2c"
+    },
+    {
+      "bytes": 5666,
+      "path": "campaign/stages/workers6-second/run/integrity.json",
+      "sha256": "6f3a041324d465fa3154d7e1a25edfa1773e70d3091def38e413402255553465"
+    },
+    {
+      "bytes": 592,
+      "path": "campaign/stages/workers6-second/run/manifest.json",
+      "sha256": "fb566cb955afc8ff9a9b80a9d8545a37f12afb3769f1f66e625a63a706597c11"
+    },
+    {
+      "bytes": 3509,
+      "path": "campaign/stages/workers6-second/run/parallel/batch-metrics.json",
+      "sha256": "bd57b483866149b6901eeec132d62b1f95096af203245ae33836eee477dbaa14"
+    },
+    {
+      "bytes": 33599,
+      "path": "campaign/stages/workers6-second/run/parallel/execution-records.json",
+      "sha256": "6789f27626081665ead5020ad4f2e3f03458e9d844b8e9f9fc02464abb65d354"
+    },
+    {
+      "bytes": 1731,
+      "path": "campaign/stages/workers6-second/run/parallel/gc-summary.json",
+      "sha256": "a9301074ec09d81aca4978cd773bc41f90e116e348fcef1d6f9fc7c15ac1c627"
+    },
+    {
+      "bytes": 307,
+      "path": "campaign/stages/workers6-second/run/parallel/resource-measurement.json",
+      "sha256": "0bfd1050ba497fba74fbf93cd138532ff6563d20fec2e30065a26afc24f30aaf"
+    },
+    {
+      "bytes": 6289,
+      "path": "campaign/stages/workers6-second/run/parallel/strict-validation.json",
+      "sha256": "276b7175b862953b75105320428090336a4c6aded79f89ea5d50039bd0e01edd"
+    },
+    {
+      "bytes": 4142,
+      "path": "campaign/stages/workers6-second/run/production-full-preflight.json",
+      "sha256": "1e01fe304f4ffc5d46aafe5cb6fffaac4c2a3ce2bbb11eb7cd79317558db25d0"
+    },
+    {
+      "bytes": 156,
+      "path": "campaign/stages/workers6-second/runner-process.json",
+      "sha256": "c694147971bbb6cd260832222a707c3cc1ca000a44b283e1eed8885152ec4481"
+    },
+    {
+      "bytes": 973,
+      "path": "campaign/stages/workers6-second/runtime-profile.json",
+      "sha256": "57a6b368b9f11984db436c96eb2360965b75aa8b203d86ed3fc3271d68db2ec6"
+    },
+    {
+      "bytes": 1582,
+      "path": "campaign/stages/workers6-second/stage-control.json",
+      "sha256": "288c48de8c49ec64ed0d26a927c65f9290e0aeaadf63dcf91d5484eb5323c367"
+    },
+    {
+      "bytes": 11510,
+      "path": "campaign/stages/workers6-second/stage-result.json",
+      "sha256": "8ced1e85511a321a1caae6a7d8442556040f3d75fd5d7ad58042c90909e6d6dc"
+    },
+    {
+      "bytes": 17422,
+      "path": "derived-stage-summary.json",
+      "sha256": "58bb017f8bd93ae65fe0772cd350ad0db85ffc1052b51d67ec60a8ff86dabb84"
+    },
+    {
+      "bytes": 1366,
+      "path": "runtime-profile-validation.json",
+      "sha256": "e7d70e8303d01db68067e168c4f69ec052a83826311340f972d09597ebbc5001"
+    },
+    {
+      "bytes": 1288,
+      "path": "selected-local-runtime-profile.json",
+      "sha256": "0cafa8d27406aefab98d5de4895d030895ea78767222034cde29487c47230058"
+    }
+  ],
+  "schema": "mac-parallel2-four-worker-evidence-manifest/1",
+  "scope": "ENGINEERING_ONLY_NOT_QUALIFICATION"
+}

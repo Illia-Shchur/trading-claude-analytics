@@ -286,3 +286,19 @@ evidence only and does not alter production or qualification settings. The raw
 and compact evidence custody is in
 `strategy-research/v5-records/evidence/mac-gc-comparison-20260915/`; Windows
 performance and compatibility remain unmeasured.
+
+### Current Parallel/2 outer-worker comparison (2026-09-15)
+
+The follow-up bounded comparison tested four versus six outer workers for the
+selected Parallel GC configuration, holding 1536 MiB, `-XX:ActiveProcessorCount=1`,
+and `-XX:ParallelGCThreads=2` fixed. The ABBA stages were
+`workers4-first`, `workers6-first`, `workers6-second`, and `workers4-second`.
+Their validated means were 1333.954432687 seconds for four workers and
+1321.6365264375 seconds for six workers. The four-worker mean was 12.317906250
+seconds slower (0.932% relative to the six-worker mean), within the predeclared
+one-percent engineering tie band (`mean4 <= mean6 * 1.01`), so the latest local selected
+profile uses four outer workers. This supersedes the historical six-worker
+recommendation above for this local Parallel/2 harness. This is a local
+engineering choice, not a statistical significance claim or a formal
+qualification result. The self-hashed profile and receipts are in
+`strategy-research/v5-records/evidence/mac-gc-four-workers-20260915/`.

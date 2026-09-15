@@ -86,6 +86,21 @@ The Java optimization is platform-neutral, but the local harness and profile
 have not been validated on Windows. Full-GC counts, pause time, pressure,
 compression, swap, and sampled RSS remain diagnostic observations.
 
+## Current Parallel/2 outer-worker profile (2026-09-15)
+
+The bounded follow-up comparison tested the selected Parallel/2 configuration
+with four and six outer workers in ABBA order at 1536 MiB per worker and
+`-XX:ActiveProcessorCount=1`. The validated means were 1333.954432687 seconds
+for four workers and 1321.6365264375 seconds for six workers. The four-worker
+mean was 12.317906250 seconds slower (0.932% relative to the six-worker mean),
+within the predeclared one-percent practical tie band (`mean4 <= mean6 * 1.01`), so four workers is
+the selected local engineering profile. This supersedes the historical
+six-worker recommendation above for this local Parallel/2 harness. See
+[docs/GC-FOUR-WORKERS-20260915.md](docs/GC-FOUR-WORKERS-20260915.md)
+and `strategy-research/v5-records/evidence/mac-gc-four-workers-20260915/` for
+the self-hashed profile, raw custody, and stage receipts. This does not change
+production or qualification settings and provides no Windows result.
+
 ## Output Convention
 
 Reports are saved as markdown to:
