@@ -400,7 +400,7 @@ public final class StrategyResearchV5NodeOracleTest {
 
         Path callbackRoot = Files.createTempDirectory("strategy-v5-callback-oracle-");
         Path legacyArtifact = callbackRoot.resolve("definition.json");
-        Files.copy(REPOSITORY.resolve("strategy-research/definitions/fk-deleveraging-absorption/v001.json"), legacyArtifact);
+        Files.copy(REPOSITORY.resolve("analytics-research/src/test/resources/fixtures/fk-deleveraging/baseline-v001.json"), legacyArtifact);
         ObjectNode validateOptions = object(); validateOptions.put("input", legacyArtifact.toString());
         validateOptions.put("record_root", callbackRoot.resolve("records").toString());
         int[] callbackCounts = new int[2];

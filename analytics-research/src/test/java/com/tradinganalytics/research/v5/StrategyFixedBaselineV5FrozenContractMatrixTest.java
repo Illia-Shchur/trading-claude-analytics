@@ -19,11 +19,11 @@ final class StrategyFixedBaselineV5FrozenContractMatrixTest {
     private static final ObjectMapper MAPPER = JsonHashes.mapper();
     private static final Method VALIDATOR = validator();
     private static final Path BASELINE_PATH = Path.of(
-            "strategy-research/definitions/fk-deleveraging-absorption/v002.json");
+            "analytics-research/src/test/resources/fixtures/fk-deleveraging/baseline-v002.json");
     private static final Path CONTROLS_PATH = Path.of(
-            "strategy-research/experiments/fk-deleveraging-baseline-v002/controls.json");
+            "analytics-research/src/test/resources/fixtures/fk-deleveraging/controls-v002.json");
     private static final Path EXPERIMENT_PATH = Path.of(
-            "strategy-research/experiments/fk-deleveraging-baseline-v002/experiment.json");
+            "analytics-research/src/test/resources/fixtures/fk-deleveraging/experiment-v002.json");
 
     @Test
     void realFrozenDefinitionsPassTheCompleteLineageContract() {

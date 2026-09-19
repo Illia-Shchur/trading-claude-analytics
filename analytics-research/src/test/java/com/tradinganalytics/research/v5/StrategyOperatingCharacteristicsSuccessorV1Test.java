@@ -76,9 +76,9 @@ final class StrategyOperatingCharacteristicsSuccessorV1Test {
         ObjectNode identity = BuildIdentityService.describe(StrategyFixedBaselineV5.class);
         Assumptions.assumeTrue("JAR".equals(identity.path("executable").path("kind").asText()),
                 "the fixed evaluator intentionally requires a packaged executor identity");
-        ObjectNode baseline = readObject(repoFile("strategy-research/definitions/fk-deleveraging-absorption/v002.json"));
-        ObjectNode controls = readObject(repoFile("strategy-research/experiments/fk-deleveraging-baseline-v002/controls.json"));
-        ObjectNode experiment = readObject(repoFile("strategy-research/experiments/fk-deleveraging-baseline-v002/experiment.json"));
+        ObjectNode baseline = readObject(repoFile("analytics-research/src/test/resources/fixtures/fk-deleveraging/baseline-v002.json"));
+        ObjectNode controls = readObject(repoFile("analytics-research/src/test/resources/fixtures/fk-deleveraging/controls-v002.json"));
+        ObjectNode experiment = readObject(repoFile("analytics-research/src/test/resources/fixtures/fk-deleveraging/experiment-v002.json"));
         ObjectNode plan = JsonHashes.mapper().createObjectNode().put("test", "bounded-repetition");
         plan.put("content_sha256", JsonHashes.ownHash(plan));
         long seed = 202609080001L;

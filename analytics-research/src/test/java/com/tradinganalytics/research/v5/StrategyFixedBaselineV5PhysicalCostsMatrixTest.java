@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 final class StrategyFixedBaselineV5PhysicalCostsMatrixTest {
     private static final ObjectMapper MAPPER = JsonHashes.mapper();
     private static final Method VALIDATOR = validator();
-    private static final String BASELINE = "strategy-research/definitions/fk-deleveraging-absorption/v002.json";
+    private static final String BASELINE = "analytics-research/src/test/resources/fixtures/fk-deleveraging/baseline-v002.json";
     private static final double FEE = .001D;
     private static final double SLIPPAGE_BPS = 5D;
     private static final double NOTIONAL = 1_000D;

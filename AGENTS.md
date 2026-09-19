@@ -66,40 +66,14 @@ Spring commands that make report numbers computed instead of narrated. The appli
 - `./mvnw -q -pl analytics-core test` — Java regression vectors; run before calibrations and after any deterministic rubric-helper change. A SKILL band change and its Java helper plus test change land in the same commit.
 - **Changed production-code coverage:** For this calculation change, the reviewed pre-change baseline requires at least 80% changed-line and, when changed lines contain branches, at least 80% changed-branch coverage. Exact 80% passes; a zero denominator is not applicable. The calculation change passed that local 80%/80% gate. The current `.github/workflows/java-migration.yml` invocation still applies 55%/55% to the full pull-request diff; that legacy CI result does not substitute for the reviewed-baseline 80%/80% check. The checker accepts a separate branch floor, defaulting to the line floor. Missing or malformed aggregate data, an unresolved base, and source-path mismatches fail closed. Documentation-only and test-source changes are outside this denominator. For local verification, first run `./mvnw --batch-mode --no-transfer-progress clean install`, then `python3 tools/check_new_code_coverage.py --base <reviewed-base> --report analytics-coverage/target/site/jacoco-aggregate/jacoco.xml --minimum 80 --branch-minimum 80`.
 
-## Local Mac FULL-development throughput default
+## Mac development FULL profile
 
-For the bounded eight-seed Mac throughput harness only, use the self-hashed
-profile at `strategy-research/v5-records/evidence/mac-throughput-20260914/selected-local-runtime-profile.json`:
-6 outer workers × 1536 MiB, `-XX:ActiveProcessorCount=1`, and G1. The 6-worker
-mean was 7.426 seconds slower than the 4-worker mean, a difference smaller
-than the observed 9.975-second 4-worker run spread. The 4-worker runs ranged
-from 1329.568 to 1339.543 seconds, and the 6-worker runs from 1339.463 to
-1345.565 seconds, overlapping by 0.080 seconds. The plan treats the means as
-practically indistinguishable at this measurement scale, so six workers follow
-its tie-break and are not claimed to be faster. The 8-worker × 1280 MiB attempt was censored at the predeclared bound.
-See `docs/MAC-CALCULATION-PERFORMANCE-20260914.md` for measurements, package
-identity, profile hash, and platform limits.
-
-This local engineering profile does not change production or qualification
-settings, the FULL resource gate, held-out inventory, or qualification status.
-The Java optimization is platform-neutral, but the local harness and profile
-have not been validated on Windows. Full-GC counts, pause time, pressure,
-compression, swap, and sampled RSS remain diagnostic observations.
-
-## Current Parallel/2 outer-worker profile (2026-09-15)
-
-The bounded follow-up comparison tested the selected Parallel/2 configuration
-with four and six outer workers in ABBA order at 1536 MiB per worker and
-`-XX:ActiveProcessorCount=1`. The validated means were 1333.954432687 seconds
-for four workers and 1321.6365264375 seconds for six workers. The four-worker
-mean was 12.317906250 seconds slower (0.932% relative to the six-worker mean),
-within the predeclared one-percent practical tie band (`mean4 <= mean6 * 1.01`), so four workers is
-the selected local engineering profile. This supersedes the historical
-six-worker recommendation above for this local Parallel/2 harness. See
-[docs/GC-FOUR-WORKERS-20260915.md](docs/GC-FOUR-WORKERS-20260915.md)
-and `strategy-research/v5-records/evidence/mac-gc-four-workers-20260915/` for
-the self-hashed profile, raw custody, and stage receipts. This does not change
-production or qualification settings and provides no Windows result.
+For future full development runs on this Mac, use four outer workers with
+1536 MiB per worker, `-XX:ActiveProcessorCount=1`, Parallel GC, and
+`-XX:ParallelGCThreads=2`. This is the retained local engineering setting;
+the historical benchmark harness, package, and run evidence have been removed,
+so this note does not claim a reproducible qualification result. It does not
+change production settings or formal qualification gates.
 
 ## Output Convention
 
@@ -126,14 +100,3 @@ Full per-report workflow: `position` → `fetch` → `compute` → save → `lin
 - If no asset specified → **BTC**
 - If context is ambiguous between BTC and another asset → ask once, then proceed
 - Multi-asset reports are allowed but produce one file per asset
-
-## Current Mac collector profile (2026-09-15)
-
-The bounded Java 21 GC comparison selected the self-hashed local engineering
-profile at `strategy-research/v5-records/evidence/mac-gc-comparison-20260915/selected-local-runtime-profile.json`:
-6 outer workers × 1536 MiB, `-XX:ActiveProcessorCount=1`, Parallel GC with
-`-XX:ParallelGCThreads=2`. Two validated Parallel/2 batches averaged 1306.414
-seconds versus two validated G1 batches averaging 1348.359 seconds; the
-predeclared repeat-spread rule selected Parallel/2. This applies only to the
-optimized eight-development-seed Mac harness. It does not change production or
-qualification settings, and it provides no Windows result.

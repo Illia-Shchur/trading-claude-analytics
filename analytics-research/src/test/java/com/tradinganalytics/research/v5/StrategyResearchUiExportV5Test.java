@@ -5,7 +5,9 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.tradinganalytics.contracts.json.NodePrettyJson;
 import com.tradinganalytics.contracts.schema.ResearchSchemaRegistry;
+import com.tradinganalytics.infrastructure.security.JsonHashes;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -49,9 +51,8 @@ class StrategyResearchUiExportV5Test {
     }
 
     @Test
-    void readinessOnlyIndexProjectsNewestReadinessAndStaysEmpty() throws Exception {
-        Path sourceRoot = Path.of("strategy-research", "v5-records");
-        assertThat(Files.isRegularFile(sourceRoot.resolve("index.json"))).isTrue();
+    void readinessOnlyIndexProjectsNewestReadinessAndStaysEmpty(@TempDir Path temporary) throws Exception {
+        Path sourceRoot = readinessOnlyRoot(temporary.resolve("source"));
 
         JsonNode result = StrategyResearchUiExportV5.export(sourceRoot);
 
@@ -66,8 +67,8 @@ class StrategyResearchUiExportV5Test {
     }
 
     @Test
-    void relocationAndIndexedContentOrByteTamperingAreHandledOnPublicPath() throws Exception {
-        Path sourceRoot = Path.of("strategy-research", "v5-records");
+    void relocationAndIndexedContentOrByteTamperingAreHandledOnPublicPath(@TempDir Path temporary) throws Exception {
+        Path sourceRoot = readinessOnlyRoot(temporary.resolve("source"));
         Path first = copyIndexedRoot(sourceRoot);
         Path second = copyIndexedRoot(sourceRoot);
         assertThat(NodePrettyJson.write(StrategyResearchUiExportV5.export(first)))
@@ -222,5 +223,24 @@ class StrategyResearchUiExportV5Test {
 
     private static void writeIndex(Path root, ObjectNode index) throws IOException {
         Files.writeString(root.resolve("index.json"), NodePrettyJson.write(index), StandardCharsets.UTF_8);
+    }
+
+    private static Path readinessOnlyRoot(Path root) throws IOException {
+        Files.createDirectories(root);
+        ObjectNode audit = StrategyReadinessV5.buildReadinessAuditV5();
+        assertThat(ResearchSchemaRegistry.defaultRegistry().validateKnownContractSchema(audit)).isTrue();
+        byte[] bytes = NodePrettyJson.write(audit).getBytes(StandardCharsets.UTF_8);
+        Files.write(root.resolve("readiness.json"), bytes);
+
+        ObjectNode index = JsonHashes.mapper().createObjectNode()
+                .put("schema", "strategy-research-index/5").put("version", 1);
+        index.putArray("records").addObject()
+                .put("schema", audit.path("schema").asText())
+                .put("content_sha256", audit.path("content_sha256").asText())
+                .put("byte_sha256", JsonHashes.sha256(bytes))
+                .put("path", "readiness.json");
+        index.put("content_sha256", StrategyResearchV5.ownHash(index));
+        writeIndex(root, index);
+        return root;
     }
 }

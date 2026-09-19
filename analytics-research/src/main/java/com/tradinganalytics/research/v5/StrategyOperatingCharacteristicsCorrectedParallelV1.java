@@ -547,8 +547,8 @@ public final class StrategyOperatingCharacteristicsCorrectedParallelV1 {
             Path root = RepositoryLayout.locate();
             ArrayNode result = JsonHashes.mapper().createArrayNode();
             for (String relative : new String[] {
-                    "strategy-research/experiments/fk-deleveraging-baseline-v002/portfolio-policy-v001.json",
-                    "strategy-research/experiments/fk-deleveraging-baseline-v002/lifecycle-timing-v001.json"}) {
+                    "strategy-research/config/fixed-baseline-portfolio-policy-v001.json",
+                    "strategy-research/config/fixed-baseline-lifecycle-timing-v001.json"}) {
                 Path source = PathConfinement.resolve(root, relative, "corrected worker dependency",
                         PathConfinement.ExpectedType.FILE).absolute();
                 byte[] bytes = PathConfinement.readSinglyLinkedFile(source, "corrected worker dependency");

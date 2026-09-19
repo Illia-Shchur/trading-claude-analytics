@@ -21,9 +21,9 @@ import org.junit.jupiter.api.Test;
 final class StrategyFixedBaselineV5SupportedContractMatrixTest {
     private static final ObjectMapper MAPPER = JsonHashes.mapper();
     private static final Method VALIDATOR = validator();
-    private static final String BASELINE = "strategy-research/definitions/fk-deleveraging-absorption/v002.json";
-    private static final String CONTROLS = "strategy-research/experiments/fk-deleveraging-baseline-v002/controls.json";
-    private static final String EXPERIMENT = "strategy-research/experiments/fk-deleveraging-baseline-v002/experiment.json";
+    private static final String BASELINE = "analytics-research/src/test/resources/fixtures/fk-deleveraging/baseline-v002.json";
+    private static final String CONTROLS = "analytics-research/src/test/resources/fixtures/fk-deleveraging/controls-v002.json";
+    private static final String EXPERIMENT = "analytics-research/src/test/resources/fixtures/fk-deleveraging/experiment-v002.json";
 
     @Test
     void frozenFkV002ContractIsAcceptedAsTheOnlySupportedShape() {

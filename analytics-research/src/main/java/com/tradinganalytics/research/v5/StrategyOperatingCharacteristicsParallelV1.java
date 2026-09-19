@@ -1831,8 +1831,8 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
         for (JsonNode dependency : dependencies) {
             String relative = dependency.path("relative_path").asText("");
             if (!paths.add(relative)
-                    || !relative.equals("strategy-research/experiments/fk-deleveraging-baseline-v002/portfolio-policy-v001.json")
-                            && !relative.equals("strategy-research/experiments/fk-deleveraging-baseline-v002/lifecycle-timing-v001.json")
+                    || !relative.equals("strategy-research/config/fixed-baseline-portfolio-policy-v001.json")
+                            && !relative.equals("strategy-research/config/fixed-baseline-lifecycle-timing-v001.json")
                     || dependency.path("bytes").asLong(0) <= 0
                     || !SHA256.matcher(dependency.path("byte_sha256").asText()).matches()
                     || !SHA256.matcher(dependency.path("content_sha256").asText()).matches()) {
@@ -3213,8 +3213,8 @@ public final class StrategyOperatingCharacteristicsParallelV1 {
                 Path sourceRoot = RepositoryLayout.locate();
                 ArrayNode dependencies = JsonHashes.mapper().createArrayNode();
                 for (String relative : List.of(
-                        "strategy-research/experiments/fk-deleveraging-baseline-v002/portfolio-policy-v001.json",
-                        "strategy-research/experiments/fk-deleveraging-baseline-v002/lifecycle-timing-v001.json")) {
+                        "strategy-research/config/fixed-baseline-portfolio-policy-v001.json",
+                        "strategy-research/config/fixed-baseline-lifecycle-timing-v001.json")) {
                     Path source = PathConfinement.resolve(sourceRoot, relative, "frozen worker dependency",
                             PathConfinement.ExpectedType.FILE).absolute();
                     byte[] bytes = PathConfinement.readSinglyLinkedFile(source, "frozen worker dependency");

@@ -30,8 +30,8 @@ import org.junit.jupiter.api.io.TempDir;
  */
 final class StrategyOperatingCharacteristicsCorrectedParallelV1Test {
     private static final long GIB = 1024L * 1024L * 1024L;
-    private static final String EVENT = "strategy-research/experiments/fk-deleveraging-baseline-v002/portfolio-policy-v001.json";
-    private static final String LIFECYCLE = "strategy-research/experiments/fk-deleveraging-baseline-v002/lifecycle-timing-v001.json";
+    private static final String EVENT = "strategy-research/config/fixed-baseline-portfolio-policy-v001.json";
+    private static final String LIFECYCLE = "strategy-research/config/fixed-baseline-lifecycle-timing-v001.json";
 
     @TempDir Path temporary;
 
@@ -289,6 +289,23 @@ final class StrategyOperatingCharacteristicsCorrectedParallelV1Test {
                 basePlan(), profile))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("packaged executable identity");
+    }
+
+    @Test
+    void workerDependencyAllowlistAcceptsCurrentConfigsAndRejectsRetiredResearchPath() {
+        ObjectNode valid = basePlan();
+        StrategyOperatingCharacteristicsParallelV1.validateBasePlanForCorrectedBuilder(valid);
+
+        ObjectNode retiredLocation = valid.deepCopy();
+        ((ObjectNode) retiredLocation.path("supporting_dependency_receipts").get(1))
+                .put("relative_path",
+                        "strategy-research/experiments/fk-deleveraging-baseline-v002/lifecycle-timing-v001.json");
+        rehash(retiredLocation);
+
+        assertThatThrownBy(() -> StrategyOperatingCharacteristicsParallelV1
+                .validateBasePlanForCorrectedBuilder(retiredLocation))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("parallel plan worker dependency receipt is incomplete");
     }
 
     @Test

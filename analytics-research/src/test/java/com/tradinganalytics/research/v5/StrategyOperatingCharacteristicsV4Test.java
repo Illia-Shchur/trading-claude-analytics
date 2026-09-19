@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 class StrategyOperatingCharacteristicsV4Test {
     @Test
     void preflightBindsPlanAndCannotOpenOutcomes() throws Exception {
-        Path path = Path.of("strategy-research/experiments/fk-deleveraging-baseline-v002/operating-characteristics-plan-v004.json");
+        Path path = Path.of("analytics-research/src/test/resources/fixtures/fk-deleveraging/operating-characteristics-plan-v004.json");
         if (!Files.exists(path)) path = Path.of("..", path.toString()).normalize();
         ObjectNode plan = (ObjectNode) JsonHashes.mapper().readTree(Files.readString(path));
 
@@ -29,7 +29,7 @@ class StrategyOperatingCharacteristicsV4Test {
 
     @Test
     void changedPlanBytesAreRejectedBeforePreflight() throws Exception {
-        Path path = Path.of("strategy-research/experiments/fk-deleveraging-baseline-v002/operating-characteristics-plan-v004.json");
+        Path path = Path.of("analytics-research/src/test/resources/fixtures/fk-deleveraging/operating-characteristics-plan-v004.json");
         if (!Files.exists(path)) path = Path.of("..", path.toString()).normalize();
         ObjectNode plan = (ObjectNode) JsonHashes.mapper().readTree(Files.readString(path));
         plan.withObject("targets").put("minimum_independent_units_per_replication", 29);

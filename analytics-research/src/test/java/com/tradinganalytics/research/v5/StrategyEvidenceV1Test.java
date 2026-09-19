@@ -104,7 +104,7 @@ final class StrategyEvidenceV1Test {
 
     @Test
     void successorControlDesignBindsPredecessorAndRejectsTampering() throws Exception {
-        Path predecessorPath = Path.of("strategy-research/experiments/fk-deleveraging-baseline-v002/controls.json");
+        Path predecessorPath = Path.of("analytics-research/src/test/resources/fixtures/fk-deleveraging/controls-v002.json");
         if (!Files.isRegularFile(predecessorPath)) predecessorPath = Path.of("..").resolve(predecessorPath).normalize();
         ObjectNode options = JsonHashes.mapper().createObjectNode().put("predecessor", predecessorPath.toString());
         ObjectNode result = StrategyEvidenceV1.freezeSuccessorControlDesign(options);

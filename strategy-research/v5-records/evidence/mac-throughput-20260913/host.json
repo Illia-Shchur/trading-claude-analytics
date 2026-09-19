@@ -1,6 +1,0 @@
-{
-  "recorded_at_utc": "2026-09-13T14:47:33.253244+00:00",
-  "sysctl": "machdep.cpu.brand_string: Apple M1 Pro\nhw.memsize: 17179869184\nhw.logicalcpu: 10\nhw.physicalcpu: 10\nhw.perflevel0.physicalcpu: 8\nhw.perflevel1.physicalcpu: 2\n",
-  "power": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=7209059)\t100%; charged; 0:00 remaining present: true\n",
-  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t15.7.7\nBuildVersion:\t\t24G720\n"
-}

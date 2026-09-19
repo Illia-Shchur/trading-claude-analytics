@@ -1642,13 +1642,13 @@ public final class StrategyFixedBaselineV5 {
     }
 
     private static Path portfolioPolicyPath() {
-        return RepositoryLayout.locate().resolve(Path.of("strategy-research", "experiments",
-                "fk-deleveraging-baseline-v002", "portfolio-policy-v001.json")).toAbsolutePath().normalize();
+        return RepositoryLayout.locate().resolve(Path.of("strategy-research", "config",
+                "fixed-baseline-portfolio-policy-v001.json")).toAbsolutePath().normalize();
     }
 
     private static Path lifecycleTimingPolicyPath() {
-        return RepositoryLayout.locate().resolve(Path.of("strategy-research", "experiments",
-                "fk-deleveraging-baseline-v002", "lifecycle-timing-v001.json")).toAbsolutePath().normalize();
+        return RepositoryLayout.locate().resolve(Path.of("strategy-research", "config",
+                "fixed-baseline-lifecycle-timing-v001.json")).toAbsolutePath().normalize();
     }
 
     private static ObjectNode readLifecycleTimingPolicy() {

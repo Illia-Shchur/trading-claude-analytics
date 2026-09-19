@@ -29,7 +29,7 @@ final class StrategyOperatingCharacteristicsReviewTest {
 
     @Test
     void rehashingADifferentMarketProcessCannotKeepTheFrozenV004Claim() throws Exception {
-        Path path = Path.of("strategy-research/experiments/fk-deleveraging-baseline-v002/operating-characteristics-plan-v004.json");
+        Path path = Path.of("analytics-research/src/test/resources/fixtures/fk-deleveraging/operating-characteristics-plan-v004.json");
         if (!Files.exists(path)) path = Path.of("..").resolve(path);
         ObjectNode plan = (ObjectNode) JsonHashes.mapper().readTree(Files.readAllBytes(path));
         assertThat(StrategyOperatingCharacteristicsV4.preflight(plan).path("status").asText()).isEqualTo("READY_PRE_OUTCOME");
@@ -41,7 +41,7 @@ final class StrategyOperatingCharacteristicsReviewTest {
 
     @Test
     void aRehashedUnsupportedHorizonCannotBeAcceptedAndThenSilentlyIgnored() throws Exception {
-        Path path = Path.of("strategy-research/experiments/fk-deleveraging-baseline-v002/operating-characteristics-plan-v004.json");
+        Path path = Path.of("analytics-research/src/test/resources/fixtures/fk-deleveraging/operating-characteristics-plan-v004.json");
         if (!Files.exists(path)) path = Path.of("..").resolve(path);
         ObjectNode plan = (ObjectNode) JsonHashes.mapper().readTree(Files.readAllBytes(path));
         ((ObjectNode) plan.path("generator")).put("holding_horizon_minutes", 60);

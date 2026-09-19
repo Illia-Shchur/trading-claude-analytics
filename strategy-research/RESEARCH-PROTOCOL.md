@@ -27,12 +27,15 @@ This protocol governs new strategy families. It separates idea formation,
 selection, confirmation, portfolio feasibility, and activation so a promising
 chart pattern cannot silently become a live rule.
 
-## 0. Additive strategy-research/4 path
+## 0. Strategy-research/4 policy contract
 
-`tools/strategy-research-next.mjs` is the canonical next-generation policy
-surface. It does not mutate v1-v3 artifacts. Its source registry assigns the
-maximum permitted PIT tier; caller tier claims are audit-only and
-unknown/custom data is development-only. The path freezes the exact eight-asset
+This section preserves the v4 research requirements. The former Node command
+wrapper and its historical generated registries were removed during project
+cleanup. The maintained Java adapters still expose the v1-v3
+`strategy-research` and v4 `strategy-research-next` command surfaces; v5 is an
+additive façade documented in [V5-README.md](V5-README.md). The policy assigns each source its maximum
+permitted PIT tier; caller tier claims are audit-only and unknown/custom data
+is development-only. The research contract freezes the exact eight-asset
 crypto universe (BTC, ETH, SOL, BNB, XRP, ADA, LINK, AAVE), Binance spot and
 USD-M linear perpetual/futures scope, source receipts, feature/label physical
 separation, completed-bar/as-of joins, and cumulative family×dataset exposure.
@@ -89,16 +92,13 @@ An idea whose expected frequency is too low for its proposed evidence window is
 redesigned or rejected before search. The core premise contains no composite
 score, score threshold, or score weight.
 
-Freeze the filled premise and review its deterministic Markdown:
-
-```sh
-node tools/strategy-research.mjs precommit \
-  --input premise.json \
-  --root strategy-research
-```
-
-The JSON and Markdown are immutable after freezing. A mechanism change creates
-a new precommit; it does not rewrite the old one.
+Freeze the completed premise and retain its reviewed JSON and Markdown under
+the fresh caller-supplied research root. Use the Java façade matching the
+artifact version (`./bin/analytics strategy-research` for v1-v3,
+`./bin/analytics strategy-research-next` for v4, or
+`./bin/analytics strategy-research-v5` for v5). Pass explicit `--root` or
+`--out` paths under `.research-run/records/`; a mechanism change creates a new
+precommit and never rewrites the old one.
 
 ## 2. Verify data feasibility before outcomes
 
@@ -182,11 +182,12 @@ A single frozen baseline may declare `NO_SELECTION_SEARCH` with an empty grid.
 Every actual search must pass plateau analysis; it cannot call itself a
 baseline to avoid neighbour evidence.
 
-```sh
-node tools/strategy-research.mjs generate \
-  --precommit strategy-research/precommits/<family>.json \
-  --root strategy-research
-```
+Use the retained Java generators through `./bin/analytics strategy-research`
+for v1-v3 artifacts or `./bin/analytics strategy-research-next` for v4
+artifacts. V5's current command list is available from
+`./bin/analytics strategy-research-v5 --help`. Keep every generated file under
+a fresh caller-supplied `.research-run/records/` root; do not recreate the
+removed historical registry.
 
 ## 5. Separate evidence phases
 
@@ -282,18 +283,13 @@ stress, portfolio, decisions, source hashes, and evidence phase; generated
 indexes expose these by strategy, experiment, asset, candidate, phase, and
 status.
 
-Useful deterministic commands:
-
-```sh
-node tools/strategy-research.mjs stats --input candidate-returns.json
-node tools/strategy-research.mjs plateau --experiment experiment.json --candidates candidates.json --metrics metrics.json --candidate <id>
-node tools/strategy-research.mjs ablations --input context-plan.json
-node tools/strategy-research.mjs stress --trades trades.json --suite stress-suite.json
-node tools/strategy-research.mjs portfolio --signals signals.json --policy portfolio-policy.json
-node tools/strategy-research.mjs run --root strategy-research --experiment experiment.json --metrics metrics.json --trades trades.json --stress stress.json --portfolio portfolio.json
-node tools/strategy-research.mjs rebuild-index --root strategy-research
-node tools/strategy-research.mjs validate --root strategy-research
-```
+The former Node wrappers are not included, but their maintained Java
+counterparts remain: v1-v3 commands use `./bin/analytics strategy-research`,
+v4 commands use `./bin/analytics strategy-research-next`, and v5 commands use
+`./bin/analytics strategy-research-v5 --help`. Where a command writes durable
+records or receipts, pass an explicit caller-supplied root under
+`.research-run/records/` rather than recreating the removed historical
+registry.
 
 Prospective monitoring compares the frozen frequency, win-rate, expectancy,
 loss-run, slippage, feature-coverage, drift, and regime profile with genuinely
@@ -363,20 +359,22 @@ describe missing or failed computation, while `DEVELOPMENT` and
 of those labels is a promotion decision.
 
 The v1 registry and historical imports remain read-compatible and retain their
-original evidence labels. The current additive research entry point is the
-typed Java v5 façade, `./bin/analytics strategy-research-v5`; `evaluate-v3`
-remains the compatibility evaluator for v3 artifacts and is not the default
-for new work. Old evidence is never rewritten to appear stronger than it was.
+original evidence labels. The maintained Java command adapters support v1-v3
+and v4 artifacts; the typed `./bin/analytics strategy-research-v5` façade is
+additive. `evaluate-v3` remains the compatibility evaluator for v3 artifacts
+and is not the default for new work. Old evidence is never rewritten to appear
+stronger than it was.
 
 ## 11. Additive v5 path
 
 The v5 implementation is an additive research path exposed by
 `./bin/analytics strategy-research-v5`; it does not rewrite v1--v4 artifacts.
-The historical `tools/strategy-research-v5.mjs` wrappers remain available for
-read and data-pipeline support. The `search-genetic` command is the only
-adaptive genetic entry point. Static `generate --method GENETIC` remains
-rejected so a deterministic sample cannot be described as an evolutionary
-search.
+The historical Node wrappers were removed; maintained Java adapters remain
+available as `./bin/analytics strategy-research` and
+`./bin/analytics strategy-research-next`.
+The `search-genetic` command is the only adaptive genetic entry point. Static
+`generate --method GENETIC` remains rejected so a deterministic sample cannot
+be described as an evolutionary search.
 
 V5 freezes typed chromosomes, NSGA-II operators and objectives, hard
 constraints, population history, three seeds, a simple baseline, direct

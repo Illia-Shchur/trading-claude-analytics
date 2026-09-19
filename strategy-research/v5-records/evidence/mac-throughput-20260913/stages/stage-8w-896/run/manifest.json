@@ -1,8 +1,0 @@
-{
-  "archive_required": true,
-  "batch_metrics": "parallel/batch-metrics.json",
-  "censored": "parallel/censored.json",
-  "schema": "mac-throughput-stage/1",
-  "status": "CENSORED",
-  "wave": "parallel"
-}

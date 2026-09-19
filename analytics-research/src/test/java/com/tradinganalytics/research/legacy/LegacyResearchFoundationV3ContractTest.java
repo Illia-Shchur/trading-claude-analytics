@@ -91,7 +91,7 @@ class LegacyResearchFoundationV3ContractTest {
                         acceptance.path("content_sha256").asText())
                 .put("containerSha256", "1".repeat(64))
                 .put("executorSha256", "2".repeat(64))
-                .put("experimentPath", "strategy-research/experiments/e.json")
+                .put("experimentPath", "fixtures/experiments/e.json")
                 .put("dataPath", "data/e.json").put("workflowPath", workflow.toString());
         ObjectNode reservation = LegacyResearchV3.makeConfirmationReservation(
                 reservationOptions);
