@@ -2,6 +2,7 @@
 
 This is the owner-approved shorter-history successor to [v001](../liquidation-structure-v001/SPECIFICATION.md), in the same `liquidation-structure` family. Its first implementation acquires daily liquidation observations and counts a predeclared stress gate. It does not generate trades or test returns.
 
+- [Implementation and backtest plan](IMPLEMENTATION-AND-BACKTEST-PLAN.md)
 - [Actual-data diagnostic results](RESULTS.md)
 - [Verification](VERIFICATION.md)
 - [Frozen specification](SPECIFICATION.md)
