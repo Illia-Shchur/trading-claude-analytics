@@ -1,0 +1,182 @@
+{
+  "schema": "daily-stress-diagnostic-summary/1",
+  "display_only": true,
+  "status": "BLOCKED",
+  "stage": "DEVELOPMENT",
+  "precommit_content_sha256": "cfae45fac7678a913610c37c156b044ed733e3ecd5e45673b01e412f8eaca904",
+  "acquisition_manifest_content_sha256": "fbafcfb11c6ef19a8f0d4030ca0bc33d58e8c6a4b5442e7d334e1ab19df584ea",
+  "acquisition_manifest_byte_sha256": "b52d919d1dbaac0e5ad38a5b373b5ed76e981e9fcbb74e6e5d8266d61da04a6e",
+  "diagnostic_result_content_sha256": "b6643a0684bd2d385f1b7de817190a69383bb09d69e939ff05ffc79503f31fe3",
+  "diagnostic_result_byte_sha256": "bc0ea372ea8a09ec4c400f5e2571a74095377d79145996ee689ac656f969c67e",
+  "captured_at": "2026-09-20T09:53:53.048561Z",
+  "source_window": {
+    "from_inclusive": "2022-08-11",
+    "to_exclusive": "2026-09-20"
+  },
+  "normalized_rows": 5997,
+  "raw_response_hashes": [
+    {
+      "kind": "exchanges",
+      "path": "raw/exchanges.json",
+      "sha256": "b4464dcc838c9746a8ab4e1ca083eed629a62cd1357b064761bf89fc1acfa5d5",
+      "captured_at": "2026-09-20T09:53:52.194485Z",
+      "bytes": 852
+    },
+    {
+      "kind": "future-markets",
+      "path": "raw/future-markets.json",
+      "sha256": "acd93eb052ba91245b014d1b92475857d15139100040f116ba43777e3e9cbf8d",
+      "captured_at": "2026-09-20T09:53:52.584517Z",
+      "bytes": 1593151
+    },
+    {
+      "kind": "liquidation_history",
+      "path": "raw/liquidation-history-2022.json",
+      "sha256": "d9a0147b236422bdd915df1342f5d1820d9c1d352a62522d645ba8f71143d23d",
+      "captured_at": "2026-09-20T09:53:52.672500Z",
+      "bytes": 31594
+    },
+    {
+      "kind": "liquidation_history",
+      "path": "raw/liquidation-history-2023.json",
+      "sha256": "d39cff3b3797429777f701107a0ee2b7d5271e8396bfb8e55b72e1e96f5180c1",
+      "captured_at": "2026-09-20T09:53:52.774270Z",
+      "bytes": 81860
+    },
+    {
+      "kind": "liquidation_history",
+      "path": "raw/liquidation-history-2024.json",
+      "sha256": "c22a2f57e8b21c7cba8ddc7c0b0d93b4ef17d5f5e18409b87402b376e8e257e2",
+      "captured_at": "2026-09-20T09:53:52.850474Z",
+      "bytes": 84355
+    },
+    {
+      "kind": "liquidation_history",
+      "path": "raw/liquidation-history-2025.json",
+      "sha256": "9b14346a9cc8adfb46bba525aa31e0e06021880b4d2b0f47abdd5f91dff8753c",
+      "captured_at": "2026-09-20T09:53:52.938556Z",
+      "bytes": 87005
+    },
+    {
+      "kind": "liquidation_history",
+      "path": "raw/liquidation-history-2026.json",
+      "sha256": "eb627432838403a27ae24504ef5e0b547f6a25665899cca21d8883b1962166cf",
+      "captured_at": "2026-09-20T09:53:53.023478Z",
+      "bytes": 62297
+    }
+  ],
+  "asset_counts": [
+    {
+      "asset": "BTC",
+      "observed_daily_records": 1501,
+      "eligible_decision_days": 1342,
+      "blocked_decision_days": 0,
+      "long_liquidation_stress_count": 101,
+      "short_liquidation_stress_count": 91,
+      "earliest_usable_decision_at": "2022-11-11T00:00:00Z",
+      "latest_usable_decision_at": "2026-07-14T00:00:00Z"
+    },
+    {
+      "asset": "ETH",
+      "observed_daily_records": 1501,
+      "eligible_decision_days": 1342,
+      "blocked_decision_days": 0,
+      "long_liquidation_stress_count": 104,
+      "short_liquidation_stress_count": 100,
+      "earliest_usable_decision_at": "2022-11-11T00:00:00Z",
+      "latest_usable_decision_at": "2026-07-14T00:00:00Z"
+    },
+    {
+      "asset": "SOL",
+      "observed_daily_records": 1501,
+      "eligible_decision_days": 1342,
+      "blocked_decision_days": 0,
+      "long_liquidation_stress_count": 104,
+      "short_liquidation_stress_count": 91,
+      "earliest_usable_decision_at": "2022-11-11T00:00:00Z",
+      "latest_usable_decision_at": "2026-07-14T00:00:00Z"
+    },
+    {
+      "asset": "AAVE",
+      "observed_daily_records": 1494,
+      "eligible_decision_days": 1108,
+      "blocked_decision_days": 234,
+      "long_liquidation_stress_count": 85,
+      "short_liquidation_stress_count": 83,
+      "earliest_usable_decision_at": "2023-04-03T00:00:00Z",
+      "latest_usable_decision_at": "2026-07-14T00:00:00Z"
+    }
+  ],
+  "coverage": {
+    "from_inclusive": "2022-08-11",
+    "to_exclusive": "2026-09-20",
+    "closed_data_to_exclusive": "2026-09-20",
+    "as_of": "2026-09-20T00:00:00Z",
+    "by_asset": {
+      "BTC": {
+        "expected_days": 1501,
+        "observed_days": 1501,
+        "missing_days": 0,
+        "complete": true,
+        "status": "COMPLETE",
+        "missing_day_ranges": []
+      },
+      "ETH": {
+        "expected_days": 1501,
+        "observed_days": 1501,
+        "missing_days": 0,
+        "complete": true,
+        "status": "COMPLETE",
+        "missing_day_ranges": []
+      },
+      "SOL": {
+        "expected_days": 1501,
+        "observed_days": 1501,
+        "missing_days": 0,
+        "complete": true,
+        "status": "COMPLETE",
+        "missing_day_ranges": []
+      },
+      "AAVE": {
+        "expected_days": 1501,
+        "observed_days": 1494,
+        "missing_days": 7,
+        "complete": false,
+        "status": "INCOMPLETE",
+        "missing_day_ranges": [
+          {
+            "from_inclusive": "2022-10-12",
+            "to_exclusive": "2022-10-13"
+          },
+          {
+            "from_inclusive": "2022-12-09",
+            "to_exclusive": "2022-12-11"
+          },
+          {
+            "from_inclusive": "2022-12-18",
+            "to_exclusive": "2022-12-19"
+          },
+          {
+            "from_inclusive": "2022-12-24",
+            "to_exclusive": "2022-12-25"
+          },
+          {
+            "from_inclusive": "2022-12-31",
+            "to_exclusive": "2023-01-01"
+          },
+          {
+            "from_inclusive": "2023-05-13",
+            "to_exclusive": "2023-05-14"
+          }
+        ]
+      }
+    }
+  },
+  "limitations": [
+    "Historical Coinalyze publication time, capture completeness, and revision vintages are UNKNOWN; t+48h is a disclosed development assumption.",
+    "This is a liquidation gate diagnostic only; no price path, PnL, strategy signal, candidate, win rate, or deployment claim is produced.",
+    "The later completed-4h structure, 1h entry path, and 60-day staged execution lifecycle remain unqualified."
+  ],
+  "price_pnl_calculated": false,
+  "candidate_generation_performed": false
+}

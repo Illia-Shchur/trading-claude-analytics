@@ -1,0 +1,54 @@
+{
+  "schema": "research-specification-freeze-manifest/1",
+  "custom_document_manifest": true,
+  "not_a_production_research_schema": true,
+  "created_at": "2026-09-20T09:07:39.045519+00:00",
+  "precommit_content_sha256": "1bbeb1e7daf49a2f1bd0f8765e137f7ef3ff7e46fc91547198f3bbf952738130",
+  "status": "SPECIFICATION_FROZEN_EXECUTION_BLOCKED",
+  "files": [
+    {
+      "path": "docs/research/liquidation-structure-v001/SPECIFICATION.md",
+      "byte_sha256": "f2f606a60690cc117610f4664a3f2f275c28b802d073ace5f90de4bab86ea354"
+    },
+    {
+      "path": "docs/research/liquidation-structure-v001/provenance.json",
+      "byte_sha256": "a3bbc5fed87397cb6a26c2d4de31fd6bd9b5360beb2c9b9d425a4686dd686f56"
+    },
+    {
+      "path": "docs/research/liquidation-structure-v001/precommit-input.json",
+      "byte_sha256": "d75d321b7dcaca627d5cdba703ba281e78d1193471cfaf4f194ed9616a32696a"
+    },
+    {
+      "path": "docs/research/liquidation-structure-v001/README.md",
+      "byte_sha256": "ca7c2cb21e3549eff8f5ff60c9e73c7197b95d81c0362147e0ad04664fc59183"
+    },
+    {
+      "path": "docs/research/liquidation-structure-v001/FEASIBILITY.md",
+      "byte_sha256": "ad21cbb2e931bf442b8d9be2ba6ce733aab33be5f53b20412430a27a47ffd136"
+    },
+    {
+      "path": ".research-run/liquidation-structure-v001/registry/precommits/liquidation-structure-v001.json",
+      "byte_sha256": "030d3df4e89db0a05a6a703e068307ba1df00e6362d536dcda5421e9f6d28c27"
+    },
+    {
+      "path": ".research-run/liquidation-structure-v001/registry/precommits/liquidation-structure-v001.md",
+      "byte_sha256": "452cae32b27aedcd148108c4834ef191a6dac2fafa533da0fceaf166aa3e87fb"
+    },
+    {
+      "path": ".research-run/liquidation-structure-v001/feasibility/public-data-probes.json",
+      "byte_sha256": "4940683e2bce20a38ffb23d400d8cdf1c93376c63ae121746f6fc1ad932d32a6"
+    },
+    {
+      "path": ".research-run/liquidation-structure-v001/feasibility/supplementary-probes.json",
+      "byte_sha256": "e361d6a076d0937e18748ae4e7e2a40e7fdcd3e95b2fada370080b862208b8b2"
+    },
+    {
+      "path": ".research-run/liquidation-structure-v001/verification.json",
+      "byte_sha256": "769434d28b929f0cc94bd5756f70f57a55c66dbee3e3fe64f6f573a18b379b5d"
+    },
+    {
+      "path": ".research-run/liquidation-structure-v001/validation/receipts/6d12075e20f8a0c1278bcfc64c112e9c6d7cb350f668ec9f12d7dfafafcafe6a.json",
+      "byte_sha256": "52dd5ec712329e4baab7cadba67fbff9feade790c0fbd963c8f6738beeb61a33"
+    }
+  ]
+}

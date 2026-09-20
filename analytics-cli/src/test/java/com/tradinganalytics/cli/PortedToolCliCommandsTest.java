@@ -156,7 +156,7 @@ class PortedToolCliCommandsTest {
         assertThat(commandLine.execute()).isZero();
         assertThat(output).hasToString(
                 "usage: strategy-research-v5.mjs data-backfill|data-raw-replay|feature-build|"
-                        + "metadata-build|opportunity-envelope|artifact-build|research-init|"
+                        + "metadata-build|daily-stress-preflight|opportunity-envelope|artifact-build|research-init|"
                         + "experiment-freeze|search-genetic|research-run|overfit-audit|"
                         + "prospective-runner|readiness-audit|deployment-audit|fixed-baseline|"
                         + "fixed-baseline-refinement|fixed-baseline-produce-signal-bars|"

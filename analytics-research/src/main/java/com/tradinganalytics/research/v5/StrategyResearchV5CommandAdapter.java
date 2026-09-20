@@ -8,7 +8,7 @@ import java.io.PrintStream;
 
 /** Exact process-boundary adapter for {@code tools/strategy-research-v5.mjs}. */
 public final class StrategyResearchV5CommandAdapter {
-    public static final String COMMANDS = "data-backfill|data-raw-replay|feature-build|metadata-build|"
+    public static final String COMMANDS = "data-backfill|data-raw-replay|feature-build|metadata-build|daily-stress-preflight|"
             + "opportunity-envelope|artifact-build|research-init|experiment-freeze|search-genetic|"
             + "research-run|overfit-audit|prospective-runner|readiness-audit|deployment-audit|"
             + "fixed-baseline|fixed-baseline-refinement|fixed-baseline-produce-signal-bars|operating-characteristics-preflight|operating-characteristics-run|operating-characteristics-diagnose|operating-characteristics-successor-preflight|operating-characteristics-successor-run|operating-characteristics-successor-record-attempt|operating-characteristics-parallel-profile|operating-characteristics-parallel-preflight|operating-characteristics-parallel-run|operating-characteristics-parallel-worker|operating-characteristics-corrected-successor-preflight|operating-characteristics-corrected-successor-run|operating-characteristics-corrected-parallel-profile|operating-characteristics-corrected-parallel-plan|operating-characteristics-corrected-parallel-preflight|operating-characteristics-corrected-parallel-run|operating-characteristics-corrected-parallel-worker|operating-characteristics-corrected-parallel-qualify|operating-characteristics-corrected-parallel-validate-qualification|freeze-refinement|portfolio-reconcile|prospective-outcome-reconcile|evidence-disposition|canonical-hash-batch|lineage-inventory|matching-attrition|freeze-successor-control|validate|index|presentation-export";
@@ -47,6 +47,8 @@ public final class StrategyResearchV5CommandAdapter {
                 result = StrategyFixedBaselineV5.runRefinement(options);
             } else if ("fixed-baseline-produce-signal-bars".equals(command)) {
                 result = StrategyFixedBaselineV5.buildSignalBarsFromVerifiedParquet(options);
+            } else if ("daily-stress-preflight".equals(command)) {
+                result = DailyStressPreflightV1.run(options);
             } else if ("operating-characteristics-preflight".equals(command)) {
                 result = StrategyOperatingCharacteristicsV4.preflight(readObjectOption(options, "plan"));
             } else if ("operating-characteristics-run".equals(command)) {
