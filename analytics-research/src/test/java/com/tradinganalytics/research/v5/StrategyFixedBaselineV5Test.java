@@ -131,11 +131,11 @@ class StrategyFixedBaselineV5Test {
     @Test
     void fixedEvaluatorRejectsRehashedUnsupportedFormulaInsteadOfChangingRules() throws Exception {
         ObjectNode baseline = (ObjectNode) JsonHashes.mapper().readTree(Files.readString(repoFile(
-                "strategy-research/definitions/fk-deleveraging-absorption/v002.json")));
+                "analytics-research/src/test/resources/fixtures/fk-deleveraging/baseline-v002.json")));
         ObjectNode controls = (ObjectNode) JsonHashes.mapper().readTree(Files.readString(repoFile(
-                "strategy-research/experiments/fk-deleveraging-baseline-v002/controls.json")));
+                "analytics-research/src/test/resources/fixtures/fk-deleveraging/controls-v002.json")));
         ObjectNode experiment = (ObjectNode) JsonHashes.mapper().readTree(Files.readString(repoFile(
-                "strategy-research/experiments/fk-deleveraging-baseline-v002/experiment.json")));
+                "analytics-research/src/test/resources/fixtures/fk-deleveraging/experiment-v002.json")));
         baseline.with("shock_rule").with("volume").put("lookback_completed_bars", 29);
         Method method = StrategyFixedBaselineV5.class.getDeclaredMethod("validateSupportedFixedContract",
                 ObjectNode.class, ObjectNode.class, ObjectNode.class);
@@ -147,7 +147,7 @@ class StrategyFixedBaselineV5Test {
     @Test
     void refinementRouteRejectsARehashedUnsupportedMemberBeforeOpeningPhysicalInputs() throws Exception {
         ObjectNode plan = (ObjectNode) JsonHashes.mapper().readTree(Files.readString(repoFile(
-                "strategy-research/v5-records/evidence/fixed-baseline-full-declared-v004/refinement-plan-v001.json")));
+                "analytics-research/src/test/resources/fixtures/fk-deleveraging/refinement-plan-v001.json")));
         ((ObjectNode) plan.path("members").get(0)).put("shock_threshold", -0.09);
         plan.put("content_sha256", JsonHashes.ownHash(plan));
         Path file = Files.createTempFile("invalid-refinement-", ".json");
@@ -162,7 +162,7 @@ class StrategyFixedBaselineV5Test {
     @Test
     void refinementMemberThresholdIsTheOnlyAllowedShockDimension() throws Exception {
         ObjectNode baseline = (ObjectNode) JsonHashes.mapper().readTree(Files.readString(repoFile(
-                "strategy-research/definitions/fk-deleveraging-absorption/v002.json")));
+                "analytics-research/src/test/resources/fixtures/fk-deleveraging/baseline-v002.json")));
         ObjectNode row = JsonHashes.mapper().createObjectNode().put("signal_eligible", true)
                 .put("setup_bar_count", 31).put("shock_return", -0.09)
                 .put("volume_multiple", 2.0).put("realized_volatility", 0.02);

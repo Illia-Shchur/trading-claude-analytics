@@ -77,7 +77,7 @@ final class StrategyRetentionArchiveReviewTest {
         Path root = seed();
         Path archive = Files.createDirectories(root.resolve("evidence"));
         Path marker = temporary.resolve("external-marker");
-        Files.copy(repoFile("strategy-research/v5-records/evidence/.retention-archive"), marker);
+        Files.writeString(marker, "strategy-research-retention-archive/1\n");
         Files.createSymbolicLink(archive.resolve(".retention-archive"), marker);
         assertThatThrownBy(() -> index(root)).isInstanceOf(IllegalArgumentException.class);
         assertThat(output()).doesNotExist();
@@ -140,14 +140,30 @@ final class StrategyRetentionArchiveReviewTest {
 
     private Path seed() throws Exception {
         Path root = Files.createDirectories(temporary.resolve("records"));
-        Files.copy(repoFile("strategy-research/v5-records/evidence/fixed-baseline-full-declared-v004/"
-                + "fixed-baseline-e11-result-summary.json"), root.resolve("summary.json"));
+        ObjectNode summary = JsonHashes.mapper().createObjectNode()
+                .put("schema", "strategy-research-evidence-summary/1")
+                .put("version", 1).put("status", "BLOCKED")
+                .put("summary_kind", "FIXED_BASELINE_RESULT")
+                .put("display_only", true).put("promotion_eligible", false)
+                .put("activation_authorized", false);
+        summary.putObject("source_result")
+                .put("path", "fixture-result.json")
+                .put("byte_sha256", "b".repeat(64))
+                .put("content_sha256", "c".repeat(64))
+                .put("bytes", 1)
+                .put("original_schema", "strategy-fixed-baseline-result/1");
+        summary.putObject("summary")
+                .put("stage", "FIXED_BASELINE")
+                .put("evidence_phase", "DEVELOPMENT")
+                .put("hypothesis_family", "fixture-family")
+                .put("physical_input_sha256", "a".repeat(64));
+        summary.put("content_sha256", JsonHashes.ownHash(summary));
+        Files.writeString(root.resolve("summary.json"), JsonHashes.mapper().writeValueAsString(summary));
         return root;
     }
 
     private void mark(Path directory) throws Exception {
-        Files.copy(repoFile("strategy-research/v5-records/evidence/.retention-archive"),
-                directory.resolve(".retention-archive"));
+        Files.writeString(directory.resolve(".retention-archive"), "strategy-research-retention-archive/1\n");
     }
 
     private JsonNode index(Path root) {

@@ -35,8 +35,8 @@ class ResearchSchemaRegistryTest {
 
     @Test
     void loadsAndCompilesTheExactNodeSchemaCorpusIncludingEmbeddedIds() {
-        assertThat(registry.listSchemaDocuments()).hasSize(179);
-        assertThat(registry.listContractSchemas()).hasSize(196).isSorted().doesNotHaveDuplicates();
+        assertThat(registry.listSchemaDocuments()).hasSize(192);
+        assertThat(registry.listContractSchemas()).hasSize(209).isSorted().doesNotHaveDuplicates();
 
         String filenames = registry.listSchemaDocuments().stream()
                 .map(ResearchSchemaRegistry.SchemaDocument::filename)
@@ -44,9 +44,9 @@ class ResearchSchemaRegistryTest {
                 .reduce("", (left, right) -> left + right + "\n");
         String ids = String.join("\n", registry.listContractSchemas()) + "\n";
         assertThat(Sha256.hex(filenames))
-                .isEqualTo("a380105a054918fc36086f21e942f4fed698f4641e05f5c8bfa374a1c3fe0347");
+                .isEqualTo("3bc58004340ff7b64b385267f98ab8845e5274fcdd454ce6cc54831743755f4d");
         assertThat(Sha256.hex(ids))
-                .isEqualTo("28eb437d515cf069a4a4e5b336af39f4a051be49ad397620daa2503e1eb1de58");
+                .isEqualTo("6d70518288140aef36e0762b52c38125064df8a71f25ac5ea108e965696b2485");
 
         assertThat(registry.listSchemaDocuments())
                 .allSatisfy(document -> {
@@ -57,7 +57,13 @@ class ResearchSchemaRegistryTest {
         assertThat(registry.listContractSchemas())
                 .contains("https://schemas.local/strategy-v5-statistical-contracts/1")
                 .contains("strategy-v5-statistical-input/1")
-                .contains("strategy-v5-statistical-genetic-checkpoint/1");
+                .contains("strategy-v5-statistical-genetic-checkpoint/1")
+                .contains("strategy-fixed-baseline-corrected-result/1")
+                .contains("strategy-evaluator-operating-characteristics-corrected-parallel-plan/1")
+                .contains("strategy-evaluator-operating-characteristics-corrected-parallel-result/1")
+                .contains("strategy-evaluator-operating-characteristics-corrected-parallel-preflight/1")
+                .contains("strategy-evaluator-resource-measurement/1")
+                .contains("strategy-evaluator-operating-characteristics-corrected-qualification/1");
     }
 
     @Test
@@ -99,6 +105,28 @@ class ResearchSchemaRegistryTest {
         assertThatThrownBy(() -> registry.validateKnownContractJson(
                 "{\"schema\":\"strategy-gene-space/1\",\"genes\":[{}],"
                         + "\"content_sha256\":\"" + HASH + "\",\"extra\":true}"))
+                .isInstanceOf(ContractSchemaValidationException.class);
+    }
+
+    @Test
+    void validatesCorrectedSuccessorEvaluatorReceiptBindings() {
+        String valid = "{\"schema\":\"strategy-evaluator-operating-characteristics-corrected-successor-evaluator-receipt/1\","
+                + "\"version\":1,\"origin\":\"SHARED_FIXED_EVALUATOR_IN_PROCESS\","
+                + "\"result_schema\":\"strategy-fixed-baseline-corrected-result/1\","
+                + "\"result_content_sha256\":\"" + HASH + "\","
+                + "\"economic_semantic_sha256\":\"" + HASH + "\",\"status\":\"COMPLETE\","
+                + "\"executor_identity_sha256\":\"" + HASH + "\",\"source_input_sha256\":\"" + HASH + "\","
+                + "\"metrics\":{},\"accounting_version\":\"PORTFOLIO_ACCOUNTING_CORRECTION_V1\","
+                + "\"evaluator_identity\":\"com.tradinganalytics.research.v5.StrategyFixedBaselineCorrectedV1\","
+                + "\"legacy_result_content_sha256\":\"" + HASH + "\",\"content_sha256\":\"" + HASH + "\"}";
+
+        assertThat(registry.validateKnownContractJson(valid)).isTrue();
+        assertThatThrownBy(() -> registry.validateKnownContractJson(
+                valid.replace("\"evaluator_identity\":\"com.tradinganalytics.research.v5.StrategyFixedBaselineCorrectedV1\"",
+                        "\"evaluator_identity\":\"StrategyFixedBaselineV5\"")))
+                .isInstanceOf(ContractSchemaValidationException.class);
+        assertThatThrownBy(() -> registry.validateKnownContractJson(
+                valid.replace(",\"legacy_result_content_sha256\":\"" + HASH + "\"", "")))
                 .isInstanceOf(ContractSchemaValidationException.class);
     }
 
@@ -226,7 +254,7 @@ class ResearchSchemaRegistryTest {
         ClassLoader original = thread.getContextClassLoader();
         try {
             thread.setContextClassLoader(null);
-            assertThat(new ResearchSchemaRegistry().listSchemaDocuments()).hasSize(179);
+            assertThat(new ResearchSchemaRegistry().listSchemaDocuments()).hasSize(192);
         } finally {
             thread.setContextClassLoader(original);
         }

@@ -10,11 +10,13 @@ its v3 foundation: PIT Parquet/DuckDB data, separate features/labels, frozen
 candidates, WFO/stress/portfolio evidence, and SHADOW-only decisions. This
 report skill never mints SEALED or ACTIVE research evidence.
 
-For new work, use the additive strategy-research/4 policy core at
-`tools/strategy-research-next.mjs`: reviewed source-registry PIT tiers,
-family×dataset cumulative K, nested purge/embargo selection, Binance
-market/stop-market execution, the frozen portfolio risk profile, future-only
-prospective ledger, and signed activation lease. FK reports may consume only
+For new strategy-family work, follow the `strategy-research` skill and its
+premise-first PIT, cumulative-search, walk-forward, stress, and portfolio
+requirements. Maintained Java command surfaces remain for v1-v3
+(`./bin/analytics strategy-research`) and v4
+(`./bin/analytics strategy-research-next`); v5 is additive at
+`./bin/analytics strategy-research-v5`. The historical Node wrappers and
+research results were removed. FK reports may consume only
 `REJECTED`, `SHADOW`, or `CANDIDATE_REVIEW` research output; they cannot bypass
 the asset+portfolio Ed25519 approval required for `ACTIVE`.
 
@@ -78,8 +80,11 @@ context. Tradable instruments are crypto spot and crypto derivatives only;
 non-crypto markets are PIT-safe context/correlation inputs, never candidates,
 holdings, validation markets, or PnL. Follow the reusable
 [`strategy-research/RESEARCH-PROTOCOL.md`](../../../strategy-research/RESEARCH-PROTOCOL.md)
-through the `strategy-research` skill and use `strategy-research.mjs precommit`
-before `generate`.
+through the `strategy-research` skill and freeze the premise before any candidate search. Use the
+maintained Java `strategy-research` or `strategy-research-next` command for
+legacy artifacts and the v5 façade for v5 artifacts. Do not claim a backtest
+unless a supported evaluator actually ran and its inputs and outputs were
+verified.
 
 ## Swing-score/1 operating contract (SHADOW until activation)
 
@@ -147,12 +152,12 @@ tranche. `CANDIDATE_REVIEW` is still non-active: registry recording cannot
 bypass governed activation. Legacy imports are provenance, not activation evidence. See
 `strategy-research/README.md`.
 
-For v2 backtests the authoritative path is `strategy-research.mjs evaluate`:
-freeze the experiment/candidate set, hashed feature store and
-`strategy-data-manifest/1`, then retain the resulting evidence bundle. The
-local swing adapter recomputes trades/metrics, stress and mark-to-market
-portfolio risk; narrated or caller-supplied result JSON is external exposed
-evidence only. Local `SEALED_CONFIRMATION` and `ACTIVE` are impossible, and
+Historical v2 examples may name the removed Node wrapper; the maintained Java
+`strategy-research` adapter retains the corresponding legacy capability.
+Current v5 commands are described in `strategy-research/V5-README.md`; do not
+present historical outputs as current evidence. Narrated or caller-supplied
+result JSON is external exposed evidence only. Local `SEALED_CONFIRMATION`
+and `ACTIVE` are impossible, and
 options, multi-leg carry/basis, HFT/queue claims or missing leveraged marks
 fail closed.
 

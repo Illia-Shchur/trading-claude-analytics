@@ -33,8 +33,18 @@ public final class StrategyOperatingCharacteristicsSuccessorV1 {
     public static final String DIAGNOSIS_SCHEMA = "strategy-evaluator-operating-characteristics-diagnosis/1";
     public static final String PLAN_SCHEMA = "strategy-evaluator-operating-characteristics-successor-plan/1";
     public static final String LEDGER_SCHEMA = "strategy-evaluator-operating-characteristics-attempt-ledger/1";
+    static final String CORRECTED_PLAN_SCHEMA =
+            "strategy-evaluator-operating-characteristics-corrected-successor-plan/1";
+    static final String CORRECTED_EVALUATOR_RESULT_SCHEMA = StrategyFixedBaselineCorrectedV1.RESULT_SCHEMA;
+    static final String CORRECTED_RESULT_SCHEMA =
+            "strategy-evaluator-operating-characteristics-corrected-successor-result/1";
     private static final String FIXED_EVALUATOR =
             "StrategyFixedBaselineV5+TradeLifecycleV5+StrategyResearchImprovementV1.disposition";
+    /** Additive evaluator identity.  The frozen V5 identity above is retained. */
+    static final String CORRECTED_EVALUATOR =
+            StrategyFixedBaselineCorrectedV1.EVALUATOR_ID;
+    static final String CORRECTED_RECEIPT_SCHEMA =
+            "strategy-evaluator-operating-characteristics-corrected-successor-evaluator-receipt/1";
     private static final double Z95 = 1.959963984540054;
     private static final Set<String> COMPACT_ROW_FIELDS = Set.of("cell", "effect_size", "replication", "seed",
             "status", "decision", "event_count", "paired_count", "independent_units",
@@ -126,6 +136,18 @@ public final class StrategyOperatingCharacteristicsSuccessorV1 {
     /** Validates an immutable successor plan before outcome generation is opened. */
     public static ObjectNode preflight(ObjectNode plan) {
         validatePlan(plan);
+        if (isCorrectedPlan(plan)) throw new IllegalArgumentException("use corrected successor preflight for the corrected plan");
+        return preflightValidated(plan, false);
+    }
+
+    /** Preflight for the additive corrected successor contract. */
+    public static ObjectNode correctedPreflight(ObjectNode plan) {
+        validatePlan(plan);
+        if (!isCorrectedPlan(plan)) throw new IllegalArgumentException("corrected successor plan schema is required");
+        return preflightValidated(plan, true);
+    }
+
+    private static ObjectNode preflightValidated(ObjectNode plan, boolean corrected) {
         ObjectNode budget = (ObjectNode) plan.path("resource_budget");
         long replications = plan.path("replications").asLong(-1);
         long cells = plan.path("cell_count").asLong(-1);
@@ -145,10 +167,11 @@ public final class StrategyOperatingCharacteristicsSuccessorV1 {
         boolean resourcePass = estimatedWall <= budget.path("max_wall_minutes").asLong(-1) * 60L
                 && estimatedRss <= budget.path("max_rss_bytes").asLong(-1);
         ObjectNode result = JsonHashes.mapper().createObjectNode()
-                .put("schema", "strategy-evaluator-operating-characteristics-successor-preflight/1")
+                .put("schema", corrected ? "strategy-evaluator-operating-characteristics-corrected-successor-preflight/1"
+                        : "strategy-evaluator-operating-characteristics-successor-preflight/1")
                 .put("version", 1).put("status", resourcePass ? "READY_PRE_OUTCOME" : "BLOCKED_RESOURCE_ESTIMATE")
                 .put("plan_sha256", plan.path("content_sha256").asText())
-                .put("binding_fixed_evaluator", FIXED_EVALUATOR)
+                .put("binding_fixed_evaluator", corrected ? CORRECTED_EVALUATOR : FIXED_EVALUATOR)
                 .put("shared_physical_evaluator", true).put("toy_statistic", false)
                 .put("outcomes_opened", false).put("promotion_eligible", false)
                 .put("activation_authorized", false)
@@ -165,6 +188,7 @@ public final class StrategyOperatingCharacteristicsSuccessorV1 {
                 .put("resource_budget_pass", resourcePass)
                 .put("resource_estimate_method", "conservative linear DEVELOPMENT estimate from retained v004 full run; must be replaced by a measured exact-geometry prefix before any full run");
         if (!resourcePass) result.put("blocker", "SUCCESSOR_FULL_GEOMETRY_EXCEEDS_DECLARED_8GIB_12H_ENVELOPE");
+        if (corrected) result.put("accounting_version", StrategyFixedBaselinePortfolioCorrectionV1.ACCOUNTING_VERSION);
         result.set("build_identity", BuildIdentityService.describe(StrategyOperatingCharacteristicsSuccessorV1.class));
         result.put("content_sha256", JsonHashes.ownHash(result));
         return result;
@@ -177,20 +201,32 @@ public final class StrategyOperatingCharacteristicsSuccessorV1 {
      * disjoint prefix seeds recorded in the plan.
      */
     public static ObjectNode run(ObjectNode options) {
+        return run(options, false);
+    }
+
+    /** Additive corrected successor execution; the frozen run remains unchanged. */
+    public static ObjectNode runCorrected(ObjectNode options) {
+        return run(options, true);
+    }
+
+    private static ObjectNode run(ObjectNode options, boolean corrected) {
         Path ledgerPath = Path.of(text(options, "ledger")).toAbsolutePath().normalize();
         Path runLockPath = ledgerPath.resolveSibling(ledgerPath.getFileName() + ".run.lock");
         try (FileChannel runLockChannel = FileChannel.open(runLockPath, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
                 FileLock ignored = runLockChannel.lock()) {
-            return runUnlocked(options);
+            return runUnlocked(options, corrected);
         } catch (IOException error) {
             throw new IllegalArgumentException("cannot acquire successor runner lock", error);
         }
     }
 
-    private static ObjectNode runUnlocked(ObjectNode options) {
+    private static ObjectNode runUnlocked(ObjectNode options, boolean corrected) {
         ObjectNode plan = readObject(text(options, "plan"), "successor plan");
         validatePlan(plan);
-        ObjectNode preflight = preflight(plan);
+        if (corrected != isCorrectedPlan(plan)) {
+            throw new IllegalArgumentException("corrected successor command requires its versioned corrected plan");
+        }
+        ObjectNode preflight = corrected ? correctedPreflight(plan) : preflight(plan);
         boolean prefix = options.path("prefix").asBoolean(false);
         if (!prefix && !"READY_PRE_OUTCOME".equals(preflight.path("status").asText())) {
             throw new IllegalArgumentException("successor full run is blocked by its frozen resource preflight");
@@ -245,8 +281,11 @@ public final class StrategyOperatingCharacteristicsSuccessorV1 {
                     ObjectNode startedAttempt = attemptFor(plan, mode, cell, replication, seed, "STARTED", null);
                     appendInternal(plan, options, ledgerPath, startedAttempt);
                 }
-                ObjectNode row = runReplication(plan, baseline, controls, experiment, mode, cell, replication, seed,
-                        episodes, deadline, maxRss);
+                ObjectNode row = corrected
+                        ? runCorrectedReplication(plan, baseline, controls, experiment, mode, cell, replication, seed,
+                                episodes, deadline, maxRss)
+                        : runReplication(plan, baseline, controls, experiment, mode, cell, replication, seed,
+                                episodes, deadline, maxRss);
                 rows.add(row);
                 ObjectNode attempt = attemptFor(plan, mode, cell, replication, seed,
                         row.path("status").asText("COMPUTE_INCOMPLETE"), row);
@@ -263,12 +302,14 @@ public final class StrategyOperatingCharacteristicsSuccessorV1 {
         }
         boolean measured = !prefix && !incomplete && adequate;
         ObjectNode result = JsonHashes.mapper().createObjectNode()
-                .put("schema", "strategy-evaluator-operating-characteristics-successor-result/1")
+                .put("schema", corrected ? CORRECTED_RESULT_SCHEMA
+                        : "strategy-evaluator-operating-characteristics-successor-result/1")
                 .put("version", 1).put("status", incomplete ? "COMPUTE_INCOMPLETE" : (prefix ? "PREFIX_COMPLETE" : "COMPLETE"))
                 .put("scope", "CONDITIONAL_FIXED_BASELINE_SYNTHETIC_DIAGNOSTIC")
                 .put("plan_sha256", plan.path("content_sha256").asText())
                 .put("preflight_sha256", preflight.path("content_sha256").asText())
-                .put("binding_fixed_evaluator", FIXED_EVALUATOR).put("shared_physical_evaluator", true)
+                .put("binding_fixed_evaluator", corrected ? CORRECTED_EVALUATOR : FIXED_EVALUATOR)
+                .put("shared_physical_evaluator", true)
                 .put("toy_statistic", false).put("promotion_eligible", false).put("activation_authorized", false)
                 .put("pit_valid", false).put("observed_exchange_fills", false).put("outcomes_opened", true)
                 .put("execution_complete", !incomplete).put("measured", measured)
@@ -278,6 +319,7 @@ public final class StrategyOperatingCharacteristicsSuccessorV1 {
                 .put("runtime_seconds", (System.nanoTime() - started) / 1_000_000_000D)
                 .put("peak_rss_bytes", peakRss).put("planned_replications", replications * cells.size());
         result.set("replications", rows);
+        if (corrected) result.put("accounting_version", StrategyFixedBaselinePortfolioCorrectionV1.ACCOUNTING_VERSION);
         result.set("build_identity", BuildIdentityService.describe(StrategyOperatingCharacteristicsSuccessorV1.class));
         result.put("content_sha256", JsonHashes.ownHash(result));
         String output = options.path("out").asText("");
@@ -292,6 +334,13 @@ public final class StrategyOperatingCharacteristicsSuccessorV1 {
                 episodes, deadline, maxRss, false);
     }
 
+    private static ObjectNode runCorrectedReplication(ObjectNode plan, ObjectNode baseline, ObjectNode controls,
+            ObjectNode experiment, String mode, CellSpec cell, int replication, long seed, int episodes,
+            long deadline, long maxRss) {
+        return runReplicationInternal(plan, baseline, controls, experiment, mode, cell, replication, seed,
+                episodes, deadline, maxRss, false, true);
+    }
+
     /**
      * Bounded repetition seam for the independent runner.  The argument order
      * deliberately mirrors the frozen slot identity so callers cannot invent
@@ -302,12 +351,31 @@ public final class StrategyOperatingCharacteristicsSuccessorV1 {
             ObjectNode experiment, ObjectNode plan, String mode, String scenario, double effect,
             int replication, long seed, int episodes, long deadline, long maxRss) {
         return runReplicationInternal(plan, baseline, controls, experiment, mode,
-                new CellSpec(scenario, effect, null), replication, seed, episodes, deadline, maxRss, true);
+                new CellSpec(scenario, effect, null), replication, seed, episodes, deadline, maxRss, true, false);
+    }
+
+    /**
+     * Corrected worker seam.  It reuses the frozen setup, matching and
+     * lifecycle generator, then applies the additive accounting correction to
+     * both event and control books before any result projection is created.
+     */
+    static ObjectNode evaluateCorrectedReplication(ObjectNode baseline, ObjectNode controls,
+            ObjectNode experiment, ObjectNode plan, String mode, String scenario, double effect,
+            int replication, long seed, int episodes, long deadline, long maxRss) {
+        return runReplicationInternal(plan, baseline, controls, experiment, mode,
+                new CellSpec(scenario, effect, null), replication, seed, episodes, deadline, maxRss, true, true);
     }
 
     private static ObjectNode runReplicationInternal(ObjectNode plan, ObjectNode baseline, ObjectNode controls,
             ObjectNode experiment, String mode, CellSpec cell, int replication, long seed, int episodes,
             long deadline, long maxRss, boolean bounded) {
+        return runReplicationInternal(plan, baseline, controls, experiment, mode, cell, replication, seed,
+                episodes, deadline, maxRss, bounded, false);
+    }
+
+    private static ObjectNode runReplicationInternal(ObjectNode plan, ObjectNode baseline, ObjectNode controls,
+            ObjectNode experiment, String mode, CellSpec cell, int replication, long seed, int episodes,
+            long deadline, long maxRss, boolean bounded, boolean corrected) {
         Path root;
         try { root = Files.createTempDirectory("strategy-successor-v1-"); }
         catch (IOException error) { throw new IllegalArgumentException("cannot create successor role root", error); }
@@ -404,16 +472,19 @@ public final class StrategyOperatingCharacteristicsSuccessorV1 {
                     .put("content_sha256", JsonHashes.sha256("synthetic-successor-portfolio"));
             ObjectNode evaluated = StrategyFixedBaselineV5.evaluate(JsonHashes.mapper().createObjectNode(), baseline, controls,
                     experiment, portfolio, physical, exposure, root.resolve("successor-exposure-head.json"), lineage, "", Double.NaN);
+            if (corrected) evaluated = StrategyFixedBaselineCorrectedV1.correctFrozenResult(evaluated);
             ObjectNode row = JsonHashes.mapper().createObjectNode().put("cell", cell.scenario()).put("effect_size", cell.effect())
                     .put("replication", replication).put("seed", seed).put("status", evaluated.path("status").asText())
                     .put("decision", "ELIGIBLE".equals(evaluated.path("disposition").path("primary_reason").asText()))
                     .put("event_count", evaluated.path("event_count").asInt()).put("paired_count", evaluated.path("matched_control_count").asInt())
                     .put("independent_units", evaluated.path("independent_market_episode_count").asInt())
-                    .put("economic_semantic_sha256", evaluated.path("economic_semantic_sha256").asText())
+                    .put("economic_semantic_sha256", corrected
+                            ? evaluated.path("corrected_economic_semantic_sha256").asText()
+                            : evaluated.path("economic_semantic_sha256").asText())
                     .put("generator_input_sha256", physical.contentSha256());
             row.set("disposition", evaluated.path("disposition").deepCopy()); row.set("metrics", evaluated.path("metrics").deepCopy());
             row.set("portfolio_summary", evaluated.path("portfolio").deepCopy());
-            row.set("evaluator_receipt", evaluatorReceipt(evaluated, physical.contentSha256()));
+            row.set("evaluator_receipt", evaluatorReceipt(evaluated, physical.contentSha256(), corrected));
             // Retain the complete evaluator output before deleting the temporary
             // physical-input tree. The selected metrics/portfolio projection is
             // convenient for diagnosis, but cannot stand in for the authoritative
@@ -421,8 +492,10 @@ public final class StrategyOperatingCharacteristicsSuccessorV1 {
             ObjectNode rawEvaluatorResult = evaluated;
             row.set("raw_evaluator_result", rawEvaluatorResult);
             row.put("raw_evaluator_result_content_sha256", rawEvaluatorResult.path("content_sha256").asText());
-            row.put("raw_evaluator_result_canonical_sha256", JsonHashes.canonicalSha256(rawEvaluatorResult));
-            row.put("raw_evaluator_result_byte_sha256", serializedJsonSha256(rawEvaluatorResult));
+            row.put("raw_evaluator_result_canonical_sha256",
+                    JsonHashes.canonicalSha256Streaming(rawEvaluatorResult));
+            row.put("raw_evaluator_result_byte_sha256",
+                    JsonHashes.serializedSha256Streaming(rawEvaluatorResult));
             row.set("representative_setup_events", firstRows(evaluated.path("setup_events"), 2));
             row.set("representative_control_selections", firstRows(evaluated.path("control_selections"), 2));
             return row;
@@ -491,7 +564,9 @@ public final class StrategyOperatingCharacteristicsSuccessorV1 {
     }
 
     private static void validatePlan(ObjectNode plan) {
-        if (!PLAN_SCHEMA.equals(plan.path("schema").asText()) || plan.path("version").asInt(-1) != 1
+        boolean corrected = isCorrectedPlan(plan);
+        if ((!PLAN_SCHEMA.equals(plan.path("schema").asText()) && !corrected)
+                || plan.path("version").asInt(-1) != 1
                 || !plan.path("frozen_before_outcomes").asBoolean(false)
                 || plan.path("outcomes_opened").asBoolean(true)
                 || plan.path("promotion_eligible").asBoolean(true)
@@ -499,9 +574,16 @@ public final class StrategyOperatingCharacteristicsSuccessorV1 {
                 || !plan.path("content_sha256").asText().equals(JsonHashes.ownHash(plan))) {
             throw new IllegalArgumentException("successor plan is not immutable and pre-outcome self-bound");
         }
-        if (!FIXED_EVALUATOR.equals(plan.path("binding_fixed_evaluator").asText())
+        String expectedEvaluator = corrected ? CORRECTED_EVALUATOR : FIXED_EVALUATOR;
+        if (!expectedEvaluator.equals(plan.path("binding_fixed_evaluator").asText())
                 || !plan.path("development_exposure").asBoolean(false)) {
             throw new IllegalArgumentException("successor plan is not bound to the production fixed evaluator");
+        }
+        if (corrected && (!CORRECTED_PLAN_SCHEMA.equals(plan.path("schema").asText())
+                || !CORRECTED_EVALUATOR.equals(plan.path("corrected_evaluator_identity").asText())
+                || !StrategyFixedBaselinePortfolioCorrectionV1.ACCOUNTING_VERSION
+                        .equals(plan.path("accounting_version").asText()))) {
+            throw new IllegalArgumentException("corrected successor plan is not bound to corrected accounting");
         }
         requireHash(plan, "predecessor_diagnosis_sha256");
         requireHash(plan, "baseline_sha256");
@@ -630,19 +712,29 @@ public final class StrategyOperatingCharacteristicsSuccessorV1 {
         }
         requireHash(attempt, "executor_identity_sha256");
         requireHash(attempt, "input_sha256");
+        if (internal) validateInternalAttemptInputBinding(plan, attempt);
         if (!attempt.path("outcomes_opened").asBoolean(false)
                 || !attempt.path("promotion_eligible").isBoolean()
                 || attempt.path("promotion_eligible").asBoolean(true)) {
             throw new IllegalArgumentException("successor attempt lacks diagnostic outcome boundary");
+        }
+        if (internal && !"STARTED".equals(attempt.path("status").asText())
+                && attempt.path("result_row").isObject()
+                && !attempt.path("status").asText().equals(attempt.path("result_row").path("status").asText())) {
+            throw new IllegalArgumentException("successor terminal attempt status differs from its durable result row");
         }
         if ("COMPLETE".equals(attempt.path("status").asText())) {
             if (!internal || !attempt.path("internal_evaluator").asBoolean(false)) {
                 throw new IllegalArgumentException("COMPLETE successor attempts require the in-process evaluator");
             }
             JsonNode output = attempt.path("evaluator_output");
-            if (!output.isObject() || !"strategy-evaluator-operating-characteristics-successor-evaluator-receipt/1".equals(output.path("schema").asText())
+            boolean corrected = isCorrectedPlan(plan);
+            if (!output.isObject() || !(corrected ? CORRECTED_RECEIPT_SCHEMA
+                    : "strategy-evaluator-operating-characteristics-successor-evaluator-receipt/1")
+                    .equals(output.path("schema").asText())
                     || !"SHARED_FIXED_EVALUATOR_IN_PROCESS".equals(output.path("origin").asText())
-                    || !"strategy-fixed-baseline-result/1".equals(output.path("result_schema").asText())
+                    || !(corrected ? CORRECTED_EVALUATOR_RESULT_SCHEMA : "strategy-fixed-baseline-result/1")
+                            .equals(output.path("result_schema").asText())
                     || !output.path("content_sha256").asText().equals(JsonHashes.ownHash(output))
                     || !attempt.path("evaluator_output_sha256").asText().equals(output.path("content_sha256").asText())
                     || !output.path("metrics").isObject()
@@ -652,6 +744,14 @@ public final class StrategyOperatingCharacteristicsSuccessorV1 {
                     || !attempt.path("result_row").path("metrics").equals(output.path("metrics"))
                     || !validRawEvaluatorResult(attempt.path("result_row"), output)) {
                 throw new IllegalArgumentException("COMPLETE successor attempt lacks an authoritative evaluator result");
+            }
+            if (corrected) {
+                ObjectNode resultRow = object(attempt, "result_row");
+                ObjectNode raw = object(resultRow, "raw_evaluator_result");
+                StrategyOperatingCharacteristicsParallelV1.validateCorrectedRawForResume(raw, resultRow, plan,
+                        attempt.path("mode").asText(), attempt.path("scenario").asText(),
+                        attempt.path("effect_size").asDouble(), attempt.path("replication").asInt(),
+                        attempt.path("seed").asLong(), Path.of("successor-attempt-ledger"));
             }
         }
         if (!"STARTED".equals(attempt.path("status").asText()) && !attempt.path("result_row").isObject()) {
@@ -679,6 +779,71 @@ public final class StrategyOperatingCharacteristicsSuccessorV1 {
                 || !plan.path("content_sha256").asText().equals(ledger.path("plan_sha256").asText())
                 || !ledger.path("content_sha256").asText().equals(JsonHashes.ownHash(ledger))) {
             throw new IllegalArgumentException("successor attempt ledger is invalid or bound to another plan");
+        }
+        JsonNode attempts = ledger.path("attempts");
+        if (!attempts.isArray()) throw new IllegalArgumentException("successor attempt ledger has no attempt inventory");
+        // Historical frozen V5 ledgers retain their original custody contract.
+        // The additive corrected ledger is the only path that gets the new
+        // raw-result and synthetic-slot resume checks.
+        if (isCorrectedPlan(plan)) for (JsonNode value : attempts) {
+            if (!value.isObject()) throw new IllegalArgumentException("successor attempt ledger contains a non-object attempt");
+            validateAttempt(plan, (ObjectNode) value, true);
+        }
+    }
+
+    /** Package-private custody seam for corrected resume regression tests. */
+    static void validateLedgerForTest(ObjectNode plan, ObjectNode ledger) {
+        validateLedger(plan, ledger);
+    }
+
+    /**
+     * Resume validation must bind the durable input hash to the actual frozen
+     * slot.  A copied row can carry self-consistent hashes while naming a
+     * different cell or seed unless this descriptor is reconstructed here.
+     */
+    private static void validateInternalAttemptInputBinding(ObjectNode plan, ObjectNode attempt) {
+        String mode = attempt.path("mode").asText("");
+        String scenario = attempt.path("scenario").asText("");
+        double effect = attempt.path("effect_size").asDouble(Double.NaN);
+        int replication = attempt.path("replication").asInt(-1);
+        long seed = attempt.path("seed").asLong(Long.MIN_VALUE);
+        int replicationLimit = "PREFIX".equals(mode)
+                ? plan.path("resource_preflight").path("replications").asInt(-1)
+                : plan.path("replications").asInt(-1);
+        if (!Set.of("PREFIX", "FULL").contains(mode) || scenario.isBlank()
+                || !Double.isFinite(effect) || replication < 0 || replication >= replicationLimit) {
+            throw new IllegalArgumentException("successor internal attempt slot is invalid");
+        }
+        JsonNode cell = null;
+        for (JsonNode candidate : plan.path("cells")) {
+            if (scenario.equals(candidate.path("scenario").asText())
+                    && Double.compare(effect, candidate.path("effect_size").asDouble(Double.NaN)) == 0) {
+                cell = candidate; break;
+            }
+        }
+        String seedField = "PREFIX".equals(mode) ? "prefix_seeds" : "seeds";
+        if (cell == null || !cell.path(seedField).isArray() || cell.path(seedField).size() <= replication
+                || !cell.path(seedField).get(replication).isIntegralNumber()
+                || cell.path(seedField).get(replication).asLong() != seed) {
+            throw new IllegalArgumentException("successor internal attempt seed differs from frozen slot");
+        }
+        String effectKey = java.math.BigDecimal.valueOf(effect).stripTrailingZeros().toPlainString();
+        String expectedId = mode + "|" + scenario + "|" + effectKey + ":" + replication;
+        if (!expectedId.equals(attempt.path("attempt_id").asText())) {
+            throw new IllegalArgumentException("successor internal attempt_id differs from frozen slot");
+        }
+        String expectedInput = expectedInputSha(plan, mode, new CellSpec(scenario, effect, null), replication, seed);
+        if (!expectedInput.equals(attempt.path("input_sha256").asText())) {
+            throw new IllegalArgumentException("successor internal attempt input differs from frozen synthetic descriptor");
+        }
+        if (attempt.path("result_row").isObject()) {
+            JsonNode row = attempt.path("result_row");
+            if (!scenario.equals(row.path("cell").asText())
+                    || Double.compare(effect, row.path("effect_size").asDouble(Double.NaN)) != 0
+                    || replication != row.path("replication").asInt(-1)
+                    || seed != row.path("seed").asLong(Long.MIN_VALUE)) {
+                throw new IllegalArgumentException("successor internal attempt row differs from frozen slot");
+            }
         }
     }
 
@@ -801,16 +966,30 @@ public final class StrategyOperatingCharacteristicsSuccessorV1 {
     }
 
     private static ObjectNode evaluatorReceipt(ObjectNode evaluated, String sourceInputSha256) {
+        return evaluatorReceipt(evaluated, sourceInputSha256, false);
+    }
+
+    private static boolean isCorrectedPlan(ObjectNode plan) {
+        return CORRECTED_PLAN_SCHEMA.equals(plan.path("schema").asText());
+    }
+
+    private static ObjectNode evaluatorReceipt(ObjectNode evaluated, String sourceInputSha256, boolean corrected) {
         ObjectNode identity = BuildIdentityService.describe(StrategyOperatingCharacteristicsSuccessorV1.class);
         ObjectNode receipt = JsonHashes.mapper().createObjectNode()
-                .put("schema", "strategy-evaluator-operating-characteristics-successor-evaluator-receipt/1")
+                .put("schema", corrected ? CORRECTED_RECEIPT_SCHEMA
+                        : "strategy-evaluator-operating-characteristics-successor-evaluator-receipt/1")
                 .put("version", 1).put("origin", "SHARED_FIXED_EVALUATOR_IN_PROCESS")
                 .put("result_schema", evaluated.path("schema").asText())
                 .put("result_content_sha256", evaluated.path("content_sha256").asText())
-                .put("economic_semantic_sha256", evaluated.path("economic_semantic_sha256").asText())
+                .put("economic_semantic_sha256", evaluated.has("corrected_economic_semantic_sha256")
+                        ? evaluated.path("corrected_economic_semantic_sha256").asText()
+                        : evaluated.path("economic_semantic_sha256").asText())
                 .put("status", evaluated.path("status").asText())
                 .put("executor_identity_sha256", identity.path("executable").path("sha256").asText())
                 .put("source_input_sha256", sourceInputSha256);
+        if (corrected) receipt.put("accounting_version", StrategyFixedBaselinePortfolioCorrectionV1.ACCOUNTING_VERSION)
+                .put("evaluator_identity", CORRECTED_EVALUATOR)
+                .put("legacy_result_content_sha256", evaluated.path("source_result_content_sha256").asText());
         receipt.set("metrics", evaluated.path("metrics").deepCopy());
         receipt.put("content_sha256", JsonHashes.ownHash(receipt));
         return receipt;
@@ -820,22 +999,20 @@ public final class StrategyOperatingCharacteristicsSuccessorV1 {
         JsonNode raw = row.path("raw_evaluator_result");
         if (!raw.isObject()
                 || !raw.path("content_sha256").isTextual()
-                || !raw.path("content_sha256").asText().equals(JsonHashes.ownHash(raw))
+                || !raw.path("content_sha256").asText().equals(JsonHashes.ownHashStreaming(raw))
                 || !raw.path("content_sha256").asText().equals(receipt.path("result_content_sha256").asText())
                 || !row.path("raw_evaluator_result_content_sha256").asText().equals(raw.path("content_sha256").asText())
-                || !row.path("raw_evaluator_result_canonical_sha256").asText().equals(JsonHashes.canonicalSha256(raw))
-                || !row.path("raw_evaluator_result_byte_sha256").asText().equals(serializedJsonSha256(raw))) {
+                || !row.path("raw_evaluator_result_canonical_sha256").asText().equals(
+                        JsonHashes.canonicalSha256Streaming(raw))
+                || !row.path("raw_evaluator_result_byte_sha256").asText().equals(
+                        JsonHashes.serializedSha256Streaming(raw))) {
             return false;
         }
         return row.path("portfolio_summary").equals(raw.path("portfolio"));
     }
 
     private static String serializedJsonSha256(JsonNode value) {
-        try {
-            return JsonHashes.sha256(JsonHashes.mapper().writeValueAsBytes(value));
-        } catch (IOException error) {
-            throw new IllegalArgumentException("cannot serialize raw evaluator result", error);
-        }
+        return JsonHashes.serializedSha256Streaming(value);
     }
 
     private static void validateNumericFalsifier(JsonNode row) {
@@ -980,6 +1157,12 @@ public final class StrategyOperatingCharacteristicsSuccessorV1 {
         JsonNode value = object.path(field);
         if (!value.isArray()) throw new IllegalArgumentException("required array missing: " + field);
         return (ArrayNode) value;
+    }
+
+    private static ObjectNode object(JsonNode parent, String field) {
+        JsonNode value = parent.path(field);
+        if (!value.isObject()) throw new IllegalArgumentException("required object missing: " + field);
+        return (ObjectNode) value;
     }
 
     private static void requireHash(JsonNode value, String field) {

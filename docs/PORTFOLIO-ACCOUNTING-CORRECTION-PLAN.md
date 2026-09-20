@@ -1,5 +1,9 @@
 # Portfolio accounting correction plan
 
+The 80% line/branch coverage threshold recorded in this historical plan and its
+measurements is superseded by the current 55%/55% policy in `AGENTS.md`. The
+historical threshold and evidence below are retained unchanged.
+
 Reviewed baseline: `fd7935b9ea0320c171353416d94c1e3a6ab56078`.
 
 ## Finding

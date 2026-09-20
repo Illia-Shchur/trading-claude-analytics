@@ -273,6 +273,19 @@ final class StrategyOperatingCharacteristicsParallelV1Test {
     }
 
     @Test
+    void macMachineIdentityParserAcceptsOnlyAPlatformUuid() {
+        String uuid = "00112233-4455-6677-8899-aabbccddeeff";
+        assertThat(StrategyOperatingCharacteristicsParallelV1.parseMacMachineIdentity(
+                "+-o IOPlatformExpertDevice\n    \"IOPlatformUUID\" = \"" + uuid + "\"\n"))
+                .isEqualTo(uuid);
+        assertThat(StrategyOperatingCharacteristicsParallelV1.parseMacMachineIdentity(null)).isEmpty();
+        assertThat(StrategyOperatingCharacteristicsParallelV1.parseMacMachineIdentity(
+                "    \"IOPlatformUUID\" = \"unknown\"\n")).isEmpty();
+        assertThat(StrategyOperatingCharacteristicsParallelV1.parseMacMachineIdentity(
+                "    \"OtherUUID\" = \"" + uuid + "\"\n")).isEmpty();
+    }
+
+    @Test
     void resourceIncompleteRowsAbortGloballyWithoutPublishingCompleteTransport() {
         ObjectNode plan = plan("PREFIX", 2, true);
         ObjectNode profile = profile(1);
@@ -293,6 +306,14 @@ final class StrategyOperatingCharacteristicsParallelV1Test {
                 JsonHashes.mapper().createObjectNode().put("test_probe_override", true)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("test_probe_override");
+    }
+
+    @Test
+    void processWorkersUseVersionedSubcommandsForFrozenAndCorrectedRuns() {
+        assertThat(StrategyOperatingCharacteristicsParallelV1.workerSubcommandForTest(false))
+                .isEqualTo("operating-characteristics-parallel-worker");
+        assertThat(StrategyOperatingCharacteristicsParallelV1.workerSubcommandForTest(true))
+                .isEqualTo("operating-characteristics-corrected-parallel-worker");
     }
 
     @Test

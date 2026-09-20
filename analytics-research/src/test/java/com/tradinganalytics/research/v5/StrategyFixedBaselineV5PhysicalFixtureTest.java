@@ -167,13 +167,13 @@ class StrategyFixedBaselineV5PhysicalFixtureTest {
 
     private Fixture fixture() throws Exception {
         ObjectNode baseline = (ObjectNode) JsonHashes.mapper().readTree(Files.readString(repoFile(
-                "strategy-research/definitions/fk-deleveraging-absorption/v002.json")));
+                "analytics-research/src/test/resources/fixtures/fk-deleveraging/baseline-v002.json")));
         ObjectNode controls = (ObjectNode) JsonHashes.mapper().readTree(Files.readString(repoFile(
-                "strategy-research/experiments/fk-deleveraging-baseline-v002/controls.json")));
+                "analytics-research/src/test/resources/fixtures/fk-deleveraging/controls-v002.json")));
         ObjectNode experiment = (ObjectNode) JsonHashes.mapper().readTree(Files.readString(repoFile(
-                "strategy-research/experiments/fk-deleveraging-baseline-v002/experiment.json")));
+                "analytics-research/src/test/resources/fixtures/fk-deleveraging/experiment-v002.json")));
         ObjectNode portfolio = (ObjectNode) JsonHashes.mapper().readTree(Files.readString(repoFile(
-                "strategy-research/experiments/fk-deleveraging-baseline-v002/portfolio-policy-v001.json")));
+                "strategy-research/config/fixed-baseline-portfolio-policy-v001.json")));
 
         Map<String, StrategyFixedBaselineV5.Role> roles = new LinkedHashMap<>();
         roles.put("contract_spec", role("contract-spec", object()
@@ -244,8 +244,18 @@ class StrategyFixedBaselineV5PhysicalFixtureTest {
     }
 
     private ObjectNode nonTradingPolicy() throws Exception {
-        ObjectNode policy = (ObjectNode) JsonHashes.mapper().readTree(Files.readString(repoFile(
-                "strategy-research/v5-records/evidence/fixed-baseline-full-declared-v004/non-trading-intervals.json")));
+        ObjectNode policy = JsonHashes.mapper().createObjectNode()
+                .put("schema", "strategy-fixed-baseline-non-trading/1")
+                .put("version", 1).put("status", "FROZEN")
+                .put("policy_id", "NON_TRADING_CLOSURE_V001")
+                .put("provenance", "OFFICIAL_BINANCE_NOTICE_AND_PUBLIC_MONTHLY_ARCHIVE_CHECKSUMS")
+                .put("venue", "BINANCE").put("instrument", "BINANCE_SPOT")
+                .put("asset_scope", "EXPLICIT_INTERVAL_ASSETS_ONLY")
+                .put("frozen_before_outcome_read", true)
+                .put("interval_semantics", "[start_ms,end_ms)")
+                .put("missing_bar_policy", "NO_SYNTHETIC_BARS_OR_FILLS;_RESUME_AT_FIRST_REOPENING_BAR")
+                .put("notice_url", "https://example.test/non-trading")
+                .put("notice_statement", "Test fixture closure interval");
         ArrayNode intervals = policy.putArray("intervals");
         intervals.addObject().put("asset", "btc").put("symbol", "BTCUSDT")
                 .put("venue", "BINANCE").put("instrument", "BINANCE_SPOT")

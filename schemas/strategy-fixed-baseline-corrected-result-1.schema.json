@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-fixed-baseline-corrected-result/1",
+  "type": "object",
+  "required": [
+    "schema", "version", "correction_status", "accounting_version",
+    "evaluator_identity", "corrected_evaluator_identity", "source_evaluator_identity",
+    "source_result_schema", "source_result_content_sha256", "source_executor_identity_sha256",
+    "corrected_executor_identity_sha256", "executor_identity_sha256",
+    "algorithm_fingerprint", "baseline_sha256", "control_spec_sha256", "experiment_sha256",
+    "physical_input_sha256", "portfolio", "corrected_portfolio_metrics", "metrics",
+    "corrected_input_binding", "correction_receipt", "build_identity",
+    "corrected_economic_semantic_sha256", "corrected_semantic_sha256", "content_sha256"
+  ],
+  "properties": {
+    "schema": {"const": "strategy-fixed-baseline-corrected-result/1"},
+    "version": {"const": 1},
+    "correction_status": {"const": "CORRECTED"},
+    "accounting_version": {"const": "PORTFOLIO_ACCOUNTING_CORRECTION_V1"},
+    "evaluator_identity": {"const": "com.tradinganalytics.research.v5.StrategyFixedBaselineCorrectedV1"},
+    "corrected_evaluator_identity": {"const": "com.tradinganalytics.research.v5.StrategyFixedBaselineCorrectedV1"},
+    "source_evaluator_identity": {"const": "com.tradinganalytics.research.v5.StrategyFixedBaselineV5"},
+    "source_result_schema": {"enum": ["strategy-fixed-baseline-result/1", "strategy-fixed-refinement-member-result/1"]},
+    "source_result_content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "source_executor_identity_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "corrected_executor_identity_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "executor_identity_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "algorithm_fingerprint": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "baseline_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "control_spec_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "experiment_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "physical_input_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "portfolio": {
+      "type": "object",
+      "required": ["event_book", "control_book", "corrected_metrics", "combined_equity_curve",
+                    "accounting_version", "evaluator_identity", "corrected",
+                    "ending_minus_starting_equals_net", "sum_check",
+                    "final_marked_holdings_usdt", "final_active_position_count"],
+      "properties": {
+        "event_book": {"type": "object"},
+        "control_book": {"type": "object"},
+        "corrected_metrics": {"$ref": "#/$defs/correctedMetrics"},
+        "combined_equity_curve": {"type": "array"},
+        "accounting_version": {"const": "PORTFOLIO_ACCOUNTING_CORRECTION_V1"},
+        "evaluator_identity": {"const": "com.tradinganalytics.research.v5.StrategyFixedBaselineCorrectedV1"},
+        "corrected": {"const": true},
+        "ending_minus_starting_equals_net": {"const": true},
+        "sum_check": {"const": true},
+        "final_marked_holdings_usdt": {"type": "number"},
+        "final_active_position_count": {"const": 0}
+      }
+    },
+    "corrected_portfolio_metrics": {"$ref": "#/$defs/correctedMetrics"},
+    "metrics": {"type": "object"},
+    "corrected_input_binding": {"type": "object"},
+    "correction_receipt": {"type": "object"},
+    "build_identity": {"type": "object"},
+    "corrected_economic_semantic_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "corrected_semantic_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "$defs": {
+    "bookMetrics": {
+      "type": "object",
+      "required": ["starting_equity_usdt", "ending_equity_usdt", "net_pnl_usdt",
+                    "max_drawdown_usdt", "return_fraction", "final_marked_holdings_usdt",
+                    "final_active_position_count"],
+      "properties": {
+        "starting_equity_usdt": {"type": "number"},
+        "ending_equity_usdt": {"type": "number"},
+        "net_pnl_usdt": {"type": "number"},
+        "max_drawdown_usdt": {"type": "number", "minimum": 0},
+        "return_fraction": {"type": "number"},
+        "final_marked_holdings_usdt": {"type": "number", "minimum": 0},
+        "final_active_position_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "combinedMetrics": {
+      "type": "object",
+      "required": ["starting_equity_usdt", "ending_equity_usdt", "gross_pnl_usdt", "fees_usdt",
+                    "slippage_usdt", "capacity_debit_usdt", "net_pnl_usdt", "max_drawdown_usdt",
+                    "return_fraction", "max_drawdown_fraction", "final_marked_holdings_usdt",
+                    "final_active_position_count", "equity_curve_recomputed"],
+      "properties": {
+        "starting_equity_usdt": {"type": "number", "exclusiveMinimum": 0},
+        "ending_equity_usdt": {"type": "number"},
+        "gross_pnl_usdt": {"type": "number"},
+        "fees_usdt": {"type": "number", "minimum": 0},
+        "slippage_usdt": {"type": "number", "minimum": 0},
+        "capacity_debit_usdt": {"type": "number", "minimum": 0},
+        "net_pnl_usdt": {"type": "number"},
+        "max_drawdown_usdt": {"type": "number", "minimum": 0},
+        "return_fraction": {"type": "number"},
+        "max_drawdown_fraction": {"type": "number", "minimum": 0},
+        "final_marked_holdings_usdt": {"type": "number", "minimum": 0},
+        "final_active_position_count": {"type": "integer", "minimum": 0},
+        "equity_curve_recomputed": {"const": true}
+      }
+    },
+    "correctedMetrics": {
+      "type": "object",
+      "required": ["schema", "version", "accounting_version", "evaluator_identity", "trade_count",
+                    "event_book", "control_book", "combined", "equity_curve_sha256",
+                    "equity_curve_source", "equity_curve_row_count", "content_sha256"],
+      "properties": {
+        "schema": {"const": "strategy-fixed-baseline-corrected-portfolio-metrics/1"},
+        "version": {"const": 1},
+        "accounting_version": {"const": "PORTFOLIO_ACCOUNTING_CORRECTION_V1"},
+        "evaluator_identity": {"const": "com.tradinganalytics.research.v5.StrategyFixedBaselineCorrectedV1"},
+        "trade_count": {"type": "integer", "minimum": 0},
+        "event_book": {"$ref": "#/$defs/bookMetrics"},
+        "control_book": {"$ref": "#/$defs/bookMetrics"},
+        "combined": {"$ref": "#/$defs/combinedMetrics"},
+        "equity_curve_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "equity_curve_source": {"const": "portfolio.combined_equity_curve"},
+        "equity_curve_row_count": {"type": "integer", "minimum": 0},
+        "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    }
+  },
+  "additionalProperties": true
+}

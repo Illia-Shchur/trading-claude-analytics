@@ -167,8 +167,8 @@
         "properties": {
           "relative_path": {
             "enum": [
-              "strategy-research/experiments/fk-deleveraging-baseline-v002/portfolio-policy-v001.json",
-              "strategy-research/experiments/fk-deleveraging-baseline-v002/lifecycle-timing-v001.json"
+              "strategy-research/config/fixed-baseline-portfolio-policy-v001.json",
+              "strategy-research/config/fixed-baseline-lifecycle-timing-v001.json"
             ]
           },
           "byte_sha256": {

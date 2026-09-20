@@ -17,8 +17,7 @@ final class StrategyRetentionArchivePublicationReviewTest {
     void transactionControlInsideMarkedArchiveCannotBeHidden() throws Exception {
         Path root = Files.createDirectories(temporary.resolve("records"));
         Path evidence = Files.createDirectories(root.resolve("evidence"));
-        Files.copy(repoFile("strategy-research/v5-records/evidence/.retention-archive"),
-                evidence.resolve(".retention-archive"));
+        Files.writeString(evidence.resolve(".retention-archive"), "strategy-research-retention-archive/1\n");
         Path transactions = Files.createDirectories(evidence.resolve("transactions"));
         Files.writeString(transactions.resolve("unexpected.json"), "{}\n");
         ObjectNode options = JsonHashes.mapper().createObjectNode()

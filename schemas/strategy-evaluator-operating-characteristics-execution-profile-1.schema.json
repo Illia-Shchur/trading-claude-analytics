@@ -135,6 +135,21 @@
     "retry_limit_per_slot": {
       "const": 1
     },
+    "executor_identity_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$|^$"
+    },
+    "executor_source_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$|^$"
+    },
+    "executor_kind": {
+      "enum": ["JAR", "CLASSES", "UNKNOWN"]
+    },
+    "host_identity_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
     "qualification_receipt": {
       "type": "object",
       "required": [

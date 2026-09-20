@@ -259,12 +259,14 @@ public final class ResearchSchemaRegistry {
             } else if ("jar".equals(root.getProtocol())) {
                 JarURLConnection connection = (JarURLConnection) root.openConnection();
                 connection.setUseCaches(false);
-                Enumeration<JarEntry> entries = connection.getJarFile().entries();
-                while (entries.hasMoreElements()) {
-                    String name = entries.nextElement().getName();
-                    if (name.startsWith(SCHEMA_ROOT + "/") && name.endsWith(SCHEMA_SUFFIX)
-                            && name.indexOf('/', SCHEMA_ROOT.length() + 1) < 0) {
-                        resources.add(name);
+                try (var jarFile = connection.getJarFile()) {
+                    Enumeration<JarEntry> entries = jarFile.entries();
+                    while (entries.hasMoreElements()) {
+                        String name = entries.nextElement().getName();
+                        if (name.startsWith(SCHEMA_ROOT + "/") && name.endsWith(SCHEMA_SUFFIX)
+                                && name.indexOf('/', SCHEMA_ROOT.length() + 1) < 0) {
+                            resources.add(name);
+                        }
                     }
                 }
             }

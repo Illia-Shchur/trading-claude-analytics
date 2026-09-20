@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-evaluator-operating-characteristics-corrected-parallel-preflight/1",
+  "type": "object",
+  "required": ["schema", "version", "status", "plan_sha256", "profile_sha256", "fixed_evaluator", "accounting_version", "outcomes_opened", "promotion_eligible", "activation_authorized", "mode", "planned_slots", "measured", "content_sha256"],
+  "properties": {
+    "schema": {"const": "strategy-evaluator-operating-characteristics-corrected-parallel-preflight/1"},
+    "version": {"const": 1},
+    "status": {"enum": ["READY_PRE_OUTCOME", "BLOCKED_RESOURCE"]},
+    "plan_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "profile_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "fixed_evaluator": {"const": "com.tradinganalytics.research.v5.StrategyFixedBaselineCorrectedV1"},
+    "accounting_version": {"const": "PORTFOLIO_ACCOUNTING_CORRECTION_V1"},
+    "outcomes_opened": {"const": false},
+    "promotion_eligible": {"const": false},
+    "activation_authorized": {"const": false},
+    "mode": {"enum": ["FULL", "PREFIX"]},
+    "planned_slots": {"type": "integer", "minimum": 0},
+    "measured": {"const": false},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": true
+}

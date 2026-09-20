@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tradinganalytics.contracts.hash.Sha256;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Stream;
+import org.erdtman.jcs.JsonCanonicalizer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -87,6 +88,56 @@ class NodeCanonicalizeCompatibilityTest {
     }
 
     @Test
+    void directlyEncodedStringScalarsMatchPinnedJcsAcrossValidUnicode() throws Exception {
+        assertStringMatchesPinnedJcs("\u0000\u0001\u0008\t\n\u000b\f\r\u001f\"\\/");
+        assertStringMatchesPinnedJcs("ASCII, €uro, café, é, \u2028, \u2029, 😀 and 𝄞");
+        assertStringMatchesPinnedJcs("");
+        assertStringMatchesPinnedJcs(new String(Character.toChars(0x10000)));
+        assertStringMatchesPinnedJcs(new String(Character.toChars(0x10ffff)));
+        assertStringMatchesPinnedJcs("pairs: " + new String(Character.toChars(0x10000))
+                + new String(Character.toChars(0x10ffff)) + " end");
+
+        StringBuilder allBmp = new StringBuilder(0x10000);
+        for (int codePoint = Character.MIN_VALUE; codePoint <= Character.MAX_VALUE; codePoint++) {
+            if (!Character.isSurrogate((char) codePoint)) {
+                allBmp.append((char) codePoint);
+            }
+        }
+        assertStringMatchesPinnedJcs(allBmp.toString());
+    }
+
+    @Test
+    void directStringAndTextNodeBytePathsRejectMalformedSurrogateForms() {
+        for (String invalid : new String[] {"\uD800", "\uD800x", "\uDC00", "\uDC00\uD800"}) {
+            assertLoneSurrogateRejected(invalid);
+            assertLoneSurrogateRejected(MAPPER.getNodeFactory().textNode(invalid));
+        }
+    }
+
+    private static void assertLoneSurrogateRejected(Object value) {
+        assertThatThrownBy(() -> CanonicalJson.canonicalize(value))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Lone surrogate");
+        assertThatThrownBy(() -> CanonicalJson.canonicalBytes(value))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Lone surrogate");
+    }
+
+    private static void assertStringMatchesPinnedJcs(String value) throws Exception {
+        String wrapped = '[' + MAPPER.writeValueAsString(value) + ']';
+        String expected = new JsonCanonicalizer(wrapped).getEncodedString();
+        expected = expected.substring(1, expected.length() - 1);
+
+        assertThat(CanonicalJson.canonicalize(value)).isEqualTo(expected);
+        assertThat(CanonicalJson.canonicalBytes(value))
+                .isEqualTo(expected.getBytes(StandardCharsets.UTF_8));
+        var textNode = MAPPER.getNodeFactory().textNode(value);
+        assertThat(CanonicalJson.canonicalize(textNode)).isEqualTo(expected);
+        assertThat(CanonicalJson.canonicalBytes(textNode))
+                .isEqualTo(expected.getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Test
     void rawAndCanonicalSha256HelpersHaveUnambiguousSemantics() {
         assertThat(Sha256.hex("abc"))
                 .isEqualTo("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
@@ -104,6 +155,13 @@ class NodeCanonicalizeCompatibilityTest {
     @Test
     void reportsNullAndUnsupportedBinaryInputsClearly() {
         assertThat(CanonicalJson.canonicalize(null)).isEqualTo("null");
+        assertThat(CanonicalJson.canonicalBytes(null)).isEqualTo("null".getBytes(StandardCharsets.UTF_8));
+        assertThat(CanonicalJson.canonicalize(Boolean.TRUE)).isEqualTo("true");
+        assertThat(CanonicalJson.canonicalBytes(Boolean.FALSE))
+                .isEqualTo("false".getBytes(StandardCharsets.UTF_8));
+        byte[] mutableLiteral = CanonicalJson.canonicalBytes(Boolean.TRUE);
+        mutableLiteral[0] = 'x';
+        assertThat(CanonicalJson.canonicalBytes(Boolean.TRUE)).isEqualTo("true".getBytes(StandardCharsets.UTF_8));
         assertThatThrownBy(() -> CanonicalJson.canonicalize(new byte[] {1, 2, 3}))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("not canonicalizable");

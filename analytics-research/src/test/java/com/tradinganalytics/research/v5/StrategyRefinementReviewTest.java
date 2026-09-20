@@ -316,16 +316,16 @@ final class StrategyRefinementReviewTest {
 
     private ObjectNode arguments() {
         return JsonHashes.mapper().createObjectNode()
-                .put("baseline", repoFile("strategy-research/definitions/fk-deleveraging-absorption/v002.json").toString())
-                .put("controls", repoFile("strategy-research/experiments/fk-deleveraging-baseline-v002/controls.json").toString())
-                .put("experiment", repoFile("strategy-research/experiments/fk-deleveraging-baseline-v002/experiment.json").toString())
+                .put("baseline", repoFile("analytics-research/src/test/resources/fixtures/fk-deleveraging/baseline-v002.json").toString())
+                .put("controls", repoFile("analytics-research/src/test/resources/fixtures/fk-deleveraging/controls-v002.json").toString())
+                .put("experiment", repoFile("analytics-research/src/test/resources/fixtures/fk-deleveraging/experiment-v002.json").toString())
                 .put("physical_input", temporary.resolve("unused-physical.json").toString())
                 .put("exposure_head", temporary.resolve("unused-head.json").toString());
     }
 
     private static ObjectNode input() throws Exception {
         return (ObjectNode) JsonHashes.mapper().readTree(Files.readAllBytes(repoFile(
-                "strategy-research/experiments/fk-deleveraging-baseline-v002/refinement-input-v001.json")));
+                "analytics-research/src/test/resources/fixtures/fk-deleveraging/refinement-input-v001.json")));
     }
 
     private static ObjectNode rehash(ObjectNode value) {

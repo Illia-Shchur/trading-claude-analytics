@@ -11,7 +11,7 @@ public final class StrategyResearchV5CommandAdapter {
     public static final String COMMANDS = "data-backfill|data-raw-replay|feature-build|metadata-build|"
             + "opportunity-envelope|artifact-build|research-init|experiment-freeze|search-genetic|"
             + "research-run|overfit-audit|prospective-runner|readiness-audit|deployment-audit|"
-            + "fixed-baseline|fixed-baseline-refinement|fixed-baseline-produce-signal-bars|operating-characteristics-preflight|operating-characteristics-run|operating-characteristics-diagnose|operating-characteristics-successor-preflight|operating-characteristics-successor-run|operating-characteristics-successor-record-attempt|operating-characteristics-parallel-profile|operating-characteristics-parallel-preflight|operating-characteristics-parallel-run|operating-characteristics-parallel-worker|freeze-refinement|portfolio-reconcile|prospective-outcome-reconcile|evidence-disposition|canonical-hash-batch|lineage-inventory|matching-attrition|freeze-successor-control|validate|index|presentation-export";
+            + "fixed-baseline|fixed-baseline-refinement|fixed-baseline-produce-signal-bars|operating-characteristics-preflight|operating-characteristics-run|operating-characteristics-diagnose|operating-characteristics-successor-preflight|operating-characteristics-successor-run|operating-characteristics-successor-record-attempt|operating-characteristics-parallel-profile|operating-characteristics-parallel-preflight|operating-characteristics-parallel-run|operating-characteristics-parallel-worker|operating-characteristics-corrected-successor-preflight|operating-characteristics-corrected-successor-run|operating-characteristics-corrected-parallel-profile|operating-characteristics-corrected-parallel-plan|operating-characteristics-corrected-parallel-preflight|operating-characteristics-corrected-parallel-run|operating-characteristics-corrected-parallel-worker|operating-characteristics-corrected-parallel-qualify|operating-characteristics-corrected-parallel-validate-qualification|freeze-refinement|portfolio-reconcile|prospective-outcome-reconcile|evidence-disposition|canonical-hash-batch|lineage-inventory|matching-attrition|freeze-successor-control|validate|index|presentation-export";
     public static final String USAGE = "usage: strategy-research-v5.mjs " + COMMANDS;
     public static final String HELP_USAGE = USAGE + " [options]";
 
@@ -59,6 +59,10 @@ public final class StrategyResearchV5CommandAdapter {
                 result = StrategyOperatingCharacteristicsSuccessorV1.run(options);
             } else if ("operating-characteristics-successor-record-attempt".equals(command)) {
                 result = StrategyOperatingCharacteristicsSuccessorV1.recordAttempt(options);
+            } else if ("operating-characteristics-corrected-successor-preflight".equals(command)) {
+                result = StrategyOperatingCharacteristicsCorrectedSuccessorV1.preflight(readObjectOption(options, "plan"));
+            } else if ("operating-characteristics-corrected-successor-run".equals(command)) {
+                result = StrategyOperatingCharacteristicsCorrectedSuccessorV1.run(options);
             } else if ("operating-characteristics-parallel-profile".equals(command)) {
                 result = StrategyOperatingCharacteristicsParallelV1.executionProfile(options);
             } else if ("operating-characteristics-parallel-preflight".equals(command)) {
@@ -69,7 +73,35 @@ public final class StrategyResearchV5CommandAdapter {
                 if (!options.path("internal").asBoolean(false) || !options.has("payload")) {
                     throw new IllegalArgumentException("parallel worker is internal and requires --internal --payload");
                 }
+                ObjectNode payload = readObjectOption(options, "payload");
+                if (payload.path("corrected_accounting").asBoolean(false)
+                        || payload.path("plan").path("schema").asText().contains("corrected")) {
+                    throw new IllegalArgumentException("frozen parallel worker rejects corrected payloads; use the corrected worker command");
+                }
                 result = StrategyOperatingCharacteristicsParallelV1.worker(options);
+            } else if ("operating-characteristics-corrected-parallel-profile".equals(command)) {
+                result = StrategyOperatingCharacteristicsCorrectedParallelV1.executionProfile(options);
+            } else if ("operating-characteristics-corrected-parallel-plan".equals(command)) {
+                result = StrategyOperatingCharacteristicsCorrectedParallelV1.createDevelopmentPlan(
+                        readObjectOption(options, "base_plan"), readObjectOption(options, "profile"));
+            } else if ("operating-characteristics-corrected-parallel-preflight".equals(command)) {
+                result = StrategyOperatingCharacteristicsCorrectedParallelV1.preflight(options);
+            } else if ("operating-characteristics-corrected-parallel-run".equals(command)) {
+                result = StrategyOperatingCharacteristicsCorrectedParallelV1.run(options);
+            } else if ("operating-characteristics-corrected-parallel-worker".equals(command)) {
+                if (!options.path("internal").asBoolean(false) || !options.has("payload")) {
+                    throw new IllegalArgumentException("corrected parallel worker is internal and requires --internal --payload");
+                }
+                ObjectNode payload = readObjectOption(options, "payload");
+                if (!payload.path("corrected_accounting").asBoolean(false)
+                        || !payload.path("plan").path("schema").asText().contains("corrected")) {
+                    throw new IllegalArgumentException("corrected parallel worker requires a corrected payload and plan");
+                }
+                result = StrategyOperatingCharacteristicsParallelV1.worker(options);
+            } else if ("operating-characteristics-corrected-parallel-qualify".equals(command)) {
+                result = StrategyOperatingCharacteristicsCorrectedParallelV1.qualifyDevelopment(options);
+            } else if ("operating-characteristics-corrected-parallel-validate-qualification".equals(command)) {
+                result = StrategyOperatingCharacteristicsCorrectedParallelV1.validateQualification(options);
             } else if ("portfolio-reconcile".equals(command)) {
                 result = StrategyResearchImprovementV1.reconcilePortfolio(readArrayOption(options, "trades"));
             } else if ("prospective-outcome-reconcile".equals(command)) {
