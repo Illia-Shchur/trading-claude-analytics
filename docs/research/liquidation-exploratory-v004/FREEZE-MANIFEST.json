@@ -1,0 +1,15 @@
+{
+  "schema": "liquidation-exploratory-freeze/1",
+  "frozen_at": "2026-09-21T09:52:20.827184+00:00",
+  "outcomes_viewed": false,
+  "outcomes_viewed_scope": "Successor nine-asset outcomes only; v003 predecessor outcomes already exposed DEVELOPMENT.",
+  "predecessor_outcomes_exposed": true,
+  "independent_policy_review": "Completed; OI endpoint and source-envelope wording clarified in policy without rewriting immutable precommit.",
+  "files": {
+    "precommit-input.json": "e1eff071227394e1cc03ed7e5e034d956531e34a8de82b53340974c74edb3ee8",
+    "frozen-precommit.json": "538f9e588cbfb5efe821f97d218821fdc949c958e74b49c5fca810787fe7b914",
+    "frozen-precommit.md": "19ed7dcd3e15d2dddf422f0dc8bf5bb45927f60aafd7605d6e6d15ca91c071a0",
+    "exploratory-policy.json": "20e9b5be92ea486f45344f8dba669263760b9fc49fcdacf3b014562c2a840972",
+    "README.md": "084c0f84e46718a04f7c631eb137856a604f8bbd5d9a58e96bb4a3a86bbde62e"
+  }
+}
