@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "liquidation-input-qualification/1",
+  "title": "liquidation-input-qualification/1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "version", "status", "strategy_family", "strategy_version", "precommit_id",
+    "precommit_content_sha256", "precommit_byte_sha256", "assessed_at", "source_window_start",
+    "source_window_end_exclusive", "decision_window_start", "decision_window_end_exclusive",
+    "execution_window_end_exclusive", "historical_availability_proven", "historical_revision_proven",
+    "verified_input_count", "authoritative_wfo_permitted", "sealed_evidence_permitted", "asset_scope",
+    "precommit_ref", "acquisition_manifest_ref", "inputs", "limitations", "content_sha256"
+  ],
+  "properties": {
+    "schema": { "const": "liquidation-input-qualification/1" },
+    "version": { "const": 1 },
+    "status": { "const": "BLOCKED_FOR_AUTHORITATIVE_RESEARCH" },
+    "strategy_family": { "const": "liquidation-structure" },
+    "strategy_version": { "const": "liquidation-daily-stress-v002" },
+    "precommit_id": { "const": "liquidation-daily-stress-v002" },
+    "precommit_content_sha256": { "$ref": "#/$defs/sha256" },
+    "precommit_byte_sha256": { "$ref": "#/$defs/sha256" },
+    "assessed_at": { "type": "string", "format": "date-time" },
+    "source_window_start": { "const": "2022-08-11" },
+    "source_window_end_exclusive": { "const": "2026-09-20" },
+    "decision_window_start": { "const": "2022-11-11T00:00:00Z" },
+    "decision_window_end_exclusive": { "const": "2026-07-15T00:00:00Z" },
+    "execution_window_end_exclusive": { "const": "2026-09-20T00:00:00Z" },
+    "historical_availability_proven": { "const": false },
+    "historical_revision_proven": { "const": false },
+    "verified_input_count": { "const": 0 },
+    "authoritative_wfo_permitted": { "const": false },
+    "sealed_evidence_permitted": { "const": false },
+    "asset_scope": { "const": ["BTC", "ETH", "SOL", "AAVE"] },
+    "precommit_ref": { "$ref": "#/$defs/localReference" },
+    "acquisition_manifest_ref": { "$ref": "#/$defs/localReference" },
+    "inputs": {
+      "type": "array",
+      "minItems": 9,
+      "maxItems": 9,
+      "items": { "$ref": "#/$defs/input" }
+    },
+    "limitations": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "content_sha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "localReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "byte_sha256", "content_sha256", "bytes"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "byte_sha256": { "$ref": "#/$defs/sha256" },
+        "content_sha256": { "$ref": "#/$defs/sha256" },
+        "bytes": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "series_id", "required", "units", "qualification_status", "availability_status", "revision_status",
+        "coverage_sufficient_for_intended_use", "permitted_evidence_use", "event_time_contract",
+        "documented_availability_at", "verified_availability_at", "retrieval_at", "observed_value_vintage",
+        "coverage", "evidence_refs"
+      ],
+      "properties": {
+        "series_id": { "enum": ["daily_liquidations", "open_interest_base", "price_4h", "price_1h", "trades_marks_1m", "funding_settlements", "contract_execution_metadata", "sp500_context", "positioning_ratios"] },
+        "required": { "type": "boolean" },
+        "units": { "type": "string", "minLength": 1 },
+        "qualification_status": { "enum": ["PROXY_DISCLOSED", "UNKNOWN", "UNAVAILABLE"] },
+        "availability_status": { "const": "UNKNOWN" },
+        "revision_status": { "const": "UNKNOWN" },
+        "coverage_sufficient_for_intended_use": { "const": false },
+        "permitted_evidence_use": { "type": "string" },
+        "event_time_contract": { "type": "string" },
+        "documented_availability_at": { "type": ["string", "null"] },
+        "verified_availability_at": { "type": ["string", "null"] },
+        "retrieval_at": { "type": ["string", "null"] },
+        "observed_value_vintage": { "type": "string" },
+        "coverage": { "type": "object" },
+        "evidence_refs": { "type": "array", "items": { "type": "object" } }
+      }
+    }
+  }
+}

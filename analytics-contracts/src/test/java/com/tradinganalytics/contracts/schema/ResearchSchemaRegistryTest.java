@@ -23,6 +23,16 @@ import org.junit.jupiter.api.io.TempDir;
 
 class ResearchSchemaRegistryTest {
     private static final String HASH = "a".repeat(64);
+    private static final List<String> LIQUIDATION_SCHEMA_FILENAMES = List.of(
+            "liquidation-daily-stress-profile-1.schema.json",
+            "liquidation-input-qualification-1.schema.json",
+            "liquidation-v2-normalization-receipt-1.schema.json",
+            "liquidation-v2-physical-development-qualification-1.schema.json");
+    private static final List<String> LIQUIDATION_SCHEMA_IDS = List.of(
+            "liquidation-daily-stress-profile/1",
+            "liquidation-input-qualification/1",
+            "liquidation-v2-normalization-receipt/1",
+            "liquidation-v2-physical-development-qualification/1");
     private static ResearchSchemaRegistry registry;
 
     @TempDir
@@ -35,17 +45,33 @@ class ResearchSchemaRegistryTest {
 
     @Test
     void loadsAndCompilesTheExactNodeSchemaCorpusIncludingEmbeddedIds() {
-        assertThat(registry.listSchemaDocuments()).hasSize(192);
-        assertThat(registry.listContractSchemas()).hasSize(209).isSorted().doesNotHaveDuplicates();
+        assertThat(registry.listSchemaDocuments()).hasSize(196);
+        assertThat(registry.listContractSchemas()).hasSize(213).isSorted().doesNotHaveDuplicates();
 
-        String filenames = registry.listSchemaDocuments().stream()
+        List<String> filenames = registry.listSchemaDocuments().stream()
                 .map(ResearchSchemaRegistry.SchemaDocument::filename)
                 .sorted()
-                .reduce("", (left, right) -> left + right + "\n");
-        String ids = String.join("\n", registry.listContractSchemas()) + "\n";
-        assertThat(Sha256.hex(filenames))
+                .toList();
+        String filenameLines = String.join("\n", filenames) + "\n";
+        List<String> legacyFilenames = filenames.stream()
+                .filter(filename -> !LIQUIDATION_SCHEMA_FILENAMES.contains(filename)).toList();
+        String legacyFilenameLines = String.join("\n", legacyFilenames) + "\n";
+        assertThat(filenames).containsAll(LIQUIDATION_SCHEMA_FILENAMES);
+        assertThat(legacyFilenames).hasSize(192);
+        assertThat(Sha256.hex(filenameLines))
+                .isEqualTo("57b7dba8d9b6f970b3c8b95a836d2fef4f278c120ddfcfc08ee4f6895113e336");
+        assertThat(Sha256.hex(legacyFilenameLines))
                 .isEqualTo("3bc58004340ff7b64b385267f98ab8845e5274fcdd454ce6cc54831743755f4d");
-        assertThat(Sha256.hex(ids))
+
+        List<String> schemaIds = registry.listContractSchemas();
+        String idLines = String.join("\n", schemaIds) + "\n";
+        List<String> legacyIds = schemaIds.stream().filter(id -> !LIQUIDATION_SCHEMA_IDS.contains(id)).toList();
+        String legacyIdLines = String.join("\n", legacyIds) + "\n";
+        assertThat(schemaIds).containsAll(LIQUIDATION_SCHEMA_IDS);
+        assertThat(legacyIds).hasSize(209);
+        assertThat(Sha256.hex(idLines))
+                .isEqualTo("9432df1640e8b24fc347d1c97449c2c5747c752538074be27afbee42e76ad1f2");
+        assertThat(Sha256.hex(legacyIdLines))
                 .isEqualTo("6d70518288140aef36e0762b52c38125064df8a71f25ac5ea108e965696b2485");
 
         assertThat(registry.listSchemaDocuments())
@@ -254,7 +280,7 @@ class ResearchSchemaRegistryTest {
         ClassLoader original = thread.getContextClassLoader();
         try {
             thread.setContextClassLoader(null);
-            assertThat(new ResearchSchemaRegistry().listSchemaDocuments()).hasSize(192);
+            assertThat(new ResearchSchemaRegistry().listSchemaDocuments()).hasSize(196);
         } finally {
             thread.setContextClassLoader(original);
         }

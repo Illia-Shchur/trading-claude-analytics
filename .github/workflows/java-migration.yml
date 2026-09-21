@@ -12,7 +12,7 @@ permissions:
 jobs:
   java-parity:
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -59,12 +59,12 @@ jobs:
         env:
           BASE_SHA: ${{ steps.base.outputs.base_sha }}
         run: |
-          # The current reviewed-diff policy is one unconditional 55/55 gate.
+          # Changed production Java must meet the standard 80/80 line and branch gate.
           python3 tools/check_new_code_coverage.py \
             --base "$BASE_SHA" \
             --report analytics-coverage/target/site/jacoco-aggregate/jacoco.xml \
-            --minimum 55 \
-            --branch-minimum 55 \
+            --minimum 80 \
+            --branch-minimum 80 \
             --summary-json coverage-gate-summary.json \
             --summary-markdown coverage-gate-summary.md
       - name: Publish aggregate coverage and gate summary

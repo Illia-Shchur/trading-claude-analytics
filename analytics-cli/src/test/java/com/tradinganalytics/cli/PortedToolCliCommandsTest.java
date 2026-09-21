@@ -156,7 +156,14 @@ class PortedToolCliCommandsTest {
         assertThat(commandLine.execute()).isZero();
         assertThat(output).hasToString(
                 "usage: strategy-research-v5.mjs data-backfill|data-raw-replay|feature-build|"
-                        + "metadata-build|daily-stress-preflight|opportunity-envelope|artifact-build|research-init|"
+                        + "metadata-build|daily-stress-preflight|liquidation-input-qualify|"
+                        + "liquidation-input-verify|liquidation-profile-contract|liquidation-profile-validate|"
+                        + "liquidation-profile-assess-physical|liquidation-v2-plan|"
+                        + "liquidation-v2-physical-build|liquidation-v2-physical-verify|liquidation-v2-freeze|"
+                        + "liquidation-v2-replay|liquidation-v2-replay-resumable|liquidation-v2-evidence|"
+                        + "liquidation-v2-run-evaluate|liquidation-v2-staged-plan-no-macro|"
+                        + "liquidation-v2-staged-plan-macro|liquidation-v2-staged-replay|"
+                        + "liquidation-v2-staged-evidence|opportunity-envelope|artifact-build|research-init|"
                         + "experiment-freeze|search-genetic|research-run|overfit-audit|"
                         + "prospective-runner|readiness-audit|deployment-audit|fixed-baseline|"
                         + "fixed-baseline-refinement|fixed-baseline-produce-signal-bars|"
