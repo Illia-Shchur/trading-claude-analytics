@@ -1,15 +1,15 @@
 {
   "counts": {
-    "files_in_reports_dir": 157,
-    "framework_reports": 149,
+    "files_in_reports_dir": 161,
+    "framework_reports": 153,
     "mismatched_v2_pairs": 0,
     "non_framework_files_ignored": 8,
     "orphaned_v2": 0,
-    "signals": 83,
+    "signals": 87,
     "skipped_no_machine_block": 66,
     "skipped_post_epoch_missing_block": 0,
     "skipped_unparseable": 0,
-    "v2_signals": 15,
+    "v2_signals": 19,
     "v3_signals": 0
   },
   "encoding": "decimal quantities (prices, scores, percentages, EV) are JSON strings in plain decimal notation; counts, gate numbers, booleans and enums are native",
@@ -19,7 +19,7 @@
     "machine_block": "2026-07-11",
     "report_phase_registry": "report-phase-registry/1"
   },
-  "generated_at": "2026-09-11T13:21:54Z",
+  "generated_at": "2026-09-21T09:41:23Z",
   "generated_by": "tools/export-signals.mjs",
   "ignored_files": [
     {
@@ -26473,6 +26473,2019 @@
       },
       "verdict": "ETH: legacy FR mechanical/adjusted 3/20, channel NONE, 0/8 gates. Inflation remains restrictive but CPI's first selloff reversed; no new short.",
       "view_file": "eth_flying_rocket_20260911_0918.md"
+    },
+    {
+      "asset": "BTC",
+      "canonical_file": "btc_flying_rocket_20260921_0523.json",
+      "canonical_sha256": "b69ea6b9d6d0e379078d19a5874f0ffd4245c8f0a9e0555ba774ffbf239339f1",
+      "channel": "none",
+      "channel_inference_basis": "declared in the machine block",
+      "channel_inferred": false,
+      "content_sha256": "b69ea6b9d6d0e379078d19a5874f0ffd4245c8f0a9e0555ba774ffbf239339f1",
+      "deployment": {
+        "deployed_pct": "0",
+        "dry_pct": "50",
+        "filled_detection": "deployed === true || typeof entry_price === \"number\" || typeof entry === \"number\"",
+        "filled_detection_caveat": "before the entry_price epoch (2026-07-29) no tranche in this corpus carried deployed:true or a numeric entry — 152/152 tranches across 39 reports encode `entry` as prose — so filled_tranche_count is structurally 0 on every pre-epoch signal. It is an artifact of the old schema, not an observation that nothing was filled.",
+        "filled_tranche_count": 0,
+        "throttle_released": false,
+        "tranche_count": 4,
+        "tranches": [
+          {
+            "channel": "A",
+            "channel_regime": null,
+            "deployed": false,
+            "discretionary": false,
+            "entry": null,
+            "entry_price": null,
+            "filled": false,
+            "pct": "5",
+            "phase": "1A",
+            "prior_stop": null,
+            "prior_time_stop": null,
+            "stop": null,
+            "time_stop": null
+          },
+          {
+            "channel": "A",
+            "channel_regime": null,
+            "deployed": false,
+            "discretionary": false,
+            "entry": null,
+            "entry_price": null,
+            "filled": false,
+            "pct": "10",
+            "phase": "1B",
+            "prior_stop": null,
+            "prior_time_stop": null,
+            "stop": null,
+            "time_stop": null
+          },
+          {
+            "channel": "A",
+            "channel_regime": null,
+            "deployed": false,
+            "discretionary": false,
+            "entry": null,
+            "entry_price": null,
+            "filled": false,
+            "pct": "15",
+            "phase": "2",
+            "prior_stop": null,
+            "prior_time_stop": null,
+            "stop": null,
+            "time_stop": null
+          },
+          {
+            "channel": "A",
+            "channel_regime": null,
+            "deployed": false,
+            "discretionary": false,
+            "entry": null,
+            "entry_price": null,
+            "filled": false,
+            "pct": "20",
+            "phase": "3",
+            "prior_stop": null,
+            "prior_time_stop": null,
+            "stop": null,
+            "time_stop": null
+          }
+        ]
+      },
+      "ev": {
+        "scenarios": [
+          {
+            "high": "91520",
+            "low": "84480",
+            "mid": "88000",
+            "name": "Recovery extends",
+            "p": "50"
+          },
+          {
+            "high": "85280",
+            "low": "78720",
+            "mid": "82000",
+            "name": "Range / base",
+            "p": "30"
+          },
+          {
+            "high": "79560",
+            "low": "73440",
+            "mid": "76500",
+            "name": "Mean reversion",
+            "p": "15"
+          },
+          {
+            "high": "72800",
+            "low": "67200",
+            "mid": "70000",
+            "name": "Bear reversal",
+            "p": "5"
+          }
+        ],
+        "stated_ev_usd": "83575",
+        "vs_spot_pct": "-0.25"
+      },
+      "evidence": {
+        "derivatives": {
+          "as_of": "2026-09-21T08:00:00.000Z",
+          "confidence": "MEDIUM",
+          "rationale": "Single-venue Binance aggregate, 42 completed four-hour bars through 2026-09-21T08:00:00.000Z. Spot CVD: 24h $51.5M, 3d $114.8M, full window $207.8M. Futures taker delta/CVD: 24h $176.3M, 3d $408.9M, full-window CVD $-346.3M. OI: +2.085% 24h, +6.541% 3d; sampled latest $10.583B. OI-weighted funding latest raw fraction 0.00004503 per interval (do not annualize aggregate); prior-window percentile 14.29. Price rose 1.756% over 24h and 5.074% over the full flow window. Panel scope is Binance only, not cross-exchange; these linked flow/price/OI observations are one context family, not separate score votes. Mean annualized settled Binance funding 6.76%; positive means long holders pay shorts. No negative interval in the current analyzed run and no sustained-negative run; no squeeze penalty. True 25-delta options skew and market-wide put/call ratio are not available; no option proxy is scored.",
+          "source_ids": [
+            "snapshot",
+            "binance_flow",
+            "binance_funding"
+          ],
+          "status": "AVAILABLE",
+          "unit": "Binance derivatives + single-venue market-flow panel",
+          "value": "positive funding / OI near 90d high"
+        },
+        "etf_flows": {
+          "as_of": "2026-09-18",
+          "confidence": "HIGH",
+          "rationale": "Trailing calendar month Aug21–Sep18 net +$1,762.1M; September MTD +$313.4M; Sep14–18 +$6.1M after Sep8–11 −$462.7M, with Sep18 +$433.0M. Inflows decelerated materially from the two preceding strong weeks, earning the known single §4A distribution sub-leg; because price remains >20% below its own one-year high, this is also capitulation-context for gate 5 and cannot confirm a short.",
+          "source_ids": [
+            "farside_btc"
+          ],
+          "status": "AVAILABLE",
+          "unit": "USD millions trailing calendar month",
+          "value": "1762.1"
+        },
+        "funding": {
+          "as_of": "2026-09-21T08:55:22.411Z",
+          "confidence": "HIGH",
+          "rationale": "Mean annualized settled Binance funding 6.76%; positive means long holders pay shorts. No negative interval in the current analyzed run and no sustained-negative run; no squeeze penalty.",
+          "source_ids": [
+            "binance_funding"
+          ],
+          "status": "AVAILABLE",
+          "unit": "percent annualized",
+          "value": "6.76"
+        },
+        "macro": {
+          "as_of": "2026-09-21",
+          "confidence": "MEDIUM",
+          "rationale": "Fed raised 25bp on Sep16 to 3.75–4.00%; August CPI 3.4% headline/2.4% core y/y; July PCE 3.7%/3.3%; FRED 10y real yield 2.61% and 2y 4.67% on Sep17. VIX14.93 (5-observation change −12.69%), DXY100.28 (+0.82%), Brent97.52 (−7.72%); S&P500 Sep18 close 7650.5 (5d −0.08%), Nasdaq Composite 26522.54 (+0.72%), breadth 49.5% above 200dma on Sep17. No CPI, NFP, PCE, FOMC decision or minutes Sep21–25; next PCE Sep30, employment Oct2. These are mixed macro context, not a scored short signal.",
+          "source_ids": [
+            "snapshot",
+            "fed",
+            "cpi",
+            "pce",
+            "real_yield",
+            "us2y",
+            "calendar"
+          ],
+          "status": "AVAILABLE",
+          "unit": "rates, FX, equities and event calendar",
+          "value": "mixed"
+        },
+        "momentum": {
+          "as_of": "2026-09-14",
+          "confidence": "HIGH",
+          "rationale": "Weekly RSI-14 58.69; BTC earns 0 (<60), ETH earns 1 (60–65 band). Partial week excluded.",
+          "source_ids": [
+            "snapshot"
+          ],
+          "status": "AVAILABLE",
+          "unit": "completed weekly Wilder RSI-14",
+          "value": "58.69"
+        },
+        "onchain": {
+          "as_of": "2026-09-20",
+          "confidence": "MEDIUM",
+          "rationale": "MVRV-Z 0.914. Exchange reserves 2,721,135.941 BTC (+0.372%/30d); 30d net exchange inflow $-3.438B, which is net outflow. True LTH supply/profit-taking is provider-gated; tagged large-address inflows are unavailable and neither is assigned a short score credit.",
+          "source_ids": [
+            "coinmetrics",
+            "snapshot"
+          ],
+          "status": "AVAILABLE",
+          "unit": "Coin Metrics reconstructed on-chain daily",
+          "value": "MVRV-Z 0.914; reserves +0.372%/30d; net exchange flow $-3.438B"
+        },
+        "regime": {
+          "as_of": "2026-09-21",
+          "confidence": "HIGH",
+          "rationale": "Price $83,782.00 is 33.61% below the trailing one-year high and 18.72% above the 200dma $70,568.93; that 200dma is rising 1.58% over 20 sessions. This is neither a Channel-A top (not within 20% of high) nor a Channel-B downtrend (price is above a rising 200dma).",
+          "source_ids": [
+            "snapshot"
+          ],
+          "status": "AVAILABLE",
+          "unit": "channel routing",
+          "value": "none"
+        },
+        "sentiment": {
+          "as_of": "2026-09-21",
+          "confidence": "HIGH",
+          "rationale": "Alternative.me daily prints 70,71,71; average 70.67; greed, not ≥80 for seven days.",
+          "source_ids": [
+            "sentiment"
+          ],
+          "status": "AVAILABLE",
+          "unit": "Fear and Greed 3-day average",
+          "value": "70.67"
+        },
+        "spot": {
+          "as_of": "2026-09-21T08:55:22.411Z",
+          "confidence": "HIGH",
+          "rationale": "Median of three timestamped CoinGecko, Binance and Coinbase quotes; spread below 0.5%.",
+          "source_ids": [
+            "snapshot"
+          ],
+          "status": "AVAILABLE",
+          "unit": "USD",
+          "value": "83782.00"
+        }
+      },
+      "framework": "flying_rocket",
+      "gates": {
+        "active": 8,
+        "na": [
+          8
+        ],
+        "passed": [],
+        "passed_count": 0,
+        "passed_mask": 0
+      },
+      "position": {
+        "asset": "BTC",
+        "attribution": {
+          "active_tags": [],
+          "note": "No framework short attribution is corroborated. Custody is UNEXPLAINED; do not infer a flat position.",
+          "status": "UNKNOWN"
+        },
+        "basis": {
+          "avg_cost": null,
+          "reason": "Custody is UNEXPLAINED and the basis is not reliable; no average cost, total basis, PnL or ROI is stated.",
+          "reliable": false,
+          "total_cost": null
+        },
+        "custody": {
+          "reason": "The live balance and the fill replay disagree, and neither recorded withdrawals nor a migration seed accounts for the gap. This is a data defect — an unread wallet, an uncovered venue, or an incomplete backfill — not a position. Do NOT report a figure for this asset in either direction; fix the ledger first.",
+          "status": "UNEXPLAINED"
+        },
+        "dry_powder": "7792.6440",
+        "futures": [],
+        "pnl": {
+          "reason": "Unexplained custody prohibits any position PnL claim.",
+          "status": "DATA_LIMITED",
+          "unrealized": null
+        },
+        "quantity": null,
+        "reconciliation": "Snapshot generated 2026-08-15T09:30:02.628253Z under event-driven validity. BTC custody is UNEXPLAINED. Hard Rule 8: report no asset quantity, basis, or PnL in either direction; reconcile ledger before sizing. Ledger does not corroborate a tagged FR short; this is not a claim of flat exposure.",
+        "status": "DATA_LIMITED"
+      },
+      "position_controls": {
+        "action": {
+          "rationale": "Snapshot generated 2026-08-15T09:30:02.628253Z under event-driven validity. BTC custody is UNEXPLAINED. Hard Rule 8: report no asset quantity, basis, or PnL in either direction; reconcile ledger before sizing. Ledger does not corroborate a tagged FR short; this is not a claim of flat exposure.",
+          "status": "DATA_LIMITED",
+          "value": "STAND_DOWN"
+        },
+        "required": true,
+        "status": "DATA_LIMITED"
+      },
+      "regime": null,
+      "report_at_derivation": "derived by interpreting the filename's HHMM in America/New_York (the repo's Output Convention) — the machine block carries a date but no time field, and (asset, framework, date) collides (btc/eth × fallen_knives on 2026-07-14 and 2026-07-18), so report_file is the primary key",
+      "report_at_utc": "2026-09-21T09:23:00Z",
+      "report_date": "2026-09-21",
+      "report_file": "btc_flying_rocket_20260921_0523.md",
+      "report_local_time": "05:23",
+      "report_zone": "America/New_York",
+      "rubric": "FR-A/1",
+      "schema_epoch": "report_machine_2",
+      "score": {
+        "adjusted": "4",
+        "cap_applied": false,
+        "cap_value": null,
+        "discretionary": "0",
+        "discretionary_inferred": false,
+        "inference_basis": "declared in the machine block",
+        "legs": [
+          {
+            "block_key": "euphoria",
+            "max": 5,
+            "min": 0,
+            "ordinal": 1,
+            "rubric_name": "euphoria",
+            "value": "3"
+          },
+          {
+            "block_key": "momentum",
+            "max": 4,
+            "min": 0,
+            "ordinal": 2,
+            "rubric_name": "momentum",
+            "value": "0"
+          },
+          {
+            "block_key": "valuation",
+            "max": 5,
+            "min": 0,
+            "ordinal": 3,
+            "rubric_name": "valuation",
+            "value": "0"
+          },
+          {
+            "block_key": "distribution",
+            "max": 3,
+            "min": 0,
+            "ordinal": 4,
+            "rubric_name": "distribution",
+            "value": "1"
+          },
+          {
+            "block_key": "vulnerability",
+            "max": 3,
+            "min": 0,
+            "ordinal": 5,
+            "rubric_name": "vulnerability",
+            "value": "0"
+          }
+        ],
+        "mechanical": "4",
+        "mechanical_inferred": false,
+        "penalty": "0",
+        "raw": "4",
+        "rounding": "half-up"
+      },
+      "source_schema": "report-machine/2",
+      "spot_source": "snapshot",
+      "spot_usd": "83782.00",
+      "stops": null,
+      "tagging": {
+        "active_tags": [],
+        "channel": "none",
+        "framework": "flying_rocket",
+        "instrument_class": "crypto",
+        "mode": "phase_registry",
+        "registry": {
+          "asset": "BTC",
+          "channel": "none",
+          "entries": [
+            {
+              "asset": "BTC",
+              "canonical_tag": "FR-A-1A-BTC-20260921-0523",
+              "decision": "STAND_DOWN",
+              "instrument_class": "crypto",
+              "phase": "1A",
+              "report_date": "2026-09-21",
+              "report_file": "btc_flying_rocket_20260921_0523.md",
+              "report_local_time": "05:23",
+              "report_version": "report-machine/2"
+            },
+            {
+              "asset": "BTC",
+              "canonical_tag": "FR-A-1B-BTC-20260921-0523",
+              "decision": "STAND_DOWN",
+              "instrument_class": "crypto",
+              "phase": "1B",
+              "report_date": "2026-09-21",
+              "report_file": "btc_flying_rocket_20260921_0523.md",
+              "report_local_time": "05:23",
+              "report_version": "report-machine/2"
+            },
+            {
+              "asset": "BTC",
+              "canonical_tag": "FR-A-2-BTC-20260921-0523",
+              "decision": "STAND_DOWN",
+              "instrument_class": "crypto",
+              "phase": "2",
+              "report_date": "2026-09-21",
+              "report_file": "btc_flying_rocket_20260921_0523.md",
+              "report_local_time": "05:23",
+              "report_version": "report-machine/2"
+            },
+            {
+              "asset": "BTC",
+              "canonical_tag": "FR-A-3-BTC-20260921-0523",
+              "decision": "STAND_DOWN",
+              "instrument_class": "crypto",
+              "phase": "3",
+              "report_date": "2026-09-21",
+              "report_file": "btc_flying_rocket_20260921_0523.md",
+              "report_local_time": "05:23",
+              "report_version": "report-machine/2"
+            }
+          ],
+          "framework": "flying_rocket",
+          "instrument_class": "crypto",
+          "report_date": "2026-09-21",
+          "report_file": "btc_flying_rocket_20260921_0523.md",
+          "report_local_time": "05:23",
+          "report_version": "report-machine/2",
+          "report_zone": "America/New_York",
+          "schema": "report-phase-registry/1",
+          "version": "1"
+        },
+        "report_asset": "BTC",
+        "report_date": "2026-09-21",
+        "report_file": "btc_flying_rocket_20260921_0523.md",
+        "report_local_time": "05:23",
+        "report_version": "report-machine/2",
+        "reserved_tags": [
+          "FR-A-1A-BTC-20260921-0523",
+          "FR-A-1B-BTC-20260921-0523",
+          "FR-A-2-BTC-20260921-0523",
+          "FR-A-3-BTC-20260921-0523"
+        ],
+        "status": "REGISTERED"
+      },
+      "tagging_v2": {
+        "active_tags": [],
+        "entries": [
+          {
+            "canonical_tag": "FR-A-1A-BTC-20260921-0523",
+            "decision": "STAND_DOWN",
+            "instrument_class": "crypto",
+            "phase": "1A"
+          },
+          {
+            "canonical_tag": "FR-A-1B-BTC-20260921-0523",
+            "decision": "STAND_DOWN",
+            "instrument_class": "crypto",
+            "phase": "1B"
+          },
+          {
+            "canonical_tag": "FR-A-2-BTC-20260921-0523",
+            "decision": "STAND_DOWN",
+            "instrument_class": "crypto",
+            "phase": "2"
+          },
+          {
+            "canonical_tag": "FR-A-3-BTC-20260921-0523",
+            "decision": "STAND_DOWN",
+            "instrument_class": "crypto",
+            "phase": "3"
+          }
+        ],
+        "instrument_class": "crypto",
+        "reserved_tags": [
+          "FR-A-1A-BTC-20260921-0523",
+          "FR-A-1B-BTC-20260921-0523",
+          "FR-A-2-BTC-20260921-0523",
+          "FR-A-3-BTC-20260921-0523"
+        ],
+        "schema": "report-phase-registry/2",
+        "status": "REGISTERED"
+      },
+      "unlock": {
+        "highest_phase_unlocked_by_score": null,
+        "ladder": "FR-A",
+        "p1a": 11,
+        "p1b": 13,
+        "p2": 15,
+        "p3": 19,
+        "p3_note": "Phase 3 reads the MECHANICAL score — no analyst channel reaches it"
+      },
+      "verdict": "No new BTC short: no channel is live; known score floor 4/20 (range 4–7), 0/8 gates, and all phases stay locked. Repair unexplained custody before any position claim or sizing.",
+      "view_file": "btc_flying_rocket_20260921_0523.md"
+    },
+    {
+      "asset": "ETH",
+      "canonical_file": "eth_flying_rocket_20260921_0523.json",
+      "canonical_sha256": "9f81061693b17a05508f57aef6080266c440eed2345c32597f44c348444433cb",
+      "channel": "none",
+      "channel_inference_basis": "declared in the machine block",
+      "channel_inferred": false,
+      "content_sha256": "9f81061693b17a05508f57aef6080266c440eed2345c32597f44c348444433cb",
+      "deployment": {
+        "deployed_pct": "0",
+        "dry_pct": "50",
+        "filled_detection": "deployed === true || typeof entry_price === \"number\" || typeof entry === \"number\"",
+        "filled_detection_caveat": "before the entry_price epoch (2026-07-29) no tranche in this corpus carried deployed:true or a numeric entry — 152/152 tranches across 39 reports encode `entry` as prose — so filled_tranche_count is structurally 0 on every pre-epoch signal. It is an artifact of the old schema, not an observation that nothing was filled.",
+        "filled_tranche_count": 0,
+        "throttle_released": false,
+        "tranche_count": 4,
+        "tranches": [
+          {
+            "channel": "A",
+            "channel_regime": null,
+            "deployed": false,
+            "discretionary": false,
+            "entry": null,
+            "entry_price": null,
+            "filled": false,
+            "pct": "5",
+            "phase": "1A",
+            "prior_stop": null,
+            "prior_time_stop": null,
+            "stop": null,
+            "time_stop": null
+          },
+          {
+            "channel": "A",
+            "channel_regime": null,
+            "deployed": false,
+            "discretionary": false,
+            "entry": null,
+            "entry_price": null,
+            "filled": false,
+            "pct": "10",
+            "phase": "1B",
+            "prior_stop": null,
+            "prior_time_stop": null,
+            "stop": null,
+            "time_stop": null
+          },
+          {
+            "channel": "A",
+            "channel_regime": null,
+            "deployed": false,
+            "discretionary": false,
+            "entry": null,
+            "entry_price": null,
+            "filled": false,
+            "pct": "15",
+            "phase": "2",
+            "prior_stop": null,
+            "prior_time_stop": null,
+            "stop": null,
+            "time_stop": null
+          },
+          {
+            "channel": "A",
+            "channel_regime": null,
+            "deployed": false,
+            "discretionary": false,
+            "entry": null,
+            "entry_price": null,
+            "filled": false,
+            "pct": "20",
+            "phase": "3",
+            "prior_stop": null,
+            "prior_time_stop": null,
+            "stop": null,
+            "time_stop": null
+          }
+        ]
+      },
+      "ev": {
+        "scenarios": [
+          {
+            "high": "2964",
+            "low": "2736",
+            "mid": "2850",
+            "name": "Recovery extends",
+            "p": "50"
+          },
+          {
+            "high": "2756",
+            "low": "2544",
+            "mid": "2650",
+            "name": "Range / base",
+            "p": "30"
+          },
+          {
+            "high": "2548",
+            "low": "2352",
+            "mid": "2450",
+            "name": "Mean reversion",
+            "p": "15"
+          },
+          {
+            "high": "2288",
+            "low": "2112",
+            "mid": "2200",
+            "name": "Bear reversal",
+            "p": "5"
+          }
+        ],
+        "stated_ev_usd": "2697.5",
+        "vs_spot_pct": "-0.08"
+      },
+      "evidence": {
+        "derivatives": {
+          "as_of": "2026-09-21T08:00:00.000Z",
+          "confidence": "MEDIUM",
+          "rationale": "Single-venue Binance aggregate, 42 completed four-hour bars through 2026-09-21T08:00:00.000Z. Spot CVD: 24h $58.3M, 3d $152.5M, full window $12.3M. Futures taker delta/CVD: 24h $322.3M, 3d $665.5M, full-window CVD $280.6M. OI: +4.782% 24h, +9.037% 3d; sampled latest $9.192B. OI-weighted funding latest raw fraction 0.00007514 per interval (do not annualize aggregate); prior-window percentile 76.19. Price rose 3.291% over 24h and 6.081% over the full flow window. Panel scope is Binance only, not cross-exchange; these linked flow/price/OI observations are one context family, not separate score votes. Mean annualized settled Binance funding 3.66%; positive means long holders pay shorts. One <−7% annualized print is 18 intervals old; latest three funding observations are positive, no sustained-negative run, so stale print does not trigger current squeeze penalty. True 25-delta options skew and market-wide put/call ratio are not available; no option proxy is scored.",
+          "source_ids": [
+            "snapshot",
+            "binance_flow",
+            "binance_funding"
+          ],
+          "status": "AVAILABLE",
+          "unit": "Binance derivatives + single-venue market-flow panel",
+          "value": "positive funding / OI near 90d high"
+        },
+        "etf_flows": {
+          "as_of": "2026-09-18",
+          "confidence": "HIGH",
+          "rationale": "Trailing calendar month Aug21–Sep18 net +$1,283.5M; September MTD +$186.8M; Sep14–18 −$140.6M after four positive weeks; Sep18 +$143.7M. The weekly reversal supports the known single §4A ETF-decay sub-leg; because price remains >20% below its own one-year high, gate 5 remains capitulation-context and cannot confirm a short.",
+          "source_ids": [
+            "farside_eth"
+          ],
+          "status": "AVAILABLE",
+          "unit": "USD millions trailing calendar month",
+          "value": "1283.5"
+        },
+        "funding": {
+          "as_of": "2026-09-21T08:55:22.411Z",
+          "confidence": "HIGH",
+          "rationale": "Mean annualized settled Binance funding 3.66%; positive means long holders pay shorts. One <−7% annualized print is 18 intervals old; latest three funding observations are positive, no sustained-negative run, so stale print does not trigger current squeeze penalty.",
+          "source_ids": [
+            "binance_funding"
+          ],
+          "status": "AVAILABLE",
+          "unit": "percent annualized",
+          "value": "3.66"
+        },
+        "macro": {
+          "as_of": "2026-09-21",
+          "confidence": "MEDIUM",
+          "rationale": "Fed raised 25bp on Sep16 to 3.75–4.00%; August CPI 3.4% headline/2.4% core y/y; July PCE 3.7%/3.3%; FRED 10y real yield 2.61% and 2y 4.67% on Sep17. VIX14.93 (5-observation change −12.69%), DXY100.28 (+0.82%), Brent97.52 (−7.72%); S&P500 Sep18 close 7650.5 (5d −0.08%), Nasdaq Composite 26522.54 (+0.72%), breadth 49.5% above 200dma on Sep17. No CPI, NFP, PCE, FOMC decision or minutes Sep21–25; next PCE Sep30, employment Oct2. These are mixed macro context, not a scored short signal.",
+          "source_ids": [
+            "snapshot",
+            "fed",
+            "cpi",
+            "pce",
+            "real_yield",
+            "us2y",
+            "calendar"
+          ],
+          "status": "AVAILABLE",
+          "unit": "rates, FX, equities and event calendar",
+          "value": "mixed"
+        },
+        "momentum": {
+          "as_of": "2026-09-14",
+          "confidence": "HIGH",
+          "rationale": "Weekly RSI-14 62.56; BTC earns 0 (<60), ETH earns 1 (60–65 band). Partial week excluded.",
+          "source_ids": [
+            "snapshot"
+          ],
+          "status": "AVAILABLE",
+          "unit": "completed weekly Wilder RSI-14",
+          "value": "62.56"
+        },
+        "onchain": {
+          "as_of": "2026-09-20",
+          "confidence": "MEDIUM",
+          "rationale": "MVRV-Z 0.272. Exchange reserves 15,518,530.953 ETH (-1.416%/30d); 30d net exchange inflow $-0.572B, which is net outflow. True LTH supply/profit-taking is provider-gated; tagged large-address inflows are unavailable and neither is assigned a short score credit.",
+          "source_ids": [
+            "coinmetrics",
+            "snapshot"
+          ],
+          "status": "AVAILABLE",
+          "unit": "Coin Metrics reconstructed on-chain daily",
+          "value": "MVRV-Z 0.272; reserves -1.416%/30d; net exchange flow $-0.572B"
+        },
+        "regime": {
+          "as_of": "2026-09-21",
+          "confidence": "HIGH",
+          "rationale": "Price $2,699.79 is 43.22% below the trailing one-year high and 29.84% above the 200dma $2,079.27; that 200dma is rising 2.57% over 20 sessions. This is neither a Channel-A top (not within 20% of high) nor a Channel-B downtrend (price is above a rising 200dma).",
+          "source_ids": [
+            "snapshot"
+          ],
+          "status": "AVAILABLE",
+          "unit": "channel routing",
+          "value": "none"
+        },
+        "sentiment": {
+          "as_of": "2026-09-21",
+          "confidence": "HIGH",
+          "rationale": "Alternative.me daily prints 70,71,71; average 70.67; greed, not ≥80 for seven days.",
+          "source_ids": [
+            "sentiment"
+          ],
+          "status": "AVAILABLE",
+          "unit": "Fear and Greed 3-day average",
+          "value": "70.67"
+        },
+        "spot": {
+          "as_of": "2026-09-21T08:55:22.411Z",
+          "confidence": "HIGH",
+          "rationale": "Median of three timestamped CoinGecko, Binance and Coinbase quotes; spread below 0.5%.",
+          "source_ids": [
+            "snapshot"
+          ],
+          "status": "AVAILABLE",
+          "unit": "USD",
+          "value": "2699.79"
+        }
+      },
+      "framework": "flying_rocket",
+      "gates": {
+        "active": 8,
+        "na": [
+          8
+        ],
+        "passed": [],
+        "passed_count": 0,
+        "passed_mask": 0
+      },
+      "position": {
+        "asset": "ETH",
+        "attribution": {
+          "active_tags": [],
+          "note": "Open ETH exposure attribution is unknown. The ledger has borrow-corroborated evidence of an ETH margin liability, but custody is UNEXPLAINED so its amount and current venue status cannot be stated.",
+          "status": "UNKNOWN"
+        },
+        "basis": {
+          "avg_cost": null,
+          "reason": "Custody is UNEXPLAINED; although ledger replay basis is internally derivable, do not state it or any PnL until holdings reconcile.",
+          "reliable": true,
+          "total_cost": null
+        },
+        "custody": {
+          "reason": "The live balance and the fill replay disagree, and neither recorded withdrawals nor a migration seed accounts for the gap. This is a data defect — an unread wallet, an uncovered venue, or an incomplete backfill — not a position. Do NOT report a figure for this asset in either direction; fix the ledger first.",
+          "status": "UNEXPLAINED"
+        },
+        "dry_powder": "7792.6440",
+        "futures": [],
+        "pnl": {
+          "reason": "Unexplained custody prohibits any position PnL claim.",
+          "status": "DATA_LIMITED",
+          "unrealized": null
+        },
+        "quantity": null,
+        "reconciliation": "Snapshot generated 2026-08-15T09:30:02.628253Z under event-driven validity. ETH custody is UNEXPLAINED. Hard Rule 8: report no asset quantity, basis, or PnL in either direction; reconcile ledger before sizing. Previous report borrow-corroborated ETH short instruction remains: verify current venue liability and cover 100% of any amount still open because the old clocks are expired; exact amount is withheld.",
+        "status": "DATA_LIMITED"
+      },
+      "position_controls": {
+        "action": {
+          "rationale": "Snapshot generated 2026-08-15T09:30:02.628253Z under event-driven validity. ETH custody is UNEXPLAINED. Hard Rule 8: report no asset quantity, basis, or PnL in either direction; reconcile ledger before sizing. Previous report borrow-corroborated ETH short instruction remains: verify current venue liability and cover 100% of any amount still open because the old clocks are expired; exact amount is withheld.",
+          "status": "DATA_LIMITED",
+          "value": "VERIFY_AND_COVER"
+        },
+        "required": true,
+        "status": "DATA_LIMITED"
+      },
+      "regime": null,
+      "report_at_derivation": "derived by interpreting the filename's HHMM in America/New_York (the repo's Output Convention) — the machine block carries a date but no time field, and (asset, framework, date) collides (btc/eth × fallen_knives on 2026-07-14 and 2026-07-18), so report_file is the primary key",
+      "report_at_utc": "2026-09-21T09:23:00Z",
+      "report_date": "2026-09-21",
+      "report_file": "eth_flying_rocket_20260921_0523.md",
+      "report_local_time": "05:23",
+      "report_zone": "America/New_York",
+      "rubric": "FR-A/1",
+      "schema_epoch": "report_machine_2",
+      "score": {
+        "adjusted": "5",
+        "cap_applied": false,
+        "cap_value": null,
+        "discretionary": "0",
+        "discretionary_inferred": false,
+        "inference_basis": "declared in the machine block",
+        "legs": [
+          {
+            "block_key": "euphoria",
+            "max": 5,
+            "min": 0,
+            "ordinal": 1,
+            "rubric_name": "euphoria",
+            "value": "3"
+          },
+          {
+            "block_key": "momentum",
+            "max": 4,
+            "min": 0,
+            "ordinal": 2,
+            "rubric_name": "momentum",
+            "value": "1"
+          },
+          {
+            "block_key": "valuation",
+            "max": 5,
+            "min": 0,
+            "ordinal": 3,
+            "rubric_name": "valuation",
+            "value": "0"
+          },
+          {
+            "block_key": "distribution",
+            "max": 3,
+            "min": 0,
+            "ordinal": 4,
+            "rubric_name": "distribution",
+            "value": "1"
+          },
+          {
+            "block_key": "vulnerability",
+            "max": 3,
+            "min": 0,
+            "ordinal": 5,
+            "rubric_name": "vulnerability",
+            "value": "0"
+          }
+        ],
+        "mechanical": "5",
+        "mechanical_inferred": false,
+        "penalty": "0",
+        "raw": "5",
+        "rounding": "half-down"
+      },
+      "source_schema": "report-machine/2",
+      "spot_source": "snapshot",
+      "spot_usd": "2699.79",
+      "stops": null,
+      "tagging": {
+        "active_tags": [],
+        "channel": "none",
+        "framework": "flying_rocket",
+        "instrument_class": "crypto",
+        "mode": "phase_registry",
+        "registry": {
+          "asset": "ETH",
+          "channel": "none",
+          "entries": [
+            {
+              "asset": "ETH",
+              "canonical_tag": "FR-A-1A-ETH-20260921-0523",
+              "decision": "STAND_DOWN",
+              "instrument_class": "crypto",
+              "phase": "1A",
+              "report_date": "2026-09-21",
+              "report_file": "eth_flying_rocket_20260921_0523.md",
+              "report_local_time": "05:23",
+              "report_version": "report-machine/2"
+            },
+            {
+              "asset": "ETH",
+              "canonical_tag": "FR-A-1B-ETH-20260921-0523",
+              "decision": "STAND_DOWN",
+              "instrument_class": "crypto",
+              "phase": "1B",
+              "report_date": "2026-09-21",
+              "report_file": "eth_flying_rocket_20260921_0523.md",
+              "report_local_time": "05:23",
+              "report_version": "report-machine/2"
+            },
+            {
+              "asset": "ETH",
+              "canonical_tag": "FR-A-2-ETH-20260921-0523",
+              "decision": "STAND_DOWN",
+              "instrument_class": "crypto",
+              "phase": "2",
+              "report_date": "2026-09-21",
+              "report_file": "eth_flying_rocket_20260921_0523.md",
+              "report_local_time": "05:23",
+              "report_version": "report-machine/2"
+            },
+            {
+              "asset": "ETH",
+              "canonical_tag": "FR-A-3-ETH-20260921-0523",
+              "decision": "STAND_DOWN",
+              "instrument_class": "crypto",
+              "phase": "3",
+              "report_date": "2026-09-21",
+              "report_file": "eth_flying_rocket_20260921_0523.md",
+              "report_local_time": "05:23",
+              "report_version": "report-machine/2"
+            }
+          ],
+          "framework": "flying_rocket",
+          "instrument_class": "crypto",
+          "report_date": "2026-09-21",
+          "report_file": "eth_flying_rocket_20260921_0523.md",
+          "report_local_time": "05:23",
+          "report_version": "report-machine/2",
+          "report_zone": "America/New_York",
+          "schema": "report-phase-registry/1",
+          "version": "1"
+        },
+        "report_asset": "ETH",
+        "report_date": "2026-09-21",
+        "report_file": "eth_flying_rocket_20260921_0523.md",
+        "report_local_time": "05:23",
+        "report_version": "report-machine/2",
+        "reserved_tags": [
+          "FR-A-1A-ETH-20260921-0523",
+          "FR-A-1B-ETH-20260921-0523",
+          "FR-A-2-ETH-20260921-0523",
+          "FR-A-3-ETH-20260921-0523"
+        ],
+        "status": "REGISTERED"
+      },
+      "tagging_v2": {
+        "active_tags": [],
+        "entries": [
+          {
+            "canonical_tag": "FR-A-1A-ETH-20260921-0523",
+            "decision": "STAND_DOWN",
+            "instrument_class": "crypto",
+            "phase": "1A"
+          },
+          {
+            "canonical_tag": "FR-A-1B-ETH-20260921-0523",
+            "decision": "STAND_DOWN",
+            "instrument_class": "crypto",
+            "phase": "1B"
+          },
+          {
+            "canonical_tag": "FR-A-2-ETH-20260921-0523",
+            "decision": "STAND_DOWN",
+            "instrument_class": "crypto",
+            "phase": "2"
+          },
+          {
+            "canonical_tag": "FR-A-3-ETH-20260921-0523",
+            "decision": "STAND_DOWN",
+            "instrument_class": "crypto",
+            "phase": "3"
+          }
+        ],
+        "instrument_class": "crypto",
+        "reserved_tags": [
+          "FR-A-1A-ETH-20260921-0523",
+          "FR-A-1B-ETH-20260921-0523",
+          "FR-A-2-ETH-20260921-0523",
+          "FR-A-3-ETH-20260921-0523"
+        ],
+        "schema": "report-phase-registry/2",
+        "status": "REGISTERED"
+      },
+      "unlock": {
+        "highest_phase_unlocked_by_score": null,
+        "ladder": "FR-A",
+        "p1a": 11,
+        "p1b": 13,
+        "p2": 15,
+        "p3": 19,
+        "p3_note": "Phase 3 reads the MECHANICAL score — no analyst channel reaches it"
+      },
+      "verdict": "No new ETH short: no channel is live; known score floor 5/20 (range 5–8), 0/8 gates, and all phases stay locked. Verify venue liability; cover 100% of any ETH short still open because its prior FR clock is expired.",
+      "view_file": "eth_flying_rocket_20260921_0523.md"
+    },
+    {
+      "asset": "BTC",
+      "canonical_file": "btc_fallen_knives_20260921_0541.json",
+      "canonical_sha256": "d2a3f9f135c4bf962a5504a83ffd9b2d2482618570c1fc2de8641df8258def14",
+      "channel": null,
+      "channel_inference_basis": "Fallen Knives has no channel dimension",
+      "channel_inferred": false,
+      "content_sha256": "d2a3f9f135c4bf962a5504a83ffd9b2d2482618570c1fc2de8641df8258def14",
+      "deployment": {
+        "deployed_pct": "0",
+        "dry_pct": "100",
+        "filled_detection": "deployed === true || typeof entry_price === \"number\" || typeof entry === \"number\"",
+        "filled_detection_caveat": "before the entry_price epoch (2026-07-29) no tranche in this corpus carried deployed:true or a numeric entry — 152/152 tranches across 39 reports encode `entry` as prose — so filled_tranche_count is structurally 0 on every pre-epoch signal. It is an artifact of the old schema, not an observation that nothing was filled.",
+        "filled_tranche_count": 0,
+        "throttle_released": false,
+        "tranche_count": 4,
+        "tranches": [
+          {
+            "channel": null,
+            "channel_regime": null,
+            "deployed": false,
+            "discretionary": false,
+            "entry": null,
+            "entry_price": null,
+            "filled": false,
+            "pct": "10",
+            "phase": "1A",
+            "prior_stop": null,
+            "prior_time_stop": null,
+            "stop": null,
+            "time_stop": null
+          },
+          {
+            "channel": null,
+            "channel_regime": null,
+            "deployed": false,
+            "discretionary": false,
+            "entry": null,
+            "entry_price": null,
+            "filled": false,
+            "pct": "15",
+            "phase": "1B",
+            "prior_stop": null,
+            "prior_time_stop": null,
+            "stop": null,
+            "time_stop": null
+          },
+          {
+            "channel": null,
+            "channel_regime": null,
+            "deployed": false,
+            "discretionary": false,
+            "entry": null,
+            "entry_price": null,
+            "filled": false,
+            "pct": "30",
+            "phase": "2",
+            "prior_stop": null,
+            "prior_time_stop": null,
+            "stop": null,
+            "time_stop": null
+          },
+          {
+            "channel": null,
+            "channel_regime": null,
+            "deployed": false,
+            "discretionary": false,
+            "entry": null,
+            "entry_price": null,
+            "filled": false,
+            "pct": "45",
+            "phase": "3",
+            "prior_stop": null,
+            "prior_time_stop": null,
+            "stop": null,
+            "time_stop": null
+          }
+        ]
+      },
+      "ev": {
+        "scenarios": [
+          {
+            "high": "86000",
+            "low": "83000",
+            "mid": "84500",
+            "name": "Rally",
+            "p": "20"
+          },
+          {
+            "high": "82000",
+            "low": "76000",
+            "mid": "79000",
+            "name": "Range",
+            "p": "40"
+          },
+          {
+            "high": "76000",
+            "low": "70000",
+            "mid": "73000",
+            "name": "Retest",
+            "p": "25"
+          },
+          {
+            "high": "70000",
+            "low": "62000",
+            "mid": "66000",
+            "name": "Bear",
+            "p": "15"
+          }
+        ],
+        "stated_ev_usd": "76650",
+        "vs_spot_pct": "-8.51"
+      },
+      "evidence": {
+        "correlation": {
+          "as_of": "2026-09-18",
+          "confidence": "MEDIUM",
+          "rationale": "Java compute corr; last30 aligned asset/SPX session closes,29 log returns. SPX source in snapshot. Surcharge applies only above0.7.",
+          "source_ids": [
+            "binance"
+          ],
+          "status": "AVAILABLE",
+          "unit": "Pearson daily log-return correlation",
+          "value": "0.2981738852651547"
+        },
+        "cpi": {
+          "as_of": "2026-09-11",
+          "confidence": "MEDIUM",
+          "rationale": "Monthly headline+0.4/core+0.3. Latest release; not a new forecast.",
+          "source_ids": [
+            "cpi"
+          ],
+          "status": "AVAILABLE",
+          "unit": "percent YoY August",
+          "value": "3.4 headline / 2.4 core"
+        },
+        "etf_aum_secondary": {
+          "as_of": "2026-09-18",
+          "confidence": "LOW",
+          "rationale": "Wu Blockchain Sep19 quotes SoSoValue net assets. Secondary only; direct SoSoValue inaccessible. No simultaneous first-party AUM claim.",
+          "source_ids": [
+            "sosovalue"
+          ],
+          "status": "AVAILABLE",
+          "unit": "USD millions",
+          "value": "102532"
+        },
+        "etf_flows": {
+          "as_of": "2026-09-18",
+          "confidence": "MEDIUM",
+          "rationale": "Daily Sep18 +$433.0M; Sep14-18 week $6.1M; September MTD $313.4M; trailing calendar month Aug21-Sep18 $1762.1M. Latest green streak 2 sessions, below the five-session flip bar. Monthly net flow remains positive, so >=2% and >=3% AUM outflow tests are false regardless of unverified AUM. YTD and synchronized total AUM NOT VERIFIED after full-table/web and SoSoValue attempts; never substitute cumulative-since-launch for YTD. Secondary SoSoValue AUM via Wu: $102532M asofSep18; indicative monthly net inflow/AUM 1.72%, no outflow trigger.",
+          "source_ids": [
+            "farside",
+            "sosovalue"
+          ],
+          "status": "AVAILABLE",
+          "unit": "USD millions trailing calendar month",
+          "value": "1762.1"
+        },
+        "holder": {
+          "as_of": "2026-09-20",
+          "confidence": "MEDIUM",
+          "rationale": "True LTH30d unavailable/provider-gated; its prior zero remains held. Reserve subcomponent fresh; holder total0. No staking-as-LTH substitution.",
+          "source_ids": [
+            "coinmetrics",
+            "snapshot"
+          ],
+          "status": "AVAILABLE",
+          "unit": "reserve change30d percent",
+          "value": "0.372"
+        },
+        "liquidations": {
+          "as_of": "2026-09-21",
+          "confidence": "LOW",
+          "rationale": "Gate01:33:53 cites CoinGlass: longs160M, shorts241M; publication timezone not specified, timestamp treated as page label. No current 90d percentile/30d sigma dataset; liquidation credit1 HELD from prior, not newly earned. Gate7 unlit. Data debt2 since Aug22; paid distribution unavailable; do not fabricate a percentile.",
+          "source_ids": [
+            "liquidations"
+          ],
+          "status": "AVAILABLE",
+          "unit": "USD millions marketwide24h",
+          "value": "401"
+        },
+        "macro": {
+          "as_of": "2026-09-21",
+          "confidence": "MEDIUM",
+          "rationale": "Oil/VIX eased, but Fed hike, DXY rise and higher real yield keep gate9 dark; a schedule itself is not a veto.",
+          "source_ids": [
+            "snapshot",
+            "fed",
+            "realyield"
+          ],
+          "status": "AVAILABLE",
+          "unit": "qualitative",
+          "value": "mixed, net adverse"
+        },
+        "pce": {
+          "as_of": "2026-08-26",
+          "confidence": "MEDIUM",
+          "rationale": "Monthly both+0.2; next Sep30 08:30EDT.",
+          "source_ids": [
+            "pce"
+          ],
+          "status": "AVAILABLE",
+          "unit": "percent YoY July",
+          "value": "3.7 headline / 3.3 core"
+        },
+        "policy_rate": {
+          "as_of": "2026-09-16",
+          "confidence": "MEDIUM",
+          "rationale": "Fed raised25bp, unanimous12-0.",
+          "source_ids": [
+            "fed"
+          ],
+          "status": "AVAILABLE",
+          "unit": "percent target range",
+          "value": "3.75-4.00"
+        },
+        "real_yield": {
+          "as_of": "2026-09-17",
+          "confidence": "MEDIUM",
+          "rationale": "Official web fallback after Java FRED endpoint RST_STREAM.",
+          "source_ids": [
+            "realyield"
+          ],
+          "status": "AVAILABLE",
+          "unit": "percent 10y real",
+          "value": "2.61"
+        },
+        "sentiment": {
+          "as_of": "2026-09-21",
+          "confidence": "HIGH",
+          "rationale": "Daily70/71/71; greed. Extreme-fear daily streak0; no >=75 seven-day euphoria streak.",
+          "source_ids": [
+            "sentiment"
+          ],
+          "status": "AVAILABLE",
+          "unit": "F&G three-day average",
+          "value": "70.67"
+        },
+        "spot": {
+          "as_of": "2026-09-21T08:55:22.411Z",
+          "confidence": "HIGH",
+          "rationale": "Three-source synchronized median.",
+          "source_ids": [
+            "snapshot"
+          ],
+          "status": "AVAILABLE",
+          "unit": "USD",
+          "value": "83782"
+        },
+        "us2y": {
+          "as_of": "2026-09-17",
+          "confidence": "MEDIUM",
+          "rationale": "Latest displayed FRED observation.",
+          "source_ids": [
+            "us2y"
+          ],
+          "status": "AVAILABLE",
+          "unit": "percent 2y nominal",
+          "value": "4.67"
+        },
+        "valuation": {
+          "as_of": "2026-09-20",
+          "confidence": "MEDIUM",
+          "rationale": "reconstructed: (market cap - realized cap) / sample stdev(full-history market cap); realized cap = market cap / MVRV; 5909 observations. MVRV ratio1.524 is not Z. Fresh reconstruction subject to flash revisions, not proprietary Glassnode Z.",
+          "source_ids": [
+            "coinmetrics"
+          ],
+          "status": "AVAILABLE",
+          "unit": "reconstructed MVRV-Z",
+          "value": "0.914"
+        },
+        "weekly_rsi": {
+          "as_of": "week starting2026-09-14",
+          "confidence": "HIGH",
+          "rationale": "261 completed Yahoo UTC week-start closes, period14; live week excluded. >45 earns0.",
+          "source_ids": [
+            "snapshot"
+          ],
+          "status": "AVAILABLE",
+          "unit": "Wilder RSI14",
+          "value": "58.69"
+        }
+      },
+      "framework": "fallen_knives",
+      "gates": {
+        "active": 9,
+        "na": [],
+        "passed": [
+          3
+        ],
+        "passed_count": 1,
+        "passed_mask": 4
+      },
+      "position": {
+        "asset": "BTC",
+        "attribution": {
+          "active_tags": [],
+          "note": "No confirmed BTC quantity can be mapped to an FK phase.",
+          "status": "UNKNOWN"
+        },
+        "basis": {
+          "avg_cost": null,
+          "reason": "Unbacked disposals make basis non-derivable; no average cost, basis, unrealized PnL or ROI is quoted.",
+          "reliable": false,
+          "total_cost": null
+        },
+        "custody": {
+          "reason": "Live balance and fill replay disagree; neither withdrawals nor a migration seed explains the gap.",
+          "status": "UNEXPLAINED"
+        },
+        "dry_powder": "7792.6440",
+        "futures": [],
+        "pnl": {
+          "realized": null,
+          "reason": "Custody and basis defects prohibit a PnL claim.",
+          "status": "DATA_LIMITED",
+          "unrealized": null
+        },
+        "quantity": null,
+        "reconciliation": "Position Reconciliation: unchanged from Sep7; latest Aug15 export is FRESH under event-driven policy but BTC custody remains UNEXPLAINED. No quantity in either direction; not flat. Basis unreliable; no average cost, basis, unrealized PnL/ROI or realized performance claim. Planning0% deployed/100% dry is not an account holdings statement. Shared account stable balance$10,741.5780 includes$2,948.9340 locked; drawable$7,792.6440, not separate allocations to BTC and ETH. Ledger futures coverage is inspected separately; no whole-account flat claim is made by the empty asset futures array.",
+        "status": "DATA_LIMITED"
+      },
+      "position_controls": {
+        "action": {
+          "rationale": "Unexplained custody prevents selecting or sizing a live protective order, trim or exit. No level is absolutely best; a best-available control cannot be selected from unreconciled exposure. Recommendations are not executions; no order changed.",
+          "status": "DATA_LIMITED",
+          "value": "NO_POSITION_CLAIM"
+        },
+        "required": true,
+        "status": "DATA_LIMITED"
+      },
+      "regime": null,
+      "report_at_derivation": "derived by interpreting the filename's HHMM in America/New_York (the repo's Output Convention) — the machine block carries a date but no time field, and (asset, framework, date) collides (btc/eth × fallen_knives on 2026-07-14 and 2026-07-18), so report_file is the primary key",
+      "report_at_utc": "2026-09-21T09:41:00Z",
+      "report_date": "2026-09-21",
+      "report_file": "btc_fallen_knives_20260921_0541.md",
+      "report_local_time": "05:41",
+      "report_zone": "America/New_York",
+      "rubric": "FK/1",
+      "schema_epoch": "report_machine_2",
+      "score": {
+        "adjusted": "4",
+        "cap_applied": false,
+        "cap_value": null,
+        "discretionary": "0",
+        "discretionary_inferred": false,
+        "inference_basis": "declared in the machine block",
+        "legs": [
+          {
+            "block_key": "sentiment",
+            "max": 5,
+            "min": 0,
+            "ordinal": 1,
+            "rubric_name": "sentiment",
+            "value": "0"
+          },
+          {
+            "block_key": "momentum",
+            "max": 4,
+            "min": 0,
+            "ordinal": 2,
+            "rubric_name": "momentum",
+            "value": "0"
+          },
+          {
+            "block_key": "valuation",
+            "max": 5,
+            "min": -2,
+            "ordinal": 3,
+            "rubric_name": "valuation",
+            "value": "3"
+          },
+          {
+            "block_key": "capitulation",
+            "max": 3,
+            "min": 0,
+            "ordinal": 4,
+            "rubric_name": "capitulation",
+            "value": "1"
+          },
+          {
+            "block_key": "holder",
+            "max": 3,
+            "min": 0,
+            "ordinal": 5,
+            "rubric_name": "holder_behavior",
+            "value": "0"
+          }
+        ],
+        "mechanical": "4",
+        "mechanical_inferred": false,
+        "penalty": "0",
+        "raw": "4",
+        "rounding": "half-up"
+      },
+      "source_schema": "report-machine/2",
+      "spot_source": "snapshot",
+      "spot_usd": "83782",
+      "stops": null,
+      "tagging": {
+        "active_tags": [],
+        "channel": null,
+        "framework": "fallen_knives",
+        "instrument_class": "crypto",
+        "mode": "phase_registry",
+        "registry": {
+          "asset": "BTC",
+          "channel": null,
+          "entries": [
+            {
+              "asset": "BTC",
+              "canonical_tag": "FK-P1A-BTC-20260921-0541",
+              "decision": "LOCKED",
+              "instrument_class": "crypto",
+              "phase": "1A",
+              "report_date": "2026-09-21",
+              "report_file": "btc_fallen_knives_20260921_0541.md",
+              "report_local_time": "05:41",
+              "report_version": "report-machine/2"
+            },
+            {
+              "asset": "BTC",
+              "canonical_tag": "FK-P1B-BTC-20260921-0541",
+              "decision": "LOCKED",
+              "instrument_class": "crypto",
+              "phase": "1B",
+              "report_date": "2026-09-21",
+              "report_file": "btc_fallen_knives_20260921_0541.md",
+              "report_local_time": "05:41",
+              "report_version": "report-machine/2"
+            },
+            {
+              "asset": "BTC",
+              "canonical_tag": "FK-P2-BTC-20260921-0541",
+              "decision": "LOCKED",
+              "instrument_class": "crypto",
+              "phase": "2",
+              "report_date": "2026-09-21",
+              "report_file": "btc_fallen_knives_20260921_0541.md",
+              "report_local_time": "05:41",
+              "report_version": "report-machine/2"
+            },
+            {
+              "asset": "BTC",
+              "canonical_tag": "FK-P3-BTC-20260921-0541",
+              "decision": "LOCKED",
+              "instrument_class": "crypto",
+              "phase": "3",
+              "report_date": "2026-09-21",
+              "report_file": "btc_fallen_knives_20260921_0541.md",
+              "report_local_time": "05:41",
+              "report_version": "report-machine/2"
+            }
+          ],
+          "framework": "fallen_knives",
+          "instrument_class": "crypto",
+          "report_date": "2026-09-21",
+          "report_file": "btc_fallen_knives_20260921_0541.md",
+          "report_local_time": "05:41",
+          "report_version": "report-machine/2",
+          "report_zone": "America/New_York",
+          "schema": "report-phase-registry/1",
+          "version": "1"
+        },
+        "report_asset": "BTC",
+        "report_date": "2026-09-21",
+        "report_file": "btc_fallen_knives_20260921_0541.md",
+        "report_local_time": "05:41",
+        "report_version": "report-machine/2",
+        "reserved_tags": [
+          "FK-P1A-BTC-20260921-0541",
+          "FK-P1B-BTC-20260921-0541",
+          "FK-P2-BTC-20260921-0541",
+          "FK-P3-BTC-20260921-0541"
+        ],
+        "status": "REGISTERED"
+      },
+      "tagging_v2": {
+        "active_tags": [],
+        "entries": [
+          {
+            "canonical_tag": "FK-P1A-BTC-20260921-0541",
+            "decision": "LOCKED",
+            "instrument_class": "crypto",
+            "phase": "1A"
+          },
+          {
+            "canonical_tag": "FK-P1B-BTC-20260921-0541",
+            "decision": "LOCKED",
+            "instrument_class": "crypto",
+            "phase": "1B"
+          },
+          {
+            "canonical_tag": "FK-P2-BTC-20260921-0541",
+            "decision": "LOCKED",
+            "instrument_class": "crypto",
+            "phase": "2"
+          },
+          {
+            "canonical_tag": "FK-P3-BTC-20260921-0541",
+            "decision": "LOCKED",
+            "instrument_class": "crypto",
+            "phase": "3"
+          }
+        ],
+        "instrument_class": "crypto",
+        "reserved_tags": [
+          "FK-P1A-BTC-20260921-0541",
+          "FK-P1B-BTC-20260921-0541",
+          "FK-P2-BTC-20260921-0541",
+          "FK-P3-BTC-20260921-0541"
+        ],
+        "schema": "report-phase-registry/2",
+        "status": "REGISTERED"
+      },
+      "unlock": {
+        "highest_phase_unlocked_by_score": null,
+        "ladder": "FK",
+        "p1a": 8,
+        "p1b": 11,
+        "p2": 15,
+        "p3": 17,
+        "p3_note": "Phase 3 reads the MECHANICAL score — no analyst channel reaches it"
+      },
+      "verdict": "BTC adjusted4/20 (mechanical4, raw4, D1=0); gates1/9, V1. WAIT / NO NEW ADD; all four phases locked. Position-level controls remain DATA_LIMITED.",
+      "view_file": "btc_fallen_knives_20260921_0541.md"
+    },
+    {
+      "asset": "ETH",
+      "canonical_file": "eth_fallen_knives_20260921_0541.json",
+      "canonical_sha256": "a9b1ea14c77c44f083b5f2aac33e59c80b76f828657ff59aa8a1d3d83f4f078c",
+      "channel": null,
+      "channel_inference_basis": "Fallen Knives has no channel dimension",
+      "channel_inferred": false,
+      "content_sha256": "a9b1ea14c77c44f083b5f2aac33e59c80b76f828657ff59aa8a1d3d83f4f078c",
+      "deployment": {
+        "deployed_pct": "0",
+        "dry_pct": "100",
+        "filled_detection": "deployed === true || typeof entry_price === \"number\" || typeof entry === \"number\"",
+        "filled_detection_caveat": "before the entry_price epoch (2026-07-29) no tranche in this corpus carried deployed:true or a numeric entry — 152/152 tranches across 39 reports encode `entry` as prose — so filled_tranche_count is structurally 0 on every pre-epoch signal. It is an artifact of the old schema, not an observation that nothing was filled.",
+        "filled_tranche_count": 0,
+        "throttle_released": false,
+        "tranche_count": 4,
+        "tranches": [
+          {
+            "channel": null,
+            "channel_regime": null,
+            "deployed": false,
+            "discretionary": false,
+            "entry": null,
+            "entry_price": null,
+            "filled": false,
+            "pct": "10",
+            "phase": "1A",
+            "prior_stop": null,
+            "prior_time_stop": null,
+            "stop": null,
+            "time_stop": null
+          },
+          {
+            "channel": null,
+            "channel_regime": null,
+            "deployed": false,
+            "discretionary": false,
+            "entry": null,
+            "entry_price": null,
+            "filled": false,
+            "pct": "15",
+            "phase": "1B",
+            "prior_stop": null,
+            "prior_time_stop": null,
+            "stop": null,
+            "time_stop": null
+          },
+          {
+            "channel": null,
+            "channel_regime": null,
+            "deployed": false,
+            "discretionary": false,
+            "entry": null,
+            "entry_price": null,
+            "filled": false,
+            "pct": "30",
+            "phase": "2",
+            "prior_stop": null,
+            "prior_time_stop": null,
+            "stop": null,
+            "time_stop": null
+          },
+          {
+            "channel": null,
+            "channel_regime": null,
+            "deployed": false,
+            "discretionary": false,
+            "entry": null,
+            "entry_price": null,
+            "filled": false,
+            "pct": "45",
+            "phase": "3",
+            "prior_stop": null,
+            "prior_time_stop": null,
+            "stop": null,
+            "time_stop": null
+          }
+        ]
+      },
+      "ev": {
+        "scenarios": [
+          {
+            "high": "3000",
+            "low": "2800",
+            "mid": "2900",
+            "name": "Rally",
+            "p": "20"
+          },
+          {
+            "high": "2700",
+            "low": "2550",
+            "mid": "2625",
+            "name": "Range",
+            "p": "40"
+          },
+          {
+            "high": "2500",
+            "low": "2350",
+            "mid": "2425",
+            "name": "Retest",
+            "p": "25"
+          },
+          {
+            "high": "2200",
+            "low": "2000",
+            "mid": "2100",
+            "name": "Bear",
+            "p": "15"
+          }
+        ],
+        "stated_ev_usd": "2551.25",
+        "vs_spot_pct": "-5.5"
+      },
+      "evidence": {
+        "altseason": {
+          "as_of": "2026-09-21",
+          "confidence": "MEDIUM",
+          "rationale": "Below75, no altcoin season; context only.",
+          "source_ids": [
+            "altseason"
+          ],
+          "status": "AVAILABLE",
+          "unit": "top50 90d breadth index",
+          "value": "51"
+        },
+        "correlation": {
+          "as_of": "2026-09-18",
+          "confidence": "MEDIUM",
+          "rationale": "Java compute corr; last30 aligned asset/SPX session closes,29 log returns. SPX source in snapshot. Surcharge applies only above0.7.",
+          "source_ids": [
+            "binance"
+          ],
+          "status": "AVAILABLE",
+          "unit": "Pearson daily log-return correlation",
+          "value": "0.30492452895879224"
+        },
+        "cpi": {
+          "as_of": "2026-09-11",
+          "confidence": "MEDIUM",
+          "rationale": "Monthly headline+0.4/core+0.3. Latest release; not a new forecast.",
+          "source_ids": [
+            "cpi"
+          ],
+          "status": "AVAILABLE",
+          "unit": "percent YoY August",
+          "value": "3.4 headline / 2.4 core"
+        },
+        "etf_aum_secondary": {
+          "as_of": "2026-09-18",
+          "confidence": "LOW",
+          "rationale": "Wu Blockchain Sep19 quotes SoSoValue net assets. Secondary only; direct SoSoValue inaccessible. No simultaneous first-party AUM claim.",
+          "source_ids": [
+            "sosovalue"
+          ],
+          "status": "AVAILABLE",
+          "unit": "USD millions",
+          "value": "16719"
+        },
+        "etf_flows": {
+          "as_of": "2026-09-18",
+          "confidence": "MEDIUM",
+          "rationale": "Daily Sep18 +$143.7M; Sep14-18 week $-140.6M; September MTD $186.8M; trailing calendar month Aug21-Sep18 $1283.5M. Latest green streak 1 sessions, below the five-session flip bar. Monthly net flow remains positive, so >=2% and >=3% AUM outflow tests are false regardless of unverified AUM. YTD and synchronized total AUM NOT VERIFIED after full-table/web and SoSoValue attempts; never substitute cumulative-since-launch for YTD. Secondary SoSoValue AUM via Wu: $16719M asofSep18; indicative monthly net inflow/AUM 7.68%, no outflow trigger.",
+          "source_ids": [
+            "farside",
+            "sosovalue"
+          ],
+          "status": "AVAILABLE",
+          "unit": "USD millions trailing calendar month",
+          "value": "1283.5"
+        },
+        "holder": {
+          "as_of": "2026-09-20",
+          "confidence": "MEDIUM",
+          "rationale": "True LTH30d unavailable/provider-gated; its prior zero remains held. Reserve subcomponent fresh; holder total1.5. No staking-as-LTH substitution.",
+          "source_ids": [
+            "coinmetrics",
+            "snapshot"
+          ],
+          "status": "AVAILABLE",
+          "unit": "reserve change30d percent",
+          "value": "-1.416"
+        },
+        "liquidations": {
+          "as_of": "2026-09-21",
+          "confidence": "LOW",
+          "rationale": "Gate01:33:53 cites CoinGlass: longs160M, shorts241M; publication timezone not specified, timestamp treated as page label. No current 90d percentile/30d sigma dataset; liquidation credit1 HELD from prior, not newly earned. Gate7 unlit. Data debt2 since Aug22; paid distribution unavailable; do not fabricate a percentile.",
+          "source_ids": [
+            "liquidations"
+          ],
+          "status": "AVAILABLE",
+          "unit": "USD millions marketwide24h",
+          "value": "401"
+        },
+        "macro": {
+          "as_of": "2026-09-21",
+          "confidence": "MEDIUM",
+          "rationale": "Oil/VIX eased, but Fed hike, DXY rise and higher real yield keep gate9 dark; a schedule itself is not a veto.",
+          "source_ids": [
+            "snapshot",
+            "fed",
+            "realyield"
+          ],
+          "status": "AVAILABLE",
+          "unit": "qualitative",
+          "value": "mixed, net adverse"
+        },
+        "pce": {
+          "as_of": "2026-08-26",
+          "confidence": "MEDIUM",
+          "rationale": "Monthly both+0.2; next Sep30 08:30EDT.",
+          "source_ids": [
+            "pce"
+          ],
+          "status": "AVAILABLE",
+          "unit": "percent YoY July",
+          "value": "3.7 headline / 3.3 core"
+        },
+        "policy_rate": {
+          "as_of": "2026-09-16",
+          "confidence": "MEDIUM",
+          "rationale": "Fed raised25bp, unanimous12-0.",
+          "source_ids": [
+            "fed"
+          ],
+          "status": "AVAILABLE",
+          "unit": "percent target range",
+          "value": "3.75-4.00"
+        },
+        "real_yield": {
+          "as_of": "2026-09-17",
+          "confidence": "MEDIUM",
+          "rationale": "Official web fallback after Java FRED endpoint RST_STREAM.",
+          "source_ids": [
+            "realyield"
+          ],
+          "status": "AVAILABLE",
+          "unit": "percent 10y real",
+          "value": "2.61"
+        },
+        "sentiment": {
+          "as_of": "2026-09-21",
+          "confidence": "HIGH",
+          "rationale": "Daily70/71/71; greed. Extreme-fear daily streak0; no >=75 seven-day euphoria streak.",
+          "source_ids": [
+            "sentiment"
+          ],
+          "status": "AVAILABLE",
+          "unit": "F&G three-day average",
+          "value": "70.67"
+        },
+        "spot": {
+          "as_of": "2026-09-21T08:55:22.411Z",
+          "confidence": "HIGH",
+          "rationale": "Three-source synchronized median.",
+          "source_ids": [
+            "snapshot"
+          ],
+          "status": "AVAILABLE",
+          "unit": "USD",
+          "value": "2699.79"
+        },
+        "staking": {
+          "as_of": "2026-09-21",
+          "confidence": "MEDIUM",
+          "rationale": "Live page from beaconcha.in; context only, not LTH trend.",
+          "source_ids": [
+            "staking"
+          ],
+          "status": "AVAILABLE",
+          "unit": "ETH stake/queues",
+          "value": "43.2M / 35.4%; entry1745626 / exit138624"
+        },
+        "us2y": {
+          "as_of": "2026-09-17",
+          "confidence": "MEDIUM",
+          "rationale": "Latest displayed FRED observation.",
+          "source_ids": [
+            "us2y"
+          ],
+          "status": "AVAILABLE",
+          "unit": "percent 2y nominal",
+          "value": "4.67"
+        },
+        "valuation": {
+          "as_of": "2026-09-20",
+          "confidence": "MEDIUM",
+          "rationale": "reconstructed: (market cap - realized cap) / sample stdev(full-history market cap); realized cap = market cap / MVRV; 4062 observations. MVRV ratio1.154 is not Z. Fresh reconstruction subject to flash revisions, not proprietary Glassnode Z.",
+          "source_ids": [
+            "coinmetrics"
+          ],
+          "status": "AVAILABLE",
+          "unit": "reconstructed MVRV-Z",
+          "value": "0.272"
+        },
+        "weekly_rsi": {
+          "as_of": "week starting2026-09-14",
+          "confidence": "HIGH",
+          "rationale": "261 completed Yahoo UTC week-start closes, period14; live week excluded. >45 earns0.",
+          "source_ids": [
+            "snapshot"
+          ],
+          "status": "AVAILABLE",
+          "unit": "Wilder RSI14",
+          "value": "62.56"
+        }
+      },
+      "framework": "fallen_knives",
+      "gates": {
+        "active": 8,
+        "na": [
+          5
+        ],
+        "passed": [
+          3,
+          6
+        ],
+        "passed_count": 2,
+        "passed_mask": 36
+      },
+      "position": {
+        "asset": "ETH",
+        "attribution": {
+          "active_tags": [],
+          "note": "No confirmed ETH quantity can be mapped to an FK phase.",
+          "status": "UNKNOWN"
+        },
+        "basis": {
+          "avg_cost": null,
+          "reason": "Replay basis flag is reliable, but the custody defect prohibits quoting it as the basis of an exact held quantity.",
+          "reliable": true,
+          "total_cost": null
+        },
+        "custody": {
+          "reason": "Live balance and fill replay disagree; neither withdrawals nor a migration seed explains the gap.",
+          "status": "UNEXPLAINED"
+        },
+        "dry_powder": "7792.6440",
+        "futures": [],
+        "pnl": {
+          "realized": null,
+          "reason": "Unexplained custody mismatch prohibits a position-level PnL claim.",
+          "status": "DATA_LIMITED",
+          "unrealized": null
+        },
+        "quantity": null,
+        "reconciliation": "Position Reconciliation: unchanged from Sep7; latest Aug15 export is FRESH under event-driven policy but ETH custody remains UNEXPLAINED. No quantity in either direction; not flat. Basis unreliable; no average cost, basis, unrealized PnL/ROI or realized performance claim. Planning0% deployed/100% dry is not an account holdings statement. Shared account stable balance$10,741.5780 includes$2,948.9340 locked; drawable$7,792.6440, not separate allocations to BTC and ETH. Ledger futures coverage is inspected separately; no whole-account flat claim is made by the empty asset futures array.",
+        "status": "DATA_LIMITED"
+      },
+      "position_controls": {
+        "action": {
+          "rationale": "Unexplained custody prevents selecting or sizing a live protective order, trim or exit. No level is absolutely best; a best-available control cannot be selected from unreconciled exposure. Recommendations are not executions; no order changed.",
+          "status": "DATA_LIMITED",
+          "value": "NO_POSITION_CLAIM"
+        },
+        "required": true,
+        "status": "DATA_LIMITED"
+      },
+      "regime": null,
+      "report_at_derivation": "derived by interpreting the filename's HHMM in America/New_York (the repo's Output Convention) — the machine block carries a date but no time field, and (asset, framework, date) collides (btc/eth × fallen_knives on 2026-07-14 and 2026-07-18), so report_file is the primary key",
+      "report_at_utc": "2026-09-21T09:41:00Z",
+      "report_date": "2026-09-21",
+      "report_file": "eth_fallen_knives_20260921_0541.md",
+      "report_local_time": "05:41",
+      "report_zone": "America/New_York",
+      "rubric": "FK/1",
+      "schema_epoch": "report_machine_2",
+      "score": {
+        "adjusted": "6",
+        "cap_applied": false,
+        "cap_value": null,
+        "discretionary": "0",
+        "discretionary_inferred": false,
+        "inference_basis": "declared in the machine block",
+        "legs": [
+          {
+            "block_key": "sentiment",
+            "max": 5,
+            "min": 0,
+            "ordinal": 1,
+            "rubric_name": "sentiment",
+            "value": "0"
+          },
+          {
+            "block_key": "momentum",
+            "max": 4,
+            "min": 0,
+            "ordinal": 2,
+            "rubric_name": "momentum",
+            "value": "0"
+          },
+          {
+            "block_key": "valuation",
+            "max": 5,
+            "min": -2,
+            "ordinal": 3,
+            "rubric_name": "valuation",
+            "value": "4"
+          },
+          {
+            "block_key": "capitulation",
+            "max": 3,
+            "min": 0,
+            "ordinal": 4,
+            "rubric_name": "capitulation",
+            "value": "1"
+          },
+          {
+            "block_key": "holder",
+            "max": 3,
+            "min": 0,
+            "ordinal": 5,
+            "rubric_name": "holder_behavior",
+            "value": "1.5"
+          }
+        ],
+        "mechanical": "6",
+        "mechanical_inferred": false,
+        "penalty": "0",
+        "raw": "6.5",
+        "rounding": "half-down"
+      },
+      "source_schema": "report-machine/2",
+      "spot_source": "snapshot",
+      "spot_usd": "2699.79",
+      "stops": null,
+      "tagging": {
+        "active_tags": [],
+        "channel": null,
+        "framework": "fallen_knives",
+        "instrument_class": "crypto",
+        "mode": "phase_registry",
+        "registry": {
+          "asset": "ETH",
+          "channel": null,
+          "entries": [
+            {
+              "asset": "ETH",
+              "canonical_tag": "FK-P1A-ETH-20260921-0541",
+              "decision": "LOCKED",
+              "instrument_class": "crypto",
+              "phase": "1A",
+              "report_date": "2026-09-21",
+              "report_file": "eth_fallen_knives_20260921_0541.md",
+              "report_local_time": "05:41",
+              "report_version": "report-machine/2"
+            },
+            {
+              "asset": "ETH",
+              "canonical_tag": "FK-P1B-ETH-20260921-0541",
+              "decision": "LOCKED",
+              "instrument_class": "crypto",
+              "phase": "1B",
+              "report_date": "2026-09-21",
+              "report_file": "eth_fallen_knives_20260921_0541.md",
+              "report_local_time": "05:41",
+              "report_version": "report-machine/2"
+            },
+            {
+              "asset": "ETH",
+              "canonical_tag": "FK-P2-ETH-20260921-0541",
+              "decision": "LOCKED",
+              "instrument_class": "crypto",
+              "phase": "2",
+              "report_date": "2026-09-21",
+              "report_file": "eth_fallen_knives_20260921_0541.md",
+              "report_local_time": "05:41",
+              "report_version": "report-machine/2"
+            },
+            {
+              "asset": "ETH",
+              "canonical_tag": "FK-P3-ETH-20260921-0541",
+              "decision": "LOCKED",
+              "instrument_class": "crypto",
+              "phase": "3",
+              "report_date": "2026-09-21",
+              "report_file": "eth_fallen_knives_20260921_0541.md",
+              "report_local_time": "05:41",
+              "report_version": "report-machine/2"
+            }
+          ],
+          "framework": "fallen_knives",
+          "instrument_class": "crypto",
+          "report_date": "2026-09-21",
+          "report_file": "eth_fallen_knives_20260921_0541.md",
+          "report_local_time": "05:41",
+          "report_version": "report-machine/2",
+          "report_zone": "America/New_York",
+          "schema": "report-phase-registry/1",
+          "version": "1"
+        },
+        "report_asset": "ETH",
+        "report_date": "2026-09-21",
+        "report_file": "eth_fallen_knives_20260921_0541.md",
+        "report_local_time": "05:41",
+        "report_version": "report-machine/2",
+        "reserved_tags": [
+          "FK-P1A-ETH-20260921-0541",
+          "FK-P1B-ETH-20260921-0541",
+          "FK-P2-ETH-20260921-0541",
+          "FK-P3-ETH-20260921-0541"
+        ],
+        "status": "REGISTERED"
+      },
+      "tagging_v2": {
+        "active_tags": [],
+        "entries": [
+          {
+            "canonical_tag": "FK-P1A-ETH-20260921-0541",
+            "decision": "LOCKED",
+            "instrument_class": "crypto",
+            "phase": "1A"
+          },
+          {
+            "canonical_tag": "FK-P1B-ETH-20260921-0541",
+            "decision": "LOCKED",
+            "instrument_class": "crypto",
+            "phase": "1B"
+          },
+          {
+            "canonical_tag": "FK-P2-ETH-20260921-0541",
+            "decision": "LOCKED",
+            "instrument_class": "crypto",
+            "phase": "2"
+          },
+          {
+            "canonical_tag": "FK-P3-ETH-20260921-0541",
+            "decision": "LOCKED",
+            "instrument_class": "crypto",
+            "phase": "3"
+          }
+        ],
+        "instrument_class": "crypto",
+        "reserved_tags": [
+          "FK-P1A-ETH-20260921-0541",
+          "FK-P1B-ETH-20260921-0541",
+          "FK-P2-ETH-20260921-0541",
+          "FK-P3-ETH-20260921-0541"
+        ],
+        "schema": "report-phase-registry/2",
+        "status": "REGISTERED"
+      },
+      "unlock": {
+        "highest_phase_unlocked_by_score": null,
+        "ladder": "FK",
+        "p1a": 8,
+        "p1b": 11,
+        "p2": 15,
+        "p3": 17,
+        "p3_note": "Phase 3 reads the MECHANICAL score — no analyst channel reaches it"
+      },
+      "verdict": "ETH adjusted6/20 (mechanical6, raw6.5, D1=0); gates2/8, V1. WAIT / NO NEW ADD; all four phases locked. Position-level controls remain DATA_LIMITED.",
+      "view_file": "eth_fallen_knives_20260921_0541.md"
     }
   ],
   "skipped": [
