@@ -1,0 +1,170 @@
+{
+  "schema": "liquidation-exploratory-policy/1",
+  "id": "liquidation-exploratory-v003",
+  "created_at": "2026-09-21T05:43:28.410694+00:00",
+  "hypothesis_family": "liquidation-structure",
+  "evidence_phase": "DEVELOPMENT",
+  "promotion_allowed": false,
+  "parent_precommit": {
+    "id": "liquidation-daily-stress-v002",
+    "content_sha256": "cfae45fac7678a913610c37c156b044ed733e3ecd5e45673b01e412f8eaca904",
+    "byte_sha256": "ee3489672c0cbf809a16b3c1c7d382efeb691a73a11da3527d722aa8d1da2703"
+  },
+  "assets": [
+    "BTC",
+    "ETH",
+    "SOL",
+    "AAVE"
+  ],
+  "source_start": "2022-08-11T00:00:00Z",
+  "source_end_exclusive": "2026-09-20T00:00:00Z",
+  "decision_start": "2022-11-11T00:00:00Z",
+  "decision_end_exclusive": "2026-07-15T00:00:00Z",
+  "strategy": "Reuse LiquidationStructureRouterV1; all daily/OI/structure/stop/target/pivot/confirmation rules preserved except explicit hourly and evidence overrides.",
+  "variants": [
+    "CORE_ONE_ENTRY",
+    "STAGED_NO_MACRO",
+    "STAGED_MACRO"
+  ],
+  "selection": "NONE; all variants,assets,branches,years reported; all fullsample outcomes become exposed.",
+  "account": {
+    "initial_equity": 20000,
+    "max_margin_fraction": 1,
+    "position_risk_cap": 0.05,
+    "portfolio_risk_cap": 0.1,
+    "tranche_risk_fractions": [
+      0.01,
+      0.015,
+      0.025
+    ],
+    "leverage": [
+      2,
+      2,
+      3
+    ],
+    "max_holding_days": 60,
+    "asset_tie_order": [
+      "BTC",
+      "ETH",
+      "SOL",
+      "AAVE"
+    ],
+    "no_risk_netting": true
+  },
+  "execution": {
+    "bar_seconds": 3600,
+    "first_open": "strictly after decision;1h latency",
+    "fee_per_side": 0.0005,
+    "slippage_per_side": 0.0005,
+    "capacity_fraction_of_prior_completed_hour_base_volume": 0.01,
+    "capacity_qualification": "Hourly-volume proxy only; not proof of instantaneous fillability",
+    "funding": "EXCLUDED_NOT_OBSERVED_ZERO",
+    "maintenance_fraction": 0.005,
+    "marks": "TRADE_OHLC_PROXY",
+    "lot_steps": {
+      "BTC": 0.001,
+      "ETH": 0.001,
+      "SOL": 0.1,
+      "AAVE": 0.1
+    },
+    "minimum_notional_usdt": 5,
+    "entry_bar_range": "Evaluate after open fill, stop known before bar; ratchet after completed H4 affects later bars only",
+    "collision": "Conservative approximate liquidation first, structuralstop beforetarget, adversegap at worseopen; existing gapexits before additions",
+    "missing": "Never fabricate bars/interpolate OI; no entry without required exact price/priorvolume/features; held exposure persists until next available executable price",
+    "liquidation": "Approx isolatedequity at side-adverse hourlyextreme <=0.5%notional; exact exchange liquidation unverified",
+    "liquidation_fee_rate": 0.005
+  },
+  "macro": {
+    "series": "FRED_SP500",
+    "signal": "5sessionclose return, >+0.5%longsupport/<-0.5%shortsupport, equalityneutral",
+    "availability": "Next actual NYSE sessionclose; retrospective proxy",
+    "max_age_calendar_days": 4,
+    "stage2": "neutral_or_supportive",
+    "stage3": "supportive",
+    "decay": "keep existing tranches",
+    "no_macro_variant": "Ignore macro entirely"
+  },
+  "event_clusters": {
+    "interval": "[selected shock geometry start, selected shock geometry end +72h]",
+    "method": "Transitive union of touching/overlapping intervals across allassets, sorted deterministically",
+    "independent_claim": false,
+    "membership": "Feature-only qualifiedshock metadata before any returns"
+  },
+  "position_overlap_components": {
+    "method": "Connect positions sharing shockcluster or overlapping [firstfill,exit] acrossassets/variants; report actualholdingdependence separately",
+    "independent_claim": false
+  },
+  "response_diagnostics": {
+    "horizons_days": [
+      1,
+      3,
+      7
+    ],
+    "anchors": [
+      "FIRST_OBSERVABLE_EVENT_AVAILABILITY",
+      "FIRST_ROUTED_ENTRY_DECISION"
+    ],
+    "anchor_price": "Exact completed hourlyclose atanchor",
+    "endpoint": "Exact completed hourlyclose atanchor+horizon; missing endpoint or interveninghour means excluded with count",
+    "directions": [
+      "SIGNED_SHOCK",
+      "OPPOSITE_SHOCK",
+      "ROUTED_DIRECTION_WHEN_AVAILABLE"
+    ],
+    "return": "Unlevered before fees,slippage,funding; not executable PnL",
+    "aggregation": "Equal asset-event observations withinmarketcluster then equalcluster weighting; also asset/branch breakdowns",
+    "selection": "None; report all horizons",
+    "anchor_semantics": "First actual detector qualification with all selectedgeometry price/OI/liquidationavailable; not before setupknowledge. UTC hourly boundary, never Binance lastmillisecond timestamp."
+  },
+  "statistics": {
+    "minimum_groups_to_run": 0,
+    "reference_minimum_groups": 30,
+    "low_count": "INSUFFICIENT_EVIDENCE warning, computation continues",
+    "purge_days": 67,
+    "embargo_days": 7,
+    "wfo_claim": false,
+    "bootstrap_draws": 10000,
+    "seed": 20260921,
+    "primary_resampling": "Sharedmarketshockcluster draws acrossvariants/horizons; descriptiveintervals",
+    "conservative_sensitivity": "Shared67daycalendarblock draws including internalzeros, assets/variants joint",
+    "report": [
+      "shockclusters",
+      "holdingoverlapcomponents",
+      "67dayblocks",
+      "p20",
+      "95percentileinterval",
+      "laggeddailyportfolio returncorrelations when defined"
+    ],
+    "effective_n": "Not equated with any count; independence not proven"
+  },
+  "stress": {
+    "doubled_fee_slippage": "Fixed sensitivity; rerun capital sizing when costs change",
+    "funding": "UNAVAILABLE_NOT_PASSED",
+    "exact_liquidation": "UNAVAILABLE_NOT_PASSED"
+  },
+  "exposure": {
+    "preserve_prior_family_exposure": true,
+    "new_fixed_strategy_variants": 3,
+    "response_horizons": 3,
+    "no_wfo_or_confirmation_claim": true
+  },
+  "compute": {
+    "max_hours": 24,
+    "paid_data": false,
+    "historical_only": true
+  },
+  "variant_definitions": {
+    "CORE_ONE_ENTRY": "Stage1 only:1%referenceequity risk,2x leverage, samebranch exits60dayceiling",
+    "STAGED_NO_MACRO": "1/1.5/2.5% risk,2/2/3x, ignore only macroadditiongate",
+    "STAGED_MACRO": "Identical staged rules with frozen S&P additiongate"
+  },
+  "deferred_tests": [
+    "Parent unconditional direction and price+OIcontrols:NOT_TESTED",
+    "Formal routing superiority null:NOT_TESTED",
+    "Authoritative WFO/confirmation:NOT_RUN",
+    "Fundingstress:NOT_RUN",
+    "Venueoutage/adversegap/stablecoinimpairmentstress:NOT_RUN",
+    "Exactmargin/liquidation/capacityqualification:NOT_RUN"
+  ],
+  "acceptance": "All parent minimumcounts and gates reference-only. DEVELOPMENT only regardless results. Under30warning nonblocking."
+}
