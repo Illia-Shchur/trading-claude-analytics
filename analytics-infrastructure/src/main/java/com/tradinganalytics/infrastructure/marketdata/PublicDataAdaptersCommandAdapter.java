@@ -11,6 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -34,11 +35,16 @@ public final class PublicDataAdaptersCommandAdapter {
             PublicDataAdapters.InjectableHttpClient client) {
         String command = args.length == 0 ? "" : args[0];
         Map<String, String> options = flags(args);
+        if ("coinalyze-daily".equals(command)) {
+            return runCoinalyzeDaily(options, client, out, err);
+        }
         if ("resume".equals(command) && !options.containsKey("resume") && args.length > 1
                 && !args[1].startsWith("--")) options.put("resume", args[1]);
         if (!"backfill".equals(command) && !"resume".equals(command)) {
             out.print("usage: public-data-adapters backfill|resume --asset <asset> "
-                    + "--start <time>|--resume <receipt> --out <path>\n");
+                    + "--start <time>|--resume <receipt> --out <path>\n"
+                    + "       public-data-adapters coinalyze-daily --from ISO-date --to ISO-date "
+                    + "--as-of ISO-timestamp --root <dir>\n");
             return 0;
         }
         try {
@@ -47,6 +53,61 @@ public final class PublicDataAdaptersCommandAdapter {
         } catch (RuntimeException | IOException error) {
             err.println(rootMessage(error));
             return 1;
+        }
+    }
+
+    private static int runCoinalyzeDaily(
+            Map<String, String> options, PublicDataAdapters.InjectableHttpClient client,
+            PrintStream out, PrintStream err) {
+        String apiKey = System.getenv("COINALYZE_API_KEY");
+        if (apiKey == null || apiKey.isBlank()) {
+            err.println("COINALYZE_API_KEY is required");
+            return 1;
+        }
+        try {
+            String fromValue = required(options, "from");
+            String toValue = required(options, "to");
+            String asOfValue = required(options, "as_of");
+            String rootValue = required(options, "root");
+            LocalDate from = parseDate(fromValue, "--from");
+            LocalDate to = parseDate(toValue, "--to");
+            Instant asOf = parseInstant(asOfValue, "--as-of");
+            ObjectNode manifest = CoinalyzeDailyData.acquire(new CoinalyzeDailyData.Options(
+                    from, to, asOf, Path.of(rootValue), apiKey, client, null, null));
+            Path manifestPath = Path.of(rootValue).toAbsolutePath().normalize()
+                    .resolve(CoinalyzeDailyData.MANIFEST_NAME);
+            ObjectNode summary = JsonHashes.mapper().createObjectNode();
+            summary.put("manifest", manifestPath.toString());
+            summary.put("rows", manifest.path("rows").size());
+            summary.put("content_sha256", manifest.path("content_sha256").asText());
+            out.print(JsonHashes.mapper().writerWithDefaultPrettyPrinter().writeValueAsString(summary) + "\n");
+            return 0;
+        } catch (RuntimeException | IOException error) {
+            String message = rootMessage(error);
+            if (message == null || message.isBlank()) message = "Coinalyze daily acquisition failed";
+            err.println(apiKey.isEmpty() ? message : message.replace(apiKey, "[redacted]"));
+            return 1;
+        }
+    }
+
+    private static String required(Map<String, String> options, String name) {
+        String value = options.get(name);
+        if (value == null || value.isBlank()) throw new IllegalArgumentException("coinalyze-daily requires --"
+                + name.replace('_', '-'));
+        return value;
+    }
+
+    private static LocalDate parseDate(String value, String flag) {
+        try { return LocalDate.parse(value); }
+        catch (DateTimeParseException invalid) {
+            throw new IllegalArgumentException(flag + " must be an ISO date");
+        }
+    }
+
+    private static Instant parseInstant(String value, String flag) {
+        try { return Instant.parse(value); }
+        catch (DateTimeParseException invalid) {
+            throw new IllegalArgumentException(flag + " must be an ISO timestamp");
         }
     }
 

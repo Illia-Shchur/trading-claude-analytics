@@ -8,7 +8,7 @@ import java.io.PrintStream;
 
 /** Exact process-boundary adapter for {@code tools/strategy-research-v5.mjs}. */
 public final class StrategyResearchV5CommandAdapter {
-    public static final String COMMANDS = "data-backfill|data-raw-replay|feature-build|metadata-build|"
+    public static final String COMMANDS = "data-backfill|data-raw-replay|feature-build|metadata-build|daily-stress-preflight|liquidation-input-qualify|liquidation-input-verify|liquidation-profile-contract|liquidation-profile-validate|liquidation-profile-assess-physical|liquidation-v2-plan|liquidation-v2-physical-build|liquidation-v2-physical-verify|liquidation-v2-freeze|liquidation-v2-replay|liquidation-v2-replay-resumable|liquidation-v2-evidence|liquidation-v2-run-evaluate|liquidation-v2-staged-plan-no-macro|liquidation-v2-staged-plan-macro|liquidation-v2-staged-replay|liquidation-v2-staged-evidence|"
             + "opportunity-envelope|artifact-build|research-init|experiment-freeze|search-genetic|"
             + "research-run|overfit-audit|prospective-runner|readiness-audit|deployment-audit|"
             + "fixed-baseline|fixed-baseline-refinement|fixed-baseline-produce-signal-bars|operating-characteristics-preflight|operating-characteristics-run|operating-characteristics-diagnose|operating-characteristics-successor-preflight|operating-characteristics-successor-run|operating-characteristics-successor-record-attempt|operating-characteristics-parallel-profile|operating-characteristics-parallel-preflight|operating-characteristics-parallel-run|operating-characteristics-parallel-worker|operating-characteristics-corrected-successor-preflight|operating-characteristics-corrected-successor-run|operating-characteristics-corrected-parallel-profile|operating-characteristics-corrected-parallel-plan|operating-characteristics-corrected-parallel-preflight|operating-characteristics-corrected-parallel-run|operating-characteristics-corrected-parallel-worker|operating-characteristics-corrected-parallel-qualify|operating-characteristics-corrected-parallel-validate-qualification|freeze-refinement|portfolio-reconcile|prospective-outcome-reconcile|evidence-disposition|canonical-hash-batch|lineage-inventory|matching-attrition|freeze-successor-control|validate|index|presentation-export";
@@ -47,6 +47,75 @@ public final class StrategyResearchV5CommandAdapter {
                 result = StrategyFixedBaselineV5.runRefinement(options);
             } else if ("fixed-baseline-produce-signal-bars".equals(command)) {
                 result = StrategyFixedBaselineV5.buildSignalBarsFromVerifiedParquet(options);
+            } else if ("daily-stress-preflight".equals(command)) {
+                result = DailyStressPreflightV1.run(options);
+            } else if ("liquidation-input-qualify".equals(command)) {
+                result = LiquidationInputQualificationV1.audit(options);
+            } else if ("liquidation-input-verify".equals(command)) {
+                result = LiquidationInputQualificationV1.verify(options);
+            } else if ("liquidation-profile-contract".equals(command)) {
+                result = LiquidationDailyStressProfileV1.frozenContract();
+            } else if ("liquidation-profile-validate".equals(command)) {
+                ObjectNode profile = readObjectOption(options, "profile");
+                LiquidationDailyStressProfileV1.validate(profile);
+                result = JsonNodeFactory.instance.objectNode().put("status", "VALID")
+                        .put("profile_sha256", profile.path("content_sha256").asText())
+                        .put("max_lifecycle_days", profile.path("windows").path("maximum_lifecycle_days").asInt())
+                        .put("authoritative_wfo_permitted", profile.path("authoritative_wfo_permitted").asBoolean());
+            } else if ("liquidation-profile-assess-physical".equals(command)) {
+                ObjectNode profile = readObjectOption(options, "profile");
+                ObjectNode physicalOptions = JsonNodeFactory.instance.objectNode();
+                physicalOptions.set("manifest", readObjectOption(options, "manifest"));
+                physicalOptions.put("root", requiredText(options, "root"));
+                physicalOptions.set("profile", profile);
+                result = LiquidationDailyStressProfileV1.assessPhysicalManifest(profile, physicalOptions);
+            } else if ("liquidation-v2-plan".equals(command)) {
+                result = LiquidationV2PhysicalDataV1.frozenPlan(readObjectOption(options, "profile"));
+            } else if ("liquidation-v2-physical-build".equals(command)) {
+                ObjectNode physicalOptions = JsonNodeFactory.instance.objectNode();
+                physicalOptions.set("profile", readObjectOption(options, "profile"));
+                physicalOptions.set("inputs", readObjectOption(options, "inputs"));
+                physicalOptions.put("root", requiredText(options, "root"));
+                result = physicalOptions.path("inputs").path("feature").path("partitions").isArray()
+                        ? LiquidationV2PhysicalDataV1.buildDevelopment(physicalOptions)
+                        : LiquidationV2PhysicalDataV1.buildSyntheticDevelopment(physicalOptions);
+            } else if ("liquidation-v2-physical-verify".equals(command)) {
+                ObjectNode physicalOptions = JsonNodeFactory.instance.objectNode();
+                physicalOptions.set("profile", readObjectOption(options, "profile"));
+                physicalOptions.set("manifest", readObjectOption(options, "manifest"));
+                physicalOptions.put("root", requiredText(options, "root"));
+                result = physicalOptions.path("manifest").path("artifacts").path("feature").path("partitions").isArray()
+                        ? LiquidationV2PhysicalDataV1.verifyDevelopment(physicalOptions)
+                        : LiquidationV2PhysicalDataV1.verifySyntheticDevelopment(physicalOptions);
+            } else if ("liquidation-v2-freeze".equals(command)) {
+                result = LiquidationPortfolioReplayV1.freeze(readObjectOption(options, "options"));
+            } else if ("liquidation-v2-replay".equals(command)) {
+                result = LiquidationPortfolioReplayV1.run(readObjectOption(options, "options"));
+            } else if ("liquidation-v2-replay-resumable".equals(command)) {
+                result = LiquidationPortfolioReplayV1.runResumable(readObjectOption(options, "options"));
+            } else if ("liquidation-v2-evidence".equals(command)) {
+                result = LiquidationPortfolioReplayV1.evaluate(readObjectOption(options, "options"));
+            } else if ("liquidation-v2-run-evaluate".equals(command)) {
+                result = LiquidationPortfolioReplayV1.runAndEvaluate(readObjectOption(options, "options"));
+            } else if ("liquidation-v2-staged-plan-no-macro".equals(command)) {
+                result = LiquidationV2StagedCandidateInventoryV1.freezeNoMacro(
+                        readObjectOption(options, "core_replay"), readObjectOption(options, "core_evidence"),
+                        readObjectOption(options, "candidate_inventory"));
+            } else if ("liquidation-v2-staged-plan-macro".equals(command)) {
+                ObjectNode macroOptions = JsonNodeFactory.instance.objectNode();
+                for (String key : new String[] {"freeze", "no_macro_plan", "core_replay", "core_evidence",
+                        "no_macro_replay", "no_macro_evidence"}) {
+                    macroOptions.set(key, readObjectOption(options, key));
+                }
+                macroOptions.put("out", requiredText(options, "out"));
+                if (options.has("checkpoint_out")) {
+                    macroOptions.put("checkpoint_out", requiredText(options, "checkpoint_out"));
+                }
+                result = LiquidationPortfolioReplayV1.freezeStagedMacro(macroOptions);
+            } else if ("liquidation-v2-staged-replay".equals(command)) {
+                result = LiquidationPortfolioReplayV1.runStaged(readObjectOption(options, "options"));
+            } else if ("liquidation-v2-staged-evidence".equals(command)) {
+                result = LiquidationPortfolioReplayV1.evaluateStaged(readObjectOption(options, "options"));
             } else if ("operating-characteristics-preflight".equals(command)) {
                 result = StrategyOperatingCharacteristicsV4.preflight(readObjectOption(options, "plan"));
             } else if ("operating-characteristics-run".equals(command)) {
@@ -154,6 +223,14 @@ public final class StrategyResearchV5CommandAdapter {
         } catch (java.io.IOException error) {
             throw new IllegalArgumentException("cannot read --" + key + ": " + error.getMessage(), error);
         }
+    }
+
+    private static String requiredText(ObjectNode options, String key) {
+        JsonNode value = options.get(key);
+        if (value == null || !value.isTextual() || value.asText().isBlank()) {
+            throw new IllegalArgumentException("--" + key + " is required");
+        }
+        return value.asText();
     }
 
     static ObjectNode flags(String[] args, int start) {

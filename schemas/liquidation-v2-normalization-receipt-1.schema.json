@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "liquidation-v2-normalization-receipt/1",
+  "title": "liquidation-v2-normalization-receipt/1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "version", "role", "normalized_path", "normalized_byte_sha256", "source_path",
+    "source_byte_sha256", "row_count", "window_start", "window_end_exclusive", "normalizer_id",
+    "normalizer_sha256", "source_class", "series_scope", "availability_basis", "physical_identity", "physical_identity_sha256", "verified",
+    "authoritative", "historical_availability_proven", "historical_revision_proven", "content_sha256"
+  ],
+  "properties": {
+    "schema": { "const": "liquidation-v2-normalization-receipt/1" },
+    "version": { "const": 1 },
+    "role": { "enum": ["feature", "label", "execution", "mark", "funding", "metadata"] },
+    "normalized_path": { "type": "string", "minLength": 1 },
+    "normalized_byte_sha256": { "$ref": "#/$defs/sha256" },
+    "source_path": { "type": "string", "minLength": 1 },
+    "source_byte_sha256": { "$ref": "#/$defs/sha256" },
+    "row_count": { "type": "integer", "minimum": 1 },
+    "window_start": { "type": "string", "format": "date-time" },
+    "window_end_exclusive": { "type": "string", "format": "date-time" },
+    "normalizer_id": { "type": "string", "minLength": 1 },
+    "normalizer_sha256": { "$ref": "#/$defs/sha256" },
+    "source_class": { "enum": ["SYNTHETIC_FIXTURE", "COINALYZE_PROXY", "PUBLIC_ARCHIVE", "DERIVED_OUTCOME_LABEL", "HISTORICAL_APPROXIMATION"] },
+    "series_scope": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+    "availability_basis": { "enum": ["NOT_APPLICABLE", "MODELED_NEXT_COMPLETED_NYSE_SESSION", "SYNTHETIC_NEXT_COMPLETED_NYSE_SESSION"] },
+    "physical_identity": { "$ref": "#/$defs/physicalIdentity" },
+    "physical_identity_sha256": { "$ref": "#/$defs/sha256" },
+    "verified": { "const": false },
+    "authoritative": { "const": false },
+    "historical_availability_proven": { "const": false },
+    "historical_revision_proven": { "const": false },
+    "content_sha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "physicalIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["venue", "market", "contract", "quote_asset", "collateral", "margin_mode", "instruments", "context_identity"],
+      "properties": {
+        "venue": { "const": "BINANCE" },
+        "market": { "const": "USD_M" },
+        "contract": { "const": "LINEAR_PERPETUAL" },
+        "quote_asset": { "const": "USDT" },
+        "collateral": { "const": "USDT" },
+        "margin_mode": { "const": "ISOLATED" },
+        "instruments": {
+          "type": "array", "minItems": 4, "maxItems": 4,
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["asset", "binance_symbol", "coinalyze_symbol"],
+            "properties": {
+              "asset": { "enum": ["BTC", "ETH", "SOL", "AAVE"] },
+              "binance_symbol": { "type": "string" },
+              "coinalyze_symbol": { "type": "string" }
+            }
+          }
+        },
+        "context_identity": {
+          "type": "object", "additionalProperties": false,
+          "required": ["asset", "symbol", "context_only", "tradable"],
+          "properties": {
+            "asset": { "const": "SP500" }, "symbol": { "const": "SP500" },
+            "context_only": { "const": true }, "tradable": { "const": false }
+          }
+        }
+      }
+    }
+  }
+}

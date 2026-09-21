@@ -12,6 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Base64;
 import java.util.List;
+import org.junit.jupiter.api.Test;
 
 /** Standalone stdout/stderr/exit differential for the v5 executable facade. */
 public final class StrategyResearchV5CommandAdapterNodeOracleTest {
@@ -24,6 +25,12 @@ public final class StrategyResearchV5CommandAdapterNodeOracleTest {
         System.out.println("StrategyResearchV5CommandAdapterNodeOracleTest: ok (" + assertions + " assertions)");
     }
 
+    @Test
+    void commandAdapterOracleRunsInsideTheMavenSuite() throws Exception {
+        parity();
+        flagGrammar();
+    }
+
     private static void parity() throws Exception {
         assertResult("help-empty", 0, StrategyResearchV5CommandAdapter.HELP_USAGE + "\n", "");
         assertResult("help-command", 0, StrategyResearchV5CommandAdapter.HELP_USAGE + "\n", "", "--help");
@@ -32,6 +39,16 @@ public final class StrategyResearchV5CommandAdapterNodeOracleTest {
                 + StrategyResearchV5CommandAdapter.USAGE + "\n", "unknown", "--help", "true");
         assertResult("unknown", 1, "", "unknown strategy-research-v5 command: definitely-unknown\n"
                 + StrategyResearchV5CommandAdapter.USAGE + "\n", "definitely-unknown", "--foo-bar", "value", "--switch");
+        assertResult("liquidation-run-evaluate-requires-options", 1, "", "--options requires a JSON file path\n",
+                "liquidation-v2-run-evaluate");
+        assertResult("liquidation-staged-plan-no-macro-requires-core-replay", 1, "",
+                "--core_replay requires a JSON file path\n", "liquidation-v2-staged-plan-no-macro");
+        assertResult("liquidation-staged-plan-macro-requires-freeze", 1, "",
+                "--freeze requires a JSON file path\n", "liquidation-v2-staged-plan-macro");
+        assertResult("liquidation-staged-replay-requires-options", 1, "", "--options requires a JSON file path\n",
+                "liquidation-v2-staged-replay");
+        assertResult("liquidation-staged-evidence-requires-options", 1, "", "--options requires a JSON file path\n",
+                "liquidation-v2-staged-evidence");
         assertAlias("raw-replay-alias", "data-raw-replay", "data-local-raw-replay");
         assertAlias("genesis-alias", "research-init", "statistical-genesis");
         ProcessResult deployment = java(new String[] {"deployment-audit"});

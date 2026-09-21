@@ -1,0 +1,28 @@
+{
+  "schema": "research-specification-freeze-manifest/1",
+  "custom_document_manifest": true,
+  "not_a_production_research_schema": true,
+  "created_at": "2026-09-20T09:29:28.459286+00:00",
+  "precommit_content_sha256": "cfae45fac7678a913610c37c156b044ed733e3ecd5e45673b01e412f8eaca904",
+  "predecessor_content_sha256": "1bbeb1e7daf49a2f1bd0f8765e137f7ef3ff7e46fc91547198f3bbf952738130",
+  "baseline_git_revision": "4385b39",
+  "outcomes_examined": false,
+  "files": [
+    {
+      "path": "docs/research/liquidation-daily-stress-v002/precommit-input.json",
+      "byte_sha256": "d58c260bb13bb79ee581358d0819fcc5dbddeb7607d5e00a94a6969f4f592999"
+    },
+    {
+      "path": "docs/research/liquidation-daily-stress-v002/SPECIFICATION.md",
+      "byte_sha256": "447346f1ebee014a57a389e650176325c399d91d61ef7702fdbce19b7dde83ca"
+    },
+    {
+      "path": ".research-run/liquidation-daily-stress-v002/registry/precommits/liquidation-daily-stress-v002.json",
+      "byte_sha256": "ee3489672c0cbf809a16b3c1c7d382efeb691a73a11da3527d722aa8d1da2703"
+    },
+    {
+      "path": ".research-run/liquidation-daily-stress-v002/registry/precommits/liquidation-daily-stress-v002.md",
+      "byte_sha256": "709efc87f75c53623a233c0ebcf81583b1ca58ef6d6a6dd37b3d3ae371dd7ef5"
+    }
+  ]
+}

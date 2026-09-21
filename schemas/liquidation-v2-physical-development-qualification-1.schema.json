@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "liquidation-v2-physical-development-qualification/1",
+  "title": "liquidation-v2-physical-development-qualification/1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "version", "status", "evidence_tier", "source_mode", "profile_sha256", "manifest_sha256",
+    "dataset_root_sha256", "physical_verification_sha256", "coverage_inventory_complete",
+    "all_source_transformations_recomputed", "development_replay_permitted", "historical_availability_proven",
+    "historical_revision_proven", "authoritative_wfo_permitted", "sealed_evidence_permitted",
+    "prospective_live_permitted", "trade_authorization_permitted", "reason", "physical_verification", "content_sha256"
+  ],
+  "properties": {
+    "schema": { "const": "liquidation-v2-physical-development-qualification/1" },
+    "version": { "const": 1 },
+    "status": { "enum": ["PROXY_DISCLOSED_DEVELOPMENT_REPLAY_PERMITTED", "DEVELOPMENT_REPLAY_BLOCKED"] },
+    "evidence_tier": { "enum": ["PROXY_DISCLOSED_DEVELOPMENT_ONLY", "BLOCKED"] },
+    "source_mode": { "enum": ["PROXY_DISCLOSED_DEVELOPMENT_ONLY", "SYNTHETIC_DEVELOPMENT_ONLY"] },
+    "profile_sha256": { "$ref": "#/$defs/sha256" },
+    "manifest_sha256": { "$ref": "#/$defs/sha256" },
+    "dataset_root_sha256": { "$ref": "#/$defs/sha256" },
+    "physical_verification_sha256": { "$ref": "#/$defs/sha256" },
+    "coverage_inventory_complete": { "type": "boolean" },
+    "all_source_transformations_recomputed": { "type": "boolean" },
+    "development_replay_permitted": { "type": "boolean" },
+    "historical_availability_proven": { "const": false },
+    "historical_revision_proven": { "const": false },
+    "authoritative_wfo_permitted": { "const": false },
+    "sealed_evidence_permitted": { "const": false },
+    "prospective_live_permitted": { "const": false },
+    "trade_authorization_permitted": { "const": false },
+    "reason": { "type": "string", "minLength": 1 },
+    "physical_verification": { "type": "object" },
+    "content_sha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": { "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" } }
+}
