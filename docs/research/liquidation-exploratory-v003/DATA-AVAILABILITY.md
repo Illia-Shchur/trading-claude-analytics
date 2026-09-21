@@ -28,3 +28,5 @@ Input freeze file SHA-256: `e7854346247910b3c6ed63273f87bee470b1ecbc8f61e6adb75e
 Coverage file SHA-256: `4225572d661ac6fd84ce6f018266f494cb264b4f3ee4fa7bc25ead86b627bb96`.
 
 Sources: [Binance public archives](https://github.com/binance/binance-public-data), [FRED S&P 500](https://fred.stlouisfed.org/series/SP500).
+
+A durable duplicate of the frozen inputs, policies, three executable versions and both completed run records is retained in the main Desktop workspace at `.research-run/liquidation-exploratory-v003/`. All 12,569 data-freeze entries were reopened and hash-verified after copying, as were the executable and result files. This archive is ignored by Git and is separate from the temporary implementation worktree.

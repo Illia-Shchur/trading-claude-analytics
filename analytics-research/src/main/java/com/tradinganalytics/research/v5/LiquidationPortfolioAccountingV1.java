@@ -59,7 +59,17 @@ public final class LiquidationPortfolioAccountingV1 {
         boolean publicReplay = "liquidation-v2-public-replay-account/1".equals(schema);
         if (!publicReplay && !"liquidation-v2-shared-account-fixture/1".equals(schema)) throw fail("unsupported shared-account fixture schema");
         BigDecimal equity = positive(request, "initial_equity_usdt"), reserve = nonnegative(request, "reserved_costs_usdt");
-        return new AccountSession(equity, reserve, readPositions(request, equity, publicReplay), false, eventSink);
+        return new AccountSession(equity, reserve, readPositions(request, equity, publicReplay), false, eventSink, false);
+    }
+
+    /** Hourly bars are permitted only through this explicitly DEVELOPMENT-only v003 boundary. */
+    static AccountSession startHourlyDevelopmentSession(ObjectNode request) {
+        if (!"liquidation-v3-hourly-development-account/1".equals(text(request, "schema"))
+                || !"H1_OHLC_APPROXIMATION".equals(text(request, "execution_timeframe"))) {
+            throw fail("hourly account events require the explicit v003 DEVELOPMENT schema and timeframe");
+        }
+        BigDecimal equity = positive(request, "initial_equity_usdt"), reserve = nonnegative(request, "reserved_costs_usdt");
+        return new AccountSession(equity, reserve, readPositions(request, equity, true), false, null, true);
     }
 
     /** Incremental account boundary for chronological router/execution interleaving. */
@@ -71,6 +81,7 @@ public final class LiquidationPortfolioAccountingV1 {
         private final Set<String> fundingIds = new HashSet<>(), activeTimestampIdentities = new HashSet<>(),
                 attemptedStageOneIntentIds = new HashSet<>(), filledStageOneSetupIds = new HashSet<>();
         private final boolean retainDetailedEvents;
+        private final boolean allowHourlyBars;
         private final Consumer<ObjectNode> eventSink;
         private BigDecimal free, portfolioRealized = ZERO, portfolioFunding = ZERO, portfolioEntryCosts = ZERO, portfolioExitCosts = ZERO;
         private BigDecimal unpaidLiability = ZERO;
@@ -85,8 +96,14 @@ public final class LiquidationPortfolioAccountingV1 {
 
         private AccountSession(BigDecimal initialEquity, BigDecimal reservedCosts, Map<String, Position> positions,
                 boolean retainDetailedEvents, Consumer<ObjectNode> eventSink) {
+            this(initialEquity, reservedCosts, positions, retainDetailedEvents, eventSink, false);
+        }
+
+        private AccountSession(BigDecimal initialEquity, BigDecimal reservedCosts, Map<String, Position> positions,
+                boolean retainDetailedEvents, Consumer<ObjectNode> eventSink, boolean allowHourlyBars) {
             this.initialEquity = initialEquity; this.reservedCosts = reservedCosts; this.positions = positions;
-            this.retainDetailedEvents = retainDetailedEvents; this.eventSink = eventSink; this.equityPeak = initialEquity;
+            this.retainDetailedEvents = retainDetailedEvents; this.eventSink = eventSink;
+            this.allowHourlyBars = allowHourlyBars; this.equityPeak = initialEquity;
             this.free = initialEquity.subtract(reservedCosts, MC);
             if (free.signum() < 0) throw fail("account reserves exceed the 100% margin cap");
         }
@@ -94,7 +111,7 @@ public final class LiquidationPortfolioAccountingV1 {
         ObjectNode accept(ObjectNode eventRow) {
             ObjectNode request = JsonHashes.mapper().createObjectNode();
             request.putArray("events").add(eventRow.deepCopy());
-            AccountEvent event = readEvents(request, positions.keySet()).get(0);
+            AccountEvent event = readEvents(request, positions.keySet(), allowHourlyBars).get(0);
             if (previous != null && compareEvents(previous, event) > 0) throw fail("account events must arrive in deterministic chronological order");
             validateFullPositionRiskBeforeAccept(event);
             if (identityBucketTime != event.time()) {
@@ -136,6 +153,14 @@ public final class LiquidationPortfolioAccountingV1 {
             Position position = positions.get(asset.toUpperCase(Locale.ROOT));
             if (position == null) throw fail("position lookup references unknown asset " + asset);
             return position.activeSetupId;
+        }
+
+        double activeStopPrice(String asset) {
+            Position position = positions.get(asset.toUpperCase(Locale.ROOT));
+            if (position == null || position.quantity.signum() <= 0 || position.stop == null) {
+                throw fail("active stop lookup requires an open configured position for " + asset);
+            }
+            return position.stop.doubleValue();
         }
 
         private ObjectNode acceptInternal(AccountEvent event) {
@@ -862,6 +887,10 @@ public final class LiquidationPortfolioAccountingV1 {
     }
 
     private static List<AccountEvent> readEvents(ObjectNode request, Set<String> assets) {
+        return readEvents(request, assets, false);
+    }
+
+    private static List<AccountEvent> readEvents(ObjectNode request, Set<String> assets, boolean allowHourlyBars) {
         if (!request.path("events").isArray()) throw fail("events must be an array");
         List<AccountEvent> result = new ArrayList<>(); Set<String> eventIds = new HashSet<>(), eventKeys = new HashSet<>();
         for (JsonNode node : request.path("events")) {
@@ -874,7 +903,7 @@ public final class LiquidationPortfolioAccountingV1 {
                 default -> throw fail("unsupported portfolio event " + type);
             };
             if ("MARK".equals(type)) positive(row, "price");
-            if ("BAR_PRE".equals(type) || "BAR_POST".equals(type)) validateBar(row, type, time);
+            if ("BAR_PRE".equals(type) || "BAR_POST".equals(type)) validateBar(row, type, time, allowHourlyBars);
             if ("METADATA".equals(type)) validateMetadata(row);
             if ("FUNDING".equals(type)) {
                 if (!eventIds.add(text(row, "event_id"))) throw fail("funding event ids must be unique portfolio-wide");
@@ -942,10 +971,17 @@ public final class LiquidationPortfolioAccountingV1 {
         p.lastEntryHour = Long.MIN_VALUE;
     }
 
-    private static void validateBar(ObjectNode row, String type, long eventTime) {
+    private static void validateBar(ObjectNode row, String type, long eventTime, boolean allowHourlyBars) {
         long start = integer(row, "bar_start_time");
-        if ("BAR_PRE".equals(type) && start != eventTime) throw fail("BAR_PRE time must be the minute opening boundary");
-        if ("BAR_POST".equals(type) && start + 60_000L != eventTime) throw fail("BAR_POST time must be the completed minute boundary");
+        JsonNode durationNode = row.get("bar_duration_ms");
+        long duration = durationNode == null ? 60_000L
+                : durationNode.isIntegralNumber() && durationNode.canConvertToLong() ? durationNode.asLong() : -1L;
+        if (duration != 60_000L && !(allowHourlyBars && duration == 3_600_000L)) {
+            throw fail(allowHourlyBars ? "hourly diagnostic bars must declare one-hour duration"
+                    : "production account accepts minute bars only");
+        }
+        if ("BAR_PRE".equals(type) && start != eventTime) throw fail("BAR_PRE time must equal the bar opening boundary");
+        if ("BAR_POST".equals(type) && start + duration != eventTime) throw fail("BAR_POST time must equal the completed bar boundary");
         for (String prefix : List.of("trade", "mark")) {
             BigDecimal open = positive(row, prefix + "_open"), high = positive(row, prefix + "_high");
             BigDecimal low = positive(row, prefix + "_low"), close = positive(row, prefix + "_close");
@@ -1026,7 +1062,7 @@ public final class LiquidationPortfolioAccountingV1 {
             return next;
         }
         ObjectNode toJson() {
-            BigDecimal gross = unrealizedPnl(this, mark);
+            BigDecimal gross = quantity.signum() > 0 ? unrealizedPnl(this, mark) : ZERO;
             BigDecimal risk = quantity.signum() > 0 ? stopRisk(this).add(entryCosts, MC).add(fundingDebits, MC).add(closeReserve(this), MC) : ZERO;
             ObjectNode value = JsonHashes.mapper().createObjectNode().put("asset", asset).put("direction", direction)
                     .put("status", quantity.signum() > 0 ? "OPEN" : exits.isEmpty() ? "NO_POSITION" : "CLOSED")

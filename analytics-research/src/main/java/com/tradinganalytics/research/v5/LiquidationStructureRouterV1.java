@@ -1840,15 +1840,24 @@ public final class LiquidationStructureRouterV1 {
         if (!isTradingSession(sessionDate) || !local.toLocalTime().equals(sessionClose(sessionDate))) {
             throw new IllegalArgumentException("macro input must be a completed S&P 500 session close, never a partial/future close");
         }
-        LocalDate nextSession = nextTradingSession(sessionDate);
-        Instant nextSessionClose = nextSession.atTime(sessionClose(nextSession))
-                .atZone(NEW_YORK).toInstant();
+        Instant nextSessionClose = modeledNextSessionClose(closeTime);
         if (availableAt.isBefore(nextSessionClose)) {
             throw new IllegalArgumentException("macro close availability must be at or after the next completed US equity session");
         }
     }
 
-    private static LocalDate nextTradingSession(LocalDate date) {
+    /** Retrospective availability proxy shared by input adapters, using the frozen NYSE calendar. */
+    static Instant modeledNextSessionClose(Instant closeTime) {
+        ZonedDateTime local = closeTime.atZone(NEW_YORK);
+        LocalDate sessionDate = local.toLocalDate();
+        if (!isTradingSession(sessionDate) || !local.toLocalTime().equals(sessionClose(sessionDate))) {
+            throw new IllegalArgumentException("macro input must be a completed S&P 500 session close");
+        }
+        LocalDate nextSession = nextTradingSession(sessionDate);
+        return nextSession.atTime(sessionClose(nextSession)).atZone(NEW_YORK).toInstant();
+    }
+
+    static LocalDate nextTradingSession(LocalDate date) {
         LocalDate candidate = date.plusDays(1);
         while (!isTradingSession(candidate)) candidate = candidate.plusDays(1);
         return candidate;
@@ -1861,7 +1870,7 @@ public final class LiquidationStructureRouterV1 {
                 && !NYSE_HOLIDAYS.get(date.getYear()).contains(date);
     }
 
-    private static LocalTime sessionClose(LocalDate date) {
+    static LocalTime sessionClose(LocalDate date) {
         if (isEarlyClose(date)) return NYSE_EARLY_CLOSE;
         return NYSE_REGULAR_CLOSE;
     }

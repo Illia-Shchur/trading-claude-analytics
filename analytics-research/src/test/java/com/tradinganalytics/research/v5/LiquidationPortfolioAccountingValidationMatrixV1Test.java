@@ -1,8 +1,10 @@
 package com.tradinganalytics.research.v5;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.tradinganalytics.infrastructure.security.JsonHashes;
@@ -97,7 +99,17 @@ class LiquidationPortfolioAccountingValidationMatrixV1Test {
 
         ObjectNode invalidBarClock = base();
         bar(invalidBarClock, "BAR_PRE", T + 60_000, T, 100, 101, 99, 100);
-        error("BAR_PRE time must be the minute opening boundary", () -> LiquidationPortfolioAccountingV1.replayFixture(invalidBarClock));
+        error("BAR_PRE time must equal the bar opening boundary", () -> LiquidationPortfolioAccountingV1.replayFixture(invalidBarClock));
+
+        ObjectNode hourlyProductionBar = base();
+        bar(hourlyProductionBar, "BAR_PRE", T, T, 100, 101, 99, 100);
+        ((ObjectNode) hourlyProductionBar.path("events").get(0)).put("bar_duration_ms", 3_600_000);
+        error("production account accepts minute bars only", () -> LiquidationPortfolioAccountingV1.replayFixture(hourlyProductionBar));
+
+        ObjectNode malformedBarDuration = base();
+        bar(malformedBarDuration, "BAR_PRE", T, T, 100, 101, 99, 100);
+        ((ObjectNode) malformedBarDuration.path("events").get(0)).put("bar_duration_ms", "3600000");
+        error("production account accepts minute bars only", () -> LiquidationPortfolioAccountingV1.replayFixture(malformedBarDuration));
 
         ObjectNode invalidOhlc = base();
         bar(invalidOhlc, "BAR_PRE", T, T, 100, 99, 101, 100);
@@ -175,6 +187,24 @@ class LiquidationPortfolioAccountingValidationMatrixV1Test {
         add(closed, 2, T + 120_000, 100, 10_000, 90, null, "CONTINUATION", 100);
         ObjectNode closedLedger = LiquidationPortfolioAccountingV1.replayFixture(closed);
         assertTrue(closedLedger.path("events").get(2).path("reason").asText().equals("POSITION_ALREADY_CLOSED"));
+    }
+
+    @Test
+    void closedShortDoesNotReportEntryNotionalAsUnrealizedPnl() {
+        ObjectNode request = base();
+        ObjectNode shortSpec = (ObjectNode) request.path("positions").get(0);
+        shortSpec.put("direction", "SHORT").put("common_stop", 110);
+        add(request, 1, T, 100, 10_000, 110, null, "CONTINUATION", 100);
+        ((ObjectNode) request.path("events").get(0)).put("direction", "SHORT");
+        request.withArray("events").addObject().put("type", "EXIT").put("asset", "BTC")
+                .put("time", T + 60_000).put("price", 100).put("reason", "TEST_CLOSE");
+
+        ObjectNode ledger = LiquidationPortfolioAccountingV1.replayFixture(request);
+        JsonNode position = ledger.path("positions").get(0);
+
+        assertTrue(position.path("status").asText().equals("CLOSED"));
+        assertEquals(0, position.path("quantity").asDouble(), 0.0);
+        assertEquals(0, position.path("gross_unrealized_pnl_usdt").asDouble(), 0.0);
     }
 
     @Test
