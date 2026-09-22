@@ -15,8 +15,10 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 class LiquidationStructureRouterV1Test {
@@ -34,6 +36,7 @@ class LiquidationStructureRouterV1Test {
 
         Instant decisionStart = STRESS_DAY.minusDays(90).atStartOfDay(ZoneOffset.UTC).toInstant().plus(Duration.ofHours(48));
         ObjectNode snapshot = router.entryRuleAuditSnapshot(decisionStart, MODEL_AVAILABLE.plusSeconds(1));
+        assertFalse(snapshot.path("rule_changes").asBoolean());
         ObjectNode btc = (ObjectNode) snapshot.path("daily_gate_counts_by_asset").path("BTC");
 
         assertEquals(91, btc.path("daily_rows").asInt());
@@ -50,6 +53,8 @@ class LiquidationStructureRouterV1Test {
         assertEquals(0, exactExclusiveEnd.path("stress_event_trace_count").asInt());
         assertThrows(IllegalArgumentException.class,
                 () -> router.entryRuleAuditSnapshot(decisionStart, decisionStart));
+        assertFalse(new Router(Variant.ROUTED_REVERSAL_CONTINUATION, MacroGatePolicy.STRUCTURE_ONLY,
+                RuleConfig.BASELINE_V004).entryRuleAuditSnapshot(decisionStart, MODEL_AVAILABLE).path("rule_changes").asBoolean());
     }
 
     @Test
@@ -671,6 +676,441 @@ class LiquidationStructureRouterV1Test {
     }
 
     @Test
+    void postShockEntryRequiresAvailableConfirmedSwingAndUsesItsLevelForTheRetest() {
+        List<Observation> observations = postShockSwingFixture(true, Duration.ZERO, true);
+        Router router = new Router(Variant.ROUTED_REVERSAL_CONTINUATION, MacroGatePolicy.STRUCTURE_ONLY,
+                RuleConfig.POST_SHOCK_ENTRY);
+        List<ConfirmedIntent> intents = new ArrayList<>();
+        List<RouteResult> routes = new ArrayList<>();
+        for (Observation observation : sorted(observations)) {
+            RouteResult route = router.accept(observation);
+            routes.add(route);
+            intents.addAll(route.intents());
+        }
+
+        ConfirmedIntent intent = assertSingleStageOne(intents);
+        Instant auditStart = STRESS_DAY.minusDays(90).atStartOfDay(ZoneOffset.UTC).toInstant().plus(Duration.ofHours(48));
+        assertTrue(router.entryRuleAuditSnapshot(auditStart, intent.decisionTime().plusNanos(1))
+                .path("rule_changes").asBoolean());
+        assertEquals(Branch.CONTINUATION, intent.branch());
+        assertEquals(Direction.SHORT, intent.direction());
+        assertEquals(97.0, intent.zoneCenter());
+        assertEquals(97.0, intent.pivotPrice());
+        assertEquals(MODEL_AVAILABLE, intent.pivotConfirmedAt());
+        assertEquals(MODEL_AVAILABLE.plus(Duration.ofHours(8)), intent.confirmationBarStart(),
+                "the first eligible H1 bar starts exactly when the second H4 close became available");
+        assertEquals(5, intent.sourceEvidence().stream()
+                .filter(source -> source.role().equals("POST_SHOCK_ENTRY_PIVOT_SOURCE")).count());
+        assertEquals(1, intent.sourceEvidence().stream()
+                .filter(source -> source.role().equals("POST_SHOCK_BREAK_FIRST_CONFIRMATION")).count());
+        assertEquals(1, intent.sourceEvidence().stream()
+                .filter(source -> source.role().equals("POST_SHOCK_BREAK_SECOND_CONFIRMATION")).count());
+        assertTrue(intent.sourceEvidence().stream().allMatch(source -> !source.availableAt().isAfter(intent.decisionTime())));
+        assertTrue(routes.stream().flatMap(route -> route.stageOneAnchorContexts().stream()).toList().isEmpty(),
+                "post-shock geometry cannot be rebound to the predecessor's frozen boundary anchor");
+
+        List<Observation> unavailable = postShockSwingFixture(true, Duration.ofHours(1), true);
+        Router unavailableRouter = new Router(Variant.ROUTED_REVERSAL_CONTINUATION,
+                MacroGatePolicy.STRUCTURE_ONLY, RuleConfig.POST_SHOCK_ENTRY);
+        List<ConfirmedIntent> unavailableIntents = new ArrayList<>();
+        for (Observation observation : sorted(unavailable)) unavailableIntents.addAll(unavailableRouter.accept(observation).intents());
+        assertTrue(unavailableIntents.isEmpty(),
+                "a pivot confirmed one hour after the first break bar starts cannot be backfilled into it");
+
+        List<Observation> delayedBars = postShockSwingFixture(true, Duration.ZERO, true);
+        Instant omittedOldBar = MODEL_AVAILABLE.minus(Duration.ofHours(700));
+        delayedBars.removeIf(value -> value instanceof Bar bar && bar.timeframe() == Timeframe.FOUR_HOUR
+                && bar.startTime().equals(omittedOldBar));
+        Router delayedRouter = new Router(Variant.ROUTED_REVERSAL_CONTINUATION,
+                MacroGatePolicy.STRUCTURE_ONLY, RuleConfig.POST_SHOCK_ENTRY);
+        ConfirmedIntent delayedPending = null;
+        for (Observation observation : sorted(delayedBars)) {
+            RouteResult route = delayedRouter.accept(observation);
+            if (!route.intents().isEmpty()) delayedPending = route.intents().get(0);
+        }
+        assertNotNull(delayedPending);
+        Bar delayedHistorical = bar("BTC", Timeframe.FOUR_HOUR, omittedOldBar,
+                100, 100.2, 99.5, 100, delayedPending.decisionTime().plus(Duration.ofMinutes(1)), PRICE);
+        assertTrue(delayedRouter.accept(delayedHistorical).pendingCancellations().isEmpty(),
+                "a delayed pre-setup H4 close cannot invalidate the already-pending post-shock entry");
+    }
+
+    @Test
+    void postShockSwingCanRouteLongReversalWhilePriceRemainsBelowLegacyBoundary() {
+        List<Observation> observations = postShockLongReversalFixture();
+        Router router = new Router(Variant.ROUTED_REVERSAL_CONTINUATION,
+                MacroGatePolicy.STRUCTURE_ONLY, RuleConfig.POST_SHOCK_ENTRY);
+        List<ConfirmedIntent> intents = new ArrayList<>();
+        for (Observation observation : sorted(observations)) intents.addAll(router.accept(observation).intents());
+        ConfirmedIntent intent = assertSingleStageOne(intents);
+        assertEquals(Branch.REVERSAL, intent.branch());
+        assertEquals(Direction.LONG, intent.direction());
+        assertEquals(99.8, intent.zoneCenter(), 1e-9);
+        assertEquals(100.2, intent.reversalTarget(), 1e-9);
+        assertTrue(intent.confirmationClose() < intent.reversalTarget());
+        ObjectNode audit = latestSetupAudit(router, intent.decisionTime().plusNanos(1));
+        assertEquals(99.9, audit.path("initial_entry").path("boundary").asDouble(), 1e-9);
+        assertTrue(intent.confirmationClose() < audit.path("initial_entry").path("boundary").asDouble(),
+                "the reversed branch is confirmed by its post-shock swing although it has not crossed the old boundary");
+        assertEquals("POST_SHOCK_SWING_BREAK_CONFIRMED", audit.path("route").path("branch_status").asText());
+    }
+
+    @Test
+    void postShockBreakCandidateResetsOnFailureAndGapThenReconfirmsFromCurrentBar() {
+        for (boolean createGap : List.of(false, true)) {
+            List<Observation> observations = postShockSwingFixture(false, Duration.ZERO, true);
+            Instant failedSecondStart = MODEL_AVAILABLE.plus(Duration.ofHours(4));
+            if (createGap) {
+                observations.removeIf(value -> value instanceof Bar bar && bar.timeframe() == Timeframe.FOUR_HOUR
+                        && bar.startTime().equals(failedSecondStart));
+            } else {
+                observations.removeIf(value -> value instanceof Bar bar && bar.timeframe() == Timeframe.FOUR_HOUR
+                        && bar.startTime().equals(failedSecondStart));
+                observations.add(bar("BTC", Timeframe.FOUR_HOUR, failedSecondStart,
+                        96.8, 97.5, 96.3, 97.2, failedSecondStart.plus(Duration.ofHours(4)), PRICE));
+            }
+            for (int offset : new int[] {8, 12}) {
+                Instant start = MODEL_AVAILABLE.plus(Duration.ofHours(offset));
+                double close = offset == 8 ? 96.8 : 96.5;
+                observations.add(bar("BTC", Timeframe.FOUR_HOUR, start,
+                        close + 0.2, close + 0.5, close - 0.8, close,
+                        start.plus(Duration.ofHours(4)), PRICE));
+            }
+            for (int offset : new int[] {13, 14, 15}) {
+                Instant start = MODEL_AVAILABLE.plus(Duration.ofHours(offset));
+                observations.add(bar("BTC", Timeframe.ONE_HOUR, start,
+                        100, 100.2, 99.8, 100, start.plus(Duration.ofHours(1)), HOUR));
+            }
+            Instant entryStart = MODEL_AVAILABLE.plus(Duration.ofHours(16));
+            observations.add(bar("BTC", Timeframe.ONE_HOUR, entryStart,
+                    97, 97.1, 96.3, 96.5, entryStart.plus(Duration.ofHours(1)), HOUR));
+
+            Router router = new Router(Variant.ROUTED_REVERSAL_CONTINUATION,
+                    MacroGatePolicy.STRUCTURE_ONLY, RuleConfig.POST_SHOCK_ENTRY);
+            List<ConfirmedIntent> intents = new ArrayList<>();
+            for (Observation observation : sorted(observations)) intents.addAll(router.accept(observation).intents());
+            assertSingleStageOne(intents);
+            ObjectNode audit = latestSetupAudit(router, entryStart.plus(Duration.ofHours(1)));
+            assertEquals("POST_SHOCK_SWING_BREAK_CONFIRMED", audit.path("route").path("branch_status").asText());
+            assertTrue(audit.path("route").path("branch_candidate_reset_bar_count").asInt() >= 1,
+                    createGap ? "gap must reset the first break candidate" : "failed second close must reset the candidate");
+            assertEquals(MODEL_AVAILABLE.plus(Duration.ofHours(16)).toString(),
+                    audit.path("route").path("second_confirmation_available_at").asText());
+        }
+    }
+
+    @Test
+    void h4InitialStopUsesExactLatestExpectedThreeBarsAndRejectsMissingCurrentWindow() {
+        List<Observation> observations = postShockSwingFixture(true, Duration.ZERO, true);
+        Router router = new Router(Variant.ROUTED_REVERSAL_CONTINUATION, MacroGatePolicy.STRUCTURE_ONLY,
+                RuleConfig.H4_STRUCTURAL_STOP);
+        List<ConfirmedIntent> intents = new ArrayList<>();
+        for (Observation observation : sorted(observations)) intents.addAll(router.accept(observation).intents());
+        ConfirmedIntent intent = assertSingleStageOne(intents);
+        List<Bar> stopBars = observations.stream().filter(Bar.class::isInstance).map(Bar.class::cast)
+                .filter(bar -> bar.timeframe() == Timeframe.FOUR_HOUR
+                        && !bar.availableAt().isAfter(intent.decisionTime())
+                        && !bar.eventTime().isAfter(intent.decisionTime()))
+                .sorted(Comparator.comparing(Bar::eventTime)).toList();
+        List<Bar> lastThree = stopBars.subList(stopBars.size() - 3, stopBars.size());
+        double expectedShortStop = lastThree.stream().mapToDouble(Bar::high).max().orElseThrow()
+                + STOP_BUFFER_ATR * intent.preEventAtr();
+        assertEquals(expectedShortStop, intent.initialStop(), 1e-10);
+        assertEquals(3, intent.sourceEvidence().stream()
+                .filter(source -> source.role().equals("INITIAL_H4_STOP_SOURCE")).count());
+        assertTrue(intent.sourceEvidence().stream().filter(source -> source.role().equals("INITIAL_H4_STOP_SOURCE"))
+                .allMatch(source -> !source.availableAt().isAfter(intent.decisionTime())));
+
+        List<Observation> longReversalBars = postShockLongReversalFixture();
+        Router longStopRouter = new Router(Variant.ROUTED_REVERSAL_CONTINUATION, MacroGatePolicy.STRUCTURE_ONLY,
+                RuleConfig.H4_STRUCTURAL_STOP);
+        List<ConfirmedIntent> longStopIntents = new ArrayList<>();
+        for (Observation observation : sorted(longReversalBars)) longStopIntents.addAll(longStopRouter.accept(observation).intents());
+        ConfirmedIntent longIntent = assertSingleStageOne(longStopIntents);
+        assertEquals(Branch.REVERSAL, longIntent.branch());
+        assertEquals(Direction.LONG, longIntent.direction());
+        List<Bar> longStopBars = longReversalBars.stream().filter(Bar.class::isInstance).map(Bar.class::cast)
+                .filter(bar -> bar.timeframe() == Timeframe.FOUR_HOUR
+                        && !bar.availableAt().isAfter(longIntent.decisionTime())
+                        && !bar.eventTime().isAfter(longIntent.decisionTime()))
+                .sorted(Comparator.comparing(Bar::eventTime)).toList();
+        List<Bar> longLastThree = longStopBars.subList(longStopBars.size() - 3, longStopBars.size());
+        assertEquals(3, longIntent.sourceEvidence().stream()
+                .filter(source -> source.role().equals("INITIAL_H4_STOP_SOURCE")).count());
+        double expectedLongStop = longLastThree.stream().mapToDouble(Bar::low).min().orElseThrow()
+                - STOP_BUFFER_ATR * longIntent.preEventAtr();
+        assertEquals(expectedLongStop, longIntent.initialStop(), 1e-10,
+                "the H4 stop mirrors the short-side maximum with a long-side minimum");
+
+        List<Observation> missingLatestH4 = postShockSwingFixture(false, Duration.ZERO, true);
+        Instant latePriorHour = MODEL_AVAILABLE.plus(Duration.ofHours(11));
+        Instant lateEntryHour = MODEL_AVAILABLE.plus(Duration.ofHours(12));
+        missingLatestH4.add(bar("BTC", Timeframe.ONE_HOUR, latePriorHour,
+                97, 97.2, 96.8, 97, latePriorHour.plus(Duration.ofHours(1)), HOUR));
+        missingLatestH4.add(bar("BTC", Timeframe.ONE_HOUR, lateEntryHour,
+                97, 97.1, 96.0, 96.2, lateEntryHour.plus(Duration.ofHours(1)), HOUR));
+        Router missingRouter = new Router(Variant.ROUTED_REVERSAL_CONTINUATION, MacroGatePolicy.STRUCTURE_ONLY,
+                RuleConfig.H4_STRUCTURAL_STOP);
+        for (Observation observation : sorted(missingLatestH4)) missingRouter.accept(observation);
+        Instant auditStart = STRESS_DAY.minusDays(90).atStartOfDay(ZoneOffset.UTC).toInstant().plus(Duration.ofHours(48));
+        ObjectNode audit = missingRouter.entryRuleAuditSnapshot(auditStart, lateEntryHour.plus(Duration.ofHours(1)));
+        assertEquals(1, audit.path("liquidation_stress_event_trace").path(0).path("initial_entry")
+                .path("all_failed_gate_counts").path("THREE_CONSECUTIVE_H4_STOP_BARS_UNAVAILABLE_AT_DECISION").asInt());
+    }
+
+    @Test
+    void dailyRsiBlocksOnlyAdditionsWithDirectionalNeutralAndUnknownSemantics() {
+        RuleConfig rsiOnly = new RuleConfig(InitialEntryRule.PRE_SHOCK_BOUNDARY,
+                InitialStopRule.LEGACY_H1_THREE_BAR, PivotRefreshRule.FROZEN_INVALIDATION,
+                true, false, true);
+        List<Observation> observations = new ArrayList<>(fixture(true, OiBoundary.VALID, true));
+        observations.addAll(postInitialFillBars());
+        LocalDate stageTwoContextDay = LocalDate.of(2024, 1, 3);
+        Instant stageTwoContextAvailable = stageTwoContextDay.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant();
+        Router opposingRouter = new Router(Variant.ROUTED_REVERSAL_CONTINUATION, MacroGatePolicy.STRUCTURE_ONLY,
+                rsiOnly, List.of(new DailyPriceContext("BTC", stageTwoContextDay, stageTwoContextAvailable,
+                        100, 60.0, null, "daily-rsi-v1")));
+        List<ConfirmedIntent> opposingIntents = new ArrayList<>();
+        List<RejectedOpportunity> opposingRejections = new ArrayList<>();
+        for (Observation observation : sorted(observations)) {
+            RouteResult route = opposingRouter.accept(observation);
+            opposingIntents.addAll(route.intents());
+            opposingRejections.addAll(route.rejections());
+            for (ConfirmedIntent intent : route.intents()) opposingRouter.onFill(new FillAck(intent.intentId(), intent.setupId(),
+                    intent.asset(), intent.stage(), intent.requestedExecutionAfter().plusNanos(1),
+                    intent.confirmationClose(), intent.initialStop()));
+        }
+        assertEquals(List.of(1), opposingIntents.stream().map(ConfirmedIntent::stage).toList(),
+                "unknown first-entry RSI must not gate the initial tranche");
+        RejectedOpportunity opposing = opposingRejections.stream().filter(value -> value.stage() == 2).findFirst().orElseThrow();
+        assertEquals("DAILY_RSI_OPPOSING_BLOCKS_STAGE_2", opposing.reasonCode());
+        assertTrue(opposing.sourceEvidence().stream().anyMatch(source -> source.role().equals("DAILY_RSI14_CONTEXT")
+                && !source.availableAt().isAfter(opposing.decisionTime())));
+
+        List<Observation> neutralObs = new ArrayList<>(fixture(true, OiBoundary.VALID, true));
+        neutralObs.addAll(postInitialFillBars());
+        LocalDate stageThreeContextDay = LocalDate.of(2024, 1, 7);
+        Instant stageThreeContextAvailable = stageThreeContextDay.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant();
+        Router neutralRouter = new Router(Variant.ROUTED_REVERSAL_CONTINUATION, MacroGatePolicy.STRUCTURE_ONLY,
+                rsiOnly, List.of(
+                        new DailyPriceContext("BTC", stageTwoContextDay, stageTwoContextAvailable,
+                                100, 50.0, null, "daily-rsi-v1"),
+                        new DailyPriceContext("BTC", stageThreeContextDay, stageThreeContextAvailable,
+                                100, 50.0, null, "daily-rsi-v1")));
+        List<ConfirmedIntent> neutralIntents = new ArrayList<>();
+        List<RejectedOpportunity> neutralRejections = new ArrayList<>();
+        for (Observation observation : sorted(neutralObs)) {
+            RouteResult route = neutralRouter.accept(observation);
+            neutralIntents.addAll(route.intents());
+            neutralRejections.addAll(route.rejections());
+            for (ConfirmedIntent intent : route.intents()) neutralRouter.onFill(new FillAck(intent.intentId(), intent.setupId(),
+                    intent.asset(), intent.stage(), intent.requestedExecutionAfter().plusNanos(1),
+                    intent.confirmationClose(), intent.initialStop()));
+        }
+        assertEquals(List.of(1, 2), neutralIntents.stream().map(ConfirmedIntent::stage).toList(),
+                "RSI 50 is neutral and can pass stage 2, but cannot pass stage 3");
+        assertEquals("DAILY_RSI_NEUTRAL_BLOCKS_STAGE_3", neutralRejections.stream()
+                .filter(value -> value.stage() == 3).findFirst().orElseThrow().reasonCode());
+
+        List<Observation> unknownObs = new ArrayList<>(fixture(true, OiBoundary.VALID, true));
+        unknownObs.addAll(postInitialFillBars());
+        Router unknownRouter = new Router(Variant.ROUTED_REVERSAL_CONTINUATION, MacroGatePolicy.STRUCTURE_ONLY, rsiOnly);
+        List<ConfirmedIntent> unknownIntents = new ArrayList<>();
+        List<RejectedOpportunity> unknownRejections = new ArrayList<>();
+        for (Observation observation : sorted(unknownObs)) {
+            RouteResult route = unknownRouter.accept(observation);
+            unknownIntents.addAll(route.intents());
+            unknownRejections.addAll(route.rejections());
+            for (ConfirmedIntent intent : route.intents()) unknownRouter.onFill(new FillAck(intent.intentId(), intent.setupId(),
+                    intent.asset(), intent.stage(), intent.requestedExecutionAfter().plusNanos(1),
+                    intent.confirmationClose(), intent.initialStop()));
+        }
+        assertEquals(List.of(1), unknownIntents.stream().map(ConfirmedIntent::stage).toList());
+        assertEquals("DAILY_RSI_UNKNOWN_BLOCKS_STAGE_2", unknownRejections.stream()
+                .filter(value -> value.stage() == 2).findFirst().orElseThrow().reasonCode());
+    }
+
+    @Test
+    void dailySmaUsesExactAssetDayBoundaryAndBothEnabledGatesAreConjunctive() {
+        RuleConfig smaOnly = new RuleConfig(InitialEntryRule.PRE_SHOCK_BOUNDARY,
+                InitialStopRule.LEGACY_H1_THREE_BAR, PivotRefreshRule.FROZEN_INVALIDATION,
+                false, true, true);
+        List<Observation> observations = new ArrayList<>(fixture(true, OiBoundary.VALID, true));
+        observations.addAll(postInitialFillBars());
+        // Jan 3 exists only for another asset, so the Jan 4 22Z decision must see UNKNOWN.
+        // The Jan 4 row becomes available exactly at the Jan 5 00Z decision boundary.
+        List<DailyPriceContext> smaRows = List.of(
+                new DailyPriceContext("ETH", LocalDate.of(2024, 1, 3),
+                        utc(LocalDate.of(2024, 1, 4), 0), 101, null, 100.0, "eth-daily-v1"),
+                new DailyPriceContext("BTC", LocalDate.of(2024, 1, 4),
+                        utc(LocalDate.of(2024, 1, 5), 0), 99, null, 100.0, "btc-daily-v1"),
+                // The latest exact prior-day value supports the short stage 3 at Jan 8 22Z.
+                new DailyPriceContext("BTC", LocalDate.of(2024, 1, 7),
+                        utc(LocalDate.of(2024, 1, 8), 0), 99, null, 100.0, "btc-daily-v1"));
+        observations.add(bar("BTC", Timeframe.ONE_HOUR, utc(LocalDate.of(2024, 1, 4), 22),
+                99.9, 100.1, 99.7, 100.0, utc(LocalDate.of(2024, 1, 4), 23), HOUR));
+        observations.add(bar("BTC", Timeframe.ONE_HOUR, utc(LocalDate.of(2024, 1, 4), 23),
+                100.0, 100.1, 99.4, 99.5, utc(LocalDate.of(2024, 1, 5), 0), HOUR));
+
+        Router smaRouter = new Router(Variant.ROUTED_REVERSAL_CONTINUATION,
+                MacroGatePolicy.STRUCTURE_ONLY, smaOnly, smaRows);
+        List<ConfirmedIntent> smaIntents = new ArrayList<>();
+        List<RejectedOpportunity> smaRejections = new ArrayList<>();
+        for (Observation observation : sorted(observations)) {
+            RouteResult route = smaRouter.accept(observation);
+            smaIntents.addAll(route.intents());
+            smaRejections.addAll(route.rejections());
+            for (ConfirmedIntent intent : route.intents()) smaRouter.onFill(new FillAck(intent.intentId(), intent.setupId(),
+                    intent.asset(), intent.stage(), intent.requestedExecutionAfter().plusNanos(1),
+                    intent.confirmationClose(), intent.initialStop()));
+        }
+        assertEquals(List.of(1, 2, 3), smaIntents.stream().map(ConfirmedIntent::stage).toList());
+        RejectedOpportunity wrongAssetMissing = smaRejections.stream()
+                .filter(value -> value.stage() == 2).findFirst().orElseThrow();
+        assertEquals("DAILY_SMA200_UNKNOWN_BLOCKS_STAGE_2", wrongAssetMissing.reasonCode(),
+                "a different asset's daily row must not be carried into BTC context");
+        ConfirmedIntent boundaryStageTwo = smaIntents.stream().filter(value -> value.stage() == 2)
+                .findFirst().orElseThrow();
+        assertEquals(utc(LocalDate.of(2024, 1, 5), 0), boundaryStageTwo.decisionTime());
+        assertTrue(boundaryStageTwo.sourceEvidence().stream().anyMatch(source ->
+                source.role().equals("DAILY_SMA200_CONTEXT")
+                        && source.seriesId().equals("btc-daily-v1")
+                        && source.availableAt().equals(boundaryStageTwo.decisionTime())));
+        assertTrue(smaIntents.stream().anyMatch(value -> value.stage() == 3
+                && value.decisionTime().equals(utc(LocalDate.of(2024, 1, 8), 22))),
+                "supportive exact-prior-day SMA context permits the third tranche");
+
+        RuleConfig bothGates = new RuleConfig(InitialEntryRule.PRE_SHOCK_BOUNDARY,
+                InitialStopRule.LEGACY_H1_THREE_BAR, PivotRefreshRule.FROZEN_INVALIDATION,
+                true, true, true);
+        List<Observation> bothObservations = new ArrayList<>(fixture(true, OiBoundary.VALID, true));
+        bothObservations.addAll(postInitialFillBars());
+        Router bothRouter = new Router(Variant.ROUTED_REVERSAL_CONTINUATION,
+                MacroGatePolicy.STRUCTURE_ONLY, bothGates, List.of(
+                        new DailyPriceContext("BTC", LocalDate.of(2024, 1, 3),
+                                utc(LocalDate.of(2024, 1, 4), 0), 101, 40.0, 100.0, "btc-daily-v1")));
+        List<RejectedOpportunity> bothRejections = new ArrayList<>();
+        for (Observation observation : sorted(bothObservations)) {
+            RouteResult route = bothRouter.accept(observation);
+            bothRejections.addAll(route.rejections());
+            for (ConfirmedIntent intent : route.intents()) bothRouter.onFill(new FillAck(intent.intentId(), intent.setupId(),
+                    intent.asset(), intent.stage(), intent.requestedExecutionAfter().plusNanos(1),
+                    intent.confirmationClose(), intent.initialStop()));
+        }
+        RejectedOpportunity conjunctive = bothRejections.stream()
+                .filter(value -> value.stage() == 2).findFirst().orElseThrow();
+        assertEquals("DAILY_SMA200_OPPOSING_BLOCKS_STAGE_2", conjunctive.reasonCode(),
+                "supportive RSI cannot override an opposing SMA when both gates are enabled");
+        assertTrue(conjunctive.sourceEvidence().stream().anyMatch(source -> source.role().equals("DAILY_RSI14_CONTEXT")));
+        assertTrue(conjunctive.sourceEvidence().stream().anyMatch(source -> source.role().equals("DAILY_SMA200_CONTEXT")));
+    }
+
+    @Test
+    void invalidatedPivotRefreshWaitsForPendingAckThenRequiresLaterSafePostInvalidationPivot() {
+        RuleConfig refresh = new RuleConfig(InitialEntryRule.PRE_SHOCK_BOUNDARY,
+                InitialStopRule.LEGACY_H1_THREE_BAR, PivotRefreshRule.REFRESH_AFTER_STOP_INVALIDATION,
+                false, false, false);
+        List<Observation> observations = new ArrayList<>(fixture(true, OiBoundary.VALID, true));
+        observations.addAll(postInitialFillBars());
+        Router router = new Router(Variant.ROUTED_REVERSAL_CONTINUATION,
+                MacroGatePolicy.STRUCTURE_ONLY, refresh);
+        ConfirmedIntent stageOne = null;
+        ConfirmedIntent pendingStageTwo = null;
+        Instant invalidationAt = utc(LocalDate.of(2024, 1, 4), 22).plusSeconds(1);
+        for (Observation observation : sorted(observations)) {
+            if (processingTime(observation).isAfter(utc(LocalDate.of(2024, 1, 5), 20))) continue;
+            RouteResult route = router.accept(observation);
+            for (ConfirmedIntent intent : route.intents()) {
+                if (intent.stage() == 1) {
+                    stageOne = intent;
+                    router.onFill(new FillAck(intent.intentId(), intent.setupId(), intent.asset(), 1,
+                            intent.requestedExecutionAfter().plusNanos(1), intent.confirmationClose(), intent.initialStop()));
+                } else if (intent.stage() == 2) {
+                    pendingStageTwo = intent;
+                    assertEquals(99.8, intent.pivotPrice(), 1e-9);
+                    assertTrue(intent.initialStop() > 99.7, "stop acknowledgement must tighten without loosening");
+                    router.onStopUpdate(new StopAck(intent.setupId(), intent.asset(), invalidationAt, 99.7));
+                }
+            }
+        }
+        assertNotNull(stageOne);
+        assertNotNull(pendingStageTwo, "the existing addition request remains pending across stop invalidation");
+        ConfirmedIntent unchangedPending = pendingStageTwo;
+
+        ObjectNode whilePending = latestSetupAudit(router, utc(LocalDate.of(2024, 1, 5), 20).plusSeconds(1));
+        assertTrue(whilePending.path("staging").path("pivot_refresh_pending").asBoolean());
+        assertTrue(whilePending.path("staging").path("pivot_refresh_deferred_for_pending_intent").asBoolean());
+        assertEquals(0, whilePending.path("staging").path("pivot_refresh_replacements").size());
+
+        router.onNoFill(new NoFillAck(unchangedPending.intentId(), unchangedPending.setupId(),
+                unchangedPending.asset(), unchangedPending.stage(), utc(LocalDate.of(2024, 1, 5), 20).plusSeconds(1),
+                "CAPACITY_REJECTED"));
+        List<Observation> replacementBars = replacementShortPivotBars();
+        for (Observation observation : sorted(replacementBars)) router.accept(observation);
+
+        ObjectNode refreshed = latestSetupAudit(router, utc(LocalDate.of(2024, 1, 6), 16).plusSeconds(1));
+        JsonNode staging = refreshed.path("staging");
+        assertEquals(1, staging.path("pivot_refresh_invalidations").size());
+        assertEquals(invalidationAt.toString(), staging.path("pivot_refresh_invalidations").path(0)
+                .path("invalidated_at").asText(), "first invalidation time is preserved");
+        assertEquals(1, staging.path("pivot_refresh_replacements").size());
+        assertEquals(utc(LocalDate.of(2024, 1, 6), 4).toString(), staging.path("pivot_refresh_replacements")
+                .path(0).path("replacement_center_time").asText());
+        assertFalse(staging.path("pivot_refresh_pending").asBoolean());
+        assertFalse(staging.path("pivot_zone_currently_invalidated_by_stop").asBoolean());
+        assertTrue(staging.path("pivot_zone_invalidated_by_stop").asBoolean(),
+                "the historical invalidation remains auditable after a successful replacement");
+
+        router.onClose(new CloseAck(stageOne.setupId(), stageOne.asset(), utc(LocalDate.of(2024, 1, 6), 16)
+                .plusSeconds(2), CloseReason.OTHER));
+        ObjectNode closed = latestSetupAudit(router, utc(LocalDate.of(2024, 1, 6), 16).plusSeconds(3));
+        assertNotEquals("FROZEN_PIVOT_ZONE_INVALIDATED_BY_TRAILING_STOP_NO_REPLACEMENT",
+                closed.path("staging").path("terminal_addition_blocker").asText());
+    }
+
+    @Test
+    void invalidatedPivotPendingAdditionAdvancesOnlyAfterItsFillAck() {
+        RuleConfig refresh = new RuleConfig(InitialEntryRule.PRE_SHOCK_BOUNDARY,
+                InitialStopRule.LEGACY_H1_THREE_BAR, PivotRefreshRule.REFRESH_AFTER_STOP_INVALIDATION,
+                false, false, false);
+        List<Observation> observations = new ArrayList<>(fixture(true, OiBoundary.VALID, true));
+        observations.addAll(postInitialFillBars());
+        Router router = new Router(Variant.ROUTED_REVERSAL_CONTINUATION,
+                MacroGatePolicy.STRUCTURE_ONLY, refresh);
+        ConfirmedIntent stageOne = null;
+        ConfirmedIntent pendingStageTwo = null;
+        Instant stopActivation = utc(LocalDate.of(2024, 1, 4), 22).plusSeconds(1);
+        for (Observation observation : sorted(observations)) {
+            if (processingTime(observation).isAfter(utc(LocalDate.of(2024, 1, 5), 20))) continue;
+            RouteResult route = router.accept(observation);
+            for (ConfirmedIntent intent : route.intents()) {
+                if (intent.stage() == 1) {
+                    stageOne = intent;
+                    router.onFill(new FillAck(intent.intentId(), intent.setupId(), intent.asset(), 1,
+                            intent.requestedExecutionAfter().plusNanos(1), intent.confirmationClose(), intent.initialStop()));
+                } else if (intent.stage() == 2) {
+                    pendingStageTwo = intent;
+                    router.onStopUpdate(new StopAck(intent.setupId(), intent.asset(), stopActivation, 99.7));
+                }
+            }
+        }
+        assertNotNull(stageOne);
+        assertNotNull(pendingStageTwo);
+        ObjectNode beforeAck = latestSetupAudit(router, utc(LocalDate.of(2024, 1, 5), 20).plusSeconds(1));
+        assertTrue(beforeAck.path("staging").path("pivot_refresh_deferred_for_pending_intent").asBoolean());
+        assertEquals(1, beforeAck.path("execution").path("fills").size());
+        assertEquals(1, beforeAck.path("execution").path("fills").get(0).path("stage").asInt());
+
+        router.onFill(new FillAck(pendingStageTwo.intentId(), pendingStageTwo.setupId(), pendingStageTwo.asset(), 2,
+                utc(LocalDate.of(2024, 1, 5), 20).plusSeconds(2), pendingStageTwo.confirmationClose(), 99.7));
+        ObjectNode afterAck = latestSetupAudit(router, utc(LocalDate.of(2024, 1, 5), 20).plusSeconds(3));
+        assertEquals(2, afterAck.path("execution").path("fills").get(1).path("stage").asInt());
+        assertEquals(2, afterAck.path("completed_addition_cycles").get(0).path("cycle_end_filled_stage").asInt());
+        assertFalse(afterAck.path("staging").path("pivot_refresh_pending").asBoolean(),
+                "the successful fill ends this addition cycle and clears its deferred refresh request");
+    }
+
+    @Test
     void predecessorAnchorsCarryHashBoundSetupSeedAndInjectedReplayUnlocksOnlyOnItsOwnFill() {
         List<Observation> observations = fixture(true, OiBoundary.VALID, true);
         observations.addAll(macroPath());
@@ -824,6 +1264,127 @@ class LiquidationStructureRouterV1Test {
                 .decisionTime().isAfter(utc(LocalDate.of(2024, 1, 8), 21)));
         assertFalse(rejected.isEmpty());
         assertTrue(rejected.stream().anyMatch(value -> value.reasonCode().startsWith("MACRO_")));
+    }
+
+    private static ConfirmedIntent assertSingleStageOne(List<ConfirmedIntent> intents) {
+        assertEquals(1, intents.size(), "one stage-one intent expected: " + intents);
+        assertEquals(1, intents.get(0).stage());
+        return intents.get(0);
+    }
+
+    private static ObjectNode latestSetupAudit(Router router, Instant exclusiveEnd) {
+        Instant auditStart = STRESS_DAY.minusDays(90).atStartOfDay(ZoneOffset.UTC).toInstant().plus(Duration.ofHours(48));
+        ObjectNode snapshot = router.entryRuleAuditSnapshot(auditStart, exclusiveEnd);
+        JsonNode rows = snapshot.path("liquidation_stress_event_trace");
+        assertTrue(rows.isArray() && !rows.isEmpty(), "setup audit should exist in the requested availability window");
+        return (ObjectNode) rows.get(0);
+    }
+
+    private static List<Observation> replacementShortPivotBars() {
+        LocalDate date = LocalDate.of(2024, 1, 5);
+        int[] hours = {20, 0, 4, 8, 12};
+        double[][] values = {
+                {98.0, 98.1, 97.0, 97.5},
+                {97.5, 97.8, 97.0, 97.3},
+                {97.4, 98.5, 96.9, 97.2},
+                {97.2, 97.9, 96.8, 97.0},
+                {97.0, 97.6, 96.5, 96.8}
+        };
+        List<Observation> bars = new ArrayList<>();
+        for (int i = 0; i < hours.length; i++) {
+            LocalDate barDate = i == 0 ? date : date.plusDays(1);
+            Instant start = utc(barDate, hours[i]);
+            double[] value = values[i];
+            bars.add(bar("BTC", Timeframe.FOUR_HOUR, start, value[0], value[1], value[2], value[3],
+                    start.plus(Duration.ofHours(4)), PRICE));
+        }
+        return bars;
+    }
+
+    private static List<Observation> postShockLongReversalFixture() {
+        List<Observation> observations = postShockSwingFixture(false, Duration.ZERO, true);
+        Instant firstPivotStart = MODEL_AVAILABLE.minus(Duration.ofHours(20));
+        Set<Instant> pivotStarts = Set.of(firstPivotStart, firstPivotStart.plus(Duration.ofHours(4)),
+                firstPivotStart.plus(Duration.ofHours(8)), firstPivotStart.plus(Duration.ofHours(12)),
+                firstPivotStart.plus(Duration.ofHours(16)));
+        Instant priorRangeStart = STRESS_START.minus(Duration.ofHours(24));
+        Set<Instant> priorStarts = new HashSet<>();
+        for (int i = 0; i < 6; i++) priorStarts.add(priorRangeStart.plus(Duration.ofHours(4L * i)));
+        Instant postEventStart = STRESS_START.plus(Duration.ofHours(4));
+        Set<Instant> postEventStarts = new HashSet<>();
+        for (Instant start = postEventStart; start.isBefore(firstPivotStart); start = start.plus(Duration.ofHours(4))) {
+            postEventStarts.add(start);
+        }
+        Set<Instant> breakStarts = Set.of(MODEL_AVAILABLE, MODEL_AVAILABLE.plus(Duration.ofHours(4)));
+        observations.removeIf(value -> value instanceof Bar bar && bar.timeframe() == Timeframe.FOUR_HOUR
+                && (pivotStarts.contains(bar.startTime()) || priorStarts.contains(bar.startTime())
+                    || postEventStarts.contains(bar.startTime()) || breakStarts.contains(bar.startTime())));
+        for (Instant start : priorStarts) observations.add(bar("BTC", Timeframe.FOUR_HOUR, start,
+                100, 100.5, 99.9, 100, start.plus(Duration.ofHours(4)), PRICE));
+        for (Instant start : postEventStarts) observations.add(bar("BTC", Timeframe.FOUR_HOUR, start,
+                99, 99.5, 98.5, 99.1, start.plus(Duration.ofHours(4)), PRICE));
+        double[][] five = {
+                {99, 99.4, 98.7, 99.1},
+                {99.1, 99.5, 98.8, 99.2},
+                {99.2, 99.8, 98.9, 99.4},
+                {99.4, 99.6, 99.0, 99.3},
+                {99.3, 99.5, 99.1, 99.4}
+        };
+        for (int i = 0; i < five.length; i++) {
+            double[] value = five[i];
+            Instant start = firstPivotStart.plus(Duration.ofHours(4L * i));
+            observations.add(bar("BTC", Timeframe.FOUR_HOUR, start,
+                    value[0], value[1], value[2], value[3], start.plus(Duration.ofHours(4)), PRICE));
+        }
+        observations.add(bar("BTC", Timeframe.FOUR_HOUR, MODEL_AVAILABLE,
+                99.4, 100.0, 99.2, 99.85, MODEL_AVAILABLE.plus(Duration.ofHours(4)), PRICE));
+        Instant secondBreakStart = MODEL_AVAILABLE.plus(Duration.ofHours(4));
+        observations.add(bar("BTC", Timeframe.FOUR_HOUR, secondBreakStart,
+                99.85, 100.1, 99.5, 99.86, secondBreakStart.plus(Duration.ofHours(4)), PRICE));
+
+        Instant previousStart = MODEL_AVAILABLE.plus(Duration.ofHours(7));
+        observations.removeIf(value -> value instanceof Bar bar && bar.timeframe() == Timeframe.ONE_HOUR
+                && bar.startTime().equals(previousStart));
+        observations.add(bar("BTC", Timeframe.ONE_HOUR, previousStart,
+                99.5, 99.7, 99.4, 99.6, previousStart.plus(Duration.ofHours(1)), HOUR));
+        Instant entryStart = MODEL_AVAILABLE.plus(Duration.ofHours(8));
+        observations.add(bar("BTC", Timeframe.ONE_HOUR, entryStart,
+                99.6, 99.95, 99.5, 99.85, entryStart.plus(Duration.ofHours(1)), HOUR));
+        return observations;
+    }
+
+    private static List<Observation> postShockSwingFixture(boolean includeH1Entry,
+            Duration finalPivotAvailabilityLag, boolean replaceEarlyEntry) {
+        List<Observation> observations = new ArrayList<>(fixture(true, OiBoundary.VALID, true));
+        Instant firstPivotStart = MODEL_AVAILABLE.minus(Duration.ofHours(20));
+        Set<Instant> pivotBars = Set.of(firstPivotStart, firstPivotStart.plus(Duration.ofHours(4)),
+                firstPivotStart.plus(Duration.ofHours(8)), firstPivotStart.plus(Duration.ofHours(12)),
+                firstPivotStart.plus(Duration.ofHours(16)));
+        observations.removeIf(value -> value instanceof Bar bar && bar.timeframe() == Timeframe.FOUR_HOUR
+                && pivotBars.contains(bar.startTime()));
+        double[][] five = {
+                {100, 100.2, 99.5, 100},
+                {100, 100.3, 99.0, 100.1},
+                {100, 100.4, 97.0, 99.4},
+                {99.4, 100.2, 99.2, 99.7},
+                {99.7, 100.5, 99.3, 100}
+        };
+        for (int i = 0; i < five.length; i++) {
+            double[] values = five[i];
+            Instant start = firstPivotStart.plus(Duration.ofHours(4L * i));
+            Instant available = start.plus(Duration.ofHours(4));
+            if (i == five.length - 1) available = available.plus(finalPivotAvailabilityLag);
+            observations.add(bar("BTC", Timeframe.FOUR_HOUR, start, values[0], values[1], values[2], values[3],
+                    available, PRICE));
+        }
+        if (replaceEarlyEntry) {
+            Instant earlyEntry = MODEL_AVAILABLE.plus(Duration.ofHours(8));
+            observations.removeIf(value -> value instanceof Bar bar && bar.timeframe() == Timeframe.ONE_HOUR
+                    && bar.startTime().equals(earlyEntry));
+            if (includeH1Entry) observations.add(bar("BTC", Timeframe.ONE_HOUR, earlyEntry,
+                    97, 97.1, 96.3, 96.5, earlyEntry.plus(Duration.ofHours(1)), HOUR));
+        }
+        return observations;
     }
 
     static List<Observation> fixture(boolean completeCalendar, OiBoundary oiBoundary, boolean bothSidesStress) {

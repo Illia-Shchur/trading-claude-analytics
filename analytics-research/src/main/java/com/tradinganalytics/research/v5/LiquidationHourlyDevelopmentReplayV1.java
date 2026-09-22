@@ -53,6 +53,9 @@ public final class LiquidationHourlyDevelopmentReplayV1 {
     private static final long FOUR_HOURS_MS = 4L * HOUR_MS;
     private static final List<String> LEGACY_ASSETS = List.of("BTC", "ETH", "SOL", "AAVE");
     private static final List<String> V004_ASSETS = List.of("BTC", "ETH", "SOL", "AAVE", "UNI", "BNB", "LINK", "ZEC", "TRX");
+    private static final List<String> V003_VARIANTS = List.of("CORE_ONE_ENTRY", "STAGED_NO_MACRO", "STAGED_MACRO");
+    private static final List<String> V005_VARIANTS = List.of("BASELINE_V004", "POST_SHOCK_ENTRY", "H4_STRUCTURAL_STOP",
+            "REFRESHED_STAGING", "DAILY_RSI_CONTEXT", "DAILY_MA_CONTEXT", "DAILY_BOTH_CONTEXT");
     private static final ZoneId NEW_YORK = ZoneId.of("America/New_York");
     private static final long[] RESPONSE_HORIZONS_DAYS = {1, 3, 7};
 
@@ -99,6 +102,9 @@ public final class LiquidationHourlyDevelopmentReplayV1 {
         verifyPolicy(policy, policyBytes, policyFreezePath);
         ObjectNode dataFreeze = readObject(dataFreezePath);
         Input input = loadInput(inputPath);
+        if ("liquidation-exploratory-v005".equals(policy.path("id").asText()) && !input.dailyContextWarmupVerified) {
+            throw failure("v005 requires its exact verified supplemental daily-context warmup bundle before simulation");
+        }
         verifyDataFreeze(input, dataFreeze, dataFreezePath.getParent());
         if (!input.preflightBlockers.isEmpty()) throw failure("required source-input gaps prevent this run: " + String.join("; ", input.preflightBlockers));
         Path runs = requiredPath(options, "run_root");
@@ -167,6 +173,7 @@ public final class LiquidationHourlyDevelopmentReplayV1 {
         List<String> expectedAssets = switch (policyId) {
             case "liquidation-exploratory-v003" -> LEGACY_ASSETS;
             case "liquidation-exploratory-v004" -> V004_ASSETS;
+            case "liquidation-exploratory-v005" -> V004_ASSETS;
             default -> List.of();
         };
         if (!"liquidation-exploratory-policy/1".equals(policy.path("schema").asText())
@@ -178,13 +185,29 @@ public final class LiquidationHourlyDevelopmentReplayV1 {
                 || policy.path("execution").path("funding").asText("").equals("0")) {
             throw failure("frozen policy does not match a supported exploratory-only asset boundary");
         }
-        if (policy.path("variants").size() != 3) throw failure("frozen policy must retain exactly the three predeclared variants");
-        ObjectNode parent = readObject(Path.of("docs/research/liquidation-daily-stress-v002/frozen-precommit.json"));
-        if (!"liquidation-daily-stress-v002".equals(parent.path("precommit_id").asText())
-                || !policy.path("parent_precommit").path("byte_sha256").asText().equals(
-                        sha256(Path.of("docs/research/liquidation-daily-stress-v002/frozen-precommit.json")))
+        List<String> expectedVariants = switch (policyId) {
+            case "liquidation-exploratory-v003", "liquidation-exploratory-v004" -> V003_VARIANTS;
+            case "liquidation-exploratory-v005" -> V005_VARIANTS;
+            default -> List.of();
+        };
+        if (!expectedVariants.equals(orderedTextArray(policy.path("variants")))) {
+            throw failure("frozen policy variant order differs from its immutable inventory");
+        }
+        Path repository = repositoryRoot();
+        boolean v005 = "liquidation-exploratory-v005".equals(policyId);
+        if (v005 && !actualBytes.equals(sha256(repository.resolve("docs/research/liquidation-exploratory-v005/exploratory-policy.json")))) {
+            throw failure("v005 policy bytes do not equal the repository's frozen source policy");
+        }
+        Path parentPolicyPath = v005
+                ? repository.resolve("docs/research/liquidation-exploratory-v004/frozen-precommit.json")
+                : repository.resolve("docs/research/liquidation-daily-stress-v002/frozen-precommit.json");
+        ObjectNode parent = readObject(parentPolicyPath);
+        String parentId = v005 ? "liquidation-exploratory-v004" : "liquidation-daily-stress-v002";
+        String actualParentId = parent.path("precommit_id").asText();
+        if (!parentId.equals(actualParentId)
+                || !policy.path("parent_precommit").path("byte_sha256").asText().equals(sha256(parentPolicyPath))
                 || !policy.path("parent_precommit").path("content_sha256").asText().equals(parent.path("content_sha256").asText())) {
-            throw failure("policy is detached from its immutable v002 predecessor");
+            throw failure("policy is detached from its immutable predecessor");
         }
         if ("liquidation-exploratory-v004".equals(policyId)) {
             JsonNode audit = policy.path("entry_rule_audit");
@@ -193,7 +216,7 @@ public final class LiquidationHourlyDevelopmentReplayV1 {
                 throw failure("v004 entry-rule audit must be diagnostic-only and cannot change or optimize the frozen rules");
             }
             JsonNode predecessor = policy.path("predecessor_experiment");
-            Path v003Root = Path.of("docs/research/liquidation-exploratory-v003");
+            Path v003Root = repository.resolve("docs/research/liquidation-exploratory-v003");
             if (!"liquidation-exploratory-v003".equals(predecessor.path("id").asText())
                     || !predecessor.path("outcomes_exposed").asBoolean(false)
                     || !sha256(v003Root.resolve("exploratory-policy.json")).equals(predecessor.path("policy_byte_sha256").asText())
@@ -201,6 +224,59 @@ public final class LiquidationHourlyDevelopmentReplayV1 {
                     || !sha256(v003Root.resolve("results.json")).equals(predecessor.path("compact_results_byte_sha256").asText())) {
                 throw failure("v004 predecessor binding does not match exposed v003 policy, freeze and compact results");
             }
+        }
+        if (v005) {
+            JsonNode audit = policy.path("entry_rule_audit");
+            JsonNode predecessor = policy.path("predecessor_experiment");
+            Path v004Root = repository.resolve("docs/research/liquidation-exploratory-v004");
+            if (!audit.isObject() || !audit.path("diagnostic_only").asBoolean(false)
+                    || !audit.path("rule_changes").asBoolean(false) || audit.path("outcome_optimization").asBoolean(true)
+                    || !"liquidation-exploratory-v004".equals(predecessor.path("id").asText())
+                    || !predecessor.path("outcomes_exposed").asBoolean(false)
+                    || !sha256(v004Root.resolve("exploratory-policy.json")).equals(predecessor.path("policy_byte_sha256").asText())
+                    || !sha256(v004Root.resolve("FREEZE-MANIFEST.json")).equals(predecessor.path("freeze_byte_sha256").asText())
+                    || !sha256(v004Root.resolve("results.json")).equals(predecessor.path("compact_results_byte_sha256").asText())) {
+                throw failure("v005 entry-rule audit or exposed v004 predecessor binding is invalid");
+            }
+            if (!policy.path("daily_context").path("warmup").asText().contains("Apr1,2022-Aug11,2022")) {
+                throw failure("v005 daily-context warmup interval differs from the frozen supplemental scope");
+            }
+            verifyV005RuleDefinitions(policy);
+        }
+    }
+
+    private static void verifyV005RuleDefinitions(ObjectNode policy) {
+        JsonNode definitions = policy.path("variant_definitions");
+        if (!definitions.isObject() || definitions.size() != V005_VARIANTS.size()) {
+            throw failure("v005 policy must define every fixed profile exactly once");
+        }
+        List<String> predecessors = Arrays.asList(null, "BASELINE_V004", "POST_SHOCK_ENTRY", "H4_STRUCTURAL_STOP",
+                "REFRESHED_STAGING", "REFRESHED_STAGING", "REFRESHED_STAGING");
+        List<String> stages = List.of("CORE_PREMISE", "ENTRY_TIMING", "RISK_LIFECYCLE", "RISK_LIFECYCLE",
+                "INDEPENDENT_CONTEXT", "INDEPENDENT_CONTEXT", "INDEPENDENT_CONTEXT");
+        for (int i = 0; i < V005_VARIANTS.size(); i++) {
+            String id = V005_VARIANTS.get(i);
+            JsonNode definition = definitions.path(id);
+            LiquidationStructureRouterV1.RuleConfig config = LiquidationStructureRouterV1.RuleConfig.forProfile(id);
+            if (!definition.isObject() || !stages.get(i).equals(definition.path("stage").asText())
+                    || (predecessors.get(i) == null ? !definition.path("predecessor_variant").isNull()
+                            : !predecessors.get(i).equals(definition.path("predecessor_variant").asText()))
+                    || definition.path("post_shock_entry").asBoolean(!config.initialEntryRule().equals(
+                            LiquidationStructureRouterV1.InitialEntryRule.POST_SHOCK_CONFIRMED_H4_SWING))
+                            != config.initialEntryRule().equals(LiquidationStructureRouterV1.InitialEntryRule.POST_SHOCK_CONFIRMED_H4_SWING)
+                    || definition.path("h4_initial_stop").asBoolean(false)
+                            != config.initialStopRule().equals(LiquidationStructureRouterV1.InitialStopRule.H4_THREE_BAR)
+                    || definition.path("refresh_invalidated_pivot").asBoolean(false)
+                            != config.pivotRefreshRule().equals(LiquidationStructureRouterV1.PivotRefreshRule.REFRESH_AFTER_STOP_INVALIDATION)
+                    || definition.path("daily_rsi_context").asBoolean(false) != config.dailyRsiAdditionGate()
+                    || definition.path("daily_sma200_context").asBoolean(false) != config.dailySma200AdditionGate()
+                    || !definition.path("sp500_addition_gate").asBoolean(false)) {
+                throw failure("v005 router implementation differs from frozen profile definition: " + id);
+            }
+        }
+        if (policy.path("daily_context").path("rsi").path("period_days").asInt(-1) != 14
+                || policy.path("daily_context").path("sma").path("period_days").asInt(-1) != 200) {
+            throw failure("v005 daily RSI/SMA implementation periods differ from the frozen contract");
         }
     }
 
@@ -240,6 +316,9 @@ public final class LiquidationHourlyDevelopmentReplayV1 {
     }
 
     private static ObjectNode replay(Input input, ObjectNode policy) {
+        if ("liquidation-exploratory-v005".equals(policy.path("id").asText()) && !input.dailyContextWarmupVerified) {
+            throw failure("v005 cannot simulate without its verified supplemental context bundle");
+        }
         if (!policyAssetOrder(policy).equals(input.assets)) {
             throw failure("policy asset order must exactly match the normalized input manifest asset order");
         }
@@ -270,8 +349,11 @@ public final class LiquidationHourlyDevelopmentReplayV1 {
         LiquidationStructureRouterV1.MacroGatePolicy macroPolicy = "STAGED_NO_MACRO".equals(variantId)
                 ? LiquidationStructureRouterV1.MacroGatePolicy.STRUCTURE_ONLY
                 : LiquidationStructureRouterV1.MacroGatePolicy.REQUIRE_MACRO_CONFIRMATION;
-        LiquidationStructureRouterV1.Router router = new LiquidationStructureRouterV1.Router(
-                LiquidationStructureRouterV1.Variant.ROUTED_REVERSAL_CONTINUATION, macroPolicy);
+        LiquidationStructureRouterV1.Router router = "liquidation-exploratory-v005".equals(policy.path("id").asText())
+                ? new LiquidationStructureRouterV1.Router(LiquidationStructureRouterV1.Variant.ROUTED_REVERSAL_CONTINUATION,
+                        macroPolicy, LiquidationStructureRouterV1.RuleConfig.forProfile(variantId), input.dailyPriceContexts)
+                : new LiquidationStructureRouterV1.Router(
+                        LiquidationStructureRouterV1.Variant.ROUTED_REVERSAL_CONTINUATION, macroPolicy);
         LiquidationPortfolioAccountingV1.AccountSession account = LiquidationPortfolioAccountingV1
                 .startHourlyDevelopmentSession(accountRequest(input, policy, costMultiplier));
         NavigableMap<Instant, List<LiquidationStructureRouterV1.Observation>> observations = observationsByTime(input.features);
@@ -586,7 +668,9 @@ public final class LiquidationHourlyDevelopmentReplayV1 {
                 .put("independent_episode_claim", false);
         ObjectNode variantRows = output.putObject("variants");
         ObjectNode auditByVariant = output.putObject("entry_rule_audit").put("schema", "liquidation-entry-rule-audit-set/1")
-                .put("diagnostic_only", true).put("rule_changes", false).putObject("variants");
+                .put("diagnostic_only", true)
+                .put("rule_changes", "liquidation-exploratory-v005".equals(policy.path("id").asText()))
+                .putObject("variants");
         Map<String, ObjectNode> accounts = new LinkedHashMap<>(), funnels = new LinkedHashMap<>();
         List<LiquidationHourlyDiagnosticsV1.Intent> diagnosticIntents = new ArrayList<>();
         List<LiquidationHourlyDiagnosticsV1.Position> diagnosticPositions = new ArrayList<>();
@@ -608,7 +692,8 @@ public final class LiquidationHourlyDevelopmentReplayV1 {
             }
             diagnosticPositions.addAll(diagnosticPositions(row, policy));
         }
-        Map<String, LiquidationStructureRouterV1.QualifiedDailyStressEvent> events = mergeEvents(variants);
+        Map<String, LiquidationStructureRouterV1.QualifiedDailyStressEvent> events = mergeEvents(variants,
+                "liquidation-exploratory-v005".equals(policy.path("id").asText()));
         ArrayNode inventory = output.putArray("qualified_event_inventory");
         events.values().stream().sorted(Comparator.comparing(LiquidationStructureRouterV1.QualifiedDailyStressEvent::availableAt)
                 .thenComparing(LiquidationStructureRouterV1.QualifiedDailyStressEvent::asset)
@@ -749,10 +834,35 @@ public final class LiquidationHourlyDevelopmentReplayV1 {
         return account;
     }
 
-    private static Map<String, LiquidationStructureRouterV1.QualifiedDailyStressEvent> mergeEvents(Map<String, VariantResult> variants) {
+    private static Map<String, LiquidationStructureRouterV1.QualifiedDailyStressEvent> mergeEvents(
+            Map<String, VariantResult> variants, boolean requireExactAcrossProfiles) {
         LinkedHashMap<String, LiquidationStructureRouterV1.QualifiedDailyStressEvent> merged = new LinkedHashMap<>();
+        if (requireExactAcrossProfiles && !variants.isEmpty()) {
+            List<Map<String, LiquidationStructureRouterV1.QualifiedDailyStressEvent>> inventories = variants.values().stream()
+                    .map(VariantResult::stressEvents).toList();
+            return verifyIdenticalEventInventories(inventories);
+        }
         for (VariantResult row : variants.values()) row.stressEvents.forEach(merged::putIfAbsent);
         return merged;
+    }
+
+    static Map<String, LiquidationStructureRouterV1.QualifiedDailyStressEvent> verifyIdenticalEventInventories(
+            List<Map<String, LiquidationStructureRouterV1.QualifiedDailyStressEvent>> inventories) {
+        if (inventories.isEmpty()) return Map.of();
+        Map<String, LiquidationStructureRouterV1.QualifiedDailyStressEvent> canonical = inventories.get(0);
+        for (int profile = 1; profile < inventories.size(); profile++) {
+            Map<String, LiquidationStructureRouterV1.QualifiedDailyStressEvent> candidate = inventories.get(profile);
+            if (candidate.size() != canonical.size() || !candidate.keySet().equals(canonical.keySet())) {
+                throw failure("v005 qualified event inventory differs across profiles");
+            }
+            for (Map.Entry<String, LiquidationStructureRouterV1.QualifiedDailyStressEvent> event : canonical.entrySet()) {
+                if (!event.getValue().equals(candidate.get(event.getKey()))) {
+                    throw failure("v005 qualified event geometry, direction, availability, or evidence differs across profiles: "
+                            + event.getKey());
+                }
+            }
+        }
+        return Map.copyOf(canonical);
     }
 
     private static ObjectNode eventJson(LiquidationStructureRouterV1.QualifiedDailyStressEvent event) {
@@ -786,6 +896,10 @@ public final class LiquidationHourlyDevelopmentReplayV1 {
                 || !"normalized".equals(manifest.path("root").asText())
                 || !manifest.path("files").isObject()) throw failure("input manifest schema or root is unsupported");
         List<String> inputAssets = manifestAssetOrder(manifest);
+        boolean v005ContextInput = manifest.has("daily_context_warmup");
+        if (v005ContextInput && !V004_ASSETS.equals(inputAssets)) {
+            throw failure("daily context warmup input is supported only for the exact frozen nine-asset scope");
+        }
         Path runRoot = manifestPath.toAbsolutePath().normalize().getParent();
         Path normalizedRoot = safeResolve(runRoot, manifest.path("root").asText());
         ObjectNode coverage = readObject(safeResolve(runRoot, "coverage.json"));
@@ -971,9 +1085,218 @@ public final class LiquidationHourlyDevelopmentReplayV1 {
         coverage.put("executor_oi_rows_examined", oiRowsExamined[0]).put("executor_oi_snapshots_selected", oiSnapshotsSelected[0])
                 .put("executor_sp500_rows", spRows).put("executor_feature_observation_count", features.size())
                 .put("source_vintages_point_in_time_verified", false);
+        List<LiquidationStructureRouterV1.DailyPriceContext> dailyPriceContexts = v005ContextInput
+                ? loadDailyContextWarmup(manifest, runRoot, inputAssets, features, fileHashes, coverage)
+                : List.of();
         return new Input(inputAssets, features, barsByAsset, barsByStart, barsByAssetStart, barsByAssetAndStart, pricesByAsset, coverage,
                 fileHashes, blockers, dailyRows, validDailyWindows, longStressFlags, shortStressFlags,
-                missingOiEndpoints, sha256(manifestPath), manifestPath.toAbsolutePath().normalize());
+                missingOiEndpoints, sha256(manifestPath), manifestPath.toAbsolutePath().normalize(), dailyPriceContexts,
+                v005ContextInput);
+    }
+
+    private static List<LiquidationStructureRouterV1.DailyPriceContext> loadDailyContextWarmup(ObjectNode inputManifest,
+            Path runRoot, List<String> inputAssets, List<LiquidationStructureRouterV1.Observation> retainedFeatures,
+            Map<String, String> fileHashes, ObjectNode coverage) {
+        return loadDailyContextWarmup(inputManifest, runRoot, inputAssets, retainedFeatures, fileHashes, coverage,
+                repositoryRoot().resolve(".research-run/liquidation-exploratory-v004"));
+    }
+
+    static List<LiquidationStructureRouterV1.DailyPriceContext> loadDailyContextWarmup(ObjectNode inputManifest,
+            Path runRoot, List<String> inputAssets, List<LiquidationStructureRouterV1.Observation> retainedFeatures,
+            Map<String, String> fileHashes, ObjectNode coverage, Path retainedV004Root) {
+        JsonNode binding = inputManifest.path("daily_context_warmup");
+        if (!"liquidation-context-warmup-input/1".equals(binding.path("schema").asText())) {
+            throw failure("v005 input manifest daily context warmup schema is unsupported");
+        }
+        String freezeRelative = text(binding, "freeze_path");
+        String manifestRelative = text(binding, "manifest_path");
+        validateWarmupBindingPaths(binding);
+        Path freezePath = safeResolve(runRoot, freezeRelative);
+        Path contextManifestPath = safeResolve(runRoot, manifestRelative);
+        String expectedFreezeSha = digest(binding, "freeze_byte_sha256");
+        String expectedManifestSha = digest(binding, "manifest_byte_sha256");
+        if (!expectedFreezeSha.equals(sha256(freezePath)) || !expectedManifestSha.equals(sha256(contextManifestPath))) {
+            throw failure("daily context warmup nested freeze or manifest differs from the outer input binding");
+        }
+        ObjectNode nestedFreeze = readObject(freezePath);
+        ObjectNode contextManifest = readObject(contextManifestPath);
+        if (!nestedFreeze.path("files").isObject()
+                || !JsonHashes.ownHash(nestedFreeze).equals(nestedFreeze.path("content_sha256").asText())) {
+            throw failure("daily context warmup nested freeze contents are invalid");
+        }
+        JsonNode frozenManifest = nestedFreeze.path("files").path("context-warmup-manifest.json");
+        if (!frozenManifest.isObject() || !expectedManifestSha.equals(frozenManifest.path("sha256").asText())) {
+            throw failure("daily context warmup nested freeze does not bind its exact manifest bytes");
+        }
+        Path contextRoot = freezePath.getParent();
+        nestedFreeze.path("files").fields().forEachRemaining(entry -> {
+            String relative = entry.getKey();
+            JsonNode receipt = entry.getValue();
+            long expectedBytes = receipt.path("bytes").asLong(-1);
+            String expectedSha = receipt.path("sha256").asText("");
+            if (!receipt.isObject() || expectedBytes < 0 || !expectedSha.matches("[0-9a-f]{64}")) {
+                throw failure("daily context warmup freeze has an invalid file receipt: " + relative);
+            }
+            Path file = safeResolve(contextRoot, relative);
+            if (Files.isSymbolicLink(file) || !Files.isRegularFile(file) || fileSize(file) != expectedBytes
+                    || !expectedSha.equals(sha256(file))) {
+                throw failure("daily context warmup source changed or disappeared after freeze: " + relative);
+            }
+            fileHashes.put("context-warmup/" + relative, expectedSha);
+        });
+        fileHashes.put(freezeRelative, expectedFreezeSha);
+        fileHashes.put(manifestRelative, expectedManifestSha);
+
+        validateDailyContextWarmupMetadata(contextManifest, nestedFreeze, inputAssets);
+        verifyRetainedV004Binding(contextManifest, inputManifest, runRoot, retainedV004Root);
+
+        JsonNode mappedFiles = contextManifest.path("files");
+        if (!mappedFiles.isObject() || mappedFiles.size() != V004_ASSETS.size()) {
+            throw failure("daily context warmup must map exactly one normalized H1 file for each frozen asset");
+        }
+        ArrayList<LiquidationStructureRouterV1.Bar> supplementalBars = new ArrayList<>();
+        ObjectNode perAssetCoverage = JsonHashes.mapper().createObjectNode();
+        Instant startBound = Instant.parse("2022-04-01T00:00:00Z");
+        Instant endBound = Instant.parse("2022-08-11T00:00:00Z");
+        int totalRows = 0, totalMissingRows = 0, totalMissingIntervals = 0, totalInternalGapCount = 0;
+        int expectedWarmupRows = (int) Duration.between(startBound, endBound).toHours();
+        for (String asset : inputAssets) {
+            String relative = text(mappedFiles, asset);
+            if (!relative.startsWith("normalized/") || !relative.equals("normalized/klines_1h_" + asset + ".csv")) {
+                throw failure("daily context warmup normalized path is outside its fixed per-asset mapping: " + asset);
+            }
+            if (!nestedFreeze.path("files").path(relative).isObject()) {
+                throw failure("daily context warmup normalized CSV lacks an explicit nested freeze receipt: " + asset);
+            }
+            Path path = safeResolve(contextRoot, relative);
+            CsvHeader header = csvHeader(path, Set.of("open_time", "symbol", "open", "high", "low", "close", "base_volume"));
+            ArrayList<Instant> starts = new ArrayList<>();
+            readCsv(path, header, fields -> {
+                Instant start = Instant.parse(fields[header.index("open_time")]);
+                if (!start.isBefore(endBound) || start.isBefore(startBound)
+                        || start.toEpochMilli() % HOUR_MS != 0
+                        || !(asset + "USDT").equals(fields[header.index("symbol")])) {
+                    throw failure("daily context warmup bar is outside the hourly source bounds or has a wrong symbol: " + asset);
+                }
+                HourBar bar = new HourBar(asset, start, finitePositive(fields[header.index("open")], "open"),
+                        finitePositive(fields[header.index("high")], "high"), finitePositive(fields[header.index("low")], "low"),
+                        finitePositive(fields[header.index("close")], "close"), finiteNonnegative(fields[header.index("base_volume")], "base_volume"));
+                if (bar.high < Math.max(bar.open, bar.close) || bar.low > Math.min(bar.open, bar.close) || bar.low > bar.high
+                        || (!starts.isEmpty() && !start.isAfter(starts.get(starts.size() - 1)))) {
+                    throw failure("daily context warmup bars are invalid, duplicated, or unsorted for " + asset);
+                }
+                starts.add(start);
+                supplementalBars.add(new LiquidationStructureRouterV1.Bar(asset, LiquidationStructureRouterV1.Timeframe.ONE_HOUR,
+                        start, start.plusMillis(HOUR_MS), bar.open, bar.high, bar.low, bar.close,
+                        "binance-usdm-h1-context-warmup-" + asset));
+            });
+            long internalGaps = 0;
+            for (int i = 1; i < starts.size(); i++) if (!starts.get(i).equals(starts.get(i - 1).plusMillis(HOUR_MS))) internalGaps++;
+            int missingRows = expectedWarmupRows - starts.size();
+            int missingIntervals = 0, cursor = 0;
+            boolean insideMissingInterval = false;
+            for (Instant expected = startBound; expected.isBefore(endBound); expected = expected.plusMillis(HOUR_MS)) {
+                boolean observed = cursor < starts.size() && starts.get(cursor).equals(expected);
+                if (observed) {
+                    cursor++;
+                    insideMissingInterval = false;
+                } else {
+                    if (!insideMissingInterval) missingIntervals++;
+                    insideMissingInterval = true;
+                }
+            }
+            totalRows += starts.size(); totalMissingRows += missingRows;
+            totalMissingIntervals += missingIntervals; totalInternalGapCount += internalGaps;
+            ObjectNode assetCoverage = perAssetCoverage.putObject(asset).put("expected_hourly_rows", expectedWarmupRows)
+                    .put("hourly_rows", starts.size()).put("missing_hourly_rows", missingRows)
+                    .put("missing_hourly_intervals", missingIntervals).put("internal_hourly_gaps", internalGaps);
+            if (starts.isEmpty()) assetCoverage.putNull("first_open").putNull("last_open");
+            else assetCoverage.put("first_open", starts.get(0).toString()).put("last_open", starts.get(starts.size() - 1).toString());
+        }
+        ArrayList<LiquidationStructureRouterV1.Bar> retainedBars = new ArrayList<>();
+        for (LiquidationStructureRouterV1.Observation observation : retainedFeatures) {
+            if (observation instanceof LiquidationStructureRouterV1.Bar bar
+                    && bar.timeframe() == LiquidationStructureRouterV1.Timeframe.ONE_HOUR) retainedBars.add(bar);
+        }
+        List<LiquidationStructureRouterV1.DailyPriceContext> rows = LiquidationDailyPriceContextV1.build(retainedBars, supplementalBars);
+        int rsiRows = 0, smaRows = 0;
+        for (LiquidationStructureRouterV1.DailyPriceContext row : rows) {
+            if (row.rsi14() != null) rsiRows++;
+            if (row.sma200() != null) smaRows++;
+        }
+        ObjectNode contextCoverage = coverage.putObject("daily_price_context").put("schema", "liquidation-daily-price-context-coverage/1")
+                .put("source", "BINANCE_USDT_PERPETUAL_H1;SUPPLEMENTAL_WARMUP_USED_ONLY_BY_CONTEXT_CALCULATOR")
+                .put("supplemental_expected_hourly_rows", expectedWarmupRows * inputAssets.size())
+                .put("supplemental_hourly_rows", totalRows).put("supplemental_missing_hourly_rows", totalMissingRows)
+                .put("supplemental_missing_hourly_intervals", totalMissingIntervals)
+                .put("supplemental_internal_hourly_gaps", totalInternalGapCount)
+                .put("supplemental_start_inclusive", startBound.toString()).put("supplemental_end_exclusive", endBound.toString())
+                .put("complete_daily_context_rows", rows.size()).put("rsi14_available_rows", rsiRows)
+                .put("sma200_available_rows", smaRows).put("historical_outcomes_computed", false);
+        contextCoverage.set("by_asset", perAssetCoverage);
+        return rows;
+    }
+
+    static void validateWarmupBindingPaths(JsonNode binding) {
+        if (!"liquidation-context-warmup-input/1".equals(binding.path("schema").asText())
+                || !"context-warmup/data-freeze.json".equals(binding.path("freeze_path").asText())
+                || !"context-warmup/context-warmup-manifest.json".equals(binding.path("manifest_path").asText())
+                || !binding.path("freeze_byte_sha256").asText().matches("[0-9a-f]{64}")
+                || !binding.path("manifest_byte_sha256").asText().matches("[0-9a-f]{64}")) {
+            throw failure("daily context warmup binding schema, exact paths, or byte digests are invalid");
+        }
+    }
+
+    static void validateDailyContextWarmupMetadata(ObjectNode contextManifest, ObjectNode nestedFreeze,
+            List<String> inputAssets) {
+        if (!"liquidation-context-warmup-freeze/1".equals(nestedFreeze.path("schema").asText())
+                || !"liquidation-context-warmup/1".equals(contextManifest.path("schema").asText())
+                || !nestedFreeze.path("files").isObject()
+                || !V004_ASSETS.equals(inputAssets)
+                || !V004_ASSETS.equals(orderedTextArray(contextManifest.path("assets")))
+                || !V004_ASSETS.equals(orderedTextArray(nestedFreeze.path("assets")))
+                || !"2022-04-01".equals(contextManifest.path("warmup_window").path("start_inclusive").asText())
+                || !"2022-08-11".equals(contextManifest.path("warmup_window").path("end_exclusive").asText())
+                || !"2022-08-11".equals(contextManifest.path("retained_hourly_window").path("start_inclusive").asText())
+                || !"2026-09-20".equals(contextManifest.path("retained_hourly_window").path("end_exclusive").asText())
+                || contextManifest.path("outcome_calculation_performed").asBoolean(true)
+                || !"2022-11-11".equals(contextManifest.path("decision_window").path("start_inclusive").asText())
+                || !"2026-07-15".equals(contextManifest.path("decision_window").path("end_exclusive").asText())) {
+            throw failure("daily context warmup asset scope, date windows, or no-outcomes receipt differs from the frozen contract");
+        }
+    }
+
+    private static void verifyRetainedV004Binding(ObjectNode contextManifest, ObjectNode inputManifest, Path runRoot,
+            Path v004Root) {
+        String retainedArchiveManifestSha = contextManifest.path("retained_v004").path("archive_manifest_sha256").asText("");
+        if (!retainedArchiveManifestSha.matches("[0-9a-f]{64}")
+                || !retainedArchiveManifestSha.equals(sha256(v004Root.resolve("archive-manifest.json")))) {
+            throw failure("daily context warmup is detached from the retained v004 archive manifest");
+        }
+        JsonNode retained = contextManifest.path("retained_v004");
+        Path retainedFreezePath = v004Root.resolve("data-freeze.json");
+        ObjectNode retainedFreeze = readObject(retainedFreezePath);
+        if (!retained.path("data_freeze_sha256").asText().equals(sha256(retainedFreezePath))
+                || !retained.path("data_freeze_content_sha256").asText().equals(retainedFreeze.path("content_sha256").asText())
+                || !JsonHashes.ownHash(retainedFreeze).equals(retainedFreeze.path("content_sha256").asText())
+                || !retained.path("input_manifest_sha256").asText().equals(sha256(v004Root.resolve("input-manifest.json")))
+                || !"2022-08-11".equals(retained.path("window_start").asText())
+                || !"2026-09-20".equals(retained.path("window_end_exclusive").asText())
+                || !V004_ASSETS.equals(orderedTextArray(retained.path("assets")))) {
+            throw failure("daily context warmup is detached from retained v004 input or freeze identity");
+        }
+        Path currentNormalizedRoot = safeResolve(runRoot, inputManifest.path("root").asText());
+        JsonNode assets = contextManifest.path("retained_v004").path("august_archives");
+        for (String asset : V004_ASSETS) {
+            JsonNode receipt = assets.path(asset);
+            String retainedSha = receipt.path("normalized_v004_sha256").asText("");
+            String path = receipt.path("normalized_v004_path").asText("");
+            if (!retainedSha.matches("[0-9a-f]{64}") || !path.equals("normalized/klines_1h_" + asset + ".csv")
+                    || !retainedSha.equals(sha256(v004Root.resolve(path)))
+                    || !retainedSha.equals(sha256(currentNormalizedRoot.resolve("klines_1h_" + asset + ".csv")))) {
+                throw failure("daily context warmup retained H1 identity differs from immutable v004 input for " + asset);
+            }
+        }
     }
 
     static List<HourBar> aggregateFourHour(String asset, List<HourBar> oneHour) {
@@ -1013,6 +1336,18 @@ public final class LiquidationHourlyDevelopmentReplayV1 {
         JsonNode value = manifest.path("files").path(key).path(asset);
         if (!value.isTextual() || value.asText().isBlank()) throw failure("input manifest is missing files." + key + "." + asset);
         return safeResolve(normalizedRoot, value.asText());
+    }
+
+    private static String text(JsonNode object, String field) {
+        JsonNode value = object.path(field);
+        if (!value.isTextual() || value.asText().isBlank()) throw failure("required nonblank text field is missing: " + field);
+        return value.asText();
+    }
+
+    private static String digest(JsonNode object, String field) {
+        String value = text(object, field);
+        if (!value.matches("[0-9a-f]{64}")) throw failure("required SHA-256 field is invalid: " + field);
+        return value;
     }
 
     private static Path safeResolve(Path root, String relative) {
@@ -1079,6 +1414,16 @@ public final class LiquidationHourlyDevelopmentReplayV1 {
             if (!(value instanceof ObjectNode object)) throw failure("expected JSON object: " + path);
             return object;
         } catch (IOException error) { throw failure("cannot read JSON " + path + ": " + error.getMessage()); }
+    }
+
+    private static Path repositoryRoot() {
+        for (Path path = Path.of("").toAbsolutePath().normalize(); path != null; path = path.getParent()) {
+            if (Files.isRegularFile(path.resolve("pom.xml"))
+                    && Files.isRegularFile(path.resolve("docs/research/liquidation-exploratory-v005/exploratory-policy.json"))) {
+                return path;
+            }
+        }
+        throw failure("repository root with the frozen v005 policy cannot be located");
     }
 
     private static String sha256(Path file) {
@@ -1243,7 +1588,7 @@ public final class LiquidationHourlyDevelopmentReplayV1 {
         }
         List<String> result = List.copyOf(assets);
         if (!result.equals(LEGACY_ASSETS) && !result.equals(V004_ASSETS)) {
-            throw failure("input manifest assets must equal the exact frozen legacy-four or v004 nine-asset order");
+            throw failure("input manifest assets must equal the exact frozen legacy-four or nine-asset order");
         }
         return result;
     }
@@ -1271,6 +1616,8 @@ public final class LiquidationHourlyDevelopmentReplayV1 {
         final int dailyRows, validDailyWindows, longStressFlags, shortStressFlags, missingOiEndpoints;
         final String manifestByteSha256;
         final Path manifestPath;
+        final List<LiquidationStructureRouterV1.DailyPriceContext> dailyPriceContexts;
+        final boolean dailyContextWarmupVerified;
         Input(List<LiquidationStructureRouterV1.Observation> features, Map<String, List<HourBar>> barsByAsset,
                 NavigableMap<Instant, List<HourBar>> barsByStart, Map<String, HourBar> barsByAssetStart,
                 Map<String, HourBar> barsByAssetAndStart, Map<String, NavigableMap<Instant, Double>> pricesByAssetCloseTime,
@@ -1279,7 +1626,7 @@ public final class LiquidationHourlyDevelopmentReplayV1 {
                 String manifestByteSha256, Path manifestPath) {
             this(LEGACY_ASSETS, features, barsByAsset, barsByStart, barsByAssetStart, barsByAssetAndStart,
                     pricesByAssetCloseTime, coverage, fileHashes, preflightBlockers, dailyRows, validDailyWindows,
-                    longStressFlags, shortStressFlags, missingOiEndpoints, manifestByteSha256, manifestPath);
+                    longStressFlags, shortStressFlags, missingOiEndpoints, manifestByteSha256, manifestPath, List.of());
         }
         Input(List<String> assets, List<LiquidationStructureRouterV1.Observation> features, Map<String, List<HourBar>> barsByAsset,
                 NavigableMap<Instant, List<HourBar>> barsByStart, Map<String, HourBar> barsByAssetStart,
@@ -1287,14 +1634,39 @@ public final class LiquidationHourlyDevelopmentReplayV1 {
                 ObjectNode coverage, Map<String, String> fileHashes, List<String> preflightBlockers,
                 int dailyRows, int validDailyWindows, int longStressFlags, int shortStressFlags, int missingOiEndpoints,
                 String manifestByteSha256, Path manifestPath) {
+            this(assets, features, barsByAsset, barsByStart, barsByAssetStart, barsByAssetAndStart,
+                    pricesByAssetCloseTime, coverage, fileHashes, preflightBlockers, dailyRows, validDailyWindows,
+                    longStressFlags, shortStressFlags, missingOiEndpoints, manifestByteSha256, manifestPath, List.of(), false);
+        }
+        Input(List<String> assets, List<LiquidationStructureRouterV1.Observation> features, Map<String, List<HourBar>> barsByAsset,
+                NavigableMap<Instant, List<HourBar>> barsByStart, Map<String, HourBar> barsByAssetStart,
+                Map<String, HourBar> barsByAssetAndStart, Map<String, NavigableMap<Instant, Double>> pricesByAssetCloseTime,
+                ObjectNode coverage, Map<String, String> fileHashes, List<String> preflightBlockers,
+                int dailyRows, int validDailyWindows, int longStressFlags, int shortStressFlags, int missingOiEndpoints,
+                String manifestByteSha256, Path manifestPath,
+                List<LiquidationStructureRouterV1.DailyPriceContext> dailyPriceContexts) {
+            this(assets, features, barsByAsset, barsByStart, barsByAssetStart, barsByAssetAndStart,
+                    pricesByAssetCloseTime, coverage, fileHashes, preflightBlockers, dailyRows, validDailyWindows,
+                    longStressFlags, shortStressFlags, missingOiEndpoints, manifestByteSha256, manifestPath,
+                    dailyPriceContexts, false);
+        }
+        Input(List<String> assets, List<LiquidationStructureRouterV1.Observation> features, Map<String, List<HourBar>> barsByAsset,
+                NavigableMap<Instant, List<HourBar>> barsByStart, Map<String, HourBar> barsByAssetStart,
+                Map<String, HourBar> barsByAssetAndStart, Map<String, NavigableMap<Instant, Double>> pricesByAssetCloseTime,
+                ObjectNode coverage, Map<String, String> fileHashes, List<String> preflightBlockers,
+                int dailyRows, int validDailyWindows, int longStressFlags, int shortStressFlags, int missingOiEndpoints,
+                String manifestByteSha256, Path manifestPath,
+                List<LiquidationStructureRouterV1.DailyPriceContext> dailyPriceContexts, boolean dailyContextWarmupVerified) {
             this.assets = List.copyOf(assets); this.features = List.copyOf(features); this.barsByAsset = Map.copyOf(barsByAsset);
             this.barsByStart = java.util.Collections.unmodifiableNavigableMap(barsByStart);
             this.barsByAssetStart = Map.copyOf(barsByAssetStart); this.barsByAssetAndStart = Map.copyOf(barsByAssetAndStart);
             this.pricesByAssetCloseTime = Map.copyOf(pricesByAssetCloseTime); this.coverage = coverage;
+            this.dailyPriceContexts = List.copyOf(dailyPriceContexts);
             this.fileHashes = Map.copyOf(fileHashes); this.preflightBlockers = List.copyOf(preflightBlockers);
             this.dailyRows = dailyRows; this.validDailyWindows = validDailyWindows;
             this.longStressFlags = longStressFlags; this.shortStressFlags = shortStressFlags;
             this.missingOiEndpoints = missingOiEndpoints; this.manifestByteSha256 = manifestByteSha256; this.manifestPath = manifestPath;
+            this.dailyContextWarmupVerified = dailyContextWarmupVerified;
         }
     }
 

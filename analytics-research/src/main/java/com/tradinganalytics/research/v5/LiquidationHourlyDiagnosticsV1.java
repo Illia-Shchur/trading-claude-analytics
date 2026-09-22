@@ -27,10 +27,12 @@ import java.util.SplittableRandom;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-/** Outcome-independent dependence, price-response, and low-count diagnostics for exploratory v003/v004. */
+/** Outcome-independent dependence, price-response, and low-count diagnostics for exploratory v003/v005. */
 public final class LiquidationHourlyDiagnosticsV1 {
     public static final String SCHEMA = "liquidation-hourly-diagnostics/1";
-    private static final List<String> VARIANTS = List.of("CORE_ONE_ENTRY", "STAGED_NO_MACRO", "STAGED_MACRO");
+    private static final List<String> LEGACY_VARIANTS = List.of("CORE_ONE_ENTRY", "STAGED_NO_MACRO", "STAGED_MACRO");
+    private static final List<String> V005_VARIANTS = List.of("BASELINE_V004", "POST_SHOCK_ENTRY", "H4_STRUCTURAL_STOP",
+            "REFRESHED_STAGING", "DAILY_RSI_CONTEXT", "DAILY_MA_CONTEXT", "DAILY_BOTH_CONTEXT");
     private static final List<String> V004_ASSETS = List.of("BTC", "ETH", "SOL", "AAVE", "UNI", "BNB", "LINK", "ZEC", "TRX");
     private static final List<Integer> HORIZONS_DAYS = List.of(1, 3, 7);
     private static final int BOOTSTRAP_DRAWS = 10_000;
@@ -114,18 +116,19 @@ public final class LiquidationHourlyDiagnosticsV1 {
         Objects.requireNonNull(accounts, "accounts");
         Objects.requireNonNull(funnelByVariant, "funnelByVariant");
         Objects.requireNonNull(coverage, "coverage");
-        validatePolicy(policy);
+        List<String> variants = validatePolicy(policy);
+        validateVariantMaps(policy, variants, accounts, funnelByVariant);
 
         Map<String, NavigableMap<Instant, Double>> prices = canonicalPrices(pricesByAssetCloseTime);
         ClusterResult clusterResult = clusterEvents(events);
-        Map<String, Intent> firstIntents = firstIntents(intents, events);
-        ArrayNode response = responseDiagnostics(policy, prices, events, firstIntents, clusterResult);
+        Map<String, Intent> firstIntents = firstIntents(intents, events, variants);
+        ArrayNode response = responseDiagnostics(policy, prices, events, firstIntents, clusterResult, variants);
         OverlapResult overlaps = positionOverlap(positions, firstIntents, clusterResult,
-                analysisEnd(policy, prices, coverage));
-        ObjectNode completed = completedPositionMetrics(positions, firstIntents);
-        DailySeries daily = dailyPortfolioReturns(policy, accounts, positions);
-        ObjectNode blockSensitivity = calendarBlockSensitivity(policy, positions, daily);
-        ObjectNode correlations = laggedDailyCorrelations(daily);
+                analysisEnd(policy, prices, coverage), variants);
+        ObjectNode completed = completedPositionMetrics(positions, firstIntents, variants);
+        DailySeries daily = dailyPortfolioReturns(policy, accounts, positions, variants);
+        ObjectNode blockSensitivity = calendarBlockSensitivity(policy, positions, daily, variants);
+        ObjectNode correlations = laggedDailyCorrelations(daily, variants);
 
         ObjectNode output = JsonHashes.mapper().createObjectNode().put("schema", SCHEMA)
                 .put("status", "DEVELOPMENT_ONLY")
@@ -137,13 +140,14 @@ public final class LiquidationHourlyDiagnosticsV1 {
         output.put("unclustered_geometry_event_count", clusterResult.unclusteredCount);
         output.put("cluster_count_status", countStatus(clusterResult.clusters.size()));
         output.put("cluster_count_warning_nonblocking", clusterResult.clusters.size() < REFERENCE_GROUP_COUNT);
+        ArrayNode inventory = output.putArray("variant_inventory"); variants.forEach(inventory::add);
         output.set("response_diagnostics", response);
         output.set("position_overlap_components", overlaps.toJson());
         output.set("calendar_block_sensitivity", blockSensitivity);
         output.set("per_completed_position_metrics", completed);
         output.set("lagged_daily_portfolio_return_correlations", correlations);
         ObjectNode funnelCopy = JsonHashes.mapper().createObjectNode();
-        for (String variant : VARIANTS) {
+        for (String variant : variants) {
             JsonNode row = funnelByVariant.get(variant);
             if (row != null) funnelCopy.set(variant, row.deepCopy());
         }
@@ -152,20 +156,22 @@ public final class LiquidationHourlyDiagnosticsV1 {
         return output;
     }
 
-    private static void validatePolicy(ObjectNode policy) {
+    private static List<String> validatePolicy(ObjectNode policy) {
         String policyId = policy.path("id").asText();
         boolean legacyV003 = "liquidation-exploratory-v003".equals(policyId);
         boolean expandedV004 = "liquidation-exploratory-v004".equals(policyId);
+        boolean expandedV005 = "liquidation-exploratory-v005".equals(policyId);
         if (!"liquidation-exploratory-policy/1".equals(policy.path("schema").asText())
-                || (!legacyV003 && !expandedV004)
+                || (!legacyV003 && !expandedV004 && !expandedV005)
                 || !"DEVELOPMENT".equals(policy.path("evidence_phase").asText())
                 || policy.path("promotion_allowed").asBoolean(true)) {
-            throw fail("diagnostics require a supported v003/v004 DEVELOPMENT policy");
+            throw fail("diagnostics require a supported v003/v004/v005 DEVELOPMENT policy");
         }
         ArrayNode variants = array(policy, "variants");
-        if (variants.size() != VARIANTS.size()) throw fail("exploratory policy must retain its three frozen variants");
-        for (int i = 0; i < VARIANTS.size(); i++) {
-            if (!VARIANTS.get(i).equals(variants.path(i).asText())) throw fail("exploratory policy variant order differs from its frozen inventory");
+        List<String> inventory = expandedV005 ? V005_VARIANTS : LEGACY_VARIANTS;
+        if (variants.size() != inventory.size()) throw fail("exploratory policy variant count differs from its frozen inventory");
+        for (int i = 0; i < inventory.size(); i++) {
+            if (!inventory.get(i).equals(variants.path(i).asText())) throw fail("exploratory policy variant order differs from its frozen inventory");
         }
         JsonNode stats = policy.path("statistics");
         if (stats.path("bootstrap_draws").asInt(-1) != BOOTSTRAP_DRAWS
@@ -180,20 +186,34 @@ public final class LiquidationHourlyDiagnosticsV1 {
         for (int i = 0; i < HORIZONS_DAYS.size(); i++) {
             if (horizons.path(i).asInt(-1) != HORIZONS_DAYS.get(i)) throw fail("exploratory policy response horizon differs from the frozen value");
         }
-        if (expandedV004) {
+        if (expandedV004 || expandedV005) {
             ArrayNode assets = array(policy, "assets");
-            if (assets.size() != V004_ASSETS.size()) throw fail("v004 diagnostics require the exact frozen nine-asset scope");
+            if (assets.size() != V004_ASSETS.size()) throw fail("expanded diagnostics require the exact frozen nine-asset scope");
             for (int i = 0; i < V004_ASSETS.size(); i++) {
                 if (!V004_ASSETS.get(i).equals(assets.path(i).asText())) {
-                    throw fail("v004 diagnostics asset order differs from the frozen nine-asset inventory");
+                    throw fail("expanded diagnostics asset order differs from the frozen nine-asset inventory");
                 }
             }
             JsonNode audit = policy.path("entry_rule_audit");
             if (!audit.isObject() || !audit.path("diagnostic_only").isBoolean() || !audit.path("diagnostic_only").asBoolean()
-                    || !audit.path("rule_changes").isBoolean() || audit.path("rule_changes").asBoolean()
+                    || !audit.path("rule_changes").isBoolean()
+                    || (expandedV005 ? !audit.path("rule_changes").asBoolean() : audit.path("rule_changes").asBoolean())
                     || !audit.path("outcome_optimization").isBoolean() || audit.path("outcome_optimization").asBoolean()) {
-                throw fail("v004 entry-rule audit must be diagnostic-only and cannot change or optimize the frozen rules");
+                throw fail("expanded entry-rule audit does not match its frozen diagnostic-only and optimization policy");
             }
+        }
+        return List.copyOf(inventory);
+    }
+
+    private static void validateVariantMaps(ObjectNode policy, List<String> variants,
+            Map<String, ObjectNode> accounts, Map<String, ObjectNode> funnels) {
+        if (!"liquidation-exploratory-v005".equals(policy.path("id").asText())) return;
+        Set<String> expected = Set.copyOf(variants);
+        if (!accounts.keySet().equals(expected) || !funnels.keySet().equals(expected)) {
+            throw fail("v005 diagnostics require exact account and funnel keys for all seven frozen profiles");
+        }
+        if (accounts.values().stream().anyMatch(Objects::isNull) || funnels.values().stream().anyMatch(Objects::isNull)) {
+            throw fail("v005 diagnostics cannot treat a null account or funnel as a flat profile");
         }
     }
 
@@ -259,7 +279,7 @@ public final class LiquidationHourlyDiagnosticsV1 {
         return new ClusterResult(List.copyOf(clusters), Map.copyOf(byEventId), rows, unclustered);
     }
 
-    private static Map<String, Intent> firstIntents(List<Intent> intents, List<Event> events) {
+    private static Map<String, Intent> firstIntents(List<Intent> intents, List<Event> events, List<String> variants) {
         HashMap<String, Event> eventById = new HashMap<>();
         for (Event event : events) eventById.put(event.id(), event);
         LinkedHashMap<String, Intent> result = new LinkedHashMap<>();
@@ -267,7 +287,7 @@ public final class LiquidationHourlyDiagnosticsV1 {
         sorted.sort(Comparator.comparing(Intent::decisionTime).thenComparing(Intent::variant)
                 .thenComparing(Intent::asset).thenComparing(Intent::setupId));
         for (Intent intent : sorted) {
-            if (!VARIANTS.contains(intent.variant())) throw fail("intent has a variant outside the frozen v003 inventory");
+            if (!variants.contains(intent.variant())) throw fail("intent has a variant outside the frozen inventory");
             Event event = eventById.get(intent.id());
             if (event == null || !event.asset().equals(intent.asset())) continue;
             if (!intent.setupId().equals(intent.id())) throw fail("v003 intent setup id must equal its qualified event id");
@@ -279,10 +299,10 @@ public final class LiquidationHourlyDiagnosticsV1 {
 
     private static ArrayNode responseDiagnostics(ObjectNode policy,
             Map<String, NavigableMap<Instant, Double>> prices, List<Event> events,
-            Map<String, Intent> firstIntents, ClusterResult clusters) {
+            Map<String, Intent> firstIntents, ClusterResult clusters, List<String> variants) {
         TreeMap<ResponseKey, ArrayList<ResponseObservation>> grouped = new TreeMap<>();
         HashMap<PathKey, PathResult> pathCache = new HashMap<>();
-        for (String variant : VARIANTS) {
+        for (String variant : variants) {
             for (int horizon : HORIZONS_DAYS) {
                 grouped.put(new ResponseKey("FIRST_OBSERVABLE_EVENT_AVAILABILITY", variant, "SIGNED_SHOCK", horizon), new ArrayList<>());
                 grouped.put(new ResponseKey("FIRST_OBSERVABLE_EVENT_AVAILABILITY", variant, "OPPOSITE_SHOCK", horizon), new ArrayList<>());
@@ -293,7 +313,7 @@ public final class LiquidationHourlyDiagnosticsV1 {
         }
         for (Event event : events.stream().sorted(Comparator.comparing(Event::availableAt).thenComparing(Event::asset).thenComparing(Event::id)).toList()) {
             Cluster cluster = clusters.byEventId.get(event.id());
-            for (String variant : VARIANTS) {
+            for (String variant : variants) {
                 Intent intent = firstIntents.get(intentKey(variant, event.id()));
                 addResponseRows(grouped, pathCache, prices, event, variant, "FIRST_OBSERVABLE_EVENT_AVAILABILITY",
                         event.availableAt(), "UNKNOWN_AT_EVENT_AVAILABILITY", cluster, null, false);
@@ -457,12 +477,12 @@ public final class LiquidationHourlyDiagnosticsV1 {
     }
 
     private static OverlapResult positionOverlap(List<Position> positions, Map<String, Intent> firstIntents,
-            ClusterResult clusters, Instant analysisEnd) {
+            ClusterResult clusters, Instant analysisEnd, List<String> variants) {
         ArrayList<PositionNode> nodes = new ArrayList<>();
         int noFill = 0;
         HashSet<String> seen = new HashSet<>();
         for (Position position : positions) {
-            if (!VARIANTS.contains(position.variant())) throw fail("position has a variant outside the frozen v003 inventory");
+            if (!variants.contains(position.variant())) throw fail("position has a variant outside the frozen inventory");
             String key = position.variant() + "\n" + position.asset() + "\n" + position.setupId();
             if (!seen.add(key)) throw fail("position setup is duplicated within a variant: " + position.setupId());
             if (position.firstFill() == null) { noFill++; continue; }
@@ -535,17 +555,22 @@ public final class LiquidationHourlyDiagnosticsV1 {
         return new OverlapResult(summary);
     }
 
-    private static ObjectNode completedPositionMetrics(List<Position> positions, Map<String, Intent> firstIntents) {
-        TreeMap<String, ArrayList<Position>> variants = new TreeMap<>();
-        for (String variant : VARIANTS) variants.put(variant, new ArrayList<>());
-        for (Position position : positions) if (position.closed()) variants.get(position.variant()).add(position);
+    private static ObjectNode completedPositionMetrics(List<Position> positions, Map<String, Intent> firstIntents,
+            List<String> profileIds) {
+        TreeMap<String, ArrayList<Position>> positionsByVariant = new TreeMap<>();
+        for (String variant : profileIds) positionsByVariant.put(variant, new ArrayList<>());
+        for (Position position : positions) if (position.closed()) {
+            ArrayList<Position> matching = positionsByVariant.get(position.variant());
+            if (matching == null) throw fail("position has a variant outside the frozen inventory");
+            matching.add(position);
+        }
         ObjectNode out = JsonHashes.mapper().createObjectNode().put("schema", "liquidation-completed-position-metrics/1")
                 .put("weighting", "EQUAL_COMPLETED_POSITION;SEPARATE_FROM_EQUAL_CLUSTER_RESPONSE_MEAN")
                 .put("expectancy_claim", "MEAN_NET_PNL_PER_COMPLETED_POSITION")
                 .put("independence_claim", false);
         ObjectNode byVariant = out.putObject("by_variant");
-        for (String variant : VARIANTS) {
-            List<Position> rows = variants.get(variant);
+        for (String variant : profileIds) {
+            List<Position> rows = positionsByVariant.get(variant);
             TreeMap<String, ArrayList<Position>> byAsset = new TreeMap<>();
             TreeMap<String, ArrayList<Position>> byBranch = new TreeMap<>();
             for (Position position : rows) {
@@ -582,7 +607,7 @@ public final class LiquidationHourlyDiagnosticsV1 {
     }
 
     private static DailySeries dailyPortfolioReturns(ObjectNode policy, Map<String, ObjectNode> accounts,
-            List<Position> positions) {
+            List<Position> positions, List<String> variants) {
         LocalDate start = LocalDate.parse(policy.path("source_start").asText().substring(0, 10));
         LocalDate endExclusive = LocalDate.parse(policy.path("source_end_exclusive").asText().substring(0, 10));
         TreeMap<String, TreeMap<LocalDate, Double>> returnsByVariant = new TreeMap<>();
@@ -590,7 +615,7 @@ public final class LiquidationHourlyDiagnosticsV1 {
         TreeMap<String, Set<LocalDate>> nonpositiveDatesByVariant = new TreeMap<>();
         TreeMap<String, TreeMap<LocalDate, Double>> closeByVariant = new TreeMap<>();
         double initialEquity = policy.path("account").path("initial_equity").asDouble(20_000.0);
-        for (String variant : VARIANTS) {
+        for (String variant : variants) {
             ObjectNode account = accounts.get(variant);
             TreeMap<LocalDate, Double> observed = new TreeMap<>();
             if (account != null && account.path("marked_equity_curve").isArray()) {
@@ -667,7 +692,8 @@ public final class LiquidationHourlyDiagnosticsV1 {
         return false;
     }
 
-    private static ObjectNode calendarBlockSensitivity(ObjectNode policy, List<Position> positions, DailySeries daily) {
+    private static ObjectNode calendarBlockSensitivity(ObjectNode policy, List<Position> positions, DailySeries daily,
+            List<String> variants) {
         ArrayList<CalendarBlock> blocks = new ArrayList<>();
         CalendarBlock partialTail = null;
         for (LocalDate start = daily.start; start.isBefore(daily.endExclusive); start = start.plusDays(CALENDAR_BLOCK_DAYS)) {
@@ -682,7 +708,7 @@ public final class LiquidationHourlyDiagnosticsV1 {
         TreeMap<String, TreeMap<String, String>> variantStates = new TreeMap<>();
         TreeMap<String, Integer> internalZeroDays = new TreeMap<>();
         TreeMap<String, Integer> invalidBlocks = new TreeMap<>();
-        for (String variant : VARIANTS) {
+        for (String variant : variants) {
             TreeMap<String, Double> values = new TreeMap<>();
             TreeMap<String, String> states = new TreeMap<>();
             for (CalendarBlock block : blocks) {
@@ -731,11 +757,11 @@ public final class LiquidationHourlyDiagnosticsV1 {
         }
         ArrayList<String> commonBlockIds = new ArrayList<>();
         for (CalendarBlock block : blocks) {
-            boolean common = VARIANTS.stream().allMatch(variant -> variantReturns.get(variant).containsKey(block.id));
+            boolean common = variants.stream().allMatch(variant -> variantReturns.get(variant).containsKey(block.id));
             if (common) commonBlockIds.add(block.id);
         }
         ObjectNode byVariant = JsonHashes.mapper().createObjectNode();
-        for (String variant : VARIANTS) {
+        for (String variant : variants) {
             ArrayList<Double> blockValues = new ArrayList<>();
             for (String id : commonBlockIds) blockValues.add(variantReturns.get(variant).get(id));
             BootstrapSummary bootstrap = bootstrapMeanByIds(commonBlockIds, variantReturns.get(variant), BOOTSTRAP_DRAWS, BOOTSTRAP_SEED);
@@ -761,7 +787,7 @@ public final class LiquidationHourlyDiagnosticsV1 {
                 detail.put("in_common_universe", commonBlockIds.contains(block.id));
             }
         }
-        ObjectNode assetVariant = assetVariantBlockCells(policy, positions, blocks);
+        ObjectNode assetVariant = assetVariantBlockCells(policy, positions, blocks, variants);
         ObjectNode out = JsonHashes.mapper().createObjectNode().put("schema", "liquidation-67-day-calendar-block-sensitivity/1")
                 .put("block_days", CALENDAR_BLOCK_DAYS).put("block_count", blocks.size())
                 .put("analysis_calendar_day_count", (int) ChronoUnit.DAYS.between(daily.start, daily.endExclusive))
@@ -783,14 +809,15 @@ public final class LiquidationHourlyDiagnosticsV1 {
         return out;
     }
 
-    private static ObjectNode assetVariantBlockCells(ObjectNode policy, List<Position> positions, List<CalendarBlock> blocks) {
+    private static ObjectNode assetVariantBlockCells(ObjectNode policy, List<Position> positions, List<CalendarBlock> blocks,
+            List<String> variants) {
         TreeSet<String> assets = new TreeSet<>();
         for (JsonNode asset : policy.path("assets")) assets.add(canonicalAsset(asset.asText()));
         ObjectNode out = JsonHashes.mapper().createObjectNode().put("weighting", "COMMON_ASSET_X_VARIANT_X_67_DAY_BLOCK_UNIVERSE")
                 .put("missing_activity_absence", "ZERO_CLOSED_POSITION_PNL_WHEN_NO_POSITION_CLOSES_IN_CELL")
                 .put("return_claim", false);
         ArrayNode cells = out.putArray("cells");
-        for (String variant : VARIANTS) {
+        for (String variant : variants) {
             for (String asset : assets) {
                 for (CalendarBlock block : blocks) {
                     int closedCount = 0, activeCount = 0;
@@ -817,12 +844,12 @@ public final class LiquidationHourlyDiagnosticsV1 {
         return out;
     }
 
-    private static ObjectNode laggedDailyCorrelations(DailySeries daily) {
+    private static ObjectNode laggedDailyCorrelations(DailySeries daily, List<String> variants) {
         ObjectNode out = JsonHashes.mapper().createObjectNode().put("schema", "liquidation-daily-return-lag-correlations/1")
                 .put("return_sampling", "LAST_OBSERVED_ACCOUNT_CURVE_POINT_PER_UTC_DATE;NOT_NECESSARILY_00:00_CLOSE;NO_INTERPOLATION_ACROSS_HELD_MARK_GAPS")
                 .put("effective_sample_size_claim", false);
         ObjectNode byVariant = out.putObject("by_variant");
-        for (String variant : VARIANTS) {
+        for (String variant : variants) {
             ObjectNode variantRow = byVariant.putObject(variant);
             variantRow.put("daily_return_observation_count", daily.returnsByVariant.get(variant).size())
                     .put("held_mark_gap_day_count", daily.missingDatesByVariant.get(variant).size())

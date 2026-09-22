@@ -73,6 +73,93 @@ class LiquidationHourlyDevelopmentReplayV1Test {
     }
 
     @Test
+    void v005RequiresExactQualifiedEventIdentityAcrossEveryProfile() {
+        Instant at = Instant.parse("2024-01-01T00:00:00Z");
+        var evidence = List.of(new LiquidationStructureRouterV1.SourceEvidence("PRICE_EVENT", "BTC",
+                "binance-usdm-h1-BTC", at, at));
+        var event = new LiquidationStructureRouterV1.QualifiedDailyStressEvent("BTC|event", "BTC",
+                LocalDate.of(2024, 1, 1), at, at, LiquidationStructureRouterV1.Direction.LONG, evidence);
+        List<Map<String, LiquidationStructureRouterV1.QualifiedDailyStressEvent>> identical = new ArrayList<>();
+        for (int i = 0; i < 7; i++) identical.add(Map.of(event.eventId(), event));
+
+        assertEquals(Map.of(event.eventId(), event), LiquidationHourlyDevelopmentReplayV1
+                .verifyIdenticalEventInventories(identical));
+        identical.set(6, Map.of());
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+                () -> LiquidationHourlyDevelopmentReplayV1.verifyIdenticalEventInventories(identical));
+        identical.set(6, Map.of(event.eventId(), new LiquidationStructureRouterV1.QualifiedDailyStressEvent(
+                event.eventId(), event.asset(), event.bucketStart(), event.bucketEventTime(), at.plusSeconds(1),
+                event.shockDirection(), event.sourceEvidence())));
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+                () -> LiquidationHourlyDevelopmentReplayV1.verifyIdenticalEventInventories(identical));
+    }
+
+    @Test
+    void v005WarmupBindingAndMetadataRejectTamperedPathsScopeAndProfiles() {
+        ObjectNode binding = JsonHashes.mapper().createObjectNode().put("schema", "liquidation-context-warmup-input/1")
+                .put("freeze_path", "context-warmup/data-freeze.json")
+                .put("freeze_byte_sha256", "a".repeat(64))
+                .put("manifest_path", "context-warmup/context-warmup-manifest.json")
+                .put("manifest_byte_sha256", "b".repeat(64));
+        LiquidationHourlyDevelopmentReplayV1.validateWarmupBindingPaths(binding);
+        binding.put("freeze_path", "../outside/data-freeze.json");
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+                () -> LiquidationHourlyDevelopmentReplayV1.validateWarmupBindingPaths(binding));
+
+        ObjectNode context = JsonHashes.mapper().createObjectNode().put("schema", "liquidation-context-warmup/1");
+        context.putArray("assets").add("BTC").add("ETH").add("SOL").add("AAVE").add("UNI")
+                .add("BNB").add("LINK").add("ZEC").add("TRX");
+        context.putObject("warmup_window").put("start_inclusive", "2022-04-01").put("end_exclusive", "2022-08-11");
+        context.putObject("retained_hourly_window").put("start_inclusive", "2022-08-11").put("end_exclusive", "2026-09-20");
+        context.putObject("decision_window").put("start_inclusive", "2022-11-11").put("end_exclusive", "2026-07-15");
+        context.put("outcome_calculation_performed", false);
+        ObjectNode freeze = JsonHashes.mapper().createObjectNode().put("schema", "liquidation-context-warmup-freeze/1");
+        freeze.putArray("assets").add("BTC").add("ETH").add("SOL").add("AAVE").add("UNI")
+                .add("BNB").add("LINK").add("ZEC").add("TRX");
+        freeze.putObject("files");
+        List<String> assets = List.of("BTC", "ETH", "SOL", "AAVE", "UNI", "BNB", "LINK", "ZEC", "TRX");
+
+        LiquidationHourlyDevelopmentReplayV1.validateDailyContextWarmupMetadata(context, freeze, assets);
+        context.withArray("assets").remove(8);
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+                () -> LiquidationHourlyDevelopmentReplayV1.validateDailyContextWarmupMetadata(context, freeze, assets));
+        context.withArray("assets").add("TRX");
+        context.with("warmup_window").put("start_inclusive", "2022-04-02");
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+                () -> LiquidationHourlyDevelopmentReplayV1.validateDailyContextWarmupMetadata(context, freeze, assets));
+    }
+
+    @Test
+    void v005FrozenPolicyVerifierRejectsChangedProfileDefinition(@TempDir Path directory) throws Exception {
+        Path policyPath = findRepositoryRoot().resolve("docs/research/liquidation-exploratory-v005/exploratory-policy.json");
+        byte[] bytes = Files.readAllBytes(policyPath);
+        String digest = JsonHashes.sha256(policyPath);
+        Path freezePath = directory.resolve("policy-freeze.json");
+        ObjectNode freeze = JsonHashes.mapper().createObjectNode().put("schema", "liquidation-exploratory-freeze/1")
+                .put("outcomes_viewed", false);
+        freeze.putObject("files").put("exploratory-policy.json", digest);
+        Files.write(freezePath, JsonHashes.mapper().writeValueAsBytes(freeze));
+        ObjectNode policy = (ObjectNode) JsonHashes.mapper().readTree(bytes);
+        invokeVerifyPolicy(policy, digest, freezePath);
+
+        ((ObjectNode) policy.path("variant_definitions").path("DAILY_MA_CONTEXT")).put("daily_sma200_context", false);
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+                () -> invokeVerifyPolicy(policy, digest, freezePath));
+    }
+
+    @Test
+    void v005ReplayCannotStartFromAPlainRetainedInputWithoutVerifiedWarmup(@TempDir Path directory) throws Exception {
+        LiquidationHourlyDevelopmentReplayV1.Input input = loadInput(writeSmallInputFixture(directory));
+        Path legacyPolicyPath = findRepositoryRoot().resolve("docs/research/liquidation-exploratory-v003/exploratory-policy.json");
+        ObjectNode policy = (ObjectNode) JsonHashes.mapper().readTree(Files.readString(legacyPolicyPath));
+        policy.put("id", "liquidation-exploratory-v005");
+
+        IllegalArgumentException error = org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+                () -> invokeReplay(input, policy));
+        assertTrue(error.getMessage().contains("verified supplemental context bundle"));
+    }
+
+    @Test
     void firstEntryUsesOnlyTheExactOneHourOpenAndNeverDefersToALaterBar() {
         Instant decision = Instant.parse("2024-01-01T12:00:00Z");
         Instant scheduled = decision.plusMillis(HOUR_MS);
@@ -912,6 +999,27 @@ class LiquidationHourlyDevelopmentReplayV1Test {
                     && Files.isRegularFile(path.resolve("docs/research/liquidation-exploratory-v003/exploratory-policy.json"))) return path;
         }
         throw new IllegalStateException("repository policy fixture is not available from this test environment");
+    }
+
+    private static void invokeVerifyPolicy(ObjectNode policy, String digest, Path freezePath) throws Exception {
+        var method = LiquidationHourlyDevelopmentReplayV1.class.getDeclaredMethod("verifyPolicy", ObjectNode.class, String.class, Path.class);
+        method.setAccessible(true);
+        try { method.invoke(null, policy, digest, freezePath); }
+        catch (java.lang.reflect.InvocationTargetException error) {
+            if (error.getCause() instanceof Exception exception) throw exception;
+            throw error;
+        }
+    }
+
+    private static ObjectNode invokeReplay(LiquidationHourlyDevelopmentReplayV1.Input input, ObjectNode policy) throws Exception {
+        var method = LiquidationHourlyDevelopmentReplayV1.class.getDeclaredMethod("replay",
+                LiquidationHourlyDevelopmentReplayV1.Input.class, ObjectNode.class);
+        method.setAccessible(true);
+        try { return (ObjectNode) method.invoke(null, input, policy); }
+        catch (java.lang.reflect.InvocationTargetException error) {
+            if (error.getCause() instanceof Exception exception) throw exception;
+            throw error;
+        }
     }
 
     private static LiquidationStructureRouterV1.ConfirmedIntent intent(Instant decision) {

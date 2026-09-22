@@ -11,6 +11,10 @@ import com.tradinganalytics.infrastructure.security.JsonHashes;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -264,6 +268,37 @@ class LiquidationHourlyDiagnosticsV1Test {
         assertEquals(2, blocks.path("common_complete_block_count").asInt());
     }
 
+    @Test
+    void v005DiagnosticsThreadAllSevenFrozenProfilesAndRejectMissingAccountOrFunnel() throws Exception {
+        ObjectNode v005 = (ObjectNode) JsonHashes.mapper().readTree(Files.readString(repositoryRoot()
+                .resolve("docs/research/liquidation-exploratory-v005/exploratory-policy.json")));
+        List<String> variants = List.of("BASELINE_V004", "POST_SHOCK_ENTRY", "H4_STRUCTURAL_STOP",
+                "REFRESHED_STAGING", "DAILY_RSI_CONTEXT", "DAILY_MA_CONTEXT", "DAILY_BOTH_CONTEXT");
+        Map<String, ObjectNode> accounts = new LinkedHashMap<>(), funnels = new LinkedHashMap<>();
+        for (String variant : variants) {
+            accounts.put(variant, JsonHashes.mapper().createObjectNode());
+            funnels.put(variant, JsonHashes.mapper().createObjectNode());
+        }
+
+        ObjectNode result = build(v005, Map.of(), List.of(), List.of(), List.of(), accounts, funnels, coverage());
+        ArrayList<String> inventory = new ArrayList<>();
+        result.path("variant_inventory").forEach(row -> inventory.add(row.asText()));
+        assertEquals(variants, inventory);
+        assertEquals(7, result.path("funnel_counts_by_variant").size());
+        assertEquals(7, result.path("per_completed_position_metrics").path("by_variant").size());
+        assertEquals(7, result.path("calendar_block_sensitivity").path("by_variant").size());
+        assertEquals(7, result.path("lagged_daily_portfolio_return_correlations").path("by_variant").size());
+        assertEquals(105, result.path("response_diagnostics").size());
+
+        accounts.remove("DAILY_BOTH_CONTEXT");
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+                () -> build(v005, Map.of(), List.of(), List.of(), List.of(), accounts, funnels, coverage()));
+        accounts.put("DAILY_BOTH_CONTEXT", JsonHashes.mapper().createObjectNode());
+        funnels.remove("DAILY_BOTH_CONTEXT");
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+                () -> build(v005, Map.of(), List.of(), List.of(), List.of(), accounts, funnels, coverage()));
+    }
+
     private static ObjectNode build(ObjectNode policy, Map<String, NavigableMap<Instant, Double>> prices,
             List<LiquidationHourlyDiagnosticsV1.Event> events, List<LiquidationHourlyDiagnosticsV1.Intent> intents,
             List<LiquidationHourlyDiagnosticsV1.Position> positions, Map<String, ObjectNode> accounts,
@@ -331,5 +366,13 @@ class LiquidationHourlyDiagnosticsV1Test {
 
     private static ObjectNode coverageAt(Instant endExclusive) {
         return JsonHashes.mapper().createObjectNode().put("analysis_coverage_end_exclusive", endExclusive.toString());
+    }
+
+    private static Path repositoryRoot() {
+        for (Path path = Path.of("").toAbsolutePath().normalize(); path != null; path = path.getParent()) {
+            if (Files.isRegularFile(path.resolve("pom.xml"))
+                    && Files.isRegularFile(path.resolve("docs/research/liquidation-exploratory-v005/exploratory-policy.json"))) return path;
+        }
+        throw new IllegalStateException("v005 policy fixture is not available from this test environment");
     }
 }
