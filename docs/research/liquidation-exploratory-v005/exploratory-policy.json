@@ -1,0 +1,369 @@
+{
+  "schema": "liquidation-exploratory-policy/1",
+  "id": "liquidation-exploratory-v005",
+  "created_at": "2026-09-22T08:02:56.613611+00:00",
+  "hypothesis_family": "liquidation-structure",
+  "evidence_phase": "DEVELOPMENT",
+  "promotion_allowed": false,
+  "parent_precommit": {
+    "id": "liquidation-exploratory-v004",
+    "content_sha256": "c18494b153262b1116a13f2996121d65beca78c83dfed9289b4a3386ac7b1858",
+    "byte_sha256": "538f9e588cbfb5efe821f97d218821fdc949c958e74b49c5fca810787fe7b914"
+  },
+  "assets": [
+    "BTC",
+    "ETH",
+    "SOL",
+    "AAVE",
+    "UNI",
+    "BNB",
+    "LINK",
+    "ZEC",
+    "TRX"
+  ],
+  "source_start": "2022-08-11T00:00:00Z",
+  "source_end_exclusive": "2026-09-20T00:00:00Z",
+  "decision_start": "2022-11-11T00:00:00Z",
+  "decision_end_exclusive": "2026-07-15T00:00:00Z",
+  "strategy": "Fixed sequential post-shock entry, H4 initial-stop, refreshed-addition and daily-context study; original defaults remain immutable.",
+  "variants": [
+    "BASELINE_V004",
+    "POST_SHOCK_ENTRY",
+    "H4_STRUCTURAL_STOP",
+    "REFRESHED_STAGING",
+    "DAILY_RSI_CONTEXT",
+    "DAILY_MA_CONTEXT",
+    "DAILY_BOTH_CONTEXT"
+  ],
+  "selection": "NONE; run and report every fixed profile regardless returns; no parameter search or new holdout claim.",
+  "account": {
+    "initial_equity": 20000,
+    "max_margin_fraction": 1,
+    "position_risk_cap": 0.05,
+    "portfolio_risk_cap": 0.1,
+    "tranche_risk_fractions": [
+      0.01,
+      0.015,
+      0.025
+    ],
+    "leverage": [
+      2,
+      2,
+      3
+    ],
+    "max_holding_days": 60,
+    "asset_tie_order": [
+      "BTC",
+      "ETH",
+      "SOL",
+      "AAVE",
+      "UNI",
+      "BNB",
+      "LINK",
+      "ZEC",
+      "TRX"
+    ],
+    "no_risk_netting": true
+  },
+  "execution": {
+    "bar_seconds": 3600,
+    "first_open": "strictly after decision;1h latency",
+    "fee_per_side": 0.0005,
+    "slippage_per_side": 0.0005,
+    "capacity_fraction_of_prior_completed_hour_base_volume": 0.01,
+    "capacity_qualification": "Hourly-volume proxy only; not proof of instantaneous fillability",
+    "funding": "EXCLUDED_NOT_OBSERVED_ZERO",
+    "maintenance_fraction": 0.005,
+    "marks": "TRADE_OHLC_PROXY",
+    "lot_steps": {
+      "BTC": 0.001,
+      "ETH": 0.001,
+      "SOL": 0.1,
+      "AAVE": 0.1,
+      "UNI": 1,
+      "BNB": 0.01,
+      "LINK": 0.1,
+      "ZEC": 0.001,
+      "TRX": 1
+    },
+    "minimum_notional_usdt": 5,
+    "entry_bar_range": "Evaluate after open fill, stop known before bar; ratchet after completed H4 affects later bars only",
+    "collision": "Conservative approximate liquidation first, structuralstop beforetarget, adversegap at worseopen; existing gapexits before additions",
+    "missing": "Never fabricate bars/interpolate OI; no entry without required exact price/priorvolume/features; held exposure persists until next available executable price",
+    "liquidation": "Approx isolatedequity at side-adverse hourlyextreme <=0.5%notional; exact exchange liquidation unverified",
+    "liquidation_fee_rate": 0.005,
+    "lot_step_qualification": "Owner-accepted fixed approximations; not historical exchange metadata. Kept fixed throughout source window."
+  },
+  "macro": {
+    "series": "FRED_SP500",
+    "signal": "5sessionclose return, >+0.5%longsupport/<-0.5%shortsupport, equalityneutral",
+    "availability": "Next actual NYSE sessionclose; retrospective proxy",
+    "max_age_calendar_days": 4,
+    "stage2": "neutral_or_supportive",
+    "stage3": "supportive",
+    "decay": "keep existing tranches",
+    "no_macro_variant": "Ignore macro entirely"
+  },
+  "event_clusters": {
+    "interval": "[selected shock geometry start, selected shock geometry end +72h]",
+    "method": "Transitive union of touching/overlapping intervals across allassets, sorted deterministically",
+    "independent_claim": false,
+    "membership": "Feature-only qualifiedshock metadata before any returns"
+  },
+  "position_overlap_components": {
+    "method": "Connect positions sharing shockcluster or overlapping [firstfill,exit] acrossassets/variants; report actualholdingdependence separately",
+    "independent_claim": false
+  },
+  "response_diagnostics": {
+    "horizons_days": [
+      1,
+      3,
+      7
+    ],
+    "anchors": [
+      "FIRST_OBSERVABLE_EVENT_AVAILABILITY",
+      "FIRST_ROUTED_ENTRY_DECISION"
+    ],
+    "anchor_price": "Exact completed hourlyclose atanchor",
+    "endpoint": "Exact completed hourlyclose atanchor+horizon; missing endpoint or interveninghour means excluded with count",
+    "directions": [
+      "SIGNED_SHOCK",
+      "OPPOSITE_SHOCK",
+      "ROUTED_DIRECTION_WHEN_AVAILABLE"
+    ],
+    "return": "Unlevered before fees,slippage,funding; not executable PnL",
+    "aggregation": "Equal asset-event observations withinmarketcluster then equalcluster weighting; also asset/branch breakdowns",
+    "selection": "None; report all horizons",
+    "anchor_semantics": "First actual detector qualification with all selectedgeometry price/OI/liquidationavailable; not before setupknowledge. UTC hourly boundary, never Binance lastmillisecond timestamp."
+  },
+  "statistics": {
+    "minimum_groups_to_run": 0,
+    "reference_minimum_groups": 30,
+    "low_count": "INSUFFICIENT_EVIDENCE warning, computation continues",
+    "purge_days": 67,
+    "embargo_days": 7,
+    "wfo_claim": false,
+    "bootstrap_draws": 10000,
+    "seed": 20260921,
+    "primary_resampling": "Sharedmarketshockcluster draws acrossvariants/horizons; descriptiveintervals",
+    "conservative_sensitivity": "Shared67daycalendarblock draws including internalzeros, assets/variants joint",
+    "report": [
+      "shockclusters",
+      "holdingoverlapcomponents",
+      "67dayblocks",
+      "p20",
+      "95percentileinterval",
+      "laggeddailyportfolio returncorrelations when defined"
+    ],
+    "effective_n": "Not equated with any count; independence not proven"
+  },
+  "stress": {
+    "doubled_fee_slippage": "Fixed sensitivity; rerun capital sizing when costs change",
+    "funding": "UNAVAILABLE_NOT_PASSED",
+    "exact_liquidation": "UNAVAILABLE_NOT_PASSED"
+  },
+  "exposure": {
+    "preserve_prior_family_exposure": true,
+    "new_fixed_strategy_variants": 6,
+    "response_horizons": 3,
+    "no_wfo_or_confirmation_claim": true,
+    "new_assets_owner_selected_before_outcomes": [],
+    "prior_v003_results_exposed": true,
+    "baseline_behavioral_alias": "v004 STAGED_MACRO",
+    "prior_v004_results_exposed": true,
+    "declared_profiles": 7,
+    "baseline_aliases_existing_behavior": 1
+  },
+  "compute": {
+    "max_hours": 24,
+    "paid_data": false,
+    "historical_only": true
+  },
+  "variant_definitions": {
+    "BASELINE_V004": {
+      "stage": "CORE_PREMISE",
+      "predecessor_variant": null,
+      "post_shock_entry": false,
+      "h4_initial_stop": false,
+      "refresh_invalidated_pivot": false,
+      "daily_rsi_context": false,
+      "daily_sma200_context": false,
+      "sp500_addition_gate": true
+    },
+    "POST_SHOCK_ENTRY": {
+      "stage": "ENTRY_TIMING",
+      "predecessor_variant": "BASELINE_V004",
+      "post_shock_entry": true,
+      "h4_initial_stop": false,
+      "refresh_invalidated_pivot": false,
+      "daily_rsi_context": false,
+      "daily_sma200_context": false,
+      "sp500_addition_gate": true
+    },
+    "H4_STRUCTURAL_STOP": {
+      "stage": "RISK_LIFECYCLE",
+      "predecessor_variant": "POST_SHOCK_ENTRY",
+      "post_shock_entry": true,
+      "h4_initial_stop": true,
+      "refresh_invalidated_pivot": false,
+      "daily_rsi_context": false,
+      "daily_sma200_context": false,
+      "sp500_addition_gate": true
+    },
+    "REFRESHED_STAGING": {
+      "stage": "RISK_LIFECYCLE",
+      "predecessor_variant": "H4_STRUCTURAL_STOP",
+      "post_shock_entry": true,
+      "h4_initial_stop": true,
+      "refresh_invalidated_pivot": true,
+      "daily_rsi_context": false,
+      "daily_sma200_context": false,
+      "sp500_addition_gate": true
+    },
+    "DAILY_RSI_CONTEXT": {
+      "stage": "INDEPENDENT_CONTEXT",
+      "predecessor_variant": "REFRESHED_STAGING",
+      "post_shock_entry": true,
+      "h4_initial_stop": true,
+      "refresh_invalidated_pivot": true,
+      "daily_rsi_context": true,
+      "daily_sma200_context": false,
+      "sp500_addition_gate": true
+    },
+    "DAILY_MA_CONTEXT": {
+      "stage": "INDEPENDENT_CONTEXT",
+      "predecessor_variant": "REFRESHED_STAGING",
+      "post_shock_entry": true,
+      "h4_initial_stop": true,
+      "refresh_invalidated_pivot": true,
+      "daily_rsi_context": false,
+      "daily_sma200_context": true,
+      "sp500_addition_gate": true
+    },
+    "DAILY_BOTH_CONTEXT": {
+      "stage": "INDEPENDENT_CONTEXT",
+      "predecessor_variant": "REFRESHED_STAGING",
+      "post_shock_entry": true,
+      "h4_initial_stop": true,
+      "refresh_invalidated_pivot": true,
+      "daily_rsi_context": true,
+      "daily_sma200_context": true,
+      "sp500_addition_gate": true
+    }
+  },
+  "deferred_tests": [
+    "Parent unconditional direction and price+OIcontrols:NOT_TESTED",
+    "Formal routing superiority null:NOT_TESTED",
+    "Authoritative WFO/confirmation:NOT_RUN",
+    "Fundingstress:NOT_RUN",
+    "Venueoutage/adversegap/stablecoinimpairmentstress:NOT_RUN",
+    "Exactmargin/liquidation/capacityqualification:NOT_RUN",
+    "Formal multiple-candidate selection/max-statistic/plateau:NOT_RUN; no winner or promotion selected"
+  ],
+  "acceptance": "All parent minimumcounts and gates reference-only. DEVELOPMENT only regardless results. Under30warning nonblocking.",
+  "predecessor_experiment": {
+    "id": "liquidation-exploratory-v004",
+    "policy_byte_sha256": "20e9b5be92ea486f45344f8dba669263760b9fc49fcdacf3b014562c2a840972",
+    "freeze_byte_sha256": "df336d9a65930ab2074373a1435671500f241e9dd8fe8fd1e6af2fb649211bb2",
+    "compact_results_byte_sha256": "ca19d628737cf6bfe1a58779950f40088dc0e320e695cc06237a90dac107fb76",
+    "exposure_byte_sha256": "2e0426c7eecea662d46d53b4df74a2a787bda36c29743bfbe612f54814dd0d44",
+    "outcomes_exposed": true
+  },
+  "entry_rule_audit": {
+    "rule_changes": true,
+    "outcome_optimization": false,
+    "denominators": [
+      "daily observations and valid90day windows",
+      "liquidation stress sides",
+      "qualified price/OI shock events",
+      "admitted setups",
+      "armed continuation/reversal branches",
+      "unique confirmed setups and repeated intents",
+      "execution accepted/rejected fills",
+      "postfill addition eligibility and terminal exits"
+    ],
+    "gate_counts": "Separate first-failure attrition from all-failed-gate diagnostics and repeated bar opportunities; do not add correlated reasons as unique events.",
+    "required_comparisons": [
+      "original four with unchanged input bytes for numeric equivalence",
+      "all nine fixed-order shared portfolio",
+      "per asset and branch attrition regardless returns"
+    ],
+    "scope": "The owner-authorized frozen v005 rules change; trace collection remains passive. No tuning after v005 outcomes.",
+    "diagnostic_only": true
+  },
+  "inherited_wording_clarifications": {
+    "precedence": "These clarify inherited precommit prose to the unchanged executable contract; no numeric rule changes.",
+    "open_interest": "5-minute minimum lag and 10-minute maximum staleness are measured independently at each historical event start/end OI endpoint, not the later daily signal decision. All source evidence must also be available by the decision.",
+    "source_window": "2022-08-11 is the frozen outer source envelope, not verified common inception for all nine assets. Per-asset actual coverage and missing windows are reported; no pre-inception or missing data fabricated."
+  },
+  "post_shock_entry": {
+    "enabled_only_in_named_profiles": true,
+    "event_detection": "Unchanged daily liquidation, ATR-displacement and OI-contraction gates; same geometry inventory.",
+    "pivot": "Strict five-consecutive-H4-bar high/low with two bars on each side; center.start >= selected shock geometry end.",
+    "availability": "A five-H4 pivot becomes available only at the fifth source bar close/eventTime. That pivot availability must be <= the first break-confirmation H4 bar start. First break-confirmation bar.start >= modeled daily availability. Both break confirmations become actionable only at their closes. Retrospective eligible pivots may be selected from stored history.",
+    "first_confirmation": "After daily signal availability, latest eligible confirmed pivot HIGH may support LONG if H4 close strictly above it; latest pivot LOW may support SHORT if close strictly below it. If both directions qualify, ambiguous/no candidate. No requirement to recross from the opposite side after daily availability. Latest means greatest center.start among eligible pivots, separately by high/low.",
+    "second_confirmation": "Freeze pivot identity, price and direction at first qualifying close. A consecutive next H4 close must remain strictly beyond that same level. On gap or failure reset and evaluate current bar as possible first confirmation against pivots already available at the current bar START. Do not move the candidate level during its two-close confirmation.",
+    "branch": "Confirmed direction matching shock direction is CONTINUATION; opposite is REVERSAL. Old pre-shock boundary remains event/recovery metadata, not the revised route/entry level.",
+    "entry": "Freeze zone at selected pivot +/-0.25 pre-event H4 ATR. Retain H1 zone touch, trade-side close and prior-hour extreme break; H1 bar must start at/after second-H4 confirmation availability. Next-hour execution/chase cap0.5ATR around NEW zone center remains unchanged.",
+    "deadline": "Original72h from daily availability to branch confirmation; original72h from branch confirmation for first entry.",
+    "invalidation": "Before first fill, completed H4 close strictly below zone.lower for LONG or strictly above zone.upper for SHORT cancels branch/pending intent. No rerouting for same setup.",
+    "reversal_target": "Keep original prior-range midpoint and cost-adjusted >=1R execution gate. No new target fitted to returns.",
+    "source_evidence": "Persist all five pivot-source bars, confirmation bars, level/zone identity and availability; no future pivot confirmation."
+  },
+  "h4_structural_stop": {
+    "rule": "Initial stop from last three consecutive completed/available H4 bars at H1 decision: LONG minimum low minus0.1pre-eventATR, SHORT maximum high plus0.1ATR. Missing bars/adverse-stop failure rejects intent.",
+    "sizing": "Same1/1.5/2.5%tranche risk and5%position/10%portfolio caps; wider distance reduces quantity.",
+    "unchanged": "Continuation trail remains three-H4 ratchet; reversal midpoint exit; 60days from firstfill; 2/2/3x leverage."
+  },
+  "refreshed_staging": {
+    "trigger": "Only after existing frozen addition zone is invalidated by tightened active stop. Valid zones stay frozen.",
+    "replacement": "Clear unsafe zone/candidate; seek a strict safe five-H4 pivot whose center is strictly after lastfill and later than invalidated pivot center, and whose confirmation is strictly after invalidation time. Retain existing favorable-H4 prerequisite.",
+    "invariants": "Never loosen stop, reset firstfill clock, increase stage count, bypass pending order, add after target or exceed any risk/margin cap. Each invalidation/replacement is auditable.",
+    "pending": "Preserve an already-pending addition intent unchanged; defer replacement while pending. Existing execution/risk/stop checks still decide fill. On fill, normal next-stage cycle supersedes prior-stage refresh request. On no-fill, next eligible H4 may seek replacement under the frozen timing constraints. Preserve the first invalidation timestamp while awaiting replacement; later ratchets do not overwrite it."
+  },
+  "daily_context": {
+    "assets": "Same-asset BinanceUSDTperpetual price context; not BTC regime substituted for alts.",
+    "daily_close": "UTC calendar day close from exactly24consecutive hourly bars, available only at completed-day end. Latest completed UTCday must exist at decision; no carry across a missing day. Daily close and indicator availability must be <= addition decision time; a midnight decision may use the just-completed UTC day.",
+    "rsi": {
+      "period_days": 14,
+      "method": "Wilder: first14daily changes seed arithmetic mean gains/losses, then recursive smoothing. Flat gains/losses =>50; zero loss with positive gain=>100; zero gain with positive loss=>0. Reset seed on missing daily close. Seed once on the first15 contiguous closes of the frozen context stream, then carry recursively; no rolling reseeding except after a gap.",
+      "long_support": "RSI>50",
+      "short_support": "RSI<50",
+      "neutral": "RSI==50"
+    },
+    "sma": {
+      "period_days": 200,
+      "method": "Arithmetic mean of exact200contiguous completed UTCdaily closes.",
+      "long_support": "Latest completed daily close>SMA200",
+      "short_support": "Latest completed daily close<SMA200",
+      "neutral": "Close==SMA200"
+    },
+    "first_entry": "Never gates direction, entry, stop or size. Compute/log context for attribution.",
+    "stage2": "S&P plus each enabled daily context must be NEUTRAL or SUPPORTIVE; UNKNOWN or OPPOSING blocks only new tranche.",
+    "stage3": "S&P plus every enabled daily context must be SUPPORTIVE.",
+    "decay": "Keep existing tranches; no context-triggered exit or stop widening.",
+    "evidence_overlap": "RSI andSMA derive from sameprice family as structure; not independent votes or evidence. Conjunctive gates, no composite score, promotion blocked.",
+    "warmup": "Supplemental hourly Apr1,2022-Aug11,2022exclusive, combined only for context with immutablev004hourly. Never inject into legacy router event/account timelines.",
+    "missing": "Context unknown blocks enabled additions only; original firstentry eligibility and otherprofiles preserved."
+  },
+  "variant_lineage_policy": "Fixed predecessor ladder above; persist per-profile result hashes in dependent records, run all regardless survival.",
+  "comparison_contract": {
+    "legacy": "Rerun v004 threevariants on original data with finalexecutor and verify numerical account/event/equity/trade/response equivalence. New BASELINE_V004 must match v004 STAGED_MACRO baseline and doubledcost accounting.",
+    "attribution": [
+      "long/short and continuation/reversal funnel",
+      "event/entry/exit/staging/context reasons",
+      "sameevent commoncohort and unchanged sourcewindows",
+      "perasset and peryear returns/counts",
+      "allprofiles and doubledcost sensitivity",
+      "frozen sharedshock grouping/holdingdependence",
+      "1/3/7day diagnostics with sharedcluster draws"
+    ],
+    "no_claims": [
+      "No sealed or forwardtest",
+      "No prediction of improvedreturns",
+      "No independent evidence credit for RSI/SMA price overlap",
+      "No funding-inclusive or exactexchangeexecution claim"
+    ],
+    "attribution_limitation": "POST_SHOCK_ENTRY jointly changes route, entry reference and prefill invalidation; not an isolated entry-level causal effect. Seven profiles include one existing behavioral baseline alias and six newly declared rule configurations; empirical behavior may coincide."
+  }
+}

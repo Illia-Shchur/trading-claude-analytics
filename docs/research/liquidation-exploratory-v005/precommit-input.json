@@ -1,0 +1,989 @@
+{
+  "schema": "strategy-precommit/1",
+  "precommit_id": "liquidation-exploratory-v005",
+  "created_at": "2026-09-22T08:02:56.613611+00:00",
+  "stage": "CORE_PREMISE",
+  "phenomenon": "After observed liquidation deleveraging, a confirmed break and retest of newly formed post-shock H4 structure may identify delayed continuation or reversal opportunities that a pre-shock-boundary retest misses.",
+  "economic_behavioral_mechanism": "Margin-constrained forced closers transfer risk urgently. Subsequent two-sided trading may form observable local swing structure before a delayed recovery or continuing repricing. Confirmation and patient retests seek that delayed adjustment; daily aggregation may already consume it.",
+  "participants": {
+    "forced_actor": "Leveraged holders subject to margin calls or involuntary liquidation",
+    "edge_provider": "Price-insensitive forced closers and liquidity takers requiring immediate execution",
+    "edge_consumer": "Patient, risk-constrained entrant waiting for post-event structure"
+  },
+  "persistence": "Forced execution and temporarily constrained market-maker inventories can outlast instantaneous arbitrage; whether enough delay remains after hourly confirmation is the main empirical question.",
+  "crowding_decay": "Faster absorption, improved arbitrage or crowded reclaim/pullback entries can consume the effect before confirmation and make net expectancy nonpositive.",
+  "direction": "Long and short selected symmetrically by confirmed post-shock swing-level breaks; relation to original shock determines continuation or reversal.",
+  "expression": "Nine frozen BinanceUSDT isolated perpetuals; fixed sequential rules and daily price-derived context, historical DEVELOPMENT only.",
+  "holding_horizon": {
+    "min": 0,
+    "max": 60,
+    "unit": "days",
+    "clock": "From first fill; never reset by additions; stops may close immediately"
+  },
+  "expected_signal_frequency": {
+    "min": 1,
+    "max": 4,
+    "unit": "market episodes per month across frozen nine-asset universe",
+    "basis": "Provisional inherited1-4marketepisodes/month prediction, not fitted to priorreturns and not a target to force by tuning; correlated assets do not multiply independentN."
+  },
+  "expected_win_rate": {
+    "min": 0.35,
+    "max": 0.55
+  },
+  "payoff": {
+    "average_win_r": {
+      "min": 1.3,
+      "max": 2.8
+    },
+    "average_loss_r": {
+      "min": -1.3,
+      "max": -0.7
+    },
+    "qualitative_shape": "Reversal returns capped by recovery target; continuation potentially right-skewed, with trailing giveback; gaps can lose more than 1R. R is initial tranche risk for core and frozen total position risk for staged comparisons; both also report dollars."
+  },
+  "regimes": {
+    "expected_to_work": [
+      "Liquidation pressure with subsequent stable absorption",
+      "Persistent directional order flow distinguishable by post-shock acceptance"
+    ],
+    "expected_to_fail": [
+      "Repeated alternating breakouts in illiquid chop",
+      "Fundamental insolvency or exchange failure",
+      "Confirmation delay consumes the entire dislocation",
+      "Missing or changing forced-order feed coverage"
+    ]
+  },
+  "failure_invalidation_mechanism": "Delayed post-shock levels do not produce repeatable entries on bothsides or increase entries without positive cost-adjusted episode expectancy; dailypricecontext may duplicate structure or preventalladds. Lowcount or unknownPIT yieldsinconclusive, not a retuned threshold.",
+  "required_inputs": [
+    {
+      "input_id": "price",
+      "evidence_family": "PRICE_STRUCTURE",
+      "role": "SETUP",
+      "availability": {
+        "rule": "Completed1h bars and UTC-aligned4h aggregation; first hourlyopen strictly after decision; pastvolume only."
+      },
+      "point_in_time": {
+        "status": "PROXY_DISCLOSED",
+        "completed_bar_only": true
+      }
+    },
+    {
+      "input_id": "open_interest",
+      "evidence_family": "LEVERAGE_UNWIND",
+      "role": "SETUP",
+      "availability": {
+        "rule": "Base-quantity OI timestamp precedes each historical event start/end endpoint by at least5 minutes, with maximum10-minute endpoint staleness. Both observations must also be available by the later signal decision. Archive publication is not historical availability proof."
+      },
+      "point_in_time": {
+        "status": "PROXY_DISCLOSED",
+        "completed_bar_only": true
+      }
+    },
+    {
+      "input_id": "liquidations",
+      "evidence_family": "FORCED_FLOW",
+      "role": "SETUP",
+      "availability": {
+        "rule": "Coinalyze Binance-specific daily USD long/short totals: bucket [t,t+24h); modeled availability t+48h. This is a disclosed development assumption, not verified historical publication. Never use intraday or incomplete-day aggregate."
+      },
+      "point_in_time": {
+        "status": "PROXY_DISCLOSED",
+        "completed_bar_only": true,
+        "historical_publication_verified": false,
+        "revision_vintages_verified": false
+      }
+    },
+    {
+      "input_id": "marks_contracts_costs",
+      "evidence_family": "EXECUTION_METADATA",
+      "role": "CORE",
+      "availability": {
+        "rule": "Accepted approximate contractsteps,minnotional,fees,slippage,maintenance and tradeOHLCmarkproxy; no exact exchange accuracy claim."
+      },
+      "point_in_time": {
+        "status": "PROXY_DISCLOSED",
+        "completed_bar_only": true
+      },
+      "usage": "execution_accounting_only"
+    },
+    {
+      "input_id": "sp500",
+      "evidence_family": "EQUITY_CONTEXT",
+      "role": "CONTEXT",
+      "availability": {
+        "rule": "Later-stage daily equity proxy only. Last independently timestamped available close, conservatively one additional US session lag; archive without availability provenance stays development-only."
+      },
+      "point_in_time": {
+        "status": "PROXY_DISCLOSED",
+        "completed_bar_only": true
+      }
+    },
+    {
+      "input_id": "daily_price_context",
+      "evidence_family": "PRICE_STRUCTURE",
+      "role": "CONTEXT",
+      "availability": {
+        "rule": "UTC calendar day close from exactly24consecutive hourly bars, available only at completed-day end. Latest completed UTCday must exist at decision; no carry across a missing day. Daily close and indicator availability must be <= addition decision time; a midnight decision may use the just-completed UTC day."
+      },
+      "point_in_time": {
+        "status": "PROXY_DISCLOSED",
+        "completed_bar_only": true
+      },
+      "usage": "DailyRSI14/SMA200, additions only; price-family overlap disclosed and blocks promotion."
+    }
+  ],
+  "falsifier": {
+    "test": "Fixed unchanged-event cohort: compare revisedstructure entry to v004baseline, then sequential lifecycle and add-one/leave-one-out context. Report all profiles; no outcome-based selection.",
+    "null": "No positive cost-adjusted incremental expectancy from eachdeclared change after sharedshock dependence; apparent entrycoverage gain may be only more losing entries.",
+    "rejection_thresholds": {
+      "max_familywise_p_value": 0.05,
+      "minimum_bootstrap_p20_net_expectancy_r": 0,
+      "minimum_bootstrap_p20_incremental_expectancy_r": 0,
+      "minimum_effective_independent_episodes": 30,
+      "minimum_completed_positions_per_branch": 20,
+      "minimum_positive_outer_folds": 5,
+      "outer_folds": 8,
+      "maximum_portfolio_drawdown_pct": 30
+    },
+    "inconclusive_rule": "Below30groups limits inference, not exploratory execution. No promotion regardless metrics. Original thresholds reference-only."
+  },
+  "tradable_instrument_contract": {
+    "universe": "CRYPTO_ONLY",
+    "instruments": [
+      {
+        "asset": "btc",
+        "asset_class": "crypto",
+        "instrument_type": "perpetual",
+        "venue": "binance",
+        "symbol": "BTCUSDT",
+        "collateral": "USDT",
+        "margin_mode": "ISOLATED",
+        "funding_carry_treatment": "EXCLUDED_FROM_DEVELOPMENT_DIAGNOSTIC",
+        "funding_contract": {
+          "method": "excluded",
+          "unknown_settlement": "NOT_MODELLED",
+          "future_settlements_not_predictors": true
+        }
+      },
+      {
+        "asset": "eth",
+        "asset_class": "crypto",
+        "instrument_type": "perpetual",
+        "venue": "binance",
+        "symbol": "ETHUSDT",
+        "collateral": "USDT",
+        "margin_mode": "ISOLATED",
+        "funding_carry_treatment": "EXCLUDED_FROM_DEVELOPMENT_DIAGNOSTIC",
+        "funding_contract": {
+          "method": "excluded",
+          "unknown_settlement": "NOT_MODELLED",
+          "future_settlements_not_predictors": true
+        }
+      },
+      {
+        "asset": "sol",
+        "asset_class": "crypto",
+        "instrument_type": "perpetual",
+        "venue": "binance",
+        "symbol": "SOLUSDT",
+        "collateral": "USDT",
+        "margin_mode": "ISOLATED",
+        "funding_carry_treatment": "EXCLUDED_FROM_DEVELOPMENT_DIAGNOSTIC",
+        "funding_contract": {
+          "method": "excluded",
+          "unknown_settlement": "NOT_MODELLED",
+          "future_settlements_not_predictors": true
+        }
+      },
+      {
+        "asset": "aave",
+        "asset_class": "crypto",
+        "instrument_type": "perpetual",
+        "venue": "binance",
+        "symbol": "AAVEUSDT",
+        "collateral": "USDT",
+        "margin_mode": "ISOLATED",
+        "funding_carry_treatment": "EXCLUDED_FROM_DEVELOPMENT_DIAGNOSTIC",
+        "funding_contract": {
+          "method": "excluded",
+          "unknown_settlement": "NOT_MODELLED",
+          "future_settlements_not_predictors": true
+        }
+      },
+      {
+        "asset": "uni",
+        "asset_class": "crypto",
+        "instrument_type": "perpetual",
+        "venue": "binance",
+        "symbol": "UNIUSDT",
+        "collateral": "USDT",
+        "margin_mode": "ISOLATED",
+        "funding_carry_treatment": "EXCLUDED_FROM_DEVELOPMENT_DIAGNOSTIC",
+        "funding_contract": {
+          "method": "excluded",
+          "unknown_settlement": "NOT_MODELLED",
+          "future_settlements_not_predictors": true
+        }
+      },
+      {
+        "asset": "bnb",
+        "asset_class": "crypto",
+        "instrument_type": "perpetual",
+        "venue": "binance",
+        "symbol": "BNBUSDT",
+        "collateral": "USDT",
+        "margin_mode": "ISOLATED",
+        "funding_carry_treatment": "EXCLUDED_FROM_DEVELOPMENT_DIAGNOSTIC",
+        "funding_contract": {
+          "method": "excluded",
+          "unknown_settlement": "NOT_MODELLED",
+          "future_settlements_not_predictors": true
+        }
+      },
+      {
+        "asset": "link",
+        "asset_class": "crypto",
+        "instrument_type": "perpetual",
+        "venue": "binance",
+        "symbol": "LINKUSDT",
+        "collateral": "USDT",
+        "margin_mode": "ISOLATED",
+        "funding_carry_treatment": "EXCLUDED_FROM_DEVELOPMENT_DIAGNOSTIC",
+        "funding_contract": {
+          "method": "excluded",
+          "unknown_settlement": "NOT_MODELLED",
+          "future_settlements_not_predictors": true
+        }
+      },
+      {
+        "asset": "zec",
+        "asset_class": "crypto",
+        "instrument_type": "perpetual",
+        "venue": "binance",
+        "symbol": "ZECUSDT",
+        "collateral": "USDT",
+        "margin_mode": "ISOLATED",
+        "funding_carry_treatment": "EXCLUDED_FROM_DEVELOPMENT_DIAGNOSTIC",
+        "funding_contract": {
+          "method": "excluded",
+          "unknown_settlement": "NOT_MODELLED",
+          "future_settlements_not_predictors": true
+        }
+      },
+      {
+        "asset": "trx",
+        "asset_class": "crypto",
+        "instrument_type": "perpetual",
+        "venue": "binance",
+        "symbol": "TRXUSDT",
+        "collateral": "USDT",
+        "margin_mode": "ISOLATED",
+        "funding_carry_treatment": "EXCLUDED_FROM_DEVELOPMENT_DIAGNOSTIC",
+        "funding_contract": {
+          "method": "excluded",
+          "unknown_settlement": "NOT_MODELLED",
+          "future_settlements_not_predictors": true
+        }
+      }
+    ]
+  },
+  "trade_assets": [
+    "btc",
+    "eth",
+    "sol",
+    "aave",
+    "uni",
+    "bnb",
+    "link",
+    "zec",
+    "trx"
+  ],
+  "non_crypto_context_only": [
+    {
+      "input_id": "sp500",
+      "asset": "SP500",
+      "asset_class": "index",
+      "role": "CONTEXT",
+      "context_only": true,
+      "tradable": false,
+      "trade": false
+    }
+  ],
+  "independence_replication_groups": [
+    "Chronological market episodes; group contemporaneous symbols and overlapping 4h/72h shocks",
+    "Eight quarterly forward blocks; purge full 60-day outcome overlap plus confirmation lag",
+    "Original four versus five owner-selected added assets are dependence diagnostics, not independent crypto-beta replications",
+    "Long/short and continuation/reversal are mandatory report strata, not independent trials"
+  ],
+  "role_of_composite_score": "Deferred; no composite score. RSI/SMA overlap samepricefamily explicitly blocks promotion.",
+  "candidate_template": {
+    "id": "score-free-conditional-baseline",
+    "instrument": {
+      "asset": "btc",
+      "asset_class": "crypto",
+      "instrument_type": "perpetual",
+      "venue": "binance",
+      "symbol": "BTCUSDT",
+      "collateral": "USDT",
+      "margin_mode": "ISOLATED",
+      "funding_carry_treatment": "EXCLUDED_FROM_DEVELOPMENT_DIAGNOSTIC",
+      "funding_contract": {
+        "method": "excluded",
+        "unknown_settlement": "NOT_MODELLED",
+        "future_settlements_not_predictors": true
+      }
+    },
+    "asset_scope": [
+      "btc",
+      "eth",
+      "sol",
+      "aave",
+      "uni",
+      "bnb",
+      "link",
+      "zec",
+      "trx"
+    ],
+    "description": "One fixed rule family; no candidate grid and no outcome optimization"
+  },
+  "feature_contract": {
+    "series": [
+      {
+        "series_id": "btc-binance-usdm-4h",
+        "asset": "btc",
+        "asset_class": "crypto",
+        "timeframe": "4h",
+        "context_only": false,
+        "tradable": true,
+        "point_in_time": {
+          "status": "UNKNOWN",
+          "completed_bar_only": true
+        }
+      },
+      {
+        "series_id": "btc-binance-usdm-1h",
+        "asset": "btc",
+        "asset_class": "crypto",
+        "timeframe": "1h",
+        "context_only": false,
+        "tradable": true,
+        "point_in_time": {
+          "status": "UNKNOWN",
+          "completed_bar_only": true
+        }
+      },
+      {
+        "series_id": "eth-binance-usdm-4h",
+        "asset": "eth",
+        "asset_class": "crypto",
+        "timeframe": "4h",
+        "context_only": false,
+        "tradable": true,
+        "point_in_time": {
+          "status": "UNKNOWN",
+          "completed_bar_only": true
+        }
+      },
+      {
+        "series_id": "eth-binance-usdm-1h",
+        "asset": "eth",
+        "asset_class": "crypto",
+        "timeframe": "1h",
+        "context_only": false,
+        "tradable": true,
+        "point_in_time": {
+          "status": "UNKNOWN",
+          "completed_bar_only": true
+        }
+      },
+      {
+        "series_id": "sol-binance-usdm-4h",
+        "asset": "sol",
+        "asset_class": "crypto",
+        "timeframe": "4h",
+        "context_only": false,
+        "tradable": true,
+        "point_in_time": {
+          "status": "UNKNOWN",
+          "completed_bar_only": true
+        }
+      },
+      {
+        "series_id": "sol-binance-usdm-1h",
+        "asset": "sol",
+        "asset_class": "crypto",
+        "timeframe": "1h",
+        "context_only": false,
+        "tradable": true,
+        "point_in_time": {
+          "status": "UNKNOWN",
+          "completed_bar_only": true
+        }
+      },
+      {
+        "series_id": "aave-binance-usdm-4h",
+        "asset": "aave",
+        "asset_class": "crypto",
+        "timeframe": "4h",
+        "context_only": false,
+        "tradable": true,
+        "point_in_time": {
+          "status": "UNKNOWN",
+          "completed_bar_only": true
+        }
+      },
+      {
+        "series_id": "aave-binance-usdm-1h",
+        "asset": "aave",
+        "asset_class": "crypto",
+        "timeframe": "1h",
+        "context_only": false,
+        "tradable": true,
+        "point_in_time": {
+          "status": "UNKNOWN",
+          "completed_bar_only": true
+        }
+      },
+      {
+        "series_id": "uni-binance-usdm-4h",
+        "asset": "uni",
+        "asset_class": "crypto",
+        "timeframe": "4h",
+        "context_only": false,
+        "tradable": true,
+        "point_in_time": {
+          "status": "UNKNOWN",
+          "completed_bar_only": true
+        }
+      },
+      {
+        "series_id": "uni-binance-usdm-1h",
+        "asset": "uni",
+        "asset_class": "crypto",
+        "timeframe": "1h",
+        "context_only": false,
+        "tradable": true,
+        "point_in_time": {
+          "status": "UNKNOWN",
+          "completed_bar_only": true
+        }
+      },
+      {
+        "series_id": "bnb-binance-usdm-4h",
+        "asset": "bnb",
+        "asset_class": "crypto",
+        "timeframe": "4h",
+        "context_only": false,
+        "tradable": true,
+        "point_in_time": {
+          "status": "UNKNOWN",
+          "completed_bar_only": true
+        }
+      },
+      {
+        "series_id": "bnb-binance-usdm-1h",
+        "asset": "bnb",
+        "asset_class": "crypto",
+        "timeframe": "1h",
+        "context_only": false,
+        "tradable": true,
+        "point_in_time": {
+          "status": "UNKNOWN",
+          "completed_bar_only": true
+        }
+      },
+      {
+        "series_id": "link-binance-usdm-4h",
+        "asset": "link",
+        "asset_class": "crypto",
+        "timeframe": "4h",
+        "context_only": false,
+        "tradable": true,
+        "point_in_time": {
+          "status": "UNKNOWN",
+          "completed_bar_only": true
+        }
+      },
+      {
+        "series_id": "link-binance-usdm-1h",
+        "asset": "link",
+        "asset_class": "crypto",
+        "timeframe": "1h",
+        "context_only": false,
+        "tradable": true,
+        "point_in_time": {
+          "status": "UNKNOWN",
+          "completed_bar_only": true
+        }
+      },
+      {
+        "series_id": "zec-binance-usdm-4h",
+        "asset": "zec",
+        "asset_class": "crypto",
+        "timeframe": "4h",
+        "context_only": false,
+        "tradable": true,
+        "point_in_time": {
+          "status": "UNKNOWN",
+          "completed_bar_only": true
+        }
+      },
+      {
+        "series_id": "zec-binance-usdm-1h",
+        "asset": "zec",
+        "asset_class": "crypto",
+        "timeframe": "1h",
+        "context_only": false,
+        "tradable": true,
+        "point_in_time": {
+          "status": "UNKNOWN",
+          "completed_bar_only": true
+        }
+      },
+      {
+        "series_id": "trx-binance-usdm-4h",
+        "asset": "trx",
+        "asset_class": "crypto",
+        "timeframe": "4h",
+        "context_only": false,
+        "tradable": true,
+        "point_in_time": {
+          "status": "UNKNOWN",
+          "completed_bar_only": true
+        }
+      },
+      {
+        "series_id": "trx-binance-usdm-1h",
+        "asset": "trx",
+        "asset_class": "crypto",
+        "timeframe": "1h",
+        "context_only": false,
+        "tradable": true,
+        "point_in_time": {
+          "status": "UNKNOWN",
+          "completed_bar_only": true
+        }
+      }
+    ],
+    "inputs": [
+      {
+        "input_id": "price",
+        "evidence_family": "PRICE_STRUCTURE",
+        "role": "SETUP",
+        "availability": {
+          "rule": "Completed1h bars and UTC-aligned4h aggregation; first hourlyopen strictly after decision; pastvolume only."
+        },
+        "point_in_time": {
+          "status": "PROXY_DISCLOSED",
+          "completed_bar_only": true
+        }
+      },
+      {
+        "input_id": "open_interest",
+        "evidence_family": "LEVERAGE_UNWIND",
+        "role": "SETUP",
+        "availability": {
+          "rule": "Base-quantity OI timestamp precedes each historical event start/end endpoint by at least5 minutes, with maximum10-minute endpoint staleness. Both observations must also be available by the later signal decision. Archive publication is not historical availability proof."
+        },
+        "point_in_time": {
+          "status": "PROXY_DISCLOSED",
+          "completed_bar_only": true
+        }
+      },
+      {
+        "input_id": "liquidations",
+        "evidence_family": "FORCED_FLOW",
+        "role": "SETUP",
+        "availability": {
+          "rule": "Coinalyze Binance-specific daily USD long/short totals: bucket [t,t+24h); modeled availability t+48h. This is a disclosed development assumption, not verified historical publication. Never use intraday or incomplete-day aggregate."
+        },
+        "point_in_time": {
+          "status": "PROXY_DISCLOSED",
+          "completed_bar_only": true,
+          "historical_publication_verified": false,
+          "revision_vintages_verified": false
+        }
+      },
+      {
+        "input_id": "marks_contracts_costs",
+        "evidence_family": "EXECUTION_METADATA",
+        "role": "CORE",
+        "availability": {
+          "rule": "Accepted approximate contractsteps,minnotional,fees,slippage,maintenance and tradeOHLCmarkproxy; no exact exchange accuracy claim."
+        },
+        "point_in_time": {
+          "status": "PROXY_DISCLOSED",
+          "completed_bar_only": true
+        },
+        "usage": "execution_accounting_only"
+      },
+      {
+        "input_id": "sp500",
+        "evidence_family": "EQUITY_CONTEXT",
+        "role": "CONTEXT",
+        "availability": {
+          "rule": "Later-stage daily equity proxy only. Last independently timestamped available close, conservatively one additional US session lag; archive without availability provenance stays development-only."
+        },
+        "point_in_time": {
+          "status": "PROXY_DISCLOSED",
+          "completed_bar_only": true
+        }
+      },
+      {
+        "input_id": "daily_price_context",
+        "evidence_family": "PRICE_STRUCTURE",
+        "role": "CONTEXT",
+        "availability": {
+          "rule": "UTC calendar day close from exactly24consecutive hourly bars, available only at completed-day end. Latest completed UTCday must exist at decision; no carry across a missing day. Daily close and indicator availability must be <= addition decision time; a midnight decision may use the just-completed UTC day."
+        },
+        "point_in_time": {
+          "status": "PROXY_DISCLOSED",
+          "completed_bar_only": true
+        },
+        "usage": "DailyRSI14/SMA200, additions only; price-family overlap disclosed and blocks promotion."
+      }
+    ]
+  },
+  "experiment": {
+    "evidence_phase": "DEVELOPMENT",
+    "ablation_role": "FIXED_SEQUENTIAL_DEVELOPMENT_NO_WINNER_SELECTION",
+    "required_assets": [
+      "btc",
+      "eth",
+      "sol",
+      "aave",
+      "uni",
+      "bnb",
+      "link",
+      "zec",
+      "trx"
+    ],
+    "grid": {},
+    "acceptance": {
+      "robust_stats": {
+        "max_statistic_p_value": 0.05,
+        "minimum_bootstrap_p20_expectancy_r": 0,
+        "minimum_effective_independent_episode_count": 30,
+        "maximum_drawdown_r": 20,
+        "maximum_cost_r": 0.5
+      },
+      "plateau": {
+        "applicable": false,
+        "reason": "No parameter search in core; later searches require frozen topology and neighbour gates"
+      },
+      "stress": {
+        "required_scenarios": [
+          {
+            "id": "fee_slippage",
+            "multiplier": 2,
+            "minimum_expectancy_r": 0,
+            "minimum_observations": 30
+          },
+          {
+            "id": "funding_carry",
+            "multiplier": 2,
+            "credit_multiplier": 1,
+            "minimum_expectancy_r": 0,
+            "minimum_observations": 30
+          },
+          {
+            "id": "adverse_execution_gap",
+            "debit_r": 0.25,
+            "minimum_expectancy_r": 0,
+            "minimum_observations": 30
+          },
+          {
+            "id": "liquidity_capacity",
+            "maximum_participation_rate": 0.01,
+            "minimum_expectancy_r": 0,
+            "minimum_observations": 30
+          },
+          {
+            "id": "venue_outage_blackout",
+            "window_rule": "First 1h after every qualifying event, applied uniformly before outcomes; zero affected trades fails as no-op",
+            "minimum_expectancy_r": 0,
+            "minimum_observations": 30
+          }
+        ]
+      },
+      "portfolio": {
+        "minimum_accepted_trades": 60,
+        "maximum_drawdown_pct": 30,
+        "minimum_net_pnl": 0
+      }
+    },
+    "predecessor_stage": "CORE_PREMISE",
+    "predecessor_sha256": "20e9b5be92ea486f45344f8dba669263760b9fc49fcdacf3b014562c2a840972",
+    "parent_evidence_sha256": "ca19d628737cf6bfe1a58779950f40088dc0e320e695cc06237a90dac107fb76"
+  },
+  "hypothesis_family": "liquidation-structure",
+  "feasibility": {
+    "status": "DEVELOPMENT",
+    "reason": "Accepted retrospective approximations; no promotion regardless results; measure coverage and exclude missing feature windows."
+  },
+  "user_constraints": {
+    "starting_equity_usdt": 20000,
+    "margin_fraction_cap": 1,
+    "position_risk_fraction_cap": 0.05,
+    "portfolio_risk_fraction_cap": 0.1,
+    "tranche_equity_risk_fractions": [
+      0.01,
+      0.015,
+      0.025
+    ],
+    "leverage_by_stage": [
+      2,
+      2,
+      3
+    ],
+    "max_holding_days": 60,
+    "funding_policy": "EXCLUDED; returns before funding, never net-of-all-costs",
+    "macro_additions": [
+      "not_required",
+      "neutral_or_supportive",
+      "supportive"
+    ],
+    "allocation": "first_confirmed_first_served",
+    "compute_hours_cap": 24,
+    "data_spend_cap": 0,
+    "scope": "historical_only",
+    "daily_context": {
+      "assets": "Same-asset BinanceUSDTperpetual price context; not BTC regime substituted for alts.",
+      "daily_close": "UTC calendar day close from exactly24consecutive hourly bars, available only at completed-day end. Latest completed UTCday must exist at decision; no carry across a missing day. Daily close and indicator availability must be <= addition decision time; a midnight decision may use the just-completed UTC day.",
+      "rsi": {
+        "period_days": 14,
+        "method": "Wilder: first14daily changes seed arithmetic mean gains/losses, then recursive smoothing. Flat gains/losses =>50; zero loss with positive gain=>100; zero gain with positive loss=>0. Reset seed on missing daily close. Seed once on the first15 contiguous closes of the frozen context stream, then carry recursively; no rolling reseeding except after a gap.",
+        "long_support": "RSI>50",
+        "short_support": "RSI<50",
+        "neutral": "RSI==50"
+      },
+      "sma": {
+        "period_days": 200,
+        "method": "Arithmetic mean of exact200contiguous completed UTCdaily closes.",
+        "long_support": "Latest completed daily close>SMA200",
+        "short_support": "Latest completed daily close<SMA200",
+        "neutral": "Close==SMA200"
+      },
+      "first_entry": "Never gates direction, entry, stop or size. Compute/log context for attribution.",
+      "stage2": "S&P plus each enabled daily context must be NEUTRAL or SUPPORTIVE; UNKNOWN or OPPOSING blocks only new tranche.",
+      "stage3": "S&P plus every enabled daily context must be SUPPORTIVE.",
+      "decay": "Keep existing tranches; no context-triggered exit or stop widening.",
+      "evidence_overlap": "RSI andSMA derive from sameprice family as structure; not independent votes or evidence. Conjunctive gates, no composite score, promotion blocked.",
+      "warmup": "Supplemental hourly Apr1,2022-Aug11,2022exclusive, combined only for context with immutablev004hourly. Never inject into legacy router event/account timelines.",
+      "missing": "Context unknown blocks enabled additions only; original firstentry eligibility and otherprofiles preserved."
+    }
+  },
+  "research_window": {
+    "source_start": "2022-08-11T00:00:00Z",
+    "source_end_exclusive": "2026-09-20T00:00:00Z",
+    "decision_start": "2022-11-11T00:00:00Z",
+    "decision_end_exclusive": "2026-07-15T00:00:00Z",
+    "execution_end_exclusive": "2026-09-20T00:00:00Z",
+    "development_end_exclusive": "2024-01-01T00:00:00Z",
+    "outer_test_start": "2024-01-01T00:00:00Z",
+    "outer_test_end_exclusive": "2026-01-01T00:00:00Z",
+    "late_extension_phase": "DEVELOPMENT_DIAGNOSTIC_ONLY_2026_NO_CONFIRMATION",
+    "minimum_purge_days": 67,
+    "embargo_days": 7,
+    "policy": "Common source inception plus strictly prior 90-day warmup and 48h modeled availability. Final eligible decisions leave full setup and 60-day holding maturity. No parameter optimization. If effective sample is insufficient report it; do not shrink purge."
+  },
+  "parent_precommit": {
+    "id": "liquidation-exploratory-v004",
+    "content_sha256": "c18494b153262b1116a13f2996121d65beca78c83dfed9289b4a3386ac7b1858",
+    "byte_sha256": "538f9e588cbfb5efe821f97d218821fdc949c958e74b49c5fca810787fe7b914"
+  },
+  "revision_reason": "Owner authorizes post-shock entries, H4stop/staging experiments, dailyRSI14 andSMA200 directional context for additions; not firstentryfilters. Priorv004 outcomes already exposed.",
+  "daily_stress_contract": {
+    "schema": "liquidation-daily-stress-policy/1",
+    "assets": [
+      "BTC",
+      "ETH",
+      "SOL",
+      "AAVE",
+      "UNI",
+      "BNB",
+      "LINK",
+      "ZEC",
+      "TRX"
+    ],
+    "venue": "BINANCE",
+    "market_type": "USDT_PERPETUAL",
+    "bucket_seconds": 86400,
+    "publication_delay_after_bucket_close_seconds": 86400,
+    "modeled_available_after_bucket_start_seconds": 172800,
+    "prior_contiguous_days": 90,
+    "percentile": 0.95,
+    "quantile_method": "nearest_rank",
+    "stress_comparison": "STRICT_GREATER_THAN_AND_POSITIVE",
+    "missing_policy": "BLOCK_WINDOW_NOT_ZERO",
+    "data_scope": "BINANCE_SPECIFIC_NOT_MARKET_WIDE",
+    "source_authority": "RETROSPECTIVE_PROXY_DISCLOSED",
+    "no_intraday_reconstruction": true
+  },
+  "exploratory_overrides": {
+    "precedence": "exploratory-policy.json overrides incompatible parent requirements only in this DEVELOPMENT successor; original frozen files unchanged",
+    "minimum_episodes_to_run": 0,
+    "promotion_allowed": false,
+    "funding": "EXCLUDED_NOT_OBSERVED_ZERO",
+    "execution": "NEXT_HOURLY_OPEN_STRICTLY_AFTER_DECISION",
+    "marks": "TRADE_OHLC_PROXY",
+    "stage_sequence": "Run fixed sequential profiles and context ablations regardless profitability; retain prior exposure and no promotion.",
+    "independence": "Feature-only marketshockclusters and actual holding-overlap components are descriptive, not asserted independentN;67daypurge retained",
+    "acceptance_and_stress": "All inherited acceptance gates and formalWFO statistics are reference-only; unavailable or omitted stresses NOT_RUN, never passed."
+  },
+  "predecessor_experiment": {
+    "id": "liquidation-exploratory-v004",
+    "policy_byte_sha256": "20e9b5be92ea486f45344f8dba669263760b9fc49fcdacf3b014562c2a840972",
+    "freeze_byte_sha256": "df336d9a65930ab2074373a1435671500f241e9dd8fe8fd1e6af2fb649211bb2",
+    "compact_results_byte_sha256": "ca19d628737cf6bfe1a58779950f40088dc0e320e695cc06237a90dac107fb76",
+    "exposure_byte_sha256": "2e0426c7eecea662d46d53b4df74a2a787bda36c29743bfbe612f54814dd0d44",
+    "outcomes_exposed": true
+  },
+  "audit_contract": {
+    "rule_changes": true,
+    "outcome_optimization": false,
+    "denominators": [
+      "daily observations and valid90day windows",
+      "liquidation stress sides",
+      "qualified price/OI shock events",
+      "admitted setups",
+      "armed continuation/reversal branches",
+      "unique confirmed setups and repeated intents",
+      "execution accepted/rejected fills",
+      "postfill addition eligibility and terminal exits"
+    ],
+    "gate_counts": "Separate first-failure attrition from all-failed-gate diagnostics and repeated bar opportunities; do not add correlated reasons as unique events.",
+    "required_comparisons": [
+      "original four with unchanged input bytes for numeric equivalence",
+      "all nine fixed-order shared portfolio",
+      "per asset and branch attrition regardless returns"
+    ],
+    "scope": "The owner-authorized frozen v005 rules change; trace collection remains passive. No tuning after v005 outcomes.",
+    "diagnostic_only": true
+  },
+  "fixed_variant_inventory": {
+    "BASELINE_V004": {
+      "stage": "CORE_PREMISE",
+      "predecessor_variant": null,
+      "post_shock_entry": false,
+      "h4_initial_stop": false,
+      "refresh_invalidated_pivot": false,
+      "daily_rsi_context": false,
+      "daily_sma200_context": false,
+      "sp500_addition_gate": true
+    },
+    "POST_SHOCK_ENTRY": {
+      "stage": "ENTRY_TIMING",
+      "predecessor_variant": "BASELINE_V004",
+      "post_shock_entry": true,
+      "h4_initial_stop": false,
+      "refresh_invalidated_pivot": false,
+      "daily_rsi_context": false,
+      "daily_sma200_context": false,
+      "sp500_addition_gate": true
+    },
+    "H4_STRUCTURAL_STOP": {
+      "stage": "RISK_LIFECYCLE",
+      "predecessor_variant": "POST_SHOCK_ENTRY",
+      "post_shock_entry": true,
+      "h4_initial_stop": true,
+      "refresh_invalidated_pivot": false,
+      "daily_rsi_context": false,
+      "daily_sma200_context": false,
+      "sp500_addition_gate": true
+    },
+    "REFRESHED_STAGING": {
+      "stage": "RISK_LIFECYCLE",
+      "predecessor_variant": "H4_STRUCTURAL_STOP",
+      "post_shock_entry": true,
+      "h4_initial_stop": true,
+      "refresh_invalidated_pivot": true,
+      "daily_rsi_context": false,
+      "daily_sma200_context": false,
+      "sp500_addition_gate": true
+    },
+    "DAILY_RSI_CONTEXT": {
+      "stage": "INDEPENDENT_CONTEXT",
+      "predecessor_variant": "REFRESHED_STAGING",
+      "post_shock_entry": true,
+      "h4_initial_stop": true,
+      "refresh_invalidated_pivot": true,
+      "daily_rsi_context": true,
+      "daily_sma200_context": false,
+      "sp500_addition_gate": true
+    },
+    "DAILY_MA_CONTEXT": {
+      "stage": "INDEPENDENT_CONTEXT",
+      "predecessor_variant": "REFRESHED_STAGING",
+      "post_shock_entry": true,
+      "h4_initial_stop": true,
+      "refresh_invalidated_pivot": true,
+      "daily_rsi_context": false,
+      "daily_sma200_context": true,
+      "sp500_addition_gate": true
+    },
+    "DAILY_BOTH_CONTEXT": {
+      "stage": "INDEPENDENT_CONTEXT",
+      "predecessor_variant": "REFRESHED_STAGING",
+      "post_shock_entry": true,
+      "h4_initial_stop": true,
+      "refresh_invalidated_pivot": true,
+      "daily_rsi_context": true,
+      "daily_sma200_context": true,
+      "sp500_addition_gate": true
+    }
+  },
+  "rule_contract": {
+    "post_shock_entry": {
+      "enabled_only_in_named_profiles": true,
+      "event_detection": "Unchanged daily liquidation, ATR-displacement and OI-contraction gates; same geometry inventory.",
+      "pivot": "Strict five-consecutive-H4-bar high/low with two bars on each side; center.start >= selected shock geometry end.",
+      "availability": "A five-H4 pivot becomes available only at the fifth source bar close/eventTime. That pivot availability must be <= the first break-confirmation H4 bar start. First break-confirmation bar.start >= modeled daily availability. Both break confirmations become actionable only at their closes. Retrospective eligible pivots may be selected from stored history.",
+      "first_confirmation": "After daily signal availability, latest eligible confirmed pivot HIGH may support LONG if H4 close strictly above it; latest pivot LOW may support SHORT if close strictly below it. If both directions qualify, ambiguous/no candidate. No requirement to recross from the opposite side after daily availability. Latest means greatest center.start among eligible pivots, separately by high/low.",
+      "second_confirmation": "Freeze pivot identity, price and direction at first qualifying close. A consecutive next H4 close must remain strictly beyond that same level. On gap or failure reset and evaluate current bar as possible first confirmation against pivots already available at the current bar START. Do not move the candidate level during its two-close confirmation.",
+      "branch": "Confirmed direction matching shock direction is CONTINUATION; opposite is REVERSAL. Old pre-shock boundary remains event/recovery metadata, not the revised route/entry level.",
+      "entry": "Freeze zone at selected pivot +/-0.25 pre-event H4 ATR. Retain H1 zone touch, trade-side close and prior-hour extreme break; H1 bar must start at/after second-H4 confirmation availability. Next-hour execution/chase cap0.5ATR around NEW zone center remains unchanged.",
+      "deadline": "Original72h from daily availability to branch confirmation; original72h from branch confirmation for first entry.",
+      "invalidation": "Before first fill, completed H4 close strictly below zone.lower for LONG or strictly above zone.upper for SHORT cancels branch/pending intent. No rerouting for same setup.",
+      "reversal_target": "Keep original prior-range midpoint and cost-adjusted >=1R execution gate. No new target fitted to returns.",
+      "source_evidence": "Persist all five pivot-source bars, confirmation bars, level/zone identity and availability; no future pivot confirmation."
+    },
+    "h4_structural_stop": {
+      "rule": "Initial stop from last three consecutive completed/available H4 bars at H1 decision: LONG minimum low minus0.1pre-eventATR, SHORT maximum high plus0.1ATR. Missing bars/adverse-stop failure rejects intent.",
+      "sizing": "Same1/1.5/2.5%tranche risk and5%position/10%portfolio caps; wider distance reduces quantity.",
+      "unchanged": "Continuation trail remains three-H4 ratchet; reversal midpoint exit; 60days from firstfill; 2/2/3x leverage."
+    },
+    "refreshed_staging": {
+      "trigger": "Only after existing frozen addition zone is invalidated by tightened active stop. Valid zones stay frozen.",
+      "replacement": "Clear unsafe zone/candidate; seek a strict safe five-H4 pivot whose center is strictly after lastfill and later than invalidated pivot center, and whose confirmation is strictly after invalidation time. Retain existing favorable-H4 prerequisite.",
+      "invariants": "Never loosen stop, reset firstfill clock, increase stage count, bypass pending order, add after target or exceed any risk/margin cap. Each invalidation/replacement is auditable.",
+      "pending": "Preserve an already-pending addition intent unchanged; defer replacement while pending. Existing execution/risk/stop checks still decide fill. On fill, normal next-stage cycle supersedes prior-stage refresh request. On no-fill, next eligible H4 may seek replacement under the frozen timing constraints. Preserve the first invalidation timestamp while awaiting replacement; later ratchets do not overwrite it."
+    },
+    "daily_context": {
+      "assets": "Same-asset BinanceUSDTperpetual price context; not BTC regime substituted for alts.",
+      "daily_close": "UTC calendar day close from exactly24consecutive hourly bars, available only at completed-day end. Latest completed UTCday must exist at decision; no carry across a missing day. Daily close and indicator availability must be <= addition decision time; a midnight decision may use the just-completed UTC day.",
+      "rsi": {
+        "period_days": 14,
+        "method": "Wilder: first14daily changes seed arithmetic mean gains/losses, then recursive smoothing. Flat gains/losses =>50; zero loss with positive gain=>100; zero gain with positive loss=>0. Reset seed on missing daily close. Seed once on the first15 contiguous closes of the frozen context stream, then carry recursively; no rolling reseeding except after a gap.",
+        "long_support": "RSI>50",
+        "short_support": "RSI<50",
+        "neutral": "RSI==50"
+      },
+      "sma": {
+        "period_days": 200,
+        "method": "Arithmetic mean of exact200contiguous completed UTCdaily closes.",
+        "long_support": "Latest completed daily close>SMA200",
+        "short_support": "Latest completed daily close<SMA200",
+        "neutral": "Close==SMA200"
+      },
+      "first_entry": "Never gates direction, entry, stop or size. Compute/log context for attribution.",
+      "stage2": "S&P plus each enabled daily context must be NEUTRAL or SUPPORTIVE; UNKNOWN or OPPOSING blocks only new tranche.",
+      "stage3": "S&P plus every enabled daily context must be SUPPORTIVE.",
+      "decay": "Keep existing tranches; no context-triggered exit or stop widening.",
+      "evidence_overlap": "RSI andSMA derive from sameprice family as structure; not independent votes or evidence. Conjunctive gates, no composite score, promotion blocked.",
+      "warmup": "Supplemental hourly Apr1,2022-Aug11,2022exclusive, combined only for context with immutablev004hourly. Never inject into legacy router event/account timelines.",
+      "missing": "Context unknown blocks enabled additions only; original firstentry eligibility and otherprofiles preserved."
+    }
+  },
+  "schema_stage_note": "The maintained strategy-precommit/1 freezer requires CORE_PREMISE at the document root. This successor preserves the liquidation-structure family and prior exposure; fixed_variant_inventory declares actual ENTRY_TIMING, RISK_LIFECYCLE and INDEPENDENT_CONTEXT refinement lineage. This is not a new family or exposure reset."
+}

@@ -1,0 +1,15 @@
+{
+  "schema": "liquidation-exploratory-freeze/1",
+  "frozen_at": "2026-09-22T08:14:21.777937+00:00",
+  "outcomes_viewed": false,
+  "outcomes_viewed_scope": "Only new v005 successor profiles; v003/v004 predecessor outcomes already exposed DEVELOPMENT.",
+  "predecessor_outcomes_exposed": true,
+  "independent_policy_review": "PASS by premise_audit_review_v004 after causal pivot timing, pending addition ACK, daily RSI seed and OI endpoint clarifications. Root stage CORE_PREMISE is required by maintained CLI schema; actual refinement stages remain explicit in fixed_variant_inventory.",
+  "files": {
+    "precommit-input.json": "eb6957e8f8075666d25c145d9c0cf48b6ac630ab683450100d69e9fb3b3c96dd",
+    "frozen-precommit.json": "52a5cb0361096d4ba13c4a7b74fa6576c8935658771df90c7021706510179cc1",
+    "frozen-precommit.md": "35cf0b36960173ad2f96857053e6445e6b283d3b08dfd5e74a2dcba0c1282ba8",
+    "exploratory-policy.json": "cbc554e7982c14c633c929536f6a9483411d6b873d7d0040a45e2b8046c2ae21",
+    "README.md": "c10e83b1884bf0aeaf61e62bc71319edeeb20845fb40f66b89ae192386cb3185"
+  }
+}
