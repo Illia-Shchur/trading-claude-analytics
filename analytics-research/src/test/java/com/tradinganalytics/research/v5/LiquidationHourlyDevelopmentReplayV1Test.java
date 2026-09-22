@@ -84,9 +84,28 @@ class LiquidationHourlyDevelopmentReplayV1Test {
 
         assertEquals(Map.of(event.eventId(), event), LiquidationHourlyDevelopmentReplayV1
                 .verifyIdenticalEventInventories(identical));
+        assertEquals(Map.of(), LiquidationHourlyDevelopmentReplayV1.verifyIdenticalEventInventories(List.of()));
         identical.set(6, Map.of());
         org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
                 () -> LiquidationHourlyDevelopmentReplayV1.verifyIdenticalEventInventories(identical));
+        List<LiquidationStructureRouterV1.QualifiedDailyStressEvent> changedEvents = List.of(
+                new LiquidationStructureRouterV1.QualifiedDailyStressEvent(event.eventId(), event.asset(),
+                        event.bucketStart().plusDays(1), event.bucketEventTime(), event.availableAt(),
+                        event.shockDirection(), event.sourceEvidence()),
+                new LiquidationStructureRouterV1.QualifiedDailyStressEvent(event.eventId(), event.asset(),
+                        event.bucketStart(), event.bucketEventTime().plusSeconds(1), event.availableAt().plusSeconds(1),
+                        event.shockDirection(), event.sourceEvidence()),
+                new LiquidationStructureRouterV1.QualifiedDailyStressEvent(event.eventId(), event.asset(),
+                        event.bucketStart(), event.bucketEventTime(), event.availableAt(),
+                        LiquidationStructureRouterV1.Direction.SHORT, event.sourceEvidence()),
+                new LiquidationStructureRouterV1.QualifiedDailyStressEvent(event.eventId(), event.asset(),
+                        event.bucketStart(), event.bucketEventTime(), event.availableAt(), event.shockDirection(), List.of()));
+        for (LiquidationStructureRouterV1.QualifiedDailyStressEvent changed : changedEvents) {
+            org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+                    () -> LiquidationHourlyDevelopmentReplayV1.verifyIdenticalEventInventories(
+                            List.of(Map.of(event.eventId(), event), Map.of(changed.eventId(), changed))),
+                    changed.toString());
+        }
         identical.set(6, Map.of(event.eventId(), new LiquidationStructureRouterV1.QualifiedDailyStressEvent(
                 event.eventId(), event.asset(), event.bucketStart(), event.bucketEventTime(), at.plusSeconds(1),
                 event.shockDirection(), event.sourceEvidence())));
@@ -102,9 +121,16 @@ class LiquidationHourlyDevelopmentReplayV1Test {
                 .put("manifest_path", "context-warmup/context-warmup-manifest.json")
                 .put("manifest_byte_sha256", "b".repeat(64));
         LiquidationHourlyDevelopmentReplayV1.validateWarmupBindingPaths(binding);
-        binding.put("freeze_path", "../outside/data-freeze.json");
-        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
-                () -> LiquidationHourlyDevelopmentReplayV1.validateWarmupBindingPaths(binding));
+        List<ObjectNode> invalidBindings = new ArrayList<>();
+        ObjectNode invalidBinding = binding.deepCopy(); invalidBinding.put("schema", "other"); invalidBindings.add(invalidBinding);
+        invalidBinding = binding.deepCopy(); invalidBinding.put("freeze_path", "../outside/data-freeze.json"); invalidBindings.add(invalidBinding);
+        invalidBinding = binding.deepCopy(); invalidBinding.put("manifest_path", "context-warmup/other.json"); invalidBindings.add(invalidBinding);
+        invalidBinding = binding.deepCopy(); invalidBinding.put("freeze_byte_sha256", "short"); invalidBindings.add(invalidBinding);
+        invalidBinding = binding.deepCopy(); invalidBinding.put("manifest_byte_sha256", "A".repeat(64)); invalidBindings.add(invalidBinding);
+        for (ObjectNode changed : invalidBindings) {
+            org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+                    () -> LiquidationHourlyDevelopmentReplayV1.validateWarmupBindingPaths(changed), changed.toString());
+        }
 
         ObjectNode context = JsonHashes.mapper().createObjectNode().put("schema", "liquidation-context-warmup/1");
         context.putArray("assets").add("BTC").add("ETH").add("SOL").add("AAVE").add("UNI")
@@ -120,13 +146,34 @@ class LiquidationHourlyDevelopmentReplayV1Test {
         List<String> assets = List.of("BTC", "ETH", "SOL", "AAVE", "UNI", "BNB", "LINK", "ZEC", "TRX");
 
         LiquidationHourlyDevelopmentReplayV1.validateDailyContextWarmupMetadata(context, freeze, assets);
-        context.withArray("assets").remove(8);
+        List<ObjectNode> invalidContexts = new ArrayList<>();
+        ObjectNode changedContext = context.deepCopy(); changedContext.put("schema", "other"); invalidContexts.add(changedContext);
+        changedContext = context.deepCopy(); changedContext.withArray("assets").set(0, JsonHashes.mapper().getNodeFactory().textNode("ETH")); invalidContexts.add(changedContext);
+        changedContext = context.deepCopy(); changedContext.with("warmup_window").put("start_inclusive", "2022-04-02"); invalidContexts.add(changedContext);
+        changedContext = context.deepCopy(); changedContext.with("warmup_window").put("end_exclusive", "2022-08-12"); invalidContexts.add(changedContext);
+        changedContext = context.deepCopy(); changedContext.with("retained_hourly_window").put("start_inclusive", "2022-08-12"); invalidContexts.add(changedContext);
+        changedContext = context.deepCopy(); changedContext.with("retained_hourly_window").put("end_exclusive", "2026-09-21"); invalidContexts.add(changedContext);
+        changedContext = context.deepCopy(); changedContext.with("decision_window").put("start_inclusive", "2022-11-12"); invalidContexts.add(changedContext);
+        changedContext = context.deepCopy(); changedContext.with("decision_window").put("end_exclusive", "2026-07-16"); invalidContexts.add(changedContext);
+        changedContext = context.deepCopy(); changedContext.put("outcome_calculation_performed", true); invalidContexts.add(changedContext);
+        for (ObjectNode changed : invalidContexts) {
+            org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+                    () -> LiquidationHourlyDevelopmentReplayV1.validateDailyContextWarmupMetadata(changed, freeze, assets),
+                    changed.toString());
+        }
+        ObjectNode wrongFreezeSchema = freeze.deepCopy(); wrongFreezeSchema.put("schema", "other");
         org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
-                () -> LiquidationHourlyDevelopmentReplayV1.validateDailyContextWarmupMetadata(context, freeze, assets));
-        context.withArray("assets").add("TRX");
-        context.with("warmup_window").put("start_inclusive", "2022-04-02");
+                () -> LiquidationHourlyDevelopmentReplayV1.validateDailyContextWarmupMetadata(context, wrongFreezeSchema, assets));
+        ObjectNode wrongFreezeAssets = freeze.deepCopy();
+        wrongFreezeAssets.withArray("assets").set(0, JsonHashes.mapper().getNodeFactory().textNode("ETH"));
         org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
-                () -> LiquidationHourlyDevelopmentReplayV1.validateDailyContextWarmupMetadata(context, freeze, assets));
+                () -> LiquidationHourlyDevelopmentReplayV1.validateDailyContextWarmupMetadata(context, wrongFreezeAssets, assets));
+        ObjectNode noFiles = freeze.deepCopy(); noFiles.remove("files");
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+                () -> LiquidationHourlyDevelopmentReplayV1.validateDailyContextWarmupMetadata(context, noFiles, assets));
+        ArrayList<String> wrongInputOrder = new ArrayList<>(assets); wrongInputOrder.set(0, "ETH");
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+                () -> LiquidationHourlyDevelopmentReplayV1.validateDailyContextWarmupMetadata(context, freeze, wrongInputOrder));
     }
 
     @Test
@@ -142,9 +189,32 @@ class LiquidationHourlyDevelopmentReplayV1Test {
         ObjectNode policy = (ObjectNode) JsonHashes.mapper().readTree(bytes);
         invokeVerifyPolicy(policy, digest, freezePath);
 
-        ((ObjectNode) policy.path("variant_definitions").path("DAILY_MA_CONTEXT")).put("daily_sma200_context", false);
-        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
-                () -> invokeVerifyPolicy(policy, digest, freezePath));
+        List<ObjectNode> changedPolicies = new ArrayList<>();
+        ObjectNode changed = policy.deepCopy();
+        ((ObjectNode) changed.path("variant_definitions").path("DAILY_MA_CONTEXT")).put("daily_sma200_context", false);
+        changedPolicies.add(changed);
+        changed = policy.deepCopy(); ((ObjectNode) changed.path("variant_definitions").path("POST_SHOCK_ENTRY")).put("stage", "RISK_LIFECYCLE");
+        changedPolicies.add(changed);
+        changed = policy.deepCopy(); ((ObjectNode) changed.path("variant_definitions").path("POST_SHOCK_ENTRY")).put("predecessor_variant", "H4_STRUCTURAL_STOP");
+        changedPolicies.add(changed);
+        changed = policy.deepCopy(); ((ObjectNode) changed.path("variant_definitions").path("POST_SHOCK_ENTRY")).put("post_shock_entry", false);
+        changedPolicies.add(changed);
+        changed = policy.deepCopy(); ((ObjectNode) changed.path("variant_definitions").path("H4_STRUCTURAL_STOP")).put("h4_initial_stop", false);
+        changedPolicies.add(changed);
+        changed = policy.deepCopy(); ((ObjectNode) changed.path("variant_definitions").path("REFRESHED_STAGING")).put("refresh_invalidated_pivot", false);
+        changedPolicies.add(changed);
+        changed = policy.deepCopy(); ((ObjectNode) changed.path("variant_definitions").path("DAILY_RSI_CONTEXT")).put("daily_rsi_context", false);
+        changedPolicies.add(changed);
+        changed = policy.deepCopy(); ((ObjectNode) changed.path("variant_definitions").path("BASELINE_V004")).put("sp500_addition_gate", false);
+        changedPolicies.add(changed);
+        changed = policy.deepCopy(); changed.with("daily_context").with("rsi").put("period_days", 13);
+        changedPolicies.add(changed);
+        changed = policy.deepCopy(); changed.with("daily_context").with("sma").put("period_days", 199);
+        changedPolicies.add(changed);
+        for (ObjectNode changedPolicy : changedPolicies) {
+            org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+                    () -> invokeVerifyPolicy(changedPolicy, digest, freezePath), changedPolicy.toString());
+        }
     }
 
     @Test

@@ -135,6 +135,45 @@ class LiquidationHourlyDiagnosticsV1BoundaryTest {
     }
 
     @Test
+    void responsePathsDistinguishNonHourlyAnchorsInvalidAnchorsAndBothKindsOfMissingClose() {
+        TreeMap<Instant, Double> btc = hourly(BASE, 72);
+        btc.put(BASE.plus(Duration.ofHours(10)), Double.NaN);
+        btc.put(BASE.plus(Duration.ofDays(1)), Double.NaN);
+        List<LiquidationHourlyDiagnosticsV1.Event> events = List.of(
+                event("interior-and-endpoint-gap", "BTC", BASE, BASE,
+                        BASE, LiquidationStructureRouterV1.Direction.LONG),
+                event("nonhour-anchor", "BTC", BASE.plusSeconds(1_800), BASE.plusSeconds(1_800),
+                        BASE.plusSeconds(1_800), LiquidationStructureRouterV1.Direction.LONG),
+                event("invalid-anchor-close", "BTC", BASE.plus(Duration.ofDays(1)), BASE.plus(Duration.ofDays(1)),
+                        BASE.plus(Duration.ofDays(1)), LiquidationStructureRouterV1.Direction.LONG));
+
+        ObjectNode result = build(policy(140), Map.of("BTC", btc), events, List.of(), List.of(), Map.of(), Map.of(), coverage());
+        JsonNode oneDay = metric(result, "FIRST_OBSERVABLE_EVENT_AVAILABILITY", CORE, "SIGNED_SHOCK", 1);
+
+        assertEquals(3, oneDay.path("observation_count").asInt());
+        assertEquals(0, oneDay.path("valid_response_count").asInt());
+        assertEquals(1, oneDay.path("non_hourly_anchor_count").asInt());
+        assertEquals(1, oneDay.path("missing_anchor_count").asInt(), "a non-finite anchor close is unavailable");
+        assertEquals(1, oneDay.path("missing_endpoint_count").asInt());
+        assertEquals(1, oneDay.path("missing_intervening_hour_count").asInt());
+    }
+
+    @Test
+    void publicDiagnosticRowsRejectInvalidPricesAndImpossiblePositionChronology() {
+        assertThrows(IllegalArgumentException.class, () -> new LiquidationHourlyDiagnosticsV1.Price("BTC", BASE, Double.NaN));
+        assertThrows(IllegalArgumentException.class, () -> new LiquidationHourlyDiagnosticsV1.Price("BTC", BASE, 0.0));
+
+        assertThrows(IllegalArgumentException.class, () -> new LiquidationHourlyDiagnosticsV1.Position(CORE, "BTC", "no-fill",
+                BASE, null, BASE.plusSeconds(1), java.math.BigDecimal.ONE, true));
+        assertThrows(IllegalArgumentException.class, () -> new LiquidationHourlyDiagnosticsV1.Position(CORE, "BTC", "no-exit",
+                BASE, BASE.plusSeconds(1), null, java.math.BigDecimal.ONE, true));
+        assertThrows(IllegalArgumentException.class, () -> new LiquidationHourlyDiagnosticsV1.Position(CORE, "BTC", "exit-before-fill",
+                BASE, BASE.plusSeconds(2), BASE.plusSeconds(1), java.math.BigDecimal.ONE, true));
+        assertThrows(IllegalArgumentException.class, () -> new LiquidationHourlyDiagnosticsV1.Position(CORE, "BTC", "open-with-exit",
+                BASE, BASE.plusSeconds(1), BASE.plusSeconds(2), java.math.BigDecimal.ONE, false));
+    }
+
+    @Test
     void intentAssociationIgnoresOrphansAndAssetMismatchesButRejectsFutureOrMalformedRoutes() {
         LiquidationHourlyDiagnosticsV1.Event event = event("qualified", "BTC", BASE, BASE, BASE,
                 LiquidationStructureRouterV1.Direction.LONG);

@@ -58,6 +58,29 @@ class LiquidationStructureRouterV1Test {
     }
 
     @Test
+    void ruleProfileLookupAndDailyContextInputGuardsFailClosed() {
+        assertThrows(IllegalArgumentException.class, () -> RuleConfig.forProfile("UNFROZEN_PROFILE"));
+        LocalDate day = LocalDate.of(2024, 1, 3);
+        Instant completedDay = utc(day.plusDays(1), 0);
+        assertThrows(IllegalArgumentException.class, () -> new DailyPriceContext("BTC", day,
+                completedDay.minusNanos(1), 100, 50.0, 100.0, "btc-daily-v1"));
+        assertThrows(IllegalArgumentException.class, () -> new DailyPriceContext("BTC", day,
+                completedDay, 0, 50.0, 100.0, "btc-daily-v1"));
+        assertThrows(IllegalArgumentException.class, () -> new DailyPriceContext("BTC", day,
+                completedDay, 100, Double.NaN, 100.0, "btc-daily-v1"));
+        assertThrows(IllegalArgumentException.class, () -> new DailyPriceContext("BTC", day,
+                completedDay, 100, -0.1, 100.0, "btc-daily-v1"));
+        assertThrows(IllegalArgumentException.class, () -> new DailyPriceContext("BTC", day,
+                completedDay, 100, 100.1, 100.0, "btc-daily-v1"));
+        assertThrows(IllegalArgumentException.class, () -> new DailyPriceContext("BTC", day,
+                completedDay, 100, 50.0, 0.0, "btc-daily-v1"));
+        DailyPriceContext duplicate = new DailyPriceContext("BTC", day, completedDay,
+                100, null, null, "btc-daily-v1");
+        assertThrows(IllegalArgumentException.class, () -> new Router(Variant.ROUTED_REVERSAL_CONTINUATION,
+                MacroGatePolicy.STRUCTURE_ONLY, RuleConfig.DAILY_BOTH_CONTEXT, List.of(duplicate, duplicate)));
+    }
+
+    @Test
     void entryAuditSnapshotSeparatesUnavailableNoStressAndRejectedGeometryRowsAndHonorsItsWindow() {
         List<Observation> observations = new ArrayList<>(fixture(true, OiBoundary.TOO_FRESH, true));
         LocalDate extraWarmupDay = STRESS_DAY.minusDays(91);
@@ -756,6 +779,47 @@ class LiquidationStructureRouterV1Test {
     }
 
     @Test
+    void postShockEntryZoneInvalidationCancelsPendingIntentsAndTerminatesUnpendingRoutes() {
+        List<List<Observation>> cases = List.of(
+                postShockSwingFixture(true, Duration.ZERO, true),
+                postShockLongReversalFixture(),
+                postShockSwingFixture(false, Duration.ZERO, true));
+        for (int index = 0; index < cases.size(); index++) {
+            List<Observation> observations = new ArrayList<>(cases.get(index));
+            Instant invalidationStart = MODEL_AVAILABLE.plus(Duration.ofHours(8));
+            Bar invalidation = index == 1
+                    ? bar("BTC", Timeframe.FOUR_HOUR, invalidationStart,
+                            99.5, 99.6, 98.5, 98.8, invalidationStart.plus(Duration.ofHours(4)), PRICE)
+                    : bar("BTC", Timeframe.FOUR_HOUR, invalidationStart,
+                            99.8, 100.2, 99.6, 100.0, invalidationStart.plus(Duration.ofHours(4)), PRICE);
+            observations.add(invalidation);
+            Router router = new Router(Variant.ROUTED_REVERSAL_CONTINUATION,
+                    MacroGatePolicy.STRUCTURE_ONLY, RuleConfig.POST_SHOCK_ENTRY);
+            List<ConfirmedIntent> intents = new ArrayList<>();
+            List<PendingCancellation> cancellations = new ArrayList<>();
+            for (Observation observation : sorted(observations)) {
+                RouteResult route = router.accept(observation);
+                intents.addAll(route.intents());
+                cancellations.addAll(route.pendingCancellations());
+            }
+            ObjectNode audit = latestSetupAudit(router, invalidation.availableAt().plusNanos(1));
+            assertEquals("POST_SHOCK_ENTRY_ZONE_INVALIDATED_BEFORE_FILL",
+                    audit.path("route").path("branch_status").asText());
+            if (index < 2) {
+                assertSingleStageOne(intents);
+                assertEquals(1, cancellations.size());
+                assertEquals("POST_SHOCK_ENTRY_ZONE_INVALIDATED_BEFORE_FILL", cancellations.get(0).reasonCode());
+                assertEquals("POST_SHOCK_ENTRY_ZONE_INVALIDATED_BEFORE_FILL",
+                        audit.path("terminal_reason").asText());
+            } else {
+                assertTrue(intents.isEmpty(), "a confirmed route without an entry intent terminates without rerouting");
+                assertTrue(cancellations.isEmpty());
+                assertEquals("POST_SHOCK_ENTRY_ZONE_INVALIDATED_NO_REROUTE", audit.path("terminal_reason").asText());
+            }
+        }
+    }
+
+    @Test
     void postShockBreakCandidateResetsOnFailureAndGapThenReconfirmsFromCurrentBar() {
         for (boolean createGap : List.of(false, true)) {
             List<Observation> observations = postShockSwingFixture(false, Duration.ZERO, true);
@@ -886,6 +950,11 @@ class LiquidationStructureRouterV1Test {
         assertEquals("DAILY_RSI_OPPOSING_BLOCKS_STAGE_2", opposing.reasonCode());
         assertTrue(opposing.sourceEvidence().stream().anyMatch(source -> source.role().equals("DAILY_RSI14_CONTEXT")
                 && !source.availableAt().isAfter(opposing.decisionTime())));
+        opposingRouter.onClose(new CloseAck(opposingIntents.get(0).setupId(), opposingIntents.get(0).asset(),
+                utc(LocalDate.of(2024, 1, 9), 0), CloseReason.OTHER));
+        ObjectNode opposingClosed = latestSetupAudit(opposingRouter, utc(LocalDate.of(2024, 1, 9), 0).plusNanos(1));
+        assertEquals("STAGE_2_CONFIRMATIONS_BLOCKED_BY_DAILY_CONTEXT",
+                opposingClosed.path("staging").path("terminal_addition_blocker").asText());
 
         List<Observation> neutralObs = new ArrayList<>(fixture(true, OiBoundary.VALID, true));
         neutralObs.addAll(postInitialFillBars());
@@ -942,6 +1011,8 @@ class LiquidationStructureRouterV1Test {
         List<DailyPriceContext> smaRows = List.of(
                 new DailyPriceContext("ETH", LocalDate.of(2024, 1, 3),
                         utc(LocalDate.of(2024, 1, 4), 0), 101, null, 100.0, "eth-daily-v1"),
+                new DailyPriceContext("BTC", LocalDate.of(2024, 1, 3),
+                        utc(LocalDate.of(2024, 1, 4), 23), 101, null, 100.0, "btc-late-daily-v1"),
                 new DailyPriceContext("BTC", LocalDate.of(2024, 1, 4),
                         utc(LocalDate.of(2024, 1, 5), 0), 99, null, 100.0, "btc-daily-v1"),
                 // The latest exact prior-day value supports the short stage 3 at Jan 8 22Z.
@@ -968,7 +1039,7 @@ class LiquidationStructureRouterV1Test {
         RejectedOpportunity wrongAssetMissing = smaRejections.stream()
                 .filter(value -> value.stage() == 2).findFirst().orElseThrow();
         assertEquals("DAILY_SMA200_UNKNOWN_BLOCKS_STAGE_2", wrongAssetMissing.reasonCode(),
-                "a different asset's daily row must not be carried into BTC context");
+                "wrong-asset data and same-asset data not yet available at the decision both fail closed");
         ConfirmedIntent boundaryStageTwo = smaIntents.stream().filter(value -> value.stage() == 2)
                 .findFirst().orElseThrow();
         assertEquals(utc(LocalDate.of(2024, 1, 5), 0), boundaryStageTwo.decisionTime());
@@ -1003,6 +1074,83 @@ class LiquidationStructureRouterV1Test {
                 "supportive RSI cannot override an opposing SMA when both gates are enabled");
         assertTrue(conjunctive.sourceEvidence().stream().anyMatch(source -> source.role().equals("DAILY_RSI14_CONTEXT")));
         assertTrue(conjunctive.sourceEvidence().stream().anyMatch(source -> source.role().equals("DAILY_SMA200_CONTEXT")));
+    }
+
+    @Test
+    void supportiveDailyRsiAndSmaPermitLongReversalAddition() {
+        RuleConfig bothGates = new RuleConfig(InitialEntryRule.POST_SHOCK_CONFIRMED_H4_SWING,
+                InitialStopRule.LEGACY_H1_THREE_BAR, PivotRefreshRule.FROZEN_INVALIDATION,
+                true, true, true);
+        List<Observation> observations = new ArrayList<>(postShockLongReversalFixture());
+        // Keep the active stage-one stop safely below the later H4 pivot so the test isolates
+        // directional daily context instead of accidentally rejecting an unsafe add structure.
+        Instant stageOnePriorHour = MODEL_AVAILABLE.plus(Duration.ofHours(7));
+        observations.removeIf(value -> value instanceof Bar bar && bar.timeframe() == Timeframe.ONE_HOUR
+                && bar.startTime().equals(stageOnePriorHour));
+        observations.add(bar("BTC", Timeframe.ONE_HOUR, stageOnePriorHour,
+                99.5, 99.7, 98.5, 99.6, stageOnePriorHour.plus(Duration.ofHours(1)), HOUR));
+        double[][] h4 = {
+                {99.9, 100.1, 99.8, 100.0},
+                {100.0, 100.15, 99.7, 100.1},
+                {100.1, 100.15, 99.5, 99.9},
+                {99.9, 100.15, 99.6, 100.0},
+                {100.0, 100.15, 99.7, 100.1}
+        };
+        Instant firstStart = MODEL_AVAILABLE.plus(Duration.ofHours(12));
+        for (int i = 0; i < h4.length; i++) {
+            Instant start = firstStart.plus(Duration.ofHours(4L * i));
+            double[] v = h4[i];
+            observations.add(bar("BTC", Timeframe.FOUR_HOUR, start,
+                    v[0], v[1], v[2], v[3], start.plus(Duration.ofHours(4)), PRICE));
+        }
+        Instant priorHour = MODEL_AVAILABLE.plus(Duration.ofHours(32));
+        observations.add(bar("BTC", Timeframe.ONE_HOUR, priorHour,
+                99.2, 99.5, 99.1, 99.4, priorHour.plus(Duration.ofHours(1)), HOUR));
+        Instant additionHour = MODEL_AVAILABLE.plus(Duration.ofHours(33));
+        observations.add(bar("BTC", Timeframe.ONE_HOUR, additionHour,
+                99.4, 100.0, 99.3, 99.8, additionHour.plus(Duration.ofHours(1)), HOUR));
+        LocalDate contextDay = LocalDate.of(2024, 1, 3);
+        Instant contextAvailable = utc(LocalDate.of(2024, 1, 4), 0);
+        Router router = new Router(Variant.ROUTED_REVERSAL_CONTINUATION,
+                MacroGatePolicy.STRUCTURE_ONLY, bothGates, List.of(
+                        new DailyPriceContext("BTC", contextDay, contextAvailable,
+                                101, 60.0, 100.0, "btc-daily-v1")));
+        List<ConfirmedIntent> intents = new ArrayList<>();
+        List<RejectedOpportunity> rejections = new ArrayList<>();
+        for (Observation observation : sorted(observations)) {
+            RouteResult route = router.accept(observation);
+            intents.addAll(route.intents());
+            rejections.addAll(route.rejections());
+            for (ConfirmedIntent intent : route.intents()) router.onFill(new FillAck(intent.intentId(), intent.setupId(),
+                    intent.asset(), intent.stage(), intent.requestedExecutionAfter().plusNanos(1),
+                    intent.confirmationClose(), intent.initialStop()));
+        }
+        assertEquals(List.of(1, 2), intents.stream().map(ConfirmedIntent::stage).toList());
+        ConfirmedIntent addition = intents.get(1);
+        assertEquals(Branch.REVERSAL, addition.branch());
+        assertEquals(Direction.LONG, addition.direction());
+        assertEquals(0, rejections.stream().filter(value -> value.stage() == 2).count());
+        assertTrue(addition.sourceEvidence().stream().anyMatch(source -> source.role().equals("DAILY_RSI14_CONTEXT")
+                && source.availableAt().equals(contextAvailable)));
+        assertTrue(addition.sourceEvidence().stream().anyMatch(source -> source.role().equals("DAILY_SMA200_CONTEXT")
+                && source.availableAt().equals(contextAvailable)));
+
+        Router opposingLongRouter = new Router(Variant.ROUTED_REVERSAL_CONTINUATION,
+                MacroGatePolicy.STRUCTURE_ONLY, bothGates, List.of(
+                        new DailyPriceContext("BTC", contextDay, contextAvailable,
+                                99, 40.0, 100.0, "btc-daily-v1")));
+        List<RejectedOpportunity> opposingLongRejections = new ArrayList<>();
+        for (Observation observation : sorted(observations)) {
+            RouteResult route = opposingLongRouter.accept(observation);
+            opposingLongRejections.addAll(route.rejections());
+            for (ConfirmedIntent intent : route.intents()) opposingLongRouter.onFill(new FillAck(intent.intentId(), intent.setupId(),
+                    intent.asset(), intent.stage(), intent.requestedExecutionAfter().plusNanos(1),
+                    intent.confirmationClose(), intent.initialStop()));
+        }
+        RejectedOpportunity opposingLong = opposingLongRejections.stream()
+                .filter(value -> value.stage() == 2).findFirst().orElseThrow();
+        assertEquals("DAILY_RSI_OPPOSING_BLOCKS_STAGE_2;DAILY_SMA200_OPPOSING_BLOCKS_STAGE_2",
+                opposingLong.reasonCode(), "both long-direction context gates must independently pass");
     }
 
     @Test

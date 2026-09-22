@@ -5,9 +5,12 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.tradinganalytics.infrastructure.security.JsonHashes;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -17,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -80,6 +84,44 @@ class LiquidationDailyContextWarmupLoaderV1Test {
         IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
                 () -> load(fixture, retainedBtcBars()));
         assertTrue(error.getMessage().contains("source changed or disappeared after freeze"));
+    }
+
+    @Test
+    void rejectsEachMalformedNestedFileReceipt(@TempDir Path directory) throws Exception {
+        List<Consumer<Fixture>> corruptions = List.of(
+                fixture -> fixture.mutateReceipt("coverage.json", receipt -> fixture.nestedFreeze.with("files")
+                        .set("coverage.json", TextNode.valueOf("not-a-receipt"))),
+                fixture -> fixture.mutateReceipt("coverage.json", receipt -> receipt.put("bytes", -1)),
+                fixture -> fixture.mutateReceipt("coverage.json", receipt -> receipt.put("sha256", "ABCDEF")));
+        for (int index = 0; index < corruptions.size(); index++) {
+            Fixture fixture = Fixture.create(directory.resolve("bad-receipt-" + index));
+            corruptions.get(index).accept(fixture);
+            IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                    () -> load(fixture, retainedBtcBars()));
+            assertTrue(error.getMessage().contains("invalid file receipt"), error.getMessage());
+        }
+    }
+
+    @Test
+    void rejectsFrozenSymlinkAndSameLengthContentMutation(@TempDir Path directory) throws Exception {
+        Fixture symlink = Fixture.create(directory.resolve("symlink"));
+        Path btc = symlink.contextRoot.resolve("normalized/klines_1h_BTC.csv");
+        Files.delete(btc);
+        Files.createSymbolicLink(btc, symlink.contextRoot.resolve("normalized/klines_1h_ETH.csv"));
+        symlink.refreshBundle(null);
+        IllegalArgumentException symlinkError = assertThrows(IllegalArgumentException.class,
+                () -> load(symlink, retainedBtcBars()));
+        assertTrue(symlinkError.getMessage().contains("source changed or disappeared after freeze"));
+
+        Fixture sameLength = Fixture.create(directory.resolve("same-length"));
+        Path csv = sameLength.contextRoot.resolve("normalized/klines_1h_BTC.csv");
+        String original = Files.readString(csv);
+        String changed = original.replaceFirst("100\\.0", "100.1");
+        assertEquals(original.length(), changed.length());
+        Files.writeString(csv, changed);
+        IllegalArgumentException hashError = assertThrows(IllegalArgumentException.class,
+                () -> load(sameLength, retainedBtcBars()));
+        assertTrue(hashError.getMessage().contains("source changed or disappeared after freeze"));
     }
 
     @Test
@@ -161,6 +203,27 @@ class LiquidationDailyContextWarmupLoaderV1Test {
         IllegalArgumentException symbolError = assertThrows(IllegalArgumentException.class,
                 () -> load(wrongSymbol, retainedBtcBars()));
         assertTrue(symbolError.getMessage().contains("wrong symbol"));
+    }
+
+    @Test
+    void rejectsWrongFixedAssetMappingAndNonHourlyAlignedSupplementalBars(@TempDir Path directory) throws Exception {
+        Fixture wrongMapping = Fixture.create(directory.resolve("wrong-fixed-map"));
+        wrongMapping.contextManifest.with("files").put("BTC", "normalized/klines_1h_ETH.csv");
+        wrongMapping.refreshBundle(null);
+        IllegalArgumentException mappingError = assertThrows(IllegalArgumentException.class,
+                () -> load(wrongMapping, retainedBtcBars()));
+        assertTrue(mappingError.getMessage().contains("fixed per-asset mapping"));
+
+        Fixture unaligned = Fixture.create(directory.resolve("unaligned"));
+        Path csv = unaligned.contextRoot.resolve("normalized/klines_1h_BTC.csv");
+        String[] lines = Files.readString(csv).split("\\n", 3);
+        String[] first = lines[1].split(",", -1);
+        first[0] = "2022-04-01T00:30:00Z";
+        Files.writeString(csv, lines[0] + "\n" + String.join(",", first) + "\n" + lines[2]);
+        unaligned.refreshBundle(null);
+        IllegalArgumentException alignmentError = assertThrows(IllegalArgumentException.class,
+                () -> load(unaligned, retainedBtcBars()));
+        assertTrue(alignmentError.getMessage().contains("outside the hourly source bounds"));
     }
 
     private static List<LiquidationStructureRouterV1.DailyPriceContext> load(Fixture fixture,
@@ -288,6 +351,22 @@ class LiquidationDailyContextWarmupLoaderV1Test {
             ((ObjectNode) inputManifest.path("daily_context_warmup"))
                     .put("freeze_byte_sha256", sha(nestedFreezePath))
                     .put("manifest_byte_sha256", sha(contextManifestPath));
+        }
+
+        void mutateReceipt(String relative, Consumer<ObjectNode> mutation) {
+            JsonNode raw = nestedFreeze.path("files").path(relative);
+            ObjectNode receipt = raw instanceof ObjectNode object ? object : JsonHashes.mapper().createObjectNode();
+            mutation.accept(receipt);
+            if (nestedFreeze.path("files").path(relative).isObject()) {
+                ((ObjectNode) nestedFreeze.path("files")).set(relative, receipt);
+            }
+            nestedFreeze.put("content_sha256", JsonHashes.ownHash(nestedFreeze));
+            try {
+                writeJson(nestedFreezePath, nestedFreeze);
+                ((ObjectNode) inputManifest.path("daily_context_warmup")).put("freeze_byte_sha256", sha(nestedFreezePath));
+            } catch (IOException error) {
+                throw new UncheckedIOException(error);
+            }
         }
 
         private List<Path> bundleFiles() {

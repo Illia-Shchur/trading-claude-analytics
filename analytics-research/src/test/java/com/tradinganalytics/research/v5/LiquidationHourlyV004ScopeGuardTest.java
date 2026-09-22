@@ -249,7 +249,7 @@ class LiquidationHourlyV004ScopeGuardTest {
     private static void assertManifestRejected(List<String> assets) {
         IllegalArgumentException rejected = assertThrows(IllegalArgumentException.class,
                 () -> manifestAssetOrder(manifestAssets(assets)));
-        assertEquals("input manifest assets must equal the exact frozen legacy-four or v004 nine-asset order", rejected.getMessage());
+        assertEquals("input manifest assets must equal the exact frozen legacy-four or nine-asset order", rejected.getMessage());
     }
 
     private static List<String> manifestAssetOrder(ObjectNode manifest) {

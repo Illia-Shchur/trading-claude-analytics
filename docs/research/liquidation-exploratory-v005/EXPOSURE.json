@@ -1,0 +1,57 @@
+{
+  "schema": "liquidation-exploratory-exposure/1",
+  "experiment_id": "liquidation-exploratory-v005",
+  "evidence_phase": "DEVELOPMENT",
+  "recorded_at": "2026-09-22T10:10:14.530244+00:00",
+  "predecessor_outcomes_exposed": true,
+  "predecessor_exposure": {
+    "path": "docs/research/liquidation-exploratory-v004/EXPOSURE.json",
+    "sha256": "2e0426c7eecea662d46d53b4df74a2a787bda36c29743bfbe612f54814dd0d44"
+  },
+  "declared_profile_count": 7,
+  "new_declared_rule_configurations": 6,
+  "baseline_alias": "BASELINE_V004 equals previously exposed v004 STAGED_MACRO behavior",
+  "variant_inventory": [
+    "BASELINE_V004",
+    "POST_SHOCK_ENTRY",
+    "H4_STRUCTURAL_STOP",
+    "REFRESHED_STAGING",
+    "DAILY_RSI_CONTEXT",
+    "DAILY_MA_CONTEXT",
+    "DAILY_BOTH_CONTEXT"
+  ],
+  "empirical_equal_accounting_does_not_reduce_declared_exposure": true,
+  "cost_sensitivity": "Doubled fees and slippage for all seven profiles; no selection",
+  "outcome_optimization": false,
+  "holdout_reset": false,
+  "promotion_allowed": false,
+  "runs": [
+    {
+      "scope": "legacy-nine-runs",
+      "run_id": "2026-09-22T10-03-33-017986Z-207597d6-af3d-4fc2-9a5e-57a1bf739036",
+      "status": "COMPLETED_OUTCOMES_VIEWED",
+      "receipt": ".research-run/liquidation-exploratory-v005/legacy-nine-runs/2026-09-22T10-03-33-017986Z-207597d6-af3d-4fc2-9a5e-57a1bf739036/result.json",
+      "receipt_byte_sha256": "10c15c101f97e932bede5e9835caf2f62662de86ca4e6eeffc31c5d0cb3f7ba8",
+      "executor_sha256": "7ae562430f8ad1449306238d83ff0aab30fcf7ffb615a5d5db8f004a20c1043b",
+      "note": "Retained cumulative exposure; no holdout or family reset."
+    },
+    {
+      "scope": "legacy-four-runs",
+      "run_id": "2026-09-22T10-09-01-481401Z-9eacbc26-00db-46d2-bdb6-18178c78f3f6",
+      "status": "COMPLETED_OUTCOMES_VIEWED",
+      "receipt": ".research-run/liquidation-exploratory-v005/legacy-four-runs/2026-09-22T10-09-01-481401Z-9eacbc26-00db-46d2-bdb6-18178c78f3f6/result.json",
+      "receipt_byte_sha256": "2208ba53e1b0fa05b7bc606f688745bbc66dadf160221fb96ba784d84fa092c4",
+      "executor_sha256": "7ae562430f8ad1449306238d83ff0aab30fcf7ffb615a5d5db8f004a20c1043b",
+      "note": "Retained cumulative exposure; no holdout or family reset."
+    },
+    {
+      "scope": "runs",
+      "run_id": "2026-09-22T10-05-35-237575Z-2c0ee15d-aa08-4fd7-be64-a141d84ffb99",
+      "status": "COMPLETED_OUTCOMES_VIEWED",
+      "receipt": ".research-run/liquidation-exploratory-v005/runs/2026-09-22T10-05-35-237575Z-2c0ee15d-aa08-4fd7-be64-a141d84ffb99/result.json",
+      "receipt_byte_sha256": "f7766ccbd8bf54ad1d29dac59f25230d8d7fb56dddb019b9a361f564734bd8f9",
+      "executor_sha256": "7ae562430f8ad1449306238d83ff0aab30fcf7ffb615a5d5db8f004a20c1043b",
+      "note": "Retained cumulative exposure; no holdout or family reset."
+    }
+  ]
+}

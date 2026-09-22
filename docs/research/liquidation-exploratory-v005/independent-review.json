@@ -1,0 +1,112 @@
+{
+  "schema": "liquidation-v005-independent-review/1",
+  "status": "PASS_WITH_DISCLOSED_LIMITATIONS",
+  "reviewer": "independent premise_audit_review_v004",
+  "reviewed_at_utc": "2026-09-22T10:17:14.608575+00:00",
+  "source_revision": "2e549fb762eb6ce6a71cfbcc6e9667211709ccd3",
+  "executor_jar_byte_sha256": "7ae562430f8ad1449306238d83ff0aab30fcf7ffb615a5d5db8f004a20c1043b",
+  "raw_result_path": "/private/tmp/trading-daily-stress-v002/.research-run/liquidation-exploratory-v005/runs/2026-09-22T10-05-35-237575Z-2c0ee15d-aa08-4fd7-be64-a141d84ffb99/result.json",
+  "raw_result_byte_sha256": "f7766ccbd8bf54ad1d29dac59f25230d8d7fb56dddb019b9a361f564734bd8f9",
+  "production_paths_reviewed": [
+    "analytics-research/src/main/java/com/tradinganalytics/research/v5/LiquidationDailyPriceContextV1.java",
+    "analytics-research/src/main/java/com/tradinganalytics/research/v5/LiquidationStructureRouterV1.java",
+    "analytics-research/src/main/java/com/tradinganalytics/research/v5/LiquidationHourlyDevelopmentReplayV1.java",
+    "analytics-research/src/main/java/com/tradinganalytics/research/v5/LiquidationHourlyDiagnosticsV1.java"
+  ],
+  "review_scope": [
+    "Frozen v005 contract and profile inventory",
+    "Causal same-asset UTC daily RSI14/SMA200 calculator and tests",
+    "Postshock routing/entry/H4 stop, pivot refresh and pending acknowledgement lifecycle",
+    "Context gates additions only, preserved initial entry and risk limits",
+    "Replay supplemental data isolation and immutable binding",
+    "Dynamic seven-profile diagnostics and shared dependence/bootstrap inventory",
+    "Independent result arithmetic, pairing, event invariance and context attribution"
+  ],
+  "quantified_checks": {
+    "accounts_reconciled": 14,
+    "position_ledgers_recomputed": 496,
+    "base_profile_position_records": 248,
+    "base_profiles": 7,
+    "doubled_cost_profiles": 7,
+    "position_quantity_close_and_fill_exit_gross_pnl_checks": 496,
+    "position_cost_reconciliation_checks": 496,
+    "maximum_absolute_reconciliation_tolerance_usdt": "0.00000001",
+    "all_positions_closed": true,
+    "all_holding_durations_at_most_60_days": true,
+    "common_new_profile_first_entry_identities": 40,
+    "new_profile_long_positions_each": 22,
+    "new_profile_short_positions_each": 18,
+    "baseline_short_positions": 8,
+    "identical_qualified_events_per_profile": 179,
+    "stress_trace_rows_per_profile": 1407,
+    "shared_market_shock_groups": 52,
+    "holding_components_across_profiles": 27,
+    "identical_event_anchor_cells_per_profile": 6,
+    "event_anchor_confidence_intervals_all_include_zero": true,
+    "rsi_rejection_reason_hits_including_completed_cycles": 6,
+    "sma_rejection_reason_hits_including_completed_cycles": 6,
+    "both_rejection_reason_hits_including_completed_cycles": 12
+  },
+  "confirmed_results": {
+    "baseline_net_return_pct": 9.2829214031177,
+    "both_net_return_pct": -5.808343373772149,
+    "both_doubled_cost_net_return_pct": -9.717106447223088,
+    "both_maximum_event_path_drawdown_pct": 8.778001723595674,
+    "rsi_account_matches_refreshed_staging": true,
+    "both_account_matches_ma_only": true,
+    "stage_three_fills": 0
+  },
+  "context_attribution": [
+    "Five RSI rejections also fail S&P; remaining LINK RSI rejection replaces a chase-distance execution rejection, so RSI changes no fills or account outcomes.",
+    "SMA prevents TRX stage-two addition and initially blocks BTC; BTC later fills.",
+    "Context counters must include completed_addition_cycles, not final staging alone."
+  ],
+  "earlier_findings_resolved": [
+    "Decimal RSI/SMA equality drift",
+    "Postshock final geometry field mutation",
+    "Delayed pre-branch H4 invalidation",
+    "Mandatory verified v005 supplemental binding",
+    "Nested mapped-file receipts and retained input identity",
+    "Diagnostics local variable collision",
+    "Refresh terminal attribution and legacy macro fields"
+  ],
+  "limitations": [
+    "Full clean build and mandatory coverage gate remain parent-owned; this reviewer ran no builds.",
+    "Legacy equivalence receipts (110 checks) and baseline alias receipt (34 checks) were reported by parent, not independently re-executed here.",
+    "Exposed DEVELOPMENT sample; no holdout or forward-test claim, no threshold optimization.",
+    "Funding excluded, hourly trade-OHLC execution/mark proxy and frozen approximate exchange costs.",
+    "Only one or two stage-two fills per structural/context profile and no stage-three fills; context efficacy is not established.",
+    "52 shock groups and 27 holding components are dependence summaries, not proofs of independent samples.",
+    "Snapshot audit context fields may show latest assessment; rejection counters and timestamps cover earlier assessments.",
+    "Earlier generic structural first/all failure counter mismatch was audit-only; reviewed actual output contained no accounting discrepancy."
+  ],
+  "historical_outcomes_viewed": true,
+  "production_or_test_files_modified": false,
+  "builds_run_by_reviewer": false,
+  "final_report_review": {
+    "status": "PASS",
+    "reviewed_at_utc": "2026-09-22T10:50:26.311370+00:00",
+    "files": [
+      {
+        "path": "/private/tmp/trading-daily-stress-v002/docs/research/liquidation-exploratory-v005/RESULTS.md",
+        "byte_sha256": "5bd3dc4fe37428acba920003fcc993c30e58218bd3b22cb92887d2928a07df1a"
+      },
+      {
+        "path": "/private/tmp/trading-daily-stress-v002/docs/research/liquidation-exploratory-v005/results.json",
+        "byte_sha256": "27c97fcb61a5dc09b75591a0141a3057c3e4e0fd07163c56c342fe68c709fb8d"
+      }
+    ],
+    "routed_response_profile_horizon_rows_checked": 21,
+    "base_and_doubled_performance_rows_checked": 14,
+    "all_source_receipt_byte_hashes_verified": true,
+    "production_java_changes_since_reviewed_revision": false,
+    "findings_resolved": [
+      "New54decision/32cluster cohort reported independently from baseline12/7",
+      "Decision branch counts27/27 distinguished from completed18/22",
+      "Nominal negative1day interval disclosed without multiplicity-adjusted inference",
+      "27holdingcomponents not asserted to be effective independent sample size"
+    ],
+    "remaining_blockers": [],
+    "parent_owned_remaining_gates": "Final clean-build and mandatory new-code coverage verification; no outcome rerun required for test-only changes."
+  }
+}
