@@ -1,0 +1,2987 @@
+{
+  "schema": "liquidation-exploratory-v004-compact-results/1",
+  "evidence_phase": "DEVELOPMENT",
+  "promotion_allowed": false,
+  "rules_changed": false,
+  "funding_included": false,
+  "original_four": {
+    "run_id": "2026-09-21T17-12-15-468386Z-f97d095a-6d31-4233-9a31-420a00972e93",
+    "shock_groups": 38,
+    "holding_groups": 4,
+    "variants": {
+      "CORE_ONE_ENTRY": {
+        "initial": "2E+4",
+        "final": "22291.466389147189204035",
+        "return_pct": "11.45733194573594602017500",
+        "drawdown_pct": 5.189253463518482,
+        "funnel": {
+          "daily_rows": 5997,
+          "valid_90_day_windows": 5410,
+          "long_liquidation_stress_flags": 400,
+          "short_liquidation_stress_flags": 381,
+          "qualified_source_events": 88,
+          "stage_one_confirmation_intents": 10,
+          "unique_stage_one_setups": 7,
+          "all_confirmation_intents": 10,
+          "in_window_router_rejections": 0,
+          "outside_window_router_rejections": 0,
+          "outside_window_intents_suppressed": 0,
+          "submitted_fill_attempts": 10,
+          "filled_tranches": 5,
+          "fill_rejections": 5,
+          "missing_h4_oi_endpoints": 26,
+          "completed_positions": 5
+        },
+        "daily_gates": {
+          "BTC": {
+            "daily_rows": 1342,
+            "window_unavailable": 0,
+            "no_liquidation_stress": 1174,
+            "valid_90_day_windows": 1342,
+            "long_stress_days": 101,
+            "short_stress_days": 91,
+            "unique_liquidation_stress_days": 168,
+            "geometry_rejected": 140,
+            "setup_admitted": 23,
+            "setup_suppressed": 5,
+            "first_observed_daily_bucket": "2022-08-11",
+            "last_observed_daily_bucket": "2026-09-19",
+            "observed_coverage_days_in_decision_window": 1342,
+            "missing_daily_days_inside_observed_asset_span": 0
+          },
+          "ETH": {
+            "daily_rows": 1342,
+            "window_unavailable": 0,
+            "no_liquidation_stress": 1152,
+            "valid_90_day_windows": 1342,
+            "long_stress_days": 104,
+            "short_stress_days": 100,
+            "unique_liquidation_stress_days": 190,
+            "geometry_rejected": 163,
+            "setup_admitted": 22,
+            "setup_suppressed": 5,
+            "first_observed_daily_bucket": "2022-08-11",
+            "last_observed_daily_bucket": "2026-09-19",
+            "observed_coverage_days_in_decision_window": 1342,
+            "missing_daily_days_inside_observed_asset_span": 0
+          },
+          "SOL": {
+            "daily_rows": 1342,
+            "window_unavailable": 0,
+            "no_liquidation_stress": 1175,
+            "valid_90_day_windows": 1342,
+            "long_stress_days": 104,
+            "short_stress_days": 91,
+            "unique_liquidation_stress_days": 167,
+            "geometry_rejected": 152,
+            "setup_admitted": 13,
+            "setup_suppressed": 2,
+            "first_observed_daily_bucket": "2022-08-11",
+            "last_observed_daily_bucket": "2026-09-19",
+            "observed_coverage_days_in_decision_window": 1342,
+            "missing_daily_days_inside_observed_asset_span": 0
+          },
+          "AAVE": {
+            "daily_rows": 1336,
+            "window_unavailable": 228,
+            "no_liquidation_stress": 957,
+            "valid_90_day_windows": 1108,
+            "long_stress_days": 85,
+            "short_stress_days": 83,
+            "unique_liquidation_stress_days": 151,
+            "geometry_rejected": 133,
+            "setup_admitted": 15,
+            "setup_suppressed": 3,
+            "first_observed_daily_bucket": "2022-08-11",
+            "last_observed_daily_bucket": "2026-09-19",
+            "observed_coverage_days_in_decision_window": 1342,
+            "missing_daily_days_inside_observed_asset_span": 6
+          }
+        },
+        "dispositions": {
+          "SETUP_ADMITTED": 73,
+          "SETUP_SUPPRESSED_ASSET_OCCUPIED": 15,
+          "GEOMETRY_REJECTED_NO_FAST_OR_SLOW_MATCH": 586,
+          "GEOMETRY_REJECTED_SELECTED_GEOMETRY": 2
+        },
+        "terminal": {
+          "INITIAL_ENTRY_WINDOW_EXPIRED_WITHOUT_CONFIRMATION": 57,
+          "BRANCH_INVALIDATED_NO_REROUTE": 11,
+          "POSITION_CLOSED_STOP": 5
+        },
+        "selected_branches": {
+          "CONTINUATION_SHORT": 46,
+          "CONTINUATION_LONG": 20,
+          "REVERSAL_LONG": 6,
+          "REVERSAL_SHORT": 1
+        },
+        "h1_first_failures": {
+          "NO_H1_TOUCH_OF_ENTRY_ZONE": 4306,
+          "H1_CLOSE_NOT_ON_TRADE_SIDE_OF_BOUNDARY": 17,
+          "H1_CLOSE_DID_NOT_BREAK_PRIOR_H1_EXTREME": 71,
+          "STAGE_ONE_INTENT_ALREADY_PENDING": 2
+        },
+        "fill_rejections": {
+          "MAXIMUM_CHASE_DISTANCE_EXCEEDED": 5
+        },
+        "trades": [
+          {
+            "asset": "BTC",
+            "direction": "SHORT",
+            "status": "CLOSED",
+            "first_fill_time": 1710716400000,
+            "fills": 1,
+            "net_pnl_before_funding": "-199.62691341312239774",
+            "last_exit": {
+              "time": 1710741600000,
+              "price": "68874.16412068646",
+              "reason": "STOP",
+              "quantity": "0.269",
+              "gross_pnl_usdt": "-162.73534846465774",
+              "exit_costs_usdt": "18.52715014846465774"
+            }
+          },
+          {
+            "asset": "AAVE",
+            "direction": "SHORT",
+            "status": "CLOSED",
+            "first_fill_time": 1722996000000,
+            "fills": 1,
+            "net_pnl_before_funding": "12.497044432032090217",
+            "last_exit": {
+              "time": 1723086000000,
+              "price": "103.21047764748491",
+              "reason": "STOP",
+              "quantity": "41.3",
+              "gross_pnl_usdt": "21.043273158873217",
+              "exit_costs_usdt": "4.262592726841126783"
+            }
+          },
+          {
+            "asset": "BTC",
+            "direction": "SHORT",
+            "status": "CLOSED",
+            "first_fill_time": 1723035600000,
+            "fills": 1,
+            "net_pnl_before_funding": "-127.677424453653416136",
+            "last_exit": {
+              "time": 1723082400000,
+              "price": "57587.941454578824",
+              "reason": "STOP",
+              "quantity": "0.289",
+              "gross_pnl_usdt": "-94.486080373280136",
+              "exit_costs_usdt": "16.642915080373280136"
+            }
+          },
+          {
+            "asset": "BTC",
+            "direction": "SHORT",
+            "status": "CLOSED",
+            "first_fill_time": 1760400000000,
+            "fills": 1,
+            "net_pnl_before_funding": "1404.44207421489306648",
+            "last_exit": {
+              "time": 1760868000000,
+              "price": "107419.03240262454",
+              "reason": "STOP",
+              "quantity": "0.188",
+              "gross_pnl_usdt": "1446.27790830658648",
+              "exit_costs_usdt": "20.19477809169341352"
+            }
+          },
+          {
+            "asset": "AAVE",
+            "direction": "SHORT",
+            "status": "CLOSED",
+            "first_fill_time": 1758726000000,
+            "fills": 1,
+            "net_pnl_before_funding": "1201.831608367039861214",
+            "last_exit": {
+              "time": 1758906000000,
+              "price": "266.85610736979766",
+              "reason": "STOP",
+              "quantity": "97.1",
+              "gross_pnl_usdt": "1254.909974392647214",
+              "exit_costs_usdt": "25.911728025607352786"
+            }
+          }
+        ]
+      },
+      "STAGED_NO_MACRO": {
+        "initial": "2E+4",
+        "final": "22291.466389147189204035",
+        "return_pct": "11.45733194573594602017500",
+        "drawdown_pct": 5.189253463518482,
+        "funnel": {
+          "daily_rows": 5997,
+          "valid_90_day_windows": 5410,
+          "long_liquidation_stress_flags": 400,
+          "short_liquidation_stress_flags": 381,
+          "qualified_source_events": 88,
+          "stage_one_confirmation_intents": 10,
+          "unique_stage_one_setups": 7,
+          "all_confirmation_intents": 10,
+          "in_window_router_rejections": 0,
+          "outside_window_router_rejections": 0,
+          "outside_window_intents_suppressed": 0,
+          "submitted_fill_attempts": 10,
+          "filled_tranches": 5,
+          "fill_rejections": 5,
+          "missing_h4_oi_endpoints": 26,
+          "completed_positions": 5
+        },
+        "daily_gates": {
+          "BTC": {
+            "daily_rows": 1342,
+            "window_unavailable": 0,
+            "no_liquidation_stress": 1174,
+            "valid_90_day_windows": 1342,
+            "long_stress_days": 101,
+            "short_stress_days": 91,
+            "unique_liquidation_stress_days": 168,
+            "geometry_rejected": 140,
+            "setup_admitted": 23,
+            "setup_suppressed": 5,
+            "first_observed_daily_bucket": "2022-08-11",
+            "last_observed_daily_bucket": "2026-09-19",
+            "observed_coverage_days_in_decision_window": 1342,
+            "missing_daily_days_inside_observed_asset_span": 0
+          },
+          "ETH": {
+            "daily_rows": 1342,
+            "window_unavailable": 0,
+            "no_liquidation_stress": 1152,
+            "valid_90_day_windows": 1342,
+            "long_stress_days": 104,
+            "short_stress_days": 100,
+            "unique_liquidation_stress_days": 190,
+            "geometry_rejected": 163,
+            "setup_admitted": 22,
+            "setup_suppressed": 5,
+            "first_observed_daily_bucket": "2022-08-11",
+            "last_observed_daily_bucket": "2026-09-19",
+            "observed_coverage_days_in_decision_window": 1342,
+            "missing_daily_days_inside_observed_asset_span": 0
+          },
+          "SOL": {
+            "daily_rows": 1342,
+            "window_unavailable": 0,
+            "no_liquidation_stress": 1175,
+            "valid_90_day_windows": 1342,
+            "long_stress_days": 104,
+            "short_stress_days": 91,
+            "unique_liquidation_stress_days": 167,
+            "geometry_rejected": 152,
+            "setup_admitted": 13,
+            "setup_suppressed": 2,
+            "first_observed_daily_bucket": "2022-08-11",
+            "last_observed_daily_bucket": "2026-09-19",
+            "observed_coverage_days_in_decision_window": 1342,
+            "missing_daily_days_inside_observed_asset_span": 0
+          },
+          "AAVE": {
+            "daily_rows": 1336,
+            "window_unavailable": 228,
+            "no_liquidation_stress": 957,
+            "valid_90_day_windows": 1108,
+            "long_stress_days": 85,
+            "short_stress_days": 83,
+            "unique_liquidation_stress_days": 151,
+            "geometry_rejected": 133,
+            "setup_admitted": 15,
+            "setup_suppressed": 3,
+            "first_observed_daily_bucket": "2022-08-11",
+            "last_observed_daily_bucket": "2026-09-19",
+            "observed_coverage_days_in_decision_window": 1342,
+            "missing_daily_days_inside_observed_asset_span": 6
+          }
+        },
+        "dispositions": {
+          "SETUP_ADMITTED": 73,
+          "SETUP_SUPPRESSED_ASSET_OCCUPIED": 15,
+          "GEOMETRY_REJECTED_NO_FAST_OR_SLOW_MATCH": 586,
+          "GEOMETRY_REJECTED_SELECTED_GEOMETRY": 2
+        },
+        "terminal": {
+          "INITIAL_ENTRY_WINDOW_EXPIRED_WITHOUT_CONFIRMATION": 57,
+          "BRANCH_INVALIDATED_NO_REROUTE": 11,
+          "POSITION_CLOSED_STOP": 5
+        },
+        "selected_branches": {
+          "CONTINUATION_SHORT": 46,
+          "CONTINUATION_LONG": 20,
+          "REVERSAL_LONG": 6,
+          "REVERSAL_SHORT": 1
+        },
+        "h1_first_failures": {
+          "NO_H1_TOUCH_OF_ENTRY_ZONE": 4306,
+          "H1_CLOSE_NOT_ON_TRADE_SIDE_OF_BOUNDARY": 17,
+          "H1_CLOSE_DID_NOT_BREAK_PRIOR_H1_EXTREME": 71,
+          "STAGE_ONE_INTENT_ALREADY_PENDING": 2
+        },
+        "fill_rejections": {
+          "MAXIMUM_CHASE_DISTANCE_EXCEEDED": 5
+        },
+        "trades": [
+          {
+            "asset": "BTC",
+            "direction": "SHORT",
+            "status": "CLOSED",
+            "first_fill_time": 1710716400000,
+            "fills": 1,
+            "net_pnl_before_funding": "-199.62691341312239774",
+            "last_exit": {
+              "time": 1710741600000,
+              "price": "68874.16412068646",
+              "reason": "STOP",
+              "quantity": "0.269",
+              "gross_pnl_usdt": "-162.73534846465774",
+              "exit_costs_usdt": "18.52715014846465774"
+            }
+          },
+          {
+            "asset": "AAVE",
+            "direction": "SHORT",
+            "status": "CLOSED",
+            "first_fill_time": 1722996000000,
+            "fills": 1,
+            "net_pnl_before_funding": "12.497044432032090217",
+            "last_exit": {
+              "time": 1723086000000,
+              "price": "103.21047764748491",
+              "reason": "STOP",
+              "quantity": "41.3",
+              "gross_pnl_usdt": "21.043273158873217",
+              "exit_costs_usdt": "4.262592726841126783"
+            }
+          },
+          {
+            "asset": "BTC",
+            "direction": "SHORT",
+            "status": "CLOSED",
+            "first_fill_time": 1723035600000,
+            "fills": 1,
+            "net_pnl_before_funding": "-127.677424453653416136",
+            "last_exit": {
+              "time": 1723082400000,
+              "price": "57587.941454578824",
+              "reason": "STOP",
+              "quantity": "0.289",
+              "gross_pnl_usdt": "-94.486080373280136",
+              "exit_costs_usdt": "16.642915080373280136"
+            }
+          },
+          {
+            "asset": "BTC",
+            "direction": "SHORT",
+            "status": "CLOSED",
+            "first_fill_time": 1760400000000,
+            "fills": 1,
+            "net_pnl_before_funding": "1404.44207421489306648",
+            "last_exit": {
+              "time": 1760868000000,
+              "price": "107419.03240262454",
+              "reason": "STOP",
+              "quantity": "0.188",
+              "gross_pnl_usdt": "1446.27790830658648",
+              "exit_costs_usdt": "20.19477809169341352"
+            }
+          },
+          {
+            "asset": "AAVE",
+            "direction": "SHORT",
+            "status": "CLOSED",
+            "first_fill_time": 1758726000000,
+            "fills": 1,
+            "net_pnl_before_funding": "1201.831608367039861214",
+            "last_exit": {
+              "time": 1758906000000,
+              "price": "266.85610736979766",
+              "reason": "STOP",
+              "quantity": "97.1",
+              "gross_pnl_usdt": "1254.909974392647214",
+              "exit_costs_usdt": "25.911728025607352786"
+            }
+          }
+        ]
+      },
+      "STAGED_MACRO": {
+        "initial": "2E+4",
+        "final": "22291.466389147189204035",
+        "return_pct": "11.45733194573594602017500",
+        "drawdown_pct": 5.189253463518482,
+        "funnel": {
+          "daily_rows": 5997,
+          "valid_90_day_windows": 5410,
+          "long_liquidation_stress_flags": 400,
+          "short_liquidation_stress_flags": 381,
+          "qualified_source_events": 88,
+          "stage_one_confirmation_intents": 10,
+          "unique_stage_one_setups": 7,
+          "all_confirmation_intents": 10,
+          "in_window_router_rejections": 0,
+          "outside_window_router_rejections": 0,
+          "outside_window_intents_suppressed": 0,
+          "submitted_fill_attempts": 10,
+          "filled_tranches": 5,
+          "fill_rejections": 5,
+          "missing_h4_oi_endpoints": 26,
+          "completed_positions": 5
+        },
+        "daily_gates": {
+          "BTC": {
+            "daily_rows": 1342,
+            "window_unavailable": 0,
+            "no_liquidation_stress": 1174,
+            "valid_90_day_windows": 1342,
+            "long_stress_days": 101,
+            "short_stress_days": 91,
+            "unique_liquidation_stress_days": 168,
+            "geometry_rejected": 140,
+            "setup_admitted": 23,
+            "setup_suppressed": 5,
+            "first_observed_daily_bucket": "2022-08-11",
+            "last_observed_daily_bucket": "2026-09-19",
+            "observed_coverage_days_in_decision_window": 1342,
+            "missing_daily_days_inside_observed_asset_span": 0
+          },
+          "ETH": {
+            "daily_rows": 1342,
+            "window_unavailable": 0,
+            "no_liquidation_stress": 1152,
+            "valid_90_day_windows": 1342,
+            "long_stress_days": 104,
+            "short_stress_days": 100,
+            "unique_liquidation_stress_days": 190,
+            "geometry_rejected": 163,
+            "setup_admitted": 22,
+            "setup_suppressed": 5,
+            "first_observed_daily_bucket": "2022-08-11",
+            "last_observed_daily_bucket": "2026-09-19",
+            "observed_coverage_days_in_decision_window": 1342,
+            "missing_daily_days_inside_observed_asset_span": 0
+          },
+          "SOL": {
+            "daily_rows": 1342,
+            "window_unavailable": 0,
+            "no_liquidation_stress": 1175,
+            "valid_90_day_windows": 1342,
+            "long_stress_days": 104,
+            "short_stress_days": 91,
+            "unique_liquidation_stress_days": 167,
+            "geometry_rejected": 152,
+            "setup_admitted": 13,
+            "setup_suppressed": 2,
+            "first_observed_daily_bucket": "2022-08-11",
+            "last_observed_daily_bucket": "2026-09-19",
+            "observed_coverage_days_in_decision_window": 1342,
+            "missing_daily_days_inside_observed_asset_span": 0
+          },
+          "AAVE": {
+            "daily_rows": 1336,
+            "window_unavailable": 228,
+            "no_liquidation_stress": 957,
+            "valid_90_day_windows": 1108,
+            "long_stress_days": 85,
+            "short_stress_days": 83,
+            "unique_liquidation_stress_days": 151,
+            "geometry_rejected": 133,
+            "setup_admitted": 15,
+            "setup_suppressed": 3,
+            "first_observed_daily_bucket": "2022-08-11",
+            "last_observed_daily_bucket": "2026-09-19",
+            "observed_coverage_days_in_decision_window": 1342,
+            "missing_daily_days_inside_observed_asset_span": 6
+          }
+        },
+        "dispositions": {
+          "SETUP_ADMITTED": 73,
+          "SETUP_SUPPRESSED_ASSET_OCCUPIED": 15,
+          "GEOMETRY_REJECTED_NO_FAST_OR_SLOW_MATCH": 586,
+          "GEOMETRY_REJECTED_SELECTED_GEOMETRY": 2
+        },
+        "terminal": {
+          "INITIAL_ENTRY_WINDOW_EXPIRED_WITHOUT_CONFIRMATION": 57,
+          "BRANCH_INVALIDATED_NO_REROUTE": 11,
+          "POSITION_CLOSED_STOP": 5
+        },
+        "selected_branches": {
+          "CONTINUATION_SHORT": 46,
+          "CONTINUATION_LONG": 20,
+          "REVERSAL_LONG": 6,
+          "REVERSAL_SHORT": 1
+        },
+        "h1_first_failures": {
+          "NO_H1_TOUCH_OF_ENTRY_ZONE": 4306,
+          "H1_CLOSE_NOT_ON_TRADE_SIDE_OF_BOUNDARY": 17,
+          "H1_CLOSE_DID_NOT_BREAK_PRIOR_H1_EXTREME": 71,
+          "STAGE_ONE_INTENT_ALREADY_PENDING": 2
+        },
+        "fill_rejections": {
+          "MAXIMUM_CHASE_DISTANCE_EXCEEDED": 5
+        },
+        "trades": [
+          {
+            "asset": "BTC",
+            "direction": "SHORT",
+            "status": "CLOSED",
+            "first_fill_time": 1710716400000,
+            "fills": 1,
+            "net_pnl_before_funding": "-199.62691341312239774",
+            "last_exit": {
+              "time": 1710741600000,
+              "price": "68874.16412068646",
+              "reason": "STOP",
+              "quantity": "0.269",
+              "gross_pnl_usdt": "-162.73534846465774",
+              "exit_costs_usdt": "18.52715014846465774"
+            }
+          },
+          {
+            "asset": "AAVE",
+            "direction": "SHORT",
+            "status": "CLOSED",
+            "first_fill_time": 1722996000000,
+            "fills": 1,
+            "net_pnl_before_funding": "12.497044432032090217",
+            "last_exit": {
+              "time": 1723086000000,
+              "price": "103.21047764748491",
+              "reason": "STOP",
+              "quantity": "41.3",
+              "gross_pnl_usdt": "21.043273158873217",
+              "exit_costs_usdt": "4.262592726841126783"
+            }
+          },
+          {
+            "asset": "BTC",
+            "direction": "SHORT",
+            "status": "CLOSED",
+            "first_fill_time": 1723035600000,
+            "fills": 1,
+            "net_pnl_before_funding": "-127.677424453653416136",
+            "last_exit": {
+              "time": 1723082400000,
+              "price": "57587.941454578824",
+              "reason": "STOP",
+              "quantity": "0.289",
+              "gross_pnl_usdt": "-94.486080373280136",
+              "exit_costs_usdt": "16.642915080373280136"
+            }
+          },
+          {
+            "asset": "BTC",
+            "direction": "SHORT",
+            "status": "CLOSED",
+            "first_fill_time": 1760400000000,
+            "fills": 1,
+            "net_pnl_before_funding": "1404.44207421489306648",
+            "last_exit": {
+              "time": 1760868000000,
+              "price": "107419.03240262454",
+              "reason": "STOP",
+              "quantity": "0.188",
+              "gross_pnl_usdt": "1446.27790830658648",
+              "exit_costs_usdt": "20.19477809169341352"
+            }
+          },
+          {
+            "asset": "AAVE",
+            "direction": "SHORT",
+            "status": "CLOSED",
+            "first_fill_time": 1758726000000,
+            "fills": 1,
+            "net_pnl_before_funding": "1201.831608367039861214",
+            "last_exit": {
+              "time": 1758906000000,
+              "price": "266.85610736979766",
+              "reason": "STOP",
+              "quantity": "97.1",
+              "gross_pnl_usdt": "1254.909974392647214",
+              "exit_costs_usdt": "25.911728025607352786"
+            }
+          }
+        ]
+      }
+    },
+    "response_diagnostics": [
+      {
+        "anchor": "FIRST_OBSERVABLE_EVENT_AVAILABILITY",
+        "variant": "CORE_ONE_ENTRY",
+        "direction": "OPPOSITE_SHOCK",
+        "horizon_days": 1,
+        "observation_count": 88,
+        "valid_response_count": 88,
+        "cluster_observation_count": 38,
+        "missing_anchor_count": 0,
+        "missing_endpoint_count": 0,
+        "missing_intervening_hour_count": 0,
+        "non_hourly_anchor_count": 0,
+        "unclustered_geometry_count": 0,
+        "mean_directional_return_fraction": "0.005554049847763",
+        "p20_directional_return_fraction": "0.0020332518145178675",
+        "ci95_low_directional_return_fraction": "-0.002181597630865354",
+        "ci95_high_directional_return_fraction": "0.01407628640016615",
+        "bootstrap_valid_draw_count": 10000,
+        "bootstrap_draws": 10000,
+        "bootstrap_seed": 20260921,
+        "bootstrap_resampling_unit": "SHARED_MARKET_WIDE_SHOCK_CLUSTER",
+        "independence_claim": false,
+        "intent_conditioned": false,
+        "direction_was_known_at_anchor": true,
+        "event_anchor_metrics_shared_across_variants": true,
+        "under_30_cluster_warning_nonblocking": false,
+        "asset_breakdown": [
+          {
+            "asset": "AAVE",
+            "observation_count": 18,
+            "valid_response_count": 18,
+            "cluster_observation_count": 15,
+            "mean_directional_return_fraction": "0.007630443948716811",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "BTC",
+            "observation_count": 28,
+            "valid_response_count": 28,
+            "cluster_observation_count": 21,
+            "mean_directional_return_fraction": "0.0055208687781992715",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "ETH",
+            "observation_count": 27,
+            "valid_response_count": 27,
+            "cluster_observation_count": 21,
+            "mean_directional_return_fraction": "0.0011727792541985935",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "SOL",
+            "observation_count": 15,
+            "valid_response_count": 15,
+            "cluster_observation_count": 12,
+            "mean_directional_return_fraction": "0.008857925628006857",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          }
+        ],
+        "branch_breakdown": [
+          {
+            "branch": "UNKNOWN_AT_EVENT_AVAILABILITY",
+            "observation_count": 88,
+            "valid_response_count": 88,
+            "cluster_observation_count": 38,
+            "mean_directional_return_fraction": "0.005554049847763",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          }
+        ]
+      },
+      {
+        "anchor": "FIRST_OBSERVABLE_EVENT_AVAILABILITY",
+        "variant": "CORE_ONE_ENTRY",
+        "direction": "OPPOSITE_SHOCK",
+        "horizon_days": 3,
+        "observation_count": 88,
+        "valid_response_count": 88,
+        "cluster_observation_count": 38,
+        "missing_anchor_count": 0,
+        "missing_endpoint_count": 0,
+        "missing_intervening_hour_count": 0,
+        "non_hourly_anchor_count": 0,
+        "unclustered_geometry_count": 0,
+        "mean_directional_return_fraction": "0.0042733445552761715",
+        "p20_directional_return_fraction": "-0.0010431531498121937",
+        "ci95_low_directional_return_fraction": "-0.00902824370743707",
+        "ci95_high_directional_return_fraction": "0.01694831118315185",
+        "bootstrap_valid_draw_count": 10000,
+        "bootstrap_draws": 10000,
+        "bootstrap_seed": 20260921,
+        "bootstrap_resampling_unit": "SHARED_MARKET_WIDE_SHOCK_CLUSTER",
+        "independence_claim": false,
+        "intent_conditioned": false,
+        "direction_was_known_at_anchor": true,
+        "event_anchor_metrics_shared_across_variants": true,
+        "under_30_cluster_warning_nonblocking": false,
+        "asset_breakdown": [
+          {
+            "asset": "AAVE",
+            "observation_count": 18,
+            "valid_response_count": 18,
+            "cluster_observation_count": 15,
+            "mean_directional_return_fraction": "0.005377983104310568",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "BTC",
+            "observation_count": 28,
+            "valid_response_count": 28,
+            "cluster_observation_count": 21,
+            "mean_directional_return_fraction": "0.006828958359362159",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "ETH",
+            "observation_count": 27,
+            "valid_response_count": 27,
+            "cluster_observation_count": 21,
+            "mean_directional_return_fraction": "0.008403972228419756",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "SOL",
+            "observation_count": 15,
+            "valid_response_count": 15,
+            "cluster_observation_count": 12,
+            "mean_directional_return_fraction": "0.0040166399050343",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          }
+        ],
+        "branch_breakdown": [
+          {
+            "branch": "UNKNOWN_AT_EVENT_AVAILABILITY",
+            "observation_count": 88,
+            "valid_response_count": 88,
+            "cluster_observation_count": 38,
+            "mean_directional_return_fraction": "0.0042733445552761715",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          }
+        ]
+      },
+      {
+        "anchor": "FIRST_OBSERVABLE_EVENT_AVAILABILITY",
+        "variant": "CORE_ONE_ENTRY",
+        "direction": "OPPOSITE_SHOCK",
+        "horizon_days": 7,
+        "observation_count": 88,
+        "valid_response_count": 88,
+        "cluster_observation_count": 38,
+        "missing_anchor_count": 0,
+        "missing_endpoint_count": 0,
+        "missing_intervening_hour_count": 0,
+        "non_hourly_anchor_count": 0,
+        "unclustered_geometry_count": 0,
+        "mean_directional_return_fraction": "0.023935538485160376",
+        "p20_directional_return_fraction": "0.014906769235254002",
+        "ci95_low_directional_return_fraction": "0.005411238071146575",
+        "ci95_high_directional_return_fraction": "0.041919190296851115",
+        "bootstrap_valid_draw_count": 10000,
+        "bootstrap_draws": 10000,
+        "bootstrap_seed": 20260921,
+        "bootstrap_resampling_unit": "SHARED_MARKET_WIDE_SHOCK_CLUSTER",
+        "independence_claim": false,
+        "intent_conditioned": false,
+        "direction_was_known_at_anchor": true,
+        "event_anchor_metrics_shared_across_variants": true,
+        "under_30_cluster_warning_nonblocking": false,
+        "asset_breakdown": [
+          {
+            "asset": "AAVE",
+            "observation_count": 18,
+            "valid_response_count": 18,
+            "cluster_observation_count": 15,
+            "mean_directional_return_fraction": "0.02751135920660911",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "BTC",
+            "observation_count": 28,
+            "valid_response_count": 28,
+            "cluster_observation_count": 21,
+            "mean_directional_return_fraction": "0.01559784530770106",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "ETH",
+            "observation_count": 27,
+            "valid_response_count": 27,
+            "cluster_observation_count": 21,
+            "mean_directional_return_fraction": "0.013680653480213578",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "SOL",
+            "observation_count": 15,
+            "valid_response_count": 15,
+            "cluster_observation_count": 12,
+            "mean_directional_return_fraction": "0.011113656419565637",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          }
+        ],
+        "branch_breakdown": [
+          {
+            "branch": "UNKNOWN_AT_EVENT_AVAILABILITY",
+            "observation_count": 88,
+            "valid_response_count": 88,
+            "cluster_observation_count": 38,
+            "mean_directional_return_fraction": "0.023935538485160376",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          }
+        ]
+      },
+      {
+        "anchor": "FIRST_ROUTED_ENTRY_DECISION",
+        "variant": "CORE_ONE_ENTRY",
+        "direction": "OPPOSITE_SHOCK",
+        "horizon_days": 1,
+        "observation_count": 7,
+        "valid_response_count": 7,
+        "cluster_observation_count": 6,
+        "missing_anchor_count": 0,
+        "missing_endpoint_count": 0,
+        "missing_intervening_hour_count": 0,
+        "non_hourly_anchor_count": 0,
+        "unclustered_geometry_count": 0,
+        "mean_directional_return_fraction": "-0.01072975210948221",
+        "p20_directional_return_fraction": "-0.018221949668586215",
+        "ci95_low_directional_return_fraction": "-0.02750742087890044",
+        "ci95_high_directional_return_fraction": "0.006194217245996947",
+        "bootstrap_valid_draw_count": 9999,
+        "bootstrap_draws": 10000,
+        "bootstrap_seed": 20260921,
+        "bootstrap_resampling_unit": "SHARED_MARKET_WIDE_SHOCK_CLUSTER",
+        "independence_claim": false,
+        "intent_conditioned": true,
+        "direction_was_known_at_anchor": true,
+        "event_anchor_metrics_shared_across_variants": false,
+        "under_30_cluster_warning_nonblocking": true,
+        "asset_breakdown": [
+          {
+            "asset": "AAVE",
+            "observation_count": 3,
+            "valid_response_count": 3,
+            "cluster_observation_count": 3,
+            "mean_directional_return_fraction": "-0.007615302048712265",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "BTC",
+            "observation_count": 3,
+            "valid_response_count": 3,
+            "cluster_observation_count": 3,
+            "mean_directional_return_fraction": "-0.004373220545195585",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "ETH",
+            "observation_count": 1,
+            "valid_response_count": 1,
+            "cluster_observation_count": 1,
+            "mean_directional_return_fraction": "-0.025401069518716568",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          }
+        ],
+        "branch_breakdown": [
+          {
+            "branch": "CONTINUATION",
+            "observation_count": 5,
+            "valid_response_count": 5,
+            "cluster_observation_count": 4,
+            "mean_directional_return_fraction": "-0.014774353286418698",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "branch": "REVERSAL",
+            "observation_count": 2,
+            "valid_response_count": 2,
+            "cluster_observation_count": 2,
+            "mean_directional_return_fraction": "-0.002640549755609234",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          }
+        ]
+      },
+      {
+        "anchor": "FIRST_ROUTED_ENTRY_DECISION",
+        "variant": "CORE_ONE_ENTRY",
+        "direction": "OPPOSITE_SHOCK",
+        "horizon_days": 3,
+        "observation_count": 7,
+        "valid_response_count": 7,
+        "cluster_observation_count": 6,
+        "missing_anchor_count": 0,
+        "missing_endpoint_count": 0,
+        "missing_intervening_hour_count": 0,
+        "non_hourly_anchor_count": 0,
+        "unclustered_geometry_count": 0,
+        "mean_directional_return_fraction": "0.005150637513324008",
+        "p20_directional_return_fraction": "-0.013597864943164248",
+        "ci95_low_directional_return_fraction": "-0.026050436429865376",
+        "ci95_high_directional_return_fraction": "0.048029375447006306",
+        "bootstrap_valid_draw_count": 9999,
+        "bootstrap_draws": 10000,
+        "bootstrap_seed": 20260921,
+        "bootstrap_resampling_unit": "SHARED_MARKET_WIDE_SHOCK_CLUSTER",
+        "independence_claim": false,
+        "intent_conditioned": true,
+        "direction_was_known_at_anchor": true,
+        "event_anchor_metrics_shared_across_variants": false,
+        "under_30_cluster_warning_nonblocking": true,
+        "asset_breakdown": [
+          {
+            "asset": "AAVE",
+            "observation_count": 3,
+            "valid_response_count": 3,
+            "cluster_observation_count": 3,
+            "mean_directional_return_fraction": "0.0027480982765945385",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "BTC",
+            "observation_count": 3,
+            "valid_response_count": 3,
+            "cluster_observation_count": 3,
+            "mean_directional_return_fraction": "0.010629408243270966",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "ETH",
+            "observation_count": 1,
+            "valid_response_count": 1,
+            "cluster_observation_count": 1,
+            "mean_directional_return_fraction": "-0.0032308377896613782",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          }
+        ],
+        "branch_breakdown": [
+          {
+            "branch": "CONTINUATION",
+            "observation_count": 5,
+            "valid_response_count": 5,
+            "cluster_observation_count": 4,
+            "mean_directional_return_fraction": "-0.016772507739234527",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "branch": "REVERSAL",
+            "observation_count": 2,
+            "valid_response_count": 2,
+            "cluster_observation_count": 2,
+            "mean_directional_return_fraction": "0.04899692801844108",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          }
+        ]
+      },
+      {
+        "anchor": "FIRST_ROUTED_ENTRY_DECISION",
+        "variant": "CORE_ONE_ENTRY",
+        "direction": "OPPOSITE_SHOCK",
+        "horizon_days": 7,
+        "observation_count": 7,
+        "valid_response_count": 7,
+        "cluster_observation_count": 6,
+        "missing_anchor_count": 0,
+        "missing_endpoint_count": 0,
+        "missing_intervening_hour_count": 0,
+        "non_hourly_anchor_count": 0,
+        "unclustered_geometry_count": 0,
+        "mean_directional_return_fraction": "0.05184860426136017",
+        "p20_directional_return_fraction": "0.004732696520780422",
+        "ci95_low_directional_return_fraction": "-0.014670652624082283",
+        "ci95_high_directional_return_fraction": "0.15875339732648708",
+        "bootstrap_valid_draw_count": 9999,
+        "bootstrap_draws": 10000,
+        "bootstrap_seed": 20260921,
+        "bootstrap_resampling_unit": "SHARED_MARKET_WIDE_SHOCK_CLUSTER",
+        "independence_claim": false,
+        "intent_conditioned": true,
+        "direction_was_known_at_anchor": true,
+        "event_anchor_metrics_shared_across_variants": false,
+        "under_30_cluster_warning_nonblocking": true,
+        "asset_breakdown": [
+          {
+            "asset": "AAVE",
+            "observation_count": 3,
+            "valid_response_count": 3,
+            "cluster_observation_count": 3,
+            "mean_directional_return_fraction": "0.09466140784096055",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "BTC",
+            "observation_count": 3,
+            "valid_response_count": 3,
+            "cluster_observation_count": 3,
+            "mean_directional_return_fraction": "0.003786195132980915",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "ETH",
+            "observation_count": 1,
+            "valid_response_count": 1,
+            "cluster_observation_count": 1,
+            "mean_directional_return_fraction": "0.03795306001188359",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          }
+        ],
+        "branch_breakdown": [
+          {
+            "branch": "CONTINUATION",
+            "observation_count": 5,
+            "valid_response_count": 5,
+            "cluster_observation_count": 4,
+            "mean_directional_return_fraction": "-0.00357239435199537",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "branch": "REVERSAL",
+            "observation_count": 2,
+            "valid_response_count": 2,
+            "cluster_observation_count": 2,
+            "mean_directional_return_fraction": "0.16269060148807124",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          }
+        ]
+      }
+    ],
+    "cost_sensitivity": {
+      "CORE_ONE_ENTRY": {
+        "initial": "2E+4",
+        "final": "21673.572402140909799186",
+        "return_pct": "8.3678620107045489959300",
+        "drawdown_pct": "4.719280878537949674808888568",
+        "completed_positions": 5
+      },
+      "STAGED_NO_MACRO": {
+        "initial": "2E+4",
+        "final": "21673.572402140909799186",
+        "return_pct": "8.3678620107045489959300",
+        "drawdown_pct": "4.719280878537949674808888568",
+        "completed_positions": 5
+      },
+      "STAGED_MACRO": {
+        "initial": "2E+4",
+        "final": "21673.572402140909799186",
+        "return_pct": "8.3678620107045489959300",
+        "drawdown_pct": "4.719280878537949674808888568",
+        "completed_positions": 5
+      }
+    }
+  },
+  "expanded_nine": {
+    "run_id": "2026-09-21T17-11-57-279757Z-89e6598f-b036-479c-97ce-4b524056d430",
+    "shock_groups": 52,
+    "holding_groups": 5,
+    "variants": {
+      "CORE_ONE_ENTRY": {
+        "initial": "2E+4",
+        "final": "21856.58428062354012670175",
+        "return_pct": "9.2829214031177006335087500",
+        "drawdown_pct": 6.231371844528781,
+        "funnel": {
+          "daily_rows": 13485,
+          "valid_90_day_windows": 11969,
+          "long_liquidation_stress_flags": 847,
+          "short_liquidation_stress_flags": 798,
+          "qualified_source_events": 179,
+          "stage_one_confirmation_intents": 16,
+          "unique_stage_one_setups": 12,
+          "all_confirmation_intents": 16,
+          "in_window_router_rejections": 0,
+          "outside_window_router_rejections": 0,
+          "outside_window_intents_suppressed": 0,
+          "submitted_fill_attempts": 16,
+          "filled_tranches": 8,
+          "fill_rejections": 8,
+          "missing_h4_oi_endpoints": 59,
+          "completed_positions": 8
+        },
+        "daily_gates": {
+          "BTC": {
+            "daily_rows": 1342,
+            "window_unavailable": 0,
+            "no_liquidation_stress": 1174,
+            "valid_90_day_windows": 1342,
+            "long_stress_days": 101,
+            "short_stress_days": 91,
+            "unique_liquidation_stress_days": 168,
+            "geometry_rejected": 140,
+            "setup_admitted": 23,
+            "setup_suppressed": 5,
+            "first_observed_daily_bucket": "2022-08-11",
+            "last_observed_daily_bucket": "2026-09-19",
+            "observed_coverage_days_in_decision_window": 1342,
+            "missing_daily_days_inside_observed_asset_span": 0
+          },
+          "ETH": {
+            "daily_rows": 1342,
+            "window_unavailable": 0,
+            "no_liquidation_stress": 1152,
+            "valid_90_day_windows": 1342,
+            "long_stress_days": 104,
+            "short_stress_days": 100,
+            "unique_liquidation_stress_days": 190,
+            "geometry_rejected": 163,
+            "setup_admitted": 22,
+            "setup_suppressed": 5,
+            "first_observed_daily_bucket": "2022-08-11",
+            "last_observed_daily_bucket": "2026-09-19",
+            "observed_coverage_days_in_decision_window": 1342,
+            "missing_daily_days_inside_observed_asset_span": 0
+          },
+          "SOL": {
+            "daily_rows": 1342,
+            "window_unavailable": 0,
+            "no_liquidation_stress": 1175,
+            "valid_90_day_windows": 1342,
+            "long_stress_days": 104,
+            "short_stress_days": 91,
+            "unique_liquidation_stress_days": 167,
+            "geometry_rejected": 152,
+            "setup_admitted": 13,
+            "setup_suppressed": 2,
+            "first_observed_daily_bucket": "2022-08-11",
+            "last_observed_daily_bucket": "2026-09-19",
+            "observed_coverage_days_in_decision_window": 1342,
+            "missing_daily_days_inside_observed_asset_span": 0
+          },
+          "AAVE": {
+            "daily_rows": 1336,
+            "window_unavailable": 228,
+            "no_liquidation_stress": 957,
+            "valid_90_day_windows": 1108,
+            "long_stress_days": 85,
+            "short_stress_days": 83,
+            "unique_liquidation_stress_days": 151,
+            "geometry_rejected": 133,
+            "setup_admitted": 15,
+            "setup_suppressed": 3,
+            "first_observed_daily_bucket": "2022-08-11",
+            "last_observed_daily_bucket": "2026-09-19",
+            "observed_coverage_days_in_decision_window": 1342,
+            "missing_daily_days_inside_observed_asset_span": 6
+          },
+          "UNI": {
+            "daily_rows": 1338,
+            "window_unavailable": 127,
+            "no_liquidation_stress": 1063,
+            "valid_90_day_windows": 1211,
+            "long_stress_days": 85,
+            "short_stress_days": 77,
+            "unique_liquidation_stress_days": 148,
+            "geometry_rejected": 134,
+            "setup_admitted": 12,
+            "setup_suppressed": 2,
+            "first_observed_daily_bucket": "2022-08-11",
+            "last_observed_daily_bucket": "2026-09-19",
+            "observed_coverage_days_in_decision_window": 1342,
+            "missing_daily_days_inside_observed_asset_span": 4
+          },
+          "BNB": {
+            "daily_rows": 1342,
+            "window_unavailable": 0,
+            "no_liquidation_stress": 1197,
+            "valid_90_day_windows": 1342,
+            "long_stress_days": 82,
+            "short_stress_days": 79,
+            "unique_liquidation_stress_days": 145,
+            "geometry_rejected": 124,
+            "setup_admitted": 18,
+            "setup_suppressed": 3,
+            "first_observed_daily_bucket": "2022-08-11",
+            "last_observed_daily_bucket": "2026-09-19",
+            "observed_coverage_days_in_decision_window": 1342,
+            "missing_daily_days_inside_observed_asset_span": 0
+          },
+          "LINK": {
+            "daily_rows": 1342,
+            "window_unavailable": 0,
+            "no_liquidation_stress": 1192,
+            "valid_90_day_windows": 1342,
+            "long_stress_days": 91,
+            "short_stress_days": 72,
+            "unique_liquidation_stress_days": 150,
+            "geometry_rejected": 129,
+            "setup_admitted": 19,
+            "setup_suppressed": 2,
+            "first_observed_daily_bucket": "2022-08-11",
+            "last_observed_daily_bucket": "2026-09-19",
+            "observed_coverage_days_in_decision_window": 1342,
+            "missing_daily_days_inside_observed_asset_span": 0
+          },
+          "ZEC": {
+            "daily_rows": 1329,
+            "window_unavailable": 352,
+            "no_liquidation_stress": 847,
+            "valid_90_day_windows": 977,
+            "long_stress_days": 79,
+            "short_stress_days": 74,
+            "unique_liquidation_stress_days": 130,
+            "geometry_rejected": 116,
+            "setup_admitted": 12,
+            "setup_suppressed": 2,
+            "first_observed_daily_bucket": "2022-08-11",
+            "last_observed_daily_bucket": "2026-09-19",
+            "observed_coverage_days_in_decision_window": 1342,
+            "missing_daily_days_inside_observed_asset_span": 13
+          },
+          "TRX": {
+            "daily_rows": 1342,
+            "window_unavailable": 0,
+            "no_liquidation_stress": 1184,
+            "valid_90_day_windows": 1342,
+            "long_stress_days": 91,
+            "short_stress_days": 83,
+            "unique_liquidation_stress_days": 158,
+            "geometry_rejected": 137,
+            "setup_admitted": 16,
+            "setup_suppressed": 5,
+            "first_observed_daily_bucket": "2022-08-11",
+            "last_observed_daily_bucket": "2026-09-19",
+            "observed_coverage_days_in_decision_window": 1342,
+            "missing_daily_days_inside_observed_asset_span": 0
+          }
+        },
+        "dispositions": {
+          "SETUP_ADMITTED": 150,
+          "SETUP_SUPPRESSED_ASSET_OCCUPIED": 29,
+          "GEOMETRY_REJECTED_NO_FAST_OR_SLOW_MATCH": 1223,
+          "GEOMETRY_REJECTED_SELECTED_GEOMETRY": 5
+        },
+        "terminal": {
+          "INITIAL_ENTRY_WINDOW_EXPIRED_WITHOUT_CONFIRMATION": 115,
+          "BRANCH_INVALIDATED_NO_REROUTE": 27,
+          "POSITION_CLOSED_STOP": 8
+        },
+        "selected_branches": {
+          "CONTINUATION_SHORT": 98,
+          "CONTINUATION_LONG": 39,
+          "REVERSAL_LONG": 11,
+          "REVERSAL_SHORT": 2
+        },
+        "h1_first_failures": {
+          "NO_H1_TOUCH_OF_ENTRY_ZONE": 8868,
+          "H1_CLOSE_NOT_ON_TRADE_SIDE_OF_BOUNDARY": 40,
+          "H1_CLOSE_DID_NOT_BREAK_PRIOR_H1_EXTREME": 145,
+          "STAGE_ONE_INTENT_ALREADY_PENDING": 2
+        },
+        "fill_rejections": {
+          "MAXIMUM_CHASE_DISTANCE_EXCEEDED": 8
+        },
+        "trades": [
+          {
+            "asset": "BTC",
+            "direction": "SHORT",
+            "status": "CLOSED",
+            "first_fill_time": 1710716400000,
+            "fills": 1,
+            "net_pnl_before_funding": "-198.14269844350810482",
+            "last_exit": {
+              "time": 1710741600000,
+              "price": "68874.16412068646",
+              "reason": "STOP",
+              "quantity": "0.267",
+              "gross_pnl_usdt": "-161.52542022328482",
+              "exit_costs_usdt": "18.38940182022328482"
+            }
+          },
+          {
+            "asset": "AAVE",
+            "direction": "SHORT",
+            "status": "CLOSED",
+            "first_fill_time": 1722996000000,
+            "fills": 1,
+            "net_pnl_before_funding": "12.40626686957180869",
+            "last_exit": {
+              "time": 1723086000000,
+              "price": "103.21047764748491",
+              "reason": "STOP",
+              "quantity": 41,
+              "gross_pnl_usdt": "20.89041645311869",
+              "exit_costs_usdt": "4.23162958354688131"
+            }
+          },
+          {
+            "asset": "BTC",
+            "direction": "SHORT",
+            "status": "CLOSED",
+            "first_fill_time": 1723035600000,
+            "fills": 1,
+            "net_pnl_before_funding": "-126.793843661586610488",
+            "last_exit": {
+              "time": 1723082400000,
+              "price": "57587.941454578824",
+              "reason": "STOP",
+              "quantity": "0.287",
+              "gross_pnl_usdt": "-93.832197464122488",
+              "exit_costs_usdt": "16.527739197464122488"
+            }
+          },
+          {
+            "asset": "BTC",
+            "direction": "SHORT",
+            "status": "CLOSED",
+            "first_fill_time": 1760400000000,
+            "fills": 1,
+            "net_pnl_before_funding": "1374.56032795500172464",
+            "last_exit": {
+              "time": 1760868000000,
+              "price": "107419.03240262454",
+              "reason": "STOP",
+              "quantity": "0.184",
+              "gross_pnl_usdt": "1415.50603791708464",
+              "exit_costs_usdt": "19.76510196208291536"
+            }
+          },
+          {
+            "asset": "AAVE",
+            "direction": "SHORT",
+            "status": "CLOSED",
+            "first_fill_time": 1758726000000,
+            "fills": 1,
+            "net_pnl_before_funding": "1180.790272278224539236",
+            "last_exit": {
+              "time": 1758906000000,
+              "price": "266.85610736979766",
+              "reason": "STOP",
+              "quantity": "95.4",
+              "gross_pnl_usdt": "1232.939356921303236",
+              "exit_costs_usdt": "25.458072643078696764"
+            }
+          },
+          {
+            "asset": "UNI",
+            "direction": "SHORT",
+            "status": "CLOSED",
+            "first_fill_time": 1723107600000,
+            "fills": 1,
+            "net_pnl_before_funding": "-195.392454941886729912",
+            "last_exit": {
+              "time": 1723122000000,
+              "price": "6.046252561553451",
+              "reason": "STOP",
+              "quantity": 1512,
+              "gross_pnl_usdt": "-177.285873068817912",
+              "exit_costs_usdt": "9.141933873068817912"
+            }
+          },
+          {
+            "asset": "LINK",
+            "direction": "SHORT",
+            "status": "CLOSED",
+            "first_fill_time": 1758726000000,
+            "fills": 1,
+            "net_pnl_before_funding": "-52.9448243053305465304",
+            "last_exit": {
+              "time": 1758736800000,
+              "price": "21.915798361434604",
+              "reason": "STOP",
+              "quantity": "542.6",
+              "gross_pnl_usdt": "-29.1909909144161304",
+              "exit_costs_usdt": "11.8915121909144161304"
+            }
+          },
+          {
+            "asset": "TRX",
+            "direction": "SHORT",
+            "status": "CLOSED",
+            "first_fill_time": 1686574800000,
+            "fills": 1,
+            "net_pnl_before_funding": "-137.89876512694595411385",
+            "last_exit": {
+              "time": 1686592800000,
+              "price": "0.07052280010120227",
+              "reason": "STOP",
+              "quantity": 565755,
+              "gross_pnl_usdt": "-58.15967125569026385",
+              "exit_costs_usdt": "39.89862677125569026385"
+            }
+          }
+        ]
+      },
+      "STAGED_NO_MACRO": {
+        "initial": "2E+4",
+        "final": "21856.58428062354012670175",
+        "return_pct": "9.2829214031177006335087500",
+        "drawdown_pct": 6.231371844528781,
+        "funnel": {
+          "daily_rows": 13485,
+          "valid_90_day_windows": 11969,
+          "long_liquidation_stress_flags": 847,
+          "short_liquidation_stress_flags": 798,
+          "qualified_source_events": 179,
+          "stage_one_confirmation_intents": 16,
+          "unique_stage_one_setups": 12,
+          "all_confirmation_intents": 16,
+          "in_window_router_rejections": 0,
+          "outside_window_router_rejections": 0,
+          "outside_window_intents_suppressed": 0,
+          "submitted_fill_attempts": 16,
+          "filled_tranches": 8,
+          "fill_rejections": 8,
+          "missing_h4_oi_endpoints": 59,
+          "completed_positions": 8
+        },
+        "daily_gates": {
+          "BTC": {
+            "daily_rows": 1342,
+            "window_unavailable": 0,
+            "no_liquidation_stress": 1174,
+            "valid_90_day_windows": 1342,
+            "long_stress_days": 101,
+            "short_stress_days": 91,
+            "unique_liquidation_stress_days": 168,
+            "geometry_rejected": 140,
+            "setup_admitted": 23,
+            "setup_suppressed": 5,
+            "first_observed_daily_bucket": "2022-08-11",
+            "last_observed_daily_bucket": "2026-09-19",
+            "observed_coverage_days_in_decision_window": 1342,
+            "missing_daily_days_inside_observed_asset_span": 0
+          },
+          "ETH": {
+            "daily_rows": 1342,
+            "window_unavailable": 0,
+            "no_liquidation_stress": 1152,
+            "valid_90_day_windows": 1342,
+            "long_stress_days": 104,
+            "short_stress_days": 100,
+            "unique_liquidation_stress_days": 190,
+            "geometry_rejected": 163,
+            "setup_admitted": 22,
+            "setup_suppressed": 5,
+            "first_observed_daily_bucket": "2022-08-11",
+            "last_observed_daily_bucket": "2026-09-19",
+            "observed_coverage_days_in_decision_window": 1342,
+            "missing_daily_days_inside_observed_asset_span": 0
+          },
+          "SOL": {
+            "daily_rows": 1342,
+            "window_unavailable": 0,
+            "no_liquidation_stress": 1175,
+            "valid_90_day_windows": 1342,
+            "long_stress_days": 104,
+            "short_stress_days": 91,
+            "unique_liquidation_stress_days": 167,
+            "geometry_rejected": 152,
+            "setup_admitted": 13,
+            "setup_suppressed": 2,
+            "first_observed_daily_bucket": "2022-08-11",
+            "last_observed_daily_bucket": "2026-09-19",
+            "observed_coverage_days_in_decision_window": 1342,
+            "missing_daily_days_inside_observed_asset_span": 0
+          },
+          "AAVE": {
+            "daily_rows": 1336,
+            "window_unavailable": 228,
+            "no_liquidation_stress": 957,
+            "valid_90_day_windows": 1108,
+            "long_stress_days": 85,
+            "short_stress_days": 83,
+            "unique_liquidation_stress_days": 151,
+            "geometry_rejected": 133,
+            "setup_admitted": 15,
+            "setup_suppressed": 3,
+            "first_observed_daily_bucket": "2022-08-11",
+            "last_observed_daily_bucket": "2026-09-19",
+            "observed_coverage_days_in_decision_window": 1342,
+            "missing_daily_days_inside_observed_asset_span": 6
+          },
+          "UNI": {
+            "daily_rows": 1338,
+            "window_unavailable": 127,
+            "no_liquidation_stress": 1063,
+            "valid_90_day_windows": 1211,
+            "long_stress_days": 85,
+            "short_stress_days": 77,
+            "unique_liquidation_stress_days": 148,
+            "geometry_rejected": 134,
+            "setup_admitted": 12,
+            "setup_suppressed": 2,
+            "first_observed_daily_bucket": "2022-08-11",
+            "last_observed_daily_bucket": "2026-09-19",
+            "observed_coverage_days_in_decision_window": 1342,
+            "missing_daily_days_inside_observed_asset_span": 4
+          },
+          "BNB": {
+            "daily_rows": 1342,
+            "window_unavailable": 0,
+            "no_liquidation_stress": 1197,
+            "valid_90_day_windows": 1342,
+            "long_stress_days": 82,
+            "short_stress_days": 79,
+            "unique_liquidation_stress_days": 145,
+            "geometry_rejected": 124,
+            "setup_admitted": 18,
+            "setup_suppressed": 3,
+            "first_observed_daily_bucket": "2022-08-11",
+            "last_observed_daily_bucket": "2026-09-19",
+            "observed_coverage_days_in_decision_window": 1342,
+            "missing_daily_days_inside_observed_asset_span": 0
+          },
+          "LINK": {
+            "daily_rows": 1342,
+            "window_unavailable": 0,
+            "no_liquidation_stress": 1192,
+            "valid_90_day_windows": 1342,
+            "long_stress_days": 91,
+            "short_stress_days": 72,
+            "unique_liquidation_stress_days": 150,
+            "geometry_rejected": 129,
+            "setup_admitted": 19,
+            "setup_suppressed": 2,
+            "first_observed_daily_bucket": "2022-08-11",
+            "last_observed_daily_bucket": "2026-09-19",
+            "observed_coverage_days_in_decision_window": 1342,
+            "missing_daily_days_inside_observed_asset_span": 0
+          },
+          "ZEC": {
+            "daily_rows": 1329,
+            "window_unavailable": 352,
+            "no_liquidation_stress": 847,
+            "valid_90_day_windows": 977,
+            "long_stress_days": 79,
+            "short_stress_days": 74,
+            "unique_liquidation_stress_days": 130,
+            "geometry_rejected": 116,
+            "setup_admitted": 12,
+            "setup_suppressed": 2,
+            "first_observed_daily_bucket": "2022-08-11",
+            "last_observed_daily_bucket": "2026-09-19",
+            "observed_coverage_days_in_decision_window": 1342,
+            "missing_daily_days_inside_observed_asset_span": 13
+          },
+          "TRX": {
+            "daily_rows": 1342,
+            "window_unavailable": 0,
+            "no_liquidation_stress": 1184,
+            "valid_90_day_windows": 1342,
+            "long_stress_days": 91,
+            "short_stress_days": 83,
+            "unique_liquidation_stress_days": 158,
+            "geometry_rejected": 137,
+            "setup_admitted": 16,
+            "setup_suppressed": 5,
+            "first_observed_daily_bucket": "2022-08-11",
+            "last_observed_daily_bucket": "2026-09-19",
+            "observed_coverage_days_in_decision_window": 1342,
+            "missing_daily_days_inside_observed_asset_span": 0
+          }
+        },
+        "dispositions": {
+          "SETUP_ADMITTED": 150,
+          "SETUP_SUPPRESSED_ASSET_OCCUPIED": 29,
+          "GEOMETRY_REJECTED_NO_FAST_OR_SLOW_MATCH": 1223,
+          "GEOMETRY_REJECTED_SELECTED_GEOMETRY": 5
+        },
+        "terminal": {
+          "INITIAL_ENTRY_WINDOW_EXPIRED_WITHOUT_CONFIRMATION": 115,
+          "BRANCH_INVALIDATED_NO_REROUTE": 27,
+          "POSITION_CLOSED_STOP": 8
+        },
+        "selected_branches": {
+          "CONTINUATION_SHORT": 98,
+          "CONTINUATION_LONG": 39,
+          "REVERSAL_LONG": 11,
+          "REVERSAL_SHORT": 2
+        },
+        "h1_first_failures": {
+          "NO_H1_TOUCH_OF_ENTRY_ZONE": 8868,
+          "H1_CLOSE_NOT_ON_TRADE_SIDE_OF_BOUNDARY": 40,
+          "H1_CLOSE_DID_NOT_BREAK_PRIOR_H1_EXTREME": 145,
+          "STAGE_ONE_INTENT_ALREADY_PENDING": 2
+        },
+        "fill_rejections": {
+          "MAXIMUM_CHASE_DISTANCE_EXCEEDED": 8
+        },
+        "trades": [
+          {
+            "asset": "BTC",
+            "direction": "SHORT",
+            "status": "CLOSED",
+            "first_fill_time": 1710716400000,
+            "fills": 1,
+            "net_pnl_before_funding": "-198.14269844350810482",
+            "last_exit": {
+              "time": 1710741600000,
+              "price": "68874.16412068646",
+              "reason": "STOP",
+              "quantity": "0.267",
+              "gross_pnl_usdt": "-161.52542022328482",
+              "exit_costs_usdt": "18.38940182022328482"
+            }
+          },
+          {
+            "asset": "AAVE",
+            "direction": "SHORT",
+            "status": "CLOSED",
+            "first_fill_time": 1722996000000,
+            "fills": 1,
+            "net_pnl_before_funding": "12.40626686957180869",
+            "last_exit": {
+              "time": 1723086000000,
+              "price": "103.21047764748491",
+              "reason": "STOP",
+              "quantity": 41,
+              "gross_pnl_usdt": "20.89041645311869",
+              "exit_costs_usdt": "4.23162958354688131"
+            }
+          },
+          {
+            "asset": "BTC",
+            "direction": "SHORT",
+            "status": "CLOSED",
+            "first_fill_time": 1723035600000,
+            "fills": 1,
+            "net_pnl_before_funding": "-126.793843661586610488",
+            "last_exit": {
+              "time": 1723082400000,
+              "price": "57587.941454578824",
+              "reason": "STOP",
+              "quantity": "0.287",
+              "gross_pnl_usdt": "-93.832197464122488",
+              "exit_costs_usdt": "16.527739197464122488"
+            }
+          },
+          {
+            "asset": "BTC",
+            "direction": "SHORT",
+            "status": "CLOSED",
+            "first_fill_time": 1760400000000,
+            "fills": 1,
+            "net_pnl_before_funding": "1374.56032795500172464",
+            "last_exit": {
+              "time": 1760868000000,
+              "price": "107419.03240262454",
+              "reason": "STOP",
+              "quantity": "0.184",
+              "gross_pnl_usdt": "1415.50603791708464",
+              "exit_costs_usdt": "19.76510196208291536"
+            }
+          },
+          {
+            "asset": "AAVE",
+            "direction": "SHORT",
+            "status": "CLOSED",
+            "first_fill_time": 1758726000000,
+            "fills": 1,
+            "net_pnl_before_funding": "1180.790272278224539236",
+            "last_exit": {
+              "time": 1758906000000,
+              "price": "266.85610736979766",
+              "reason": "STOP",
+              "quantity": "95.4",
+              "gross_pnl_usdt": "1232.939356921303236",
+              "exit_costs_usdt": "25.458072643078696764"
+            }
+          },
+          {
+            "asset": "UNI",
+            "direction": "SHORT",
+            "status": "CLOSED",
+            "first_fill_time": 1723107600000,
+            "fills": 1,
+            "net_pnl_before_funding": "-195.392454941886729912",
+            "last_exit": {
+              "time": 1723122000000,
+              "price": "6.046252561553451",
+              "reason": "STOP",
+              "quantity": 1512,
+              "gross_pnl_usdt": "-177.285873068817912",
+              "exit_costs_usdt": "9.141933873068817912"
+            }
+          },
+          {
+            "asset": "LINK",
+            "direction": "SHORT",
+            "status": "CLOSED",
+            "first_fill_time": 1758726000000,
+            "fills": 1,
+            "net_pnl_before_funding": "-52.9448243053305465304",
+            "last_exit": {
+              "time": 1758736800000,
+              "price": "21.915798361434604",
+              "reason": "STOP",
+              "quantity": "542.6",
+              "gross_pnl_usdt": "-29.1909909144161304",
+              "exit_costs_usdt": "11.8915121909144161304"
+            }
+          },
+          {
+            "asset": "TRX",
+            "direction": "SHORT",
+            "status": "CLOSED",
+            "first_fill_time": 1686574800000,
+            "fills": 1,
+            "net_pnl_before_funding": "-137.89876512694595411385",
+            "last_exit": {
+              "time": 1686592800000,
+              "price": "0.07052280010120227",
+              "reason": "STOP",
+              "quantity": 565755,
+              "gross_pnl_usdt": "-58.15967125569026385",
+              "exit_costs_usdt": "39.89862677125569026385"
+            }
+          }
+        ]
+      },
+      "STAGED_MACRO": {
+        "initial": "2E+4",
+        "final": "21856.58428062354012670175",
+        "return_pct": "9.2829214031177006335087500",
+        "drawdown_pct": 6.231371844528781,
+        "funnel": {
+          "daily_rows": 13485,
+          "valid_90_day_windows": 11969,
+          "long_liquidation_stress_flags": 847,
+          "short_liquidation_stress_flags": 798,
+          "qualified_source_events": 179,
+          "stage_one_confirmation_intents": 16,
+          "unique_stage_one_setups": 12,
+          "all_confirmation_intents": 16,
+          "in_window_router_rejections": 0,
+          "outside_window_router_rejections": 0,
+          "outside_window_intents_suppressed": 0,
+          "submitted_fill_attempts": 16,
+          "filled_tranches": 8,
+          "fill_rejections": 8,
+          "missing_h4_oi_endpoints": 59,
+          "completed_positions": 8
+        },
+        "daily_gates": {
+          "BTC": {
+            "daily_rows": 1342,
+            "window_unavailable": 0,
+            "no_liquidation_stress": 1174,
+            "valid_90_day_windows": 1342,
+            "long_stress_days": 101,
+            "short_stress_days": 91,
+            "unique_liquidation_stress_days": 168,
+            "geometry_rejected": 140,
+            "setup_admitted": 23,
+            "setup_suppressed": 5,
+            "first_observed_daily_bucket": "2022-08-11",
+            "last_observed_daily_bucket": "2026-09-19",
+            "observed_coverage_days_in_decision_window": 1342,
+            "missing_daily_days_inside_observed_asset_span": 0
+          },
+          "ETH": {
+            "daily_rows": 1342,
+            "window_unavailable": 0,
+            "no_liquidation_stress": 1152,
+            "valid_90_day_windows": 1342,
+            "long_stress_days": 104,
+            "short_stress_days": 100,
+            "unique_liquidation_stress_days": 190,
+            "geometry_rejected": 163,
+            "setup_admitted": 22,
+            "setup_suppressed": 5,
+            "first_observed_daily_bucket": "2022-08-11",
+            "last_observed_daily_bucket": "2026-09-19",
+            "observed_coverage_days_in_decision_window": 1342,
+            "missing_daily_days_inside_observed_asset_span": 0
+          },
+          "SOL": {
+            "daily_rows": 1342,
+            "window_unavailable": 0,
+            "no_liquidation_stress": 1175,
+            "valid_90_day_windows": 1342,
+            "long_stress_days": 104,
+            "short_stress_days": 91,
+            "unique_liquidation_stress_days": 167,
+            "geometry_rejected": 152,
+            "setup_admitted": 13,
+            "setup_suppressed": 2,
+            "first_observed_daily_bucket": "2022-08-11",
+            "last_observed_daily_bucket": "2026-09-19",
+            "observed_coverage_days_in_decision_window": 1342,
+            "missing_daily_days_inside_observed_asset_span": 0
+          },
+          "AAVE": {
+            "daily_rows": 1336,
+            "window_unavailable": 228,
+            "no_liquidation_stress": 957,
+            "valid_90_day_windows": 1108,
+            "long_stress_days": 85,
+            "short_stress_days": 83,
+            "unique_liquidation_stress_days": 151,
+            "geometry_rejected": 133,
+            "setup_admitted": 15,
+            "setup_suppressed": 3,
+            "first_observed_daily_bucket": "2022-08-11",
+            "last_observed_daily_bucket": "2026-09-19",
+            "observed_coverage_days_in_decision_window": 1342,
+            "missing_daily_days_inside_observed_asset_span": 6
+          },
+          "UNI": {
+            "daily_rows": 1338,
+            "window_unavailable": 127,
+            "no_liquidation_stress": 1063,
+            "valid_90_day_windows": 1211,
+            "long_stress_days": 85,
+            "short_stress_days": 77,
+            "unique_liquidation_stress_days": 148,
+            "geometry_rejected": 134,
+            "setup_admitted": 12,
+            "setup_suppressed": 2,
+            "first_observed_daily_bucket": "2022-08-11",
+            "last_observed_daily_bucket": "2026-09-19",
+            "observed_coverage_days_in_decision_window": 1342,
+            "missing_daily_days_inside_observed_asset_span": 4
+          },
+          "BNB": {
+            "daily_rows": 1342,
+            "window_unavailable": 0,
+            "no_liquidation_stress": 1197,
+            "valid_90_day_windows": 1342,
+            "long_stress_days": 82,
+            "short_stress_days": 79,
+            "unique_liquidation_stress_days": 145,
+            "geometry_rejected": 124,
+            "setup_admitted": 18,
+            "setup_suppressed": 3,
+            "first_observed_daily_bucket": "2022-08-11",
+            "last_observed_daily_bucket": "2026-09-19",
+            "observed_coverage_days_in_decision_window": 1342,
+            "missing_daily_days_inside_observed_asset_span": 0
+          },
+          "LINK": {
+            "daily_rows": 1342,
+            "window_unavailable": 0,
+            "no_liquidation_stress": 1192,
+            "valid_90_day_windows": 1342,
+            "long_stress_days": 91,
+            "short_stress_days": 72,
+            "unique_liquidation_stress_days": 150,
+            "geometry_rejected": 129,
+            "setup_admitted": 19,
+            "setup_suppressed": 2,
+            "first_observed_daily_bucket": "2022-08-11",
+            "last_observed_daily_bucket": "2026-09-19",
+            "observed_coverage_days_in_decision_window": 1342,
+            "missing_daily_days_inside_observed_asset_span": 0
+          },
+          "ZEC": {
+            "daily_rows": 1329,
+            "window_unavailable": 352,
+            "no_liquidation_stress": 847,
+            "valid_90_day_windows": 977,
+            "long_stress_days": 79,
+            "short_stress_days": 74,
+            "unique_liquidation_stress_days": 130,
+            "geometry_rejected": 116,
+            "setup_admitted": 12,
+            "setup_suppressed": 2,
+            "first_observed_daily_bucket": "2022-08-11",
+            "last_observed_daily_bucket": "2026-09-19",
+            "observed_coverage_days_in_decision_window": 1342,
+            "missing_daily_days_inside_observed_asset_span": 13
+          },
+          "TRX": {
+            "daily_rows": 1342,
+            "window_unavailable": 0,
+            "no_liquidation_stress": 1184,
+            "valid_90_day_windows": 1342,
+            "long_stress_days": 91,
+            "short_stress_days": 83,
+            "unique_liquidation_stress_days": 158,
+            "geometry_rejected": 137,
+            "setup_admitted": 16,
+            "setup_suppressed": 5,
+            "first_observed_daily_bucket": "2022-08-11",
+            "last_observed_daily_bucket": "2026-09-19",
+            "observed_coverage_days_in_decision_window": 1342,
+            "missing_daily_days_inside_observed_asset_span": 0
+          }
+        },
+        "dispositions": {
+          "SETUP_ADMITTED": 150,
+          "SETUP_SUPPRESSED_ASSET_OCCUPIED": 29,
+          "GEOMETRY_REJECTED_NO_FAST_OR_SLOW_MATCH": 1223,
+          "GEOMETRY_REJECTED_SELECTED_GEOMETRY": 5
+        },
+        "terminal": {
+          "INITIAL_ENTRY_WINDOW_EXPIRED_WITHOUT_CONFIRMATION": 115,
+          "BRANCH_INVALIDATED_NO_REROUTE": 27,
+          "POSITION_CLOSED_STOP": 8
+        },
+        "selected_branches": {
+          "CONTINUATION_SHORT": 98,
+          "CONTINUATION_LONG": 39,
+          "REVERSAL_LONG": 11,
+          "REVERSAL_SHORT": 2
+        },
+        "h1_first_failures": {
+          "NO_H1_TOUCH_OF_ENTRY_ZONE": 8868,
+          "H1_CLOSE_NOT_ON_TRADE_SIDE_OF_BOUNDARY": 40,
+          "H1_CLOSE_DID_NOT_BREAK_PRIOR_H1_EXTREME": 145,
+          "STAGE_ONE_INTENT_ALREADY_PENDING": 2
+        },
+        "fill_rejections": {
+          "MAXIMUM_CHASE_DISTANCE_EXCEEDED": 8
+        },
+        "trades": [
+          {
+            "asset": "BTC",
+            "direction": "SHORT",
+            "status": "CLOSED",
+            "first_fill_time": 1710716400000,
+            "fills": 1,
+            "net_pnl_before_funding": "-198.14269844350810482",
+            "last_exit": {
+              "time": 1710741600000,
+              "price": "68874.16412068646",
+              "reason": "STOP",
+              "quantity": "0.267",
+              "gross_pnl_usdt": "-161.52542022328482",
+              "exit_costs_usdt": "18.38940182022328482"
+            }
+          },
+          {
+            "asset": "AAVE",
+            "direction": "SHORT",
+            "status": "CLOSED",
+            "first_fill_time": 1722996000000,
+            "fills": 1,
+            "net_pnl_before_funding": "12.40626686957180869",
+            "last_exit": {
+              "time": 1723086000000,
+              "price": "103.21047764748491",
+              "reason": "STOP",
+              "quantity": 41,
+              "gross_pnl_usdt": "20.89041645311869",
+              "exit_costs_usdt": "4.23162958354688131"
+            }
+          },
+          {
+            "asset": "BTC",
+            "direction": "SHORT",
+            "status": "CLOSED",
+            "first_fill_time": 1723035600000,
+            "fills": 1,
+            "net_pnl_before_funding": "-126.793843661586610488",
+            "last_exit": {
+              "time": 1723082400000,
+              "price": "57587.941454578824",
+              "reason": "STOP",
+              "quantity": "0.287",
+              "gross_pnl_usdt": "-93.832197464122488",
+              "exit_costs_usdt": "16.527739197464122488"
+            }
+          },
+          {
+            "asset": "BTC",
+            "direction": "SHORT",
+            "status": "CLOSED",
+            "first_fill_time": 1760400000000,
+            "fills": 1,
+            "net_pnl_before_funding": "1374.56032795500172464",
+            "last_exit": {
+              "time": 1760868000000,
+              "price": "107419.03240262454",
+              "reason": "STOP",
+              "quantity": "0.184",
+              "gross_pnl_usdt": "1415.50603791708464",
+              "exit_costs_usdt": "19.76510196208291536"
+            }
+          },
+          {
+            "asset": "AAVE",
+            "direction": "SHORT",
+            "status": "CLOSED",
+            "first_fill_time": 1758726000000,
+            "fills": 1,
+            "net_pnl_before_funding": "1180.790272278224539236",
+            "last_exit": {
+              "time": 1758906000000,
+              "price": "266.85610736979766",
+              "reason": "STOP",
+              "quantity": "95.4",
+              "gross_pnl_usdt": "1232.939356921303236",
+              "exit_costs_usdt": "25.458072643078696764"
+            }
+          },
+          {
+            "asset": "UNI",
+            "direction": "SHORT",
+            "status": "CLOSED",
+            "first_fill_time": 1723107600000,
+            "fills": 1,
+            "net_pnl_before_funding": "-195.392454941886729912",
+            "last_exit": {
+              "time": 1723122000000,
+              "price": "6.046252561553451",
+              "reason": "STOP",
+              "quantity": 1512,
+              "gross_pnl_usdt": "-177.285873068817912",
+              "exit_costs_usdt": "9.141933873068817912"
+            }
+          },
+          {
+            "asset": "LINK",
+            "direction": "SHORT",
+            "status": "CLOSED",
+            "first_fill_time": 1758726000000,
+            "fills": 1,
+            "net_pnl_before_funding": "-52.9448243053305465304",
+            "last_exit": {
+              "time": 1758736800000,
+              "price": "21.915798361434604",
+              "reason": "STOP",
+              "quantity": "542.6",
+              "gross_pnl_usdt": "-29.1909909144161304",
+              "exit_costs_usdt": "11.8915121909144161304"
+            }
+          },
+          {
+            "asset": "TRX",
+            "direction": "SHORT",
+            "status": "CLOSED",
+            "first_fill_time": 1686574800000,
+            "fills": 1,
+            "net_pnl_before_funding": "-137.89876512694595411385",
+            "last_exit": {
+              "time": 1686592800000,
+              "price": "0.07052280010120227",
+              "reason": "STOP",
+              "quantity": 565755,
+              "gross_pnl_usdt": "-58.15967125569026385",
+              "exit_costs_usdt": "39.89862677125569026385"
+            }
+          }
+        ]
+      }
+    },
+    "response_diagnostics": [
+      {
+        "anchor": "FIRST_OBSERVABLE_EVENT_AVAILABILITY",
+        "variant": "CORE_ONE_ENTRY",
+        "direction": "OPPOSITE_SHOCK",
+        "horizon_days": 1,
+        "observation_count": 179,
+        "valid_response_count": 179,
+        "cluster_observation_count": 52,
+        "missing_anchor_count": 0,
+        "missing_endpoint_count": 0,
+        "missing_intervening_hour_count": 0,
+        "non_hourly_anchor_count": 0,
+        "unclustered_geometry_count": 0,
+        "mean_directional_return_fraction": "0.006570201287461728",
+        "p20_directional_return_fraction": "0.0031448792288917777",
+        "ci95_low_directional_return_fraction": "-0.0011179502245265006",
+        "ci95_high_directional_return_fraction": "0.013932474600298691",
+        "bootstrap_valid_draw_count": 10000,
+        "bootstrap_draws": 10000,
+        "bootstrap_seed": 20260921,
+        "bootstrap_resampling_unit": "SHARED_MARKET_WIDE_SHOCK_CLUSTER",
+        "independence_claim": false,
+        "intent_conditioned": false,
+        "direction_was_known_at_anchor": true,
+        "event_anchor_metrics_shared_across_variants": true,
+        "under_30_cluster_warning_nonblocking": false,
+        "asset_breakdown": [
+          {
+            "asset": "AAVE",
+            "observation_count": 18,
+            "valid_response_count": 18,
+            "cluster_observation_count": 15,
+            "mean_directional_return_fraction": "0.007630443948716811",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "BNB",
+            "observation_count": 21,
+            "valid_response_count": 21,
+            "cluster_observation_count": 16,
+            "mean_directional_return_fraction": "-0.00442828468075611",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "BTC",
+            "observation_count": 28,
+            "valid_response_count": 28,
+            "cluster_observation_count": 21,
+            "mean_directional_return_fraction": "0.0055208687781992715",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "ETH",
+            "observation_count": 27,
+            "valid_response_count": 27,
+            "cluster_observation_count": 21,
+            "mean_directional_return_fraction": "0.0011727792541985935",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "LINK",
+            "observation_count": 21,
+            "valid_response_count": 21,
+            "cluster_observation_count": 19,
+            "mean_directional_return_fraction": "-0.006240405928784787",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "SOL",
+            "observation_count": 15,
+            "valid_response_count": 15,
+            "cluster_observation_count": 12,
+            "mean_directional_return_fraction": "0.008857925628006857",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "TRX",
+            "observation_count": 21,
+            "valid_response_count": 21,
+            "cluster_observation_count": 16,
+            "mean_directional_return_fraction": "0.006036672870750628",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "UNI",
+            "observation_count": 14,
+            "valid_response_count": 14,
+            "cluster_observation_count": 12,
+            "mean_directional_return_fraction": "0.017539133886273376",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "ZEC",
+            "observation_count": 14,
+            "valid_response_count": 14,
+            "cluster_observation_count": 12,
+            "mean_directional_return_fraction": "0.002950061424027072",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          }
+        ],
+        "branch_breakdown": [
+          {
+            "branch": "UNKNOWN_AT_EVENT_AVAILABILITY",
+            "observation_count": 179,
+            "valid_response_count": 179,
+            "cluster_observation_count": 52,
+            "mean_directional_return_fraction": "0.006570201287461728",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          }
+        ]
+      },
+      {
+        "anchor": "FIRST_OBSERVABLE_EVENT_AVAILABILITY",
+        "variant": "CORE_ONE_ENTRY",
+        "direction": "OPPOSITE_SHOCK",
+        "horizon_days": 3,
+        "observation_count": 179,
+        "valid_response_count": 179,
+        "cluster_observation_count": 52,
+        "missing_anchor_count": 0,
+        "missing_endpoint_count": 0,
+        "missing_intervening_hour_count": 0,
+        "non_hourly_anchor_count": 0,
+        "unclustered_geometry_count": 0,
+        "mean_directional_return_fraction": "0.006391290751421059",
+        "p20_directional_return_fraction": "0.0007808126616544034",
+        "ci95_low_directional_return_fraction": "-0.005863049538764873",
+        "ci95_high_directional_return_fraction": "0.02240794472852269",
+        "bootstrap_valid_draw_count": 10000,
+        "bootstrap_draws": 10000,
+        "bootstrap_seed": 20260921,
+        "bootstrap_resampling_unit": "SHARED_MARKET_WIDE_SHOCK_CLUSTER",
+        "independence_claim": false,
+        "intent_conditioned": false,
+        "direction_was_known_at_anchor": true,
+        "event_anchor_metrics_shared_across_variants": true,
+        "under_30_cluster_warning_nonblocking": false,
+        "asset_breakdown": [
+          {
+            "asset": "AAVE",
+            "observation_count": 18,
+            "valid_response_count": 18,
+            "cluster_observation_count": 15,
+            "mean_directional_return_fraction": "0.005377983104310568",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "BNB",
+            "observation_count": 21,
+            "valid_response_count": 21,
+            "cluster_observation_count": 16,
+            "mean_directional_return_fraction": "-0.0034706194254156587",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "BTC",
+            "observation_count": 28,
+            "valid_response_count": 28,
+            "cluster_observation_count": 21,
+            "mean_directional_return_fraction": "0.006828958359362159",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "ETH",
+            "observation_count": 27,
+            "valid_response_count": 27,
+            "cluster_observation_count": 21,
+            "mean_directional_return_fraction": "0.008403972228419756",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "LINK",
+            "observation_count": 21,
+            "valid_response_count": 21,
+            "cluster_observation_count": 19,
+            "mean_directional_return_fraction": "-0.009312721789255813",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "SOL",
+            "observation_count": 15,
+            "valid_response_count": 15,
+            "cluster_observation_count": 12,
+            "mean_directional_return_fraction": "0.0040166399050343",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "TRX",
+            "observation_count": 21,
+            "valid_response_count": 21,
+            "cluster_observation_count": 16,
+            "mean_directional_return_fraction": "0.0020137416697855563",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "UNI",
+            "observation_count": 14,
+            "valid_response_count": 14,
+            "cluster_observation_count": 12,
+            "mean_directional_return_fraction": "0.01217565556856628",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "ZEC",
+            "observation_count": 14,
+            "valid_response_count": 14,
+            "cluster_observation_count": 12,
+            "mean_directional_return_fraction": "0.04742714403905016",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          }
+        ],
+        "branch_breakdown": [
+          {
+            "branch": "UNKNOWN_AT_EVENT_AVAILABILITY",
+            "observation_count": 179,
+            "valid_response_count": 179,
+            "cluster_observation_count": 52,
+            "mean_directional_return_fraction": "0.006391290751421059",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          }
+        ]
+      },
+      {
+        "anchor": "FIRST_OBSERVABLE_EVENT_AVAILABILITY",
+        "variant": "CORE_ONE_ENTRY",
+        "direction": "OPPOSITE_SHOCK",
+        "horizon_days": 7,
+        "observation_count": 179,
+        "valid_response_count": 179,
+        "cluster_observation_count": 52,
+        "missing_anchor_count": 0,
+        "missing_endpoint_count": 0,
+        "missing_intervening_hour_count": 0,
+        "non_hourly_anchor_count": 0,
+        "unclustered_geometry_count": 0,
+        "mean_directional_return_fraction": "0.012189176540428118",
+        "p20_directional_return_fraction": "0.006033348583378821",
+        "ci95_low_directional_return_fraction": "-0.0024976210207124944",
+        "ci95_high_directional_return_fraction": "0.028334591571462592",
+        "bootstrap_valid_draw_count": 10000,
+        "bootstrap_draws": 10000,
+        "bootstrap_seed": 20260921,
+        "bootstrap_resampling_unit": "SHARED_MARKET_WIDE_SHOCK_CLUSTER",
+        "independence_claim": false,
+        "intent_conditioned": false,
+        "direction_was_known_at_anchor": true,
+        "event_anchor_metrics_shared_across_variants": true,
+        "under_30_cluster_warning_nonblocking": false,
+        "asset_breakdown": [
+          {
+            "asset": "AAVE",
+            "observation_count": 18,
+            "valid_response_count": 18,
+            "cluster_observation_count": 15,
+            "mean_directional_return_fraction": "0.02751135920660911",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "BNB",
+            "observation_count": 21,
+            "valid_response_count": 21,
+            "cluster_observation_count": 16,
+            "mean_directional_return_fraction": "-0.005147045061575999",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "BTC",
+            "observation_count": 28,
+            "valid_response_count": 28,
+            "cluster_observation_count": 21,
+            "mean_directional_return_fraction": "0.01559784530770106",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "ETH",
+            "observation_count": 27,
+            "valid_response_count": 27,
+            "cluster_observation_count": 21,
+            "mean_directional_return_fraction": "0.013680653480213578",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "LINK",
+            "observation_count": 21,
+            "valid_response_count": 21,
+            "cluster_observation_count": 19,
+            "mean_directional_return_fraction": "-0.008903329618980332",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "SOL",
+            "observation_count": 15,
+            "valid_response_count": 15,
+            "cluster_observation_count": 12,
+            "mean_directional_return_fraction": "0.011113656419565637",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "TRX",
+            "observation_count": 21,
+            "valid_response_count": 21,
+            "cluster_observation_count": 16,
+            "mean_directional_return_fraction": "0.008054860070760231",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "UNI",
+            "observation_count": 14,
+            "valid_response_count": 14,
+            "cluster_observation_count": 12,
+            "mean_directional_return_fraction": "0.02729304170317019",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "ZEC",
+            "observation_count": 14,
+            "valid_response_count": 14,
+            "cluster_observation_count": 12,
+            "mean_directional_return_fraction": "0.021620539731142002",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          }
+        ],
+        "branch_breakdown": [
+          {
+            "branch": "UNKNOWN_AT_EVENT_AVAILABILITY",
+            "observation_count": 179,
+            "valid_response_count": 179,
+            "cluster_observation_count": 52,
+            "mean_directional_return_fraction": "0.012189176540428118",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          }
+        ]
+      },
+      {
+        "anchor": "FIRST_ROUTED_ENTRY_DECISION",
+        "variant": "CORE_ONE_ENTRY",
+        "direction": "OPPOSITE_SHOCK",
+        "horizon_days": 1,
+        "observation_count": 12,
+        "valid_response_count": 12,
+        "cluster_observation_count": 7,
+        "missing_anchor_count": 0,
+        "missing_endpoint_count": 0,
+        "missing_intervening_hour_count": 0,
+        "non_hourly_anchor_count": 0,
+        "unclustered_geometry_count": 0,
+        "mean_directional_return_fraction": "-0.008267010330011223",
+        "p20_directional_return_fraction": "-0.016481050073178332",
+        "ci95_low_directional_return_fraction": "-0.02756568147614043",
+        "ci95_high_directional_return_fraction": "0.011109895173339891",
+        "bootstrap_valid_draw_count": 9998,
+        "bootstrap_draws": 10000,
+        "bootstrap_seed": 20260921,
+        "bootstrap_resampling_unit": "SHARED_MARKET_WIDE_SHOCK_CLUSTER",
+        "independence_claim": false,
+        "intent_conditioned": true,
+        "direction_was_known_at_anchor": true,
+        "event_anchor_metrics_shared_across_variants": false,
+        "under_30_cluster_warning_nonblocking": true,
+        "asset_breakdown": [
+          {
+            "asset": "AAVE",
+            "observation_count": 3,
+            "valid_response_count": 3,
+            "cluster_observation_count": 3,
+            "mean_directional_return_fraction": "-0.007615302048712265",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "BNB",
+            "observation_count": 1,
+            "valid_response_count": 1,
+            "cluster_observation_count": 1,
+            "mean_directional_return_fraction": "-0.05217912679192982",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "BTC",
+            "observation_count": 3,
+            "valid_response_count": 3,
+            "cluster_observation_count": 3,
+            "mean_directional_return_fraction": "-0.004373220545195585",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "ETH",
+            "observation_count": 1,
+            "valid_response_count": 1,
+            "cluster_observation_count": 1,
+            "mean_directional_return_fraction": "-0.025401069518716568",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "LINK",
+            "observation_count": 2,
+            "valid_response_count": 2,
+            "cluster_observation_count": 2,
+            "mean_directional_return_fraction": "-0.02953839429056726",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "TRX",
+            "observation_count": 1,
+            "valid_response_count": 1,
+            "cluster_observation_count": 1,
+            "mean_directional_return_fraction": "0.028285714285714247",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "UNI",
+            "observation_count": 1,
+            "valid_response_count": 1,
+            "cluster_observation_count": 1,
+            "mean_directional_return_fraction": "0.006167551824567408",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          }
+        ],
+        "branch_breakdown": [
+          {
+            "branch": "CONTINUATION",
+            "observation_count": 9,
+            "valid_response_count": 9,
+            "cluster_observation_count": 5,
+            "mean_directional_return_fraction": "-0.006460750279583688",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "branch": "REVERSAL",
+            "observation_count": 3,
+            "valid_response_count": 3,
+            "cluster_observation_count": 3,
+            "mean_directional_return_fraction": "-0.019153408767716096",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          }
+        ]
+      },
+      {
+        "anchor": "FIRST_ROUTED_ENTRY_DECISION",
+        "variant": "CORE_ONE_ENTRY",
+        "direction": "OPPOSITE_SHOCK",
+        "horizon_days": 3,
+        "observation_count": 12,
+        "valid_response_count": 12,
+        "cluster_observation_count": 7,
+        "missing_anchor_count": 0,
+        "missing_endpoint_count": 0,
+        "missing_intervening_hour_count": 0,
+        "non_hourly_anchor_count": 0,
+        "unclustered_geometry_count": 0,
+        "mean_directional_return_fraction": "0.0034230334451700157",
+        "p20_directional_return_fraction": "-0.012135712560678516",
+        "ci95_low_directional_return_fraction": "-0.033729169624745134",
+        "ci95_high_directional_return_fraction": "0.041069667915537275",
+        "bootstrap_valid_draw_count": 9998,
+        "bootstrap_draws": 10000,
+        "bootstrap_seed": 20260921,
+        "bootstrap_resampling_unit": "SHARED_MARKET_WIDE_SHOCK_CLUSTER",
+        "independence_claim": false,
+        "intent_conditioned": true,
+        "direction_was_known_at_anchor": true,
+        "event_anchor_metrics_shared_across_variants": false,
+        "under_30_cluster_warning_nonblocking": true,
+        "asset_breakdown": [
+          {
+            "asset": "AAVE",
+            "observation_count": 3,
+            "valid_response_count": 3,
+            "cluster_observation_count": 3,
+            "mean_directional_return_fraction": "0.0027480982765945385",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "BNB",
+            "observation_count": 1,
+            "valid_response_count": 1,
+            "cluster_observation_count": 1,
+            "mean_directional_return_fraction": "-0.10804139445426442",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "BTC",
+            "observation_count": 3,
+            "valid_response_count": 3,
+            "cluster_observation_count": 3,
+            "mean_directional_return_fraction": "0.010629408243270966",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "ETH",
+            "observation_count": 1,
+            "valid_response_count": 1,
+            "cluster_observation_count": 1,
+            "mean_directional_return_fraction": "-0.0032308377896613782",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "LINK",
+            "observation_count": 2,
+            "valid_response_count": 2,
+            "cluster_observation_count": 2,
+            "mean_directional_return_fraction": "0.004556878226613936",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "TRX",
+            "observation_count": 1,
+            "valid_response_count": 1,
+            "cluster_observation_count": 1,
+            "mean_directional_return_fraction": "0.004999999999999893",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "UNI",
+            "observation_count": 1,
+            "valid_response_count": 1,
+            "cluster_observation_count": 1,
+            "mean_directional_return_fraction": "0.06612986123008402",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          }
+        ],
+        "branch_breakdown": [
+          {
+            "branch": "CONTINUATION",
+            "observation_count": 9,
+            "valid_response_count": 9,
+            "cluster_observation_count": 5,
+            "mean_directional_return_fraction": "-0.007048555835155057",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "branch": "REVERSAL",
+            "observation_count": 3,
+            "valid_response_count": 3,
+            "cluster_observation_count": 3,
+            "mean_directional_return_fraction": "-0.003349179472460754",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          }
+        ]
+      },
+      {
+        "anchor": "FIRST_ROUTED_ENTRY_DECISION",
+        "variant": "CORE_ONE_ENTRY",
+        "direction": "OPPOSITE_SHOCK",
+        "horizon_days": 7,
+        "observation_count": 12,
+        "valid_response_count": 12,
+        "cluster_observation_count": 7,
+        "missing_anchor_count": 0,
+        "missing_endpoint_count": 0,
+        "missing_intervening_hour_count": 0,
+        "non_hourly_anchor_count": 0,
+        "unclustered_geometry_count": 0,
+        "mean_directional_return_fraction": "0.04035283060785904",
+        "p20_directional_return_fraction": "0.003436016738720367",
+        "ci95_low_directional_return_fraction": "-0.027310126251620888",
+        "ci95_high_directional_return_fraction": "0.12385715843755192",
+        "bootstrap_valid_draw_count": 9998,
+        "bootstrap_draws": 10000,
+        "bootstrap_seed": 20260921,
+        "bootstrap_resampling_unit": "SHARED_MARKET_WIDE_SHOCK_CLUSTER",
+        "independence_claim": false,
+        "intent_conditioned": true,
+        "direction_was_known_at_anchor": true,
+        "event_anchor_metrics_shared_across_variants": false,
+        "under_30_cluster_warning_nonblocking": true,
+        "asset_breakdown": [
+          {
+            "asset": "AAVE",
+            "observation_count": 3,
+            "valid_response_count": 3,
+            "cluster_observation_count": 3,
+            "mean_directional_return_fraction": "0.09466140784096055",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "BNB",
+            "observation_count": 1,
+            "valid_response_count": 1,
+            "cluster_observation_count": 1,
+            "mean_directional_return_fraction": "-0.1423343170615855",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "BTC",
+            "observation_count": 3,
+            "valid_response_count": 3,
+            "cluster_observation_count": 3,
+            "mean_directional_return_fraction": "0.003786195132980915",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "ETH",
+            "observation_count": 1,
+            "valid_response_count": 1,
+            "cluster_observation_count": 1,
+            "mean_directional_return_fraction": "0.03795306001188359",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "LINK",
+            "observation_count": 2,
+            "valid_response_count": 2,
+            "cluster_observation_count": 2,
+            "mean_directional_return_fraction": "0.030328088547169174",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "TRX",
+            "observation_count": 1,
+            "valid_response_count": 1,
+            "cluster_observation_count": 1,
+            "mean_directional_return_fraction": "-0.0012857142857143344",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "asset": "UNI",
+            "observation_count": 1,
+            "valid_response_count": 1,
+            "cluster_observation_count": 1,
+            "mean_directional_return_fraction": "0.10176460510536245",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          }
+        ],
+        "branch_breakdown": [
+          {
+            "branch": "CONTINUATION",
+            "observation_count": 9,
+            "valid_response_count": 9,
+            "cluster_observation_count": 5,
+            "mean_directional_return_fraction": "0.0015794859128343054",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          },
+          {
+            "branch": "REVERSAL",
+            "observation_count": 3,
+            "valid_response_count": 3,
+            "cluster_observation_count": 3,
+            "mean_directional_return_fraction": "0.06101562863818566",
+            "missing_anchor_count": 0,
+            "missing_endpoint_count": 0,
+            "missing_intervening_hour_count": 0,
+            "unclustered_geometry_count": 0
+          }
+        ]
+      }
+    ],
+    "cost_sensitivity": {
+      "CORE_ONE_ENTRY": {
+        "initial": "2E+4",
+        "final": "21122.41766437066382445304",
+        "return_pct": "5.612088321853319122265200",
+        "drawdown_pct": "6.103457188209899729513108712",
+        "completed_positions": 8
+      },
+      "STAGED_NO_MACRO": {
+        "initial": "2E+4",
+        "final": "21122.41766437066382445304",
+        "return_pct": "5.612088321853319122265200",
+        "drawdown_pct": "6.103457188209899729513108712",
+        "completed_positions": 8
+      },
+      "STAGED_MACRO": {
+        "initial": "2E+4",
+        "final": "21122.41766437066382445304",
+        "return_pct": "5.612088321853319122265200",
+        "drawdown_pct": "6.103457188209899729513108712",
+        "completed_positions": 8
+      }
+    }
+  },
+  "source_results": {
+    "original_four": {
+      "path": ".research-run/liquidation-exploratory-v004/original-four-runs/2026-09-21T17-12-15-468386Z-f97d095a-6d31-4233-9a31-420a00972e93/result.json",
+      "sha256": "5391d33beda4abeb6d103f06c6d86bae0d950b5cda7af8ca37a4982db4196a03"
+    },
+    "expanded_nine": {
+      "path": ".research-run/liquidation-exploratory-v004/expanded-runs/2026-09-21T17-11-57-279757Z-89e6598f-b036-479c-97ce-4b524056d430/result.json",
+      "sha256": "012b2435756b362cd90ee160751f979bde72591b764f6c54662198a9239d142d"
+    }
+  },
+  "executor_sha256": "6d5bd7f256c73875f4c1647b9e5cbeea89c49d502d1018170422c211b5da30f6",
+  "source_start": "2022-08-11T00:00:00Z",
+  "source_end_exclusive": "2026-09-20T00:00:00Z",
+  "decision_start": "2022-11-11T00:00:00Z",
+  "decision_end_exclusive": "2026-07-15T00:00:00Z"
+}

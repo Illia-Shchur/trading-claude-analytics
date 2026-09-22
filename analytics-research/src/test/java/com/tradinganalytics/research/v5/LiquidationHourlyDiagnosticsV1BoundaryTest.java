@@ -51,6 +51,58 @@ class LiquidationHourlyDiagnosticsV1BoundaryTest {
     }
 
     @Test
+    void v004AcceptsOnlyFrozenNineAssetOrderAndDiagnosticOnlyEntryAudit() {
+        List<Consumer<ObjectNode>> mutations = List.of(
+                policy -> policy.withArray("assets").remove(8),
+                policy -> policy.withArray("assets").set(0, JsonHashes.mapper().getNodeFactory().textNode("ETH")),
+                policy -> policy.withArray("assets").set(8, JsonHashes.mapper().getNodeFactory().textNode("DOGE")),
+                policy -> policy.with("entry_rule_audit").put("diagnostic_only", false),
+                policy -> policy.with("entry_rule_audit").put("rule_changes", true),
+                policy -> policy.with("entry_rule_audit").put("outcome_optimization", true),
+                policy -> policy.with("entry_rule_audit").remove("diagnostic_only"),
+                policy -> policy.with("entry_rule_audit").put("rule_changes", "false"),
+                policy -> policy.with("entry_rule_audit").put("outcome_optimization", 0),
+                policy -> policy.remove("entry_rule_audit"));
+
+        for (Consumer<ObjectNode> mutation : mutations) {
+            ObjectNode changed = v004Policy(5);
+            mutation.accept(changed);
+            assertThrows(IllegalArgumentException.class, () -> build(changed, Map.of(), List.of(), List.of(),
+                    List.of(), Map.of(), Map.of(), coverageAt(BASE.plus(Duration.ofDays(5)))), changed.toString());
+        }
+
+        ObjectNode valid = v004Policy(5);
+        ObjectNode result = build(valid, Map.of(), List.of(), List.of(), List.of(), Map.of(), Map.of(),
+                coverageAt(BASE.plus(Duration.ofDays(5))));
+        assertEquals(LiquidationHourlyDiagnosticsV1.SCHEMA, result.path("schema").asText());
+    }
+
+    @Test
+    void diagnosticsCalculationsMatchV003ForSharedSyntheticEvidenceAndKeepSmallLegacyScopes() {
+        LiquidationHourlyDiagnosticsV1.Event qualified = event("same-event", "BTC", BASE, BASE, BASE,
+                LiquidationStructureRouterV1.Direction.LONG);
+        List<LiquidationHourlyDiagnosticsV1.Intent> intents = List.of(intent(CORE, "same-event", "BTC", BASE,
+                LiquidationStructureRouterV1.Direction.LONG));
+        List<LiquidationHourlyDiagnosticsV1.Position> positions = List.of(new LiquidationHourlyDiagnosticsV1.Position(
+                CORE, "BTC", "same-event", BASE, BASE.plusSeconds(3_600), BASE.plus(Duration.ofDays(2)),
+                java.math.BigDecimal.valueOf(125), true));
+        Map<String, NavigableMap<Instant, Double>> prices = Map.of("BTC", hourly(BASE, 168));
+        ObjectNode coverage = coverageAt(BASE.plus(Duration.ofDays(5)));
+
+        ObjectNode legacyResult = build(policy(5), prices, List.of(qualified), intents, positions, Map.of(), Map.of(), coverage);
+        ObjectNode expandedResult = build(v004Policy(5), prices, List.of(qualified), intents, positions, Map.of(), Map.of(), coverage);
+        assertEquals(legacyResult.path("response_diagnostics"), expandedResult.path("response_diagnostics"));
+        assertEquals(legacyResult.path("position_overlap_components"), expandedResult.path("position_overlap_components"));
+        assertEquals(legacyResult.path("per_completed_position_metrics"), expandedResult.path("per_completed_position_metrics"));
+
+        ObjectNode smallLegacy = policy(5);
+        smallLegacy.withArray("assets").removeAll().add("BTC").add("ETH");
+        assertEquals(LiquidationHourlyDiagnosticsV1.SCHEMA,
+                build(smallLegacy, Map.of(), List.of(), List.of(), List.of(), Map.of(), Map.of(), coverage)
+                        .path("schema").asText());
+    }
+
+    @Test
     void canonicalPricesDropInvalidOrOffHourRowsAndMissingPathEndpointsStayExplicit() {
         TreeMap<Instant, Double> btc = hourly(BASE, 168);
         btc.remove(BASE.plus(Duration.ofDays(1)));
@@ -166,6 +218,16 @@ class LiquidationHourlyDiagnosticsV1BoundaryTest {
         return policy;
     }
 
+    private static ObjectNode v004Policy(int days) {
+        ObjectNode policy = policy(days);
+        policy.put("id", "liquidation-exploratory-v004");
+        policy.withArray("assets").removeAll().add("BTC").add("ETH").add("SOL").add("AAVE")
+                .add("UNI").add("BNB").add("LINK").add("ZEC").add("TRX");
+        policy.putObject("entry_rule_audit").put("diagnostic_only", true).put("rule_changes", false)
+                .put("outcome_optimization", false);
+        return policy;
+    }
+
     private static LiquidationHourlyDiagnosticsV1.Event event(String id, String asset, Instant start, Instant end,
             Instant availableAt, LiquidationStructureRouterV1.Direction direction) {
         return new LiquidationHourlyDiagnosticsV1.Event(id, asset, start, end, availableAt, direction);
@@ -191,7 +253,11 @@ class LiquidationHourlyDiagnosticsV1BoundaryTest {
     }
 
     private static ObjectNode coverage() {
-        return JsonHashes.mapper().createObjectNode().put("analysis_coverage_end_exclusive", BASE.plus(Duration.ofDays(140)).toString());
+        return coverageAt(BASE.plus(Duration.ofDays(140)));
+    }
+
+    private static ObjectNode coverageAt(Instant endExclusive) {
+        return JsonHashes.mapper().createObjectNode().put("analysis_coverage_end_exclusive", endExclusive.toString());
     }
 
     private static JsonNode metric(ObjectNode result, String anchor, String variant, String direction, int horizon) {

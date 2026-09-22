@@ -3,6 +3,7 @@ package com.tradinganalytics.research.v5;
 import static com.tradinganalytics.research.v5.LiquidationStructureRouterV1.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.tradinganalytics.infrastructure.security.JsonHashes;
 import java.time.Duration;
@@ -25,6 +26,136 @@ class LiquidationStructureRouterV1Test {
     private static final String PRICE = "btc-4h-v1";
     private static final String HOUR = "btc-1h-v1";
     private static final String OI = "btc-oi-v1";
+
+    @Test
+    void dailyAvailabilityCoverageUsesExclusiveUpperBucketBoundary() {
+        Router router = new Router(Variant.ROUTED_REVERSAL_CONTINUATION);
+        for (Observation observation : sorted(fixture(true, OiBoundary.VALID, true))) router.accept(observation);
+
+        Instant decisionStart = STRESS_DAY.minusDays(90).atStartOfDay(ZoneOffset.UTC).toInstant().plus(Duration.ofHours(48));
+        ObjectNode snapshot = router.entryRuleAuditSnapshot(decisionStart, MODEL_AVAILABLE.plusSeconds(1));
+        ObjectNode btc = (ObjectNode) snapshot.path("daily_gate_counts_by_asset").path("BTC");
+
+        assertEquals(91, btc.path("daily_rows").asInt());
+        assertEquals(91, btc.path("observed_coverage_days_in_decision_window").asInt());
+        assertEquals(0, btc.path("missing_daily_days_inside_observed_asset_span").asInt());
+        assertEquals(1, btc.path("setup_admitted").asInt());
+        assertEquals(1, btc.path("unique_liquidation_stress_days").asInt());
+        assertEquals("SETUP_ADMITTED", snapshot.path("liquidation_stress_event_trace").path(0).path("disposition").asText());
+        ObjectNode exactExclusiveEnd = router.entryRuleAuditSnapshot(decisionStart, MODEL_AVAILABLE);
+        ObjectNode beforeStressDay = (ObjectNode) exactExclusiveEnd.path("daily_gate_counts_by_asset").path("BTC");
+        assertEquals(90, beforeStressDay.path("daily_rows").asInt());
+        assertEquals(90, beforeStressDay.path("observed_coverage_days_in_decision_window").asInt());
+        assertEquals(0, beforeStressDay.path("missing_daily_days_inside_observed_asset_span").asInt());
+        assertEquals(0, exactExclusiveEnd.path("stress_event_trace_count").asInt());
+        assertThrows(IllegalArgumentException.class,
+                () -> router.entryRuleAuditSnapshot(decisionStart, decisionStart));
+    }
+
+    @Test
+    void entryAuditSnapshotSeparatesUnavailableNoStressAndRejectedGeometryRowsAndHonorsItsWindow() {
+        List<Observation> observations = new ArrayList<>(fixture(true, OiBoundary.TOO_FRESH, true));
+        LocalDate extraWarmupDay = STRESS_DAY.minusDays(91);
+        Instant extraWarmupStart = extraWarmupDay.atStartOfDay(ZoneOffset.UTC).toInstant();
+        observations.add(new DailyLiquidation("BTC", extraWarmupDay, 1, 1,
+                extraWarmupStart.plus(Duration.ofHours(24)), "daily-v1"));
+        Router router = new Router(Variant.ROUTED_REVERSAL_CONTINUATION);
+        for (Observation observation : sorted(observations)) router.accept(observation);
+
+        Instant start = STRESS_DAY.minusDays(91).atStartOfDay(ZoneOffset.UTC).toInstant().plus(Duration.ofHours(48));
+        ObjectNode all = router.entryRuleAuditSnapshot(start, MODEL_AVAILABLE.plusSeconds(1));
+        ObjectNode btc = (ObjectNode) all.path("daily_gate_counts_by_asset").path("BTC");
+        assertTrue(btc.path("window_unavailable").asInt() > 0);
+        assertTrue(btc.path("no_liquidation_stress").asInt() > 0);
+        assertEquals(1, btc.path("long_stress_days").asInt());
+        assertEquals(1, btc.path("short_stress_days").asInt());
+        assertEquals(1, btc.path("geometry_rejected").asInt());
+        assertEquals(0, btc.path("setup_admitted").asInt());
+        assertEquals("GEOMETRY_REJECTED_NO_FAST_OR_SLOW_MATCH",
+                all.path("liquidation_stress_event_trace").path(0).path("disposition").asText());
+
+        ObjectNode onlyStress = router.entryRuleAuditSnapshot(MODEL_AVAILABLE, MODEL_AVAILABLE.plusNanos(1));
+        assertEquals(1, onlyStress.path("daily_gate_counts_by_asset").path("BTC").path("daily_rows").asInt());
+        assertEquals(0, onlyStress.path("daily_gate_counts_by_asset").path("BTC").path("no_liquidation_stress").asInt());
+        ObjectNode afterWindow = router.entryRuleAuditSnapshot(MODEL_AVAILABLE.plusNanos(1), MODEL_AVAILABLE.plusSeconds(3600));
+        assertEquals(0, afterWindow.path("daily_gate_counts_by_asset").path("BTC").path("daily_rows").asInt());
+        assertEquals(0, afterWindow.path("stress_event_trace_count").asInt());
+    }
+
+    @Test
+    void initialEntryAuditCountsMissingThreeHourWindowAndRepeatedQualifyingBarsWhileIntentIsPending() {
+        List<Observation> incomplete = new ArrayList<>(fixture(true, OiBoundary.VALID, true));
+        Instant missingThirdHour = MODEL_AVAILABLE.plus(Duration.ofHours(6));
+        incomplete.removeIf(value -> value instanceof Bar bar && bar.timeframe() == Timeframe.ONE_HOUR
+                && bar.startTime().equals(missingThirdHour));
+        Router missingRouter = new Router(Variant.ROUTED_REVERSAL_CONTINUATION);
+        for (Observation observation : sorted(incomplete)) missingRouter.accept(observation);
+        Instant auditStart = STRESS_DAY.minusDays(90).atStartOfDay(ZoneOffset.UTC).toInstant().plus(Duration.ofHours(48));
+        ObjectNode missingAudit = missingRouter.entryRuleAuditSnapshot(auditStart, MODEL_AVAILABLE.plus(Duration.ofHours(10)));
+        JsonNode missingEntry = missingAudit.path("liquidation_stress_event_trace").path(0).path("initial_entry");
+        assertEquals(0, missingEntry.path("intent_count").asInt());
+        assertEquals(1, missingEntry.path("all_failed_gate_counts")
+                .path("THREE_CONSECUTIVE_H1_CONFIRMATION_WINDOW_UNAVAILABLE").asInt());
+
+        List<Observation> repeated = new ArrayList<>(fixture(true, OiBoundary.VALID, true));
+        Instant nextHour = MODEL_AVAILABLE.plus(Duration.ofHours(9));
+        repeated.add(bar("BTC", Timeframe.ONE_HOUR, nextHour,
+                99.4, 99.5, 99.0, 99.2, nextHour.plus(Duration.ofHours(1)), HOUR));
+        Router pendingRouter = new Router(Variant.ROUTED_REVERSAL_CONTINUATION);
+        List<ConfirmedIntent> intents = new ArrayList<>();
+        for (Observation observation : sorted(repeated)) intents.addAll(pendingRouter.accept(observation).intents());
+        assertEquals(1, intents.size(), "later confirmation bars cannot duplicate an unacknowledged first-stage intent");
+        ObjectNode pendingAudit = pendingRouter.entryRuleAuditSnapshot(auditStart, MODEL_AVAILABLE.plus(Duration.ofHours(11)));
+        assertEquals(1, pendingAudit.path("liquidation_stress_event_trace").path(0).path("initial_entry")
+                .path("first_failure_counts").path("STAGE_ONE_INTENT_ALREADY_PENDING").asInt());
+    }
+
+    @Test
+    void initialEntryAuditExpiresAfterEveryConfirmedIntentWasRejected() {
+        List<Observation> observations = sorted(fixture(true, OiBoundary.VALID, true));
+        Router router = new Router(Variant.ROUTED_REVERSAL_CONTINUATION);
+        ConfirmedIntent initial = null;
+        for (Observation observation : observations) {
+            RouteResult result = router.accept(observation);
+            if (!result.intents().isEmpty()) initial = result.intents().get(0);
+        }
+        assertNotNull(initial);
+
+        Instant rejectionTime = initial.requestedExecutionAfter().plusNanos(1);
+        router.onNoFill(new NoFillAck(initial.intentId(), initial.setupId(), initial.asset(), 1,
+                rejectionTime, "CAPACITY_REJECTED"));
+
+        Instant firstHourAfterEntryDeadline = MODEL_AVAILABLE.plus(Duration.ofHours(81));
+        router.accept(bar("BTC", Timeframe.ONE_HOUR, firstHourAfterEntryDeadline,
+                99.4, 99.5, 99.0, 99.2, firstHourAfterEntryDeadline.plus(Duration.ofHours(1)), HOUR));
+
+        Instant auditStart = STRESS_DAY.minusDays(90).atStartOfDay(ZoneOffset.UTC).toInstant().plus(Duration.ofHours(48));
+        ObjectNode audit = router.entryRuleAuditSnapshot(auditStart, firstHourAfterEntryDeadline.plus(Duration.ofHours(1)));
+        JsonNode event = audit.path("liquidation_stress_event_trace").path(0);
+        assertEquals(1, event.path("execution").path("no_fills").size());
+        assertEquals("CONFIRMED_STAGE_ONE_INTENTS_NOT_FILLED_BEFORE_ENTRY_WINDOW_END",
+                event.path("terminal_reason").asText());
+        assertEquals(firstHourAfterEntryDeadline.plus(Duration.ofHours(1)).toString(),
+                event.path("terminal_time").asText());
+    }
+
+    @Test
+    void branchAuditCountsCandidateResetBeforeAnyBranchIsSelected() {
+        List<Observation> observations = new ArrayList<>(fixture(true, OiBoundary.VALID, true));
+        Instant secondStart = MODEL_AVAILABLE.plus(Duration.ofHours(4));
+        observations.removeIf(value -> value instanceof Bar bar && bar.timeframe() == Timeframe.FOUR_HOUR
+                && bar.startTime().equals(secondStart));
+        observations.add(bar("BTC", Timeframe.FOUR_HOUR, secondStart,
+                100.5, 101.0, 100.4, 100.8, secondStart.plus(Duration.ofHours(4)), PRICE));
+        Router router = new Router(Variant.ROUTED_REVERSAL_CONTINUATION);
+        for (Observation observation : sorted(observations)) router.accept(observation);
+
+        Instant auditStart = STRESS_DAY.minusDays(90).atStartOfDay(ZoneOffset.UTC).toInstant().plus(Duration.ofHours(48));
+        ObjectNode audit = router.entryRuleAuditSnapshot(auditStart, MODEL_AVAILABLE.plus(Duration.ofHours(9)));
+        JsonNode route = audit.path("liquidation_stress_event_trace").path(0).path("route");
+        assertEquals(1, route.path("branch_candidate_reset_bar_count").asInt());
+        assertEquals("WAITING_FOR_TWO_H4_CONFIRMATIONS", route.path("branch_status").asText());
+    }
 
     @Test
     void routedAndForcedControlsShareTheSameConfirmedOpportunityAndKeepTheForcedDirection() {
@@ -192,6 +323,75 @@ class LiquidationStructureRouterV1Test {
         assertTrue(second.sourceEvidence().stream().anyMatch(source -> source.role().equals("DAILY_STRESS_CURRENT")));
         assertTrue(second.sourceEvidence().stream().anyMatch(source -> source.role().equals("OI_START")));
         assertTrue(second.sourceEvidence().stream().anyMatch(source -> source.role().equals("OI_END")));
+        Instant auditStart = STRESS_DAY.minusDays(90).atStartOfDay(ZoneOffset.UTC).toInstant().plus(Duration.ofHours(48));
+        ObjectNode audit = router.entryRuleAuditSnapshot(auditStart, second.availableAt().plusNanos(1));
+        ObjectNode btc = (ObjectNode) audit.path("daily_gate_counts_by_asset").path("BTC");
+        assertEquals(1, btc.path("setup_admitted").asInt());
+        assertEquals(1, btc.path("setup_suppressed").asInt());
+        assertEquals("SETUP_SUPPRESSED_ASSET_OCCUPIED",
+                audit.path("liquidation_stress_event_trace").path(1).path("disposition").asText());
+    }
+
+    @Test
+    void entryAuditIdentifiesAStressSetupThatArrivesAtThePriorPositionClose() {
+        List<Observation> observations = new ArrayList<>(fixture(true, OiBoundary.VALID, true));
+        LocalDate secondStressDay = STRESS_DAY.plusDays(1);
+        Instant secondFastStart = STRESS_START.plus(Duration.ofDays(1));
+        observations.removeIf(value -> value instanceof Bar bar && bar.timeframe() == Timeframe.FOUR_HOUR
+                && bar.startTime().equals(secondFastStart));
+        observations.add(bar("BTC", Timeframe.FOUR_HOUR, secondFastStart,
+                100, 100.2, 95.8, 96.0, secondFastStart.plus(Duration.ofHours(4)), PRICE));
+        addOiPair(observations, secondFastStart, secondFastStart.plus(Duration.ofHours(4)), OiBoundary.VALID);
+        Instant bucketStart = secondStressDay.atStartOfDay(ZoneOffset.UTC).toInstant();
+        Instant secondAvailable = bucketStart.plus(Duration.ofHours(48));
+        observations.add(new DailyLiquidation("BTC", secondStressDay, 2, 2,
+                bucketStart.plus(Duration.ofHours(24)), "daily-v1"));
+
+        Router router = new Router(Variant.ROUTED_REVERSAL_CONTINUATION);
+        ConfirmedIntent first = null;
+        for (Observation observation : sorted(observations)) {
+            if (observation instanceof DailyLiquidation daily && daily.bucketStart().equals(secondStressDay)) {
+                assertNotNull(first);
+                router.onClose(new CloseAck(first.setupId(), first.asset(), secondAvailable, CloseReason.STOP));
+            }
+            RouteResult result = router.accept(observation);
+            if (first == null && result.intents().stream().anyMatch(intent -> intent.stage() == 1)) {
+                first = result.intents().stream().filter(intent -> intent.stage() == 1).findFirst().orElseThrow();
+                router.onFill(new FillAck(first.intentId(), first.setupId(), first.asset(), 1,
+                        first.requestedExecutionAfter().plusNanos(1), first.confirmationClose(), first.initialStop()));
+            }
+        }
+
+        assertNotNull(first);
+        Instant auditStart = STRESS_DAY.minusDays(90).atStartOfDay(ZoneOffset.UTC).toInstant().plus(Duration.ofHours(48));
+        ObjectNode audit = router.entryRuleAuditSnapshot(auditStart, secondAvailable.plusNanos(1));
+        assertEquals("SETUP_SUPPRESSED_NOT_AFTER_PRIOR_CLOSE",
+                audit.path("liquidation_stress_event_trace").path(1).path("disposition").asText());
+        assertEquals(secondAvailable.toString(), audit.path("liquidation_stress_event_trace").path(1).path("prior_close_time").asText());
+    }
+
+    @Test
+    void closeAuditReportsTheFirstStagingBlockerForAnUnadvancedFilledSetup() {
+        Router router = new Router(Variant.ROUTED_REVERSAL_CONTINUATION);
+        ConfirmedIntent first = null;
+        for (Observation observation : sorted(fixture(true, OiBoundary.VALID, true))) {
+            RouteResult result = router.accept(observation);
+            if (first == null && result.intents().stream().anyMatch(intent -> intent.stage() == 1)) {
+                first = result.intents().stream().filter(intent -> intent.stage() == 1).findFirst().orElseThrow();
+            }
+        }
+        assertNotNull(first);
+        router.onFill(new FillAck(first.intentId(), first.setupId(), first.asset(), first.stage(),
+                first.requestedExecutionAfter().plusNanos(1), first.confirmationClose(), first.initialStop()));
+        Instant closeTime = first.requestedExecutionAfter().plus(Duration.ofHours(1));
+        router.onClose(new CloseAck(first.setupId(), first.asset(), closeTime, CloseReason.STOP));
+
+        Instant auditStart = STRESS_DAY.minusDays(90).atStartOfDay(ZoneOffset.UTC).toInstant().plus(Duration.ofHours(48));
+        ObjectNode audit = router.entryRuleAuditSnapshot(auditStart, closeTime.plusNanos(1));
+        JsonNode trace = audit.path("liquidation_stress_event_trace").path(0);
+        assertEquals("POSITION_CLOSED_STOP", trace.path("terminal_reason").asText());
+        assertEquals(closeTime.toString(), trace.path("terminal_time").asText());
+        assertEquals("NO_FAVORABLE_H4_AFTER_FILL", trace.path("staging").path("terminal_addition_blocker").asText());
     }
 
     @Test
@@ -363,6 +563,14 @@ class LiquidationStructureRouterV1Test {
         assertTrue(stageTwo.initialStop() == allIntents.get(0).initialStop());
         assertTrue(stageThree.initialStop() == allIntents.get(0).initialStop());
         assertTrue(allRejections.isEmpty());
+        Instant closeTime = stageThree.requestedExecutionAfter().plus(Duration.ofHours(1));
+        router.onClose(new CloseAck(stageThree.setupId(), stageThree.asset(), closeTime,
+                CloseReason.STOP));
+        Instant auditStart = STRESS_DAY.minusDays(90).atStartOfDay(ZoneOffset.UTC).toInstant().plus(Duration.ofHours(48));
+        ObjectNode audit = router.entryRuleAuditSnapshot(auditStart, closeTime.plusNanos(1));
+        JsonNode event = audit.path("liquidation_stress_event_trace").path(0);
+        assertFalse(event.path("staging").has("terminal_addition_blocker"),
+                "once stage three is filled, closing the position has no next-tranche blocker");
     }
 
     @Test
@@ -618,7 +826,7 @@ class LiquidationStructureRouterV1Test {
         assertTrue(rejected.stream().anyMatch(value -> value.reasonCode().startsWith("MACRO_")));
     }
 
-    private static List<Observation> fixture(boolean completeCalendar, OiBoundary oiBoundary, boolean bothSidesStress) {
+    static List<Observation> fixture(boolean completeCalendar, OiBoundary oiBoundary, boolean bothSidesStress) {
         List<Observation> result = new ArrayList<>();
         for (int lag = DAILY_LOOKBACK_DAYS; lag >= 1; lag--) {
             LocalDate date = STRESS_DAY.minusDays(lag);
@@ -897,5 +1105,5 @@ class LiquidationStructureRouterV1Test {
         return result;
     }
 
-    private enum OiBoundary { VALID, TOO_FRESH, STALE, AVAILABLE_AT_ENDPOINT }
+    enum OiBoundary { VALID, TOO_FRESH, STALE, AVAILABLE_AT_ENDPOINT }
 }

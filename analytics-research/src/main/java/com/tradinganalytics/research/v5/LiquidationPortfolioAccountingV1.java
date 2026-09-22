@@ -34,7 +34,8 @@ public final class LiquidationPortfolioAccountingV1 {
     /**
      * Processes all asset events on one deterministic chronological account. At equal timestamps the order is
      * mark, funding, pre-entry bar exits, explicit exits, stop updates, entries, then same-minute post-entry paths.
-     * Same-time entries use confirmed decision time and the frozen BTC/ETH/SOL/AAVE order.
+     * Same-time entries use confirmed decision time and the frozen nine-asset order; the
+     * original BTC/ETH/SOL/AAVE relative order is preserved for v003 replay equivalence.
      */
     static ObjectNode replayFixture(ObjectNode request) {
         AccountSession session = startSession(request);
@@ -846,7 +847,7 @@ public final class LiquidationPortfolioAccountingV1 {
         Map<String, Position> result = new HashMap<>();
         for (JsonNode node : request.path("positions")) {
             ObjectNode row = (ObjectNode) node; String asset = text(row, "asset").toUpperCase(Locale.ROOT);
-            if (!Set.of("BTC", "ETH", "SOL", "AAVE").contains(asset) || result.containsKey(asset)) throw fail("position assets must be distinct frozen symbols");
+            if (!LiquidationStructureRouterV1.SUPPORTED_ASSET_ORDER.contains(asset) || result.containsKey(asset)) throw fail("position assets must be distinct frozen symbols");
             String direction = row.hasNonNull("direction") ? text(row, "direction").toUpperCase(Locale.ROOT) : "UNCONFIGURED";
             boolean unconfigured = allowUnconfigured && "UNCONFIGURED".equals(direction);
             if (!Set.of("LONG", "SHORT").contains(direction) && !unconfigured) throw fail("position direction must be LONG or SHORT");
@@ -1017,7 +1018,10 @@ public final class LiquidationPortfolioAccountingV1 {
     private static String limiting(BigDecimal risk, BigDecimal volume, BigDecimal collateral) {
         BigDecimal min = risk.min(volume).min(collateral); return min.compareTo(risk) == 0 ? "RISK_BUDGET" : min.compareTo(volume) == 0 ? "PRIOR_MINUTE_VOLUME_1_PERCENT" : "FREE_COLLATERAL";
     }
-    private static int assetRank(String asset) { return switch (asset) { case "BTC" -> 0; case "ETH" -> 1; case "SOL" -> 2; case "AAVE" -> 3; default -> 4; }; }
+    private static int assetRank(String asset) {
+        int rank = LiquidationStructureRouterV1.SUPPORTED_ASSET_ORDER.indexOf(asset);
+        return rank < 0 ? Integer.MAX_VALUE : rank;
+    }
     private static BigDecimal positive(ObjectNode n, String k) { BigDecimal v = number(n, k); if (v.signum() <= 0) throw fail(k + " must be positive"); return v; }
     private static BigDecimal nonnegative(ObjectNode n, String k) { BigDecimal v = number(n, k); if (v.signum() < 0) throw fail(k + " cannot be negative"); return v; }
     private static BigDecimal number(ObjectNode n, String k) { JsonNode v = n.get(k); if (v == null || !v.isNumber() || !Double.isFinite(v.asDouble())) throw fail(k + " must be finite numeric data"); return new BigDecimal(v.asText()).round(MC); }

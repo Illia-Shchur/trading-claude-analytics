@@ -1,0 +1,128 @@
+{
+  "schema": "liquidation-exploratory-v004-verification/1",
+  "verified_at": "2026-09-22T07:16:31.966177+00:00",
+  "status": "PASS",
+  "reviewed_base": "d4e3e9b4924b24162a9db993ab6613c51387c3b2",
+  "clean_reactor_attempt": {
+    "command": "./mvnw --batch-mode --no-transfer-progress clean install",
+    "exit_code": 1,
+    "research_tests": 1382,
+    "failures": 1,
+    "errors": 0,
+    "skipped": 1,
+    "failure": "One ScopeGuard test expected the predecessor-error message instead of the earlier diagnostic-only policy error; assertion corrected.",
+    "downstream_modules_not_reached": [
+      "analytics-cli",
+      "analytics-compatibility-tests"
+    ],
+    "receipt_directory": ".research-run/liquidation-exploratory-v004/verification/clean-install-before-diagnostics-fix"
+  },
+  "final_verification_sequence": [
+    "Corrected expected-error assertion and integrated isolated diagnostics-policy guard repair after clean attempt ended.",
+    "Affected research tests passed; subsequent scenario tests and exact validation-boundary cases passed.",
+    "analytics-cli 99/99 and analytics-compatibility-tests 55/55 passed with installed final dependencies and no -am research rerun.",
+    "Reactor install with tests skipped passed without clean; retained full clean-run and focused JaCoCo sessions were aggregated.",
+    "Explicit changed-production-code coverage gate passed at 80% line and 80% branch floors."
+  ],
+  "final_report_inventory_note": "Reports combine the original clean attempt for unchanged tests with corrected/repeated affected tests and fresh downstream modules; this is not a claim of a second all-green clean install.",
+  "final_suite_report_counts": {
+    "analytics-contracts": {
+      "tests": 88,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "analytics-research": {
+      "tests": 1395,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1
+    },
+    "analytics-market-data": {
+      "tests": 62,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "analytics-cli": {
+      "tests": 99,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "analytics-reporting": {
+      "tests": 61,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "analytics-core": {
+      "tests": 195,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "analytics-infrastructure": {
+      "tests": 102,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "analytics-compatibility-tests": {
+      "tests": 55,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "skipped_tests": [
+    {
+      "class": "com.tradinganalytics.research.v5.StrategyOperatingCharacteristicsSuccessorV1Test",
+      "test": "optimizedReplicationMatchesTheEagerRawRowWhenPackagedExecutorIsAvailable",
+      "reason": null
+    }
+  ],
+  "python_tests": {
+    "command": "python3 -m unittest tools.test_acquire_liquidation_exploratory_v004 tools.test_acquire_liquidation_exploratory_v003",
+    "tests": 10,
+    "status": "PASS"
+  },
+  "coverage": {
+    "passed": true,
+    "line_coverage_percent": "90.75",
+    "covered_lines": 2021,
+    "executable_lines": 2227,
+    "branch_coverage_percent": "80.00",
+    "branch_covered": 1256,
+    "branch_total": 1570,
+    "minimum_percent": "80",
+    "branch_minimum_percent": "80"
+  },
+  "original_four_equivalence": {
+    "status": "PASS",
+    "numeric_checks": 110,
+    "receipt": ".research-run/liquidation-exploratory-v004/verification/original-four-equivalence.json"
+  },
+  "expanded_six_account_pnl_reconciliation": "PASS_ZERO_DIFFERENCE",
+  "independent_reviews": [
+    "source and original-four trace PASS",
+    "diagnostics version guard PASS",
+    "expanded nine-asset trace and dependence reconstruction PASS",
+    "report/source-hash consistency PASS",
+    "new boundary, geometry and entry-state tests PASS"
+  ],
+  "executor_004_source_matches_final_production": true,
+  "executor_004_sha256": "6d5bd7f256c73875f4c1647b9e5cbeea89c49d502d1018170422c211b5da30f6",
+  "production_source_sha256": {
+    "analytics-research/src/main/java/com/tradinganalytics/research/v5/LiquidationHourlyDevelopmentReplayV1.java": "a681ee61215691109c074bf38adefa86493b3bfb8c28a1f0c038babcc2fcc972",
+    "analytics-research/src/main/java/com/tradinganalytics/research/v5/LiquidationStructureRouterV1.java": "d8f082188e9ec346531d18988b0bebdc7ce9da2c04160a5ecedf27ee4f015606",
+    "analytics-research/src/main/java/com/tradinganalytics/research/v5/LiquidationPortfolioAccountingV1.java": "1583adea91eb7ae55efa6492b14071267907f8d627621dbd7d2e7839b6d675b7",
+    "analytics-research/src/main/java/com/tradinganalytics/research/v5/LiquidationHourlyDiagnosticsV1.java": "a1975f0c32a28da33ba9dc0d6a875cd4c89c2a78c9a125325c70e3e203f53972",
+    "analytics-research/src/main/java/com/tradinganalytics/research/v5/LiquidationChronologicalPolicyV1.java": "94cdc1fa3f75714a01241c8ba9cf4ad09735d4020c26d547e264e8140b53dfff"
+  },
+  "notes": [
+    "One pre-existing conditional test skipped when packaged executor unavailable during the clean phase.",
+    "JaCoCo previously warned about unmatched TradeLifecycleV5 execution data; this class is outside the changed-production denominator. Final current-class coverage gate passes.",
+    "Intermediate test assertion iterations were corrected without production edits or altered research outcomes."
+  ]
+}

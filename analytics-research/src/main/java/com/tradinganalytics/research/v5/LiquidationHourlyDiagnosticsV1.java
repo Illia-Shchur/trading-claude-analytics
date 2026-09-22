@@ -27,10 +27,11 @@ import java.util.SplittableRandom;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-/** Outcome-independent dependence, price-response, and low-count diagnostics for v003. */
+/** Outcome-independent dependence, price-response, and low-count diagnostics for exploratory v003/v004. */
 public final class LiquidationHourlyDiagnosticsV1 {
     public static final String SCHEMA = "liquidation-hourly-diagnostics/1";
     private static final List<String> VARIANTS = List.of("CORE_ONE_ENTRY", "STAGED_NO_MACRO", "STAGED_MACRO");
+    private static final List<String> V004_ASSETS = List.of("BTC", "ETH", "SOL", "AAVE", "UNI", "BNB", "LINK", "ZEC", "TRX");
     private static final List<Integer> HORIZONS_DAYS = List.of(1, 3, 7);
     private static final int BOOTSTRAP_DRAWS = 10_000;
     private static final long BOOTSTRAP_SEED = 20_260_921L;
@@ -152,16 +153,19 @@ public final class LiquidationHourlyDiagnosticsV1 {
     }
 
     private static void validatePolicy(ObjectNode policy) {
+        String policyId = policy.path("id").asText();
+        boolean legacyV003 = "liquidation-exploratory-v003".equals(policyId);
+        boolean expandedV004 = "liquidation-exploratory-v004".equals(policyId);
         if (!"liquidation-exploratory-policy/1".equals(policy.path("schema").asText())
-                || !"liquidation-exploratory-v003".equals(policy.path("id").asText())
+                || (!legacyV003 && !expandedV004)
                 || !"DEVELOPMENT".equals(policy.path("evidence_phase").asText())
                 || policy.path("promotion_allowed").asBoolean(true)) {
-            throw fail("diagnostics require the frozen v003 DEVELOPMENT policy");
+            throw fail("diagnostics require a supported v003/v004 DEVELOPMENT policy");
         }
         ArrayNode variants = array(policy, "variants");
-        if (variants.size() != VARIANTS.size()) throw fail("v003 must retain its three frozen variants");
+        if (variants.size() != VARIANTS.size()) throw fail("exploratory policy must retain its three frozen variants");
         for (int i = 0; i < VARIANTS.size(); i++) {
-            if (!VARIANTS.get(i).equals(variants.path(i).asText())) throw fail("v003 variant order differs from its frozen inventory");
+            if (!VARIANTS.get(i).equals(variants.path(i).asText())) throw fail("exploratory policy variant order differs from its frozen inventory");
         }
         JsonNode stats = policy.path("statistics");
         if (stats.path("bootstrap_draws").asInt(-1) != BOOTSTRAP_DRAWS
@@ -169,12 +173,27 @@ public final class LiquidationHourlyDiagnosticsV1 {
                 || stats.path("purge_days").asInt(-1) != CALENDAR_BLOCK_DAYS
                 || stats.path("minimum_groups_to_run").asInt(-1) != 0
                 || stats.path("reference_minimum_groups").asInt(-1) != REFERENCE_GROUP_COUNT) {
-            throw fail("v003 bootstrap, block, and low-count policy differs from the frozen values");
+            throw fail("exploratory policy bootstrap, block, and low-count values differ from the frozen values");
         }
         ArrayNode horizons = array(policy.path("response_diagnostics").path("horizons_days"), "response_diagnostics.horizons_days");
-        if (horizons.size() != HORIZONS_DAYS.size()) throw fail("v003 must report every frozen response horizon");
+        if (horizons.size() != HORIZONS_DAYS.size()) throw fail("exploratory policy must report every frozen response horizon");
         for (int i = 0; i < HORIZONS_DAYS.size(); i++) {
-            if (horizons.path(i).asInt(-1) != HORIZONS_DAYS.get(i)) throw fail("v003 response horizon differs from the frozen value");
+            if (horizons.path(i).asInt(-1) != HORIZONS_DAYS.get(i)) throw fail("exploratory policy response horizon differs from the frozen value");
+        }
+        if (expandedV004) {
+            ArrayNode assets = array(policy, "assets");
+            if (assets.size() != V004_ASSETS.size()) throw fail("v004 diagnostics require the exact frozen nine-asset scope");
+            for (int i = 0; i < V004_ASSETS.size(); i++) {
+                if (!V004_ASSETS.get(i).equals(assets.path(i).asText())) {
+                    throw fail("v004 diagnostics asset order differs from the frozen nine-asset inventory");
+                }
+            }
+            JsonNode audit = policy.path("entry_rule_audit");
+            if (!audit.isObject() || !audit.path("diagnostic_only").isBoolean() || !audit.path("diagnostic_only").asBoolean()
+                    || !audit.path("rule_changes").isBoolean() || audit.path("rule_changes").asBoolean()
+                    || !audit.path("outcome_optimization").isBoolean() || audit.path("outcome_optimization").asBoolean()) {
+                throw fail("v004 entry-rule audit must be diagnostic-only and cannot change or optimize the frozen rules");
+            }
         }
     }
 

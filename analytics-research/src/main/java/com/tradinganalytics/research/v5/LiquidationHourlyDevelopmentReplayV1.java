@@ -51,7 +51,8 @@ public final class LiquidationHourlyDevelopmentReplayV1 {
     public static final String RESULT_SCHEMA = "liquidation-hourly-exploratory-result/1";
     public static final long HOUR_MS = 3_600_000L;
     private static final long FOUR_HOURS_MS = 4L * HOUR_MS;
-    private static final List<String> ASSETS = List.of("BTC", "ETH", "SOL", "AAVE");
+    private static final List<String> LEGACY_ASSETS = List.of("BTC", "ETH", "SOL", "AAVE");
+    private static final List<String> V004_ASSETS = List.of("BTC", "ETH", "SOL", "AAVE", "UNI", "BNB", "LINK", "ZEC", "TRX");
     private static final ZoneId NEW_YORK = ZoneId.of("America/New_York");
     private static final long[] RESPONSE_HORIZONS_DAYS = {1, 3, 7};
 
@@ -162,14 +163,20 @@ public final class LiquidationHourlyDevelopmentReplayV1 {
                 || !actualBytes.equals(manifest.path("files").path("exploratory-policy.json").asText())) {
             throw failure("policy freeze manifest is invalid, outcome-exposed, or bound to different policy bytes");
         }
+        String policyId = policy.path("id").asText("");
+        List<String> expectedAssets = switch (policyId) {
+            case "liquidation-exploratory-v003" -> LEGACY_ASSETS;
+            case "liquidation-exploratory-v004" -> V004_ASSETS;
+            default -> List.of();
+        };
         if (!"liquidation-exploratory-policy/1".equals(policy.path("schema").asText())
-                || !"liquidation-exploratory-v003".equals(policy.path("id").asText())
+                || expectedAssets.isEmpty() || !policyAssetOrder(policy).equals(expectedAssets)
                 || !"DEVELOPMENT".equals(policy.path("evidence_phase").asText())
                 || policy.path("promotion_allowed").asBoolean(true)
                 || policy.path("statistics").path("minimum_groups_to_run").asInt(-1) != 0
                 || policy.path("statistics").path("reference_minimum_groups").asInt(-1) != 30
                 || policy.path("execution").path("funding").asText("").equals("0")) {
-            throw failure("frozen policy does not match the approved v003 exploratory-only boundary");
+            throw failure("frozen policy does not match a supported exploratory-only asset boundary");
         }
         if (policy.path("variants").size() != 3) throw failure("frozen policy must retain exactly the three predeclared variants");
         ObjectNode parent = readObject(Path.of("docs/research/liquidation-daily-stress-v002/frozen-precommit.json"));
@@ -177,7 +184,23 @@ public final class LiquidationHourlyDevelopmentReplayV1 {
                 || !policy.path("parent_precommit").path("byte_sha256").asText().equals(
                         sha256(Path.of("docs/research/liquidation-daily-stress-v002/frozen-precommit.json")))
                 || !policy.path("parent_precommit").path("content_sha256").asText().equals(parent.path("content_sha256").asText())) {
-            throw failure("v003 policy is detached from its immutable v002 predecessor");
+            throw failure("policy is detached from its immutable v002 predecessor");
+        }
+        if ("liquidation-exploratory-v004".equals(policyId)) {
+            JsonNode audit = policy.path("entry_rule_audit");
+            if (!audit.isObject() || !audit.path("diagnostic_only").asBoolean(false)
+                    || audit.path("rule_changes").asBoolean(true) || audit.path("outcome_optimization").asBoolean(true)) {
+                throw failure("v004 entry-rule audit must be diagnostic-only and cannot change or optimize the frozen rules");
+            }
+            JsonNode predecessor = policy.path("predecessor_experiment");
+            Path v003Root = Path.of("docs/research/liquidation-exploratory-v003");
+            if (!"liquidation-exploratory-v003".equals(predecessor.path("id").asText())
+                    || !predecessor.path("outcomes_exposed").asBoolean(false)
+                    || !sha256(v003Root.resolve("exploratory-policy.json")).equals(predecessor.path("policy_byte_sha256").asText())
+                    || !sha256(v003Root.resolve("FREEZE-MANIFEST.json")).equals(predecessor.path("freeze_byte_sha256").asText())
+                    || !sha256(v003Root.resolve("results.json")).equals(predecessor.path("compact_results_byte_sha256").asText())) {
+                throw failure("v004 predecessor binding does not match exposed v003 policy, freeze and compact results");
+            }
         }
     }
 
@@ -217,6 +240,12 @@ public final class LiquidationHourlyDevelopmentReplayV1 {
     }
 
     private static ObjectNode replay(Input input, ObjectNode policy) {
+        if (!policyAssetOrder(policy).equals(input.assets)) {
+            throw failure("policy asset order must exactly match the normalized input manifest asset order");
+        }
+        if (!policyAssetOrder(policy).equals(orderedTextArray(policy.path("account").path("asset_tie_order")))) {
+            throw failure("policy account asset tie order must equal the frozen asset order");
+        }
         Map<String, VariantResult> variants = new LinkedHashMap<>();
         ObjectNode costSensitivity = JsonHashes.mapper().createObjectNode();
         for (JsonNode raw : policy.path("variants")) {
@@ -236,6 +265,8 @@ public final class LiquidationHourlyDevelopmentReplayV1 {
     }
 
     private static VariantResult simulateVariant(Input input, ObjectNode policy, String variantId, double costMultiplier) {
+        String decisionStartText = policy.path("decision_start").asText();
+        String decisionEndText = policy.path("decision_end_exclusive").asText();
         LiquidationStructureRouterV1.MacroGatePolicy macroPolicy = "STAGED_NO_MACRO".equals(variantId)
                 ? LiquidationStructureRouterV1.MacroGatePolicy.STRUCTURE_ONLY
                 : LiquidationStructureRouterV1.MacroGatePolicy.REQUIRE_MACRO_CONFIRMATION;
@@ -257,7 +288,7 @@ public final class LiquidationHourlyDevelopmentReplayV1 {
 
         for (Instant at : timeline) {
             // The prior hour's completed path is applied before same-time features or entries.
-            for (String asset : ASSETS) {
+            for (String asset : input.assets) {
                 HourBar prior = byAssetStart.get(key(asset, at.minusMillis(HOUR_MS)));
                 if (prior != null) {
                     boolean wasOpen = account.hasOpenPosition(asset);
@@ -308,7 +339,11 @@ public final class LiquidationHourlyDevelopmentReplayV1 {
         ObjectNode accountSnapshot = account.snapshot();
         funnel.qualifiedEvents = stressEvents.size();
         funnel.closedPositions = countClosedPositions(accountSnapshot);
-        return new VariantResult(variantId, accountSnapshot, stressEvents, firstDecisions, routeRejections, funnel);
+        ObjectNode entryRuleAudit = Double.compare(costMultiplier, 1.0) == 0
+                ? router.entryRuleAuditSnapshot(Instant.parse(decisionStartText), Instant.parse(decisionEndText))
+                : JsonHashes.mapper().createObjectNode();
+        return new VariantResult(variantId, accountSnapshot, stressEvents, firstDecisions, routeRejections,
+                funnel, entryRuleAudit);
     }
 
     private static void processRouteResult(LiquidationStructureRouterV1.RouteResult result,
@@ -464,7 +499,7 @@ public final class LiquidationHourlyDevelopmentReplayV1 {
                 .put("initial_equity_usdt", policy.path("account").path("initial_equity").asDouble())
                 .put("reserved_costs_usdt", 0);
         ArrayNode positions = request.putArray("positions");
-        for (String asset : ASSETS) {
+        for (String asset : input.assets) {
             HourBar mark = input.barsByAsset.get(asset).stream().findFirst()
                     .orElseThrow(() -> failure("no hourly input for " + asset));
             ObjectNode spec = positions.addObject().put("asset", asset).put("direction", "UNCONFIGURED")
@@ -550,6 +585,8 @@ public final class LiquidationHourlyDevelopmentReplayV1 {
                 .put("hourly_execution_approximation", true)
                 .put("independent_episode_claim", false);
         ObjectNode variantRows = output.putObject("variants");
+        ObjectNode auditByVariant = output.putObject("entry_rule_audit").put("schema", "liquidation-entry-rule-audit-set/1")
+                .put("diagnostic_only", true).put("rule_changes", false).putObject("variants");
         Map<String, ObjectNode> accounts = new LinkedHashMap<>(), funnels = new LinkedHashMap<>();
         List<LiquidationHourlyDiagnosticsV1.Intent> diagnosticIntents = new ArrayList<>();
         List<LiquidationHourlyDiagnosticsV1.Position> diagnosticPositions = new ArrayList<>();
@@ -562,6 +599,7 @@ public final class LiquidationHourlyDevelopmentReplayV1 {
             summary.set("funnel_counts", row.funnel.toJson());
             summary.put("content_sha256", JsonHashes.ownHash(summary));
             variantRows.set(row.id, summary);
+            auditByVariant.set(row.id, row.entryRuleAudit.deepCopy());
             accounts.put(row.id, row.account);
             funnels.put(row.id, row.funnel.toJson());
             for (LiquidationStructureRouterV1.ConfirmedIntent intent : row.firstDecisions.values()) {
@@ -747,6 +785,7 @@ public final class LiquidationHourlyDevelopmentReplayV1 {
         if (!INPUT_SCHEMA.equals(manifest.path("schema").asText())
                 || !"normalized".equals(manifest.path("root").asText())
                 || !manifest.path("files").isObject()) throw failure("input manifest schema or root is unsupported");
+        List<String> inputAssets = manifestAssetOrder(manifest);
         Path runRoot = manifestPath.toAbsolutePath().normalize().getParent();
         Path normalizedRoot = safeResolve(runRoot, manifest.path("root").asText());
         ObjectNode coverage = readObject(safeResolve(runRoot, "coverage.json"));
@@ -765,7 +804,7 @@ public final class LiquidationHourlyDevelopmentReplayV1 {
         Map<String, LocalDate[]> dailyByAsset = new TreeMap<>();
         Map<String, Map<LocalDate, DailyRow>> dailyRowsByAsset = new TreeMap<>();
         Map<String, Set<Instant>> oiEndpointsByAsset = new TreeMap<>();
-        for (String asset : ASSETS) {
+        for (String asset : inputAssets) {
             barsByAsset.put(asset, new ArrayList<>());
             pricesByAsset.put(asset, new TreeMap<>());
             dailyRowsByAsset.put(asset, new TreeMap<>());
@@ -777,7 +816,7 @@ public final class LiquidationHourlyDevelopmentReplayV1 {
         CsvHeader dailyHeader = csvHeader(dailyPath, Set.of("asset", "symbol", "day_start_utc", "long_liquidations_usd", "short_liquidations_usd"));
         readCsv(dailyPath, dailyHeader, fields -> {
             String asset = fields[dailyHeader.index("asset")].toUpperCase(Locale.ROOT);
-            if (!ASSETS.contains(asset)) throw failure("daily liquidation contains an unfrozen asset: " + asset);
+            if (!inputAssets.contains(asset)) throw failure("daily liquidation contains an unfrozen asset: " + asset);
             Instant dayStart = Instant.parse(fields[dailyHeader.index("day_start_utc")]);
             LocalDate day = dayStart.atZone(ZoneOffset.UTC).toLocalDate();
             if (!dayStart.equals(day.atStartOfDay(ZoneOffset.UTC).toInstant())) throw failure("daily liquidation timestamp is not exact UTC midnight");
@@ -789,7 +828,7 @@ public final class LiquidationHourlyDevelopmentReplayV1 {
         });
         int dailyRows = 0, validDailyWindows = 0, longStressFlags = 0, shortStressFlags = 0;
         ObjectNode dailyCoverage = coverage.putObject("executor_daily_inputs");
-        for (String asset : ASSETS) {
+        for (String asset : inputAssets) {
             Map<LocalDate, DailyRow> rows = dailyRowsByAsset.get(asset);
             dailyRows += rows.size();
             int valid = 0, longStress = 0, shortStress = 0;
@@ -814,7 +853,7 @@ public final class LiquidationHourlyDevelopmentReplayV1 {
                     .put("long_liquidation_stress_flags", longStress).put("short_liquidation_stress_flags", shortStress);
         }
 
-        for (String asset : ASSETS) {
+        for (String asset : inputAssets) {
             Path barsPath = mappedAssetPath(manifest, normalizedRoot, "hourly_bars", asset);
             recordHash(runRoot, barsPath, fileHashes);
             CsvHeader header = csvHeader(barsPath, Set.of("open_time", "symbol", "open", "high", "low", "close", "base_volume"));
@@ -831,10 +870,19 @@ public final class LiquidationHourlyDevelopmentReplayV1 {
                 bars.add(bar);
             });
             if (bars.isEmpty()) blockers.add("no hourly price bars for " + asset);
-            if (bars.size() != 36_024) blockers.add("hourly bar count differs from expected complete source envelope for " + asset + ": " + bars.size());
-            if (!bars.isEmpty() && (!Instant.parse("2022-08-11T00:00:00Z").equals(bars.get(0).start)
-                    || !Instant.parse("2026-09-20T00:00:00Z").equals(bars.get(bars.size() - 1).start.plusMillis(HOUR_MS)))) {
-                blockers.add("hourly price bounds differ from frozen common source window for " + asset);
+            if (inputAssets.equals(LEGACY_ASSETS)) {
+                if (bars.size() != 36_024) blockers.add("hourly bar count differs from expected complete source envelope for " + asset + ": " + bars.size());
+                if (!bars.isEmpty() && (!Instant.parse("2022-08-11T00:00:00Z").equals(bars.get(0).start)
+                        || !Instant.parse("2026-09-20T00:00:00Z").equals(bars.get(bars.size() - 1).start.plusMillis(HOUR_MS)))) {
+                    blockers.add("hourly price bounds differ from frozen common source window for " + asset);
+                }
+            } else {
+                JsonNode seriesCoverage = coverage.path("datasets").path(asset).path("klines_1h");
+                long expectedRows = seriesCoverage.path("expected_rows").asLong(-1);
+                long missingRows = seriesCoverage.path("missing_rows").asLong(-1);
+                if (expectedRows < 0 || missingRows < 0 || expectedRows - missingRows != bars.size()) {
+                    blockers.add("nine-asset hourly row count does not reconcile to retained per-asset coverage for " + asset);
+                }
             }
             for (int i = 0; i < bars.size(); i++) {
                 HourBar bar = bars.get(i); String k = key(asset, bar.start);
@@ -857,7 +905,7 @@ public final class LiquidationHourlyDevelopmentReplayV1 {
 
         final int[] oiRowsExamined = {0}, oiSnapshotsSelected = {0};
         ObjectNode oiCoverage = coverage.putObject("executor_oi_endpoints");
-        for (String asset : ASSETS) {
+        for (String asset : inputAssets) {
             Path oiPath = mappedAssetPath(manifest, normalizedRoot, "oi_5m", asset);
             recordHash(runRoot, oiPath, fileHashes);
             CsvHeader header = csvHeader(oiPath, Set.of("time", "symbol", "sum_open_interest"));
@@ -885,7 +933,7 @@ public final class LiquidationHourlyDevelopmentReplayV1 {
                     .put("usable_oi_snapshots", endpoints.size()).put("missing_oi_endpoints", missing)
                     .put("window_policy", "exact_5m_snapshot_at_h4_endpoint_minus_10m;available_at_endpoint_minus_5m;no_fill_forward");
         }
-        int missingOiEndpoints = ASSETS.stream().mapToInt(asset -> oiCoverage.path(asset).path("missing_oi_endpoints").asInt()).sum();
+        int missingOiEndpoints = inputAssets.stream().mapToInt(asset -> oiCoverage.path(asset).path("missing_oi_endpoints").asInt()).sum();
 
         Path spPath = mappedPath(manifest, normalizedRoot, "sp500");
         recordHash(runRoot, spPath, fileHashes);
@@ -907,7 +955,7 @@ public final class LiquidationHourlyDevelopmentReplayV1 {
         features.sort(OBSERVATION_ORDER);
         Instant commonEnd = null;
         ObjectNode barCoverage = coverage.putObject("executor_hourly_bars");
-        for (String asset : ASSETS) {
+        for (String asset : inputAssets) {
             List<HourBar> bars = barsByAsset.get(asset);
             if (bars.isEmpty()) continue;
             Instant end = bars.get(bars.size() - 1).start.plusMillis(HOUR_MS);
@@ -923,7 +971,7 @@ public final class LiquidationHourlyDevelopmentReplayV1 {
         coverage.put("executor_oi_rows_examined", oiRowsExamined[0]).put("executor_oi_snapshots_selected", oiSnapshotsSelected[0])
                 .put("executor_sp500_rows", spRows).put("executor_feature_observation_count", features.size())
                 .put("source_vintages_point_in_time_verified", false);
-        return new Input(features, barsByAsset, barsByStart, barsByAssetStart, barsByAssetAndStart, pricesByAsset, coverage,
+        return new Input(inputAssets, features, barsByAsset, barsByStart, barsByAssetStart, barsByAssetAndStart, pricesByAsset, coverage,
                 fileHashes, blockers, dailyRows, validDailyWindows, longStressFlags, shortStressFlags,
                 missingOiEndpoints, sha256(manifestPath), manifestPath.toAbsolutePath().normalize());
     }
@@ -1166,8 +1214,38 @@ public final class LiquidationHourlyDevelopmentReplayV1 {
     private static String key(String asset, Instant time) { return asset + "|" + time.toEpochMilli(); }
 
     private static int assetRank(String asset) {
-        int index = ASSETS.indexOf(asset);
+        int index = LiquidationStructureRouterV1.SUPPORTED_ASSET_ORDER.indexOf(asset);
         return index < 0 ? Integer.MAX_VALUE : index;
+    }
+
+    private static List<String> policyAssetOrder(ObjectNode policy) {
+        return orderedTextArray(policy.path("assets"));
+    }
+
+    private static List<String> orderedTextArray(JsonNode assets) {
+        if (!assets.isArray()) return List.of();
+        ArrayList<String> result = new ArrayList<>();
+        for (JsonNode asset : assets) {
+            if (!asset.isTextual()) return List.of();
+            result.add(asset.asText());
+        }
+        return List.copyOf(result);
+    }
+
+    private static List<String> manifestAssetOrder(ObjectNode manifest) {
+        JsonNode raw = manifest.path("assets");
+        if (raw.isMissingNode()) return LEGACY_ASSETS;
+        if (!raw.isArray()) throw failure("input manifest assets must be an ordered array");
+        ArrayList<String> assets = new ArrayList<>();
+        for (JsonNode value : raw) {
+            if (!value.isTextual()) throw failure("input manifest assets must contain only symbols");
+            assets.add(value.asText());
+        }
+        List<String> result = List.copyOf(assets);
+        if (!result.equals(LEGACY_ASSETS) && !result.equals(V004_ASSETS)) {
+            throw failure("input manifest assets must equal the exact frozen legacy-four or v004 nine-asset order");
+        }
+        return result;
     }
 
     private record CsvHeader(Map<String, Integer> columns, int width, String raw) {
@@ -1178,9 +1256,10 @@ public final class LiquidationHourlyDevelopmentReplayV1 {
     private record VariantResult(String id, ObjectNode account,
             Map<String, LiquidationStructureRouterV1.QualifiedDailyStressEvent> stressEvents,
             Map<String, LiquidationStructureRouterV1.ConfirmedIntent> firstDecisions,
-            ArrayNode rejections, Funnel funnel) {}
+            ArrayNode rejections, Funnel funnel, ObjectNode entryRuleAudit) {}
 
     static final class Input {
+        final List<String> assets;
         final List<LiquidationStructureRouterV1.Observation> features;
         final Map<String, List<HourBar>> barsByAsset;
         final NavigableMap<Instant, List<HourBar>> barsByStart;
@@ -1198,7 +1277,17 @@ public final class LiquidationHourlyDevelopmentReplayV1 {
                 ObjectNode coverage, Map<String, String> fileHashes, List<String> preflightBlockers,
                 int dailyRows, int validDailyWindows, int longStressFlags, int shortStressFlags, int missingOiEndpoints,
                 String manifestByteSha256, Path manifestPath) {
-            this.features = List.copyOf(features); this.barsByAsset = Map.copyOf(barsByAsset);
+            this(LEGACY_ASSETS, features, barsByAsset, barsByStart, barsByAssetStart, barsByAssetAndStart,
+                    pricesByAssetCloseTime, coverage, fileHashes, preflightBlockers, dailyRows, validDailyWindows,
+                    longStressFlags, shortStressFlags, missingOiEndpoints, manifestByteSha256, manifestPath);
+        }
+        Input(List<String> assets, List<LiquidationStructureRouterV1.Observation> features, Map<String, List<HourBar>> barsByAsset,
+                NavigableMap<Instant, List<HourBar>> barsByStart, Map<String, HourBar> barsByAssetStart,
+                Map<String, HourBar> barsByAssetAndStart, Map<String, NavigableMap<Instant, Double>> pricesByAssetCloseTime,
+                ObjectNode coverage, Map<String, String> fileHashes, List<String> preflightBlockers,
+                int dailyRows, int validDailyWindows, int longStressFlags, int shortStressFlags, int missingOiEndpoints,
+                String manifestByteSha256, Path manifestPath) {
+            this.assets = List.copyOf(assets); this.features = List.copyOf(features); this.barsByAsset = Map.copyOf(barsByAsset);
             this.barsByStart = java.util.Collections.unmodifiableNavigableMap(barsByStart);
             this.barsByAssetStart = Map.copyOf(barsByAssetStart); this.barsByAssetAndStart = Map.copyOf(barsByAssetAndStart);
             this.pricesByAssetCloseTime = Map.copyOf(pricesByAssetCloseTime); this.coverage = coverage;

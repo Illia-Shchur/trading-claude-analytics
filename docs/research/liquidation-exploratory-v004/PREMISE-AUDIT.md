@@ -27,3 +27,29 @@ The v001 specification says skip a reversal whose midpoint was already reached. 
 Broad 1/3/7-day opposite-shock responses cannot validate this narrower entry-and-exit strategy. More correlated assets expand coverage but do not multiply independent evidence automatically. Gate counts must distinguish source rows, stress sides, unique stress days, admitted setups, repeated hourly checks, intents, execution attempts and filled positions. Different filter counts can overlap and must not be added as unique lost opportunities.
 
 No rule is relaxed in this study. A later redesign should be driven by which behaviour the user intends to trade, frozen before evaluating its returns, and retain the full exposure history.
+
+## Original four: measured attrition
+
+The unchanged original-four audit reproduces all 110 numeric comparison checks against v003. Within the modeled-availability decision window:
+
+| Step | Unique count |
+|---|---:|
+| Daily liquidation stress dates across assets | 676 |
+| Qualified price/OI events | 88 |
+| Admitted setups after occupied-asset suppression | 73 |
+| Setups with an H1 entry confirmation | 7 |
+| Filled positions | 5 |
+
+Price/OI geometry removes 588 of 676 stress dates (about 87%); the 88 surviving events include 15 suppressed by an occupied asset. The 73 admitted setups select 66 continuations (46 shorts, 20 longs) and seven reversals (six longs, one short). Of these setups, 57 expire without entry confirmation, 11 invalidate the chosen branch without rerouting, and five become filled positions. The two confirmed but unfilled setups are included in these final dispositions, not an extra count.
+
+Repeated hourly tests are not unique opportunities: 4,306 hourly checks first fail the zone-touch requirement, versus 17 first failing the trade-side close and 71 first failing the preceding-hour break. Two checks are suppressed because an intent is already pending. Several failures can occur on the same bar; all-failure totals must not be added to first-failure totals.
+
+The seven confirmed setups emit ten fill attempts. All five rejected attempts fail the maximum-chase-distance cap; rejection attempts can repeat within a setup. Two reversal longs did confirm (ETH on January 26, 2023 and AAVE on July 7, 2024), but both failed the next-hour chase cap; the midpoint reward/risk test was not their observed execution blocker. All five filled positions are short continuations. Four positions never form an eligible post-fill pivot before closing; the longest BTC position forms its frozen pivot but later loses the safe addition zone to the trailing stop. No addition reaches the macro gate.
+
+This identifies two distinct restrictions: price/OI qualification is stringent, and the surviving events rarely revisit the narrow frozen boundary zone after delayed observation and H4 confirmation. It does not show that removing either condition would improve returns.
+
+An additional price-only attribution calculation measures the absolute gap from the second H4 confirmation close to the frozen boundary, divided by pre-event H4 ATR. The median is **4.26 ATR for the 66 continuations** and **2.09 ATR for the seven reversals**, while the entry zone extends only **0.25 ATR** on either side of the boundary. At branch confirmation, 64/66 continuations and 6/7 reversals lie outside that zone. This uses no subsequent returns and does not test an alternative rule. It reinforces that the specified entry requires a substantial revisit after confirmation.
+
+## Expanded nine: measured attrition
+
+The expanded unchanged-rule replay contains 1,407 stress asset-days, 179 qualified events, 150 admitted setups, 12 confirmed setups and eight fills from 16 attempts. Geometry rejects 1,228 dates; 115 setups expire and 27 invalidate their branch. All eight fills are short continuations; no additions qualify. Median confirmation distance to the boundary is 4.15 ATR for 137 continuations and 1.40 ATR for 13 reversals, with 134 and 11 respectively outside the ±0.25 ATR zone. The broader universe confirms the same restrictive interpretation; it does not validate a replacement rule. See `RESULTS.md` and `results.json` for all variants, costs and dependence.
