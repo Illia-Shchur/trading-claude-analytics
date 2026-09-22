@@ -1,0 +1,199 @@
+{
+  "schema": "liquidation-v003-verification/1",
+  "recorded_at": "2026-09-21T09:39:07.705723+00:00",
+  "status": "PASSED",
+  "production_matches_frozen_historical_executor": true,
+  "coverage_gate": {
+    "base": "0882d8af8a2faedb52d6e993f7fbff2014485833",
+    "branch_coverage_percent": "80.20",
+    "branch_covered": 895,
+    "branch_minimum_percent": "80",
+    "branch_status": "passed",
+    "branch_total": 1116,
+    "changed_files": [
+      {
+        "lines": "all-executable",
+        "path": "analytics-research/src/main/java/com/tradinganalytics/research/v5/LiquidationHourlyDevelopmentReplayV1.java",
+        "reason": "new file; assess all executable lines"
+      },
+      {
+        "lines": "all-executable",
+        "path": "analytics-research/src/main/java/com/tradinganalytics/research/v5/LiquidationHourlyDiagnosticsV1.java",
+        "reason": "new file; assess all executable lines"
+      },
+      {
+        "lines": [
+          62,
+          63,
+          64,
+          65,
+          66,
+          67,
+          68,
+          69,
+          70,
+          71,
+          72,
+          84,
+          99,
+          100,
+          101,
+          102,
+          103,
+          105,
+          106,
+          114,
+          158,
+          159,
+          160,
+          161,
+          162,
+          163,
+          164,
+          165,
+          890,
+          891,
+          892,
+          893,
+          906,
+          974,
+          976,
+          977,
+          978,
+          979,
+          980,
+          981,
+          982,
+          983,
+          984,
+          1065
+        ],
+        "path": "analytics-research/src/main/java/com/tradinganalytics/research/v5/LiquidationPortfolioAccountingV1.java",
+        "reason": "added/modified lines"
+      },
+      {
+        "lines": [
+          1843,
+          1849,
+          1850,
+          1851,
+          1852,
+          1853,
+          1854,
+          1855,
+          1856,
+          1857,
+          1858,
+          1859,
+          1860,
+          1873
+        ],
+        "path": "analytics-research/src/main/java/com/tradinganalytics/research/v5/LiquidationStructureRouterV1.java",
+        "reason": "added/modified lines"
+      },
+      {
+        "lines": [
+          11,
+          119,
+          120,
+          121,
+          122
+        ],
+        "path": "analytics-research/src/main/java/com/tradinganalytics/research/v5/StrategyResearchV5CommandAdapter.java",
+        "reason": "added/modified lines"
+      }
+    ],
+    "coverage_report": "/private/tmp/trading-daily-stress-v002/analytics-coverage/target/site/jacoco-aggregate/jacoco.xml",
+    "covered_lines": 1538,
+    "executable_lines": 1698,
+    "line_coverage_percent": "90.58",
+    "line_status": "passed",
+    "minimum_percent": "80",
+    "passed": true
+  },
+  "jacoco_aggregate_byte_sha256": "af750cc5b0f29aa98971ed63670de9b56539c60e1da4a9326d2020fc31101537",
+  "latest_module_test_reports": {
+    "analytics-cli": {
+      "tests": 99,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "analytics-compatibility-tests": {
+      "tests": 55,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "analytics-contracts": {
+      "tests": 88,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "analytics-core": {
+      "tests": 195,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "analytics-infrastructure": {
+      "tests": 102,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "analytics-market-data": {
+      "tests": 62,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "analytics-reporting": {
+      "tests": 61,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "analytics-research": {
+      "tests": 1375,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1
+    }
+  },
+  "conditional_skips": [
+    {
+      "module": "analytics-research",
+      "class": "com.tradinganalytics.research.v5.StrategyOperatingCharacteristicsSuccessorV1Test",
+      "test": "optimizedReplicationMatchesTheEagerRawRowWhenPackagedExecutorIsAvailable"
+    }
+  ],
+  "focused_test_count": 47,
+  "focused_skips": 0,
+  "acquisition_tests_passed": 4,
+  "commands": [
+    {
+      "command": "./mvnw --batch-mode --no-transfer-progress clean install",
+      "exit_code": 1,
+      "resolution": "Research and preceding modules passed; stale CLI help inventory assertion corrected to include the two new commands."
+    },
+    {
+      "command": "./mvnw --batch-mode --no-transfer-progress clean install -rf :analytics-cli",
+      "exit_code": 0
+    },
+    {
+      "command": "./mvnw --batch-mode --no-transfer-progress -pl analytics-research -am -Dtest=LiquidationHourlyDevelopmentReplayV1Test,LiquidationHourlyDevelopmentReplayV1GuardMatrixTest,LiquidationHourlyDiagnosticsV1Test,LiquidationHourlyDiagnosticsV1BoundaryTest,LiquidationPortfolioAccountingValidationMatrixV1Test -Dsurefire.failIfNoSpecifiedTests=false test",
+      "exit_code": 0
+    },
+    {
+      "command": "./mvnw --batch-mode --no-transfer-progress -DskipTests verify",
+      "exit_code": 0,
+      "purpose": "Regenerate aggregate after successful test-only additions; production source unchanged."
+    },
+    {
+      "command": "python3 tools/check_new_code_coverage.py --base 0882d8af8a2faedb52d6e993f7fbff2014485833 --report analytics-coverage/target/site/jacoco-aggregate/jacoco.xml --minimum 80 --branch-minimum 80",
+      "exit_code": 0
+    }
+  ]
+}

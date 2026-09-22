@@ -8,7 +8,7 @@ import java.io.PrintStream;
 
 /** Exact process-boundary adapter for {@code tools/strategy-research-v5.mjs}. */
 public final class StrategyResearchV5CommandAdapter {
-    public static final String COMMANDS = "data-backfill|data-raw-replay|feature-build|metadata-build|daily-stress-preflight|liquidation-input-qualify|liquidation-input-verify|liquidation-profile-contract|liquidation-profile-validate|liquidation-profile-assess-physical|liquidation-v2-plan|liquidation-v2-physical-build|liquidation-v2-physical-verify|liquidation-v2-freeze|liquidation-v2-replay|liquidation-v2-replay-resumable|liquidation-v2-evidence|liquidation-v2-run-evaluate|liquidation-v2-staged-plan-no-macro|liquidation-v2-staged-plan-macro|liquidation-v2-staged-replay|liquidation-v2-staged-evidence|"
+    public static final String COMMANDS = "data-backfill|data-raw-replay|feature-build|metadata-build|daily-stress-preflight|liquidation-input-qualify|liquidation-input-verify|liquidation-profile-contract|liquidation-profile-validate|liquidation-profile-assess-physical|liquidation-v2-plan|liquidation-v2-physical-build|liquidation-v2-physical-verify|liquidation-v2-freeze|liquidation-v2-replay|liquidation-v2-replay-resumable|liquidation-v2-evidence|liquidation-v2-run-evaluate|liquidation-v2-staged-plan-no-macro|liquidation-v2-staged-plan-macro|liquidation-v2-staged-replay|liquidation-v2-staged-evidence|liquidation-hourly-preflight|liquidation-hourly-run|"
             + "opportunity-envelope|artifact-build|research-init|experiment-freeze|search-genetic|"
             + "research-run|overfit-audit|prospective-runner|readiness-audit|deployment-audit|"
             + "fixed-baseline|fixed-baseline-refinement|fixed-baseline-produce-signal-bars|operating-characteristics-preflight|operating-characteristics-run|operating-characteristics-diagnose|operating-characteristics-successor-preflight|operating-characteristics-successor-run|operating-characteristics-successor-record-attempt|operating-characteristics-parallel-profile|operating-characteristics-parallel-preflight|operating-characteristics-parallel-run|operating-characteristics-parallel-worker|operating-characteristics-corrected-successor-preflight|operating-characteristics-corrected-successor-run|operating-characteristics-corrected-parallel-profile|operating-characteristics-corrected-parallel-plan|operating-characteristics-corrected-parallel-preflight|operating-characteristics-corrected-parallel-run|operating-characteristics-corrected-parallel-worker|operating-characteristics-corrected-parallel-qualify|operating-characteristics-corrected-parallel-validate-qualification|freeze-refinement|portfolio-reconcile|prospective-outcome-reconcile|evidence-disposition|canonical-hash-batch|lineage-inventory|matching-attrition|freeze-successor-control|validate|index|presentation-export";
@@ -116,6 +116,10 @@ public final class StrategyResearchV5CommandAdapter {
                 result = LiquidationPortfolioReplayV1.runStaged(readObjectOption(options, "options"));
             } else if ("liquidation-v2-staged-evidence".equals(command)) {
                 result = LiquidationPortfolioReplayV1.evaluateStaged(readObjectOption(options, "options"));
+            } else if ("liquidation-hourly-preflight".equals(command)) {
+                result = LiquidationHourlyDevelopmentReplayV1.preflight(options);
+            } else if ("liquidation-hourly-run".equals(command)) {
+                result = LiquidationHourlyDevelopmentReplayV1.run(options);
             } else if ("operating-characteristics-preflight".equals(command)) {
                 result = StrategyOperatingCharacteristicsV4.preflight(readObjectOption(options, "plan"));
             } else if ("operating-characteristics-run".equals(command)) {

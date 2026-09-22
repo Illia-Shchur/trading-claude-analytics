@@ -1,0 +1,1689 @@
+{
+  "schema": "liquidation-exploratory-v005-compact-results/1",
+  "experiment_id": "liquidation-exploratory-v005",
+  "precommit_id": "liquidation-exploratory-v005",
+  "evidence_phase": "DEVELOPMENT",
+  "status": "NEGATIVE_NO_PROFILE_ADVANCED",
+  "authoritative": false,
+  "promotion_allowed": false,
+  "decision": {
+    "summary": "No new v005 rule configuration has positive net return before funding. The post-shock entry family is negative against the retained positive baseline; daily context does not establish a candidate.",
+    "new_profiles_positive_net_return_before_funding": 0,
+    "new_profiles_tested": 6,
+    "formal_rejection_thresholds_fully_evaluated": false,
+    "candidate_advanced": false,
+    "outcome_selection": false,
+    "threshold_tuning_after_outcomes": false,
+    "holdout_reset": false,
+    "forward_or_sealed_validation": false
+  },
+  "scope": {
+    "assets": [
+      "BTC",
+      "ETH",
+      "SOL",
+      "AAVE",
+      "UNI",
+      "BNB",
+      "LINK",
+      "ZEC",
+      "TRX"
+    ],
+    "hourly_source_start_inclusive": "2022-08-11T00:00:00Z",
+    "hourly_source_end_exclusive": "2026-09-20T00:00:00Z",
+    "decision_start_inclusive": "2022-11-11T00:00:00Z",
+    "decision_end_exclusive": "2026-07-15T00:00:00Z",
+    "supplemental_daily_context_start_inclusive": "2022-04-01T00:00:00Z",
+    "supplemental_daily_context_end_exclusive": "2022-08-11T00:00:00Z",
+    "profiles": [
+      "BASELINE_V004",
+      "POST_SHOCK_ENTRY",
+      "H4_STRUCTURAL_STOP",
+      "REFRESHED_STAGING",
+      "DAILY_RSI_CONTEXT",
+      "DAILY_MA_CONTEXT",
+      "DAILY_BOTH_CONTEXT"
+    ],
+    "baseline_alias": "BASELINE_V004 is the previously exposed STAGED_MACRO baseline; it is not a new v005 rule configuration"
+  },
+  "simulation_assumptions": {
+    "initial_equity_usdt": 20000,
+    "funding_treatment": "EXCLUDED_NOT_OBSERVED_ZERO",
+    "mark_treatment": "TRADE_OHLC_PROXY",
+    "hourly_execution_approximation": true,
+    "bar_path_assumption": "HOURLY_OHLC;TRADE_BAR_USED_AS_MARK_PROXY;ADVERSE_EXTREME_LIQUIDATION_FIRST;STOP_BEFORE_TARGET;GAP_USES_WORSE_OPEN",
+    "deadline_exit_assumption": "AT_OR_AFTER_60_DAYS_EXIT_AT_FIRST_PRESENT_HOURLY_OPEN;MISSING_BARS_RETAIN_EXPOSURE",
+    "capacity_assumption": "ONE_PERCENT_OF_PRIOR_COMPLETED_HOUR_BASE_VOLUME;CAPACITY_PROXY_NOT_INSTANTANEOUS_LIQUIDITY",
+    "return_basis": "Account equity change net of modeled entry/exit costs, before funding; all filled positions are closed by the run end.",
+    "drawdown_basis": "maximum simulated event-path drawdown; not minute-marked drawdown"
+  },
+  "profiles": [
+    {
+      "profile": "BASELINE_V004",
+      "baseline_alias": true,
+      "base_costs": {
+        "initial_equity_usdt": "20000.0",
+        "ending_equity_usdt": "21856.58428062354012670175",
+        "net_pnl_before_funding_usdt": "1856.58428062354012670175",
+        "net_return_before_funding_pct": "9.282921",
+        "maximum_event_path_drawdown_pct": "6.231372",
+        "first_stage_entries": {
+          "long": 0,
+          "short": 8
+        },
+        "stage_2_add_fills": 0,
+        "stage_2_adds_by_asset": {},
+        "stage_3_or_later_fills": 0,
+        "filled_entry_tranches_total": 8,
+        "distinct_completed_positions": 8,
+        "open_positions_at_end": 0,
+        "pnl_reconciliation_status": "RECONCILED_EX_FUNDING",
+        "pnl_reconciliation_difference_usdt": "0.00000000000000000000",
+        "event_stream_sha256": "8d11c1d58ed95b65d0b351f15644f5aef96a1efa57df201645a6950caf24234b",
+        "filled_tranches_by_stage": {
+          "stage_1": 8
+        }
+      },
+      "doubled_fees_and_slippage": {
+        "initial_equity_usdt": "20000.0",
+        "ending_equity_usdt": "21122.41766437066382445304",
+        "net_pnl_before_funding_usdt": "1122.41766437066382445304",
+        "net_return_before_funding_pct": "5.612088",
+        "maximum_event_path_drawdown_pct": "6.103457",
+        "first_stage_entries": {
+          "long": 0,
+          "short": 8
+        },
+        "stage_2_add_fills": 0,
+        "stage_2_adds_by_asset": {},
+        "stage_3_or_later_fills": 0,
+        "filled_entry_tranches_total": 8,
+        "distinct_completed_positions": 8,
+        "open_positions_at_end": 0,
+        "pnl_reconciliation_status": "RECONCILED_EX_FUNDING",
+        "pnl_reconciliation_difference_usdt": "0.00000000000000000000",
+        "event_stream_sha256": "66916724a6e390be73966019db4e9c8b59766db3099a6afa9ea6956e44dab46a",
+        "filled_tranches_by_stage": {
+          "stage_1": 8
+        }
+      },
+      "funnel": {
+        "daily_rows": 13485,
+        "valid_90_day_windows": 11969,
+        "long_liquidation_stress_flags": 847,
+        "short_liquidation_stress_flags": 798,
+        "qualified_source_events": 179,
+        "stage_one_confirmation_intents": 16,
+        "unique_stage_one_setups": 12,
+        "all_confirmation_intents": 16,
+        "in_window_router_rejections": 0,
+        "outside_window_router_rejections": 0,
+        "outside_window_intents_suppressed": 0,
+        "submitted_fill_attempts": 16,
+        "filled_tranches": 8,
+        "fill_rejections": 8,
+        "missing_h4_oi_endpoints": 59,
+        "completed_positions": 8
+      }
+    },
+    {
+      "profile": "POST_SHOCK_ENTRY",
+      "baseline_alias": false,
+      "base_costs": {
+        "initial_equity_usdt": "20000.0",
+        "ending_equity_usdt": "19577.56804102126728367989",
+        "net_pnl_before_funding_usdt": "-422.43195897873271632011",
+        "net_return_before_funding_pct": "-2.112160",
+        "maximum_event_path_drawdown_pct": "8.988590",
+        "first_stage_entries": {
+          "long": 22,
+          "short": 18
+        },
+        "stage_2_add_fills": 0,
+        "stage_2_adds_by_asset": {},
+        "stage_3_or_later_fills": 0,
+        "filled_entry_tranches_total": 40,
+        "distinct_completed_positions": 40,
+        "open_positions_at_end": 0,
+        "pnl_reconciliation_status": "RECONCILED_EX_FUNDING",
+        "pnl_reconciliation_difference_usdt": "0.00000000000000000000",
+        "event_stream_sha256": "7d82792b02ba8cffa914caa1cb267899168c904a3b6659a890bb6bcfe3d3b0d1",
+        "filled_tranches_by_stage": {
+          "stage_1": 40
+        }
+      },
+      "doubled_fees_and_slippage": {
+        "initial_equity_usdt": "20000.0",
+        "ending_equity_usdt": "18523.17104313681571960508",
+        "net_pnl_before_funding_usdt": "-1476.82895686318428039492",
+        "net_return_before_funding_pct": "-7.384145",
+        "maximum_event_path_drawdown_pct": "9.660767",
+        "first_stage_entries": {
+          "long": 22,
+          "short": 18
+        },
+        "stage_2_add_fills": 0,
+        "stage_2_adds_by_asset": {},
+        "stage_3_or_later_fills": 0,
+        "filled_entry_tranches_total": 40,
+        "distinct_completed_positions": 40,
+        "open_positions_at_end": 0,
+        "pnl_reconciliation_status": "RECONCILED_EX_FUNDING",
+        "pnl_reconciliation_difference_usdt": "0.00000000000000000000",
+        "event_stream_sha256": "4097c8e0564e3426db50f4a7986a4153664f183d5d99489c1ee826b41619ee4d",
+        "filled_tranches_by_stage": {
+          "stage_1": 40
+        }
+      },
+      "funnel": {
+        "daily_rows": 13485,
+        "valid_90_day_windows": 11969,
+        "long_liquidation_stress_flags": 847,
+        "short_liquidation_stress_flags": 798,
+        "qualified_source_events": 179,
+        "stage_one_confirmation_intents": 57,
+        "unique_stage_one_setups": 54,
+        "all_confirmation_intents": 58,
+        "in_window_router_rejections": 2,
+        "outside_window_router_rejections": 0,
+        "outside_window_intents_suppressed": 1,
+        "submitted_fill_attempts": 58,
+        "filled_tranches": 40,
+        "fill_rejections": 18,
+        "missing_h4_oi_endpoints": 59,
+        "completed_positions": 40
+      }
+    },
+    {
+      "profile": "H4_STRUCTURAL_STOP",
+      "baseline_alias": false,
+      "base_costs": {
+        "initial_equity_usdt": "20000.0",
+        "ending_equity_usdt": "18702.03084067067846529212",
+        "net_pnl_before_funding_usdt": "-1297.96915932932153470788",
+        "net_return_before_funding_pct": "-6.489846",
+        "maximum_event_path_drawdown_pct": "9.507867",
+        "first_stage_entries": {
+          "long": 22,
+          "short": 18
+        },
+        "stage_2_add_fills": 1,
+        "stage_2_adds_by_asset": {
+          "TRX": 1
+        },
+        "stage_3_or_later_fills": 0,
+        "filled_entry_tranches_total": 41,
+        "distinct_completed_positions": 40,
+        "open_positions_at_end": 0,
+        "pnl_reconciliation_status": "RECONCILED_EX_FUNDING",
+        "pnl_reconciliation_difference_usdt": "0.00000000000000000000",
+        "event_stream_sha256": "39e87b539bcb45e4c52224aee123071efb328d14b8cfcca1177df94df103be78",
+        "filled_tranches_by_stage": {
+          "stage_1": 40,
+          "stage_2": 1
+        }
+      },
+      "doubled_fees_and_slippage": {
+        "initial_equity_usdt": "20000.0",
+        "ending_equity_usdt": "17973.02300393324566511462",
+        "net_pnl_before_funding_usdt": "-2026.97699606675433488538",
+        "net_return_before_funding_pct": "-10.134885",
+        "maximum_event_path_drawdown_pct": "10.206519",
+        "first_stage_entries": {
+          "long": 22,
+          "short": 18
+        },
+        "stage_2_add_fills": 1,
+        "stage_2_adds_by_asset": {
+          "TRX": 1
+        },
+        "stage_3_or_later_fills": 0,
+        "filled_entry_tranches_total": 41,
+        "distinct_completed_positions": 40,
+        "open_positions_at_end": 0,
+        "pnl_reconciliation_status": "RECONCILED_EX_FUNDING",
+        "pnl_reconciliation_difference_usdt": "0.00000000000000000000",
+        "event_stream_sha256": "34d3ce473b340742cafeea77c2ee9560bf747c13af994c6c102ac692b52a4b6e",
+        "filled_tranches_by_stage": {
+          "stage_1": 40,
+          "stage_2": 1
+        }
+      },
+      "funnel": {
+        "daily_rows": 13485,
+        "valid_90_day_windows": 11969,
+        "long_liquidation_stress_flags": 847,
+        "short_liquidation_stress_flags": 798,
+        "qualified_source_events": 179,
+        "stage_one_confirmation_intents": 57,
+        "unique_stage_one_setups": 54,
+        "all_confirmation_intents": 59,
+        "in_window_router_rejections": 9,
+        "outside_window_router_rejections": 0,
+        "outside_window_intents_suppressed": 1,
+        "submitted_fill_attempts": 59,
+        "filled_tranches": 41,
+        "fill_rejections": 18,
+        "missing_h4_oi_endpoints": 59,
+        "completed_positions": 40
+      }
+    },
+    {
+      "profile": "REFRESHED_STAGING",
+      "baseline_alias": false,
+      "base_costs": {
+        "initial_equity_usdt": "20000.0",
+        "ending_equity_usdt": "18577.93208873137355459332",
+        "net_pnl_before_funding_usdt": "-1422.06791126862644540668",
+        "net_return_before_funding_pct": "-7.110340",
+        "maximum_event_path_drawdown_pct": "9.507867",
+        "first_stage_entries": {
+          "long": 22,
+          "short": 18
+        },
+        "stage_2_add_fills": 2,
+        "stage_2_adds_by_asset": {
+          "BTC": 1,
+          "TRX": 1
+        },
+        "stage_3_or_later_fills": 0,
+        "filled_entry_tranches_total": 42,
+        "distinct_completed_positions": 40,
+        "open_positions_at_end": 0,
+        "pnl_reconciliation_status": "RECONCILED_EX_FUNDING",
+        "pnl_reconciliation_difference_usdt": "0.00000000000000000000",
+        "event_stream_sha256": "db12fa465cdf9e0aa45e26fbd3cd50ad11fc680703cac6fb6a64ae70590358f1",
+        "filled_tranches_by_stage": {
+          "stage_1": 40,
+          "stage_2": 2
+        }
+      },
+      "doubled_fees_and_slippage": {
+        "initial_equity_usdt": "20000.0",
+        "ending_equity_usdt": "17781.01310912607449482142",
+        "net_pnl_before_funding_usdt": "-2218.98689087392550517858",
+        "net_return_before_funding_pct": "-11.094934",
+        "maximum_event_path_drawdown_pct": "11.165803",
+        "first_stage_entries": {
+          "long": 22,
+          "short": 18
+        },
+        "stage_2_add_fills": 2,
+        "stage_2_adds_by_asset": {
+          "BTC": 1,
+          "TRX": 1
+        },
+        "stage_3_or_later_fills": 0,
+        "filled_entry_tranches_total": 42,
+        "distinct_completed_positions": 40,
+        "open_positions_at_end": 0,
+        "pnl_reconciliation_status": "RECONCILED_EX_FUNDING",
+        "pnl_reconciliation_difference_usdt": "0.00000000000000000000",
+        "event_stream_sha256": "3ac536167c09b9296d2f63ed47733446654c0f60539b300bf7f5d69f8ae80c7d",
+        "filled_tranches_by_stage": {
+          "stage_1": 40,
+          "stage_2": 2
+        }
+      },
+      "funnel": {
+        "daily_rows": 13485,
+        "valid_90_day_windows": 11969,
+        "long_liquidation_stress_flags": 847,
+        "short_liquidation_stress_flags": 798,
+        "qualified_source_events": 179,
+        "stage_one_confirmation_intents": 57,
+        "unique_stage_one_setups": 54,
+        "all_confirmation_intents": 61,
+        "in_window_router_rejections": 9,
+        "outside_window_router_rejections": 0,
+        "outside_window_intents_suppressed": 1,
+        "submitted_fill_attempts": 61,
+        "filled_tranches": 42,
+        "fill_rejections": 19,
+        "missing_h4_oi_endpoints": 59,
+        "completed_positions": 40
+      }
+    },
+    {
+      "profile": "DAILY_RSI_CONTEXT",
+      "baseline_alias": false,
+      "base_costs": {
+        "initial_equity_usdt": "20000.0",
+        "ending_equity_usdt": "18577.93208873137355459332",
+        "net_pnl_before_funding_usdt": "-1422.06791126862644540668",
+        "net_return_before_funding_pct": "-7.110340",
+        "maximum_event_path_drawdown_pct": "9.507867",
+        "first_stage_entries": {
+          "long": 22,
+          "short": 18
+        },
+        "stage_2_add_fills": 2,
+        "stage_2_adds_by_asset": {
+          "BTC": 1,
+          "TRX": 1
+        },
+        "stage_3_or_later_fills": 0,
+        "filled_entry_tranches_total": 42,
+        "distinct_completed_positions": 40,
+        "open_positions_at_end": 0,
+        "pnl_reconciliation_status": "RECONCILED_EX_FUNDING",
+        "pnl_reconciliation_difference_usdt": "0.00000000000000000000",
+        "event_stream_sha256": "db12fa465cdf9e0aa45e26fbd3cd50ad11fc680703cac6fb6a64ae70590358f1",
+        "filled_tranches_by_stage": {
+          "stage_1": 40,
+          "stage_2": 2
+        }
+      },
+      "doubled_fees_and_slippage": {
+        "initial_equity_usdt": "20000.0",
+        "ending_equity_usdt": "17781.01310912607449482142",
+        "net_pnl_before_funding_usdt": "-2218.98689087392550517858",
+        "net_return_before_funding_pct": "-11.094934",
+        "maximum_event_path_drawdown_pct": "11.165803",
+        "first_stage_entries": {
+          "long": 22,
+          "short": 18
+        },
+        "stage_2_add_fills": 2,
+        "stage_2_adds_by_asset": {
+          "BTC": 1,
+          "TRX": 1
+        },
+        "stage_3_or_later_fills": 0,
+        "filled_entry_tranches_total": 42,
+        "distinct_completed_positions": 40,
+        "open_positions_at_end": 0,
+        "pnl_reconciliation_status": "RECONCILED_EX_FUNDING",
+        "pnl_reconciliation_difference_usdt": "0.00000000000000000000",
+        "event_stream_sha256": "3ac536167c09b9296d2f63ed47733446654c0f60539b300bf7f5d69f8ae80c7d",
+        "filled_tranches_by_stage": {
+          "stage_1": 40,
+          "stage_2": 2
+        }
+      },
+      "funnel": {
+        "daily_rows": 13485,
+        "valid_90_day_windows": 11969,
+        "long_liquidation_stress_flags": 847,
+        "short_liquidation_stress_flags": 798,
+        "qualified_source_events": 179,
+        "stage_one_confirmation_intents": 57,
+        "unique_stage_one_setups": 54,
+        "all_confirmation_intents": 60,
+        "in_window_router_rejections": 10,
+        "outside_window_router_rejections": 0,
+        "outside_window_intents_suppressed": 1,
+        "submitted_fill_attempts": 60,
+        "filled_tranches": 42,
+        "fill_rejections": 18,
+        "missing_h4_oi_endpoints": 59,
+        "completed_positions": 40
+      }
+    },
+    {
+      "profile": "DAILY_MA_CONTEXT",
+      "baseline_alias": false,
+      "base_costs": {
+        "initial_equity_usdt": "20000.0",
+        "ending_equity_usdt": "18838.33132524557023007097",
+        "net_pnl_before_funding_usdt": "-1161.66867475442976992903",
+        "net_return_before_funding_pct": "-5.808343",
+        "maximum_event_path_drawdown_pct": "8.778002",
+        "first_stage_entries": {
+          "long": 22,
+          "short": 18
+        },
+        "stage_2_add_fills": 1,
+        "stage_2_adds_by_asset": {
+          "BTC": 1
+        },
+        "stage_3_or_later_fills": 0,
+        "filled_entry_tranches_total": 41,
+        "distinct_completed_positions": 40,
+        "open_positions_at_end": 0,
+        "pnl_reconciliation_status": "RECONCILED_EX_FUNDING",
+        "pnl_reconciliation_difference_usdt": "0.00000000000000000000",
+        "event_stream_sha256": "bf1013cc784bb14c7c364e58ebcb1f2f8aef5ace5294ff035171f3b66cc8624c",
+        "filled_tranches_by_stage": {
+          "stage_1": 40,
+          "stage_2": 1
+        }
+      },
+      "doubled_fees_and_slippage": {
+        "initial_equity_usdt": "20000.0",
+        "ending_equity_usdt": "18056.57871055538240795808",
+        "net_pnl_before_funding_usdt": "-1943.42128944461759204192",
+        "net_return_before_funding_pct": "-9.717106",
+        "maximum_event_path_drawdown_pct": "10.027894",
+        "first_stage_entries": {
+          "long": 22,
+          "short": 18
+        },
+        "stage_2_add_fills": 1,
+        "stage_2_adds_by_asset": {
+          "BTC": 1
+        },
+        "stage_3_or_later_fills": 0,
+        "filled_entry_tranches_total": 41,
+        "distinct_completed_positions": 40,
+        "open_positions_at_end": 0,
+        "pnl_reconciliation_status": "RECONCILED_EX_FUNDING",
+        "pnl_reconciliation_difference_usdt": "0.00000000000000000000",
+        "event_stream_sha256": "ddc564fe94a1675b2ea4e97cb496f0803bfb2d1b084e7ec351e4e3e4b204f2c6",
+        "filled_tranches_by_stage": {
+          "stage_1": 40,
+          "stage_2": 1
+        }
+      },
+      "funnel": {
+        "daily_rows": 13485,
+        "valid_90_day_windows": 11969,
+        "long_liquidation_stress_flags": 847,
+        "short_liquidation_stress_flags": 798,
+        "qualified_source_events": 179,
+        "stage_one_confirmation_intents": 57,
+        "unique_stage_one_setups": 54,
+        "all_confirmation_intents": 58,
+        "in_window_router_rejections": 13,
+        "outside_window_router_rejections": 0,
+        "outside_window_intents_suppressed": 1,
+        "submitted_fill_attempts": 58,
+        "filled_tranches": 41,
+        "fill_rejections": 17,
+        "missing_h4_oi_endpoints": 59,
+        "completed_positions": 40
+      }
+    },
+    {
+      "profile": "DAILY_BOTH_CONTEXT",
+      "baseline_alias": false,
+      "base_costs": {
+        "initial_equity_usdt": "20000.0",
+        "ending_equity_usdt": "18838.33132524557023007097",
+        "net_pnl_before_funding_usdt": "-1161.66867475442976992903",
+        "net_return_before_funding_pct": "-5.808343",
+        "maximum_event_path_drawdown_pct": "8.778002",
+        "first_stage_entries": {
+          "long": 22,
+          "short": 18
+        },
+        "stage_2_add_fills": 1,
+        "stage_2_adds_by_asset": {
+          "BTC": 1
+        },
+        "stage_3_or_later_fills": 0,
+        "filled_entry_tranches_total": 41,
+        "distinct_completed_positions": 40,
+        "open_positions_at_end": 0,
+        "pnl_reconciliation_status": "RECONCILED_EX_FUNDING",
+        "pnl_reconciliation_difference_usdt": "0.00000000000000000000",
+        "event_stream_sha256": "bf1013cc784bb14c7c364e58ebcb1f2f8aef5ace5294ff035171f3b66cc8624c",
+        "filled_tranches_by_stage": {
+          "stage_1": 40,
+          "stage_2": 1
+        }
+      },
+      "doubled_fees_and_slippage": {
+        "initial_equity_usdt": "20000.0",
+        "ending_equity_usdt": "18056.57871055538240795808",
+        "net_pnl_before_funding_usdt": "-1943.42128944461759204192",
+        "net_return_before_funding_pct": "-9.717106",
+        "maximum_event_path_drawdown_pct": "10.027894",
+        "first_stage_entries": {
+          "long": 22,
+          "short": 18
+        },
+        "stage_2_add_fills": 1,
+        "stage_2_adds_by_asset": {
+          "BTC": 1
+        },
+        "stage_3_or_later_fills": 0,
+        "filled_entry_tranches_total": 41,
+        "distinct_completed_positions": 40,
+        "open_positions_at_end": 0,
+        "pnl_reconciliation_status": "RECONCILED_EX_FUNDING",
+        "pnl_reconciliation_difference_usdt": "0.00000000000000000000",
+        "event_stream_sha256": "ddc564fe94a1675b2ea4e97cb496f0803bfb2d1b084e7ec351e4e3e4b204f2c6",
+        "filled_tranches_by_stage": {
+          "stage_1": 40,
+          "stage_2": 1
+        }
+      },
+      "funnel": {
+        "daily_rows": 13485,
+        "valid_90_day_windows": 11969,
+        "long_liquidation_stress_flags": 847,
+        "short_liquidation_stress_flags": 798,
+        "qualified_source_events": 179,
+        "stage_one_confirmation_intents": 57,
+        "unique_stage_one_setups": 54,
+        "all_confirmation_intents": 58,
+        "in_window_router_rejections": 13,
+        "outside_window_router_rejections": 0,
+        "outside_window_intents_suppressed": 1,
+        "submitted_fill_attempts": 58,
+        "filled_tranches": 41,
+        "fill_rejections": 17,
+        "missing_h4_oi_endpoints": 59,
+        "completed_positions": 40
+      }
+    }
+  ],
+  "entry_and_add_breakdown": {
+    "first_stage_entries_by_asset": [
+      {
+        "asset": "BTC",
+        "long_entries": 3,
+        "short_entries": 5,
+        "total_first_entries": 8
+      },
+      {
+        "asset": "ETH",
+        "long_entries": 3,
+        "short_entries": 4,
+        "total_first_entries": 7
+      },
+      {
+        "asset": "SOL",
+        "long_entries": 1,
+        "short_entries": 3,
+        "total_first_entries": 4
+      },
+      {
+        "asset": "AAVE",
+        "long_entries": 4,
+        "short_entries": 1,
+        "total_first_entries": 5
+      },
+      {
+        "asset": "UNI",
+        "long_entries": 1,
+        "short_entries": 1,
+        "total_first_entries": 2
+      },
+      {
+        "asset": "BNB",
+        "long_entries": 3,
+        "short_entries": 1,
+        "total_first_entries": 4
+      },
+      {
+        "asset": "LINK",
+        "long_entries": 2,
+        "short_entries": 0,
+        "total_first_entries": 2
+      },
+      {
+        "asset": "ZEC",
+        "long_entries": 2,
+        "short_entries": 0,
+        "total_first_entries": 2
+      },
+      {
+        "asset": "TRX",
+        "long_entries": 3,
+        "short_entries": 3,
+        "total_first_entries": 6
+      }
+    ],
+    "stage_2_adds_by_profile_asset": {
+      "BASELINE_V004": {},
+      "POST_SHOCK_ENTRY": {},
+      "H4_STRUCTURAL_STOP": {
+        "TRX": 1
+      },
+      "REFRESHED_STAGING": {
+        "BTC": 1,
+        "TRX": 1
+      },
+      "DAILY_RSI_CONTEXT": {
+        "BTC": 1,
+        "TRX": 1
+      },
+      "DAILY_MA_CONTEXT": {
+        "BTC": 1
+      },
+      "DAILY_BOTH_CONTEXT": {
+        "BTC": 1
+      }
+    },
+    "stage_3_or_later_fills_across_all_14_accounts": 0
+  },
+  "event_response": {
+    "event_anchor": "FIRST_OBSERVABLE_EVENT_AVAILABILITY",
+    "baseline_profile_for_shared_metrics": "BASELINE_V004",
+    "shared_across_all_seven_profiles": true,
+    "event_count": 179,
+    "market_wide_shock_cluster_count": 52,
+    "resampling_unit": "SHARED_MARKET_WIDE_SHOCK_CLUSTER",
+    "bootstrap_draws": 10000,
+    "bootstrap_seed": 20260921,
+    "independence_claim": false,
+    "by_horizon": [
+      {
+        "horizon_days": 1,
+        "opposite_shock": {
+          "observation_count": 179,
+          "valid_response_count": 179,
+          "cluster_observation_count": 52,
+          "mean_directional_return_pct": 0.65702,
+          "ci95_low_pct": -0.111795,
+          "ci95_high_pct": 1.393247,
+          "bootstrap_valid_draw_count": 10000,
+          "bootstrap_draws": 10000,
+          "bootstrap_seed": 20260921,
+          "resampling_unit": "SHARED_MARKET_WIDE_SHOCK_CLUSTER",
+          "independence_claim": false
+        },
+        "signed_shock": {
+          "observation_count": 179,
+          "valid_response_count": 179,
+          "cluster_observation_count": 52,
+          "mean_directional_return_pct": -0.65702,
+          "ci95_low_pct": -1.393247,
+          "ci95_high_pct": 0.111795,
+          "bootstrap_valid_draw_count": 10000,
+          "bootstrap_draws": 10000,
+          "bootstrap_seed": 20260921,
+          "resampling_unit": "SHARED_MARKET_WIDE_SHOCK_CLUSTER",
+          "independence_claim": false
+        }
+      },
+      {
+        "horizon_days": 3,
+        "opposite_shock": {
+          "observation_count": 179,
+          "valid_response_count": 179,
+          "cluster_observation_count": 52,
+          "mean_directional_return_pct": 0.639129,
+          "ci95_low_pct": -0.586305,
+          "ci95_high_pct": 2.240794,
+          "bootstrap_valid_draw_count": 10000,
+          "bootstrap_draws": 10000,
+          "bootstrap_seed": 20260921,
+          "resampling_unit": "SHARED_MARKET_WIDE_SHOCK_CLUSTER",
+          "independence_claim": false
+        },
+        "signed_shock": {
+          "observation_count": 179,
+          "valid_response_count": 179,
+          "cluster_observation_count": 52,
+          "mean_directional_return_pct": -0.639129,
+          "ci95_low_pct": -2.240794,
+          "ci95_high_pct": 0.586305,
+          "bootstrap_valid_draw_count": 10000,
+          "bootstrap_draws": 10000,
+          "bootstrap_seed": 20260921,
+          "resampling_unit": "SHARED_MARKET_WIDE_SHOCK_CLUSTER",
+          "independence_claim": false
+        }
+      },
+      {
+        "horizon_days": 7,
+        "opposite_shock": {
+          "observation_count": 179,
+          "valid_response_count": 179,
+          "cluster_observation_count": 52,
+          "mean_directional_return_pct": 1.218918,
+          "ci95_low_pct": -0.249762,
+          "ci95_high_pct": 2.833459,
+          "bootstrap_valid_draw_count": 10000,
+          "bootstrap_draws": 10000,
+          "bootstrap_seed": 20260921,
+          "resampling_unit": "SHARED_MARKET_WIDE_SHOCK_CLUSTER",
+          "independence_claim": false
+        },
+        "signed_shock": {
+          "observation_count": 179,
+          "valid_response_count": 179,
+          "cluster_observation_count": 52,
+          "mean_directional_return_pct": -1.218918,
+          "ci95_low_pct": -2.833459,
+          "ci95_high_pct": 0.249762,
+          "bootstrap_valid_draw_count": 10000,
+          "bootstrap_draws": 10000,
+          "bootstrap_seed": 20260921,
+          "resampling_unit": "SHARED_MARKET_WIDE_SHOCK_CLUSTER",
+          "independence_claim": false
+        }
+      }
+    ],
+    "seven_day_opposite_shock_asset_breakdown": [
+      {
+        "asset": "AAVE",
+        "event_count": 18,
+        "shock_cluster_count": 15,
+        "mean_7d_opposite_shock_return_pct": 2.751136
+      },
+      {
+        "asset": "BNB",
+        "event_count": 21,
+        "shock_cluster_count": 16,
+        "mean_7d_opposite_shock_return_pct": -0.514705
+      },
+      {
+        "asset": "BTC",
+        "event_count": 28,
+        "shock_cluster_count": 21,
+        "mean_7d_opposite_shock_return_pct": 1.559785
+      },
+      {
+        "asset": "ETH",
+        "event_count": 27,
+        "shock_cluster_count": 21,
+        "mean_7d_opposite_shock_return_pct": 1.368065
+      },
+      {
+        "asset": "LINK",
+        "event_count": 21,
+        "shock_cluster_count": 19,
+        "mean_7d_opposite_shock_return_pct": -0.890333
+      },
+      {
+        "asset": "SOL",
+        "event_count": 15,
+        "shock_cluster_count": 12,
+        "mean_7d_opposite_shock_return_pct": 1.111366
+      },
+      {
+        "asset": "TRX",
+        "event_count": 21,
+        "shock_cluster_count": 16,
+        "mean_7d_opposite_shock_return_pct": 0.805486
+      },
+      {
+        "asset": "UNI",
+        "event_count": 14,
+        "shock_cluster_count": 12,
+        "mean_7d_opposite_shock_return_pct": 2.729304
+      },
+      {
+        "asset": "ZEC",
+        "event_count": 14,
+        "shock_cluster_count": 12,
+        "mean_7d_opposite_shock_return_pct": 2.162054
+      }
+    ],
+    "event_anchor_branch_breakdown": [
+      {
+        "branch": "UNKNOWN_AT_EVENT_AVAILABILITY",
+        "observation_count": 179,
+        "valid_response_count": 179,
+        "cluster_observation_count": 52,
+        "mean_directional_return_fraction": 0.012189176540428118,
+        "missing_anchor_count": 0,
+        "missing_endpoint_count": 0,
+        "missing_intervening_hour_count": 0,
+        "unclustered_geometry_count": 0
+      }
+    ]
+  },
+  "routed_entry_response": {
+    "anchor": "FIRST_ROUTED_ENTRY_DECISION",
+    "metric": "ROUTED_DIRECTION",
+    "independence_claim": false,
+    "baseline_alias": {
+      "profile": "BASELINE_V004",
+      "routed_decision_count": 12,
+      "shock_cluster_count": 7,
+      "by_horizon": [
+        {
+          "horizon_days": 1,
+          "observation_count": 12,
+          "valid_response_count": 12,
+          "cluster_observation_count": 7,
+          "mean_directional_return_pct": -0.069604,
+          "ci95_low_pct": -1.982698,
+          "ci95_high_pct": 1.627885,
+          "bootstrap_valid_draw_count": 9998,
+          "bootstrap_draws": 10000,
+          "bootstrap_seed": 20260921,
+          "resampling_unit": "SHARED_MARKET_WIDE_SHOCK_CLUSTER",
+          "independence_claim": false
+        },
+        {
+          "horizon_days": 3,
+          "observation_count": 12,
+          "valid_response_count": 12,
+          "cluster_observation_count": 7,
+          "mean_directional_return_pct": 0.914073,
+          "ci95_low_pct": -1.888945,
+          "ci95_high_pct": 4.105634,
+          "bootstrap_valid_draw_count": 9998,
+          "bootstrap_draws": 10000,
+          "bootstrap_seed": 20260921,
+          "resampling_unit": "SHARED_MARKET_WIDE_SHOCK_CLUSTER",
+          "independence_claim": false
+        },
+        {
+          "horizon_days": 7,
+          "observation_count": 12,
+          "valid_response_count": 12,
+          "cluster_observation_count": 7,
+          "mean_directional_return_pct": 3.227975,
+          "ci95_low_pct": -3.185709,
+          "ci95_high_pct": 11.972011,
+          "bootstrap_valid_draw_count": 9998,
+          "bootstrap_draws": 10000,
+          "bootstrap_seed": 20260921,
+          "resampling_unit": "SHARED_MARKET_WIDE_SHOCK_CLUSTER",
+          "independence_claim": false
+        }
+      ],
+      "seven_day_branch_breakdown": [
+        {
+          "branch": "CONTINUATION",
+          "observation_count": 9,
+          "shock_cluster_count": 5,
+          "mean_7d_routed_direction_return_pct": -0.157949
+        },
+        {
+          "branch": "REVERSAL",
+          "observation_count": 3,
+          "shock_cluster_count": 3,
+          "mean_7d_routed_direction_return_pct": 6.101563
+        }
+      ],
+      "completed_positions_by_branch": [
+        {
+          "branch": "CONTINUATION",
+          "position_count": 8
+        }
+      ]
+    },
+    "new_profiles_all_share_identical_response_values": true,
+    "cross_profile_observations_are_not_independent_replicates": true,
+    "new_profiles": [
+      {
+        "profile": "POST_SHOCK_ENTRY",
+        "routed_decision_count": 54,
+        "shock_cluster_count": 32,
+        "by_horizon": [
+          {
+            "horizon_days": 1,
+            "observation_count": 54,
+            "valid_response_count": 54,
+            "cluster_observation_count": 32,
+            "mean_directional_return_pct": -1.510113,
+            "ci95_low_pct": -3.423303,
+            "ci95_high_pct": -0.06417,
+            "bootstrap_valid_draw_count": 10000,
+            "bootstrap_draws": 10000,
+            "bootstrap_seed": 20260921,
+            "resampling_unit": "SHARED_MARKET_WIDE_SHOCK_CLUSTER",
+            "independence_claim": false
+          },
+          {
+            "horizon_days": 3,
+            "observation_count": 54,
+            "valid_response_count": 54,
+            "cluster_observation_count": 32,
+            "mean_directional_return_pct": -1.214536,
+            "ci95_low_pct": -3.29089,
+            "ci95_high_pct": 0.653494,
+            "bootstrap_valid_draw_count": 10000,
+            "bootstrap_draws": 10000,
+            "bootstrap_seed": 20260921,
+            "resampling_unit": "SHARED_MARKET_WIDE_SHOCK_CLUSTER",
+            "independence_claim": false
+          },
+          {
+            "horizon_days": 7,
+            "observation_count": 54,
+            "valid_response_count": 54,
+            "cluster_observation_count": 32,
+            "mean_directional_return_pct": -2.65835,
+            "ci95_low_pct": -9.344489,
+            "ci95_high_pct": 3.055122,
+            "bootstrap_valid_draw_count": 10000,
+            "bootstrap_draws": 10000,
+            "bootstrap_seed": 20260921,
+            "resampling_unit": "SHARED_MARKET_WIDE_SHOCK_CLUSTER",
+            "independence_claim": false
+          }
+        ],
+        "seven_day_branch_breakdown": [
+          {
+            "branch": "CONTINUATION",
+            "observation_count": 27,
+            "shock_cluster_count": 20,
+            "mean_7d_routed_direction_return_pct": -5.34608
+          },
+          {
+            "branch": "REVERSAL",
+            "observation_count": 27,
+            "shock_cluster_count": 20,
+            "mean_7d_routed_direction_return_pct": 1.21282
+          }
+        ],
+        "completed_positions_by_branch": [
+          {
+            "branch": "CONTINUATION",
+            "position_count": 18
+          },
+          {
+            "branch": "REVERSAL",
+            "position_count": 22
+          }
+        ]
+      },
+      {
+        "profile": "H4_STRUCTURAL_STOP",
+        "routed_decision_count": 54,
+        "shock_cluster_count": 32,
+        "by_horizon": [
+          {
+            "horizon_days": 1,
+            "observation_count": 54,
+            "valid_response_count": 54,
+            "cluster_observation_count": 32,
+            "mean_directional_return_pct": -1.510113,
+            "ci95_low_pct": -3.423303,
+            "ci95_high_pct": -0.06417,
+            "bootstrap_valid_draw_count": 10000,
+            "bootstrap_draws": 10000,
+            "bootstrap_seed": 20260921,
+            "resampling_unit": "SHARED_MARKET_WIDE_SHOCK_CLUSTER",
+            "independence_claim": false
+          },
+          {
+            "horizon_days": 3,
+            "observation_count": 54,
+            "valid_response_count": 54,
+            "cluster_observation_count": 32,
+            "mean_directional_return_pct": -1.214536,
+            "ci95_low_pct": -3.29089,
+            "ci95_high_pct": 0.653494,
+            "bootstrap_valid_draw_count": 10000,
+            "bootstrap_draws": 10000,
+            "bootstrap_seed": 20260921,
+            "resampling_unit": "SHARED_MARKET_WIDE_SHOCK_CLUSTER",
+            "independence_claim": false
+          },
+          {
+            "horizon_days": 7,
+            "observation_count": 54,
+            "valid_response_count": 54,
+            "cluster_observation_count": 32,
+            "mean_directional_return_pct": -2.65835,
+            "ci95_low_pct": -9.344489,
+            "ci95_high_pct": 3.055122,
+            "bootstrap_valid_draw_count": 10000,
+            "bootstrap_draws": 10000,
+            "bootstrap_seed": 20260921,
+            "resampling_unit": "SHARED_MARKET_WIDE_SHOCK_CLUSTER",
+            "independence_claim": false
+          }
+        ],
+        "seven_day_branch_breakdown": [
+          {
+            "branch": "CONTINUATION",
+            "observation_count": 27,
+            "shock_cluster_count": 20,
+            "mean_7d_routed_direction_return_pct": -5.34608
+          },
+          {
+            "branch": "REVERSAL",
+            "observation_count": 27,
+            "shock_cluster_count": 20,
+            "mean_7d_routed_direction_return_pct": 1.21282
+          }
+        ],
+        "completed_positions_by_branch": [
+          {
+            "branch": "CONTINUATION",
+            "position_count": 18
+          },
+          {
+            "branch": "REVERSAL",
+            "position_count": 22
+          }
+        ]
+      },
+      {
+        "profile": "REFRESHED_STAGING",
+        "routed_decision_count": 54,
+        "shock_cluster_count": 32,
+        "by_horizon": [
+          {
+            "horizon_days": 1,
+            "observation_count": 54,
+            "valid_response_count": 54,
+            "cluster_observation_count": 32,
+            "mean_directional_return_pct": -1.510113,
+            "ci95_low_pct": -3.423303,
+            "ci95_high_pct": -0.06417,
+            "bootstrap_valid_draw_count": 10000,
+            "bootstrap_draws": 10000,
+            "bootstrap_seed": 20260921,
+            "resampling_unit": "SHARED_MARKET_WIDE_SHOCK_CLUSTER",
+            "independence_claim": false
+          },
+          {
+            "horizon_days": 3,
+            "observation_count": 54,
+            "valid_response_count": 54,
+            "cluster_observation_count": 32,
+            "mean_directional_return_pct": -1.214536,
+            "ci95_low_pct": -3.29089,
+            "ci95_high_pct": 0.653494,
+            "bootstrap_valid_draw_count": 10000,
+            "bootstrap_draws": 10000,
+            "bootstrap_seed": 20260921,
+            "resampling_unit": "SHARED_MARKET_WIDE_SHOCK_CLUSTER",
+            "independence_claim": false
+          },
+          {
+            "horizon_days": 7,
+            "observation_count": 54,
+            "valid_response_count": 54,
+            "cluster_observation_count": 32,
+            "mean_directional_return_pct": -2.65835,
+            "ci95_low_pct": -9.344489,
+            "ci95_high_pct": 3.055122,
+            "bootstrap_valid_draw_count": 10000,
+            "bootstrap_draws": 10000,
+            "bootstrap_seed": 20260921,
+            "resampling_unit": "SHARED_MARKET_WIDE_SHOCK_CLUSTER",
+            "independence_claim": false
+          }
+        ],
+        "seven_day_branch_breakdown": [
+          {
+            "branch": "CONTINUATION",
+            "observation_count": 27,
+            "shock_cluster_count": 20,
+            "mean_7d_routed_direction_return_pct": -5.34608
+          },
+          {
+            "branch": "REVERSAL",
+            "observation_count": 27,
+            "shock_cluster_count": 20,
+            "mean_7d_routed_direction_return_pct": 1.21282
+          }
+        ],
+        "completed_positions_by_branch": [
+          {
+            "branch": "CONTINUATION",
+            "position_count": 18
+          },
+          {
+            "branch": "REVERSAL",
+            "position_count": 22
+          }
+        ]
+      },
+      {
+        "profile": "DAILY_RSI_CONTEXT",
+        "routed_decision_count": 54,
+        "shock_cluster_count": 32,
+        "by_horizon": [
+          {
+            "horizon_days": 1,
+            "observation_count": 54,
+            "valid_response_count": 54,
+            "cluster_observation_count": 32,
+            "mean_directional_return_pct": -1.510113,
+            "ci95_low_pct": -3.423303,
+            "ci95_high_pct": -0.06417,
+            "bootstrap_valid_draw_count": 10000,
+            "bootstrap_draws": 10000,
+            "bootstrap_seed": 20260921,
+            "resampling_unit": "SHARED_MARKET_WIDE_SHOCK_CLUSTER",
+            "independence_claim": false
+          },
+          {
+            "horizon_days": 3,
+            "observation_count": 54,
+            "valid_response_count": 54,
+            "cluster_observation_count": 32,
+            "mean_directional_return_pct": -1.214536,
+            "ci95_low_pct": -3.29089,
+            "ci95_high_pct": 0.653494,
+            "bootstrap_valid_draw_count": 10000,
+            "bootstrap_draws": 10000,
+            "bootstrap_seed": 20260921,
+            "resampling_unit": "SHARED_MARKET_WIDE_SHOCK_CLUSTER",
+            "independence_claim": false
+          },
+          {
+            "horizon_days": 7,
+            "observation_count": 54,
+            "valid_response_count": 54,
+            "cluster_observation_count": 32,
+            "mean_directional_return_pct": -2.65835,
+            "ci95_low_pct": -9.344489,
+            "ci95_high_pct": 3.055122,
+            "bootstrap_valid_draw_count": 10000,
+            "bootstrap_draws": 10000,
+            "bootstrap_seed": 20260921,
+            "resampling_unit": "SHARED_MARKET_WIDE_SHOCK_CLUSTER",
+            "independence_claim": false
+          }
+        ],
+        "seven_day_branch_breakdown": [
+          {
+            "branch": "CONTINUATION",
+            "observation_count": 27,
+            "shock_cluster_count": 20,
+            "mean_7d_routed_direction_return_pct": -5.34608
+          },
+          {
+            "branch": "REVERSAL",
+            "observation_count": 27,
+            "shock_cluster_count": 20,
+            "mean_7d_routed_direction_return_pct": 1.21282
+          }
+        ],
+        "completed_positions_by_branch": [
+          {
+            "branch": "CONTINUATION",
+            "position_count": 18
+          },
+          {
+            "branch": "REVERSAL",
+            "position_count": 22
+          }
+        ]
+      },
+      {
+        "profile": "DAILY_MA_CONTEXT",
+        "routed_decision_count": 54,
+        "shock_cluster_count": 32,
+        "by_horizon": [
+          {
+            "horizon_days": 1,
+            "observation_count": 54,
+            "valid_response_count": 54,
+            "cluster_observation_count": 32,
+            "mean_directional_return_pct": -1.510113,
+            "ci95_low_pct": -3.423303,
+            "ci95_high_pct": -0.06417,
+            "bootstrap_valid_draw_count": 10000,
+            "bootstrap_draws": 10000,
+            "bootstrap_seed": 20260921,
+            "resampling_unit": "SHARED_MARKET_WIDE_SHOCK_CLUSTER",
+            "independence_claim": false
+          },
+          {
+            "horizon_days": 3,
+            "observation_count": 54,
+            "valid_response_count": 54,
+            "cluster_observation_count": 32,
+            "mean_directional_return_pct": -1.214536,
+            "ci95_low_pct": -3.29089,
+            "ci95_high_pct": 0.653494,
+            "bootstrap_valid_draw_count": 10000,
+            "bootstrap_draws": 10000,
+            "bootstrap_seed": 20260921,
+            "resampling_unit": "SHARED_MARKET_WIDE_SHOCK_CLUSTER",
+            "independence_claim": false
+          },
+          {
+            "horizon_days": 7,
+            "observation_count": 54,
+            "valid_response_count": 54,
+            "cluster_observation_count": 32,
+            "mean_directional_return_pct": -2.65835,
+            "ci95_low_pct": -9.344489,
+            "ci95_high_pct": 3.055122,
+            "bootstrap_valid_draw_count": 10000,
+            "bootstrap_draws": 10000,
+            "bootstrap_seed": 20260921,
+            "resampling_unit": "SHARED_MARKET_WIDE_SHOCK_CLUSTER",
+            "independence_claim": false
+          }
+        ],
+        "seven_day_branch_breakdown": [
+          {
+            "branch": "CONTINUATION",
+            "observation_count": 27,
+            "shock_cluster_count": 20,
+            "mean_7d_routed_direction_return_pct": -5.34608
+          },
+          {
+            "branch": "REVERSAL",
+            "observation_count": 27,
+            "shock_cluster_count": 20,
+            "mean_7d_routed_direction_return_pct": 1.21282
+          }
+        ],
+        "completed_positions_by_branch": [
+          {
+            "branch": "CONTINUATION",
+            "position_count": 18
+          },
+          {
+            "branch": "REVERSAL",
+            "position_count": 22
+          }
+        ]
+      },
+      {
+        "profile": "DAILY_BOTH_CONTEXT",
+        "routed_decision_count": 54,
+        "shock_cluster_count": 32,
+        "by_horizon": [
+          {
+            "horizon_days": 1,
+            "observation_count": 54,
+            "valid_response_count": 54,
+            "cluster_observation_count": 32,
+            "mean_directional_return_pct": -1.510113,
+            "ci95_low_pct": -3.423303,
+            "ci95_high_pct": -0.06417,
+            "bootstrap_valid_draw_count": 10000,
+            "bootstrap_draws": 10000,
+            "bootstrap_seed": 20260921,
+            "resampling_unit": "SHARED_MARKET_WIDE_SHOCK_CLUSTER",
+            "independence_claim": false
+          },
+          {
+            "horizon_days": 3,
+            "observation_count": 54,
+            "valid_response_count": 54,
+            "cluster_observation_count": 32,
+            "mean_directional_return_pct": -1.214536,
+            "ci95_low_pct": -3.29089,
+            "ci95_high_pct": 0.653494,
+            "bootstrap_valid_draw_count": 10000,
+            "bootstrap_draws": 10000,
+            "bootstrap_seed": 20260921,
+            "resampling_unit": "SHARED_MARKET_WIDE_SHOCK_CLUSTER",
+            "independence_claim": false
+          },
+          {
+            "horizon_days": 7,
+            "observation_count": 54,
+            "valid_response_count": 54,
+            "cluster_observation_count": 32,
+            "mean_directional_return_pct": -2.65835,
+            "ci95_low_pct": -9.344489,
+            "ci95_high_pct": 3.055122,
+            "bootstrap_valid_draw_count": 10000,
+            "bootstrap_draws": 10000,
+            "bootstrap_seed": 20260921,
+            "resampling_unit": "SHARED_MARKET_WIDE_SHOCK_CLUSTER",
+            "independence_claim": false
+          }
+        ],
+        "seven_day_branch_breakdown": [
+          {
+            "branch": "CONTINUATION",
+            "observation_count": 27,
+            "shock_cluster_count": 20,
+            "mean_7d_routed_direction_return_pct": -5.34608
+          },
+          {
+            "branch": "REVERSAL",
+            "observation_count": 27,
+            "shock_cluster_count": 20,
+            "mean_7d_routed_direction_return_pct": 1.21282
+          }
+        ],
+        "completed_positions_by_branch": [
+          {
+            "branch": "CONTINUATION",
+            "position_count": 18
+          },
+          {
+            "branch": "REVERSAL",
+            "position_count": 22
+          }
+        ]
+      }
+    ],
+    "note": "Each of six new profiles repeats the same 54 routed-decision/32-shock-cluster response cohort and exact response values; do not multiply the observations across profiles. The nominal one-day 95% CI is not multiplicity-adjusted and is not a selected-edge claim."
+  },
+  "dependence_and_power": {
+    "qualified_event_count": 179,
+    "market_wide_shock_cluster_count": 52,
+    "position_record_count_across_profiles": 248,
+    "position_overlap_dependence_component_count": 27,
+    "independent_episode_claim": false,
+    "precommit_minimum_effective_independent_episodes": 30,
+    "precommit_minimum_completed_positions_per_branch": 20,
+    "outer_folds_required_by_precommit": 8,
+    "outer_fold_validation_run": false,
+    "formal_familywise_p_value_and_incremental_p20_gates_run": false,
+    "routed_entry_decision_and_completed_position_counts_by_profile": [
+      {
+        "profile": "BASELINE_V004",
+        "routed_decision_count": 12,
+        "routed_decision_shock_cluster_count": 7,
+        "routed_decisions_by_branch": [
+          {
+            "branch": "CONTINUATION",
+            "observation_count": 9,
+            "shock_cluster_count": 5
+          },
+          {
+            "branch": "REVERSAL",
+            "observation_count": 3,
+            "shock_cluster_count": 3
+          }
+        ],
+        "completed_position_count": 8,
+        "completed_positions_by_branch": [
+          {
+            "branch": "CONTINUATION",
+            "position_count": 8
+          }
+        ]
+      },
+      {
+        "profile": "POST_SHOCK_ENTRY",
+        "routed_decision_count": 54,
+        "routed_decision_shock_cluster_count": 32,
+        "routed_decisions_by_branch": [
+          {
+            "branch": "CONTINUATION",
+            "observation_count": 27,
+            "shock_cluster_count": 20
+          },
+          {
+            "branch": "REVERSAL",
+            "observation_count": 27,
+            "shock_cluster_count": 20
+          }
+        ],
+        "completed_position_count": 40,
+        "completed_positions_by_branch": [
+          {
+            "branch": "CONTINUATION",
+            "position_count": 18
+          },
+          {
+            "branch": "REVERSAL",
+            "position_count": 22
+          }
+        ]
+      },
+      {
+        "profile": "H4_STRUCTURAL_STOP",
+        "routed_decision_count": 54,
+        "routed_decision_shock_cluster_count": 32,
+        "routed_decisions_by_branch": [
+          {
+            "branch": "CONTINUATION",
+            "observation_count": 27,
+            "shock_cluster_count": 20
+          },
+          {
+            "branch": "REVERSAL",
+            "observation_count": 27,
+            "shock_cluster_count": 20
+          }
+        ],
+        "completed_position_count": 40,
+        "completed_positions_by_branch": [
+          {
+            "branch": "CONTINUATION",
+            "position_count": 18
+          },
+          {
+            "branch": "REVERSAL",
+            "position_count": 22
+          }
+        ]
+      },
+      {
+        "profile": "REFRESHED_STAGING",
+        "routed_decision_count": 54,
+        "routed_decision_shock_cluster_count": 32,
+        "routed_decisions_by_branch": [
+          {
+            "branch": "CONTINUATION",
+            "observation_count": 27,
+            "shock_cluster_count": 20
+          },
+          {
+            "branch": "REVERSAL",
+            "observation_count": 27,
+            "shock_cluster_count": 20
+          }
+        ],
+        "completed_position_count": 40,
+        "completed_positions_by_branch": [
+          {
+            "branch": "CONTINUATION",
+            "position_count": 18
+          },
+          {
+            "branch": "REVERSAL",
+            "position_count": 22
+          }
+        ]
+      },
+      {
+        "profile": "DAILY_RSI_CONTEXT",
+        "routed_decision_count": 54,
+        "routed_decision_shock_cluster_count": 32,
+        "routed_decisions_by_branch": [
+          {
+            "branch": "CONTINUATION",
+            "observation_count": 27,
+            "shock_cluster_count": 20
+          },
+          {
+            "branch": "REVERSAL",
+            "observation_count": 27,
+            "shock_cluster_count": 20
+          }
+        ],
+        "completed_position_count": 40,
+        "completed_positions_by_branch": [
+          {
+            "branch": "CONTINUATION",
+            "position_count": 18
+          },
+          {
+            "branch": "REVERSAL",
+            "position_count": 22
+          }
+        ]
+      },
+      {
+        "profile": "DAILY_MA_CONTEXT",
+        "routed_decision_count": 54,
+        "routed_decision_shock_cluster_count": 32,
+        "routed_decisions_by_branch": [
+          {
+            "branch": "CONTINUATION",
+            "observation_count": 27,
+            "shock_cluster_count": 20
+          },
+          {
+            "branch": "REVERSAL",
+            "observation_count": 27,
+            "shock_cluster_count": 20
+          }
+        ],
+        "completed_position_count": 40,
+        "completed_positions_by_branch": [
+          {
+            "branch": "CONTINUATION",
+            "position_count": 18
+          },
+          {
+            "branch": "REVERSAL",
+            "position_count": 22
+          }
+        ]
+      },
+      {
+        "profile": "DAILY_BOTH_CONTEXT",
+        "routed_decision_count": 54,
+        "routed_decision_shock_cluster_count": 32,
+        "routed_decisions_by_branch": [
+          {
+            "branch": "CONTINUATION",
+            "observation_count": 27,
+            "shock_cluster_count": 20
+          },
+          {
+            "branch": "REVERSAL",
+            "observation_count": 27,
+            "shock_cluster_count": 20
+          }
+        ],
+        "completed_position_count": 40,
+        "completed_positions_by_branch": [
+          {
+            "branch": "CONTINUATION",
+            "position_count": 18
+          },
+          {
+            "branch": "REVERSAL",
+            "position_count": 22
+          }
+        ]
+      }
+    ],
+    "routed_entry_samples_by_branch_scope": "Counts are separated by profile and by stage: routed decisions are not completed positions; the six new profiles share the same 54/32 decision cohort.",
+    "effective_independent_sample_size_qualified": false,
+    "position_overlap_components_are_not_effective_n": true,
+    "component_count_reference_note": "27 overlap components are fewer than the 30 effective-episode reference threshold, but component count is descriptive and is not a qualified effective independent N."
+  },
+  "data_coverage": {
+    "retained_hourly_bars_per_asset": 36024,
+    "retained_hourly_internal_gaps": 0,
+    "daily_context_warmup_expected_h1_bars": 28512,
+    "daily_context_warmup_observed_h1_bars": 28368,
+    "daily_context_warmup_missing_h1_bars": 144,
+    "daily_context_warmup_missing_intervals": 3,
+    "daily_context_complete_days": 14691,
+    "rsi14_available_days": 14565,
+    "sma200_available_days": 12900,
+    "warmup_missing_by_asset": {
+      "SOL": {
+        "missing_h1_bars": 48,
+        "missing_intervals": 1,
+        "first_open": "2022-04-03T00:00:00Z"
+      },
+      "ZEC": {
+        "missing_h1_bars": 48,
+        "missing_intervals": 1,
+        "first_open": "2022-04-03T00:00:00Z"
+      },
+      "TRX": {
+        "missing_h1_bars": 48,
+        "missing_intervals": 1,
+        "first_open": "2022-04-03T00:00:00Z"
+      }
+    },
+    "source_vintages_point_in_time_verified": false
+  },
+  "independent_review": {
+    "accounts_and_fill_traces_audited": 14,
+    "profiles_including_doubled_cost_sensitivity": 14,
+    "reconciled_accounts": 14,
+    "all_account_ledgers_reconciled_ex_funding": true,
+    "production_source_and_executor_binding": "the run executor JAR is bound by retained receipt and source hashes",
+    "reconciliation_tolerance_usdt_below": 1e-08,
+    "reconciliation_claim": "All 14 serialized ledgers report zero ex-funding reconciliation difference; independent review audited account and fill traces within a tolerance below 1e-8 USDT."
+  },
+  "known_limitations": [
+    "Historical Binance archive vintages are retrospective; source hashes do not prove publication time. Coinalyze daily liquidation publication/revision timing is unqualified; the t+48h availability rule is a development assumption.",
+    "Daily-context warmup is missing 144 leading H1 hours in SOL, ZEC and TRX; missingness is preserved, and context does not carry across an incomplete day.",
+    "Contract sizes, fees, slippage, maintenance margin and liquidation fees are frozen approximations, not verified historical exchange metadata.",
+    "Inherited reversal logic does not latch a prior recovery-target/midpoint touch before the current confirmation bar; this ambiguity was preserved, not corrected or tested here.",
+    "Funding is excluded and is not treated as zero.",
+    "Hourly OHLC approximates execution and is also used as a trade-price mark proxy.",
+    "The 1% prior-hour base-volume capacity assumption is a proxy, not instantaneous liquidity.",
+    "Precommit statistical rejection gates, eight outer folds, and sealed or forward validation were not run; no profile is promoted."
+  ],
+  "source_receipts": {
+    "exploratory_policy": {
+      "path": "docs/research/liquidation-exploratory-v005/exploratory-policy.json",
+      "sha256": "cbc554e7982c14c633c929536f6a9483411d6b873d7d0040a45e2b8046c2ae21"
+    },
+    "frozen_precommit": {
+      "path": "docs/research/liquidation-exploratory-v005/frozen-precommit.json",
+      "sha256": "52a5cb0361096d4ba13c4a7b74fa6576c8935658771df90c7021706510179cc1"
+    },
+    "policy_freeze_manifest": {
+      "path": "docs/research/liquidation-exploratory-v005/FREEZE-MANIFEST.json",
+      "sha256": "2585c69ed2044cb65fb27b26157896c1d482a41adb3903cb076f52300d0af80d"
+    },
+    "input_manifest": {
+      "path": ".research-run/liquidation-exploratory-v005/input-manifest.json",
+      "sha256": "c72cce0d621e0de9c4a41f1bdebc65b8adfb6b32db8aa0765efb7e89f94d66fc"
+    },
+    "outer_input_freeze": {
+      "path": ".research-run/liquidation-exploratory-v005/data-freeze.json",
+      "sha256": "22d26c4734bf4e862f234793043c5459a3900c3026056b4a5245dd2ac6917d41",
+      "receipt_entry_count": 108
+    },
+    "context_warmup_freeze": {
+      "path": ".research-run/liquidation-exploratory-v005/context-warmup/data-freeze.json",
+      "sha256": "5f418e3aaecb02fb62517310b0236f987d4ed780237c1adfa45b3dcc8e26682a"
+    },
+    "context_warmup_manifest": {
+      "path": ".research-run/liquidation-exploratory-v005/context-warmup/context-warmup-manifest.json",
+      "sha256": "c2e689573d5cd360e53b2f1daca7f8fa64d7bb8f9a5755924fb53b2415b07e0b"
+    },
+    "context_warmup_archive_manifest": {
+      "path": ".research-run/liquidation-exploratory-v005/context-warmup/archive-manifest.json",
+      "sha256": "5e29a45ee18d7fd263203e2a8cab79f421de5720faa92386e68a86e56ae0c443"
+    },
+    "run_attempt": {
+      "path": ".research-run/liquidation-exploratory-v005/runs/2026-09-22T10-05-35-237575Z-2c0ee15d-aa08-4fd7-be64-a141d84ffb99/attempt.json",
+      "sha256": "6bfc1fa3dc3d1e305811c947b8d2ffd5561f1703789970ac3f00af5e72fef1f9",
+      "source_hash_receipt_count": 107
+    },
+    "run_result": {
+      "path": ".research-run/liquidation-exploratory-v005/runs/2026-09-22T10-05-35-237575Z-2c0ee15d-aa08-4fd7-be64-a141d84ffb99/result.json",
+      "sha256": "f7766ccbd8bf54ad1d29dac59f25230d8d7fb56dddb019b9a361f564734bd8f9",
+      "content_sha256": "1e132300f3c5e4714097938a514648de1d2d92305dfe93568fd6c3bc787aedfe"
+    },
+    "run_completion": {
+      "path": ".research-run/liquidation-exploratory-v005/runs/2026-09-22T10-05-35-237575Z-2c0ee15d-aa08-4fd7-be64-a141d84ffb99/completion.json",
+      "sha256": "b4e174baa41484dcef13c782603c0f64e5cef9bc33cc96ae85a079278c0fe10b",
+      "content_sha256": "ab74489c6b8420d60089ca61039667b9e69f82c5b115bc8fefe175269f488f4c"
+    },
+    "executor_jar": {
+      "path": ".research-run/liquidation-exploratory-v005/executor/liquidation-daily-context-v005-001.jar",
+      "sha256": "7ae562430f8ad1449306238d83ff0aab30fcf7ffb615a5d5db8f004a20c1043b",
+      "retained_git_head": "2e549fb762eb6ce6a71cfbcc6e9667211709ccd3"
+    },
+    "executor_receipt": {
+      "path": ".research-run/liquidation-exploratory-v005/executor/liquidation-daily-context-v005-001-receipt.json",
+      "sha256": "607ee7584ec44d216b5048a39b7b380b5a47ea69910366a8ad3b3ef5fc64be4a",
+      "source_hashes": {
+        "analytics-research/src/main/java/com/tradinganalytics/research/v5/LiquidationStructureRouterV1.java": "8a34371007391655ed6516b367b76de311f735946829e4310df734a708b8cce0",
+        "analytics-research/src/main/java/com/tradinganalytics/research/v5/LiquidationDailyPriceContextV1.java": "2bf226561f0362def7a7443ba9dc30d71f5ddf7ed8299e18b86a4bccd85297c2",
+        "analytics-research/src/main/java/com/tradinganalytics/research/v5/LiquidationHourlyDevelopmentReplayV1.java": "cdddf2fccf06ee0170763a6b318713f51abc21d1117c89b174bae48749358b09",
+        "analytics-research/src/main/java/com/tradinganalytics/research/v5/LiquidationHourlyDiagnosticsV1.java": "b1d8afbf5f385681e14bcee5f370ba11f36fdc4ec7d76a94f8f2c8ce3db19d3b",
+        "analytics-research/src/main/java/com/tradinganalytics/research/v5/LiquidationPortfolioAccountingV1.java": "1583adea91eb7ae55efa6492b14071267907f8d627621dbd7d2e7839b6d675b7",
+        "analytics-research/src/main/java/com/tradinganalytics/research/v5/StrategyResearchV5CommandAdapter.java": "116a537989cecb44ef3cf998e6aee0278d207493f730760a0fa6a33d7d94ba1e"
+      }
+    }
+  },
+  "run_id": "2026-09-22T10-05-35-237575Z-2c0ee15d-aa08-4fd7-be64-a141d84ffb99",
+  "started_at": "2026-09-22T10:05:35.237575Z",
+  "finished_at": "2026-09-22T10:08:14.055898Z",
+  "full_result_status": "DEVELOPMENT_ONLY_EXPLORATORY",
+  "full_result_byte_sha256": "f7766ccbd8bf54ad1d29dac59f25230d8d7fb56dddb019b9a361f564734bd8f9",
+  "full_result_content_sha256": "1e132300f3c5e4714097938a514648de1d2d92305dfe93568fd6c3bc787aedfe",
+  "daily_context_design": {
+    "daily_bar": "Same-asset UTC daily close from exactly 24 consecutive hourly bars; complete-day close is available at next UTC midnight. Missing/incomplete day is unknown with no carry.",
+    "rsi14": {
+      "method": "Wilder RSI-14 seeded from first 14 daily changes on 15 contiguous closes, then recursively smoothed; gap resets seed.",
+      "long_support": "RSI > 50",
+      "short_support": "RSI < 50",
+      "neutral": "RSI == 50"
+    },
+    "sma200": {
+      "method": "Arithmetic mean of the latest 200 contiguous completed UTC daily closes; gap resets warmup.",
+      "long_support": "daily close > SMA-200",
+      "short_support": "daily close < SMA-200",
+      "neutral": "daily close == SMA-200"
+    },
+    "first_entry_gate": false,
+    "stage2_gate": "S&P 500 plus each enabled daily context must be neutral or supportive; unknown or opposing blocks only a new add.",
+    "stage3_gate": "S&P 500 plus each enabled daily context must be supportive.",
+    "existing_positions": "No context-triggered exit or stop change.",
+    "stage3_fill_count": 0
+  }
+}

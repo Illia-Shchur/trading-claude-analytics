@@ -1,0 +1,565 @@
+{
+  "schema": "strategy-precommit/1",
+  "precommit_id": "liquidation-exploratory-v003",
+  "created_at": "2026-09-21T05:43:28.410694+00:00",
+  "stage": "CORE_PREMISE",
+  "phenomenon": "Completed daily observed Binance forced-liquidation stress identifies an already known deleveraging episode. Subsequent 4h price acceptance or reclaim may distinguish continuation from reversal after conservative publication lag.",
+  "economic_behavioral_mechanism": "Margin-constrained participants close urgently. Some effects may persist after a stress day has completed and its daily aggregate is available. Subsequent confirmed structure can distinguish persistent repricing from temporary dislocation. Daily aggregation does not recover intraday cascade timing; the surviving delayed edge, if any, must be tested.",
+  "participants": {
+    "forced_actor": "Leveraged holders subject to margin calls or involuntary liquidation",
+    "edge_provider": "Price-insensitive forced closers and liquidity takers requiring immediate execution",
+    "edge_consumer": "Patient, risk-constrained entrant waiting for post-event structure"
+  },
+  "persistence": "Forced execution and temporarily constrained market-maker inventories can outlast instantaneous arbitrage; whether enough delay remains after hourly confirmation is the main empirical question.",
+  "crowding_decay": "Faster absorption, improved arbitrage or crowded reclaim/pullback entries can consume the effect before confirmation and make net expectancy nonpositive.",
+  "direction": "Conditional long and short: continuation follows the extreme move after acceptance; reversal opposes it after reclaim; ambiguous structure means no trade.",
+  "expression": "Binance USDT linear perpetuals on BTC, ETH, SOL and AAVE only; isolated margin; three risk-budgeted entries in later lifecycle stage.",
+  "holding_horizon": {
+    "min": 0,
+    "max": 60,
+    "unit": "days",
+    "clock": "From first fill; never reset by additions; stops may close immediately"
+  },
+  "expected_signal_frequency": {
+    "min": 1,
+    "max": 4,
+    "unit": "independent market episodes per month across all four assets",
+    "basis": "Inherited ex ante prediction; daily detection plus publication lag may make it fail. No observed candidate frequency or return used to set it."
+  },
+  "expected_win_rate": {
+    "min": 0.35,
+    "max": 0.55
+  },
+  "payoff": {
+    "average_win_r": {
+      "min": 1.3,
+      "max": 2.8
+    },
+    "average_loss_r": {
+      "min": -1.3,
+      "max": -0.7
+    },
+    "qualitative_shape": "Reversal returns capped by recovery target; continuation potentially right-skewed, with trailing giveback; gaps can lose more than 1R. R is initial tranche risk for core and frozen total position risk for staged comparisons; both also report dollars."
+  },
+  "regimes": {
+    "expected_to_work": [
+      "Liquidation pressure with subsequent stable absorption",
+      "Persistent directional order flow distinguishable by post-shock acceptance"
+    ],
+    "expected_to_fail": [
+      "Repeated alternating breakouts in illiquid chop",
+      "Fundamental insolvency or exchange failure",
+      "Confirmation delay consumes the entire dislocation",
+      "Missing or changing forced-order feed coverage"
+    ]
+  },
+  "failure_invalidation_mechanism": "After costs and episode dependence, acceptance/reclaim routing fails to improve over fixed-direction controls or fails across chronological blocks; alternatively required forced-flow evidence cannot be sourced with adequate availability and outage provenance.",
+  "required_inputs": [
+    {
+      "input_id": "price",
+      "evidence_family": "PRICE_STRUCTURE",
+      "role": "SETUP",
+      "availability": {
+        "rule": "Completed1h bars and UTC-aligned4h aggregation; first hourlyopen strictly after decision; pastvolume only."
+      },
+      "point_in_time": {
+        "status": "PROXY_DISCLOSED",
+        "completed_bar_only": true
+      }
+    },
+    {
+      "input_id": "open_interest",
+      "evidence_family": "LEVERAGE_UNWIND",
+      "role": "SETUP",
+      "availability": {
+        "rule": "Base-quantity OI timestamp strictly before decision; lag by at least one 5m interval; maximum staleness 10m. Archive publication is not historical availability proof."
+      },
+      "point_in_time": {
+        "status": "PROXY_DISCLOSED",
+        "completed_bar_only": true
+      }
+    },
+    {
+      "input_id": "liquidations",
+      "evidence_family": "FORCED_FLOW",
+      "role": "SETUP",
+      "availability": {
+        "rule": "Coinalyze Binance-specific daily USD long/short totals: bucket [t,t+24h); modeled availability t+48h. This is a disclosed development assumption, not verified historical publication. Never use intraday or incomplete-day aggregate."
+      },
+      "point_in_time": {
+        "status": "PROXY_DISCLOSED",
+        "completed_bar_only": true,
+        "historical_publication_verified": false,
+        "revision_vintages_verified": false
+      }
+    },
+    {
+      "input_id": "marks_contracts_costs",
+      "evidence_family": "EXECUTION_METADATA",
+      "role": "CORE",
+      "availability": {
+        "rule": "Accepted approximate contractsteps,minnotional,fees,slippage,maintenance and tradeOHLCmarkproxy; no exact exchange accuracy claim."
+      },
+      "point_in_time": {
+        "status": "PROXY_DISCLOSED",
+        "completed_bar_only": true
+      },
+      "usage": "execution_accounting_only"
+    },
+    {
+      "input_id": "sp500",
+      "evidence_family": "EQUITY_CONTEXT",
+      "role": "CONTEXT",
+      "availability": {
+        "rule": "Later-stage daily equity proxy only. Last independently timestamped available close, conservatively one additional US session lag; archive without availability provenance stays development-only."
+      },
+      "point_in_time": {
+        "status": "PROXY_DISCLOSED",
+        "completed_bar_only": true
+      }
+    }
+  ],
+  "falsifier": {
+    "test": "Exploratory characterization of fixed core/staged/staged-macro variants and1/3/7day post-availability responses. Parent always-continue/reverse and price+OI controls DEFERRED_NOT_TESTED; no claim routing beats unconditional controls.",
+    "null": "Descriptive null: no directional post-availability response and no positive pre-funding expectancy. Formal parent routing superiority null remains untested.",
+    "rejection_thresholds": {
+      "max_familywise_p_value": 0.05,
+      "minimum_bootstrap_p20_net_expectancy_r": 0,
+      "minimum_bootstrap_p20_incremental_expectancy_r": 0,
+      "minimum_effective_independent_episodes": 30,
+      "minimum_completed_positions_per_branch": 20,
+      "minimum_positive_outer_folds": 5,
+      "outer_folds": 8,
+      "maximum_portfolio_drawdown_pct": 30
+    },
+    "inconclusive_rule": "Below30groups limits inference, not exploratory execution. No promotion regardless metrics. Original thresholds reference-only."
+  },
+  "tradable_instrument_contract": {
+    "universe": "CRYPTO_ONLY",
+    "instruments": [
+      {
+        "asset": "btc",
+        "asset_class": "crypto",
+        "instrument_type": "perpetual",
+        "venue": "binance",
+        "symbol": "BTCUSDT",
+        "collateral": "USDT",
+        "margin_mode": "ISOLATED",
+        "funding_carry_treatment": "EXCLUDED_FROM_DEVELOPMENT_DIAGNOSTIC",
+        "funding_contract": {
+          "method": "excluded",
+          "unknown_settlement": "NOT_MODELLED",
+          "future_settlements_not_predictors": true
+        }
+      },
+      {
+        "asset": "eth",
+        "asset_class": "crypto",
+        "instrument_type": "perpetual",
+        "venue": "binance",
+        "symbol": "ETHUSDT",
+        "collateral": "USDT",
+        "margin_mode": "ISOLATED",
+        "funding_carry_treatment": "EXCLUDED_FROM_DEVELOPMENT_DIAGNOSTIC",
+        "funding_contract": {
+          "method": "excluded",
+          "unknown_settlement": "NOT_MODELLED",
+          "future_settlements_not_predictors": true
+        }
+      },
+      {
+        "asset": "sol",
+        "asset_class": "crypto",
+        "instrument_type": "perpetual",
+        "venue": "binance",
+        "symbol": "SOLUSDT",
+        "collateral": "USDT",
+        "margin_mode": "ISOLATED",
+        "funding_carry_treatment": "EXCLUDED_FROM_DEVELOPMENT_DIAGNOSTIC",
+        "funding_contract": {
+          "method": "excluded",
+          "unknown_settlement": "NOT_MODELLED",
+          "future_settlements_not_predictors": true
+        }
+      },
+      {
+        "asset": "aave",
+        "asset_class": "crypto",
+        "instrument_type": "perpetual",
+        "venue": "binance",
+        "symbol": "AAVEUSDT",
+        "collateral": "USDT",
+        "margin_mode": "ISOLATED",
+        "funding_carry_treatment": "EXCLUDED_FROM_DEVELOPMENT_DIAGNOSTIC",
+        "funding_contract": {
+          "method": "excluded",
+          "unknown_settlement": "NOT_MODELLED",
+          "future_settlements_not_predictors": true
+        }
+      }
+    ]
+  },
+  "trade_assets": [
+    "btc",
+    "eth",
+    "sol",
+    "aave"
+  ],
+  "non_crypto_context_only": [
+    {
+      "input_id": "sp500",
+      "asset": "SP500",
+      "asset_class": "index",
+      "role": "CONTEXT",
+      "context_only": true,
+      "tradable": false,
+      "trade": false
+    }
+  ],
+  "independence_replication_groups": [
+    "Chronological market episodes; group contemporaneous symbols and overlapping 4h/72h shocks",
+    "Eight quarterly forward blocks; purge full 60-day outcome overlap plus confirmation lag",
+    "BTC/ETH versus SOL/AAVE are dependence diagnostics, not independent crypto-beta replications",
+    "Long/short and continuation/reversal are mandatory report strata, not independent trials"
+  ],
+  "role_of_composite_score": "Deferred to a later incremental experiment only after a score-free baseline survives; no composite is used in this family version.",
+  "candidate_template": {
+    "id": "score-free-conditional-baseline",
+    "instrument": {
+      "asset": "btc",
+      "asset_class": "crypto",
+      "instrument_type": "perpetual",
+      "venue": "binance",
+      "symbol": "BTCUSDT",
+      "collateral": "USDT",
+      "margin_mode": "ISOLATED",
+      "funding_carry_treatment": "EXCLUDED_FROM_DEVELOPMENT_DIAGNOSTIC",
+      "funding_contract": {
+        "method": "excluded",
+        "unknown_settlement": "NOT_MODELLED",
+        "future_settlements_not_predictors": true
+      }
+    },
+    "asset_scope": [
+      "btc",
+      "eth",
+      "sol",
+      "aave"
+    ],
+    "description": "One fixed rule family; no candidate grid and no outcome optimization"
+  },
+  "feature_contract": {
+    "series": [
+      {
+        "series_id": "btc-binance-usdm-4h",
+        "asset": "btc",
+        "asset_class": "crypto",
+        "timeframe": "4h",
+        "context_only": false,
+        "tradable": true,
+        "point_in_time": {
+          "status": "UNKNOWN",
+          "completed_bar_only": true
+        }
+      },
+      {
+        "series_id": "btc-binance-usdm-1h",
+        "asset": "btc",
+        "asset_class": "crypto",
+        "timeframe": "1h",
+        "context_only": false,
+        "tradable": true,
+        "point_in_time": {
+          "status": "UNKNOWN",
+          "completed_bar_only": true
+        }
+      },
+      {
+        "series_id": "eth-binance-usdm-4h",
+        "asset": "eth",
+        "asset_class": "crypto",
+        "timeframe": "4h",
+        "context_only": false,
+        "tradable": true,
+        "point_in_time": {
+          "status": "UNKNOWN",
+          "completed_bar_only": true
+        }
+      },
+      {
+        "series_id": "eth-binance-usdm-1h",
+        "asset": "eth",
+        "asset_class": "crypto",
+        "timeframe": "1h",
+        "context_only": false,
+        "tradable": true,
+        "point_in_time": {
+          "status": "UNKNOWN",
+          "completed_bar_only": true
+        }
+      },
+      {
+        "series_id": "sol-binance-usdm-4h",
+        "asset": "sol",
+        "asset_class": "crypto",
+        "timeframe": "4h",
+        "context_only": false,
+        "tradable": true,
+        "point_in_time": {
+          "status": "UNKNOWN",
+          "completed_bar_only": true
+        }
+      },
+      {
+        "series_id": "sol-binance-usdm-1h",
+        "asset": "sol",
+        "asset_class": "crypto",
+        "timeframe": "1h",
+        "context_only": false,
+        "tradable": true,
+        "point_in_time": {
+          "status": "UNKNOWN",
+          "completed_bar_only": true
+        }
+      },
+      {
+        "series_id": "aave-binance-usdm-4h",
+        "asset": "aave",
+        "asset_class": "crypto",
+        "timeframe": "4h",
+        "context_only": false,
+        "tradable": true,
+        "point_in_time": {
+          "status": "UNKNOWN",
+          "completed_bar_only": true
+        }
+      },
+      {
+        "series_id": "aave-binance-usdm-1h",
+        "asset": "aave",
+        "asset_class": "crypto",
+        "timeframe": "1h",
+        "context_only": false,
+        "tradable": true,
+        "point_in_time": {
+          "status": "UNKNOWN",
+          "completed_bar_only": true
+        }
+      }
+    ],
+    "inputs": [
+      {
+        "input_id": "price",
+        "evidence_family": "PRICE_STRUCTURE",
+        "role": "SETUP",
+        "availability": {
+          "rule": "Completed1h bars and UTC-aligned4h aggregation; first hourlyopen strictly after decision; pastvolume only."
+        },
+        "point_in_time": {
+          "status": "PROXY_DISCLOSED",
+          "completed_bar_only": true
+        }
+      },
+      {
+        "input_id": "open_interest",
+        "evidence_family": "LEVERAGE_UNWIND",
+        "role": "SETUP",
+        "availability": {
+          "rule": "Base-quantity OI timestamp strictly before decision; lag by at least one 5m interval; maximum staleness 10m. Archive publication is not historical availability proof."
+        },
+        "point_in_time": {
+          "status": "PROXY_DISCLOSED",
+          "completed_bar_only": true
+        }
+      },
+      {
+        "input_id": "liquidations",
+        "evidence_family": "FORCED_FLOW",
+        "role": "SETUP",
+        "availability": {
+          "rule": "Coinalyze Binance-specific daily USD long/short totals: bucket [t,t+24h); modeled availability t+48h. This is a disclosed development assumption, not verified historical publication. Never use intraday or incomplete-day aggregate."
+        },
+        "point_in_time": {
+          "status": "PROXY_DISCLOSED",
+          "completed_bar_only": true,
+          "historical_publication_verified": false,
+          "revision_vintages_verified": false
+        }
+      },
+      {
+        "input_id": "marks_contracts_costs",
+        "evidence_family": "EXECUTION_METADATA",
+        "role": "CORE",
+        "availability": {
+          "rule": "Accepted approximate contractsteps,minnotional,fees,slippage,maintenance and tradeOHLCmarkproxy; no exact exchange accuracy claim."
+        },
+        "point_in_time": {
+          "status": "PROXY_DISCLOSED",
+          "completed_bar_only": true
+        },
+        "usage": "execution_accounting_only"
+      },
+      {
+        "input_id": "sp500",
+        "evidence_family": "EQUITY_CONTEXT",
+        "role": "CONTEXT",
+        "availability": {
+          "rule": "Later-stage daily equity proxy only. Last independently timestamped available close, conservatively one additional US session lag; archive without availability provenance stays development-only."
+        },
+        "point_in_time": {
+          "status": "PROXY_DISCLOSED",
+          "completed_bar_only": true
+        }
+      }
+    ]
+  },
+  "experiment": {
+    "evidence_phase": "DEVELOPMENT",
+    "ablation_role": "NO_SELECTION_SEARCH",
+    "required_assets": [
+      "btc",
+      "eth",
+      "sol",
+      "aave"
+    ],
+    "grid": {},
+    "acceptance": {
+      "robust_stats": {
+        "max_statistic_p_value": 0.05,
+        "minimum_bootstrap_p20_expectancy_r": 0,
+        "minimum_effective_independent_episode_count": 30,
+        "maximum_drawdown_r": 20,
+        "maximum_cost_r": 0.5
+      },
+      "plateau": {
+        "applicable": false,
+        "reason": "No parameter search in core; later searches require frozen topology and neighbour gates"
+      },
+      "stress": {
+        "required_scenarios": [
+          {
+            "id": "fee_slippage",
+            "multiplier": 2,
+            "minimum_expectancy_r": 0,
+            "minimum_observations": 30
+          },
+          {
+            "id": "funding_carry",
+            "multiplier": 2,
+            "credit_multiplier": 1,
+            "minimum_expectancy_r": 0,
+            "minimum_observations": 30
+          },
+          {
+            "id": "adverse_execution_gap",
+            "debit_r": 0.25,
+            "minimum_expectancy_r": 0,
+            "minimum_observations": 30
+          },
+          {
+            "id": "liquidity_capacity",
+            "maximum_participation_rate": 0.01,
+            "minimum_expectancy_r": 0,
+            "minimum_observations": 30
+          },
+          {
+            "id": "venue_outage_blackout",
+            "window_rule": "First 1h after every qualifying event, applied uniformly before outcomes; zero affected trades fails as no-op",
+            "minimum_expectancy_r": 0,
+            "minimum_observations": 30
+          }
+        ]
+      },
+      "portfolio": {
+        "minimum_accepted_trades": 60,
+        "maximum_drawdown_pct": 30,
+        "minimum_net_pnl": 0
+      }
+    }
+  },
+  "hypothesis_family": "liquidation-structure",
+  "feasibility": {
+    "status": "DEVELOPMENT",
+    "reason": "Accepted retrospective approximations; no promotion regardless results; measure coverage and exclude missing feature windows."
+  },
+  "user_constraints": {
+    "starting_equity_usdt": 20000,
+    "margin_fraction_cap": 1,
+    "position_risk_fraction_cap": 0.05,
+    "portfolio_risk_fraction_cap": 0.1,
+    "tranche_equity_risk_fractions": [
+      0.01,
+      0.015,
+      0.025
+    ],
+    "leverage_by_stage": [
+      2,
+      2,
+      3
+    ],
+    "max_holding_days": 60,
+    "funding_policy": "EXCLUDED; returns before funding, never net-of-all-costs",
+    "macro_additions": [
+      "not_required",
+      "neutral_or_supportive",
+      "supportive"
+    ],
+    "allocation": "first_confirmed_first_served",
+    "compute_hours_cap": 24,
+    "data_spend_cap": 0,
+    "scope": "historical_only"
+  },
+  "research_window": {
+    "source_start": "2022-08-11T00:00:00Z",
+    "source_end_exclusive": "2026-09-20T00:00:00Z",
+    "decision_start": "2022-11-11T00:00:00Z",
+    "decision_end_exclusive": "2026-07-15T00:00:00Z",
+    "execution_end_exclusive": "2026-09-20T00:00:00Z",
+    "development_end_exclusive": "2024-01-01T00:00:00Z",
+    "outer_test_start": "2024-01-01T00:00:00Z",
+    "outer_test_end_exclusive": "2026-01-01T00:00:00Z",
+    "late_extension_phase": "DEVELOPMENT_DIAGNOSTIC_ONLY_2026_NO_CONFIRMATION",
+    "minimum_purge_days": 67,
+    "embargo_days": 7,
+    "policy": "Common source inception plus strictly prior 90-day warmup and 48h modeled availability. Final eligible decisions leave full setup and 60-day holding maturity. No parameter optimization. If effective sample is insufficient report it; do not shrink purge."
+  },
+  "parent_precommit": {
+    "id": "liquidation-daily-stress-v002",
+    "content_sha256": "cfae45fac7678a913610c37c156b044ed733e3ecd5e45673b01e412f8eaca904",
+    "byte_sha256": "ee3489672c0cbf809a16b3c1c7d382efeb691a73a11da3527d722aa8d1da2703"
+  },
+  "revision_reason": "Owner authorizes hourly exploratory backtest below30groups, accepted daily liquidations and approximate metadata, no funding/minute marks, and fixed1/3/7day responses. Frozen before candidate outcomes.",
+  "daily_stress_contract": {
+    "schema": "liquidation-daily-stress-policy/1",
+    "assets": [
+      "BTC",
+      "ETH",
+      "SOL",
+      "AAVE"
+    ],
+    "venue": "BINANCE",
+    "market_type": "USDT_PERPETUAL",
+    "bucket_seconds": 86400,
+    "publication_delay_after_bucket_close_seconds": 86400,
+    "modeled_available_after_bucket_start_seconds": 172800,
+    "prior_contiguous_days": 90,
+    "percentile": 0.95,
+    "quantile_method": "nearest_rank",
+    "stress_comparison": "STRICT_GREATER_THAN_AND_POSITIVE",
+    "missing_policy": "BLOCK_WINDOW_NOT_ZERO",
+    "data_scope": "BINANCE_SPECIFIC_NOT_MARKET_WIDE",
+    "source_authority": "RETROSPECTIVE_PROXY_DISCLOSED",
+    "no_intraday_reconstruction": true
+  },
+  "exploratory_overrides": {
+    "precedence": "exploratory-policy.json overrides incompatible parent requirements only in this DEVELOPMENT successor; original frozen files unchanged",
+    "minimum_episodes_to_run": 0,
+    "promotion_allowed": false,
+    "funding": "EXCLUDED_NOT_OBSERVED_ZERO",
+    "execution": "NEXT_HOURLY_OPEN_STRICTLY_AFTER_DECISION",
+    "marks": "TRADE_OHLC_PROXY",
+    "stage_sequence": "Run all fixed variants regardless profitability; no survival-based selection",
+    "independence": "Feature-only marketshockclusters and actual holding-overlap components are descriptive, not asserted independentN;67daypurge retained",
+    "acceptance_and_stress": "All inherited acceptance gates and formalWFO statistics are reference-only; unavailable or omitted stresses NOT_RUN, never passed."
+  }
+}

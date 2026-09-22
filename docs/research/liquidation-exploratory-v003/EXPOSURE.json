@@ -1,0 +1,37 @@
+{
+  "schema": "liquidation-exploratory-exposure-receipt/1",
+  "family_id": "liquidation-structure",
+  "study_id": "liquidation-exploratory-v003",
+  "evidence_phase": "DEVELOPMENT",
+  "authoritative_search_ledger": false,
+  "prior_family_exposure_reset": false,
+  "entire_evaluated_window_exposed": true,
+  "source_start": "2022-08-11T00:00:00Z",
+  "source_end_exclusive": "2026-09-20T00:00:00Z",
+  "variants": [
+    "CORE_ONE_ENTRY",
+    "STAGED_NO_MACRO",
+    "STAGED_MACRO"
+  ],
+  "cost_sensitivity": "ALL_THREE_REPLAYED_WITH_DOUBLE_FEE_AND_SLIPPAGE",
+  "new_parameter_search": false,
+  "promotion_allowed": false,
+  "completed_runs": [
+    {
+      "run_id": "2026-09-21T06-45-24-479353Z-96f8a48b-a18d-4125-9646-152eb62831e8",
+      "started_at": "2026-09-21T06:45:24.479353Z",
+      "finished_at": "2026-09-21T06:45:54.328341Z",
+      "executor_jar_byte_sha256": "b2ff9abfb2d8276e102e964e9da6c643235e8bb0fe49983a138625a074d5ef8a",
+      "rerun_reason": "Correct Spring Boot outer executable identity resolution; prior launch failed before outcomes"
+    },
+    {
+      "run_id": "2026-09-21T06-54-44-023959Z-c25a6567-c717-448e-aef3-17a4e12702a5",
+      "started_at": "2026-09-21T06:54:44.023959Z",
+      "finished_at": "2026-09-21T06:55:14.375637Z",
+      "executor_jar_byte_sha256": "6221f8fd368aac9085ca99ea8a261bb224718f65ea23288e14c1dff76443e49f",
+      "rerun_reason": "Correct reporting only: closed-position unrealized PnL and event-versus-intent diagnostic metadata; unchanged strategy, data, fills and response calculations",
+      "canonical_reported_run": true
+    }
+  ],
+  "pre_outcome_launch_failure_retained": true
+}

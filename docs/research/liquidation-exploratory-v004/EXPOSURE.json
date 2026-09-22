@@ -1,0 +1,76 @@
+{
+  "schema": "liquidation-exploratory-exposure/1",
+  "experiment_id": "liquidation-exploratory-v004",
+  "evidence_phase": "DEVELOPMENT",
+  "predecessor_outcomes_exposed": true,
+  "predecessor_exposure": {
+    "path": "docs/research/liquidation-exploratory-v003/EXPOSURE.json",
+    "sha256": "c2991fd0595ce9ba414348c2230c49c5beaf9981919b480a2aafbb498ba4facd"
+  },
+  "variant_inventory": [
+    "CORE_ONE_ENTRY",
+    "STAGED_NO_MACRO",
+    "STAGED_MACRO"
+  ],
+  "cost_sensitivity": "doubled fees and slippage for all three variants",
+  "numeric_trading_rule_changes": false,
+  "outcome_optimization": false,
+  "holdout_reset": false,
+  "promotion_allowed": false,
+  "nonexecuting_launch_failure": {
+    "receipt": ".research-run/liquidation-exploratory-v004/verification/launch-001-failure.json",
+    "note": "Library jar lacks main manifest; failed before simulation."
+  },
+  "runs": [
+    {
+      "scope": "original-four-runs",
+      "run_id": "2026-09-21T16-27-53-560127Z-caf078f7-80cc-4978-ab9a-0f6acb115b73",
+      "status": "COMPLETED_OUTCOMES_VIEWED",
+      "receipt": ".research-run/liquidation-exploratory-v004/original-four-runs/2026-09-21T16-27-53-560127Z-caf078f7-80cc-4978-ab9a-0f6acb115b73/result.json",
+      "receipt_byte_sha256": "32a2d0ef6eace5f362053159ad0327d3fa2357e843af1f86e77cf9e6a4a0ae31",
+      "executor_sha256": "704d15a8b701223ca02e42558bd5150c9cbfa7d687806340056e8cbc5b24678f",
+      "error": null,
+      "note": "Retained; no research-exposure reset."
+    },
+    {
+      "scope": "original-four-runs",
+      "run_id": "2026-09-21T16-36-11-108323Z-5cbe83db-c6c2-48d1-a39e-814ebcd6d891",
+      "status": "COMPLETED_OUTCOMES_VIEWED",
+      "receipt": ".research-run/liquidation-exploratory-v004/original-four-runs/2026-09-21T16-36-11-108323Z-5cbe83db-c6c2-48d1-a39e-814ebcd6d891/result.json",
+      "receipt_byte_sha256": "d4e3b4eb0256f4484a6bb38a210bab9b58cadb296d027464657ec02dbf5882d9",
+      "executor_sha256": "229cbb2465338f8de65b4f8cb10be31a6470ece910c09497c4018eb99547b6d3",
+      "error": null,
+      "note": "Retained; no research-exposure reset."
+    },
+    {
+      "scope": "original-four-runs",
+      "run_id": "2026-09-21T17-12-15-468386Z-f97d095a-6d31-4233-9a31-420a00972e93",
+      "status": "COMPLETED_OUTCOMES_VIEWED",
+      "receipt": ".research-run/liquidation-exploratory-v004/original-four-runs/2026-09-21T17-12-15-468386Z-f97d095a-6d31-4233-9a31-420a00972e93/result.json",
+      "receipt_byte_sha256": "5391d33beda4abeb6d103f06c6d86bae0d950b5cda7af8ca37a4982db4196a03",
+      "executor_sha256": "6d5bd7f256c73875f4c1647b9e5cbeea89c49d502d1018170422c211b5da30f6",
+      "error": null,
+      "note": "Retained; no research-exposure reset."
+    },
+    {
+      "scope": "expanded-runs",
+      "run_id": "2026-09-21T16-42-43-767275Z-8ba29c4d-52aa-453d-ad09-16617827a013",
+      "status": "FAILED_BEFORE_COMPLETION_INTERNAL_SIMULATIONS_EVALUATED",
+      "receipt": ".research-run/liquidation-exploratory-v004/expanded-runs/2026-09-21T16-42-43-767275Z-8ba29c4d-52aa-453d-ad09-16617827a013/failure.json",
+      "receipt_byte_sha256": "7fe94327118c73b3774036da83989d176c9926035cf66945eb5f5a6d2acf8450",
+      "executor_sha256": null,
+      "error": "diagnostics require the frozen v003 DEVELOPMENT policy",
+      "note": "Retained; no research-exposure reset."
+    },
+    {
+      "scope": "expanded-runs",
+      "run_id": "2026-09-21T17-11-57-279757Z-89e6598f-b036-479c-97ce-4b524056d430",
+      "status": "COMPLETED_OUTCOMES_VIEWED",
+      "receipt": ".research-run/liquidation-exploratory-v004/expanded-runs/2026-09-21T17-11-57-279757Z-89e6598f-b036-479c-97ce-4b524056d430/result.json",
+      "receipt_byte_sha256": "012b2435756b362cd90ee160751f979bde72591b764f6c54662198a9239d142d",
+      "executor_sha256": "6d5bd7f256c73875f4c1647b9e5cbeea89c49d502d1018170422c211b5da30f6",
+      "error": null,
+      "note": "Retained; no research-exposure reset."
+    }
+  ]
+}

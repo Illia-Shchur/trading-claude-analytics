@@ -17,6 +17,7 @@ import java.math.BigDecimal;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
@@ -25,9 +26,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 /**
  * Causal feature-only event router for the frozen liquidation-structure v002 rules.
@@ -65,7 +68,8 @@ public final class LiquidationStructureRouterV1 {
     public static final double MAX_CHASE_ATR = 0.50;
     public static final double MACRO_THRESHOLD = 0.005;
 
-    private static final Set<String> ASSETS = Set.of("BTC", "ETH", "SOL", "AAVE");
+    public static final List<String> SUPPORTED_ASSET_ORDER = List.of("BTC", "ETH", "SOL", "AAVE", "UNI", "BNB", "LINK", "ZEC", "TRX");
+    private static final Set<String> ASSETS = Set.copyOf(SUPPORTED_ASSET_ORDER);
     private static final ZoneId NEW_YORK = ZoneId.of("America/New_York");
     private static final LocalTime NYSE_REGULAR_CLOSE = LocalTime.of(16, 0);
     private static final LocalTime NYSE_EARLY_CLOSE = LocalTime.of(13, 0);
@@ -284,6 +288,76 @@ public final class LiquidationStructureRouterV1 {
     /** Candidate-level policy for the stage-2/3 macro gate; structural routing remains unchanged. */
     public enum MacroGatePolicy { REQUIRE_MACRO_CONFIRMATION, STRUCTURE_ONLY }
     public enum CloseReason { STOP, TARGET, TIMEOUT, LIQUIDATION, DATA_FAILURE, OTHER }
+
+    public enum InitialEntryRule { PRE_SHOCK_BOUNDARY, POST_SHOCK_CONFIRMED_H4_SWING }
+    public enum InitialStopRule { LEGACY_H1_THREE_BAR, H4_THREE_BAR }
+    public enum PivotRefreshRule { FROZEN_INVALIDATION, REFRESH_AFTER_STOP_INVALIDATION }
+
+    /** Immutable switchboard for the seven frozen V005 profiles. */
+    public record RuleConfig(InitialEntryRule initialEntryRule, InitialStopRule initialStopRule,
+            PivotRefreshRule pivotRefreshRule, boolean dailyRsiAdditionGate,
+            boolean dailySma200AdditionGate, boolean logDailyContext) {
+        public RuleConfig {
+            Objects.requireNonNull(initialEntryRule, "initialEntryRule");
+            Objects.requireNonNull(initialStopRule, "initialStopRule");
+            Objects.requireNonNull(pivotRefreshRule, "pivotRefreshRule");
+        }
+
+        public static final RuleConfig LEGACY_V004 = new RuleConfig(InitialEntryRule.PRE_SHOCK_BOUNDARY,
+                InitialStopRule.LEGACY_H1_THREE_BAR, PivotRefreshRule.FROZEN_INVALIDATION,
+                false, false, false);
+        public static final RuleConfig BASELINE_V004 = new RuleConfig(InitialEntryRule.PRE_SHOCK_BOUNDARY,
+                InitialStopRule.LEGACY_H1_THREE_BAR, PivotRefreshRule.FROZEN_INVALIDATION,
+                false, false, true);
+        public static final RuleConfig POST_SHOCK_ENTRY = new RuleConfig(InitialEntryRule.POST_SHOCK_CONFIRMED_H4_SWING,
+                InitialStopRule.LEGACY_H1_THREE_BAR, PivotRefreshRule.FROZEN_INVALIDATION,
+                false, false, true);
+        public static final RuleConfig H4_STRUCTURAL_STOP = new RuleConfig(InitialEntryRule.POST_SHOCK_CONFIRMED_H4_SWING,
+                InitialStopRule.H4_THREE_BAR, PivotRefreshRule.FROZEN_INVALIDATION,
+                false, false, true);
+        public static final RuleConfig REFRESHED_STAGING = new RuleConfig(InitialEntryRule.POST_SHOCK_CONFIRMED_H4_SWING,
+                InitialStopRule.H4_THREE_BAR, PivotRefreshRule.REFRESH_AFTER_STOP_INVALIDATION,
+                false, false, true);
+        public static final RuleConfig DAILY_RSI_CONTEXT = new RuleConfig(InitialEntryRule.POST_SHOCK_CONFIRMED_H4_SWING,
+                InitialStopRule.H4_THREE_BAR, PivotRefreshRule.REFRESH_AFTER_STOP_INVALIDATION,
+                true, false, true);
+        public static final RuleConfig DAILY_MA_CONTEXT = new RuleConfig(InitialEntryRule.POST_SHOCK_CONFIRMED_H4_SWING,
+                InitialStopRule.H4_THREE_BAR, PivotRefreshRule.REFRESH_AFTER_STOP_INVALIDATION,
+                false, true, true);
+        public static final RuleConfig DAILY_BOTH_CONTEXT = new RuleConfig(InitialEntryRule.POST_SHOCK_CONFIRMED_H4_SWING,
+                InitialStopRule.H4_THREE_BAR, PivotRefreshRule.REFRESH_AFTER_STOP_INVALIDATION,
+                true, true, true);
+
+        public static RuleConfig forProfile(String profileId) {
+            return switch (Objects.requireNonNull(profileId, "profileId")) {
+                case "BASELINE_V004" -> BASELINE_V004;
+                case "POST_SHOCK_ENTRY" -> POST_SHOCK_ENTRY;
+                case "H4_STRUCTURAL_STOP" -> H4_STRUCTURAL_STOP;
+                case "REFRESHED_STAGING" -> REFRESHED_STAGING;
+                case "DAILY_RSI_CONTEXT" -> DAILY_RSI_CONTEXT;
+                case "DAILY_MA_CONTEXT" -> DAILY_MA_CONTEXT;
+                case "DAILY_BOTH_CONTEXT" -> DAILY_BOTH_CONTEXT;
+                default -> throw new IllegalArgumentException("unsupported V005 router profile: " + profileId);
+            };
+        }
+    }
+
+    /** One complete UTC daily close and its optional, causally available indicator values. */
+    public record DailyPriceContext(String asset, LocalDate utcDay, Instant availableAt,
+            double dailyClose, Double rsi14, Double sma200, String seriesId) {
+        public DailyPriceContext {
+            asset = canonicalAsset(asset);
+            Objects.requireNonNull(utcDay, "utcDay");
+            Objects.requireNonNull(availableAt, "availableAt");
+            seriesId = requiredSeriesId(seriesId);
+            Instant dayClose = utcDay.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant();
+            if (availableAt.isBefore(dayClose) || !finitePositive(dailyClose)
+                    || (rsi14 != null && (!Double.isFinite(rsi14) || rsi14 < 0.0 || rsi14 > 100.0))
+                    || (sma200 != null && !finitePositive(sma200))) {
+                throw new IllegalArgumentException("daily context must be finite and available no earlier than its completed UTC day");
+            }
+        }
+    }
 
     /** A typed raw daily row: long/short USD totals are observed values, never precomputed gates. */
     public record DailyLiquidation(String asset, LocalDate bucketStart, double longLiquidationsUsd,
@@ -743,24 +817,42 @@ public final class LiquidationStructureRouterV1 {
     public static final class Router {
         private final Variant variant;
         private final MacroGatePolicy macroGatePolicy;
+        private final RuleConfig ruleConfig;
+        private final Map<String, NavigableMap<LocalDate, DailyPriceContext>> dailyPriceContexts;
         private final boolean anchoredStageOneOnly;
         private final Map<String, AssetState> assets = new LinkedHashMap<>();
         private final TreeMap<Instant, MacroClose> macroCloses = new TreeMap<>();
         private final Map<String, ConfirmedIntent> pendingIntents = new HashMap<>();
         private final Set<String> frozenAnchorIntentIds = new HashSet<>();
         private final Set<String> frozenAnchorPairIds = new HashSet<>();
+        private final Map<String, ObjectNode> dailyRuleAudit = new TreeMap<>();
+        private final Map<String, ObjectNode> setupRuleAudit = new HashMap<>();
         private Instant lastAcceptedAvailability;
         private String macroSeriesId;
 
-        public Router(Variant variant) { this(variant, MacroGatePolicy.REQUIRE_MACRO_CONFIRMATION, false); }
-
-        public Router(Variant variant, MacroGatePolicy macroGatePolicy) {
-            this(variant, macroGatePolicy, false);
+        public Router(Variant variant) {
+            this(variant, MacroGatePolicy.REQUIRE_MACRO_CONFIRMATION, RuleConfig.LEGACY_V004, List.of(), false);
         }
 
-        private Router(Variant variant, MacroGatePolicy macroGatePolicy, boolean anchoredStageOneOnly) {
+        public Router(Variant variant, MacroGatePolicy macroGatePolicy) {
+            this(variant, macroGatePolicy, RuleConfig.LEGACY_V004, List.of(), false);
+        }
+
+        public Router(Variant variant, MacroGatePolicy macroGatePolicy, RuleConfig ruleConfig) {
+            this(variant, macroGatePolicy, ruleConfig, List.of(), false);
+        }
+
+        public Router(Variant variant, MacroGatePolicy macroGatePolicy, RuleConfig ruleConfig,
+                Collection<DailyPriceContext> dailyPriceContexts) {
+            this(variant, macroGatePolicy, ruleConfig, dailyPriceContexts, false);
+        }
+
+        private Router(Variant variant, MacroGatePolicy macroGatePolicy, RuleConfig ruleConfig,
+                Collection<DailyPriceContext> dailyPriceContexts, boolean anchoredStageOneOnly) {
             this.variant = Objects.requireNonNull(variant, "variant");
             this.macroGatePolicy = Objects.requireNonNull(macroGatePolicy, "macroGatePolicy");
+            this.ruleConfig = Objects.requireNonNull(ruleConfig, "ruleConfig");
+            this.dailyPriceContexts = indexDailyPriceContexts(dailyPriceContexts);
             this.anchoredStageOneOnly = anchoredStageOneOnly;
             if (anchoredStageOneOnly && variant != Variant.ROUTED_REVERSAL_CONTINUATION) {
                 throw new IllegalArgumentException("anchored staged replay requires the routed candidate variant");
@@ -769,11 +861,113 @@ public final class LiquidationStructureRouterV1 {
 
         /** Package-scoped public-runner entry point; ordinary callers cannot self-certify anchors. */
         static Router anchoredStaged(MacroGatePolicy macroGatePolicy) {
-            return new Router(Variant.ROUTED_REVERSAL_CONTINUATION, macroGatePolicy, true);
+            return new Router(Variant.ROUTED_REVERSAL_CONTINUATION, macroGatePolicy,
+                    RuleConfig.LEGACY_V004, List.of(), true);
         }
 
         public Variant variant() { return variant; }
         public MacroGatePolicy macroGatePolicy() { return macroGatePolicy; }
+        public RuleConfig ruleConfig() { return ruleConfig; }
+
+        private static Map<String, NavigableMap<LocalDate, DailyPriceContext>> indexDailyPriceContexts(
+                Collection<DailyPriceContext> rows) {
+            Objects.requireNonNull(rows, "dailyPriceContexts");
+            TreeMap<String, TreeMap<LocalDate, DailyPriceContext>> byAsset = new TreeMap<>();
+            for (DailyPriceContext row : rows) {
+                Objects.requireNonNull(row, "daily price context row");
+                DailyPriceContext previous = byAsset.computeIfAbsent(row.asset(), ignored -> new TreeMap<>())
+                        .putIfAbsent(row.utcDay(), row);
+                if (previous != null) throw new IllegalArgumentException("duplicate daily context for " + row.asset() + " " + row.utcDay());
+            }
+            TreeMap<String, NavigableMap<LocalDate, DailyPriceContext>> frozen = new TreeMap<>();
+            byAsset.forEach((asset, values) -> frozen.put(asset, Collections.unmodifiableNavigableMap(values)));
+            return Map.copyOf(frozen);
+        }
+
+        /**
+         * Diagnostic-only event funnel over daily liquidation rows. The requested window is
+         * applied to the modeled availability time, matching entry decisions; this method
+         * never feeds values back into routing or accounting.
+         */
+        public ObjectNode entryRuleAuditSnapshot(Instant decisionStart, Instant decisionEnd) {
+            Objects.requireNonNull(decisionStart, "decisionStart");
+            Objects.requireNonNull(decisionEnd, "decisionEnd");
+            if (!decisionStart.isBefore(decisionEnd)) throw new IllegalArgumentException("audit decision window must be positive");
+            ObjectNode result = JsonHashes.mapper().createObjectNode()
+                    .put("schema", "liquidation-entry-rule-audit/1")
+                    .put("diagnostic_only", true)
+                    .put("rule_changes", !ruleConfig.equals(RuleConfig.LEGACY_V004)
+                            && !ruleConfig.equals(RuleConfig.BASELINE_V004))
+                    .put("decision_window_start_inclusive", decisionStart.toString())
+                    .put("decision_window_end_exclusive", decisionEnd.toString())
+                    .put("window_anchor", "MODELED_DAILY_AVAILABILITY");
+            ObjectNode byAsset = result.putObject("daily_gate_counts_by_asset");
+            ArrayNode events = result.putArray("liquidation_stress_event_trace");
+            List<String> auditAssets = dailyRuleAudit.values().stream().map(row -> row.path("asset").asText())
+                    .distinct().sorted(Comparator.comparingInt(SUPPORTED_ASSET_ORDER::indexOf)).toList();
+            for (String asset : auditAssets) {
+                ObjectNode counts = JsonHashes.mapper().createObjectNode().put("daily_rows", 0)
+                        .put("window_unavailable", 0).put("no_liquidation_stress", 0)
+                        .put("valid_90_day_windows", 0)
+                        .put("long_stress_days", 0).put("short_stress_days", 0)
+                        .put("unique_liquidation_stress_days", 0).put("geometry_rejected", 0)
+                        .put("setup_admitted", 0).put("setup_suppressed", 0);
+                TreeSet<LocalDate> allObservedDays = new TreeSet<>(), decisionWindowObservedDays = new TreeSet<>();
+                for (ObjectNode row : dailyRuleAudit.values()) {
+                    if (!asset.equals(row.path("asset").asText())) continue;
+                    LocalDate bucketDay = LocalDate.parse(row.path("bucket_start").asText());
+                    allObservedDays.add(bucketDay);
+                    Instant availableAt = Instant.parse(row.path("available_at").asText());
+                    if (availableAt.isBefore(decisionStart) || !availableAt.isBefore(decisionEnd)) continue;
+                    decisionWindowObservedDays.add(bucketDay);
+                    counts.put("daily_rows", counts.path("daily_rows").asInt() + 1);
+                    String status = row.path("status").asText();
+                    switch (status) {
+                        case "DAILY_WINDOW_UNAVAILABLE" -> counts.put("window_unavailable", counts.path("window_unavailable").asInt() + 1);
+                        case "NO_90D_P95_LIQUIDATION_STRESS" -> counts.put("no_liquidation_stress", counts.path("no_liquidation_stress").asInt() + 1);
+                        default -> { }
+                    }
+                    if (!"DAILY_WINDOW_UNAVAILABLE".equals(status)) counts.put("valid_90_day_windows", counts.path("valid_90_day_windows").asInt() + 1);
+                    if (row.path("long_stress").asBoolean(false)) counts.put("long_stress_days", counts.path("long_stress_days").asInt() + 1);
+                    if (row.path("short_stress").asBoolean(false)) counts.put("short_stress_days", counts.path("short_stress_days").asInt() + 1);
+                    if (!row.path("liquidation_stress").asBoolean(false)) continue;
+                    counts.put("unique_liquidation_stress_days", counts.path("unique_liquidation_stress_days").asInt() + 1);
+                    String disposition = row.path("disposition").asText("");
+                    if (disposition.startsWith("GEOMETRY_REJECTED")) counts.put("geometry_rejected", counts.path("geometry_rejected").asInt() + 1);
+                    else if ("SETUP_ADMITTED".equals(disposition)) counts.put("setup_admitted", counts.path("setup_admitted").asInt() + 1);
+                    else if (disposition.startsWith("SETUP_SUPPRESSED")) counts.put("setup_suppressed", counts.path("setup_suppressed").asInt() + 1);
+                    events.add(row.deepCopy());
+                }
+                if (!allObservedDays.isEmpty()) {
+                    LocalDate decisionBucketStart = utcDayCeiling(decisionStart.minus(Duration.ofHours(48)));
+                    LocalDate decisionBucketEnd = utcDayCeiling(decisionEnd.minus(Duration.ofHours(48)));
+                    LocalDate coveredStart = allObservedDays.first().isAfter(decisionBucketStart) ? allObservedDays.first() : decisionBucketStart;
+                    LocalDate coveredEnd = allObservedDays.last().plusDays(1).isBefore(decisionBucketEnd)
+                            ? allObservedDays.last().plusDays(1) : decisionBucketEnd;
+                    long coveredDays = Math.max(0, ChronoUnit.DAYS.between(coveredStart, coveredEnd));
+                    long observedCoveredDays = decisionWindowObservedDays.stream()
+                            .filter(day -> !day.isBefore(coveredStart) && day.isBefore(coveredEnd)).count();
+                    counts.put("first_observed_daily_bucket", allObservedDays.first().toString())
+                            .put("last_observed_daily_bucket", allObservedDays.last().toString())
+                            .put("observed_coverage_days_in_decision_window", coveredDays)
+                            .put("missing_daily_days_inside_observed_asset_span", Math.max(0, coveredDays - observedCoveredDays));
+                } else {
+                    counts.putNull("first_observed_daily_bucket").putNull("last_observed_daily_bucket")
+                            .put("observed_coverage_days_in_decision_window", 0)
+                            .put("missing_daily_days_inside_observed_asset_span", 0);
+                }
+                byAsset.set(asset, counts);
+            }
+            result.put("stress_event_trace_count", events.size());
+            result.put("source_asset_tie_order", JsonHashes.mapper().valueToTree(auditAssets));
+            result.put("content_sha256", JsonHashes.ownHash(result));
+            return result;
+        }
+
+        private static LocalDate utcDayCeiling(Instant instant) {
+            LocalDate date = instant.atZone(ZoneOffset.UTC).toLocalDate();
+            return instant.equals(date.atStartOfDay(ZoneOffset.UTC).toInstant()) ? date : date.plusDays(1);
+        }
 
         /**
          * Injects a predecessor-frozen stage-one decision after the same-time market history has
@@ -935,8 +1129,26 @@ public final class LiquidationStructureRouterV1 {
             setup.pivotCandidate = null;
             setup.pivotZone = null;
             setup.pivotZoneInvalid = false;
+            setup.pivotInvalidatedAt = null;
+            setup.pivotInvalidatedCenterTime = null;
+            setup.pivotReplacementCount = 0;
             setup.lastAddDecisionHour = null;
             setup.activePending = false;
+            ObjectNode audit = auditForSetup(setup.id);
+            if (audit != null) {
+                ObjectNode staging = (ObjectNode) audit.path("staging");
+                if (fill.stage() > 1) {
+                    ObjectNode completedCycle = staging.deepCopy();
+                    completedCycle.put("cycle_end_filled_stage", fill.stage())
+                            .put("cycle_end_fill_time", fill.fillTime().toString());
+                    ((ArrayNode) audit.path("completed_addition_cycles")).add(completedCycle);
+                }
+                ArrayNode fills = ((ObjectNode) audit.with("execution")).withArray("fills");
+                fills.addObject().put("stage", fill.stage()).put("fill_time", fill.fillTime().toString())
+                        .put("fill_price", fill.fillPrice()).put("active_stop", fill.activeStop());
+                if (fill.stage() == 1) ((ObjectNode) audit.path("initial_entry")).put("status", "STAGE_ONE_FILLED");
+                resetStagingCycle(staging, fill.stage(), fill.fillTime(), ruleConfig);
+            }
         }
 
         public void onNoFill(NoFillAck noFill) {
@@ -946,9 +1158,23 @@ public final class LiquidationStructureRouterV1 {
                     || intent.stage() != noFill.stage()) throw new IllegalArgumentException("no-fill does not match a pending router intent");
             AssetState state = requiredState(noFill.asset());
             if (state.setup == null || !state.setup.id.equals(noFill.setupId())) throw new IllegalArgumentException("no-fill belongs to an inactive setup");
+            ObjectNode audit = auditForSetup(noFill.setupId());
+            if (audit != null) {
+                ((ObjectNode) audit.with("execution")).withArray("no_fills").addObject()
+                        .put("stage", noFill.stage()).put("time", noFill.resolvedAt().toString())
+                        .put("reason", noFill.reasonCode());
+                if (noFill.stage() == 1) ((ObjectNode) audit.path("initial_entry")).put("status", "STAGE_ONE_FILL_REJECTED")
+                        .put("fill_rejection_reason", noFill.reasonCode());
+                else {
+                    ObjectNode staging = (ObjectNode) audit.path("staging");
+                    staging.put("stage_" + noFill.stage() + "_last_rejection", noFill.reasonCode());
+                    incrementCount((ObjectNode) staging.with("fill_rejection_counts"), noFill.reasonCode());
+                }
+            }
             state.setup.activePending = false;
             if (state.setup.pendingCancellationReason != null
                     || anchoredStageOneOnly && noFill.stage() == 1 && state.setup.filledStage == 0) {
+                markSetupTerminal(state.setup, noFill.reasonCode(), noFill.resolvedAt());
                 state.setup = null;
             }
         }
@@ -958,6 +1184,44 @@ public final class LiquidationStructureRouterV1 {
             AssetState state = requiredState(close.asset());
             if (state.setup == null || !state.setup.id.equals(close.setupId()) || state.setup.filledStage == 0) {
                 throw new IllegalArgumentException("close does not match an open routed position");
+            }
+            ObjectNode audit = auditForSetup(close.setupId());
+            if (audit != null) {
+                ObjectNode staging = (ObjectNode) audit.path("staging");
+                int nextStage = state.setup.filledStage + 1;
+                if (nextStage <= 3) {
+                    String blocker;
+                    boolean refreshEnabled = ruleConfig.pivotRefreshRule() == PivotRefreshRule.REFRESH_AFTER_STOP_INVALIDATION;
+                    if (refreshEnabled && staging.path("pivot_refresh_pending").asBoolean(false)) {
+                        blocker = "STOP_INVALIDATED_PIVOT_AWAITING_SAFE_REPLACEMENT";
+                    } else if (!refreshEnabled && staging.path("pivot_zone_invalidated_by_stop").asBoolean(false)) {
+                        blocker = "FROZEN_PIVOT_ZONE_INVALIDATED_BY_TRAILING_STOP_NO_REPLACEMENT";
+                    } else if (!staging.path("pivot_zone_formed").asBoolean(false)) {
+                        blocker = !staging.path("favorable_h4_seen").asBoolean(false)
+                                ? "NO_FAVORABLE_H4_AFTER_FILL"
+                                : staging.path("pivot_zone_invalidated_by_stop").asBoolean(false)
+                                    ? "FROZEN_PIVOT_ZONE_INVALIDATED_BY_TRAILING_STOP_NO_REPLACEMENT"
+                                    : staging.path("pivot_candidate_count").asInt() == 0
+                                        ? staging.path("strict_pivots_unsafe_vs_active_stop").asInt() > 0
+                                            ? "ONLY_STRICT_POSTFILL_PIVOTS_UNSAFE_VS_ACTIVE_STOP"
+                                            : "NO_STRICT_POSTFILL_FIVE_BAR_H4_PIVOT_BEFORE_CLOSE"
+                                        : "PIVOT_ZONE_NOT_COMPLETED_BEFORE_CLOSE";
+                    } else if (staging.path("stage_" + nextStage + "_intent_count").asInt() > 0) {
+                        blocker = "CONFIRMED_STAGE_" + nextStage + "_INTENT_NOT_FILLED_BEFORE_POSITION_CLOSE";
+                    } else if (staging.path("stage_" + nextStage + "_daily_context_rejection_count").asInt() > 0) {
+                        blocker = "STAGE_" + nextStage + "_CONFIRMATIONS_BLOCKED_BY_DAILY_CONTEXT";
+                    } else if (staging.path("stage_" + nextStage + "_first_macro_rejection_time").isTextual()) {
+                        blocker = "STAGE_" + nextStage + "_CONFIRMATIONS_BLOCKED_BY_MACRO";
+                    } else {
+                        blocker = "PIVOT_ZONE_WITHOUT_STAGE_" + nextStage + "_ENTRY_CONFIRMATION_BEFORE_CLOSE";
+                    }
+                    staging.put("terminal_addition_blocker_stage", nextStage)
+                            .put("terminal_addition_blocker", blocker);
+                }
+                audit.put("position_close_reason", close.reason().name())
+                        .put("position_closed_at", close.closeTime().toString())
+                        .put("terminal_reason", "POSITION_CLOSED_" + close.reason().name())
+                        .put("terminal_time", close.closeTime().toString());
             }
             pendingIntents.values().removeIf(intent -> intent.asset().equals(close.asset()) && intent.setupId().equals(close.setupId()));
             state.setup = null;
@@ -978,10 +1242,38 @@ public final class LiquidationStructureRouterV1 {
             setup.activeStop = stop.activeStop();
             if (setup.pivotCandidate != null
                     && !pivotSafe(setup.direction, setup.pivotCandidate.price(), setup.activeStop)) {
+                ObjectNode audit = auditForSetup(setup.id);
+                if (audit != null) ((ObjectNode) audit.path("staging")).put("pivot_candidate_invalidated_by_stop", true)
+                        .put("pivot_candidate_invalidated_at", stop.activationTime().toString());
                 setup.pivotCandidate = null;
             }
-            if (setup.pivotZone != null && !pivotSafe(setup.direction, setup.pivotZone.price(), setup.activeStop)) {
+            if (setup.pivotZone != null && !setup.pivotZoneInvalid
+                    && !pivotSafe(setup.direction, setup.pivotZone.price(), setup.activeStop)) {
+                FrozenZone invalidatedZone = setup.pivotZone;
                 setup.pivotZoneInvalid = true;
+                boolean refreshEnabled = ruleConfig.pivotRefreshRule() == PivotRefreshRule.REFRESH_AFTER_STOP_INVALIDATION;
+                if (refreshEnabled) {
+                    setup.pivotInvalidatedAt = stop.activationTime();
+                    setup.pivotInvalidatedCenterTime = invalidatedZone.pivotTime();
+                    setup.pivotCandidate = null;
+                    setup.pivotZone = null;
+                }
+                ObjectNode audit = auditForSetup(setup.id);
+                if (audit != null) {
+                    ObjectNode staging = (ObjectNode) audit.path("staging");
+                    staging.put("pivot_zone_invalidated", true).put("pivot_zone_invalidated_by_stop", true)
+                            .put("pivot_zone_invalidated_at", stop.activationTime().toString())
+                            .put("later_pivot_replacement_suppressed", !refreshEnabled);
+                    if (refreshEnabled) {
+                        staging.put("pivot_zone_currently_invalidated_by_stop", true);
+                        ArrayNode invalidations = staging.withArray("pivot_refresh_invalidations");
+                        invalidations.addObject().put("invalidated_at", stop.activationTime().toString())
+                                .put("invalidated_center_time", invalidatedZone.pivotTime().toString())
+                                .put("invalidated_price", invalidatedZone.price());
+                        staging.put("pivot_refresh_pending", true).put("pivot_refresh_deferred_for_pending_intent",
+                                setup.activePending || pendingFor(setup.id));
+                    }
+                }
             }
         }
 
@@ -999,16 +1291,94 @@ public final class LiquidationStructureRouterV1 {
             state.dailyEvaluated.add(day);
             Instant availableAt = daily.modeledAvailableAt();
             DailyGate gate = state.dailyGate(day, availableAt);
-            if (gate == null || (!gate.downStress && !gate.upStress)) return result.result();
-            Geometry geometry = state.geometryForStressDay(day, availableAt, gate);
-            if (geometry == null) return result.result();
+            String dayKey = state.asset + "|" + day;
+            ObjectNode audit = JsonHashes.mapper().createObjectNode().put("audit_id", dayKey)
+                    .put("asset", state.asset).put("bucket_start", day.toString())
+                    .put("bucket_event_time", daily.eventTime().toString()).put("available_at", availableAt.toString())
+                    .put("long_liquidations_usd", daily.longLiquidationsUsd())
+                    .put("short_liquidations_usd", daily.shortLiquidationsUsd());
+            dailyRuleAudit.put(dayKey, audit);
+            if (gate == null) {
+                audit.put("status", "DAILY_WINDOW_UNAVAILABLE").put("liquidation_stress", false)
+                        .put("long_stress", false).put("short_stress", false);
+                return result.result();
+            }
+            audit.put("long_p95_90d_usd", gate.longP95).put("short_p95_90d_usd", gate.shortP95)
+                    .put("long_stress", gate.downStress).put("short_stress", gate.upStress)
+                    .put("liquidation_stress", gate.downStress || gate.upStress);
+            if (!gate.downStress && !gate.upStress) {
+                audit.put("status", "NO_90D_P95_LIQUIDATION_STRESS");
+                return result.result();
+            }
+            audit.put("status", "LIQUIDATION_STRESS_QUALIFIED");
+            GeometryEvaluation evaluation = state.geometryForStressDay(day, availableAt, gate);
+            ObjectNode geometryAudit = audit.putObject("price_oi_geometry").put("fast_qualifies", evaluation.fastQualifies)
+                    .put("slow_qualifies", evaluation.slowQualifies);
+            addTextArray(geometryAudit, "fast_failure_reasons", evaluation.fastFailures);
+            addTextArray(geometryAudit, "slow_failure_reasons", evaluation.slowFailures);
+            addTextArray(geometryAudit, "selected_geometry_failure_reasons", evaluation.selectedFailures);
+            Geometry geometry = evaluation.geometry;
+            if (geometry == null) {
+                audit.put("disposition", evaluation.fastQualifies || evaluation.slowQualifies
+                        ? "GEOMETRY_REJECTED_SELECTED_GEOMETRY" : "GEOMETRY_REJECTED_NO_FAST_OR_SLOW_MATCH");
+                return result.result();
+            }
             String setupId = geometry.asset + "|" + day + "|" + geometry.shockDirection + "|" + geometry.eventEnd;
+            audit.put("event_id", setupId).put("selected_geometry", geometry.selectedKind.name())
+                    .put("shock_direction", geometry.shockDirection.name())
+                    .put("geometry_start", geometry.eventStart.toString()).put("geometry_end", geometry.eventEnd.toString())
+                    .put("pre_event_atr", geometry.preEventAtr).put("prior_high", geometry.priorHigh)
+                    .put("prior_low", geometry.priorLow).put("boundary", geometry.boundary)
+                    .put("recovery_target", geometry.recoveryTarget).put("zone_lower", geometry.zoneLower)
+                    .put("zone_upper", geometry.zoneUpper);
             result.qualifiedDailyStressEvents.add(new QualifiedDailyStressEvent(setupId, geometry.asset, day,
                     daily.eventTime(), availableAt, geometry.shockDirection, geometry.evidence));
-            if (state.busy()) return result.result();
-            if (state.lastCloseTime != null && !availableAt.isAfter(state.lastCloseTime)) return result.result();
-            if (anchoredStageOneOnly) return result.result();
+            if (state.busy()) {
+                audit.put("disposition", "SETUP_SUPPRESSED_ASSET_OCCUPIED");
+                return result.result();
+            }
+            if (state.lastCloseTime != null && !availableAt.isAfter(state.lastCloseTime)) {
+                audit.put("disposition", "SETUP_SUPPRESSED_NOT_AFTER_PRIOR_CLOSE");
+                audit.put("prior_close_time", state.lastCloseTime.toString());
+                return result.result();
+            }
+            if (anchoredStageOneOnly) {
+                audit.put("disposition", "SETUP_SUPPRESSED_ANCHORED_STAGE_ONE_ONLY");
+                return result.result();
+            }
             createSetup(state, geometry, day, availableAt, true);
+            audit.put("disposition", "SETUP_ADMITTED").put("setup_id", setupId);
+            setupRuleAudit.put(setupId, audit);
+            ObjectNode route = audit.putObject("route").put("branch_status", "WAITING_FOR_TWO_H4_CONFIRMATIONS")
+                    .put("branch_test_count", 0).put("qualifying_h4_close_count", 0)
+                    .put("branch_candidate_reset_bar_count", 0);
+            if (ruleConfig.initialEntryRule() == InitialEntryRule.POST_SHOCK_CONFIRMED_H4_SWING) {
+                route.put("branch_status", "WAITING_FOR_TWO_H4_SWING_BREAK_CONFIRMATIONS")
+                        .put("ambiguous_post_shock_break_bar_count", 0);
+            }
+            ObjectNode initialEntry = audit.putObject("initial_entry").put("status", "WAITING_FOR_BRANCH")
+                    .put("h1_test_count", 0);
+            if (!ruleConfig.equals(RuleConfig.LEGACY_V004)) {
+                initialEntry.put("entry_level", geometry.boundary).put("entry_zone_lower", geometry.zoneLower)
+                        .put("entry_zone_upper", geometry.zoneUpper);
+            }
+            initialEntry.putObject("first_failure_counts");
+            initialEntry.putObject("all_failed_gate_counts");
+            ObjectNode staging = audit.putObject("staging").put("favorable_h4_seen", false).put("pivot_candidate_count", 0)
+                    .put("pivot_zone_formed", false).put("pivot_zone_invalidated", false)
+                    .put("h1_add_test_count", 0);
+            staging.put("cycle_after_filled_stage", 0);
+            staging.putObject("first_failure_counts");
+            staging.putObject("all_failed_gate_counts");
+            if (!ruleConfig.equals(RuleConfig.LEGACY_V004)) {
+                staging.putObject("daily_context_rejection_counts");
+                staging.putArray("pivot_refresh_invalidations");
+                staging.putArray("pivot_refresh_replacements");
+                staging.put("pivot_refresh_pending", false).put("pivot_refresh_deferred_for_pending_intent", false);
+            }
+            audit.putArray("completed_addition_cycles");
+            audit.putObject("execution").putArray("fills");
+            ((ObjectNode) audit.path("execution")).putArray("no_fills");
             return result.result();
         }
 
@@ -1030,6 +1400,10 @@ public final class LiquidationStructureRouterV1 {
         }
 
         private void processBranchBar(AssetState state, Setup setup, Bar bar, RouteAccumulator result) {
+            if (ruleConfig.initialEntryRule() == InitialEntryRule.POST_SHOCK_CONFIRMED_H4_SWING) {
+                processPostShockBranchBar(state, setup, bar, result);
+                return;
+            }
             if (bar.eventTime().isBefore(setup.availableAt) || bar.eventTime().equals(setup.availableAt)) return;
             if (setup.pendingCancellationReason != null) return;
             if (setup.branch != null) {
@@ -1037,6 +1411,17 @@ public final class LiquidationStructureRouterV1 {
                         ? insideRange(bar.close(), setup.priorLow, setup.priorHigh)
                         : beyondBrokenBoundary(bar.close(), setup.shockDirection, setup.boundary);
                 if (invalidated) {
+                    ObjectNode audit = auditForSetup(setup.id);
+                    if (audit != null) {
+                        ObjectNode route = (ObjectNode) audit.path("route");
+                        route.put("branch_status", "SELECTED_BRANCH_INVALIDATED_BY_OPPOSITE_STRUCTURE")
+                                .put("branch_invalidated_at", bar.availableAt().toString())
+                                .put("branch_invalidation_close", bar.close())
+                                .put("opposite_structure_no_reroute", true);
+                        audit.put("terminal_reason", setup.activePending || pendingFor(setup.id)
+                                ? "BRANCH_INVALIDATED_BEFORE_FILL" : "BRANCH_INVALIDATED_NO_REROUTE")
+                                .put("terminal_time", bar.availableAt().toString());
+                    }
                     if (setup.activePending || pendingFor(setup.id)) {
                         cancelPending(state, setup, bar, result, "BRANCH_INVALIDATED_BEFORE_FILL");
                     } else {
@@ -1047,12 +1432,18 @@ public final class LiquidationStructureRouterV1 {
             }
             Instant branchDeadline = setup.availableAt.plus(BRANCH_WAIT);
             if (bar.eventTime().isAfter(branchDeadline) || bar.availableAt().isAfter(branchDeadline)) {
+                markSetupTerminal(setup, "BRANCH_WAIT_EXPIRED_WITHOUT_TWO_CONSECUTIVE_CONFIRMATIONS", bar.availableAt());
                 state.setup = null;
                 return;
             }
+            ObjectNode audit = auditForSetup(setup.id);
+            ObjectNode routeAudit = audit == null ? null : (ObjectNode) audit.path("route");
+            if (routeAudit != null) routeAudit.put("branch_test_count", routeAudit.path("branch_test_count").asInt() + 1);
+            boolean resetOnThisBar = false;
             if (setup.lastBranchBarEnd != null && !bar.startTime().equals(setup.lastBranchBarEnd)) {
                 setup.branchCandidate = null;
                 setup.branchCandidateCount = 0;
+                resetOnThisBar = true;
             }
             Branch qualifies = null;
             if (beyondBrokenBoundary(bar.close(), setup.shockDirection, setup.boundary)) qualifies = Branch.CONTINUATION;
@@ -1060,20 +1451,178 @@ public final class LiquidationStructureRouterV1 {
             if (qualifies == null) {
                 setup.branchCandidate = null;
                 setup.branchCandidateCount = 0;
+                if (routeAudit != null && !resetOnThisBar) routeAudit.put("branch_candidate_reset_bar_count",
+                        routeAudit.path("branch_candidate_reset_bar_count").asInt() + 1);
             } else if (qualifies == setup.branchCandidate) {
                 setup.branchCandidateCount++;
+                if (routeAudit != null) routeAudit.put("qualifying_h4_close_count", routeAudit.path("qualifying_h4_close_count").asInt() + 1);
                 if (setup.branchCandidateCount >= 2) {
                     setup.branch = qualifies;
                     setup.direction = qualifies == Branch.CONTINUATION ? setup.shockDirection : setup.shockDirection.opposite();
                     setup.armTime = bar.availableAt();
                     setup.lastBranchBarEnd = bar.eventTime();
+                    if (routeAudit != null) routeAudit.put("branch_status", "BRANCH_CONFIRMED")
+                            .put("selected_branch", qualifies.name()).put("trade_direction", setup.direction.name())
+                            .put("branch_confirmed_at", bar.availableAt().toString())
+                            .put("second_confirmation_close", bar.close());
+                    if (audit != null) ((ObjectNode) audit.path("initial_entry")).put("status", "WAITING_FOR_H1_RETEST_CONFIRMATION");
                     return;
                 }
             } else {
                 setup.branchCandidate = qualifies;
                 setup.branchCandidateCount = 1;
+                if (routeAudit != null) routeAudit.put("qualifying_h4_close_count", routeAudit.path("qualifying_h4_close_count").asInt() + 1)
+                        .put("latest_branch_candidate", qualifies.name()).put("latest_candidate_time", bar.availableAt().toString());
             }
             setup.lastBranchBarEnd = bar.eventTime();
+        }
+
+        private void processPostShockBranchBar(AssetState state, Setup setup, Bar bar, RouteAccumulator result) {
+            if (setup.pendingCancellationReason != null) return;
+            if (setup.branch != null) {
+                if (setup.lastBranchBarEnd == null || !bar.eventTime().isAfter(setup.lastBranchBarEnd)
+                        || bar.availableAt().isBefore(setup.armTime)) return;
+                boolean invalidated = setup.direction == Direction.LONG
+                        ? bar.close() < setup.entryZoneLower : bar.close() > setup.entryZoneUpper;
+                if (invalidated) {
+                    ObjectNode audit = auditForSetup(setup.id);
+                    if (audit != null) {
+                        ObjectNode route = (ObjectNode) audit.path("route");
+                        route.put("branch_status", "POST_SHOCK_ENTRY_ZONE_INVALIDATED_BEFORE_FILL")
+                                .put("entry_zone_invalidated_at", bar.availableAt().toString())
+                                .put("entry_zone_invalidation_close", bar.close())
+                                .put("entry_zone_lower", setup.entryZoneLower)
+                                .put("entry_zone_upper", setup.entryZoneUpper)
+                                .put("opposite_structure_no_reroute", true);
+                        audit.put("terminal_reason", setup.activePending || pendingFor(setup.id)
+                                ? "POST_SHOCK_ENTRY_ZONE_INVALIDATED_BEFORE_FILL"
+                                : "POST_SHOCK_ENTRY_ZONE_INVALIDATED_NO_REROUTE")
+                                .put("terminal_time", bar.availableAt().toString());
+                    }
+                    if (setup.activePending || pendingFor(setup.id)) {
+                        cancelPending(state, setup, bar, result, "POST_SHOCK_ENTRY_ZONE_INVALIDATED_BEFORE_FILL");
+                    } else {
+                        state.setup = null;
+                    }
+                }
+                return;
+            }
+            Instant branchDeadline = setup.availableAt.plus(BRANCH_WAIT);
+            if (bar.startTime().isBefore(setup.availableAt)) return;
+            if (bar.eventTime().isAfter(branchDeadline) || bar.availableAt().isAfter(branchDeadline)) {
+                markSetupTerminal(setup, "BRANCH_WAIT_EXPIRED_WITHOUT_TWO_H4_SWING_BREAK_CONFIRMATIONS", bar.availableAt());
+                state.setup = null;
+                return;
+            }
+            ObjectNode audit = auditForSetup(setup.id);
+            ObjectNode routeAudit = audit == null ? null : (ObjectNode) audit.path("route");
+            if (routeAudit != null) routeAudit.put("branch_test_count", routeAudit.path("branch_test_count").asInt() + 1);
+
+            if (setup.postShockBreakPivot != null) {
+                boolean consecutive = setup.firstPostShockBreakBar != null
+                        && bar.startTime().equals(setup.firstPostShockBreakBar.eventTime());
+                boolean stillBeyond = consecutive && (setup.postShockBreakDirection == Direction.LONG
+                        ? bar.close() > setup.postShockBreakPivot.price()
+                        : bar.close() < setup.postShockBreakPivot.price());
+                if (stillBeyond) {
+                    confirmPostShockBranch(setup, bar, routeAudit, audit);
+                    return;
+                }
+                setup.postShockBreakPivot = null;
+                setup.postShockBreakDirection = null;
+                setup.firstPostShockBreakBar = null;
+                if (routeAudit != null) {
+                    routeAudit.put("branch_candidate_reset_bar_count",
+                            routeAudit.path("branch_candidate_reset_bar_count").asInt() + 1)
+                            .put("latest_post_shock_candidate_reset_at", bar.availableAt().toString())
+                            .put("latest_post_shock_candidate_reset_reason",
+                                    consecutive ? "SECOND_CLOSE_FAILED_SAME_LEVEL" : "H4_GAP_BEFORE_SECOND_CLOSE");
+                }
+            }
+            evaluatePostShockFirstBreak(state, setup, bar, routeAudit, audit);
+        }
+
+        private void evaluatePostShockFirstBreak(AssetState state, Setup setup, Bar bar,
+                ObjectNode routeAudit, ObjectNode audit) {
+            Pivot latestHigh = state.latestConfirmedPivot(state.h4ConfirmedPivotHighs,
+                    setup.eventEnd, bar.startTime());
+            Pivot latestLow = state.latestConfirmedPivot(state.h4ConfirmedPivotLows,
+                    setup.eventEnd, bar.startTime());
+            boolean longBreak = latestHigh != null && bar.close() > latestHigh.price();
+            boolean shortBreak = latestLow != null && bar.close() < latestLow.price();
+            if (longBreak && shortBreak) {
+                if (routeAudit != null) routeAudit.put("ambiguous_post_shock_break_bar_count",
+                        routeAudit.path("ambiguous_post_shock_break_bar_count").asInt() + 1)
+                        .put("latest_post_shock_candidate_status", "AMBIGUOUS_BOTH_DIRECTIONS")
+                        .put("latest_post_shock_candidate_bar_start", bar.startTime().toString())
+                        .put("latest_confirmed_pivot_high", latestHigh.price())
+                        .put("latest_confirmed_pivot_low", latestLow.price());
+                return;
+            }
+            if (!longBreak && !shortBreak) {
+                if (routeAudit != null) routeAudit.put("branch_candidate_reset_bar_count",
+                        routeAudit.path("branch_candidate_reset_bar_count").asInt() + 1);
+                return;
+            }
+            setup.postShockBreakDirection = longBreak ? Direction.LONG : Direction.SHORT;
+            setup.postShockBreakPivot = longBreak ? latestHigh : latestLow;
+            setup.firstPostShockBreakBar = bar;
+            setup.lastBranchBarEnd = bar.eventTime();
+            if (routeAudit != null) {
+                routeAudit.put("qualifying_h4_close_count", routeAudit.path("qualifying_h4_close_count").asInt() + 1)
+                        .put("latest_post_shock_candidate_status", "WAITING_FOR_SECOND_CLOSE")
+                        .put("latest_post_shock_candidate_direction", setup.postShockBreakDirection.name())
+                        .put("latest_post_shock_candidate_bar_start", bar.startTime().toString())
+                        .put("latest_post_shock_candidate_available_at", bar.availableAt().toString())
+                        .put("latest_post_shock_candidate_level", setup.postShockBreakPivot.price())
+                        .put("latest_post_shock_candidate_pivot_center", setup.postShockBreakPivot.centerTime().toString())
+                        .put("latest_post_shock_candidate_pivot_confirmed_at", setup.postShockBreakPivot.confirmedAt().toString());
+            }
+            if (audit != null) ((ObjectNode) audit.path("initial_entry")).put("status", "WAITING_FOR_SECOND_POST_SHOCK_BREAK_CLOSE");
+        }
+
+        private void confirmPostShockBranch(Setup setup, Bar secondBar, ObjectNode routeAudit, ObjectNode audit) {
+            setup.direction = setup.postShockBreakDirection;
+            setup.branch = setup.direction == setup.shockDirection ? Branch.CONTINUATION : Branch.REVERSAL;
+            setup.selectedEntryPivot = setup.postShockBreakPivot;
+            setup.entryLevel = setup.selectedEntryPivot.price();
+            setup.entryZoneLower = setup.entryLevel - INITIAL_ZONE_HALF_WIDTH_ATR * setup.preEventAtr;
+            setup.entryZoneUpper = setup.entryLevel + INITIAL_ZONE_HALF_WIDTH_ATR * setup.preEventAtr;
+            setup.armTime = secondBar.availableAt();
+            setup.lastBranchBarEnd = secondBar.eventTime();
+            setup.entryStructureEvidence = new ArrayList<>();
+            for (SourceEvidence source : setup.selectedEntryPivot.evidence()) {
+                setup.entryStructureEvidence.add(new SourceEvidence("POST_SHOCK_ENTRY_PIVOT_SOURCE", source.asset(),
+                        source.seriesId(), source.eventTime(), source.availableAt()));
+            }
+            setup.entryStructureEvidence.add(evidence("POST_SHOCK_BREAK_FIRST_CONFIRMATION", setup.firstPostShockBreakBar));
+            setup.entryStructureEvidence.add(evidence("POST_SHOCK_BREAK_SECOND_CONFIRMATION", secondBar));
+            if (routeAudit != null) {
+                routeAudit.put("branch_status", "POST_SHOCK_SWING_BREAK_CONFIRMED")
+                        .put("selected_branch", setup.branch.name()).put("trade_direction", setup.direction.name())
+                        .put("branch_confirmed_at", secondBar.availableAt().toString())
+                        .put("first_confirmation_bar_start", setup.firstPostShockBreakBar.startTime().toString())
+                        .put("first_confirmation_available_at", setup.firstPostShockBreakBar.availableAt().toString())
+                        .put("first_confirmation_close", setup.firstPostShockBreakBar.close())
+                        .put("second_confirmation_bar_start", secondBar.startTime().toString())
+                        .put("second_confirmation_available_at", secondBar.availableAt().toString())
+                        .put("second_confirmation_close", secondBar.close())
+                        .put("selected_pivot_level", setup.entryLevel)
+                        .put("selected_pivot_center_time", setup.selectedEntryPivot.centerTime().toString())
+                        .put("selected_pivot_confirmed_at", setup.selectedEntryPivot.confirmedAt().toString())
+                        .put("entry_zone_lower", setup.entryZoneLower).put("entry_zone_upper", setup.entryZoneUpper)
+                        .put("legacy_boundary_role", "SHOCK_GEOMETRY_AND_RECOVERY_METADATA_ONLY");
+            }
+            if (audit != null) {
+                ObjectNode entry = (ObjectNode) audit.path("initial_entry");
+                entry.put("status", "WAITING_FOR_H1_RETEST_CONFIRMATION").put("entry_level", setup.entryLevel)
+                        .put("entry_zone_lower", setup.entryZoneLower).put("entry_zone_upper", setup.entryZoneUpper)
+                        .put("pivot_center_time", setup.selectedEntryPivot.centerTime().toString())
+                        .put("pivot_confirmed_at", setup.selectedEntryPivot.confirmedAt().toString());
+            }
+            setup.postShockBreakPivot = null;
+            setup.postShockBreakDirection = null;
+            setup.firstPostShockBreakBar = null;
         }
 
         private void processOneHour(AssetState state, Bar bar, RouteAccumulator result) {
@@ -1088,24 +1637,72 @@ public final class LiquidationStructureRouterV1 {
             if (setup.branch == null) return;
             Instant deadline = setup.armTime.plus(INITIAL_ZONE_WAIT);
             if (bar.eventTime().isAfter(deadline) || bar.availableAt().isAfter(deadline)) {
-                if (!setup.activePending && !pendingFor(setup.id)) state.setup = null;
+                if (!setup.activePending && !pendingFor(setup.id)) {
+                    markSetupTerminal(setup, initialEntryExpiryReason(setup.id), bar.availableAt());
+                    state.setup = null;
+                }
                 return;
             }
             if (bar.startTime().isBefore(setup.armTime)) return;
             Bar previous = state.barEndingAt(Timeframe.ONE_HOUR, bar.startTime());
-            if (previous == null || !entryBarQualifies(bar, previous, setup.direction, setup.boundary,
-                    setup.zoneLower, setup.zoneUpper)) return;
+            ObjectNode audit = auditForSetup(setup.id);
+            ObjectNode entryAudit = audit == null ? null : (ObjectNode) audit.path("initial_entry");
+            List<String> failCodes = entryFailureCodes(bar, previous, setup.direction,
+                    setup.entryLevel, setup.entryZoneLower, setup.entryZoneUpper);
+            String failCode = failCodes.isEmpty() ? null : failCodes.get(0);
+            if (entryAudit != null) {
+                entryAudit.put("h1_test_count", entryAudit.path("h1_test_count").asInt() + 1);
+                if (failCode != null) incrementCount((ObjectNode) entryAudit.path("first_failure_counts"), failCode);
+                for (String code : failCodes) incrementCount((ObjectNode) entryAudit.path("all_failed_gate_counts"), code);
+            }
+            if (previous == null || !entryBarQualifies(bar, previous, setup.direction,
+                    setup.entryLevel, setup.entryZoneLower, setup.entryZoneUpper)) return;
             emitStageOne(state, setup, bar, previous, result);
         }
 
         private void emitStageOne(AssetState state, Setup setup, Bar bar, Bar previous, RouteAccumulator result) {
-            if (setup.activePending || pendingFor(setup.id)) return;
-            List<Bar> lastThree = state.lastConsecutiveBars(Timeframe.ONE_HOUR, bar.eventTime(), 3);
-            if (lastThree.size() != 3) return;
+            if (setup.activePending || pendingFor(setup.id)) {
+                ObjectNode audit = auditForSetup(setup.id);
+                if (audit != null) {
+                    ObjectNode entryAudit = (ObjectNode) audit.path("initial_entry");
+                    incrementCount((ObjectNode) entryAudit.path("first_failure_counts"), "STAGE_ONE_INTENT_ALREADY_PENDING");
+                    incrementCount((ObjectNode) entryAudit.path("all_failed_gate_counts"), "STAGE_ONE_INTENT_ALREADY_PENDING");
+                }
+                return;
+            }
+            ObjectNode audit = auditForSetup(setup.id);
+            List<Bar> h1LastThree = state.lastConsecutiveBars(Timeframe.ONE_HOUR, bar.eventTime(), 3);
+            List<Bar> stopBars;
+            String missingStopWindowReason;
+            if (ruleConfig.initialStopRule() == InitialStopRule.H4_THREE_BAR) {
+                stopBars = state.lastExpectedCompletedBars(Timeframe.FOUR_HOUR, bar.availableAt(), 3);
+                missingStopWindowReason = "THREE_CONSECUTIVE_H4_STOP_BARS_UNAVAILABLE_AT_DECISION";
+            } else {
+                stopBars = h1LastThree;
+                missingStopWindowReason = "THREE_CONSECUTIVE_H1_CONFIRMATION_WINDOW_UNAVAILABLE";
+            }
+            if (stopBars.size() != 3) {
+                if (audit != null) {
+                    ObjectNode entryAudit = (ObjectNode) audit.path("initial_entry");
+                    incrementCount((ObjectNode) entryAudit.path("first_failure_counts"), missingStopWindowReason);
+                    incrementCount((ObjectNode) entryAudit.path("all_failed_gate_counts"), missingStopWindowReason);
+                }
+                return;
+            }
             List<SourceEvidence> common = new ArrayList<>(setup.geometryEvidence);
+            common.addAll(setup.entryStructureEvidence);
             common.add(evidence("CONFIRMATION", bar));
             common.add(evidence("PREVIOUS_HOUR", previous));
-            if (setup.branch == Branch.REVERSAL && targetReachedByBar(setup.recoveryTarget, setup.direction, bar)) return;
+            if (setup.branch == Branch.REVERSAL && targetReachedByBar(setup.recoveryTarget, setup.direction, bar)) {
+                if (audit != null) {
+                    ObjectNode entryAudit = (ObjectNode) audit.path("initial_entry");
+                    entryAudit.put("reversal_target_reached_on_confirmation", true)
+                            .put("reversal_target_reached_at", bar.availableAt().toString());
+                    incrementCount((ObjectNode) entryAudit.with("first_failure_counts"), "REVERSAL_TARGET_REACHED_BEFORE_ENTRY");
+                    incrementCount((ObjectNode) entryAudit.with("all_failed_gate_counts"), "REVERSAL_TARGET_REACHED_BEFORE_ENTRY");
+                }
+                return;
+            }
             Instant decisionTime = bar.availableAt();
             String pairId = setup.id + "|" + decisionTime + "|" + bar.startTime();
             List<Variant> variants = switch (variant) {
@@ -1119,10 +1716,19 @@ public final class LiquidationStructureRouterV1 {
                     default -> setup.branch;
                 };
                 Direction direction = forcedBranch == Branch.CONTINUATION ? setup.shockDirection : setup.shockDirection.opposite();
-                double stop = structuralStop(lastThree, direction, setup.preEventAtr);
+                double stop = structuralStop(stopBars, direction, setup.preEventAtr);
                 List<SourceEvidence> evidence = new ArrayList<>(common);
+                String stopRole = ruleConfig.initialStopRule() == InitialStopRule.H4_THREE_BAR
+                        ? "INITIAL_H4_STOP_SOURCE" : "INITIAL_H1_STOP_SOURCE";
+                if (ruleConfig.initialStopRule() == InitialStopRule.H4_THREE_BAR) {
+                    stopBars.stream().map(source -> evidence(stopRole, source)).forEach(evidence::add);
+                }
+                DailyContextAssessment entryContext = dailyContextAssessment(setup.asset, direction, decisionTime);
                 List<String> reasons = new ArrayList<>();
-                if (!stopAdverse(direction, stop, bar.close())) reasons.add("CONTROL_STOP_NOT_ADVERSE_AT_SHARED_DECISION");
+                if (!stopAdverse(direction, stop, bar.close())) reasons.add(
+                        ruleConfig.initialStopRule() == InitialStopRule.H4_THREE_BAR
+                                ? "INITIAL_H4_STOP_NOT_ADVERSE_AT_ENTRY_DECISION"
+                                : "CONTROL_STOP_NOT_ADVERSE_AT_SHARED_DECISION");
                 Double target = forcedBranch == Branch.REVERSAL ? setup.recoveryTarget : null;
                 if (target != null && !targetAhead(direction, target, bar.close())) {
                     reasons.add("REVERSAL_TARGET_AT_OR_BEHIND_SHARED_DECISION");
@@ -1132,12 +1738,40 @@ public final class LiquidationStructureRouterV1 {
                 }
                 if (reasons.isEmpty()) {
                     ConfirmedIntent intent = makeIntent(setup, pairId, candidate, forcedBranch, setup.branch,
-                            direction, 1, bar, decisionTime, setup.boundary, setup.zoneLower, setup.zoneUpper,
-                            null, null, null, stop, target, MacroState.NOT_REQUIRED, true, evidence, List.of());
+                            direction, 1, bar, decisionTime, setup.entryLevel, setup.entryZoneLower, setup.entryZoneUpper,
+                            setup.selectedEntryPivot == null ? null : setup.selectedEntryPivot.price(),
+                            setup.selectedEntryPivot == null ? null : setup.selectedEntryPivot.centerTime(),
+                            setup.selectedEntryPivot == null ? null : setup.selectedEntryPivot.confirmedAt(),
+                            stop, target, MacroState.NOT_REQUIRED, true, evidence, List.of());
                     result.intents.add(intent);
-                    if (candidate == Variant.ROUTED_REVERSAL_CONTINUATION) {
+                    if (audit != null) {
+                        ObjectNode entryAudit = (ObjectNode) audit.path("initial_entry");
+                        entryAudit.put("status", "STAGE_ONE_INTENT_EMITTED").put("branch", intent.branch().name())
+                                .put("intent_count", entryAudit.path("intent_count").asInt() + 1)
+                                .put("direction", intent.direction().name()).put("decision_time", decisionTime.toString())
+                                .put("confirmation_bar_start", bar.startTime().toString()).put("confirmation_close", bar.close())
+                                .put("boundary", setup.boundary).put("zone_lower", setup.zoneLower).put("zone_upper", setup.zoneUpper)
+                                .put("structural_stop", stop);
+                        if (!ruleConfig.equals(RuleConfig.LEGACY_V004)) {
+                            entryAudit.put("entry_level", setup.entryLevel).put("entry_zone_lower", setup.entryZoneLower)
+                                    .put("entry_zone_upper", setup.entryZoneUpper)
+                                    .put("initial_stop_rule", ruleConfig.initialStopRule().name());
+                        }
+                        if (ruleConfig.initialStopRule() == InitialStopRule.H4_THREE_BAR) {
+                            ArrayNode stopSourceAudit = entryAudit.putArray("initial_stop_source_bars");
+                            stopBars.forEach(source -> stopSourceAudit.addObject().put("start_time", source.startTime().toString())
+                                    .put("event_time", source.eventTime().toString()).put("available_at", source.availableAt().toString())
+                                    .put("low", source.low()).put("high", source.high()));
+                        }
+                        if (ruleConfig.logDailyContext()) entryAudit.set("daily_context", entryContext.toJson());
+                        if (target == null) entryAudit.putNull("recovery_target"); else entryAudit.put("recovery_target", target);
+                    }
+                    if (candidate == Variant.ROUTED_REVERSAL_CONTINUATION
+                            && ruleConfig.initialEntryRule() == InitialEntryRule.PRE_SHOCK_BOUNDARY
+                            && ruleConfig.initialStopRule() == InitialStopRule.LEGACY_H1_THREE_BAR
+                            && h1LastThree.size() == 3) {
                         result.pairedDecisionContexts.add(new PairedDecisionContext(
-                                intent, setup.recoveryTarget, lastThree));
+                                intent, setup.recoveryTarget, h1LastThree));
                         result.stageOneAnchorContexts.add(new StageOneAnchorContext(intent,
                                 new AnchorSetupSeed(setup.id, setup.asset, setup.shockDirection,
                                         setup.eventStart, setup.eventEnd, setup.availableAt,
@@ -1149,6 +1783,15 @@ public final class LiquidationStructureRouterV1 {
                     state.setup.activePending = true;
                     pendingIntents.put(intent.intentId(), intent);
                 } else {
+                    if (audit != null) {
+                        ObjectNode entryAudit = (ObjectNode) audit.path("initial_entry");
+                        entryAudit.put("last_structural_rejection_reason", String.join(";", reasons))
+                                .put("last_structural_rejection_time", decisionTime.toString());
+                        String firstFailure = ruleConfig.equals(RuleConfig.LEGACY_V004)
+                                ? "STAGE_ONE_STRUCTURAL_REJECTION" : reasons.get(0);
+                        incrementCount((ObjectNode) entryAudit.with("first_failure_counts"), firstFailure);
+                        for (String reason : reasons) incrementCount((ObjectNode) entryAudit.with("all_failed_gate_counts"), reason);
+                    }
                     result.rejections.add(rejected(setup, pairId, candidate, forcedBranch, direction, 1,
                             decisionTime, String.join(";", reasons), MacroState.NOT_REQUIRED, evidence));
                 }
@@ -1182,23 +1825,76 @@ public final class LiquidationStructureRouterV1 {
 
         private void updatePivotAndFavorability(AssetState state, Setup setup, Bar bar) {
             if (setup.lastFillTime == null || !bar.eventTime().isAfter(setup.lastFillTime)) return;
+            ObjectNode audit = auditForSetup(setup.id);
+            ObjectNode stagingAudit = audit == null ? null : (ObjectNode) audit.path("staging");
             boolean favorable = setup.direction == Direction.LONG ? bar.close() > bar.open() : bar.close() < bar.open();
             if (favorable && setup.favorableH4AvailableAt == null) {
                 setup.favorableH4Seen = true;
                 setup.favorableH4AvailableAt = bar.availableAt();
                 setup.favorableH4Evidence = evidence("FAVORABLE_AFTER_FILL", bar);
+                if (stagingAudit != null) stagingAudit.put("favorable_h4_seen", true)
+                        .put("first_favorable_h4_available_at", bar.availableAt().toString());
             }
-            if (setup.pivotZone != null || setup.pivotZoneInvalid) return;
+            boolean refreshEnabled = ruleConfig.pivotRefreshRule() == PivotRefreshRule.REFRESH_AFTER_STOP_INVALIDATION;
+            if (setup.pivotZoneInvalid && !refreshEnabled) {
+                if (stagingAudit != null) stagingAudit.put("h4_bars_skipped_after_frozen_pivot_invalidation",
+                        stagingAudit.path("h4_bars_skipped_after_frozen_pivot_invalidation").asInt() + 1);
+                return;
+            }
+            if (setup.pivotZone != null && !setup.pivotZoneInvalid) return;
+            if (setup.pivotZoneInvalid && (setup.activePending || pendingFor(setup.id))) {
+                if (stagingAudit != null) {
+                    stagingAudit.put("pivot_refresh_deferred_for_pending_intent", true);
+                    stagingAudit.put("h4_bars_skipped_while_refresh_deferred",
+                            stagingAudit.path("h4_bars_skipped_while_refresh_deferred").asInt() + 1);
+                }
+                return;
+            }
             List<Bar> lastFive = state.lastConsecutiveBars(Timeframe.FOUR_HOUR, bar.eventTime(), 5);
-            if (lastFive.size() != 5) return;
+            if (lastFive.size() != 5 || refreshEnabled
+                    && lastFive.stream().anyMatch(source -> source.availableAt().isAfter(bar.availableAt()))) {
+                if (stagingAudit != null) stagingAudit.put("h4_windows_without_five_consecutive_bars",
+                        stagingAudit.path("h4_windows_without_five_consecutive_bars").asInt() + 1);
+                return;
+            }
             Bar center = lastFive.get(2);
-            if (!center.startTime().isAfter(setup.lastFillTime)) return;
+            if (!center.startTime().isAfter(setup.lastFillTime)) {
+                if (stagingAudit != null) stagingAudit.put("pivot_centers_not_strictly_after_fill",
+                        stagingAudit.path("pivot_centers_not_strictly_after_fill").asInt() + 1);
+                return;
+            }
+            if (setup.pivotZoneInvalid && setup.pivotInvalidatedCenterTime != null
+                    && !center.startTime().isAfter(setup.pivotInvalidatedCenterTime)) {
+                if (stagingAudit != null) stagingAudit.put("replacement_pivots_not_later_than_invalidated_center",
+                        stagingAudit.path("replacement_pivots_not_later_than_invalidated_center").asInt() + 1);
+                return;
+            }
+            if (setup.pivotZoneInvalid && (setup.pivotInvalidatedAt == null
+                    || !bar.eventTime().isAfter(setup.pivotInvalidatedAt)
+                    || !bar.availableAt().isAfter(setup.pivotInvalidatedAt))) {
+                if (stagingAudit != null) stagingAudit.put("replacement_pivots_confirmed_not_after_invalidation",
+                        stagingAudit.path("replacement_pivots_confirmed_not_after_invalidation").asInt() + 1);
+                return;
+            }
             boolean pivot = setup.direction == Direction.LONG ? pivotLow(lastFive) : pivotHigh(lastFive);
+            if (!pivot && stagingAudit != null) stagingAudit.put("five_bar_windows_without_strict_pivot",
+                    stagingAudit.path("five_bar_windows_without_strict_pivot").asInt() + 1);
             if (pivot) {
                 double price = setup.direction == Direction.LONG ? center.low() : center.high();
                 if (pivotSafe(setup.direction, price, setup.activeStop)) {
                     setup.pivotCandidate = new Pivot(price, center.startTime(), bar.availableAt(),
                             lastFive.stream().map(item -> evidence("PIVOT_SOURCE", item)).toList());
+                    if (stagingAudit != null) stagingAudit.put("pivot_candidate_count", stagingAudit.path("pivot_candidate_count").asInt() + 1)
+                            .put("latest_pivot_center_time", center.startTime().toString())
+                            .put("latest_pivot_confirmed_at", bar.availableAt().toString())
+                            .put("latest_pivot_price", price);
+                    if (stagingAudit != null && !stagingAudit.path("first_pivot_confirmed_at").isTextual()) {
+                        stagingAudit.put("first_pivot_center_time", center.startTime().toString())
+                                .put("first_pivot_confirmed_at", bar.availableAt().toString());
+                    }
+                } else if (stagingAudit != null) {
+                    stagingAudit.put("strict_pivots_unsafe_vs_active_stop",
+                            stagingAudit.path("strict_pivots_unsafe_vs_active_stop").asInt() + 1);
                 }
             }
             if (setup.pivotCandidate == null) return;
@@ -1210,16 +1906,63 @@ public final class LiquidationStructureRouterV1 {
                     setup.pivotCandidate.confirmedAt,
                     later(setup.pivotCandidate.confirmedAt, setup.favorableH4AvailableAt),
                     combined(setup.pivotCandidate.evidence, setup.favorableH4Evidence));
+            if (setup.pivotZoneInvalid) {
+                setup.pivotReplacementCount++;
+                setup.pivotZoneInvalid = false;
+                setup.pivotInvalidatedAt = null;
+                setup.pivotInvalidatedCenterTime = null;
+            }
+            if (stagingAudit != null) stagingAudit.put("pivot_zone_formed", true)
+                    .put("pivot_zone_eligible_at", setup.pivotZone.eligibleAt.toString())
+                    .put("pivot_zone_center", setup.pivotZone.center)
+                    .put("pivot_zone_lower", setup.pivotZone.lower).put("pivot_zone_upper", setup.pivotZone.upper);
+            if (stagingAudit != null && refreshEnabled && setup.pivotReplacementCount > 0) {
+                stagingAudit.put("pivot_zone_invalidated", false).put("pivot_zone_currently_invalidated_by_stop", false);
+                ObjectNode replacement = stagingAudit.withArray("pivot_refresh_replacements").addObject();
+                replacement.put("replacement_number", setup.pivotReplacementCount)
+                        .put("replacement_center_time", setup.pivotZone.pivotTime.toString())
+                        .put("replacement_confirmed_at", setup.pivotZone.confirmedAt.toString())
+                        .put("replacement_eligible_at", setup.pivotZone.eligibleAt.toString())
+                        .put("replacement_price", setup.pivotZone.price);
+                stagingAudit.put("pivot_refresh_pending", false);
+            }
         }
 
         private void processOpenPositionOneHour(AssetState state, Setup setup, Bar bar, RouteAccumulator result) {
-            if (setup.pivotZone == null || setup.pivotZoneInvalid || setup.filledStage >= 3
-                    || setup.recoveryTargetReached || setup.activePending || pendingFor(setup.id)) return;
             if (setup.lastFillTime == null || !bar.startTime().isAfter(setup.lastFillTime)) return;
+            ObjectNode audit = auditForSetup(setup.id);
+            ObjectNode stagingAudit = audit == null ? null : (ObjectNode) audit.path("staging");
+            if (setup.pivotZoneInvalid) {
+                if (stagingAudit != null) stagingAudit.put("h1_bars_skipped_after_pivot_zone_invalidation",
+                        stagingAudit.path("h1_bars_skipped_after_pivot_zone_invalidation").asInt() + 1);
+                return;
+            }
+            if (setup.pivotZone == null) {
+                if (stagingAudit != null) stagingAudit.put("h1_bars_before_pivot_zone",
+                        stagingAudit.path("h1_bars_before_pivot_zone").asInt() + 1);
+                return;
+            }
+            if (setup.filledStage >= 3 || setup.recoveryTargetReached || setup.activePending || pendingFor(setup.id)) {
+                if (stagingAudit != null) {
+                    String reason = setup.filledStage >= 3 ? "MAX_THREE_TRANCHES_FILLED"
+                            : setup.recoveryTargetReached ? "REVERSAL_RECOVERY_TARGET_REACHED"
+                            : "ADDITION_INTENT_ALREADY_PENDING";
+                    incrementCount((ObjectNode) stagingAudit.with("h1_additional_suppressions"), reason);
+                }
+                return;
+            }
             if (bar.startTime().isBefore(setup.pivotZone.eligibleAt)) return;
             Instant entryHour = bar.startTime().truncatedTo(ChronoUnit.HOURS);
             if (setup.lastAddDecisionHour != null && !entryHour.isAfter(setup.lastAddDecisionHour)) return;
             Bar previous = state.barEndingAt(Timeframe.ONE_HOUR, bar.startTime());
+            List<String> failCodes = entryFailureCodes(bar, previous, setup.direction, setup.pivotZone.center,
+                    setup.pivotZone.lower, setup.pivotZone.upper);
+            String failCode = failCodes.isEmpty() ? null : failCodes.get(0);
+            if (stagingAudit != null) {
+                stagingAudit.put("h1_add_test_count", stagingAudit.path("h1_add_test_count").asInt() + 1);
+                if (failCode != null) incrementCount((ObjectNode) stagingAudit.path("first_failure_counts"), failCode);
+                for (String code : failCodes) incrementCount((ObjectNode) stagingAudit.path("all_failed_gate_counts"), code);
+            }
             if (previous == null || !entryBarQualifies(bar, previous, setup.direction, setup.pivotZone.center,
                     setup.pivotZone.lower, setup.pivotZone.upper)) return;
             int stage = setup.filledStage + 1;
@@ -1232,18 +1975,73 @@ public final class LiquidationStructureRouterV1 {
                     : macroAssessment(decisionTime, setup.direction);
             MacroState macroState = macro.state;
             evidence.addAll(macro.evidence);
+            DailyContextAssessment dailyContext = dailyContextAssessment(setup.asset, setup.direction, decisionTime);
+            List<String> contextFailures = dailyContextFailures(dailyContext, stage);
+            if (ruleConfig.logDailyContext() || ruleConfig.dailyRsiAdditionGate() || ruleConfig.dailySma200AdditionGate()) {
+                if (ruleConfig.dailyRsiAdditionGate() || ruleConfig.dailySma200AdditionGate()) {
+                    evidence.addAll(dailyContextEvidence(dailyContext));
+                }
+                if (stagingAudit != null) stagingAudit.set("stage_" + stage + "_daily_context", dailyContext.toJson());
+            }
             boolean macroEligible = macroGatePolicy == MacroGatePolicy.STRUCTURE_ONLY || (stage == 2
                     ? macroState == MacroState.SUPPORTIVE || macroState == MacroState.NEUTRAL
                     : macroState == MacroState.SUPPORTIVE);
+            boolean targetFails = setup.branch == Branch.REVERSAL && !targetAhead(setup.direction, setup.recoveryTarget, bar.close());
+            boolean stopFails = !stopAdverse(setup.direction, setup.activeStop, bar.close());
+            List<String> allStageFailures = new ArrayList<>();
+            if (!macroEligible) allStageFailures.add("MACRO_" + macroState + "_BLOCKS_STAGE_" + stage);
+            allStageFailures.addAll(contextFailures);
+            if (targetFails) allStageFailures.add("REVERSAL_TARGET_AT_OR_BEHIND_ADDITION_DECISION");
+            if (stopFails) allStageFailures.add("COMMON_STOP_NOT_ADVERSE_AT_ADDITION_DECISION");
+            if (stagingAudit != null) for (String reason : allStageFailures) {
+                incrementCount((ObjectNode) stagingAudit.path("all_failed_gate_counts"), reason);
+            }
+            if (stagingAudit != null && !contextFailures.isEmpty()) {
+                String dailyCountKey = "stage_" + stage + "_daily_context_rejection_count";
+                stagingAudit.put(dailyCountKey, stagingAudit.path(dailyCountKey).asInt() + 1)
+                        .put("stage_" + stage + "_last_daily_context_rejection_time", decisionTime.toString());
+                if (!stagingAudit.path("stage_" + stage + "_first_daily_context_rejection_time").isTextual()) {
+                    stagingAudit.put("stage_" + stage + "_first_daily_context_rejection_time", decisionTime.toString());
+                }
+                ObjectNode contextReasons = (ObjectNode) stagingAudit.with("daily_context_rejection_counts");
+                for (String failure : contextFailures) incrementCount(contextReasons, failure);
+            }
             String pairId = setup.id + "|ADD" + stage + "|" + decisionTime + "|" + bar.startTime();
-            if (!macroEligible) {
+            if (!macroEligible || !contextFailures.isEmpty()) {
+                if (stagingAudit != null) {
+                    String rejection = String.join(";", allStageFailures.stream()
+                            .filter(reason -> reason.startsWith("MACRO_") || reason.startsWith("DAILY_"))
+                            .toList());
+                    stagingAudit.put("stage_" + stage + "_router_rejection", rejection);
+                    if (!macroEligible) {
+                        String macroRejection = "MACRO_" + macroState + "_BLOCKS_STAGE_" + stage;
+                        stagingAudit.put("stage_" + stage + "_last_macro_rejection_time", decisionTime.toString());
+                        if (!stagingAudit.path("stage_" + stage + "_first_macro_rejection_time").isTextual()) {
+                            stagingAudit.put("stage_" + stage + "_first_macro_rejection_time", decisionTime.toString());
+                        }
+                    }
+                    if (!contextFailures.isEmpty()) {
+                        stagingAudit.put("stage_" + stage + "_last_daily_context_rejection_time", decisionTime.toString());
+                        if (!stagingAudit.path("stage_" + stage + "_first_daily_context_rejection_time").isTextual()) {
+                            stagingAudit.put("stage_" + stage + "_first_daily_context_rejection_time", decisionTime.toString());
+                        }
+                    }
+                    String firstGateFailure = !macroEligible ? "MACRO_" + macroState + "_BLOCKS_STAGE_" + stage
+                            : contextFailures.get(0);
+                    incrementCount((ObjectNode) stagingAudit.with("first_failure_counts"), firstGateFailure);
+                }
                 result.rejections.add(rejected(setup, pairId, variant, setup.branch, setup.direction, stage,
-                        decisionTime, "MACRO_" + macroState + "_BLOCKS_STAGE_" + stage,
+                        decisionTime, String.join(";", allStageFailures.stream()
+                                .filter(reason -> reason.startsWith("MACRO_") || reason.startsWith("DAILY_"))
+                                .toList()),
                         macroState, evidence));
                 setup.lastAddDecisionHour = entryHour;
                 return;
             }
-            if (setup.branch == Branch.REVERSAL && !targetAhead(setup.direction, setup.recoveryTarget, bar.close())) {
+            if (targetFails) {
+                if (stagingAudit != null) stagingAudit.put("stage_" + stage + "_router_rejection", "REVERSAL_TARGET_AT_OR_BEHIND_ADDITION_DECISION");
+                if (stagingAudit != null) incrementCount((ObjectNode) stagingAudit.path("first_failure_counts"),
+                        "REVERSAL_TARGET_AT_OR_BEHIND_ADDITION_DECISION");
                 result.rejections.add(rejected(setup, pairId, variant, setup.branch, setup.direction, stage,
                         decisionTime, "REVERSAL_TARGET_AT_OR_BEHIND_ADDITION_DECISION",
                         macroState, evidence));
@@ -1251,7 +2049,10 @@ public final class LiquidationStructureRouterV1 {
                 return;
             }
             double stop = setup.activeStop;
-            if (!stopAdverse(setup.direction, stop, bar.close())) {
+            if (stopFails) {
+                if (stagingAudit != null) stagingAudit.put("stage_" + stage + "_router_rejection", "COMMON_STOP_NOT_ADVERSE_AT_ADDITION_DECISION");
+                if (stagingAudit != null) incrementCount((ObjectNode) stagingAudit.path("first_failure_counts"),
+                        "COMMON_STOP_NOT_ADVERSE_AT_ADDITION_DECISION");
                 result.rejections.add(rejected(setup, pairId, variant, setup.branch, setup.direction, stage,
                         decisionTime, "COMMON_STOP_NOT_ADVERSE_AT_ADDITION_DECISION", macroState, evidence));
                 return;
@@ -1263,6 +2064,14 @@ public final class LiquidationStructureRouterV1 {
                     stop, setup.branch == Branch.REVERSAL ? setup.recoveryTarget : null,
                     macroState, true, evidence, List.of());
             result.intents.add(intent);
+            if (stagingAudit != null) {
+                String stagePrefix = "stage_" + stage + "_";
+                stagingAudit.put(stagePrefix + "intent_time", decisionTime.toString())
+                        .put(stagePrefix + "branch", intent.branch().name())
+                        .put(stagePrefix + "macro_state", macroState.name())
+                        .put(stagePrefix + "confirmation_close", bar.close())
+                        .put(stagePrefix + "intent_count", stagingAudit.path(stagePrefix + "intent_count").asInt() + 1);
+            }
             pendingIntents.put(intent.intentId(), intent);
             setup.activePending = true;
             setup.lastAddDecisionHour = entryHour;
@@ -1270,6 +2079,65 @@ public final class LiquidationStructureRouterV1 {
 
         private boolean pendingFor(String setupId) {
             return pendingIntents.values().stream().anyMatch(intent -> intent.setupId().equals(setupId));
+        }
+
+        private ObjectNode auditForSetup(String setupId) {
+            return setupRuleAudit.get(setupId);
+        }
+
+        private void markSetupTerminal(Setup setup, String reason, Instant at) {
+            ObjectNode audit = auditForSetup(setup.id);
+            if (audit == null) return;
+            if (!audit.path("terminal_reason").isTextual()) audit.put("terminal_reason", reason);
+            if (!audit.path("terminal_time").isTextual()) audit.put("terminal_time", at.toString());
+            ObjectNode entry = (ObjectNode) audit.path("initial_entry");
+            if ("WAITING_FOR_BRANCH".equals(entry.path("status").asText())
+                    || "WAITING_FOR_H1_RETEST_CONFIRMATION".equals(entry.path("status").asText())) entry.put("status", reason);
+            ObjectNode route = (ObjectNode) audit.path("route");
+            if ("WAITING_FOR_TWO_H4_CONFIRMATIONS".equals(route.path("branch_status").asText())) {
+                route.put("branch_status", "BRANCH_WAIT_EXPIRED_WITHOUT_TWO_CONSECUTIVE_CONFIRMATIONS")
+                        .put("branch_expiry_at", at.toString());
+            }
+        }
+
+        private String initialEntryExpiryReason(String setupId) {
+            ObjectNode audit = auditForSetup(setupId);
+            int intents = audit == null ? 0 : audit.path("initial_entry").path("intent_count").asInt();
+            return intents > 0
+                    ? "CONFIRMED_STAGE_ONE_INTENTS_NOT_FILLED_BEFORE_ENTRY_WINDOW_END"
+                    : "INITIAL_ENTRY_WINDOW_EXPIRED_WITHOUT_CONFIRMATION";
+        }
+
+        private static void resetStagingCycle(ObjectNode staging, int afterFilledStage, Instant fillTime, RuleConfig config) {
+            staging.removeAll();
+            staging.put("cycle_after_filled_stage", afterFilledStage).put("cycle_started_at", fillTime.toString())
+                    .put("favorable_h4_seen", false).put("pivot_candidate_count", 0)
+                    .put("pivot_zone_formed", false).put("pivot_zone_invalidated", false)
+                    .put("h1_add_test_count", 0).put("h4_bars_skipped_after_frozen_pivot_invalidation", 0)
+                    .put("h4_windows_without_five_consecutive_bars", 0)
+                    .put("pivot_centers_not_strictly_after_fill", 0).put("five_bar_windows_without_strict_pivot", 0)
+                    .put("strict_pivots_unsafe_vs_active_stop", 0).put("h1_bars_before_pivot_zone", 0)
+                    .put("h1_bars_skipped_after_pivot_zone_invalidation", 0);
+            staging.putObject("first_failure_counts");
+            staging.putObject("all_failed_gate_counts");
+            staging.putObject("h1_additional_suppressions");
+            staging.putObject("fill_rejection_counts");
+            if (config.dailyRsiAdditionGate() || config.dailySma200AdditionGate()) {
+                staging.putObject("daily_context_rejection_counts");
+            }
+            if (config.pivotRefreshRule() == PivotRefreshRule.REFRESH_AFTER_STOP_INVALIDATION) {
+                staging.putArray("pivot_refresh_invalidations");
+                staging.putArray("pivot_refresh_replacements");
+                staging.put("pivot_refresh_pending", false).put("pivot_refresh_deferred_for_pending_intent", false)
+                        .put("pivot_zone_currently_invalidated_by_stop", false)
+                        .put("h4_bars_skipped_while_refresh_deferred", 0)
+                        .put("replacement_pivots_not_later_than_invalidated_center", 0)
+                        .put("replacement_pivots_confirmed_not_after_invalidation", 0);
+            }
+        }
+
+        private static void incrementCount(ObjectNode counts, String key) {
+            counts.put(key, counts.path(key).asInt() + 1);
         }
 
         private void cancelPending(AssetState state, Setup setup, Bar bar, RouteAccumulator result, String reason) {
@@ -1310,6 +2178,63 @@ public final class LiquidationStructureRouterV1 {
             if (finalClose.compareTo(lowerNeutralBoundary) < 0) return new MacroAssessment(
                     direction == Direction.SHORT ? MacroState.SUPPORTIVE : MacroState.OPPOSING, evidence);
             return new MacroAssessment(MacroState.NEUTRAL, evidence);
+        }
+
+        private DailyContextAssessment dailyContextAssessment(String asset, Direction direction, Instant decisionTime) {
+            LocalDate expectedDay = decisionTime.atZone(ZoneOffset.UTC).toLocalDate().minusDays(1);
+            DailyPriceContext row = dailyPriceContexts.getOrDefault(asset, Collections.emptyNavigableMap()).get(expectedDay);
+            if (row != null && row.availableAt().isAfter(decisionTime)) row = null;
+            ContextState rsi = row == null ? ContextState.UNKNOWN : rsiContext(row.rsi14(), direction);
+            ContextState sma = row == null ? ContextState.UNKNOWN : smaContext(row.dailyClose(), row.sma200(), direction);
+            return new DailyContextAssessment(row, expectedDay, rsi, sma);
+        }
+
+        private static ContextState rsiContext(Double value, Direction direction) {
+            if (value == null) return ContextState.UNKNOWN;
+            if (Double.compare(value, 50.0) == 0) return ContextState.NEUTRAL;
+            boolean supportive = direction == Direction.LONG ? value > 50.0 : value < 50.0;
+            return supportive ? ContextState.SUPPORTIVE : ContextState.OPPOSING;
+        }
+
+        private static ContextState smaContext(double close, Double sma, Direction direction) {
+            if (sma == null) return ContextState.UNKNOWN;
+            int comparison = Double.compare(close, sma);
+            if (comparison == 0) return ContextState.NEUTRAL;
+            boolean supportive = direction == Direction.LONG ? comparison > 0 : comparison < 0;
+            return supportive ? ContextState.SUPPORTIVE : ContextState.OPPOSING;
+        }
+
+        private List<String> dailyContextFailures(DailyContextAssessment context, int stage) {
+            ArrayList<String> failures = new ArrayList<>(2);
+            if (ruleConfig.dailyRsiAdditionGate()) {
+                String reason = dailyGateFailure("DAILY_RSI", context.rsiState(), stage);
+                if (reason != null) failures.add(reason);
+            }
+            if (ruleConfig.dailySma200AdditionGate()) {
+                String reason = dailyGateFailure("DAILY_SMA200", context.smaState(), stage);
+                if (reason != null) failures.add(reason);
+            }
+            return List.copyOf(failures);
+        }
+
+        private static String dailyGateFailure(String name, ContextState state, int stage) {
+            if (stage == 2 && (state == ContextState.SUPPORTIVE || state == ContextState.NEUTRAL)) return null;
+            if (stage == 3 && state == ContextState.SUPPORTIVE) return null;
+            if (state == ContextState.UNKNOWN) return name + "_UNKNOWN_BLOCKS_STAGE_" + stage;
+            if (state == ContextState.OPPOSING) return name + "_OPPOSING_BLOCKS_STAGE_" + stage;
+            return name + "_NEUTRAL_BLOCKS_STAGE_" + stage;
+        }
+
+        private static List<SourceEvidence> dailyContextEvidence(DailyContextAssessment context) {
+            DailyPriceContext row = context.row();
+            if (row == null) return List.of();
+            Instant closeTime = row.utcDay().plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant();
+            ArrayList<SourceEvidence> evidence = new ArrayList<>(2);
+            if (row.rsi14() != null) evidence.add(new SourceEvidence("DAILY_RSI14_CONTEXT", row.asset(),
+                    row.seriesId(), closeTime, row.availableAt()));
+            if (row.sma200() != null) evidence.add(new SourceEvidence("DAILY_SMA200_CONTEXT", row.asset(),
+                    row.seriesId(), closeTime, row.availableAt()));
+            return List.copyOf(evidence);
         }
 
         private ConfirmedIntent makeIntent(Setup setup, String pairId, Variant outputVariant,
@@ -1365,7 +2290,12 @@ public final class LiquidationStructureRouterV1 {
             // Keep a confirmed request's setup alive until the accounting owner acknowledges
             // fill or no-fill. A later-arriving observation cannot invalidate an outstanding
             // intent while its next-minute execution decision is still unresolved.
-            if (now.isAfter(deadline) && !setup.activePending && !pendingFor(setup.id)) state.setup = null;
+            if (now.isAfter(deadline) && !setup.activePending && !pendingFor(setup.id)) {
+                String reason = setup.branch == null ? "BRANCH_WAIT_EXPIRED_WITHOUT_TWO_CONSECUTIVE_CONFIRMATIONS"
+                        : initialEntryExpiryReason(setup.id);
+                markSetupTerminal(setup, reason, now);
+                state.setup = null;
+            }
         }
 
         private static Instant processingTime(Observation observation) {
@@ -1404,6 +2334,8 @@ public final class LiquidationStructureRouterV1 {
         private final String asset;
         private final TreeMap<Instant, Bar> h4 = new TreeMap<>();
         private final TreeMap<Instant, Bar> h1 = new TreeMap<>();
+        private final TreeMap<Instant, Pivot> h4ConfirmedPivotHighs = new TreeMap<>();
+        private final TreeMap<Instant, Pivot> h4ConfirmedPivotLows = new TreeMap<>();
         private final TreeMap<Instant, OpenInterest> oi = new TreeMap<>();
         private final TreeMap<LocalDate, DailyLiquidation> daily = new TreeMap<>();
         private final Set<LocalDate> dailyEvaluated = new HashSet<>();
@@ -1443,6 +2375,17 @@ public final class LiquidationStructureRouterV1 {
                 throw new IllegalArgumentException("price series identity changed for " + asset + " " + value.timeframe());
             }
             if (target.putIfAbsent(value.eventTime(), value) != null) throw new IllegalArgumentException("duplicate price bar close timestamp for " + asset);
+            if (value.timeframe() == Timeframe.FOUR_HOUR) {
+                List<Bar> five = lastConsecutiveBars(Timeframe.FOUR_HOUR, value.eventTime(), 5);
+                if (five.size() == 5) {
+                    Bar center = five.get(2);
+                    List<SourceEvidence> source = five.stream().map(item -> evidence("PIVOT_SOURCE", item)).toList();
+                    if (pivotHigh(five)) h4ConfirmedPivotHighs.put(center.startTime(),
+                            new Pivot(center.high(), center.startTime(), value.availableAt(), source));
+                    if (pivotLow(five)) h4ConfirmedPivotLows.put(center.startTime(),
+                            new Pivot(center.low(), center.startTime(), value.availableAt(), source));
+                }
+            }
         }
 
         /** Delayed bars cannot rewind a signal path after later event bars have been processed. */
@@ -1476,11 +2419,14 @@ public final class LiquidationStructureRouterV1 {
             return new DailyGate(downStress, upStress, longP95, shortP95, current);
         }
 
-        private Geometry geometryForStressDay(LocalDate day, Instant decisionAvailableAt, DailyGate gate) {
+        private GeometryEvaluation geometryForStressDay(LocalDate day, Instant decisionAvailableAt, DailyGate gate) {
             Instant dayStart = day.atStartOfDay(ZoneOffset.UTC).toInstant();
             Instant dayEnd = dayStart.plus(Duration.ofDays(1));
             List<Bar> stressBars = exactBars(h4, Timeframe.FOUR_HOUR, dayStart, 6);
-            if (stressBars.size() != 6 || stressBars.stream().anyMatch(bar -> bar.availableAt().isAfter(decisionAvailableAt))) return null;
+            if (stressBars.size() != 6 || stressBars.stream().anyMatch(bar -> bar.availableAt().isAfter(decisionAvailableAt))) {
+                return new GeometryEvaluation(null, false, false, List.of("STRESS_DAY_24H_H4_WINDOW_UNAVAILABLE"),
+                        List.of("STRESS_DAY_24H_H4_WINDOW_UNAVAILABLE"), List.of());
+            }
             Bar fastBar = stressBars.get(0);
             for (Bar bar : stressBars.subList(1, stressBars.size())) {
                 // Strict comparison preserves the earliest bar when absolute moves tie.
@@ -1494,12 +2440,20 @@ public final class LiquidationStructureRouterV1 {
             boolean fastQualifies = fastDirection != null && fastAtr > 0.0 && fastOi != null
                     && Math.abs(fastBar.close() - fastBar.open()) >= FAST_ATR_MULTIPLE * fastAtr
                     && fastOi.declinedByAtLeast(OI_MINIMUM_DECLINE) && fastStressMatches;
+            List<String> fastFailures = new ArrayList<>();
+            if (fastDirection == null) fastFailures.add("FAST_SHOCK_DIRECTION_UNDEFINED");
+            if (!(fastAtr > 0.0)) fastFailures.add("FAST_PRE_EVENT_ATR_UNAVAILABLE");
+            if (fastOi == null) fastFailures.add("FAST_OI_ENDPOINT_PAIR_MISSING");
+            else if (!fastOi.declinedByAtLeast(OI_MINIMUM_DECLINE)) fastFailures.add("FAST_OI_DECLINE_BELOW_GATE");
+            if (fastAtr > 0.0 && Math.abs(fastBar.close() - fastBar.open()) < FAST_ATR_MULTIPLE * fastAtr) fastFailures.add("FAST_MOVE_BELOW_ATR_GATE");
+            if (!fastStressMatches) fastFailures.add("FAST_DIRECTION_MISMATCHES_LIQUIDATION_SIDE");
 
             List<Bar> slowBars = exactBars(h4, Timeframe.FOUR_HOUR, dayEnd.minus(Duration.ofHours(72)), SLOW_WINDOW_BARS);
             boolean slowQualifies = false;
             Direction slowDirection = null;
             double slowAtr = Double.NaN;
             Bar slowEnd = null;
+            List<String> slowFailures = new ArrayList<>();
             if (slowBars.size() == SLOW_WINDOW_BARS
                     && slowBars.stream().noneMatch(bar -> bar.availableAt().isAfter(decisionAvailableAt))) {
                 Bar first = slowBars.get(0), last = slowBars.get(slowBars.size() - 1);
@@ -1513,8 +2467,16 @@ public final class LiquidationStructureRouterV1 {
                         && Math.abs(last.close() - first.open()) >= SLOW_ATR_MULTIPLE * slowAtr
                         && slowOi != null && slowOi.declinedByAtLeast(OI_MINIMUM_DECLINE)
                         && slowStressMatches;
+                if (slowDirection == null) slowFailures.add("SLOW_SHOCK_DIRECTION_UNDEFINED");
+                if (!(slowAtr > 0.0)) slowFailures.add("SLOW_PRE_EVENT_ATR_UNAVAILABLE");
+                if (slowOi == null) slowFailures.add("SLOW_OI_ENDPOINT_PAIR_MISSING");
+                else if (!slowOi.declinedByAtLeast(OI_MINIMUM_DECLINE)) slowFailures.add("SLOW_OI_DECLINE_BELOW_GATE");
+                if (slowAtr > 0.0 && Math.abs(last.close() - first.open()) < SLOW_ATR_MULTIPLE * slowAtr) slowFailures.add("SLOW_MOVE_BELOW_ATR_GATE");
+                if (!slowStressMatches) slowFailures.add("SLOW_DIRECTION_MISMATCHES_LIQUIDATION_SIDE");
+            } else {
+                slowFailures.add("SLOW_72H_H4_WINDOW_UNAVAILABLE");
             }
-            if (!fastQualifies && !slowQualifies) return null;
+            if (!fastQualifies && !slowQualifies) return new GeometryEvaluation(null, false, false, fastFailures, slowFailures, List.of());
             boolean useFast = fastQualifies;
             List<Bar> geometryBars = useFast ? List.of(fastBar) : slowBars;
             Instant eventStart = useFast ? fastBar.startTime() : slowBars.get(0).startTime();
@@ -1523,9 +2485,29 @@ public final class LiquidationStructureRouterV1 {
             double eventOpen = useFast ? fastBar.open() : slowBars.get(0).open();
             double eventClose = useFast ? fastBar.close() : slowEnd.close();
             Direction shockDirection = useFast ? fastDirection : slowDirection;
-            return freezeGeometry(eventStart, eventEnd, eventOpen, eventClose, preAtr,
-                    fastQualifies, slowQualifies, shockDirection, decisionAvailableAt,
-                    geometryBars, dailyEvidence(day));
+            List<String> selectedFailures = selectedGeometryFailures(eventStart, eventEnd, eventClose,
+                    preAtr, shockDirection, decisionAvailableAt);
+            Geometry geometry = freezeGeometry(eventStart, eventEnd, eventOpen, eventClose, preAtr,
+                    fastQualifies, slowQualifies, shockDirection, decisionAvailableAt, geometryBars, dailyEvidence(day));
+            return new GeometryEvaluation(geometry, fastQualifies, slowQualifies, fastFailures, slowFailures,
+                    geometry == null ? selectedFailures : List.of());
+        }
+
+        private List<String> selectedGeometryFailures(Instant eventStart, Instant eventEnd, double eventClose,
+                double preAtr, Direction shock, Instant availableAt) {
+            List<String> failures = new ArrayList<>();
+            if (shock == null) failures.add("SELECTED_SHOCK_DIRECTION_UNDEFINED");
+            if (!finitePositive(preAtr)) failures.add("SELECTED_PRE_EVENT_ATR_UNAVAILABLE");
+            List<Bar> prior = exactBars(h4, Timeframe.FOUR_HOUR, eventStart.minus(Duration.ofHours(24)), FAST_WINDOW_BARS);
+            if (prior.size() != FAST_WINDOW_BARS || prior.stream().anyMatch(bar -> bar.availableAt().isAfter(availableAt))) {
+                failures.add("PRE_EVENT_24H_RANGE_UNAVAILABLE");
+            } else if (shock != null) {
+                double priorHigh = maxHigh(prior), priorLow = minLow(prior);
+                double boundary = shock == Direction.LONG ? priorHigh : priorLow;
+                if (!beyondBrokenBoundary(eventClose, shock, boundary)) failures.add("SELECTED_SHOCK_FAILED_PRIOR_24H_RANGE_BREAK");
+            }
+            if (failures.isEmpty()) failures.add("SELECTED_GEOMETRY_REJECTED_UNCLASSIFIED");
+            return List.copyOf(failures);
         }
 
         private Geometry priceOiGeometryEndingAt(Instant eventEnd) {
@@ -1667,6 +2649,36 @@ public final class LiquidationStructureRouterV1 {
             return List.copyOf(result);
         }
 
+        private List<Bar> lastConsecutiveAvailableBars(Timeframe timeframe, Instant availableAt, int count) {
+            TreeMap<Instant, Bar> source = timeframe == Timeframe.FOUR_HOUR ? h4 : h1;
+            Map.Entry<Instant, Bar> ending = source.floorEntry(availableAt);
+            while (ending != null && ending.getValue().availableAt().isAfter(availableAt)) {
+                ending = source.lowerEntry(ending.getKey());
+            }
+            if (ending == null) return List.of();
+            List<Bar> bars = lastConsecutiveBars(timeframe, ending.getKey(), count);
+            if (bars.size() != count || bars.stream().anyMatch(bar -> bar.availableAt().isAfter(availableAt))) return List.of();
+            return bars;
+        }
+
+        private List<Bar> lastExpectedCompletedBars(Timeframe timeframe, Instant availableAt, int count) {
+            long seconds = timeframe.duration().toSeconds();
+            long completedEndEpoch = Math.floorDiv(availableAt.getEpochSecond(), seconds) * seconds;
+            Instant expectedEnd = Instant.ofEpochSecond(completedEndEpoch);
+            List<Bar> bars = lastConsecutiveBars(timeframe, expectedEnd, count);
+            if (bars.size() != count || bars.stream().anyMatch(bar -> bar.availableAt().isAfter(availableAt))) return List.of();
+            return bars;
+        }
+
+        private Pivot latestConfirmedPivot(TreeMap<Instant, Pivot> pivots, Instant minimumCenter,
+                Instant availableAt) {
+            for (Pivot pivot : pivots.descendingMap().values()) {
+                if (pivot.centerTime().isBefore(minimumCenter)) break;
+                if (!pivot.confirmedAt().isAfter(availableAt)) return pivot;
+            }
+            return null;
+        }
+
         private static List<Bar> exactBars(TreeMap<Instant, Bar> source, Timeframe timeframe,
                 Instant firstStart, int count) {
             List<Bar> result = new ArrayList<>(count);
@@ -1682,8 +2694,35 @@ public final class LiquidationStructureRouterV1 {
 
     private record DailyGate(boolean downStress, boolean upStress, double longP95,
             double shortP95, DailyLiquidation current) {}
+    private record GeometryEvaluation(Geometry geometry, boolean fastQualifies, boolean slowQualifies,
+            List<String> fastFailures, List<String> slowFailures, List<String> selectedFailures) {
+        private GeometryEvaluation {
+            fastFailures = List.copyOf(fastFailures);
+            slowFailures = List.copyOf(slowFailures);
+            selectedFailures = List.copyOf(selectedFailures);
+        }
+    }
     private record MacroAssessment(MacroState state, List<SourceEvidence> evidence) {
         private MacroAssessment { evidence = List.copyOf(evidence); }
+    }
+    private enum ContextState { SUPPORTIVE, NEUTRAL, OPPOSING, UNKNOWN }
+    private record DailyContextAssessment(DailyPriceContext row, LocalDate expectedDay,
+            ContextState rsiState, ContextState smaState) {
+        private ObjectNode toJson() {
+            ObjectNode result = JsonHashes.mapper().createObjectNode().put("expected_utc_day", expectedDay.toString());
+            if (row == null) {
+                result.put("status", "UNKNOWN").put("reason", "NO_COMPLETE_PRIOR_UTC_DAY_CONTEXT");
+                result.putNull("available_at").putNull("daily_close").putNull("rsi14").putNull("sma200");
+            } else {
+                result.put("status", "AVAILABLE").put("utc_day", row.utcDay().toString())
+                        .put("available_at", row.availableAt().toString()).put("daily_close", row.dailyClose())
+                        .put("series_id", row.seriesId());
+                if (row.rsi14() == null) result.putNull("rsi14"); else result.put("rsi14", row.rsi14());
+                if (row.sma200() == null) result.putNull("sma200"); else result.put("sma200", row.sma200());
+            }
+            result.put("rsi_state", rsiState.name()).put("sma200_state", smaState.name());
+            return result;
+        }
     }
 
     private enum GeometryKind { FAST, SLOW }
@@ -1691,6 +2730,11 @@ public final class LiquidationStructureRouterV1 {
         private boolean declinedByAtLeast(double fraction) {
             return start.baseQuantity() > 0.0 && end.baseQuantity() <= start.baseQuantity() * (1.0 - fraction);
         }
+    }
+
+    private static void addTextArray(ObjectNode target, String field, List<String> values) {
+        ArrayNode rows = target.putArray(field);
+        values.forEach(rows::add);
     }
     private record Geometry(String asset, Instant eventStart, Instant eventEnd, Direction shockDirection,
             double preEventAtr, double priorHigh, double priorLow, double boundary, double recoveryTarget,
@@ -1713,6 +2757,11 @@ public final class LiquidationStructureRouterV1 {
         private final double recoveryTarget;
         private final double zoneLower;
         private final double zoneUpper;
+        private double entryLevel;
+        private double entryZoneLower;
+        private double entryZoneUpper;
+        private Pivot selectedEntryPivot;
+        private List<SourceEvidence> entryStructureEvidence = List.of();
         private final boolean fastGeometry;
         private final boolean slowGeometry;
         private final GeometryKind selectedGeometry;
@@ -1723,6 +2772,9 @@ public final class LiquidationStructureRouterV1 {
         private Branch branchCandidate;
         private int branchCandidateCount;
         private Instant lastBranchBarEnd;
+        private Pivot postShockBreakPivot;
+        private Direction postShockBreakDirection;
+        private Bar firstPostShockBreakBar;
         private Branch branch;
         private Direction direction;
         private Instant armTime;
@@ -1734,6 +2786,9 @@ public final class LiquidationStructureRouterV1 {
         private Pivot pivotCandidate;
         private FrozenZone pivotZone;
         private boolean pivotZoneInvalid;
+        private Instant pivotInvalidatedAt;
+        private Instant pivotInvalidatedCenterTime;
+        private int pivotReplacementCount;
         private boolean recoveryTargetReached;
         private boolean activePending;
         private String pendingCancellationReason;
@@ -1747,10 +2802,26 @@ public final class LiquidationStructureRouterV1 {
             this.preEventAtr = geometry.preEventAtr; this.priorHigh = geometry.priorHigh; this.priorLow = geometry.priorLow;
             this.boundary = geometry.boundary; this.recoveryTarget = geometry.recoveryTarget;
             this.zoneLower = geometry.zoneLower; this.zoneUpper = geometry.zoneUpper;
+            this.entryLevel = geometry.boundary; this.entryZoneLower = geometry.zoneLower; this.entryZoneUpper = geometry.zoneUpper;
             this.fastGeometry = geometry.fastQualifies; this.slowGeometry = geometry.slowQualifies;
             this.selectedGeometry = geometry.selectedKind; this.availableAt = availableAt;
             this.geometryEvidence = geometry.evidence; this.dailyGate = dailyGate; this.diagnosticOnly = diagnosticOnly;
         }
+    }
+
+    private static List<String> entryFailureCodes(Bar bar, Bar previous, Direction direction,
+            double level, double zoneLower, double zoneUpper) {
+        List<String> failures = new ArrayList<>();
+        if (previous == null) failures.add("NO_PREVIOUS_COMPLETED_H1_BAR");
+        boolean touchesZone = bar.low() <= zoneUpper && bar.high() >= zoneLower;
+        if (!touchesZone) failures.add("NO_H1_TOUCH_OF_ENTRY_ZONE");
+        boolean closesTradeSide = direction == Direction.LONG ? bar.close() > level : bar.close() < level;
+        if (!closesTradeSide) failures.add("H1_CLOSE_NOT_ON_TRADE_SIDE_OF_BOUNDARY");
+        if (previous != null) {
+            boolean breaksPrevious = direction == Direction.LONG ? bar.close() > previous.high() : bar.close() < previous.low();
+            if (!breaksPrevious) failures.add("H1_CLOSE_DID_NOT_BREAK_PRIOR_H1_EXTREME");
+        }
+        return List.copyOf(failures);
     }
 
     private static boolean entryBarQualifies(Bar bar, Bar previous, Direction direction,
@@ -1840,15 +2911,24 @@ public final class LiquidationStructureRouterV1 {
         if (!isTradingSession(sessionDate) || !local.toLocalTime().equals(sessionClose(sessionDate))) {
             throw new IllegalArgumentException("macro input must be a completed S&P 500 session close, never a partial/future close");
         }
-        LocalDate nextSession = nextTradingSession(sessionDate);
-        Instant nextSessionClose = nextSession.atTime(sessionClose(nextSession))
-                .atZone(NEW_YORK).toInstant();
+        Instant nextSessionClose = modeledNextSessionClose(closeTime);
         if (availableAt.isBefore(nextSessionClose)) {
             throw new IllegalArgumentException("macro close availability must be at or after the next completed US equity session");
         }
     }
 
-    private static LocalDate nextTradingSession(LocalDate date) {
+    /** Retrospective availability proxy shared by input adapters, using the frozen NYSE calendar. */
+    static Instant modeledNextSessionClose(Instant closeTime) {
+        ZonedDateTime local = closeTime.atZone(NEW_YORK);
+        LocalDate sessionDate = local.toLocalDate();
+        if (!isTradingSession(sessionDate) || !local.toLocalTime().equals(sessionClose(sessionDate))) {
+            throw new IllegalArgumentException("macro input must be a completed S&P 500 session close");
+        }
+        LocalDate nextSession = nextTradingSession(sessionDate);
+        return nextSession.atTime(sessionClose(nextSession)).atZone(NEW_YORK).toInstant();
+    }
+
+    static LocalDate nextTradingSession(LocalDate date) {
         LocalDate candidate = date.plusDays(1);
         while (!isTradingSession(candidate)) candidate = candidate.plusDays(1);
         return candidate;
@@ -1861,7 +2941,7 @@ public final class LiquidationStructureRouterV1 {
                 && !NYSE_HOLIDAYS.get(date.getYear()).contains(date);
     }
 
-    private static LocalTime sessionClose(LocalDate date) {
+    static LocalTime sessionClose(LocalDate date) {
         if (isEarlyClose(date)) return NYSE_EARLY_CLOSE;
         return NYSE_REGULAR_CLOSE;
     }

@@ -1,0 +1,13 @@
+{
+  "schema": "liquidation-exploratory-freeze/1",
+  "frozen_at": "2026-09-21T05:45:28.620915+00:00",
+  "outcomes_viewed": false,
+  "independent_policy_review": "Completed; findings incorporated before freeze",
+  "files": {
+    "precommit-input.json": "b218ee6c774d1b3b461d310eaee39f86765786e92118770fd7a03a10ed447b73",
+    "frozen-precommit.json": "cb7051d3ddc3a51c17e2936a71d425f25affbae39c0890a3afb4a89c978d0d86",
+    "frozen-precommit.md": "2e0f55dc37fba026ca2c0650442f24c62f093d14c3a9cbd04a32cf10dc66a404",
+    "exploratory-policy.json": "c96f0350a0e4d483bec0b4b3af568063768c42cb3a46e8db761520a4aad565d5",
+    "README.md": "a8b69896fe799d4797e05da54a921699b69a814bd7effbe3d9d377e52bc627ce"
+  }
+}

@@ -1,0 +1,136 @@
+{
+  "schema": "liquidation-v005-verification/1",
+  "status": "PASS",
+  "production_revision": "2e549fb762eb6ce6a71cfbcc6e9667211709ccd3",
+  "retained_executor_byte_sha256": "7ae562430f8ad1449306238d83ff0aab30fcf7ffb615a5d5db8f004a20c1043b",
+  "production_unchanged_after_historical_replay": true,
+  "verification_sequence": [
+    "Executed full clean reactor; analytics-research had one stale validation-message assertion failure and one pre-existing conditional skip.",
+    "Corrected test wording; scope guard passed10/10. All other full-clean tests passed.",
+    "CLI and compatibility modules passed154/154; final package/install passed with tests skipped after affected checks.",
+    "Added meaningful test-only boundary cases. Corrected test-helper compilation and synthetic event/long-addition fixtures; final combined affected run passed87/87.",
+    "Excluded intermediate focused/debug execution sessions from final coverage; retained original clean suite, corrected scope guard, final passing affected suite, and downstream data.",
+    "Final 80% line / 80% branch gate passed against reviewed origin/main base."
+  ],
+  "coverage": {
+    "base": "d4e3e9b4924b24162a9db993ab6613c51387c3b2",
+    "minimum_percent": "80",
+    "branch_minimum_percent": "80",
+    "covered_lines": 2797,
+    "executable_lines": 3050,
+    "line_coverage_percent": "91.70",
+    "branch_covered": 1849,
+    "branch_total": 2284,
+    "branch_coverage_percent": "80.95",
+    "passed": true
+  },
+  "latest_surefire_reports_by_module": {
+    "analytics-contracts": {
+      "tests": 88,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "analytics-research": {
+      "tests": 1432,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1
+    },
+    "analytics-market-data": {
+      "tests": 62,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "analytics-cli": {
+      "tests": 99,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "analytics-reporting": {
+      "tests": 61,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "analytics-core": {
+      "tests": 195,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "analytics-infrastructure": {
+      "tests": 102,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "analytics-compatibility-tests": {
+      "tests": 55,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "preexisting_skip": "StrategyOperatingCharacteristicsSuccessorV1Test.optimizedReplicationMatchesTheEagerRawRowWhenPackagedExecutorIsAvailable",
+  "python_acquisition_tests_passed": 17,
+  "legacy_equivalence_checks_passed": 254,
+  "independent_report_review": "PASS",
+  "receipts": {
+    "clean-install-001.log": {
+      "path": ".research-run/liquidation-exploratory-v005/verification/clean-install-001.log",
+      "byte_sha256": "301aa8c550d47611ef0728e6b43bed3d1832c0bdd2d0b1c2bfd38bd27245060a"
+    },
+    "scope-guard-tests-002.log": {
+      "path": ".research-run/liquidation-exploratory-v005/verification/scope-guard-tests-002.log",
+      "byte_sha256": "6b0a1dc0070aa6e64d2309295e22b40ec39f2ab211a80c245344e8b05f11d4fd"
+    },
+    "downstream-tests-002.log": {
+      "path": ".research-run/liquidation-exploratory-v005/verification/downstream-tests-002.log",
+      "byte_sha256": "74a8db5fdd8b669d3917708dab22baf123d873d6b4a2e27313b86758a6c8b79e"
+    },
+    "boundary-tests-009.log": {
+      "path": ".research-run/liquidation-exploratory-v005/verification/boundary-tests-009.log",
+      "byte_sha256": "5b5aac8dbd08fa6a2ff7daec07515be3e2be059d2319e53b057f63714eb3c6bc"
+    },
+    "reactor-final-package.log": {
+      "path": ".research-run/liquidation-exploratory-v005/verification/reactor-final-package.log",
+      "byte_sha256": "79222b9a1651501f5cb6891c57cc612757c67133dedd1a624efc126ce659b9ab"
+    },
+    "coverage-final.json": {
+      "path": ".research-run/liquidation-exploratory-v005/verification/coverage-final.json",
+      "byte_sha256": "ea0085eec0b3ab1674a249fa11c324d0a29d3f84970c4832c67c5620669d7d14"
+    },
+    "coverage-session-selection.json": {
+      "path": ".research-run/liquidation-exploratory-v005/verification/coverage-session-selection.json",
+      "byte_sha256": "5d3f1a4a91b0f2e621e1c19f4038b23e44e15a14be8c1750d872a260d6a086bd"
+    },
+    "independent-review-001.json": {
+      "path": ".research-run/liquidation-exploratory-v005/verification/independent-review-001.json",
+      "byte_sha256": "1cdb5808a0e2eda16fbe87cbd78d642e1edc64e1b41ba58d58f495742a25218a"
+    },
+    "legacy-four-equivalence-001.json": {
+      "path": ".research-run/liquidation-exploratory-v005/verification/legacy-four-equivalence-001.json",
+      "byte_sha256": "4f5833416944a444e02860a1d1953e6ec2cd982254475b309e3aa6bfa7b6e46c"
+    },
+    "legacy-nine-equivalence-001.json": {
+      "path": ".research-run/liquidation-exploratory-v005/verification/legacy-nine-equivalence-001.json",
+      "byte_sha256": "7182014950f4eb1d14f86db256a4aaa7266dadbc3e3fe2dfac2051c673bfb8ef"
+    },
+    "v005-baseline-equivalence-001.json": {
+      "path": ".research-run/liquidation-exploratory-v005/verification/v005-baseline-equivalence-001.json",
+      "byte_sha256": "fbe91b70fddbb0a299c5e1afd0eff88baadc274442dd166b33e9571b359e7dcb"
+    },
+    "acquisition-tests.log": {
+      "path": ".research-run/liquidation-exploratory-v005/verification/acquisition-tests.log",
+      "byte_sha256": "2d0352b894db9033b569bb74f4fdfebe4cc2a1cfd1a0449db84781dee1fbf8fe"
+    },
+    "final-source-identity.json": {
+      "path": ".research-run/liquidation-exploratory-v005/verification/final-source-identity.json",
+      "byte_sha256": "d1347a5daf77d65e0f6fb2aba61f36ab07b1bc4254f18d78a4bc946cba0e6125"
+    }
+  },
+  "notes": "Historical replay remains DEVELOPMENT, before funding. No production rules changed during verification; no historical rerun or exposure reset needed for test-only corrections."
+}
